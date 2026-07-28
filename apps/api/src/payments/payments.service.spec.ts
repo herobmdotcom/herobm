@@ -28,7 +28,7 @@ import {
   glJournalLines,
   exchangeRates,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
@@ -37,6 +37,7 @@ import {
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
 
 describe('PaymentsService', () => {
@@ -107,6 +108,8 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
       },
       {
         glAccountId: arAccountId,
@@ -116,6 +119,8 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
       },
       {
         glAccountId: apAccountId,
@@ -125,8 +130,10 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
       },
-    ]);
+    ] as any);
 
     // 3. GL Settings
     await pg.db.insert(glSettings).values({
@@ -134,6 +141,9 @@ describe('PaymentsService', () => {
       defaultArAccountId: arAccountId,
       defaultApAccountId: apAccountId,
       baseCurrency: 'AUD',
+      revenueRoutingPrecedence: 'product_first',
+      expenseRoutingPrecedence: 'product_first',
+      bankMatchDateToleranceDays: 3,
     });
 
     // 4. Location (needed for salesOrders FK)
@@ -142,6 +152,7 @@ describe('PaymentsService', () => {
       locationId,
       code: 'TEST-LOC',
       name: 'Test Location',
+      source: 'system',
     });
 
     // 5. Customer Group with AR routing
@@ -150,8 +161,10 @@ describe('PaymentsService', () => {
       customerGroupId,
       groupCode: 'TEST-GRP',
       name: 'Test Customer Group',
+      stateCode: CUSTOMER_STATE.ACTIVE,
       defaultArAccountId: arAccountId,
-    });
+      isOnCreditHold: false,
+    } as any);
 
     // 6. Customer Actor
     customerId = randomUUID();
@@ -161,7 +174,8 @@ describe('PaymentsService', () => {
       actorId: customerActorId,
       name: 'Test Customer',
       headquartersAddressLine1: 'AU',
-    });
+      isTaxRegistered: false,
+    } as any);
 
     await pg.db.insert(customers).values({
       customerId: customerId,
@@ -170,14 +184,17 @@ describe('PaymentsService', () => {
       externalId: 'CUST-001',
       currencyCode: 'AUD',
       customerGroupId,
-    });
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      source: 'system',
+    } as any);
 
     const cActorId = randomUUID();
     await pg.db.insert(actors).values({
       actorId: cActorId,
       name: 'FX Customer',
       headquartersAddressLine1: 'US',
-    });
+      isTaxRegistered: false,
+    } as any);
     await pg.db.insert(customers).values({
       customerId: usdCustomerId,
       actorId: cActorId,
@@ -185,7 +202,8 @@ describe('PaymentsService', () => {
       currencyCode: 'USD',
       customerGroupId,
       stateCode: CUSTOMER_STATE.ACTIVE,
-    });
+      source: 'system',
+    } as any);
 
     // 6. Supplier Group with AP routing
     supplierGroupId = randomUUID();
@@ -193,8 +211,10 @@ describe('PaymentsService', () => {
       supplierGroupId,
       groupCode: 'TEST-SGRP',
       name: 'Test Supplier Group',
+      isPurchasingBlocked: false,
+      isPaymentBlocked: false,
       defaultApAccountId: apAccountId,
-    });
+    } as any);
 
     // 7. Supplier Actor
     supplierId = randomUUID();
@@ -203,7 +223,8 @@ describe('PaymentsService', () => {
       actorId: supplierActorId,
       name: 'Test Supplier',
       headquartersAddressLine1: 'AU',
-    });
+      isTaxRegistered: false,
+    } as any);
 
     await pg.db.insert(suppliers).values({
       vendorId: supplierId,
@@ -212,7 +233,10 @@ describe('PaymentsService', () => {
       externalId: 'SUPP-001',
       currencyCode: 'AUD',
       supplierGroupId,
-    });
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      isPurchasingBlocked: false,
+      source: 'system',
+    } as any);
   }
 
   beforeEach(async () => {
@@ -499,15 +523,18 @@ describe('PaymentsService', () => {
         actorId: unActorId,
         name: 'Ungrouped Customer',
         headquartersAddressLine1: 'AU',
-      });
+        isTaxRegistered: false,
+      } as any);
       await pg.db.insert(customers).values({
         customerId: ungroupedId,
         actorId: unActorId,
         customerNumber: 'ACCT-UNGROUPED',
         externalId: 'UNGROUPED-001',
         currencyCode: 'AUD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'system',
         // No customerGroupId
-      });
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -604,7 +631,9 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
-      });
+        isSystem: false,
+        isBankAccount: false,
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -647,7 +676,9 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
-      });
+        isSystem: false,
+        isBankAccount: false,
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -691,6 +722,8 @@ describe('PaymentsService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
         {
           glAccountId: expense2Id,
@@ -700,8 +733,10 @@ describe('PaymentsService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
-      ]);
+      ] as any);
 
       const paymentId = randomUUID();
       await service.createPaymentEntry(
@@ -771,7 +806,10 @@ describe('PaymentsService', () => {
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
         stateCode: SALES_ORDER_STATE.SHIPPED,
-      });
+        source: 'system',
+        discrepanciesAcknowledged: false,
+        exchangeRate: '1',
+      } as any);
 
       // Create an invoiced sales invoice
       invoiceId = randomUUID();
@@ -783,8 +821,10 @@ describe('PaymentsService', () => {
         outstandingAmount: String(invoiceAmount),
         taxAmount: '0',
         currencyCode: 'AUD',
+        exchangeRate: '1',
         stateCode: SALES_INVOICE_STATE.INVOICED,
-      });
+        source: 'system',
+      } as any);
 
       // Create and submit a payment
       const payment = await service.createPaymentEntry(
@@ -1007,16 +1047,18 @@ describe('PaymentsService', () => {
         actorId: dActorId,
         name: 'Discount Customer',
         headquartersAddressLine1: 'AU',
-      });
+        isTaxRegistered: false,
+      } as any);
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
         actorId: dActorId,
         customerNumber: 'CUST-DISC-001',
         stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'system',
         currencyCode: 'AUD',
         earlyPaymentDiscount: '5', // 5%
         earlyPaymentDiscountDays: 14,
-      });
+      } as any);
 
       const soId = randomUUID();
       await pg.db.insert(salesOrders).values({
@@ -1026,7 +1068,10 @@ describe('PaymentsService', () => {
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
         stateCode: SALES_ORDER_STATE.SHIPPED,
-      });
+        source: 'system',
+        discrepanciesAcknowledged: false,
+        exchangeRate: '1',
+      } as any);
 
       const invId = randomUUID();
       await pg.db.insert(salesInvoices).values({
@@ -1037,13 +1082,15 @@ describe('PaymentsService', () => {
         outstandingAmount: '1000',
         taxAmount: '0',
         currencyCode: 'AUD',
+        exchangeRate: '1',
         stateCode: SALES_INVOICE_STATE.DRAFT,
+        source: 'system',
         invoiceDate: new Date(),
-      });
+      } as any);
 
       await pg.db
         .update(salesInvoices)
-        .set({ stateCode: 'invoiced' })
+        .set({ stateCode: SALES_INVOICE_STATE.INVOICED })
         .where(eq(salesInvoices.invoiceId, invId));
 
       const payment = await service.createPaymentEntry(
@@ -1086,16 +1133,18 @@ describe('PaymentsService', () => {
         actorId: dActorId2,
         name: 'Discount Customer 2',
         headquartersAddressLine1: 'AU',
-      });
+        isTaxRegistered: false,
+      } as any);
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
         actorId: dActorId2,
         customerNumber: 'CUST-DISC-002',
         stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'system',
         currencyCode: 'AUD',
         earlyPaymentDiscount: '5', // 5%
         earlyPaymentDiscountDays: 14,
-      });
+      } as any);
 
       const soId = randomUUID();
       await pg.db.insert(salesOrders).values({
@@ -1105,7 +1154,10 @@ describe('PaymentsService', () => {
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
         stateCode: SALES_ORDER_STATE.SHIPPED,
-      });
+        source: 'system',
+        discrepanciesAcknowledged: false,
+        exchangeRate: '1',
+      } as any);
 
       const invId = randomUUID();
       const pastInvoiceDate = new Date();
@@ -1119,9 +1171,11 @@ describe('PaymentsService', () => {
         outstandingAmount: '1000',
         taxAmount: '0',
         currencyCode: 'AUD',
-        stateCode: 'invoiced',
+        exchangeRate: '1',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        source: 'system',
         invoiceDate: pastInvoiceDate,
-      });
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -1219,7 +1273,10 @@ describe('PaymentsService', () => {
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
         stateCode: SALES_ORDER_STATE.SHIPPED,
-      });
+        source: 'system',
+        discrepanciesAcknowledged: false,
+        exchangeRate: '1',
+      } as any);
 
       const invId = randomUUID();
       await pg.db.insert(salesInvoices).values({
@@ -1230,8 +1287,10 @@ describe('PaymentsService', () => {
         outstandingAmount: '1000',
         taxAmount: '0',
         currencyCode: 'AUD',
-        stateCode: 'invoiced',
-      });
+        exchangeRate: '1',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        source: 'system',
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -1284,7 +1343,9 @@ describe('PaymentsService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
-      });
+        isSystem: false,
+        isBankAccount: false,
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -1413,7 +1474,10 @@ describe('PaymentsService', () => {
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
         stateCode: SALES_ORDER_STATE.SHIPPED,
-      });
+        source: 'system',
+        discrepanciesAcknowledged: false,
+        exchangeRate: '1',
+      } as any);
 
       const invId = randomUUID();
       await pg.db.insert(salesInvoices).values({
@@ -1424,8 +1488,10 @@ describe('PaymentsService', () => {
         outstandingAmount: '500',
         taxAmount: '0',
         currencyCode: 'AUD',
+        exchangeRate: '1',
         stateCode: SALES_INVOICE_STATE.INVOICED,
-      });
+        source: 'system',
+      } as any);
 
       const payment = await service.createPaymentEntry(
         {
@@ -1481,6 +1547,8 @@ describe('PaymentsService', () => {
             isGroup: false,
             isActive: true,
             currencyCode: 'AUD',
+            isSystem: false,
+            isBankAccount: false,
           },
           {
             glAccountId: fxLossId,
@@ -1490,8 +1558,10 @@ describe('PaymentsService', () => {
             isGroup: false,
             isActive: true,
             currencyCode: 'AUD',
+            isSystem: false,
+            isBankAccount: false,
           },
-        ]);
+        ] as any);
 
         // Update GL settings
         await pg.db.update(glSettings).set({
@@ -1530,7 +1600,9 @@ describe('PaymentsService', () => {
           exchangeRate: '1.1',
           fulfillmentLocationId: locationId,
           stateCode: SALES_ORDER_STATE.SHIPPED,
-        });
+          source: 'system',
+          discrepanciesAcknowledged: false,
+        } as any);
 
         const invId = randomUUID();
         await pg.db.insert(salesInvoices).values({
@@ -1543,7 +1615,8 @@ describe('PaymentsService', () => {
           currencyCode: 'EUR',
           exchangeRate: '1.1', // 100 EUR = 110 AUD Base
           stateCode: SALES_INVOICE_STATE.INVOICED,
-        });
+          source: 'system',
+        } as any);
 
         // Create a payment at a different rate
         const paymentId = randomUUID();

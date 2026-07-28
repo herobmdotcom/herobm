@@ -100,7 +100,11 @@ export class BusinessReportsController {
   @ApiBody({ type: CreateBusinessReportDto })
   @ApiCreatedResponse({ type: BusinessReportResponseDto })
   async createReport(@Body() data: CreateBusinessReportDto) {
-    return this.service.createReport(data);
+    return this.service.createReport({
+      isSystem: false,
+      uiConfig: data.uiConfig ?? {},
+      ...data,
+    });
   }
 
   @Put(':id')

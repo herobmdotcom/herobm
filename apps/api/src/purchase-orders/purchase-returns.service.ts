@@ -21,7 +21,7 @@ import {
   products as coreProducts,
   suppliers,
   supplierGroups,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryService } from '../inventory/inventory.service';
@@ -32,6 +32,7 @@ import {
   PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_ORDER_STATE,
   getValidStates,
+  PurchaseReturnState,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
@@ -474,8 +475,7 @@ export class PurchaseReturnsService {
 
         if (glResult) {
           await this.glService.postJournalEntry(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            glResult.lines as any,
+            glResult.lines,
             {
               actor,
               entryDate: new Date().toISOString().slice(0, 10),
@@ -524,7 +524,7 @@ export class PurchaseReturnsService {
 
   async changePurchaseReturnState(
     returnId: string,
-    newState: string,
+    newState: PurchaseReturnState,
     actor: string,
     tx?: DrizzleDB,
   ) {
@@ -554,8 +554,7 @@ export class PurchaseReturnsService {
 
     const [updated] = await db
       .update(purchaseOrderReturns)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .returning();
 

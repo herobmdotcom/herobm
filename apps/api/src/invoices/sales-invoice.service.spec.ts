@@ -18,10 +18,15 @@ import {
   uomDictionary,
   salesInvoices,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  SALES_INVOICE_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+} from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -60,6 +65,8 @@ describe('SalesInvoiceService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     const actorId = '00000000-0000-4000-8000-000000000002';
@@ -67,6 +74,7 @@ describe('SalesInvoiceService', () => {
       actorId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
 
     await pg.db.insert(customers).values({
@@ -74,6 +82,9 @@ describe('SalesInvoiceService', () => {
       actorId,
       customerNumber: 'CUST001',
       currencyCode: 'AUD',
+      stateCode: CUSTOMER_STATE.DRAFT,
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(products).values({
@@ -82,6 +93,10 @@ describe('SalesInvoiceService', () => {
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
   });
 
@@ -149,6 +164,11 @@ describe('SalesInvoiceService', () => {
       stateCode: stateCode as any,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(salesOrderLineItems).values({
@@ -162,6 +182,9 @@ describe('SalesInvoiceService', () => {
       amount: '250.00',
       totalAmount: '275.00',
       tax: '25.00',
+      discountPercentage: '0',
+      quantityPicked: '0',
+      isPostConfirmation: false,
     });
   }
 
@@ -232,6 +255,11 @@ describe('SalesInvoiceService', () => {
         fulfillmentLocationId: LOCATION_ID,
         currencyCode: 'AUD',
         stateCode: SALES_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
       });
       await pg.db.insert(salesInvoices).values({
         invoiceId: '00000000-0000-4000-8000-000000000101',
@@ -243,6 +271,11 @@ describe('SalesInvoiceService', () => {
         outstandingAmount: '100.00',
         earlyPaymentDiscount: '2.5',
         earlyPaymentDiscountDays: 14,
+        taxAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       const result = await service.findActiveInvoices({ days: 30 });

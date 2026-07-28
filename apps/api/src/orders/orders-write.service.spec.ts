@@ -14,7 +14,11 @@ import {
 import { CustomersService } from '../customers/customers.service';
 import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
-import { SALES_ORDER_STATE } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  PRODUCT_STATE,
+  CUSTOMER_STATE,
+} from '@herobm/shared';
 
 import { PGlite } from '@electric-sql/pglite';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -32,9 +36,9 @@ import {
   productComponents,
   locations,
   exchangeRates,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 
-import { taxCategories } from '../drizzle/herobm-core-schema';
+import { taxCategories } from '../drizzle/schema';
 import { getErrorMessage } from '@herobm/shared';
 
 // Default GST categories used across tests
@@ -80,6 +84,8 @@ describe('OrdersWriteService', () => {
         locationId: '10000000-0000-4000-8000-000000000001',
         code: 'MAIN',
         name: 'Main Location',
+        source: 'app',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
 
@@ -152,6 +158,7 @@ describe('OrdersWriteService', () => {
         productId: 'PROD-001',
         name: 'Test Product',
         salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
       }),
     };
     mockCreditAssessmentService = {
@@ -309,6 +316,7 @@ describe('OrdersWriteService', () => {
         productId: product.productId,
         name: 'Test Product',
         salesTaxCategoryId: prodGstId,
+        stateCode: PRODUCT_STATE.ACTIVE,
       });
 
       return {
@@ -339,6 +347,29 @@ describe('OrdersWriteService', () => {
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, result.salesOrderId));
       expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.DRAFT);
+    });
+
+    it('should throw BadRequestException if product is inactive', async () => {
+      const { validDto, product } = await setupCreate();
+      mockProductsService.findOne.mockResolvedValueOnce({
+        ...product,
+        stateCode: PRODUCT_STATE.ARCHIVED,
+      });
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if customer is inactive', async () => {
+      const { validDto, customer } = await setupCreate();
+      mockCustomersService.findOne.mockResolvedValueOnce({
+        customerId: customer.customerId,
+        currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.ARCHIVED,
+      });
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should default to 0% discount when no discount is provided (frontend-authoritative)', async () => {
@@ -398,6 +429,7 @@ describe('OrdersWriteService', () => {
       mockProductsService.findOne.mockResolvedValueOnce({
         ...product,
         salesTaxCategoryId: TAX_ZERO.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
       });
 
       mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
@@ -466,6 +498,11 @@ describe('OrdersWriteService', () => {
         fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         currencyCode: 'EUR',
         stateCode: SALES_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
       });
 
       // Mock generateOrderNumber to return the same number
@@ -818,6 +855,7 @@ describe('OrdersWriteService', () => {
         productId: zeroProduct.productId,
         name: 'Zero Prod',
         salesTaxCategoryId: TAX_ZERO.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
       });
 
       mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
@@ -868,6 +906,9 @@ describe('OrdersWriteService', () => {
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
         })
         .returning();
 
@@ -977,6 +1018,9 @@ describe('OrdersWriteService', () => {
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
         })
         .returning();
 
@@ -1060,6 +1104,9 @@ describe('OrdersWriteService', () => {
         totalAmount: '55.00',
         unitOfMeasure: 'EA',
         fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        discountPercentage: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       });
 
       // Events are automatically handled if created through the service, or we can insert one directly:
@@ -1128,6 +1175,9 @@ describe('OrdersWriteService', () => {
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
         })
         .returning();
 
@@ -1200,12 +1250,16 @@ describe('OrdersWriteService', () => {
           childProductId: comp1.productId,
           quantity: '2',
           sequenceNumber: 1,
+          parentQuantity: '1',
+          fractionalBehavior: 'round_up' as any,
         },
         {
           parentProductId: kitProduct.productId,
           childProductId: comp2.productId,
           quantity: '1',
           sequenceNumber: 2,
+          parentQuantity: '1',
+          fractionalBehavior: 'round_up' as any,
         },
       ]);
     });

@@ -6,7 +6,7 @@ interface AutoSaveConfig<TEntity, TDto> {
   id: string;
   fetchFn: (id: string) => Promise<{ data: TEntity }>;
   updateFn: (id: string, dto: TDto) => Promise<{ data: TEntity }>;
-  mapEntityToDto?: (entity: TEntity) => TDto;
+  mapEntityToDto?: (entity: TEntity) => Required<TDto>;
   onRefresh?: (entity: TEntity) => void;
 }
 
@@ -14,7 +14,7 @@ export function useAutoSaveEntity<TEntity, TDto>({
   id,
   fetchFn,
   updateFn,
-  mapEntityToDto = (e) => e as unknown as TDto,
+  mapEntityToDto = (e) => Object.assign({}, e) as unknown as Required<TDto>,
   onRefresh,
 }: AutoSaveConfig<TEntity, TDto>) {
   const [entity, setEntity] = useState<TEntity | null>(null);
@@ -65,7 +65,7 @@ export function useAutoSaveEntity<TEntity, TDto>({
 
       // Check if changed vs server state (using the mapping)
       const serverValue = mapEntityToDtoRef.current(entity)[field];
-      if (value === serverValue || (value === '' && serverValue === null)) return;
+      if (value === serverValue || (value === '' && (serverValue === null || serverValue === undefined))) return;
 
       const nextDto = { ...dto, [field]: value };
       setDto(nextDto);

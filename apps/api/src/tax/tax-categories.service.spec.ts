@@ -3,7 +3,7 @@ import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { taxCategories, appSettings } from '../drizzle/herobm-core-schema';
+import { taxCategories, appSettings } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 describe('TaxCategoriesService', () => {
@@ -73,6 +73,10 @@ describe('TaxCategoriesService', () => {
       await pg.db.delete(appSettings);
       await pg.db.insert(appSettings).values({
         defaultSalesTaxCategoryId: '550e8400-e29b-41d4-a716-446655440000',
+        inventoryValuationMethod: 'average',
+        inventoryAccountingMode: 'perpetual',
+        creditLimitBehavior: 'hard',
+        apiRateLimit: '100',
       } as any);
       const result = await service.getDefaultSalesTax();
       expect(result.code).toBe('GST');

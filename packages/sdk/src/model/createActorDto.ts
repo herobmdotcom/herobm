@@ -23,4 +23,8 @@ export interface CreateActorDto {
   businessNumber?: string;
   isTaxRegistered?: boolean;
   tags?: string[];
+  referralMode?: string;
+  referredByActorId?: string;
+  referredByContactId?: string;
+  referralNote?: string;
 }

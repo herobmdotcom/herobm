@@ -6,7 +6,7 @@ import {
   pdfTemplates,
   pdfTemplateHooks,
   pdfTemplateContexts,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import type { SeedDB } from '../run';
 
 interface SeedData {

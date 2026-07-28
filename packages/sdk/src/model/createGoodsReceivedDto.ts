@@ -11,6 +11,7 @@ export interface CreateGoodsReceivedDto {
   goodsReceivedId?: string;
   vendorId: string;
   locationId: string;
+  purchaseOrderId?: string;
   packingSlipNumber?: string;
   notes?: string;
   lines: CreateGoodsReceivedLineDto[];

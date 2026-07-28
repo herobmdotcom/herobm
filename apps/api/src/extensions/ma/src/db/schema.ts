@@ -1,6 +1,6 @@
 import { pgSchema, text, boolean, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { actors, projects } from '../../../../drizzle/herobm-core-schema';
+import { actors, projects } from '@api/drizzle/schema/index';
 
 export const extMaExtensions = pgSchema('herobm_core'); // Still deploying to the same physical Postgres schema, but conceptually separate.
 

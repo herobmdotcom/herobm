@@ -333,7 +333,7 @@ function POCard({
       }}
     >
       {/* Card header */}
-      <button
+      <Button
         onClick={onToggle}
         style={{
           width: '100%',
@@ -390,7 +390,7 @@ function POCard({
             </span>
           )}
         </div>
-      </button>
+      </Button>
 
       {/* Expanded lines */}
       {isExpanded && (

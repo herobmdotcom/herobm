@@ -9,7 +9,7 @@ import {
   bins,
   binContents,
   appSettings,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 describe('LocationsService', () => {
@@ -47,7 +47,7 @@ describe('LocationsService', () => {
     it('should update a location', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'Old' })
+        .values({ code: 'L1', name: 'Old', source: 'app', createdBy: 'system' })
         .returning();
       const result = await service.updateLocation(loc.locationId, {
         name: 'New',
@@ -58,11 +58,15 @@ describe('LocationsService', () => {
     it('should prevent deleting location with zones', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
-      await pg.db
-        .insert(zones)
-        .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' });
+      await pg.db.insert(zones).values({
+        locationId: loc.locationId,
+        code: 'Z1',
+        name: 'Z1',
+        source: 'app',
+        createdBy: 'system',
+      });
 
       await expect(service.deleteLocation(loc.locationId)).rejects.toThrow(
         BadRequestException,
@@ -72,11 +76,15 @@ describe('LocationsService', () => {
     it('should prevent deleting location set as default', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
-      await pg.db
-        .insert(appSettings)
-        .values({ defaultFulfillmentLocationId: loc.locationId });
+      await pg.db.insert(appSettings).values({
+        defaultFulfillmentLocationId: loc.locationId,
+        creditLimitBehavior: 'block',
+        apiRateLimit: '100',
+        inventoryValuationMethod: 'fifo',
+        inventoryAccountingMode: 'perpetual',
+      });
 
       await expect(service.deleteLocation(loc.locationId)).rejects.toThrow(
         BadRequestException,
@@ -88,7 +96,7 @@ describe('LocationsService', () => {
     it('should create a zone', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
       const dto = { locationId: loc.locationId, code: 'Z1', name: 'Zone 1' };
       const result = await service.createZone(dto, 'admin');
@@ -98,15 +106,27 @@ describe('LocationsService', () => {
     it('should prevent deleting zone with bins', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
       const [zone] = await pg.db
         .insert(zones)
-        .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
+        .values({
+          locationId: loc.locationId,
+          code: 'Z1',
+          name: 'Z1',
+          source: 'app',
+          createdBy: 'system',
+        })
         .returning();
-      await pg.db
-        .insert(bins)
-        .values({ zoneId: zone.zoneId, binNumber: 'B1', binType: 'storage' });
+      await pg.db.insert(bins).values({
+        zoneId: zone.zoneId,
+        binNumber: 'B1',
+        binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
+      });
 
       await expect(service.deleteZone(zone.zoneId)).rejects.toThrow(
         BadRequestException,
@@ -118,11 +138,17 @@ describe('LocationsService', () => {
     it('should create a bin', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
       const [zone] = await pg.db
         .insert(zones)
-        .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
+        .values({
+          locationId: loc.locationId,
+          code: 'Z1',
+          name: 'Z1',
+          source: 'app',
+          createdBy: 'system',
+        })
         .returning();
       const dto = {
         zoneId: zone.zoneId,
@@ -136,15 +162,27 @@ describe('LocationsService', () => {
     it('should prevent deleting bin with stock', async () => {
       const [loc] = await pg.db
         .insert(locations)
-        .values({ code: 'L1', name: 'L1' })
+        .values({ code: 'L1', name: 'L1', source: 'app', createdBy: 'system' })
         .returning();
       const [zone] = await pg.db
         .insert(zones)
-        .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
+        .values({
+          locationId: loc.locationId,
+          code: 'Z1',
+          name: 'Z1',
+          source: 'app',
+          createdBy: 'system',
+        })
         .returning();
       const [bin] = await pg.db
         .insert(bins)
-        .values({ zoneId: zone.zoneId, binNumber: 'B1', binType: 'storage' })
+        .values({
+          zoneId: zone.zoneId,
+          binNumber: 'B1',
+          binType: 'storage',
+          source: 'app',
+          createdBy: 'system',
+        })
         .returning();
 
       // Need a product for binContents

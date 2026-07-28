@@ -4,7 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as fs from 'fs';
 import * as path from 'path';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { glAccounts, glSettings } from '../drizzle/herobm-core-schema';
+import { glAccounts, glSettings } from '../drizzle/schema';
 import { count, eq } from 'drizzle-orm';
 
 describe('CoaLoaderService', () => {
@@ -32,6 +32,9 @@ describe('CoaLoaderService', () => {
         accountType: 'asset',
         isActive: true,
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
       });
 
       const result = await service.loadFromFile('au_standard.json');

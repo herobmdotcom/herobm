@@ -9,4 +9,5 @@
 export interface CreateGoodsReceivedLineDto {
   productId: string;
   quantityReceived: string;
+  purchaseOrderLineId?: string;
 }

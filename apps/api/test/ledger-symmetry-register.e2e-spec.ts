@@ -7,10 +7,7 @@ import * as crypto from 'crypto';
 import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
-import {
-  salesOrders,
-  salesOrderLineItems,
-} from '../src/drizzle/herobm-core-schema';
+import { salesOrders, salesOrderLineItems } from '../src/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 interface LedgerSnapshot {
@@ -517,8 +514,9 @@ describe('API E2E — Ledger Symmetry Register', () => {
         `);
         const transferBinId = rows[0]?.bin_id || ctx.validBinId;
 
-        // Ensure there is enough stock in the bin to pick from
+        // Ensure there is enough stock in the bin to pick from, and the bin is pickable
         await db.execute(sql`
+          UPDATE herobm_core.bins SET bin_type = 'pick' WHERE bin_id = ${transferBinId};
           INSERT INTO herobm_core.bin_contents (bin_id, product_id, actual_quantity)
           VALUES (${transferBinId}, ${ctx.validProductId}, 100)
           ON CONFLICT (bin_id, product_id) 

@@ -21,7 +21,7 @@ import {
   products as coreProducts,
   customerGroups,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
@@ -435,6 +435,9 @@ export class SalesCreditNoteService {
           stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
           notes: dto.notes ?? `Credit note for return ${ret.returnNumber}`,
           createdBy: actor,
+          baseTotalAmount: '0',
+          baseOutstandingAmount: '0',
+          exchangeRate: '1',
         })
         .returning();
 
@@ -934,6 +937,9 @@ export class SalesCreditNoteService {
         stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
         notes: dto.notes ?? 'Ad-hoc credit note',
         createdBy: actor,
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
       })
       .returning();
 

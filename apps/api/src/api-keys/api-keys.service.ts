@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { apiKeys } from '../drizzle/herobm-core-schema';
+import { apiKeys } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -38,6 +38,7 @@ export class ApiKeysService {
           role: body.role,
           keyHash: hash,
           createdBy: actorUsername,
+          isActive: true,
         })
         .returning();
 

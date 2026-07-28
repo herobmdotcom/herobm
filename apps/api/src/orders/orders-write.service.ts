@@ -5,6 +5,7 @@ import {
   InventoryGap,
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
+  PRODUCT_STATE,
   getErrorMessage,
 } from '@herobm/shared';
 import {
@@ -37,7 +38,7 @@ import {
   tradingTerms,
   taxCategories,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   CreateOrderDto,
   UpdateOrderDto,
@@ -377,7 +378,21 @@ export class OrdersWriteService {
     productId: string,
     tx?: DrizzleDB,
   ): Promise<void> {
-    await this.lookupProduct(productId, tx);
+    try {
+      const product = await this.productsService.findOne(productId, tx);
+      if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
+        throw new BadRequestException(
+          `Cannot use product '${product.productNumber || product.name}' as it is not active.`,
+        );
+      }
+    } catch (e) {
+      if (e instanceof NotFoundException) {
+        throw new BadRequestException(
+          `Product with ID ${productId} not found.`,
+        );
+      }
+      throw e;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -396,6 +411,11 @@ export class OrdersWriteService {
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const customer = await this.resolveCustomer(dto.customerId, tx);
+      if (customer.stateCode === CUSTOMER_STATE.ARCHIVED) {
+        throw new BadRequestException(
+          'Cannot create order: customer_inactive.',
+        );
+      }
 
       for (const line of dto.lines) {
         if (line.productId) {
@@ -505,6 +525,9 @@ export class OrdersWriteService {
           deliveryCountry: dto.deliveryCountry,
           termsDescription: termsDescription,
           createdBy: actor,
+          baseTotalAmount: '0',
+          discrepanciesAcknowledged: false,
+          source: 'app',
         })
         .returning();
 

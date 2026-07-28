@@ -15,6 +15,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -26,6 +27,7 @@ import {
   UpdateActorContactDto,
   CreateActorContactDto,
   CreateActorNoteDto,
+  EmptyBodyDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -45,7 +47,7 @@ export class ActorsController {
 
   @Post()
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Create Actor' })
+  @ApiOperation({ summary: 'Create Actor', description: 'Create Actor' })
   @ApiCreatedResponse({ type: ActorResponseDto })
   create(@Body() dto: CreateActorDto, @AuthUser() user: JwtUser) {
     return this.actorsService.createActor(dto, user.userId);
@@ -53,7 +55,10 @@ export class ActorsController {
 
   @Get()
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get all Actors (paginated)' })
+  @ApiOperation({
+    summary: 'Get all Actors (paginated)',
+    description: 'Get all Actors (paginated)',
+  })
   @ApiFieldMask()
   @ApiPaginatedResponse(ActorResponseDto)
   findAll(@Query() query: PaginationQuery) {
@@ -62,7 +67,7 @@ export class ActorsController {
 
   @Get(':id')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Actor by ID' })
+  @ApiOperation({ summary: 'Get Actor by ID', description: 'Get Actor by ID' })
   @ApiOkResponse({ type: ActorResponseDto })
   findOne(@Param('id') id: string) {
     return this.actorsService.getActor(id);
@@ -70,7 +75,7 @@ export class ActorsController {
 
   @Patch(':id')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Actor' })
+  @ApiOperation({ summary: 'Update Actor', description: 'Update Actor' })
   @ApiOkResponse({ type: ActorResponseDto })
   update(
     @Param('id') id: string,
@@ -82,7 +87,10 @@ export class ActorsController {
 
   @Patch(':id/contacts/:contactId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Contact Link on Actor' })
+  @ApiOperation({
+    summary: 'Update Contact Link on Actor',
+    description: 'Update Contact Link on Actor',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   updateContact(
     @Param('id') id: string,
@@ -95,7 +103,10 @@ export class ActorsController {
 
   @Post(':id/contacts')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Link Contact to Actor' })
+  @ApiOperation({
+    summary: 'Link Contact to Actor',
+    description: 'Link Contact to Actor',
+  })
   @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
   addContact(
     @Param('id') id: string,
@@ -106,16 +117,48 @@ export class ActorsController {
   }
 
   @Delete(':id')
-  @CasbinAction('write')
-  @ApiOperation({ summary: 'Delete Actor' })
+  @CasbinAction('delete')
+  @ApiOperation({ summary: 'Delete Actor', description: 'Delete Actor' })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.actorsService.deleteActor(id, user.userId);
   }
 
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  @ApiOperation({ summary: 'Archive Actor', description: 'Archives an actor' })
+  @ApiOkResponse({ type: ActorResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  archive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.archiveActor(id, user.userId);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Unarchive Actor',
+    description: 'Unarchives an actor',
+  })
+  @ApiOkResponse({ type: ActorResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  unarchive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.unarchiveActor(id, user.userId);
+  }
+
   @Post(':id/notes')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Note to Actor' })
+  @ApiOperation({
+    summary: 'Add Note to Actor',
+    description: 'Add Note to Actor',
+  })
   @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
   addNote(
     @Param('id') id: string,
@@ -127,7 +170,10 @@ export class ActorsController {
 
   @Delete(':id/notes/:noteId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Remove Note from Actor' })
+  @ApiOperation({
+    summary: 'Remove Note from Actor',
+    description: 'Remove Note from Actor',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   removeNote(
     @Param('id') id: string,
@@ -139,7 +185,10 @@ export class ActorsController {
 
   @Delete(':id/contacts/:contactId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Remove Contact Link from Actor' })
+  @ApiOperation({
+    summary: 'Remove Contact Link from Actor',
+    description: 'Remove Contact Link from Actor',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   removeContact(
     @Param('id') id: string,

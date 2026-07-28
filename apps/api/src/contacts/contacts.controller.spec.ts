@@ -8,7 +8,7 @@ describe('ContactsController', () => {
   let controller: ContactsController;
 
   const mockUser: JwtUser = {
-    userId: 'U001',
+    userId: '00000000-0000-0000-0000-000000000001',
     username: 'testuser',
     email: 'test@example.com',
     role: 'admin',

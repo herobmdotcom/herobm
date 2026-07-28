@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { webhooks } from '../drizzle/herobm-core-schema';
+import { webhooks } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import { CreateWebhookDto, UpdateWebhookDto } from './dto';

@@ -380,18 +380,18 @@ export default function ReportViewer() {
             <div className="flex flex-col">
               <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>View As</label>
               <div className="flex bg-white rounded-md border border-[rgba(196,198,205,0.4)] p-0.5 h-[34px]">
-                <button
+                <Button
                   className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
                   onClick={() => setViewMode('grid')}
                 >
                   Table
-                </button>
-                <button
+                </Button>
+                <Button
                   className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'chart' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
                   onClick={() => setViewMode('chart')}
                 >
                   Chart
-                </button>
+                </Button>
               </div>
             </div>
           )}

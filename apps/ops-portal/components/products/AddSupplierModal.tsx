@@ -5,6 +5,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface AddSupplierModalProps {
   productId: string;
@@ -138,14 +139,15 @@ export default function AddSupplierModal({
           <h3 className="font-bold text-xl text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
             {t('title')}
           </h3>
-          <button 
-            type="button" 
-            className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
+          <Button 
+            variant="ghost"
+            size="icon"
+            className="rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
             onClick={onClose}
           >
             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+          </Button>
         </div>
 
         {/* Product Context Banner */}
@@ -190,14 +192,14 @@ export default function AddSupplierModal({
                 <ul className="py-1">
                   {(Array.isArray(suppliers) ? suppliers : []).map(s => (
                     <li key={s.supplierId}>
-                      <button
-                        type="button"
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#e2f9f5] flex flex-col focus:bg-[#e2f9f5] focus:outline-none transition-colors rounded-md"
+                      <Button
+                        variant="ghost"
+                        className="w-full text-left px-4 py-2.5 hover:bg-[#e2f9f5] flex flex-col items-start h-auto focus:bg-[#e2f9f5] focus:outline-none transition-colors rounded-md"
                         onClick={() => selectSupplier(s)}
                       >
                         <span className="font-semibold text-gray-900">{s.name}</span>
                         {s.vendorNumber && <span className="text-xs text-gray-500 font-medium">{s.vendorNumber}</span>}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -239,12 +241,12 @@ export default function AddSupplierModal({
           </div>
 
           <div className="mt-8 pt-6 flex justify-end gap-3 border-t border-gray-100">
-             <button type="button" className="btn btn-ghost hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
+             <Button variant="ghost" className="hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
                {t('buttons.cancel')}
-              </button>
-             <button type="submit" className="btn bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={submitting || !vendorId}>
+              </Button>
+             <Button type="submit" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={submitting || !vendorId}>
                {submitting ? <span className="loading loading-spinner loading-sm text-white"></span> : t('buttons.linkProduct')}
-             </button>
+             </Button>
           </div>
         </form>
       </div>

@@ -7,7 +7,7 @@ describe('ProjectsController', () => {
   let controller: ProjectsController;
 
   const mockUser: JwtUser = {
-    userId: 'U001',
+    userId: '00000000-0000-0000-0000-000000000001',
     username: 'testuser',
     email: 'test@example.com',
     role: 'admin',
@@ -52,7 +52,7 @@ describe('ProjectsController', () => {
 
   describe('findAll', () => {
     it('should return all projects', async () => {
-      const result = await controller.findAll();
+      const result = await controller.findAll({} as any);
       expect(result).toEqual(mockResult);
       expect(mockService.getProjects).toHaveBeenCalled();
     });

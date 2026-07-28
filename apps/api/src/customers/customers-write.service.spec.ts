@@ -8,13 +8,9 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  customers,
-  masterDataEvents,
-  actors,
-} from '../drizzle/herobm-core-schema';
+import { customers, masterDataEvents, actors } from '../drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
-import { getErrorMessage } from '@herobm/shared';
+import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
 
 describe('CustomersWriteService', () => {
   const pg = setupPgliteSuite();
@@ -73,6 +69,7 @@ describe('CustomersWriteService', () => {
         .values({
           name: 'Existing',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -80,6 +77,9 @@ describe('CustomersWriteService', () => {
         actorId: act.actorId,
         customerNumber: 'TEST001',
         currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       await expect(
@@ -101,6 +101,7 @@ describe('CustomersWriteService', () => {
         .values({
           name: 'First',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -108,6 +109,9 @@ describe('CustomersWriteService', () => {
         actorId: act.actorId,
         customerNumber: 'UNQ-001',
         currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       // Directly call DB to bypass service's manual existence check
@@ -117,6 +121,7 @@ describe('CustomersWriteService', () => {
           .values({
             name: 'Duplicate',
             headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
           })
           .returning();
 
@@ -124,6 +129,9 @@ describe('CustomersWriteService', () => {
           actorId: act2.actorId,
           customerNumber: 'UNQ-001',
           currencyCode: 'EUR',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         });
         fail('Should have thrown unique violation');
       } catch (e: unknown) {
@@ -140,6 +148,7 @@ describe('CustomersWriteService', () => {
         .values({
           name: 'First',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -147,6 +156,9 @@ describe('CustomersWriteService', () => {
         actorId: act.actorId,
         customerNumber: 'CONFLICT-001',
         currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       // Bypass manual check by mocking the select? No, just rely on race condition potential.
@@ -185,6 +197,7 @@ describe('CustomersWriteService', () => {
         .values({
           name: 'Old',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -194,6 +207,9 @@ describe('CustomersWriteService', () => {
           actorId: act.actorId,
           customerNumber: 'TEST001',
           currencyCode: 'EUR',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 

@@ -12,6 +12,7 @@ import type { ProjectResponseDtoProjectContactsItem } from './projectResponseDto
 
 export interface ProjectResponseDto {
   projectId: string;
+  stateCode: string;
   name: string;
   status: string;
   type: string;

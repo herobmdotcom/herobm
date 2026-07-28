@@ -47,7 +47,7 @@ import {
   transferOrderReceipts,
   transferOrderReceiptLines,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -90,7 +90,7 @@ export class InventoryService {
   // =========================================================================
 
   async findAll(query?: PaginationQuery & { locationNo?: string }) {
-    const { page, limit, cursor, direction, searchTerm } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -126,6 +126,10 @@ export class InventoryService {
 
     if (query?.locationNo) {
       filters.push(eq(locations.code, query.locationNo));
+    }
+
+    if (!includeArchived) {
+      filters.push(sql`${products.stateCode} != 'archived'`);
     }
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
@@ -955,6 +959,7 @@ export class InventoryService {
         sourceId: params.sourceId,
         memo: params.memo,
         createdBy: params.userId,
+        isReversed: false,
       })
       .returning({ entryId: inventoryEntries.entryId });
 

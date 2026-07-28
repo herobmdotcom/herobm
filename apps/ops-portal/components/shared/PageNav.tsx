@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from './Button';
 
 export interface PageSection {
   id: string;
@@ -35,7 +36,7 @@ export default function PageNav({ sections }: PageNavProps) {
               const isActive = section.isActive;
               
               return (
-                  <button
+                  <Button
                       key={section.id}
                       className={`text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
                       style={{
@@ -63,7 +64,7 @@ export default function PageNav({ sections }: PageNavProps) {
                       }}
                   >
                       {section.label}
-                  </button>
+                  </Button>
               );
             })}
         </div>
@@ -90,7 +91,7 @@ export default function PageNav({ sections }: PageNavProps) {
                     style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
                 >
                     {visibleSubtargets.map((sub) => (
-                        <button
+                        <Button
                           key={sub.id}
                           className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap"
                           style={{
@@ -111,7 +112,7 @@ export default function PageNav({ sections }: PageNavProps) {
                           }}
                         >
                           {sub.label}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             );

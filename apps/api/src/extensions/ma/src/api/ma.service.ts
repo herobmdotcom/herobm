@@ -1,15 +1,15 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 // Use dynamic import path mapping or relative paths to core components
-import { DRIZZLE } from '../../../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../../../drizzle/drizzle.module';
+import { DRIZZLE } from '@api/drizzle/drizzle.module';
+import type { DrizzleDB } from '@api/drizzle/drizzle.module';
 import {
   extMaProjectFeedback,
   extMaSellerQualifications,
   extMaBuyerQualifications,
   extMaStrategicIntelligence,
 } from '../db/schema';
-import { projects, actors } from '../../../../drizzle/herobm-core-schema';
+import { projects, actors } from '@api/drizzle/schema';
 import {
   CreateProjectFeedbackDto,
   UpdateProjectFeedbackDto,
@@ -24,8 +24,8 @@ import {
   UpdateStrategicIntelligenceDto,
   StrategicIntelligenceResponseDto,
 } from './dto';
-import { emitEvent } from '../../../../common/emit-event';
-import { EntityType, EventType } from '../../../../common/event-types';
+import { emitEvent } from '@api/common/emit-event';
+import { EntityType, EventType } from '@api/common/event-types';
 
 @Injectable()
 export class MaService {
@@ -58,6 +58,7 @@ export class MaService {
       })
       .returning();
 
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType: EntityType.PROJECT as any,
       entityId: projectId,
@@ -71,7 +72,10 @@ export class MaService {
       actor: 'system',
     });
 
-    await this.touchProject(projectId);
+    await this.db
+      .update(projects)
+      .set({ modifiedOn: new Date() })
+      .where(eq(projects.projectId, projectId));
 
     return this.getFeedbackById(newFeedback.feedbackId);
   }
@@ -100,6 +104,7 @@ export class MaService {
       throw new NotFoundException('Feedback not found');
     }
 
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType: EntityType.PROJECT as any,
       entityId: projectId,
@@ -109,7 +114,10 @@ export class MaService {
       actor: 'system',
     });
 
-    await this.touchProject(projectId);
+    await this.db
+      .update(projects)
+      .set({ modifiedOn: new Date() })
+      .where(eq(projects.projectId, projectId));
 
     return this.getFeedbackById(feedbackId);
   }
@@ -124,12 +132,7 @@ export class MaService {
     return fb as unknown as ProjectFeedbackResponseDto;
   }
 
-  private async touchProject(projectId: string) {
-    await this.db
-      .update(projects)
-      .set({ modifiedOn: new Date() })
-      .where(eq(projects.projectId, projectId));
-  }
+
 
   // --- Seller Qualifications ---
   async getSellerQualifications(actorId: string): Promise<SellerQualificationResponseDto[]> {
@@ -147,7 +150,16 @@ export class MaService {
       asOfDate: dto.asOfDate ? new Date(dto.asOfDate) : undefined,
     }).returning();
 
-    await this.emitActorUpdate(actorId, 'seller_qualification_added', newQual.qualificationId);
+    // @sync-ignore
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR as any,
+      entityId: actorId,
+      eventType: EventType.UPDATED as any,
+      entityDisplayName: 'Actor',
+      payload: { action: 'seller_qualification_added', actorId, itemId: newQual.qualificationId },
+      actor: 'system',
+    });
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
     return newQual as unknown as SellerQualificationResponseDto;
   }
 
@@ -158,7 +170,16 @@ export class MaService {
       modifiedOn: new Date(),
     }).where(and(eq(extMaSellerQualifications.actorId, actorId), eq(extMaSellerQualifications.qualificationId, qualificationId))).returning();
     if (!updated) throw new NotFoundException('Seller Qualification not found');
-    await this.emitActorUpdate(actorId, 'seller_qualification_updated', qualificationId);
+    // @sync-ignore
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR as any,
+      entityId: actorId,
+      eventType: EventType.UPDATED as any,
+      entityDisplayName: 'Actor',
+      payload: { action: 'seller_qualification_updated', actorId, itemId: qualificationId },
+      actor: 'system',
+    });
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
     return updated as unknown as SellerQualificationResponseDto;
   }
 
@@ -177,7 +198,16 @@ export class MaService {
       ...dto,
       asOfDate: dto.asOfDate ? new Date(dto.asOfDate) : undefined,
     }).returning();
-    await this.emitActorUpdate(actorId, 'buyer_qualification_added', newQual.qualificationId);
+    // @sync-ignore
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR as any,
+      entityId: actorId,
+      eventType: EventType.UPDATED as any,
+      entityDisplayName: 'Actor',
+      payload: { action: 'buyer_qualification_added', actorId, itemId: newQual.qualificationId },
+      actor: 'system',
+    });
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
     return newQual as unknown as BuyerQualificationResponseDto;
   }
 
@@ -188,7 +218,16 @@ export class MaService {
       modifiedOn: new Date(),
     }).where(and(eq(extMaBuyerQualifications.actorId, actorId), eq(extMaBuyerQualifications.qualificationId, qualificationId))).returning();
     if (!updated) throw new NotFoundException('Buyer Qualification not found');
-    await this.emitActorUpdate(actorId, 'buyer_qualification_updated', qualificationId);
+    // @sync-ignore
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR as any,
+      entityId: actorId,
+      eventType: EventType.UPDATED as any,
+      entityDisplayName: 'Actor',
+      payload: { action: 'buyer_qualification_updated', actorId, itemId: qualificationId },
+      actor: 'system',
+    });
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
     return updated as unknown as BuyerQualificationResponseDto;
   }
 
@@ -207,7 +246,16 @@ export class MaService {
       ...dto,
       asOfDate: dto.asOfDate ? new Date(dto.asOfDate) : undefined,
     }).returning();
-    await this.emitActorUpdate(actorId, 'strategic_intelligence_added', newIntel.intelligenceId);
+    // @sync-ignore
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR as any,
+      entityId: actorId,
+      eventType: EventType.UPDATED as any,
+      entityDisplayName: 'Actor',
+      payload: { action: 'strategic_intelligence_added', actorId, itemId: newIntel.intelligenceId },
+      actor: 'system',
+    });
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
     return newIntel as unknown as StrategicIntelligenceResponseDto;
   }
 
@@ -218,28 +266,19 @@ export class MaService {
       modifiedOn: new Date(),
     }).where(and(eq(extMaStrategicIntelligence.actorId, actorId), eq(extMaStrategicIntelligence.intelligenceId, intelligenceId))).returning();
     if (!updated) throw new NotFoundException('Strategic Intelligence not found');
-    await this.emitActorUpdate(actorId, 'strategic_intelligence_updated', intelligenceId);
-    return updated as unknown as StrategicIntelligenceResponseDto;
-  }
-
-  private async emitActorUpdate(actorId: string, action: string, itemId: string) {
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType: EntityType.ACTOR as any,
       entityId: actorId,
       eventType: EventType.UPDATED as any,
       entityDisplayName: 'Actor',
-      payload: { action, actorId, itemId },
+      payload: { action: 'strategic_intelligence_updated', actorId, itemId: intelligenceId },
       actor: 'system',
     });
-    await this.touchActor(actorId);
+    await this.db.update(actors).set({ modifiedOn: new Date() }).where(eq(actors.actorId, actorId));
+    return updated as unknown as StrategicIntelligenceResponseDto;
   }
 
-  private async touchActor(actorId: string) {
-    await this.db
-      .update(actors)
-      .set({ modifiedOn: new Date() })
-      .where(eq(actors.actorId, actorId));
-  }
 }
 
 

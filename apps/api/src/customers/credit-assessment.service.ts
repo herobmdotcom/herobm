@@ -7,7 +7,7 @@ import {
   customers,
   customerGroups,
   tradingTerms,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { resolveEffectiveTradingTermsId } from './credit-control.utils';
 

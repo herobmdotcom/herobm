@@ -69,6 +69,7 @@ describe('Actors (e2e)', () => {
         name: 'E2E Actor',
         actorType: 'customer',
         email: 'e2e@actor.com',
+        isTaxRegistered: false,
       });
 
     expect(res.status).toBe(201);
@@ -163,6 +164,73 @@ describe('Actors (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe('Referral Tracking', () => {
+    let parentActorId: string;
+    let childActorId: string;
+
+    it('POST /api/actors — creates actor with referral data (admin)', async () => {
+      // 1. Create referer
+      const pRes = await request(app.getHttpServer())
+        .post('/api/actors')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Referer Actor',
+          actorType: 'partner',
+          isTaxRegistered: false,
+        });
+      parentActorId = pRes.body.actorId;
+
+      // 2. Create child with referral info
+      const cRes = await request(app.getHttpServer())
+        .post('/api/actors')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Referred Actor',
+          actorType: 'customer',
+          referralMode: 'Partner',
+          referredByActorId: parentActorId,
+          referredByContactId: createdContactId,
+          referralNote: 'Found us at a conference',
+          isTaxRegistered: false,
+        });
+
+      expect(cRes.status).toBe(201);
+      childActorId = cRes.body.actorId;
+      expect(cRes.body.referralMode).toBe('Partner');
+      expect(cRes.body.referredByActorId).toBe(parentActorId);
+      expect(cRes.body.referredByContactId).toBe(createdContactId);
+      expect(cRes.body.referralNote).toBe('Found us at a conference');
+    });
+
+    it('GET /api/actors/:id — exposes referral link names (viewer)', async () => {
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/actors/${childActorId}`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.referredByActorId).toBe(parentActorId);
+      expect(getRes.body.referredByActorName).toBe('Referer Actor');
+      expect(getRes.body.referredByContactId).toBe(createdContactId);
+      expect(getRes.body.referredByContactName).toContain('Actor Contact');
+    });
+
+    it('PATCH /api/actors/:id — clears referral links (admin)', async () => {
+      const patchRes = await request(app.getHttpServer())
+        .patch(`/api/actors/${childActorId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          referredByActorId: null,
+          referredByContactId: null,
+          referralNote: null,
+        });
+
+      expect(patchRes.status).toBe(200);
+      expect(patchRes.body.referredByActorId).toBeNull();
+      expect(patchRes.body.referredByContactId).toBeNull();
+      expect(patchRes.body.referralNote).toBeNull();
     });
   });
 

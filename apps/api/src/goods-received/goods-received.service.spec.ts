@@ -21,13 +21,16 @@ import {
   uomDictionary,
   taxCategories,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
+  GOODS_RECEIVED_STATE,
+  SUPPLIER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
@@ -124,6 +127,7 @@ describe('GoodsReceivedService', () => {
         actorId,
         name: 'Supplier 1',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       })
       .onConflictDoNothing();
 
@@ -134,6 +138,9 @@ describe('GoodsReceivedService', () => {
         actorId,
         vendorNumber: 'V1',
         currencyCode: 'EUR',
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        source: 'app',
+        isPurchasingBlocked: false,
       })
       .onConflictDoNothing();
     await pg.db
@@ -142,6 +149,7 @@ describe('GoodsReceivedService', () => {
         locationId: LOCATION_ID,
         code: 'MAIN',
         name: 'Main',
+        source: 'app',
       })
       .onConflictDoNothing();
     await pg.db
@@ -153,6 +161,9 @@ describe('GoodsReceivedService', () => {
         baseUom: 'EA',
         standardCost: '10',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
       })
       .onConflictDoNothing();
   }
@@ -182,6 +193,7 @@ describe('GoodsReceivedService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.ORDERED,
+        exchangeRate: '1',
       });
       await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderId: PO_ID,
@@ -225,6 +237,7 @@ describe('GoodsReceivedService', () => {
           deliveryLocationId: LOCATION_ID,
           currencyCode: 'EUR',
           stateCode: PURCHASE_ORDER_STATE.ORDERED,
+          exchangeRate: '1',
         },
         {
           purchaseOrderId: PO2_ID,
@@ -233,6 +246,7 @@ describe('GoodsReceivedService', () => {
           deliveryLocationId: LOCATION_ID,
           currencyCode: 'EUR',
           stateCode: PURCHASE_ORDER_STATE.ORDERED,
+          exchangeRate: '1',
         },
       ]);
       await pg.db.insert(purchaseOrderLineItems).values([
@@ -300,6 +314,7 @@ describe('GoodsReceivedService', () => {
           receiptNumber: 'GR-001',
           vendorId: VENDOR_ID,
           locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
         })
         .returning();
 
@@ -307,6 +322,8 @@ describe('GoodsReceivedService', () => {
         goodsReceivedId: gr.goodsReceivedId,
         productId: PROD_ID,
         quantityReceived: '10',
+        matchStatus: MATCH_STATUS.UNMATCHED,
+        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
       });
 
       const result = await service.findOne(gr.goodsReceivedId);
@@ -334,12 +351,16 @@ describe('GoodsReceivedService', () => {
         locationId: LOCATION_ID,
         code: 'QUAR',
         name: 'Quarantine Zone',
+        source: 'system',
       });
       await pg.db.insert(bins).values({
         binId: QUAR_BIN_ID,
         zoneId: QUAR_ZONE_ID,
         binNumber: 'QUARANTINE',
         binType: 'quarantine',
+        source: 'system',
+        isUnavailable: false,
+        isBonded: false,
       });
 
       const PO_ID = '00000000-0000-4000-8000-000000000061';
@@ -351,6 +372,7 @@ describe('GoodsReceivedService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.ORDERED,
+        exchangeRate: '1',
       });
       await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderLineId: PO_LINE_ID,
@@ -370,6 +392,7 @@ describe('GoodsReceivedService', () => {
           receiptNumber: 'GR-R1',
           vendorId: VENDOR_ID,
           locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
         })
         .returning();
       const [line] = await pg.db
@@ -420,6 +443,7 @@ describe('GoodsReceivedService', () => {
           deliveryLocationId: LOCATION_ID,
           stateCode: PURCHASE_ORDER_STATE.ORDERED,
           currencyCode: 'USD',
+          exchangeRate: '1',
         })
         .returning();
       const [poLine] = await pg.db

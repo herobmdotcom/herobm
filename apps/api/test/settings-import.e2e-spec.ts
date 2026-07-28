@@ -4,7 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { users } from '../src/drizzle/herobm-core-schema';
+import { users } from '../src/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 describe('Settings Import (e2e)', () => {

@@ -3,7 +3,7 @@ import { MacrosService } from './macros.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { macros } from '../drizzle/herobm-core-schema';
+import { macros } from '../drizzle/schema';
 
 describe('MacrosService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

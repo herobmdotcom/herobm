@@ -13,7 +13,7 @@ import {
   masterDataEvents,
   supplierExpiries,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -82,8 +82,8 @@ export class SuppliersWriteService {
           .insert(actors)
           .values({
             name: name as string,
-            businessNumber: businessNumber as string,
-            isTaxRegistered: isTaxRegistered as boolean,
+            businessNumber: (businessNumber as string) || null,
+            isTaxRegistered: (isTaxRegistered as boolean) ?? false,
             headquartersAddressLine1: address1Line1 as string,
             headquartersAddressLine2: address1Line2 as string,
             headquartersCity: address1City as string,
@@ -105,6 +105,9 @@ export class SuppliersWriteService {
           actorId: actorRecord.actorId,
           currencyCode: dto.currencyCode || this.appConfig.homeCurrency(),
           createdBy: actor,
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
         })
         .returning();
 

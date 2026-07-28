@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { costCenters } from '../drizzle/herobm-core-schema';
+import { costCenters } from '../drizzle/schema';
 import { CreateCostCenterDto, UpdateCostCenterDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -43,6 +43,7 @@ export class CostCentersService {
             code: dto.code.trim(),
             name: dto.name.trim(),
             isActive: dto.isActive ?? true,
+            isSystem: false,
           })
           .returning();
 
@@ -149,7 +150,7 @@ export class CostCentersService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(costCenters)
-        .values(values)
+        .values(values.map((v) => ({ isSystem: false, ...v })))
         .onConflictDoUpdate({
           target: costCenters.code,
           set: {

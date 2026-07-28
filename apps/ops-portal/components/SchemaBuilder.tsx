@@ -270,22 +270,26 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                 </div>
                 
                 <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto">
-                  <button 
-                    className="btn btn-sm btn-ghost text-muted hover:text-gray-800 h-8 w-8 p-0 flex items-center justify-center rounded-full bg-white border border-gray-200"
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted hover:text-gray-800 rounded-full bg-white border border-gray-200"
                     title={t('editField')}
                     onClick={(e) => { e.stopPropagation(); setEditingSnapshot(field); setEditingFieldId(field.id); }}
                   >
                     { }
                     <span className="material-symbols-outlined text-[16px]">edit</span>
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-ghost text-[var(--danger)] hover:bg-red-50 h-8 w-8 p-0 flex items-center justify-center rounded-full bg-white border border-gray-200"
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className="text-[var(--danger)] hover:bg-red-50 rounded-full bg-white border border-gray-200"
                     title={t('removeField')}
                     onClick={(e) => handleRemoveField(field.id, e)}
                   >
                     { }
                     <span className="material-symbols-outlined text-[16px]">delete</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
             );

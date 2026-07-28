@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import * as api from '@herobm/sdk';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import toast from 'react-hot-toast';
@@ -30,6 +31,7 @@ export default function IntegrationsSettingsPage() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tInt = useTranslations('admin.integrations');
+  useDocumentTitle('Integrations & Enrichment');
 
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<ProviderConfig[]>([]);

@@ -5,7 +5,7 @@ import {
   salesOrderLineItems,
   salesInvoices,
   salesInvoiceLines,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

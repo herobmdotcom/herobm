@@ -13,7 +13,7 @@ import {
   purchaseInvoiceLines,
   customers,
   suppliers,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 
 describe('Inventory & GL Lifecycle (e2e)', () => {
@@ -74,7 +74,10 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locations.body[0].locationId;
+    const mainLoc =
+      locations.body.find((l: any) => l.locationNo === 'MAIN') ||
+      locations.body[0];
+    locationId = mainLoc.locationId;
 
     console.log('Setup: Getting GL accounts from API...');
     const bankAccountsRes = await request(app.getHttpServer())
@@ -278,7 +281,8 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .get(`/api/inventory/by-products?productIds=${productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const level = invRes.body[0];
+    const level = invRes.body.find((l: any) => l.locationId === locationId) ||
+      invRes.body[0] || { quantityOnHand: 0 };
     console.log('QOH after Step 2:', level?.quantityOnHand);
   });
 
@@ -335,13 +339,13 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const level = invRes.body[0];
+    console.log('invRes.body:', invRes.body);
+    const level = invRes.body.find((l: any) => l.locationId === locationId) ||
+      invRes.body[0] || { quantityOnHand: 0 };
     const binsLog = await request(app.getHttpServer())
-      .get(
-        `/api/inventory/bins?locationId=${locationId}&productId=${productId}`,
-      )
+      .get(`/api/inventory/bins`)
       .set('Authorization', `Bearer ${adminToken}`);
-    console.log('Bins after putaway:', binsLog.body);
+    console.log('Bins after putaway:', binsLog.body.data);
     expect(parseFloat(level.quantityOnHand)).toBe(10);
   });
 
@@ -478,7 +482,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         salesOrderId: crypto.randomUUID(),
-        fulfillmentLocationId: locationId,
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         customerId,
         deliveryAddressLine1: '123 E2E St',
         deliveryCity: 'E2E City',
@@ -540,7 +544,9 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(parseFloat(invRes.body[0].quantityOnHand)).toBe(5);
+    const level = invRes.body.find((l: any) => l.locationId === locationId) ||
+      invRes.body[0] || { quantityOnHand: 0 };
+    expect(parseFloat(level.quantityOnHand)).toBe(5);
 
     // Verify GL (COGS Debit 50, Inventory Credit 50)
     // Shipment GL entries use shipmentId

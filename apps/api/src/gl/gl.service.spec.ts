@@ -12,7 +12,7 @@ import {
   costCenters,
   activities,
   glSettings,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -157,6 +157,8 @@ describe('GlService', () => {
         isGroup: true,
         isActive: true,
         currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
       });
       await pg.db.insert(glAccounts).values({
         glAccountId: randomUUID(),
@@ -166,6 +168,8 @@ describe('GlService', () => {
         isGroup: false,
         isActive: true,
         currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
       });
 
       await expect(
@@ -194,6 +198,8 @@ describe('GlService', () => {
           name: 'AR',
           accountType: 'asset',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
         {
           glAccountId: revId,
@@ -203,6 +209,8 @@ describe('GlService', () => {
           name: 'Revenue',
           accountType: 'revenue',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
       ]);
 
@@ -264,6 +272,8 @@ describe('GlService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
         {
           accountCode: 'SEQ-4100',
@@ -272,6 +282,8 @@ describe('GlService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         },
       ]);
 
@@ -279,6 +291,8 @@ describe('GlService', () => {
         entryNumber: `JE-${todayStripped}-0003`,
         entryDate: today,
         sourceType: 'manual',
+        isReversed: false,
+        createdBy: 'system',
       });
 
       const result = await service.postJournalEntry(
@@ -314,6 +328,9 @@ describe('GlService', () => {
           isGroup: true,
           accountType: 'asset',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         },
         {
           glAccountId: a2,
@@ -323,6 +340,9 @@ describe('GlService', () => {
           isGroup: false,
           accountType: 'asset',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         },
         {
           glAccountId: a3,
@@ -332,6 +352,9 @@ describe('GlService', () => {
           isGroup: false,
           accountType: 'asset',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         },
         {
           glAccountId: a4,
@@ -341,6 +364,9 @@ describe('GlService', () => {
           isGroup: true,
           accountType: 'liability',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         },
         {
           glAccountId: a5,
@@ -350,6 +376,9 @@ describe('GlService', () => {
           isGroup: false,
           accountType: 'liability',
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         },
       ]);
 
@@ -376,6 +405,8 @@ describe('GlService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         })
         .returning();
 
@@ -385,6 +416,8 @@ describe('GlService', () => {
           entryNumber: 'JE-TB-001',
           entryDate: new Date().toISOString(),
           sourceType: 'manual',
+          isReversed: false,
+          createdBy: 'system',
         })
         .returning();
 
@@ -393,6 +426,10 @@ describe('GlService', () => {
         glAccountId: acct.glAccountId,
         debit: '500',
         credit: '200',
+        foreignDebit: '500',
+        foreignCredit: '200',
+        exchangeRate: '1',
+        isReconciled: false,
       });
 
       const tb = await service.getTrialBalance();
@@ -446,6 +483,8 @@ describe('GlService', () => {
           isGroup: false,
           isActive: true,
           currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
         })
         .returning();
 
@@ -476,6 +515,8 @@ describe('GlService', () => {
               isGroup: false,
               isActive: true,
               currencyCode: 'AUD',
+              isSystem: false,
+              isBankAccount: false,
             },
             {
               accountCode: 'FX-4000',
@@ -484,6 +525,8 @@ describe('GlService', () => {
               isGroup: false,
               isActive: true,
               currencyCode: 'AUD',
+              isSystem: false,
+              isBankAccount: false,
             },
           ])
           .onConflictDoNothing();

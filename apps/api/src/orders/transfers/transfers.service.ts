@@ -26,7 +26,7 @@ import {
   inventoryLedger,
   inventoryEntries,
   products as coreProducts,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
@@ -53,6 +53,8 @@ import {
   TRANSFER_ORDER_PICK_TRANSITIONS,
   getValidStates,
   SHIPMENT_STATE,
+  PUTAWAY_STATUS,
+  MATCH_STATUS,
 } from '@herobm/shared';
 import type {
   TransferOrderState,
@@ -409,6 +411,7 @@ export class TransferService {
         productId: line.productId,
         binId,
         quantity: quantity.toString(),
+        stateCode: TRANSFER_ORDER_PICK_STATE.PICKED,
         createdBy: actor,
       });
 
@@ -662,7 +665,7 @@ export class TransferService {
           await tx
             .update(transferOrderLines)
             .set({
-              quantityShipped: sql`${transferOrderLines.quantityShipped} + ${shipQty}`,
+              quantityShipped: sql`CAST(COALESCE(${transferOrderLines.quantityShipped}, '0') AS NUMERIC) + CAST(${shipQty} AS NUMERIC)`,
             })
             .where(
               eq(
@@ -867,7 +870,7 @@ export class TransferService {
         await tx
           .update(transferOrderLines)
           .set({
-            quantityShipped: sql`${transferOrderLines.quantityShipped} + ${pick.quantity}`,
+            quantityShipped: sql`CAST(COALESCE(${transferOrderLines.quantityShipped}, '0') AS NUMERIC) + CAST(${pick.quantity} AS NUMERIC)`,
           })
           .where(
             eq(
@@ -1004,7 +1007,7 @@ export class TransferService {
         await tx
           .update(transferOrderLines)
           .set({
-            quantityShipped: sql`${transferOrderLines.quantityShipped} - ${line.quantity}`,
+            quantityShipped: sql`CAST(COALESCE(${transferOrderLines.quantityShipped}, '0') AS NUMERIC) - CAST(${line.quantity} AS NUMERIC)`,
           })
           .where(
             eq(
@@ -1234,6 +1237,8 @@ export class TransferService {
             productId: line.productId,
             quantity: qtyToReceive.toString(),
             binId: destinationBinId,
+            putawayStatus: PUTAWAY_STATUS.COMPLETED,
+            matchStatus: MATCH_STATUS.MATCHED,
           });
 
           // Decrease from INTRA_TRANSIT bin

@@ -17,8 +17,15 @@ import {
   inventoryEntries,
   uomDictionary,
   actors,
-} from '../drizzle/herobm-core-schema';
-import { PUTAWAY_STATUS } from '@herobm/shared';
+} from '../drizzle/schema';
+import {
+  PUTAWAY_STATUS,
+  PRODUCT_STATE,
+  CUSTOMER_STATE,
+  SUPPLIER_STATE,
+  GOODS_RECEIVED_STATE,
+  MATCH_STATUS,
+} from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
 
@@ -68,9 +75,13 @@ describe('InventoryService - Quarantine', () => {
     await pg.db.delete(zones);
     await pg.db.delete(locations);
 
-    await pg.db
-      .insert(locations)
-      .values({ locationId: LOCATION_ID, code: 'MAIN', name: 'Main' });
+    await pg.db.insert(locations).values({
+      locationId: LOCATION_ID,
+      code: 'MAIN',
+      name: 'Main',
+      source: 'app',
+      createdBy: 'system',
+    });
 
     // The locations trigger automatically scaffolds system bins. Let's fetch them.
     const autoBins = await pg.db.select().from(bins);
@@ -85,6 +96,7 @@ describe('InventoryService - Quarantine', () => {
       binType: 'quarantine',
       isUnavailable: true,
       source: 'system',
+      createdBy: 'system',
     });
     await pg.db
       .insert(uomDictionary)
@@ -95,6 +107,10 @@ describe('InventoryService - Quarantine', () => {
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
 
     // Seed initial stock in receiving bin via a manual entry
@@ -217,18 +233,25 @@ describe('InventoryService - Quarantine', () => {
         actorId,
         name: 'Test Vendor',
         headquartersAddressLine1: 'DE',
+        isTaxRegistered: false,
       });
       await pg.db.insert(suppliers).values({
         vendorId: '00000000-0000-4000-8000-000000000098',
         actorId,
         vendorNumber: 'V1',
         currencyCode: 'EUR',
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        source: 'app',
+        isPurchasingBlocked: false,
+        createdBy: 'system',
       });
       await pg.db.insert(goodsReceived).values({
         goodsReceivedId: GR_ID,
         locationId: LOCATION_ID,
         receiptNumber: 'GR-1',
         vendorId: '00000000-0000-4000-8000-000000000098',
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
       });
       await pg.db.insert(goodsReceivedLines).values({
         goodsReceivedLineId: GR_LINE_ID,
@@ -236,6 +259,7 @@ describe('InventoryService - Quarantine', () => {
         productId: PROD_ID,
         quantityReceived: '50',
         putawayStatus: PUTAWAY_STATUS.AWAITING_MATCHING,
+        matchStatus: MATCH_STATUS.UNMATCHED,
       });
     });
 

@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
+import { useAuth } from '@/components/AuthGate';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -20,12 +21,13 @@ import { ActorCard } from '@/components/shared/ActorCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { PROJECT_STATE, SystemResource, hasPermission } from '@herobm/shared';
 
 interface ProjectFormDto {
   name: string;
   type: string;
   status: string;
-  ownerId?: string;
+  ownerId?: string | null;
   createdOn: string;
   modifiedOn: string;
 }
@@ -335,6 +337,8 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
   const [users, setUsers] = useState<api.UserResponseDto[]>([]);
   const [appSettings, setAppSettings] = useState<api.AppConfigResponseDto | null>(null);
   
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -353,11 +357,32 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
       name: data.name || '',
       type: data.type || 'buy_side',
       status: data.status || 'prospect',
-      ownerId: data.ownerId || undefined,
+      ownerId: data.ownerId || null,
       createdOn: (data.createdOn as unknown as string) || '',
       modifiedOn: (data.modifiedOn as unknown as string) || ''
     }),
   });
+
+  const archiveProject = async () => {
+    if (!confirm('Are you sure you want to archive this project?')) return;
+    try {
+      await api.projectsControllerArchive(projectId, {});
+      toast.success('Project archived');
+      loadProject();
+    } catch (e) {
+      reportError(e, 'Archive Project');
+    }
+  };
+
+  const unarchiveProject = async () => {
+    try {
+      await api.projectsControllerUnarchive(projectId, {});
+      toast.success('Project unarchived');
+      loadProject();
+    } catch (e) {
+      reportError(e, 'Unarchive Project');
+    }
+  };
 
   useDocumentTitle(project ? project.name : null);
 
@@ -434,6 +459,30 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
           showPrint={false}
           nav={<PageNav sections={navItems} />}
         />
+      }
+      footerActions={
+        canArchive && project ? (
+          project.stateCode === PROJECT_STATE.ARCHIVED ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={unarchiveProject}
+              disabled={loading}
+            >
+              Unarchive
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              onClick={archiveProject}
+              disabled={loading}
+            >
+              Archive
+            </Button>
+          )
+        ) : undefined
       }
     >
       <>

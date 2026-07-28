@@ -8,7 +8,7 @@ import {
   glAccounts,
   reconciliationRules,
   csvMappingProfiles,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 
 describe('BankFeedsController (e2e)', () => {
   let app: INestApplication;
@@ -46,6 +46,8 @@ describe('BankFeedsController (e2e)', () => {
         currencyCode: 'AUD',
         isBankAccount: true,
         isGroup: false,
+        isSystem: false,
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
@@ -168,6 +170,8 @@ describe('BankFeedsController (e2e)', () => {
         currencyCode: 'AUD',
         isGroup: false,
         isBankAccount: false,
+        isSystem: false,
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,

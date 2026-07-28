@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesInvoices } from '../drizzle/herobm-core-schema';
+import { salesInvoices } from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { SALES_INVOICE_STATE } from '@herobm/shared';

@@ -34,6 +34,10 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
 
   const handleDraftUpdate = async (field: string, value: unknown) => {
     if (creating) return;
+    
+    // Ignore empty values to prevent creating an empty snapshot when clicking in and out
+    if (value === '' || value === null || value === undefined) return;
+
     const newDraft = { ...draft, [field]: value };
     setDraft(newDraft);
     

@@ -221,7 +221,7 @@ describe('BankFeedsService', () => {
 
       // Row 1: valid with $ sign. Row 2: missing date. Row 3: missing amount.
       const csvData = Buffer.from(
-        'Date,Amount,Description\n2026-05-25,"$1,500.50",Valid\n,100,MissingDate\n2026-05-26,,MissingAmount',
+        'Date,Amount,Description\n2026-05-25,"$1,500.50",Valid\n,100,MissingDate\n2026-05-26,MissingAmount,',
       );
       const result = await service.importCsv(csvData, 'bank-acc-1', 'prof-1');
 

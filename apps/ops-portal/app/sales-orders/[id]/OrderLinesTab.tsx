@@ -8,39 +8,33 @@ import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { isPhysicalProductLine } from '@herobm/shared';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
-import type { TaxCategory, OrderLine } from './types';
+import type { TaxCategory, OrderLine, OrderDetail } from './types';
 import { getTaxLabel } from './types';
 import { SALES_ORDER_STATE, SALES_ORDER_LIFECYCLE as ORDER_LIFECYCLE, BACKORDER_STATE, calculateUomPriceAdjustment, calculateInventoryGaps } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
+import type { Product } from '@/components/shared/ProductSearchInput';
 import StateBadge from '@/components/StateBadge';
 import type { ValidState } from '@/types/states';
 
 interface OrderLinesTabProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    order: any;
+    order: OrderDetail | null | undefined;
     saving: boolean;
     editFulfillmentLocationId: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    inventoryData: any[];
+    inventoryData: import('./types').InventoryLevel[];
     inventoryLoading: boolean;
     activeBackorders: Set<string>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    gapMap: any;
+    gapMap: Record<string, number>;
     isOrderLinesEditable: boolean;
     isOrderDetailsEditable: boolean;
     isPostConfirmationAddingEnabled: boolean;
     setIsPostConfirmationAddingEnabled: (val: boolean) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    addLineFromProduct: (product: any) => void;
+    addLineFromProduct: (product: Product) => void;
     addBlankLine: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    updateLine: (lineId: string, field: string, value: any) => Promise<void> | void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    updateLineFields: (lineId: string, fields: Record<string, any>) => Promise<void> | void;
+    updateLine: (lineId: string, field: string, value: string | boolean | null | undefined | number) => Promise<void> | void;
+    updateLineFields: (lineId: string, fields: Partial<OrderLine>) => Promise<void> | void;
     removeLine: (lineId: string) => void;
     calculateTaxes: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-    taxCategories: any[];
+    taxCategories: TaxCategory[];
     subtotal: number;
     totalTax: number;
     activeTab: 'lines' | 'availability' | 'backorders';
@@ -74,6 +68,8 @@ export default function OrderLinesTab({
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
     
+    if (!order) return null;
+    
     const isPreConfirmation = order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED;
     const isShipped = ([SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.ARCHIVED, SALES_ORDER_STATE.CANCELLED] as string[]).includes(order.stateCode as string);
 
@@ -83,7 +79,7 @@ export default function OrderLinesTab({
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
                     <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
                         <div className="flex gap-0 min-w-max">
-                            <button
+                            <Button
                                 className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
                                 style={{
                                     color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
@@ -95,8 +91,8 @@ export default function OrderLinesTab({
                                 onClick={() => setActiveTab('lines')}
                             >
                                 {tSales('lineItems')}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 className="text-xs font-medium px-3 py-1.5"
                                 style={{
                                     color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
@@ -109,8 +105,8 @@ export default function OrderLinesTab({
                                 onClick={() => setActiveTab('availability')}
                             >
                                 {tSales('availability')}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
                                 style={{
                                     color: activeTab === 'backorders' ? 'var(--accent)' : 'var(--text-muted)',
@@ -123,7 +119,7 @@ export default function OrderLinesTab({
                                 onClick={() => setActiveTab('backorders')}
                             >
                                 {tSales('backordersTab')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     
@@ -234,7 +230,7 @@ export default function OrderLinesTab({
                             render: (line: OrderLine) => {
                                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                 
-                                const hasGap = isPreConfirmation && gapMap.has(line.salesOrderLineId);
+                                const hasGap = isPreConfirmation && gapMap[line.salesOrderLineId] !== undefined;
                                 const isBackordered = !isPreConfirmation && line.productId && activeBackorders.has(line.productId);
                                 const hasWarning = hasGap || isBackordered;
                                 
@@ -390,7 +386,7 @@ export default function OrderLinesTab({
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                     {tSales('columns.tax')}
                                     {isOrderDetailsEditable && (
-                                        <button
+                                        <Button
                                             type="button"
                                             onClick={calculateTaxes}
                                             disabled={saving}
@@ -399,7 +395,7 @@ export default function OrderLinesTab({
                                         >
                                             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon string constant. */}
                                             <span className={`material-symbols-outlined ${saving ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>sync</span>
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             ),
@@ -616,7 +612,7 @@ export default function OrderLinesTab({
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Local iteratee
                                     (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                 );
-                                const gap = gapMap.get(line.salesOrderLineId);
+                                const gap = gapMap[line.salesOrderLineId];
                                 const canFulfil = !gap;
 
                                 return (
@@ -686,7 +682,7 @@ export default function OrderLinesTab({
                                                                 if (canFulfil) {
                                                                     return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
                                                                 }
-                                                                if (gap && totalAvail >= gap.quantityGap) {
+                                                                if (gap && totalAvail >= gap) {
                                                                     return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
                                                                 }
                                                                 return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
@@ -716,7 +712,7 @@ export default function OrderLinesTab({
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Local iteratee
                                     (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                 );
-                                const gap = gapMap.get(line.salesOrderLineId);
+                                const gap = gapMap[line.salesOrderLineId];
                                 const canFulfil = !gap;
 
                                 return (
@@ -757,7 +753,7 @@ export default function OrderLinesTab({
                                                                 return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
                                                             }
                                                             if (canFulfil) return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
-                                                            if (gap && totalAvail >= gap.quantityGap) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
+                                                            if (gap && totalAvail >= gap) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
                                                             return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
                                                         })()}
                                                     </span>

@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { supplierGroups, suppliers } from '../drizzle/herobm-core-schema';
+import { supplierGroups, suppliers } from '../drizzle/schema';
 import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -47,7 +47,11 @@ export class SupplierGroupsService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(supplierGroups)
-        .values({ ...dto } as typeof supplierGroups.$inferInsert)
+        .values({
+          ...dto,
+          isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
+          isPaymentBlocked: dto.isPaymentBlocked ?? false,
+        } as typeof supplierGroups.$inferInsert)
         .returning();
 
       await emitEvent(tx, {

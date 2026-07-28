@@ -21,13 +21,15 @@ import {
   uomDictionary,
   taxCategories,
   glJournalEntries,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_SHIPMENT_STATE,
+  SUPPLIER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
 
@@ -116,17 +118,24 @@ describe('PurchaseReturnsService', () => {
       actorId,
       name: 'Supplier 1',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
       actorId,
       vendorNumber: 'V1',
       currencyCode: 'EUR',
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     });
     await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,
@@ -135,18 +144,28 @@ describe('PurchaseReturnsService', () => {
       productType: 'inventory',
       baseUom: 'EA',
       standardCost: '10',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
     await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
       code: 'RECV',
       name: 'Receiving Zone',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(bins).values({
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'SUPPLIER_RETURNS',
       binType: 'storage',
+      source: 'app',
+      createdBy: 'system',
+      isUnavailable: false,
+      isBonded: false,
     });
   }
 
@@ -177,6 +196,9 @@ describe('PurchaseReturnsService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       await pg.db.insert(purchaseOrderLineItems).values({
@@ -188,6 +210,9 @@ describe('PurchaseReturnsService', () => {
         quantityReceived: '20',
         pricePerUnit: '10',
         taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
       });
 
       await pg.db.insert(purchaseOrderReturns).values({
@@ -195,12 +220,14 @@ describe('PurchaseReturnsService', () => {
         returnNumber: 'PRT-1',
         purchaseOrderId: PO_ID,
         stateCode: PURCHASE_RETURN_STATE.STAGED,
+        createdBy: 'system',
       });
 
       await pg.db.insert(purchaseOrderReturnLines).values({
         returnId: RETURN_ID,
         purchaseOrderLineId: PO_LINE_ID,
         quantityReturned: '5',
+        returnFee: '0',
       });
 
       // Clear mock calls
@@ -279,6 +306,9 @@ describe('PurchaseReturnsService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       await pg.db.insert(purchaseOrderReturns).values({
@@ -286,6 +316,7 @@ describe('PurchaseReturnsService', () => {
         returnNumber: 'PRT-1',
         purchaseOrderId: PO_ID,
         stateCode: PURCHASE_RETURN_STATE.DRAFT, // Not STAGED
+        createdBy: 'system',
       });
 
       await expect(service.shipReturn(RETURN_ID, 'admin')).rejects.toThrow(

@@ -39,7 +39,7 @@ const ToggleCell = (p: any) => {
 
   return (
     <div className="flex items-center gap-3 mt-1">
-      <button
+      <Button
         type="button"
         onClick={() => handleToggle(data)}
         className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
@@ -55,7 +55,7 @@ const ToggleCell = (p: any) => {
  isAllocated ? 'translate-x-4' : 'translate-x-0'
  }`}
         />
-      </button>
+      </Button>
     </div>
   );
 };
@@ -1069,21 +1069,21 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                     {searchInput}
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <button
+                                    <Button
                                       onClick={() => setPartialModalOpen(true)}
                                       disabled={!selectedInvoice}
                                       className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                       title={!selectedInvoice ? t('manager.messages.selectRowForPartial') : ""}
                                     >
                                       {t('manager.messages.partial')}
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                       onClick={submitAllocations}
                                       disabled={submitting || totalAllocatedNow <= 0 || remainingToAllocate < 0}
                                       className="btn btn-primary btn-sm"
                                     >
                                       {submitting ? t('submitting') : t('manager.buttons.saveAllocations')}
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               </div>

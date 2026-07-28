@@ -134,6 +134,8 @@ import type {
   CreateWebhookDto,
   CreateZoneDto,
   CreditAssessmentResponseDto,
+  CrmMapControllerGetMapParams,
+  CrmMapResponseDto,
   CsvMetadataDto,
   CustomerGroupResponseDto,
   CustomerGroupsControllerFindAllParams,
@@ -307,6 +309,8 @@ import type {
   ProjectResponseDto,
   ProjectsControllerAddActor201,
   ProjectsControllerAddContact201,
+  ProjectsControllerFindAll200,
+  ProjectsControllerFindAllParams,
   ProjectsControllerRemove200,
   ProjectsControllerRemoveActor200,
   ProjectsControllerRemoveContact200,
@@ -6284,91 +6288,6 @@ export const ordersControllerCreate = async (createOrderDto: CreateOrderDto, opt
 
 
 /**
- * Retrieve detailed information for a specific sales order.
- * @summary Find Order
- */
-export type ordersControllerFindOneResponse200 = {
-  data: OrderResponseDto
-  status: 200
-}
-    
-export type ordersControllerFindOneResponseSuccess = (ordersControllerFindOneResponse200) & {
-  headers: Headers;
-};
-;
-
-export type ordersControllerFindOneResponse = (ordersControllerFindOneResponseSuccess)
-
-export const getOrdersControllerFindOneUrl = (id: string,
-    params?: OrdersControllerFindOneParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/sales-orders/${id}?${stringifiedParams}` : `/sales-orders/${id}`
-}
-
-export const ordersControllerFindOne = async (id: string,
-    params?: OrdersControllerFindOneParams, options?: RequestInit): Promise<ordersControllerFindOneResponse> => {
-  
-  return customFetch<ordersControllerFindOneResponse>(getOrdersControllerFindOneUrl(id,params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Modify the details or metadata of an existing sales order.
- * @summary Update Order
- */
-export type ordersControllerUpdateResponse200 = {
-  data: OrderResponseDto
-  status: 200
-}
-    
-export type ordersControllerUpdateResponseSuccess = (ordersControllerUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type ordersControllerUpdateResponse = (ordersControllerUpdateResponseSuccess)
-
-export const getOrdersControllerUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/sales-orders/${id}`
-}
-
-export const ordersControllerUpdate = async (id: string,
-    updateOrderDto: UpdateOrderDto, options?: RequestInit): Promise<ordersControllerUpdateResponse> => {
-  
-  return customFetch<ordersControllerUpdateResponse>(getOrdersControllerUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateOrderDto,)
-  }
-);}
-
-
-
-/**
  * Manually trigger an external tax calculation for the order.
  * @summary Calculate Taxes
  */
@@ -6755,6 +6674,91 @@ export const ordersControllerAddPostConfirmationLine = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createOrderLineDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve detailed information for a specific sales order.
+ * @summary Find Order
+ */
+export type ordersControllerFindOneResponse200 = {
+  data: OrderResponseDto
+  status: 200
+}
+    
+export type ordersControllerFindOneResponseSuccess = (ordersControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerFindOneResponse = (ordersControllerFindOneResponseSuccess)
+
+export const getOrdersControllerFindOneUrl = (id: string,
+    params?: OrdersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/sales-orders/${id}?${stringifiedParams}` : `/sales-orders/${id}`
+}
+
+export const ordersControllerFindOne = async (id: string,
+    params?: OrdersControllerFindOneParams, options?: RequestInit): Promise<ordersControllerFindOneResponse> => {
+  
+  return customFetch<ordersControllerFindOneResponse>(getOrdersControllerFindOneUrl(id,params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Modify the details or metadata of an existing sales order.
+ * @summary Update Order
+ */
+export type ordersControllerUpdateResponse200 = {
+  data: OrderResponseDto
+  status: 200
+}
+    
+export type ordersControllerUpdateResponseSuccess = (ordersControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerUpdateResponse = (ordersControllerUpdateResponseSuccess)
+
+export const getOrdersControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}`
+}
+
+export const ordersControllerUpdate = async (id: string,
+    updateOrderDto: UpdateOrderDto, options?: RequestInit): Promise<ordersControllerUpdateResponse> => {
+  
+  return customFetch<ordersControllerUpdateResponse>(getOrdersControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateOrderDto,)
   }
 );}
 
@@ -12805,82 +12809,6 @@ export const purchaseOrdersControllerFindReturnableLines = async (params: Purcha
 
 
 /**
- * Retrieve detailed information about a specific purchase order.
- * @summary Get Purchase Order
- */
-export type purchaseOrdersControllerFindOneResponse200 = {
-  data: PurchaseOrderResponseDto
-  status: 200
-}
-    
-export type purchaseOrdersControllerFindOneResponseSuccess = (purchaseOrdersControllerFindOneResponse200) & {
-  headers: Headers;
-};
-;
-
-export type purchaseOrdersControllerFindOneResponse = (purchaseOrdersControllerFindOneResponseSuccess)
-
-export const getPurchaseOrdersControllerFindOneUrl = (id: string,) => {
-
-
-  
-
-  return `/purchase-orders/${id}`
-}
-
-export const purchaseOrdersControllerFindOne = async (id: string, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
-  
-  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Update an existing purchase order.
- * @summary Update Purchase Order
- */
-export type purchaseOrdersControllerUpdateResponse200 = {
-  data: PurchaseOrderResponseDto
-  status: 200
-}
-    
-export type purchaseOrdersControllerUpdateResponseSuccess = (purchaseOrdersControllerUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type purchaseOrdersControllerUpdateResponse = (purchaseOrdersControllerUpdateResponseSuccess)
-
-export const getPurchaseOrdersControllerUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/purchase-orders/${id}`
-}
-
-export const purchaseOrdersControllerUpdate = async (id: string,
-    updatePurchaseOrderDto: UpdatePurchaseOrderDto, options?: RequestInit): Promise<purchaseOrdersControllerUpdateResponse> => {
-  
-  return customFetch<purchaseOrdersControllerUpdateResponse>(getPurchaseOrdersControllerUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updatePurchaseOrderDto,)
-  }
-);}
-
-
-
-/**
  * Update the state of a purchase order.
  * @summary Change Order State
  */
@@ -13111,6 +13039,82 @@ export const purchaseOrdersControllerRemoveLine = async (id: string,
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * Retrieve detailed information about a specific purchase order.
+ * @summary Get Purchase Order
+ */
+export type purchaseOrdersControllerFindOneResponse200 = {
+  data: PurchaseOrderResponseDto
+  status: 200
+}
+    
+export type purchaseOrdersControllerFindOneResponseSuccess = (purchaseOrdersControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerFindOneResponse = (purchaseOrdersControllerFindOneResponseSuccess)
+
+export const getPurchaseOrdersControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}`
+}
+
+export const purchaseOrdersControllerFindOne = async (id: string, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
+  
+  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Update an existing purchase order.
+ * @summary Update Purchase Order
+ */
+export type purchaseOrdersControllerUpdateResponse200 = {
+  data: PurchaseOrderResponseDto
+  status: 200
+}
+    
+export type purchaseOrdersControllerUpdateResponseSuccess = (purchaseOrdersControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerUpdateResponse = (purchaseOrdersControllerUpdateResponseSuccess)
+
+export const getPurchaseOrdersControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}`
+}
+
+export const purchaseOrdersControllerUpdate = async (id: string,
+    updatePurchaseOrderDto: UpdatePurchaseOrderDto, options?: RequestInit): Promise<purchaseOrdersControllerUpdateResponse> => {
+  
+  return customFetch<purchaseOrdersControllerUpdateResponse>(getPurchaseOrdersControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updatePurchaseOrderDto,)
   }
 );}
 
@@ -16028,6 +16032,94 @@ export const contactsControllerRemove = async (id: string, options?: RequestInit
 
 
 /**
+ * Archives a contact
+ * @summary Archive Contact
+ */
+export type contactsControllerArchiveResponse200 = {
+  data: ContactResponseDto
+  status: 200
+}
+
+export type contactsControllerArchiveResponse201 = {
+  data: ContactResponseDto
+  status: 201
+}
+    
+export type contactsControllerArchiveResponseSuccess = (contactsControllerArchiveResponse200 | contactsControllerArchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerArchiveResponse = (contactsControllerArchiveResponseSuccess)
+
+export const getContactsControllerArchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/contacts/${id}/archive`
+}
+
+export const contactsControllerArchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<contactsControllerArchiveResponse> => {
+  
+  return customFetch<contactsControllerArchiveResponse>(getContactsControllerArchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Unarchives a contact
+ * @summary Unarchive Contact
+ */
+export type contactsControllerUnarchiveResponse200 = {
+  data: ContactResponseDto
+  status: 200
+}
+
+export type contactsControllerUnarchiveResponse201 = {
+  data: ContactResponseDto
+  status: 201
+}
+    
+export type contactsControllerUnarchiveResponseSuccess = (contactsControllerUnarchiveResponse200 | contactsControllerUnarchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerUnarchiveResponse = (contactsControllerUnarchiveResponseSuccess)
+
+export const getContactsControllerUnarchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/contacts/${id}/unarchive`
+}
+
+export const contactsControllerUnarchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<contactsControllerUnarchiveResponse> => {
+  
+  return customFetch<contactsControllerUnarchiveResponse>(getContactsControllerUnarchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Create a new delivery address for a customer.
  * @summary Create a new delivery address
  */
@@ -16142,6 +16234,7 @@ export const deliveryAddressesControllerRemove = async (id: string, options?: Re
 
 
 /**
+ * Create Actor
  * @summary Create Actor
  */
 export type actorsControllerCreateResponse201 = {
@@ -16179,6 +16272,7 @@ export const actorsControllerCreate = async (createActorDto: CreateActorDto, opt
 
 
 /**
+ * Get all Actors (paginated)
  * @summary Get all Actors (paginated)
  */
 export type actorsControllerFindAllResponse200 = {
@@ -16222,6 +16316,7 @@ export const actorsControllerFindAll = async (params?: ActorsControllerFindAllPa
 
 
 /**
+ * Get Actor by ID
  * @summary Get Actor by ID
  */
 export type actorsControllerFindOneResponse200 = {
@@ -16258,6 +16353,7 @@ export const actorsControllerFindOne = async (id: string, options?: RequestInit)
 
 
 /**
+ * Update Actor
  * @summary Update Actor
  */
 export type actorsControllerUpdateResponse200 = {
@@ -16296,6 +16392,7 @@ export const actorsControllerUpdate = async (id: string,
 
 
 /**
+ * Delete Actor
  * @summary Delete Actor
  */
 export type actorsControllerRemoveResponse200 = {
@@ -16332,6 +16429,7 @@ export const actorsControllerRemove = async (id: string, options?: RequestInit):
 
 
 /**
+ * Update Contact Link on Actor
  * @summary Update Contact Link on Actor
  */
 export type actorsControllerUpdateContactResponse200 = {
@@ -16372,6 +16470,7 @@ export const actorsControllerUpdateContact = async (id: string,
 
 
 /**
+ * Remove Contact Link from Actor
  * @summary Remove Contact Link from Actor
  */
 export type actorsControllerRemoveContactResponse200 = {
@@ -16410,6 +16509,7 @@ export const actorsControllerRemoveContact = async (id: string,
 
 
 /**
+ * Link Contact to Actor
  * @summary Link Contact to Actor
  */
 export type actorsControllerAddContactResponse201 = {
@@ -16448,6 +16548,95 @@ export const actorsControllerAddContact = async (id: string,
 
 
 /**
+ * Archives an actor
+ * @summary Archive Actor
+ */
+export type actorsControllerArchiveResponse200 = {
+  data: ActorResponseDto
+  status: 200
+}
+
+export type actorsControllerArchiveResponse201 = {
+  data: ActorResponseDto
+  status: 201
+}
+    
+export type actorsControllerArchiveResponseSuccess = (actorsControllerArchiveResponse200 | actorsControllerArchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerArchiveResponse = (actorsControllerArchiveResponseSuccess)
+
+export const getActorsControllerArchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/archive`
+}
+
+export const actorsControllerArchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<actorsControllerArchiveResponse> => {
+  
+  return customFetch<actorsControllerArchiveResponse>(getActorsControllerArchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Unarchives an actor
+ * @summary Unarchive Actor
+ */
+export type actorsControllerUnarchiveResponse200 = {
+  data: ActorResponseDto
+  status: 200
+}
+
+export type actorsControllerUnarchiveResponse201 = {
+  data: ActorResponseDto
+  status: 201
+}
+    
+export type actorsControllerUnarchiveResponseSuccess = (actorsControllerUnarchiveResponse200 | actorsControllerUnarchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerUnarchiveResponse = (actorsControllerUnarchiveResponseSuccess)
+
+export const getActorsControllerUnarchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/unarchive`
+}
+
+export const actorsControllerUnarchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<actorsControllerUnarchiveResponse> => {
+  
+  return customFetch<actorsControllerUnarchiveResponse>(getActorsControllerUnarchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Add Note to Actor
  * @summary Add Note to Actor
  */
 export type actorsControllerAddNoteResponse201 = {
@@ -16486,6 +16675,7 @@ export const actorsControllerAddNote = async (id: string,
 
 
 /**
+ * Remove Note from Actor
  * @summary Remove Note from Actor
  */
 export type actorsControllerRemoveNoteResponse200 = {
@@ -16524,6 +16714,7 @@ export const actorsControllerRemoveNote = async (id: string,
 
 
 /**
+ * Create Project
  * @summary Create Project
  */
 export type projectsControllerCreateResponse201 = {
@@ -16561,10 +16752,11 @@ export const projectsControllerCreate = async (createProjectDto: CreateProjectDt
 
 
 /**
+ * Get all Projects
  * @summary Get all Projects
  */
 export type projectsControllerFindAllResponse200 = {
-  data: ProjectResponseDto[]
+  data: ProjectsControllerFindAll200
   status: 200
 }
     
@@ -16575,17 +16767,24 @@ export type projectsControllerFindAllResponseSuccess = (projectsControllerFindAl
 
 export type projectsControllerFindAllResponse = (projectsControllerFindAllResponseSuccess)
 
-export const getProjectsControllerFindAllUrl = () => {
+export const getProjectsControllerFindAllUrl = (params?: ProjectsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/projects`
+  return stringifiedParams.length > 0 ? `/projects?${stringifiedParams}` : `/projects`
 }
 
-export const projectsControllerFindAll = async ( options?: RequestInit): Promise<projectsControllerFindAllResponse> => {
+export const projectsControllerFindAll = async (params?: ProjectsControllerFindAllParams, options?: RequestInit): Promise<projectsControllerFindAllResponse> => {
   
-  return customFetch<projectsControllerFindAllResponse>(getProjectsControllerFindAllUrl(),
+  return customFetch<projectsControllerFindAllResponse>(getProjectsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -16597,6 +16796,7 @@ export const projectsControllerFindAll = async ( options?: RequestInit): Promise
 
 
 /**
+ * Get Project by ID
  * @summary Get Project by ID
  */
 export type projectsControllerFindOneResponse200 = {
@@ -16633,6 +16833,7 @@ export const projectsControllerFindOne = async (id: string, options?: RequestIni
 
 
 /**
+ * Update Project
  * @summary Update Project
  */
 export type projectsControllerUpdateResponse200 = {
@@ -16671,6 +16872,7 @@ export const projectsControllerUpdate = async (id: string,
 
 
 /**
+ * Delete Project
  * @summary Delete Project
  */
 export type projectsControllerRemoveResponse200 = {
@@ -16707,6 +16909,95 @@ export const projectsControllerRemove = async (id: string, options?: RequestInit
 
 
 /**
+ * Archives a project
+ * @summary Archive Project
+ */
+export type projectsControllerArchiveResponse200 = {
+  data: ProjectResponseDto
+  status: 200
+}
+
+export type projectsControllerArchiveResponse201 = {
+  data: ProjectResponseDto
+  status: 201
+}
+    
+export type projectsControllerArchiveResponseSuccess = (projectsControllerArchiveResponse200 | projectsControllerArchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerArchiveResponse = (projectsControllerArchiveResponseSuccess)
+
+export const getProjectsControllerArchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/archive`
+}
+
+export const projectsControllerArchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<projectsControllerArchiveResponse> => {
+  
+  return customFetch<projectsControllerArchiveResponse>(getProjectsControllerArchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Unarchives a project
+ * @summary Unarchive Project
+ */
+export type projectsControllerUnarchiveResponse200 = {
+  data: ProjectResponseDto
+  status: 200
+}
+
+export type projectsControllerUnarchiveResponse201 = {
+  data: ProjectResponseDto
+  status: 201
+}
+    
+export type projectsControllerUnarchiveResponseSuccess = (projectsControllerUnarchiveResponse200 | projectsControllerUnarchiveResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerUnarchiveResponse = (projectsControllerUnarchiveResponseSuccess)
+
+export const getProjectsControllerUnarchiveUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/unarchive`
+}
+
+export const projectsControllerUnarchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<projectsControllerUnarchiveResponse> => {
+  
+  return customFetch<projectsControllerUnarchiveResponse>(getProjectsControllerUnarchiveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Add Note to Project
  * @summary Add Note to Project
  */
 export type projectsControllerAddNoteResponse201 = {
@@ -16745,6 +17036,7 @@ export const projectsControllerAddNote = async (id: string,
 
 
 /**
+ * Delete Note from Project
  * @summary Delete Note from Project
  */
 export type projectsControllerRemoveNoteResponse200 = {
@@ -16783,6 +17075,7 @@ export const projectsControllerRemoveNote = async (id: string,
 
 
 /**
+ * Add Contact to Project
  * @summary Add Contact to Project
  */
 export type projectsControllerAddContactResponse201 = {
@@ -16821,6 +17114,7 @@ export const projectsControllerAddContact = async (id: string,
 
 
 /**
+ * Remove Contact from Project
  * @summary Remove Contact from Project
  */
 export type projectsControllerRemoveContactResponse200 = {
@@ -16859,6 +17153,7 @@ export const projectsControllerRemoveContact = async (id: string,
 
 
 /**
+ * Update Contact Role on Project
  * @summary Update Contact Role on Project
  */
 export type projectsControllerUpdateContactResponse200 = {
@@ -16899,6 +17194,7 @@ export const projectsControllerUpdateContact = async (id: string,
 
 
 /**
+ * Add Actor to Project
  * @summary Add Actor to Project
  */
 export type projectsControllerAddActorResponse201 = {
@@ -16937,6 +17233,7 @@ export const projectsControllerAddActor = async (id: string,
 
 
 /**
+ * Update Actor Role on Project
  * @summary Update Actor Role on Project
  */
 export type projectsControllerUpdateActorResponse200 = {
@@ -16977,6 +17274,7 @@ export const projectsControllerUpdateActor = async (id: string,
 
 
 /**
+ * Remove Actor from Project
  * @summary Remove Actor from Project
  */
 export type projectsControllerRemoveActorResponse200 = {
@@ -17015,6 +17313,51 @@ export const projectsControllerRemoveActor = async (id: string,
 
 
 /**
+ * Get CRM Graph Map Data
+ * @summary Get CRM Graph Map Data
+ */
+export type crmMapControllerGetMapResponse200 = {
+  data: CrmMapResponseDto
+  status: 200
+}
+    
+export type crmMapControllerGetMapResponseSuccess = (crmMapControllerGetMapResponse200) & {
+  headers: Headers;
+};
+;
+
+export type crmMapControllerGetMapResponse = (crmMapControllerGetMapResponseSuccess)
+
+export const getCrmMapControllerGetMapUrl = (params?: CrmMapControllerGetMapParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/crm-map?${stringifiedParams}` : `/crm-map`
+}
+
+export const crmMapControllerGetMap = async (params?: CrmMapControllerGetMapParams, options?: RequestInit): Promise<crmMapControllerGetMapResponse> => {
+  
+  return customFetch<crmMapControllerGetMapResponse>(getCrmMapControllerGetMapUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Get Project Feedback
  * @summary Get Project Feedback
  */
 export type maControllerGetFeedbackResponse200 = {
@@ -17051,6 +17394,7 @@ export const maControllerGetFeedback = async (id: string, options?: RequestInit)
 
 
 /**
+ * Add Project Feedback
  * @summary Add Project Feedback
  */
 export type maControllerAddFeedbackResponse201 = {
@@ -17089,6 +17433,7 @@ export const maControllerAddFeedback = async (id: string,
 
 
 /**
+ * Update Project Feedback
  * @summary Update Project Feedback
  */
 export type maControllerUpdateFeedbackResponse200 = {
@@ -17129,6 +17474,7 @@ export const maControllerUpdateFeedback = async (id: string,
 
 
 /**
+ * Get Seller Qualifications
  * @summary Get Seller Qualifications
  */
 export type maGetSellerQualificationsResponse200 = {
@@ -17165,6 +17511,7 @@ export const maGetSellerQualifications = async (id: string, options?: RequestIni
 
 
 /**
+ * Add Seller Qualification
  * @summary Add Seller Qualification
  */
 export type maAddSellerQualificationResponse201 = {
@@ -17203,6 +17550,7 @@ export const maAddSellerQualification = async (id: string,
 
 
 /**
+ * Update Seller Qualification
  * @summary Update Seller Qualification
  */
 export type maUpdateSellerQualificationResponse200 = {
@@ -17243,6 +17591,7 @@ export const maUpdateSellerQualification = async (id: string,
 
 
 /**
+ * Get Buyer Qualifications
  * @summary Get Buyer Qualifications
  */
 export type maGetBuyerQualificationsResponse200 = {
@@ -17279,6 +17628,7 @@ export const maGetBuyerQualifications = async (id: string, options?: RequestInit
 
 
 /**
+ * Add Buyer Qualification
  * @summary Add Buyer Qualification
  */
 export type maAddBuyerQualificationResponse201 = {
@@ -17317,6 +17667,7 @@ export const maAddBuyerQualification = async (id: string,
 
 
 /**
+ * Update Buyer Qualification
  * @summary Update Buyer Qualification
  */
 export type maUpdateBuyerQualificationResponse200 = {
@@ -17357,6 +17708,7 @@ export const maUpdateBuyerQualification = async (id: string,
 
 
 /**
+ * Get Strategic Intelligence
  * @summary Get Strategic Intelligence
  */
 export type maGetStrategicIntelligenceResponse200 = {
@@ -17393,6 +17745,7 @@ export const maGetStrategicIntelligence = async (id: string, options?: RequestIn
 
 
 /**
+ * Add Strategic Intelligence
  * @summary Add Strategic Intelligence
  */
 export type maAddStrategicIntelligenceResponse201 = {
@@ -17431,6 +17784,7 @@ export const maAddStrategicIntelligence = async (id: string,
 
 
 /**
+ * Update Strategic Intelligence
  * @summary Update Strategic Intelligence
  */
 export type maUpdateStrategicIntelligenceResponse200 = {

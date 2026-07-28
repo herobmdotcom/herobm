@@ -22,6 +22,7 @@ import * as api from '@herobm/sdk';
 import useSWR from 'swr';
 import { useAuth } from './AuthGate';
 import { apiFetch } from '../../lib/api';
+import { Button } from './Button';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -908,7 +909,7 @@ export default function DataGrid<T>({
 
   const optionsButtonNode = (
     <div ref={colPickerRef} style={{ position: "relative" }}>
-      <button
+      <Button
         onClick={() => setColPickerOpen((v) => !v)}
         className="px-3 py-1.5 rounded text-xs cursor-pointer transition-colors"
         style={{
@@ -921,7 +922,7 @@ export default function DataGrid<T>({
         title={tGrid('options')}
       >
         {tGrid('options')}
-      </button>
+      </Button>
       {colPickerOpen && (
             <div
               style={{
@@ -944,7 +945,7 @@ export default function DataGrid<T>({
             >
               {/* 1. Export Section */}
               {canExport && (
-                <button
+                <Button
                   onClick={(e) => {
                     e.stopPropagation();
                     setColPickerOpen(false);
@@ -971,7 +972,7 @@ export default function DataGrid<T>({
                 }
               >
                 <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
-                </button>
+                </Button>
               )}
 
               {/* 2. Columns Section */}
@@ -1038,7 +1039,7 @@ export default function DataGrid<T>({
                       </label>
                     );
                   })}
-                  <button
+                  <Button
                     onClick={() => {
                       handleResetColumns();
                       setColPickerOpen(false);
@@ -1065,7 +1066,7 @@ export default function DataGrid<T>({
                   >
                     {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                     <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
-                  </button>
+                  </Button>
                 </>
               )}
 
@@ -1187,7 +1188,7 @@ export default function DataGrid<T>({
 
 
   const prevButton = (
-    <button
+    <Button
       onClick={() => {
         setCursor(prevCursor);
         setDirection('prev');
@@ -1201,11 +1202,11 @@ export default function DataGrid<T>({
       }}
     >
       <span aria-hidden>←</span>{' '}{tGrid('prev')}
-    </button>
+    </Button>
   );
 
   const nextButton = (
-    <button
+    <Button
       onClick={() => {
         setCursor(nextCursor);
         setDirection('next');
@@ -1219,7 +1220,7 @@ export default function DataGrid<T>({
       }}
     >
       {tGrid('next')}{' '}<span aria-hidden>→</span>
-    </button>
+    </Button>
   );
 
   const renderPaginationControls = (isMobileView: boolean) => {
@@ -1251,7 +1252,7 @@ export default function DataGrid<T>({
               <div className="h-4 w-px bg-slate-200" />
               <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <span>{tGrid('customViewMessage', { fallback: 'All records' })}</span>
-                <button 
+                <Button 
                   onClick={() => {
                     const api = gridRef.current?.api;
                     if (!api) return;
@@ -1270,7 +1271,7 @@ export default function DataGrid<T>({
                   className="hover:text-slate-800 focus:outline-none flex items-center justify-center rounded hover:bg-slate-100 px-1 py-0.5 transition-colors"
                 >
                   {tGrid('clearCustomView', { fallback: 'x' })}
-                </button>
+                </Button>
               </div>
             </>
           )}

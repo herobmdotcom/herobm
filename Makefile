@@ -428,8 +428,6 @@ check-lint:
 	@npm run lint -w apps/ops-portal
 	@npm run lint:oas -w apps/api
 
-	npm install
-	$(MAKE) build-shared
 
 clean-build:
 	$(CLEAN_BUILD_CMD)

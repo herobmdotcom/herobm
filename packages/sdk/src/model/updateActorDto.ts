@@ -23,4 +23,8 @@ export interface UpdateActorDto {
   businessNumber?: string;
   isTaxRegistered?: boolean;
   tags?: string[];
+  referralMode?: string;
+  referredByActorId?: string;
+  referredByContactId?: string;
+  referralNote?: string;
 }

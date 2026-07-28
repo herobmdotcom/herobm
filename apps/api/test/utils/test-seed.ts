@@ -4,7 +4,7 @@ import {
   bins,
   appSettings,
   users,
-} from '../../src/drizzle/herobm-core-schema';
+} from '../../src/drizzle/schema';
 import * as bcrypt from 'bcrypt';
 import type { SeedDB } from '../../src/seeds/run';
 
@@ -20,6 +20,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
       locationId: '10000000-0000-4000-8000-000000000001',
       code: 'MAIN',
       name: 'Main Location',
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoUpdate({
       target: locations.locationId,
@@ -33,6 +35,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
       locationId: '10000000-0000-4000-8000-000000000001',
       code: 'MAIN-Z1',
       name: 'Main Zone',
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoUpdate({
       target: zones.zoneId,
@@ -49,6 +53,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
+        createdBy: 'system',
       },
       {
         binId: '00000000-0000-4000-8000-000000000002',
@@ -57,6 +62,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
+        createdBy: 'system',
       },
       {
         binId: '00000000-0000-4000-8000-000000000003',
@@ -65,6 +71,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'storage',
         source: 'app',
         isUnavailable: false,
+        createdBy: 'system',
       },
     ])
     .onConflictDoUpdate({

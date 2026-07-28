@@ -22,9 +22,10 @@ import {
   actorNotes,
   masterDataEvents,
   contacts,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { ACTOR_STATE } from '@herobm/shared';
 import {
   CreateActorDto,
   UpdateActorDto,
@@ -45,7 +46,10 @@ export class ActorsService {
     dto: CreateActorDto,
     userId: string,
   ): Promise<ActorResponseDto> {
-    const [newActor] = await this.db.insert(actors).values(dto).returning();
+    const [newActor] = await this.db
+      .insert(actors)
+      .values({ isTaxRegistered: false, ...dto })
+      .returning();
 
     await emitEvent(this.db, {
       entityType: EntityType.ACTOR,
@@ -108,6 +112,8 @@ export class ActorsService {
             contact: true,
           },
         },
+        referredByActor: true,
+        referredByContact: true,
       },
     });
 
@@ -121,11 +127,23 @@ export class ActorsService {
       .where(eq(masterDataEvents.entityId, id))
       .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-    return { ...actor, events } as unknown as ActorResponseDto;
+    const actorWithRefs = actor as typeof actor & {
+      referredByActor?: { name: string } | null;
+      referredByContact?: { fullName: string } | null;
+    };
+
+    const result = {
+      ...actor,
+      events,
+      referredByActorName: actorWithRefs.referredByActor?.name || null,
+      referredByContactName: actorWithRefs.referredByContact?.fullName || null,
+    };
+
+    return result as unknown as ActorResponseDto;
   }
 
   async getActors(query?: PaginationQuery) {
-    const { page, limit, cursor, direction, searchTerm } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -143,6 +161,10 @@ export class ActorsService {
 
     if (searchTerm) {
       conditions.push(ilike(actors.name, `%${rawSearchTerm}%`));
+    }
+
+    if (!includeArchived) {
+      conditions.push(sql`${actors.stateCode} != ${ACTOR_STATE.ARCHIVED}`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -238,6 +260,60 @@ export class ActorsService {
     });
 
     return { success: true };
+  }
+
+  async archiveActor(id: string, userId: string): Promise<ActorResponseDto> {
+    const [updatedActor] = await this.db
+      .update(actors)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: ACTOR_STATE.ARCHIVED, modifiedOn: new Date() })
+      .where(eq(actors.actorId, id))
+      .returning();
+
+    if (!updatedActor) {
+      throw new NotFoundException(`Actor with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Actor',
+      payload: {
+        action: 'actor_archived',
+        actorId: id,
+      },
+      actor: userId,
+    });
+
+    return updatedActor as unknown as ActorResponseDto;
+  }
+
+  async unarchiveActor(id: string, userId: string): Promise<ActorResponseDto> {
+    const [updatedActor] = await this.db
+      .update(actors)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: ACTOR_STATE.ACTIVE, modifiedOn: new Date() })
+      .where(eq(actors.actorId, id))
+      .returning();
+
+    if (!updatedActor) {
+      throw new NotFoundException(`Actor with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Actor',
+      payload: {
+        action: 'actor_unarchived',
+        actorId: id,
+      },
+      actor: userId,
+    });
+
+    return updatedActor as unknown as ActorResponseDto;
   }
 
   // @herobm-skip-audit
@@ -390,6 +466,7 @@ export class ActorsService {
       actorId,
       contactId: dto.contactId,
       primaryFor: dto.primaryFor || [],
+      linkType: 'employee',
     });
 
     const [actor, contact] = await Promise.all([

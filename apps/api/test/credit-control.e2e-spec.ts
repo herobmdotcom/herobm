@@ -10,7 +10,7 @@ import {
   salesOrders,
   salesInvoices,
   locations,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import request from 'supertest';
@@ -57,6 +57,7 @@ describe('Credit Control Lifecycle (e2e)', () => {
       firstName: 'Viewer',
       lastName: 'Test',
       role: 'viewer',
+      isActive: true,
     });
 
     const enforcer = app.get('CASBIN_ENFORCER');
@@ -223,6 +224,11 @@ describe('Credit Control Lifecycle (e2e)', () => {
         currencyCode: 'USD',
         fulfillmentLocationId: locId,
         stateCode: 'invoiced',
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
       })
       .returning();
 
@@ -234,6 +240,11 @@ describe('Credit Control Lifecycle (e2e)', () => {
       currencyCode: 'USD',
       stateCode: 'unpaid',
       dueDate: entryDate,
+      taxAmount: '0',
+      baseTotalAmount: '0',
+      baseOutstandingAmount: '0',
+      exchangeRate: '1',
+      createdBy: 'system',
     });
 
     // Create Order 1

@@ -13,7 +13,7 @@ import {
   glAccounts,
   glMatchGroups,
   reconciliationRules,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, and, desc, inArray, SQL } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateBankStatementLineDto } from './dto/bank-statement.dto';

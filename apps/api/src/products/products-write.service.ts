@@ -16,7 +16,7 @@ import {
   productComponents,
   productSuppliers,
   bins,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -54,8 +54,10 @@ export class ProductsWriteService {
         .values({
           ...dto,
           productType: dto.productType ?? 'inventory',
-          stateCode: dto.stateCode as ProductState | undefined,
+          stateCode: (dto.stateCode as ProductState) ?? PRODUCT_STATE.ACTIVE,
           createdBy: actor,
+          source: 'app',
+          structureType: 'standard',
         })
         .returning();
 
@@ -234,8 +236,7 @@ export class ProductsWriteService {
 
     const [updated] = await db
       .update(coreProducts)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for stateCode matching database-level enum definitions.
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(coreProducts.productId, productId))
       .returning();
 
@@ -296,6 +297,7 @@ export class ProductsWriteService {
       productId,
       vendorId: dto.vendorId,
       supplierPartNumber: dto.supplierPartNumber || null,
+      isPreferred: false,
       costPrice: dto.costPrice ? dto.costPrice.toString() : '0',
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
       effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
@@ -310,6 +312,8 @@ export class ProductsWriteService {
           ...payload,
           createdBy: actor,
           createdOn: new Date(),
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
         })
         .onConflictDoUpdate({
           target: [productSuppliers.vendorId, productSuppliers.productId],

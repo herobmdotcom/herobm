@@ -7,7 +7,9 @@ import {
   actorContactLinks,
   actorNotes,
   contacts,
-} from '../drizzle/herobm-core-schema';
+  users,
+} from '../drizzle/schema';
+import { ACTOR_STATE } from '@herobm/shared';
 import { NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -15,13 +17,27 @@ import { eq } from 'drizzle-orm';
 describe('ActorsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ActorsService;
-  const mockUserId = 'U001';
+  const mockUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
     await pg.db.delete(actorContactLinks);
     await pg.db.delete(actorNotes);
     await pg.db.delete(actors);
     await pg.db.delete(contacts);
+
+    await pg.db
+      .insert(users)
+      .values({
+        userId: mockUserId,
+        username: 'mockuser',
+        // eslint-disable-next-line no-restricted-syntax -- Mocking a test user password
+        passwordHash: 'hash',
+        role: 'admin',
+        displayName: 'Mock User',
+        email: 'mock@example.com',
+        isActive: true,
+      })
+      .onConflictDoNothing();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ActorsService, { provide: DRIZZLE, useValue: pg.db }],
@@ -64,6 +80,7 @@ describe('ActorsService', () => {
         .insert(actors)
         .values({
           name: 'Existing Actor',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -86,6 +103,7 @@ describe('ActorsService', () => {
         .insert(actors)
         .values({
           name: 'Old Name',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -119,6 +137,7 @@ describe('ActorsService', () => {
         .insert(actors)
         .values({
           name: 'To Delete',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -138,11 +157,49 @@ describe('ActorsService', () => {
     });
   });
 
+  describe('archiveActor', () => {
+    it('should archive an actor', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({ name: 'To Archive', isTaxRegistered: false })
+        .returning();
+
+      const res = await service.archiveActor(actor.actorId, mockUserId);
+      expect(res.stateCode).toBe(ACTOR_STATE.ARCHIVED);
+
+      const dbRecord = await pg.db.query.actors.findFirst({
+        where: eq(actors.actorId, actor.actorId),
+      });
+      expect(dbRecord?.stateCode).toBe(ACTOR_STATE.ARCHIVED);
+    });
+  });
+
+  describe('unarchiveActor', () => {
+    it('should unarchive an actor', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'To Unarchive',
+          stateCode: ACTOR_STATE.ARCHIVED,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const res = await service.unarchiveActor(actor.actorId, mockUserId);
+      expect(res.stateCode).toBe(ACTOR_STATE.ACTIVE);
+
+      const dbRecord = await pg.db.query.actors.findFirst({
+        where: eq(actors.actorId, actor.actorId),
+      });
+      expect(dbRecord?.stateCode).toBe(ACTOR_STATE.ACTIVE);
+    });
+  });
+
   describe('sub-entities', () => {
     it('should add and remove a note', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Note Actor' })
+        .values({ name: 'Note Actor', isTaxRegistered: false })
         .returning();
 
       const noteResult = await service.addNote(
@@ -170,7 +227,7 @@ describe('ActorsService', () => {
     it('should add, update, and remove a contact', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Contact Actor' })
+        .values({ name: 'Contact Actor', isTaxRegistered: false })
         .returning();
       const [contact] = await pg.db
         .insert(contacts)

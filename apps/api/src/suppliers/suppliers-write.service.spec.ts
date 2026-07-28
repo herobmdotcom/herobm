@@ -3,12 +3,9 @@ import { SuppliersWriteService } from './suppliers-write.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { SUPPLIER_STATE } from '@herobm/shared';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  suppliers,
-  masterDataEvents,
-  actors,
-} from '../drizzle/herobm-core-schema';
+import { suppliers, masterDataEvents, actors } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
@@ -62,6 +59,7 @@ describe('SuppliersWriteService', () => {
         .values({
           name: 'Existing',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -69,6 +67,10 @@ describe('SuppliersWriteService', () => {
         actorId: act.actorId,
         vendorNumber: 'V-001',
         currencyCode: 'EUR',
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        source: 'app',
+        isPurchasingBlocked: false,
+        createdBy: 'system',
       });
 
       const dto = {
@@ -90,6 +92,7 @@ describe('SuppliersWriteService', () => {
         .values({
           name: 'Old Name',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -99,6 +102,10 @@ describe('SuppliersWriteService', () => {
           actorId: act.actorId,
           vendorNumber: 'V-EX',
           currencyCode: 'EUR',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         })
         .returning();
       existingActorId = act.actorId;

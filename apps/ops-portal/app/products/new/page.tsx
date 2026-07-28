@@ -18,9 +18,9 @@ import { useGroup, useInheritance } from '@/hooks/useInheritance';
 import { Button } from '@/components/shared/Button';
 
 const formatMoney = (val: string | number | undefined | null) => {
-  if (!val) return '0.00';
+  if (val === '' || val === null || val === undefined) return null;
   const num = typeof val === 'string' ? parseFloat(val) : val;
-  if (isNaN(num)) return '0.00';
+  if (isNaN(num)) return null;
   return num.toFixed(2);
 };
 
@@ -297,7 +297,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.listPrice}
                   onChange={(e) => updateField('listPrice', e.target.value)}
-                  onBlur={(e) => updateField('listPrice', formatMoney(e.target.value))}
+                  onBlur={(e) => updateField('listPrice', formatMoney(e.target.value) || '')}
                   disabled={submitting}
                 />
               </div>
@@ -311,7 +311,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.tradePrice}
                   onChange={(e) => updateField('tradePrice', e.target.value)}
-                  onBlur={(e) => updateField('tradePrice', formatMoney(e.target.value))}
+                  onBlur={(e) => updateField('tradePrice', formatMoney(e.target.value) || '')}
                   disabled={submitting}
                 />
               </div>
@@ -325,7 +325,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.priceLevel3}
                   onChange={(e) => updateField('priceLevel3', e.target.value)}
-                  onBlur={(e) => updateField('priceLevel3', formatMoney(e.target.value))}
+                  onBlur={(e) => updateField('priceLevel3', formatMoney(e.target.value) || '')}
                   disabled={submitting}
                 />
               </div>
@@ -339,7 +339,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.priceLevel4}
                   onChange={(e) => updateField('priceLevel4', e.target.value)}
-                  onBlur={(e) => updateField('priceLevel4', formatMoney(e.target.value))}
+                  onBlur={(e) => updateField('priceLevel4', formatMoney(e.target.value) || '')}
                   disabled={submitting}
                 />
               </div>
@@ -353,7 +353,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.standardCost}
                   onChange={(e) => updateField('standardCost', e.target.value)}
-                  onBlur={(e) => updateField('standardCost', formatMoney(e.target.value))}
+                  onBlur={(e) => updateField('standardCost', formatMoney(e.target.value) || '')}
                   disabled={submitting}
                 />
               </div>

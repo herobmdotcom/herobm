@@ -458,9 +458,9 @@ export default function NewPurchaseInvoicePage() {
                   <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                     <span className="font-bold text-slate-500 text-sm">{t('lineItemPrefix')} {idx + 1}</span>
                     {lines.length > 1 && (
-                      <button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
+                      <Button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                      </button>
+                      </Button>
                     )}
                   </div>
                   

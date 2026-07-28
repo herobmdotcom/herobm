@@ -160,6 +160,7 @@ export enum ActorRole {
 
 export class ContactResponseDto {
   contactId!: string;
+  stateCode!: string;
   firstName!: string;
   lastName!: string;
   fullName?: string | null;
@@ -171,3 +172,5 @@ export class ContactResponseDto {
   createdOn!: Date | null;
   modifiedOn!: Date | null;
 }
+
+export class EmptyBodyDto {}

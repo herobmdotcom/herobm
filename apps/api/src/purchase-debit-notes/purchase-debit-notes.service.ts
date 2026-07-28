@@ -16,7 +16,7 @@ import {
   purchaseDebitNoteLines,
   suppliers,
   supplierGroups,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateDebitNoteDto } from './dto';
@@ -30,7 +30,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
-import { glAccounts } from '../drizzle/herobm-core-schema';
+import { glAccounts } from '../drizzle/schema';
 
 const VALID_DN_STATES = getValidStates(PURCHASE_DEBIT_NOTE_TRANSITIONS);
 
@@ -145,6 +145,9 @@ export class PurchaseDebitNotesService {
           stateCode: PURCHASE_DEBIT_NOTE_STATE.DRAFT,
           notes: dto.notes,
           createdBy: actor,
+          baseTotalAmount: '0',
+          baseOutstandingAmount: '0',
+          exchangeRate: '1',
         })
         .returning();
 

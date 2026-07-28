@@ -20,9 +20,14 @@ import {
   actors,
   procurementEvents,
   exchangeRates,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@herobm/shared';
+import {
+  PURCHASE_ORDER_STATE,
+  SUPPLIER_STATE,
+  PRODUCT_STATE,
+  ACTOR_STATE,
+} from '@herobm/shared';
 
 jest.setTimeout(120000);
 
@@ -59,12 +64,15 @@ describe('PurchaseOrdersService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
     const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
     await pg.db.insert(actors).values({
       actorId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
@@ -72,6 +80,9 @@ describe('PurchaseOrdersService', () => {
       vendorNumber: 'V001',
       currencyCode: 'EUR',
       stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,
@@ -80,6 +91,10 @@ describe('PurchaseOrdersService', () => {
       productType: 'inventory',
       baseUom: 'EA',
       purchaseTaxCategoryId: TAX_CAT_ID,
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
   });
 
@@ -149,6 +164,72 @@ describe('PurchaseOrdersService', () => {
   });
 
   describe('create', () => {
+    it('should throw BadRequestException if supplier is inactive', async () => {
+      const INACTIVE_VENDOR_ID = '00000000-0000-4000-8000-000000000200';
+      const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47262d';
+      await pg.db.insert(actors).values({
+        actorId,
+        name: 'Inactive Vendor',
+        isTaxRegistered: false,
+        stateCode: ACTOR_STATE.ARCHIVED,
+      });
+      await pg.db.insert(suppliers).values({
+        vendorId: INACTIVE_VENDOR_ID,
+        actorId,
+        vendorNumber: 'V002',
+        currencyCode: 'EUR',
+        stateCode: SUPPLIER_STATE.ARCHIVED,
+        source: 'app',
+        isPurchasingBlocked: false,
+        createdBy: 'system',
+      });
+
+      await expect(
+        service.create(
+          {
+            orderNumber: 'PO-INACT-1',
+            deliveryLocationId: LOCATION_ID,
+            vendorId: INACTIVE_VENDOR_ID,
+          },
+          'system',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if a line item product is inactive', async () => {
+      const INACTIVE_PROD_ID = '00000000-0000-4000-8000-00000000020a';
+      await pg.db.insert(products).values({
+        productId: INACTIVE_PROD_ID,
+        productNumber: 'P2',
+        name: 'Inactive Product',
+        productType: 'inventory',
+        baseUom: 'EA',
+        purchaseTaxCategoryId: TAX_CAT_ID,
+        stateCode: PRODUCT_STATE.ARCHIVED,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      await expect(
+        service.create(
+          {
+            orderNumber: 'PO-INACT-2',
+            deliveryLocationId: LOCATION_ID,
+            vendorId: VENDOR_ID,
+            lines: [
+              {
+                productId: INACTIVE_PROD_ID,
+                quantity: '1',
+                pricePerUnit: '10',
+              },
+            ],
+          },
+          'system',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should create a purchase order and return it', async () => {
       const dto = {
         orderNumber: 'PO-NEW-' + Math.random(),
@@ -174,6 +255,9 @@ describe('PurchaseOrdersService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       const result = await service.changePurchaseOrderState(
@@ -192,6 +276,9 @@ describe('PurchaseOrdersService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       mockSuppliersService.assessRisk.mockResolvedValueOnce({
@@ -215,6 +302,9 @@ describe('PurchaseOrdersService', () => {
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
         stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       await service.addLine(poId, {
@@ -228,6 +318,43 @@ describe('PurchaseOrdersService', () => {
         .from(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
       expect(lines).toHaveLength(1);
+    });
+
+    it('should throw BadRequestException if adding an inactive product', async () => {
+      const poId = '00000000-0000-4000-8000-000000000103';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-LINE-2-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      const INACTIVE_PROD_ID = '00000000-0000-4000-8000-00000000020b';
+      await pg.db.insert(products).values({
+        productId: INACTIVE_PROD_ID,
+        productNumber: 'P3',
+        name: 'Inactive Product',
+        productType: 'inventory',
+        baseUom: 'EA',
+        purchaseTaxCategoryId: TAX_CAT_ID,
+        stateCode: PRODUCT_STATE.ARCHIVED,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      await expect(
+        service.addLine(poId, {
+          productId: INACTIVE_PROD_ID,
+          quantity: '5',
+          pricePerUnit: '10',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

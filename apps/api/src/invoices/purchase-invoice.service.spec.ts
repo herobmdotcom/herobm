@@ -21,7 +21,7 @@ import {
   purchaseInvoiceReceipts,
   glAccounts,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -30,6 +30,10 @@ import {
   PURCHASE_INVOICE_STATE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
+  CUSTOMER_STATE,
+  SUPPLIER_STATE,
+  GOODS_RECEIVED_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
 
 describe('PurchaseInvoiceService', () => {
@@ -64,6 +68,8 @@ describe('PurchaseInvoiceService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     const actorId = '00000000-0000-4000-8000-000000000003';
@@ -71,6 +77,7 @@ describe('PurchaseInvoiceService', () => {
       actorId,
       name: 'Steel Co',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
 
     await pg.db.insert(suppliers).values({
@@ -78,6 +85,10 @@ describe('PurchaseInvoiceService', () => {
       actorId,
       vendorNumber: 'V001',
       currencyCode: 'AUD',
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     });
 
     await pg.db.insert(products).values({
@@ -86,6 +97,10 @@ describe('PurchaseInvoiceService', () => {
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
   });
 
@@ -150,6 +165,9 @@ describe('PurchaseInvoiceService', () => {
       stateCode: stateCode as any,
       currencyCode: 'AUD',
       deliveryLocationId: LOCATION_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      createdBy: 'system',
     });
 
     await pg.db.insert(purchaseOrderLineItems).values({
@@ -163,6 +181,7 @@ describe('PurchaseInvoiceService', () => {
       pricePerUnit: '15.00',
       tax: '1.50',
       amount: '150.00',
+      discountPercentage: '0',
     });
   }
 
@@ -206,7 +225,10 @@ describe('PurchaseInvoiceService', () => {
           accountCode: 'gl-ap',
           name: 'AP',
           accountType: 'liability',
-          balanceType: 'credit',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
           currencyCode: 'AUD',
         },
         {
@@ -214,7 +236,10 @@ describe('PurchaseInvoiceService', () => {
           accountCode: 'gl-tax',
           name: 'Tax',
           accountType: 'liability',
-          balanceType: 'credit',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
           currencyCode: 'AUD',
         },
         {
@@ -222,7 +247,10 @@ describe('PurchaseInvoiceService', () => {
           accountCode: 'gl-grni',
           name: 'GRNI',
           accountType: 'liability',
-          balanceType: 'credit',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
           currencyCode: 'AUD',
         },
         {
@@ -230,7 +258,10 @@ describe('PurchaseInvoiceService', () => {
           accountCode: 'gl-expense',
           name: 'Expense',
           accountType: 'expense',
-          balanceType: 'debit',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
           currencyCode: 'AUD',
         },
         {
@@ -238,10 +269,13 @@ describe('PurchaseInvoiceService', () => {
           accountCode: 'gl-ppv',
           name: 'PPV',
           accountType: 'expense',
-          balanceType: 'debit',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
           currencyCode: 'AUD',
         },
-      ] as any[]);
+      ]);
 
       // Create Goods Received
       await pg.db.insert(goodsReceived).values({
@@ -250,6 +284,8 @@ describe('PurchaseInvoiceService', () => {
         locationId: LOCATION_ID,
         vendorId: VENDOR_ID,
         packingSlipNumber: 'PACK-123',
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
       });
 
       await pg.db.insert(goodsReceivedLines).values({
@@ -273,6 +309,11 @@ describe('PurchaseInvoiceService', () => {
         taxAmount: '0.00',
         currencyCode: 'AUD',
         stateCode: PURCHASE_INVOICE_STATE.DRAFT,
+        outstandingAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       await pg.db.insert(purchaseInvoiceLines).values({
@@ -341,7 +382,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-ap',
             name: 'AP',
             accountType: 'liability',
-            balanceType: 'credit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -349,7 +393,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-tax',
             name: 'Tax',
             accountType: 'liability',
-            balanceType: 'credit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -357,7 +404,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-grni',
             name: 'GRNI',
             accountType: 'liability',
-            balanceType: 'credit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -365,7 +415,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-expense',
             name: 'Expense',
             accountType: 'expense',
-            balanceType: 'debit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -373,7 +426,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-ppv',
             name: 'PPV',
             accountType: 'expense',
-            balanceType: 'debit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -381,7 +437,10 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-fx-gain',
             name: 'FX Gain',
             accountType: 'revenue',
-            balanceType: 'credit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
           {
@@ -389,10 +448,13 @@ describe('PurchaseInvoiceService', () => {
             accountCode: 'gl-fx-loss',
             name: 'FX Loss',
             accountType: 'expense',
-            balanceType: 'debit',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
             currencyCode: 'AUD',
           },
-        ] as any[])
+        ])
         .onConflictDoNothing();
 
       // Create a PO in EUR at rate 1.5
@@ -406,6 +468,8 @@ describe('PurchaseInvoiceService', () => {
           currencyCode: 'EUR',
           exchangeRate: '1.5',
           stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+          baseTotalAmount: '0',
+          createdBy: 'system',
         })
         .onConflictDoNothing();
 
@@ -420,6 +484,10 @@ describe('PurchaseInvoiceService', () => {
           taxCategoryId: TAX_CAT_ID,
           quantity: '10',
           pricePerUnit: '10.00',
+          discountPercentage: '0',
+          amount: '0',
+          tax: '0',
+          quantityReceived: '0',
         })
         .onConflictDoNothing();
 
@@ -429,6 +497,8 @@ describe('PurchaseInvoiceService', () => {
         receiptNumber: 'REC-FX-123',
         locationId: LOCATION_ID,
         vendorId: VENDOR_ID,
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
       });
 
       await pg.db.insert(goodsReceivedLines).values({
@@ -454,6 +524,10 @@ describe('PurchaseInvoiceService', () => {
         currencyCode: 'EUR',
         exchangeRate: '1.6', // 120 EUR * 1.6 = 192 AUD (AP Credit)
         stateCode: PURCHASE_INVOICE_STATE.DRAFT,
+        outstandingAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
       });
 
       await pg.db.insert(purchaseInvoiceLines).values({

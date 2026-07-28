@@ -28,7 +28,8 @@ import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useSettings } from '@/components/SettingsProvider';
-import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
+import { useAuth } from '@/components/shared/AuthGate';
+import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry, SystemResource, hasPermission } from '@herobm/shared';
 import { useSupplier, Supplier } from './useSupplier';
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -43,6 +44,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const params = use(paramsPromise);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.SUPPLIERS, 'archive');
   const initialTab = (searchParams.get('tab') as 'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments') || 'details';
   const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments'>(initialTab);
   const {
@@ -270,6 +273,24 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier)} stateCode={supplier.stateCode || ''} />}
             nav={<PageNav sections={visibleSections} />}
           />
+        }
+        footerActions={
+          canArchive && supplier ? (
+            supplier.stateCode === SUPPLIER_STATE.ARCHIVED ? (
+              <Button variant="secondary" onClick={unarchiveSupplier} disabled={saving}>
+                {tSales('buttons.unarchive')}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                onClick={archiveSupplier}
+                disabled={saving}
+              >
+                {tSales('buttons.archive')}
+              </Button>
+            )
+          ) : undefined
         }
       >
       {supplier.stateCode === SUPPLIER_STATE.ARCHIVED && (
@@ -933,22 +954,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <ActivityTimeline events={((supplier as { events?: unknown[] }).events || []) as TimelineEvent[]} />
         </div>
 
-        <div className="flex justify-end pt-2">
-          {supplier.stateCode === SUPPLIER_STATE.ARCHIVED ? (
-            <Button variant="secondary" onClick={unarchiveSupplier} disabled={saving}>
-              {tSales('buttons.unarchive')}
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              style={{ color: '#ef4444', borderColor: '#ef4444' }}
-              onClick={archiveSupplier}
-              disabled={saving}
-            >
-              {tSales('buttons.archive')}
-            </Button>
-          )}
-        </div>
       </div>
       )}
 

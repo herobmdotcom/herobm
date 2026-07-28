@@ -29,7 +29,7 @@ import {
   salesInvoices,
   actors,
   taxCategories,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -221,6 +221,7 @@ export class ReturnsWriteService {
           reason: line.reason,
           resolution: line.resolution || RETURN_RESOLUTION.REFUND,
           returnFee: line.returnFee ?? '0',
+          putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
         }));
 
         if (lineValues.length > 0) {
@@ -480,6 +481,8 @@ export class ReturnsWriteService {
             reason: dto.reason,
             resolution: dto.resolution || RETURN_RESOLUTION.REFUND,
             returnFee: dto.returnFee ?? '0',
+            quantityReceived: '0',
+            putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
           })
           .returning();
 

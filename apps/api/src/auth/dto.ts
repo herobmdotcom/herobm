@@ -1,12 +1,14 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class LoginDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   username!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   password!: string;
 }
 

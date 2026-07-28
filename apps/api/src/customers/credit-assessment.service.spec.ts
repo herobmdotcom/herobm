@@ -11,7 +11,8 @@ import {
   glAccounts,
   locations,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('CreditAssessmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -36,6 +37,10 @@ describe('CreditAssessmentService', () => {
         name: 'Customers Receivable',
         accountType: 'asset',
         currencyCode: 'USD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       })
       .returning();
     testGlAccountId = gl.glAccountId;
@@ -60,6 +65,7 @@ describe('CreditAssessmentService', () => {
         .values({
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -69,6 +75,9 @@ describe('CreditAssessmentService', () => {
           actorId: act.actorId,
           customerNumber: 'CUST-1',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -79,6 +88,8 @@ describe('CreditAssessmentService', () => {
           entryNumber: 'JE-1',
           entryDate: new Date().toISOString(),
           sourceType: 'manual',
+          isReversed: false,
+          createdBy: 'system',
         })
         .returning();
 
@@ -89,7 +100,11 @@ describe('CreditAssessmentService', () => {
           partyType: 'customer',
           debit: '500',
           credit: '0',
+          foreignDebit: '500',
+          foreignCredit: '0',
           glAccountId: testGlAccountId,
+          exchangeRate: '1',
+          isReconciled: false,
         },
         {
           journalEntryId: entry.journalEntryId,
@@ -97,13 +112,22 @@ describe('CreditAssessmentService', () => {
           partyType: 'customer',
           debit: '0',
           credit: '200',
+          foreignDebit: '0',
+          foreignCredit: '200',
           glAccountId: testGlAccountId,
+          exchangeRate: '1',
+          isReconciled: false,
         },
       ]);
 
       const [loc] = await pg.db
         .insert(locations)
-        .values({ name: 'Main Warehouse', code: 'MAIN' })
+        .values({
+          name: 'Main Warehouse',
+          code: 'MAIN',
+          source: 'app',
+          createdBy: 'system',
+        })
         .returning();
 
       // Create Sales Order and Invoices
@@ -116,6 +140,10 @@ describe('CreditAssessmentService', () => {
           stateCode: 'confirmed',
           baseTotalAmount: '1000',
           fulfillmentLocationId: loc.locationId,
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -134,6 +162,11 @@ describe('CreditAssessmentService', () => {
           totalAmount: '400',
           outstandingAmount: '400',
           currencyCode: 'USD',
+          exchangeRate: '1',
+          baseTotalAmount: '0',
+          taxAmount: '0',
+          baseOutstandingAmount: '0',
+          createdBy: 'system',
         },
         {
           invoiceNumber: 'INV-2',
@@ -143,6 +176,11 @@ describe('CreditAssessmentService', () => {
           totalAmount: '600',
           outstandingAmount: '600',
           currencyCode: 'USD',
+          exchangeRate: '1',
+          baseTotalAmount: '0',
+          taxAmount: '0',
+          baseOutstandingAmount: '0',
+          createdBy: 'system',
         },
       ]);
 

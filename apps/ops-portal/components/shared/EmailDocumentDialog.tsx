@@ -339,14 +339,14 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
             {/* Attachment Preview */}
             <div className="flex items-center gap-2 mt-1">
               <span className="material-symbols-outlined text-gray-500 text-[18px]">attach_file</span>
-              <button
+              <Button
                 type="button"
                 onClick={() => onPreview(customPdfText)}
                 className="text-sm text-[var(--accent)] hover:underline text-left"
               >
                 {/* eslint-disable-next-line i18next/no-literal-string -- technical filename */}
                 {documentName}-{orderNumber}.pdf
-              </button>
+              </Button>
             </div>
           </div>
       </form>

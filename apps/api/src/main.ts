@@ -40,22 +40,6 @@ async function bootstrap() {
   const emptyStringMiddleware = new ConvertEmptyStringsToNullMiddleware();
   app.use(emptyStringMiddleware.use.bind(emptyStringMiddleware));
 
-  // Debug middleware to log bodies
-  app.use(
-    (
-      req: { method: string; url: string; body: unknown },
-      res: unknown,
-      next: () => void,
-    ) => {
-      if (req.method === 'PATCH' && req.url.includes('/api/customers/')) {
-        console.log('--- INCOMING PATCH BODY TO', req.url, '---');
-        console.log(req.body);
-        console.log('-----------------------------------');
-      }
-      next();
-    },
-  );
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -124,15 +108,3 @@ bootstrap().catch((err) => {
   Logger.error(err);
   process.exit(1);
 });
-// trigger restart
-// trigger restart
-// trigger restart 2
-// trigger restart 3
-// trigger restart 4
-// trigger restart 5
-// trigger restart 6
-// trigger restart 7
-// trigger restart 8
-// trigger restart 9
-// trigger restart 10
-// trigger restart 11

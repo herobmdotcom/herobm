@@ -10,7 +10,7 @@ import {
   products,
   productGroups,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   PaginationQuery,
   parsePagination,

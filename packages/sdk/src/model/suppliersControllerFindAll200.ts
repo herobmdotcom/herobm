@@ -5,7 +5,17 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { PaginatedResponse } from './paginatedResponse';
-import type { SuppliersControllerFindAll200AllOf } from './suppliersControllerFindAll200AllOf';
+import type { SupplierResponseDto } from './supplierResponseDto';
 
-export type SuppliersControllerFindAll200 = PaginatedResponse & SuppliersControllerFindAll200AllOf;
+export type SuppliersControllerFindAll200 = {
+  data: SupplierResponseDto[];
+  limit: number;
+  /** @nullable */
+  page?: number | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  nextCursor?: string | null;
+  /** @nullable */
+  prevCursor?: string | null;
+};

@@ -46,6 +46,7 @@ import { UserSettingsModule } from './user-settings/user-settings.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { ActorsModule } from './actors/actors.module';
 import { ProjectsModule } from './projects/projects.module';
+import { CrmMapModule } from './crm-map/crm-map.module';
 import { extensionModules } from './generated/extension-modules';
 
 import { ReadOnlyGuard } from './common/guards/read-only.guard';
@@ -106,6 +107,7 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     DeliveryAddressesModule,
     ActorsModule,
     ProjectsModule,
+    CrmMapModule,
     ...extensionModules,
   ],
   providers: [

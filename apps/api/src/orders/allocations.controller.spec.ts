@@ -14,8 +14,12 @@ import {
   binContents,
   uomDictionary,
   taxCategories,
-} from '../drizzle/herobm-core-schema';
-import { BACKORDER_STATE } from '@herobm/shared';
+} from '../drizzle/schema';
+import {
+  BACKORDER_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
 
 describe('AllocationsController.getOpenDemands — availableElsewhere enrichment', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -60,13 +64,45 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       type: 'tax_applies',
     });
     await pg.db.insert(locations).values([
-      { locationId: LOC_MAIN, code: 'MAIN', name: 'Main Warehouse' },
-      { locationId: LOC_OTHER1, code: 'WH-B', name: 'Warehouse B' },
-      { locationId: LOC_OTHER2, code: 'WH-C', name: 'Warehouse C' },
+      {
+        locationId: LOC_MAIN,
+        code: 'MAIN',
+        name: 'Main Warehouse',
+        source: 'app',
+        createdBy: 'system',
+      },
+      {
+        locationId: LOC_OTHER1,
+        code: 'WH-B',
+        name: 'Warehouse B',
+        source: 'app',
+        createdBy: 'system',
+      },
+      {
+        locationId: LOC_OTHER2,
+        code: 'WH-C',
+        name: 'Warehouse C',
+        source: 'app',
+        createdBy: 'system',
+      },
     ]);
     await pg.db.insert(zones).values([
-      { zoneId: ZONE_OTHER1, locationId: LOC_OTHER1, code: 'Z1', name: 'Z1' },
-      { zoneId: ZONE_OTHER2, locationId: LOC_OTHER2, code: 'Z1', name: 'Z1' },
+      {
+        zoneId: ZONE_OTHER1,
+        locationId: LOC_OTHER1,
+        code: 'Z1',
+        name: 'Z1',
+        source: 'app',
+        createdBy: 'system',
+      },
+      {
+        zoneId: ZONE_OTHER2,
+        locationId: LOC_OTHER2,
+        code: 'Z1',
+        name: 'Z1',
+        source: 'app',
+        createdBy: 'system',
+      },
     ]);
     await pg.db.insert(bins).values([
       {
@@ -74,12 +110,20 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
         zoneId: ZONE_OTHER1,
         binNumber: 'B1',
         binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       },
       {
         binId: BIN_OTHER2,
         zoneId: ZONE_OTHER2,
         binNumber: 'B1',
         binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       },
     ]);
     await pg.db.insert(products).values({
@@ -88,6 +132,10 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
 
     // Seed an open demand for the main location
@@ -96,6 +144,12 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       orderNumber: 'SO-1',
       fulfillmentLocationId: LOC_MAIN,
       currencyCode: 'EUR',
+      stateCode: SALES_ORDER_STATE.DRAFT,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(salesOrderLineItems).values({
       salesOrderLineId: LINE_ID,
@@ -106,6 +160,11 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       pricePerUnit: '100',
       taxCategoryId: TAX_CAT_ID,
       fulfillmentLocationId: LOC_MAIN,
+      discountPercentage: '0',
+      amount: '0',
+      tax: '0',
+      quantityPicked: '0',
+      isPostConfirmation: false,
     });
     await pg.db.insert(backorders).values({
       backorderId: BACKORDER_ID,
@@ -181,12 +240,18 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       locationId: LOC_MAIN,
       code: 'Z1',
       name: 'Z1',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(bins).values({
       binId: BIN_MAIN,
       zoneId: ZONE_MAIN,
       binNumber: 'B1',
       binType: 'storage',
+      source: 'app',
+      createdBy: 'system',
+      isUnavailable: false,
+      isBonded: false,
     });
     await pg.db.insert(binContents).values([
       { binId: BIN_MAIN, productId: PROD_ID, actualQuantity: '50' },

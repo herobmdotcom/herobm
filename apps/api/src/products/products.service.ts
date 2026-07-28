@@ -21,7 +21,7 @@ import {
   bins,
   inventoryLedger,
   productComponents,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   PaginationQuery,
   parsePagination,

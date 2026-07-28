@@ -5,11 +5,12 @@ import type { NavSection } from '@/components/shared/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/components/AuthGate';
 import { useLicense } from '@/components/LicenseProvider';
+import { SystemResource, hasPermission, hasAnyPermission } from '@herobm/shared';
 
 export default function Sidebar() {
   const t = useTranslations('sidebar');
   const tInventory = useTranslations('inventory');
-  const { role } = useAuth();
+  const { permissions } = useAuth();
 
   const sections: NavSection[] = [
     {
@@ -80,12 +81,13 @@ export default function Sidebar() {
         { href: '/crm/actors', label: 'Actors', icon: 'business' },
         { href: '/crm/projects', label: 'Projects', icon: 'folder' },
         { href: '/crm/contacts', label: 'Contacts', icon: 'contacts' },
+        { href: '/crm/map', label: 'Map', icon: 'map' },
       ],
     },
   ];
 
-  // Finance section — visible only to admin and finance roles
-  if (role === 'admin' || role === 'finance') {
+  // Finance section
+  if (hasPermission(permissions, SystemResource.GL, 'read')) {
     sections.push({
       label: t('groups.finance'),
       items: [
@@ -134,8 +136,8 @@ export default function Sidebar() {
     });
   }
 
-  // Reporting section — visible to admin and finance/sales/etc. based on roles later
-  if (role === 'admin' || role === 'finance') {
+  // Reporting section
+  if (hasAnyPermission(permissions, [SystemResource.REPORT, SystemResource.BUSINESS_REPORT], 'read')) {
     sections.push({
       label: 'Reporting',
       items: [
@@ -152,8 +154,8 @@ export default function Sidebar() {
     });
   }
 
-  // Admin section — visible only to admin role
-  if (role === 'admin') {
+  // Admin section
+  if (hasAnyPermission(permissions, [SystemResource.USERS, SystemResource.ROLES, SystemResource.SETTINGS], 'read')) {
     sections.push({
       label: t('groups.admin'),
       items: [
@@ -192,7 +194,10 @@ export default function Sidebar() {
         },
       ],
     });
-    
+  }
+
+  // Technical section
+  if (hasAnyPermission(permissions, [SystemResource.API_KEYS, SystemResource.WEBHOOKS, SystemResource.IMPORT, SystemResource.SYSTEM_LOGS, SystemResource.EVENTS], 'read')) {
     sections.push({
       label: 'Technical',
       items: [

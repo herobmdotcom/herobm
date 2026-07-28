@@ -14,11 +14,12 @@ import {
   locations,
   taxCategories,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   CUSTOMER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
 
 describe('ShippingDocketService', () => {
@@ -66,6 +67,8 @@ describe('ShippingDocketService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     // Seed Customer Actor
@@ -75,6 +78,7 @@ describe('ShippingDocketService', () => {
       name: 'Acme Corp',
       headquartersAddressLine1:
         '123 Fake St, Springfield, QLD, 4000, Australia',
+      isTaxRegistered: false,
     });
 
     await pg.db.insert(coreAccounts).values({
@@ -84,6 +88,7 @@ describe('ShippingDocketService', () => {
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
+      createdBy: 'system',
     });
 
     // Seed Products
@@ -94,6 +99,10 @@ describe('ShippingDocketService', () => {
         name: 'Widget Alpha',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       },
       {
         productId: PROD_B_ID,
@@ -101,6 +110,10 @@ describe('ShippingDocketService', () => {
         name: 'Gadget Beta',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       },
     ]);
 
@@ -112,6 +125,11 @@ describe('ShippingDocketService', () => {
       stateCode: SALES_ORDER_STATE.CONFIRMED,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
 
     // Seed Order Lines
@@ -126,6 +144,11 @@ describe('ShippingDocketService', () => {
         productDescription: 'Widget Alpha',
         taxCategoryId: TAX_CAT_ID,
         fulfillmentLocationId: LOCATION_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       },
       {
         salesOrderLineId: LINE_2_ID,
@@ -137,6 +160,11 @@ describe('ShippingDocketService', () => {
         productDescription: 'Gadget Beta',
         taxCategoryId: TAX_CAT_ID,
         fulfillmentLocationId: LOCATION_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       },
     ]);
 
@@ -148,6 +176,7 @@ describe('ShippingDocketService', () => {
       trackingNumber: 'TRACK123',
       notes: 'Fragile items',
       stateCode: SHIPMENT_STATE.DISPATCHED,
+      createdBy: 'system',
     });
 
     // Seed Shipment Lines

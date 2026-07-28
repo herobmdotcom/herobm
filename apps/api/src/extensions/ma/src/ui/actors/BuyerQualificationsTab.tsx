@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 import { SnapshotTabContainer } from '@/components/shared/SnapshotTabContainer';
 
 export const tabLabel = "M&A: Buy";
@@ -17,8 +18,8 @@ export default function BuyerQualificationsTab({
       setLoading(true);
       const res = await api.maGetBuyerQualifications(actorId) as any;
       setQualifications(res.data || []);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to load qualifications');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to load qualifications');
     } finally {
       setLoading(false);
     }

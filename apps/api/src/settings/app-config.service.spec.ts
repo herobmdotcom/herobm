@@ -2,14 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppConfigService } from './app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  glSettings,
-  appSettings,
-  locations,
-} from '../drizzle/herobm-core-schema';
+import { glSettings, appSettings, locations } from '../drizzle/schema';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '../drizzle/herobm-core-schema';
+import * as schema from '../drizzle/schema';
 
 describe('AppConfigService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -22,6 +18,8 @@ describe('AppConfigService', () => {
       .values({
         name: 'Test Wh',
         code: 'TWH',
+        source: 'app',
+        createdBy: 'system',
       })
       .returning();
     testLocationId = loc.locationId;
@@ -46,6 +44,7 @@ describe('AppConfigService', () => {
         baseCurrency: 'AUD',
         revenueRoutingPrecedence: 'product_first',
         expenseRoutingPrecedence: 'product_first',
+        bankMatchDateToleranceDays: 0,
       });
 
       await pg.db.insert(appSettings).values({
@@ -53,6 +52,8 @@ describe('AppConfigService', () => {
         inventoryValuationMethod: 'weighted_average',
         inventoryAccountingMode: 'periodic',
         setupCompletedAt: new Date(),
+        creditLimitBehavior: 'block',
+        apiRateLimit: '100',
       });
 
       await service.onModuleInit();
@@ -101,6 +102,7 @@ describe('AppConfigService', () => {
         baseCurrency: 'NZD',
         revenueRoutingPrecedence: 'customer_first',
         expenseRoutingPrecedence: 'supplier_first',
+        bankMatchDateToleranceDays: 0,
       });
 
       await pg.db.insert(appSettings).values({
@@ -108,6 +110,8 @@ describe('AppConfigService', () => {
         inventoryValuationMethod: 'fifo',
         inventoryAccountingMode: 'perpetual',
         setupCompletedAt: new Date(),
+        creditLimitBehavior: 'block',
+        apiRateLimit: '100',
       });
 
       await service.reload();

@@ -3,8 +3,8 @@ import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, actors } from '../drizzle/herobm-core-schema';
-import { SUPPLIER_STATE } from '@herobm/shared';
+import { suppliers, actors } from '../drizzle/schema';
+import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersService', () => {
@@ -26,8 +26,18 @@ describe('SuppliersService', () => {
       const acts = await pg.db
         .insert(actors)
         .values([
-          { name: 'Vendor 1', headquartersAddressLine1: 'AU' },
-          { name: 'Vendor 2', headquartersAddressLine1: 'AU' },
+          {
+            name: 'Vendor 1',
+            headquartersAddressLine1: 'AU',
+            stateCode: ACTOR_STATE.ACTIVE,
+            isTaxRegistered: false,
+          },
+          {
+            name: 'Vendor 2',
+            headquartersAddressLine1: 'AU',
+            stateCode: ACTOR_STATE.ACTIVE,
+            isTaxRegistered: false,
+          },
         ])
         .returning();
 
@@ -36,11 +46,19 @@ describe('SuppliersService', () => {
           actorId: acts[0].actorId,
           vendorNumber: 'V1',
           currencyCode: 'EUR',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         },
         {
           actorId: acts[1].actorId,
           vendorNumber: 'V2',
           currencyCode: 'USD',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         },
       ]);
 
@@ -53,8 +71,18 @@ describe('SuppliersService', () => {
       const acts = await pg.db
         .insert(actors)
         .values([
-          { name: 'Alpha', headquartersAddressLine1: 'AU' },
-          { name: 'Beta', headquartersAddressLine1: 'AU' },
+          {
+            name: 'Alpha',
+            headquartersAddressLine1: 'AU',
+            stateCode: ACTOR_STATE.ACTIVE,
+            isTaxRegistered: false,
+          },
+          {
+            name: 'Beta',
+            headquartersAddressLine1: 'AU',
+            stateCode: ACTOR_STATE.ACTIVE,
+            isTaxRegistered: false,
+          },
         ])
         .returning();
 
@@ -63,11 +91,19 @@ describe('SuppliersService', () => {
           actorId: acts[0].actorId,
           vendorNumber: 'V1',
           currencyCode: 'EUR',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         },
         {
           actorId: acts[1].actorId,
           vendorNumber: 'V2',
           currencyCode: 'USD',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         },
       ]);
 
@@ -84,6 +120,8 @@ describe('SuppliersService', () => {
         .values({
           name: 'Existing Vendor',
           headquartersAddressLine1: 'AU',
+          stateCode: ACTOR_STATE.ACTIVE,
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -93,6 +131,10 @@ describe('SuppliersService', () => {
           actorId: act.actorId,
           vendorNumber: 'V-EX',
           currencyCode: 'EUR',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         })
         .returning();
 
@@ -114,6 +156,8 @@ describe('SuppliersService', () => {
         .values({
           name: 'Risk Vendor',
           headquartersAddressLine1: 'AU',
+          stateCode: ACTOR_STATE.ACTIVE,
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -124,6 +168,9 @@ describe('SuppliersService', () => {
           vendorNumber: 'V-RISK',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.INACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
         })
         .returning();
 

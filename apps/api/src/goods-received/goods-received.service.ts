@@ -24,7 +24,7 @@ import {
   glJournalEntries,
   glJournalLines,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 
 import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
@@ -193,8 +193,20 @@ export class GoodsReceivedService {
                 eq(purchaseOrders.vendorId, createDto.vendorId),
                 eq(purchaseOrderLineItems.productId, line.productId),
                 eq(purchaseOrders.deliveryLocationId, createDto.locationId),
+                createDto.purchaseOrderId
+                  ? eq(
+                      purchaseOrders.purchaseOrderId,
+                      createDto.purchaseOrderId,
+                    )
+                  : undefined,
+                line.purchaseOrderLineId
+                  ? eq(
+                      purchaseOrderLineItems.purchaseOrderLineId,
+                      line.purchaseOrderLineId,
+                    )
+                  : undefined,
                 sql`${purchaseOrders.stateCode} IN (${PURCHASE_ORDER_STATE.ORDERED}, ${PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED})`,
-                sql`CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
+                sql`CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
                 sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`,
               ),
             );
@@ -237,6 +249,14 @@ export class GoodsReceivedService {
                 ? openPoLines[0].unitOfMeasure || product.baseUom
                 : product.baseUom,
           });
+          console.log(
+            '[DEBUG] GoodsReceived - Line:',
+            line.productId,
+            'MatchStatus:',
+            matchStatus,
+            'openPoLines:',
+            openPoLines.length,
+          );
         }
 
         await tx
@@ -418,7 +438,7 @@ export class GoodsReceivedService {
           await tx
             .update(purchaseOrderLineItems)
             .set({
-              quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${ml.quantityReceived} AS NUMERIC)`,
+              quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${ml.quantityReceived} AS NUMERIC)`,
             })
             .where(
               eq(

@@ -17,7 +17,7 @@ import {
   salesInvoiceLines,
   salesOrderPicks,
   products,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 
 // ============================================================================
 // Shared query helpers for picking & shipment services

@@ -5,7 +5,17 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { PaginatedResponse } from './paginatedResponse';
-import type { ActorsControllerFindAll200AllOf } from './actorsControllerFindAll200AllOf';
+import type { ActorResponseDto } from './actorResponseDto';
 
-export type ActorsControllerFindAll200 = PaginatedResponse & ActorsControllerFindAll200AllOf;
+export type ActorsControllerFindAll200 = {
+  data: ActorResponseDto[];
+  limit: number;
+  /** @nullable */
+  page?: number | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  nextCursor?: string | null;
+  /** @nullable */
+  prevCursor?: string | null;
+};

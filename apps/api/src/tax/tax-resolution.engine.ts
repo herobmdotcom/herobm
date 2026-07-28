@@ -7,7 +7,7 @@ import {
   products,
   productGroups,
   appSettings,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, and } from 'drizzle-orm';
 
 export interface TaxResolutionContext {

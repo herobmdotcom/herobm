@@ -1,9 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  emailOutbox,
-  outbox,
-  systemEvents,
-} from '../drizzle/herobm-core-schema';
+import { emailOutbox, outbox, systemEvents } from '../drizzle/schema';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { EntityType, EventType, EntityTypeValue } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';

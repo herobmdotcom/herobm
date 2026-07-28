@@ -39,7 +39,7 @@ const PROHIBITED_PATTERNS: Array<{ regex: RegExp; description: string }> = [
     description: 'Hardcoded stateCode string in URL or query parameter',
   },
   {
-    // stateCode: 'draft', stateCode: "confirmed"
+    // stateCode: 'draft' as any, stateCode: "confirmed"
     regex: /stateCode:\s*['"][a-z_]+['"]/i,
     description: 'Hardcoded stateCode string literal in object',
   },

@@ -19,11 +19,12 @@ import {
   transferOrderLines,
   transferOrderPicks,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   SALES_ORDER_STATE,
   TRANSFER_ORDER_STATE,
   CUSTOMER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
 
 describe('PickingSlipService', () => {
@@ -74,11 +75,19 @@ describe('PickingSlipService', () => {
 
     // Seed Locations
     await pg.db.insert(locations).values([
-      { locationId: LOCATION_SRC_ID, code: 'SRC', name: 'Source Warehouse' },
+      {
+        locationId: LOCATION_SRC_ID,
+        code: 'SRC',
+        name: 'Source Warehouse',
+        source: 'app',
+        createdBy: 'system',
+      },
       {
         locationId: LOCATION_DEST_ID,
         code: 'DEST',
         name: 'Destination Warehouse',
+        source: 'app',
+        createdBy: 'system',
       },
     ]);
     await pg.db.insert(zones).values({
@@ -86,12 +95,18 @@ describe('PickingSlipService', () => {
       locationId: LOCATION_SRC_ID,
       code: 'Z1',
       name: 'Zone 1',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(bins).values({
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'B1',
       binType: 'storage',
+      source: 'app',
+      createdBy: 'system',
+      isUnavailable: false,
+      isBonded: false,
     });
 
     // Seed Customer Actor
@@ -100,6 +115,7 @@ describe('PickingSlipService', () => {
       actorId: customerActorId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
 
     await pg.db.insert(coreAccounts).values({
@@ -109,6 +125,7 @@ describe('PickingSlipService', () => {
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
+      createdBy: 'system',
     });
 
     // Seed Products
@@ -119,6 +136,10 @@ describe('PickingSlipService', () => {
         name: 'Widget Alpha',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       },
       {
         productId: PROD_B_ID,
@@ -126,6 +147,10 @@ describe('PickingSlipService', () => {
         name: 'Gadget Beta',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       },
     ]);
 
@@ -138,6 +163,11 @@ describe('PickingSlipService', () => {
       stateCode: SALES_ORDER_STATE.CONFIRMED,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_SRC_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(salesOrderLineItems).values({
       salesOrderLineId: '00000000-0000-4000-8000-000000000011',
@@ -148,6 +178,11 @@ describe('PickingSlipService', () => {
       pricePerUnit: '50.00',
       taxCategoryId: TAX_CAT_ID,
       fulfillmentLocationId: LOCATION_SRC_ID,
+      discountPercentage: '0',
+      amount: '0',
+      tax: '0',
+      quantityPicked: '0',
+      isPostConfirmation: false,
     });
 
     // Seed Transfer Order
@@ -157,12 +192,15 @@ describe('PickingSlipService', () => {
       sourceLocationId: LOCATION_SRC_ID,
       destinationLocationId: LOCATION_DEST_ID,
       stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
+      createdBy: 'system',
     });
     await pg.db.insert(transferOrderLines).values({
       transferOrderLineId: '00000000-0000-4000-8000-000000000012',
       transferOrderId: TRANSFER_ID,
       productId: PROD_B_ID,
       quantity: '5',
+      quantityReceived: '0',
+      quantityShipped: '0',
     });
 
     // Seed Inventory

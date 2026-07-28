@@ -7,7 +7,7 @@ import {
 import { eq, and, lte, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { exchangeRates } from '../drizzle/herobm-core-schema';
+import { exchangeRates } from '../drizzle/schema';
 import { CreateExchangeRateDto, UpdateExchangeRateDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

@@ -10,7 +10,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users, userEvents } from '../drizzle/herobm-core-schema';
+import { users, userEvents } from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';
@@ -88,6 +88,7 @@ export class UsersService {
             role: dto.role,
             displayName: dto.displayName?.trim() || null,
             email: dto.email?.trim().toLowerCase() || null,
+            isActive: true,
           })
           .returning(PUBLIC_COLUMNS);
 

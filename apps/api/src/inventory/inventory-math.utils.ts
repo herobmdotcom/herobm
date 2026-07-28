@@ -1,6 +1,6 @@
 import { SQL, sql, inArray, eq, and } from 'drizzle-orm';
 import { BIN_TYPE } from '@herobm/shared';
-import { bins } from '../drizzle/herobm-core-schema';
+import { bins } from '../drizzle/schema';
 
 export const PICKABLE_BIN_TYPES = [
   BIN_TYPE.STORAGE,

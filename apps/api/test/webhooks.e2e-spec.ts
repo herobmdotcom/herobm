@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DrizzleDB, DRIZZLE } from '../src/drizzle/drizzle.module';
-import { apiKeys, webhooks } from '../src/drizzle/herobm-core-schema';
+import { apiKeys, webhooks } from '../src/drizzle/schema';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 
@@ -66,12 +66,14 @@ describe('Webhooks & API Keys (e2e)', () => {
     it('should allow more than 60 requests when using an API Key', async () => {
       // The default limit is 60, but API key limit is 1000.
       // We will make 65 requests. If they all pass, the distinct throttler works.
-      const requests = Array.from({ length: 65 }).map(() =>
-        request(server).get('/api/webhooks').set('x-api-key', rawKey),
-      );
-
-      const responses = await Promise.all(requests);
-      const allPassed = responses.every((res) => res.status === 200);
+      const statuses: number[] = [];
+      for (let i = 0; i < 65; i++) {
+        const res = await request(server)
+          .get('/api/webhooks')
+          .set('x-api-key', rawKey);
+        statuses.push(res.status);
+      }
+      const allPassed = statuses.every((status) => status === 200);
       expect(allPassed).toBe(true);
     });
   });

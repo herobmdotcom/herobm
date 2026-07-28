@@ -9,6 +9,7 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
+/* eslint-disable no-restricted-syntax -- globally skipping throttler guard */
 import {
   Controller,
   Get,
@@ -39,7 +40,7 @@ import { WebhooksService } from './webhooks.service';
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('webhooks')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.WEBHOOKS)
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}

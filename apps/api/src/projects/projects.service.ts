@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { desc, eq, ne, sql, and, or, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -10,7 +10,7 @@ import {
   masterDataEvents,
   contacts,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 
 import {
   CreateProjectDto,
@@ -23,8 +23,15 @@ import {
   CreateProjectActorDto,
   UpdateProjectActorDto,
 } from './dto';
+import {
+  PaginationQuery,
+  withCursorPagination,
+  PaginatedResponse,
+  parsePagination,
+} from '../common/pagination';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { PROJECT_STATE } from '@herobm/shared';
 
 @Injectable()
 export class ProjectsService {
@@ -36,7 +43,10 @@ export class ProjectsService {
     dto: CreateProjectDto,
     userId: string,
   ): Promise<ProjectResponseDto> {
-    const [newProject] = await this.db.insert(projects).values(dto).returning();
+    const [newProject] = await this.db
+      .insert(projects)
+      .values({ status: dto.status || 'Draft', ...dto })
+      .returning();
 
     await emitEvent(this.db, {
       entityType: EntityType.PROJECT,
@@ -78,6 +88,66 @@ export class ProjectsService {
         action: 'project_updated',
         projectId: updatedProject.projectId,
         projectName: updatedProject.name,
+      },
+      actor: userId,
+    });
+
+    return updatedProject as unknown as ProjectResponseDto;
+  }
+
+  async archiveProject(
+    id: string,
+    userId: string,
+  ): Promise<ProjectResponseDto> {
+    const [updatedProject] = await this.db
+      .update(projects)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: PROJECT_STATE.ARCHIVED, modifiedOn: new Date() })
+      .where(eq(projects.projectId, id))
+      .returning();
+
+    if (!updatedProject) {
+      throw new NotFoundException(`Project with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.PROJECT,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Project',
+      payload: {
+        action: 'project_archived',
+        projectId: id,
+      },
+      actor: userId,
+    });
+
+    return updatedProject as unknown as ProjectResponseDto;
+  }
+
+  async unarchiveProject(
+    id: string,
+    userId: string,
+  ): Promise<ProjectResponseDto> {
+    const [updatedProject] = await this.db
+      .update(projects)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: PROJECT_STATE.ACTIVE, modifiedOn: new Date() })
+      .where(eq(projects.projectId, id))
+      .returning();
+
+    if (!updatedProject) {
+      throw new NotFoundException(`Project with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.PROJECT,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Project',
+      payload: {
+        action: 'project_unarchived',
+        projectId: id,
       },
       actor: userId,
     });
@@ -473,15 +543,65 @@ export class ProjectsService {
     return { success: true };
   }
 
-  async getProjects(): Promise<ProjectResponseDto[]> {
-    const allProjects = await this.db.query.projects.findMany({
-      with: {
-        projectActors: true,
-        projectContacts: true,
+  async getProjects(
+    query?: PaginationQuery,
+  ): Promise<PaginatedResponse<ProjectResponseDto>> {
+    const includeArchived = query?.includeArchived ?? false;
+    const { limit = 50, direction = 'next', cursor } = parsePagination(query);
+    const whereClause = includeArchived
+      ? undefined
+      : ne(projects.stateCode, PROJECT_STATE.ARCHIVED);
+
+    let qb = this.db.select().from(projects).$dynamic();
+    if (whereClause) {
+      qb = qb.where(whereClause);
+    }
+
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor as {
+        projectId: string;
+        createdOn: Date;
+      } | null,
+      direction: direction,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic query builder type bypass
+      applyWhere: (q: any, c: any, dir: any) => {
+        const op = dir === 'next' ? sql`<` : sql`>`;
+        const idOp = dir === 'next' ? sql`>` : sql`<`;
+
+        const cursorCond = or(
+          sql`${projects.createdOn} ${op} ${new Date(c.createdOn)}`,
+          and(
+            sql`${projects.createdOn} = ${new Date(c.createdOn)}`,
+            sql`${projects.projectId} ${idOp} ${c.projectId}`,
+          ),
+        );
+
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
-      orderBy: (projects, { desc }) => [desc(projects.createdOn)],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic query builder type bypass
+      applyOrderBy: (q: any, dir: any) => {
+        const sortOrder = dir === 'next' ? desc : asc;
+        const idSortOrder = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          sortOrder(projects.createdOn),
+          idSortOrder(projects.projectId),
+        );
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic entity row type bypass
+      encodeRow: (item: any) => ({
+        projectId: item.projectId,
+        createdOn: item.createdOn,
+      }),
     });
-    return allProjects as unknown as ProjectResponseDto[];
+
+    return {
+      data: data as unknown as ProjectResponseDto[],
+      limit,
+      nextCursor,
+      prevCursor,
+    };
   }
 
   async deleteProject(

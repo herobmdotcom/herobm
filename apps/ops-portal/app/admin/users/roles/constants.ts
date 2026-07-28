@@ -2,7 +2,7 @@ import { SystemResource } from '@herobm/shared';
 
 export const RESOURCES = Object.values(SystemResource);
 
-export const ACTIONS = ['read', 'write', 'archive', 'handle', 'invoice'];
+export const ACTIONS = ['read', 'write', 'archive', 'handle', 'invoice', 'delete'];
 
 export const VALID_ACTIONS: Record<string, string[]> = {
   'customers': ['read', 'write', 'archive'],
@@ -31,5 +31,5 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'gl': ['read', 'write'],
   'data-export': ['read'],
   'credit-control': ['read', 'write'],
-  'crm': ['read', 'write'],
+  'crm': ['read', 'write', 'archive', 'delete'],
 };

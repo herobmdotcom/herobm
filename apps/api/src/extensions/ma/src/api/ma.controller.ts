@@ -35,7 +35,7 @@ import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
-} from '../../../../auth/casbin.guard';
+} from '@api/auth/casbin.guard';
 
 @ApiTags('Projects')
 @Controller('projects')
@@ -46,7 +46,7 @@ export class MaController {
 
   @Get(':id/feedback')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Project Feedback', operationId: 'maController_getFeedback' })
+  @ApiOperation({ summary: 'Get Project Feedback', description: 'Get Project Feedback', operationId: 'maController_getFeedback' })
   @ApiParam({ name: 'id', required: true })
   @ApiOkResponse({ type: [ProjectFeedbackResponseDto] })
   getFeedback(@Param('id') id: string) {
@@ -55,7 +55,7 @@ export class MaController {
 
   @Post(':id/feedback')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Project Feedback', operationId: 'maController_addFeedback' })
+  @ApiOperation({ summary: 'Add Project Feedback', description: 'Add Project Feedback', operationId: 'maController_addFeedback' })
   @ApiParam({ name: 'id', required: true })
   @ApiCreatedResponse({ type: ProjectFeedbackResponseDto })
   addFeedback(@Param('id') id: string, @Body() dto: CreateProjectFeedbackDto) {
@@ -64,7 +64,7 @@ export class MaController {
 
   @Patch(':id/feedback/:feedbackId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Project Feedback', operationId: 'maController_updateFeedback' })
+  @ApiOperation({ summary: 'Update Project Feedback', description: 'Update Project Feedback', operationId: 'maController_updateFeedback' })
   @ApiParam({ name: 'id', required: true })
   @ApiParam({ name: 'feedbackId', required: true })
   @ApiOkResponse({ type: ProjectFeedbackResponseDto })

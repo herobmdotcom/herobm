@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProjectDto {
   @IsString()
@@ -89,6 +90,9 @@ export class ProjectResponseDto {
   projectId!: string;
 
   @IsString()
+  stateCode!: string;
+
+  @IsString()
   name!: string;
 
   @IsString()
@@ -125,3 +129,4 @@ export class UpdateProjectContactDto {
   @IsString({ each: true })
   roles?: string[];
 }
+export class EmptyBodyDto {}

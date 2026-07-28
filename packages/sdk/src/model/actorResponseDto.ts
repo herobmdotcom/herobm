@@ -11,6 +11,7 @@ import type { ActorResponseDtoEventsItem } from './actorResponseDtoEventsItem';
 
 export interface ActorResponseDto {
   actorId: string;
+  stateCode: string;
   name: string;
   legalStatus?: string;
   headquartersAddressLine1?: string;
@@ -32,4 +33,16 @@ export interface ActorResponseDto {
   notes?: ActorNoteResponseDto[];
   actorContactLinks?: ActorResponseDtoActorContactLinksItem[];
   events?: ActorResponseDtoEventsItem[];
+  /** @nullable */
+  referralMode?: string | null;
+  /** @nullable */
+  referredByActorId?: string | null;
+  /** @nullable */
+  referredByContactId?: string | null;
+  /** @nullable */
+  referredByActorName?: string | null;
+  /** @nullable */
+  referredByContactName?: string | null;
+  /** @nullable */
+  referralNote?: string | null;
 }

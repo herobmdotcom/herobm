@@ -3,11 +3,7 @@ import { ProductsWriteService } from './products-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  products,
-  masterDataEvents,
-  uomDictionary,
-} from '../drizzle/herobm-core-schema';
+import { products, masterDataEvents, uomDictionary } from '../drizzle/schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { EventType, EntityType } from '../common/event-types';
@@ -76,6 +72,9 @@ describe('ProductsWriteService', () => {
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
           productType: 'inventory',
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         })
         .returning();
       productId = p.productId;
@@ -127,6 +126,9 @@ describe('ProductsWriteService', () => {
           stateCode: PRODUCT_STATE.ACTIVE,
           productType: 'inventory',
           baseUom: 'EA',
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         })
         .returning();
       productId = p.productId;
@@ -161,6 +163,9 @@ describe('ProductsWriteService', () => {
           stateCode: PRODUCT_STATE.ARCHIVED,
           productType: 'inventory',
           baseUom: 'EA',
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         })
         .returning();
       productId = p.productId;

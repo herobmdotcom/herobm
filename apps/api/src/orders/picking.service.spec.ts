@@ -20,7 +20,7 @@ import {
   salesEvents,
   outbox,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, and } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
@@ -77,12 +77,16 @@ describe('PickingService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
       code: 'Z1',
       name: 'Zone 1',
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(bins).values([
       {
@@ -90,12 +94,20 @@ describe('PickingService', () => {
         zoneId: ZONE_ID,
         binNumber: 'STORAGE-1',
         binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       },
       {
         binId: SHIPPING_BIN_ID,
         zoneId: ZONE_ID,
         binNumber: 'SHIPPING',
         binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       },
     ]);
     const custActorId = '00000000-0000-4000-8000-000000000002';
@@ -103,6 +115,7 @@ describe('PickingService', () => {
       actorId: custActorId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     });
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
@@ -111,6 +124,7 @@ describe('PickingService', () => {
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,
@@ -118,6 +132,10 @@ describe('PickingService', () => {
       name: 'Widget A',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
 
     // Mocks
@@ -148,6 +166,11 @@ describe('PickingService', () => {
       stateCode: state,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(salesOrderLineItems).values({
       salesOrderLineId: LINE_ID,
@@ -159,6 +182,10 @@ describe('PickingService', () => {
       pricePerUnit: '50.00',
       taxCategoryId: TAX_CAT_ID,
       fulfillmentLocationId: LOCATION_ID,
+      discountPercentage: '0',
+      amount: '0',
+      tax: '0',
+      isPostConfirmation: false,
     });
   }
 
@@ -249,6 +276,7 @@ describe('PickingService', () => {
           binId: STORAGE_BIN_ID,
           quantity: '5',
           stateCode: SALES_ORDER_PICK_STATE.SHIPPED, // Invalid state for cancellation
+          createdBy: 'system',
         })
         .returning();
 
@@ -268,6 +296,7 @@ describe('PickingService', () => {
         binId: STORAGE_BIN_ID,
         quantity: '4',
         stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
       });
 
       const summary = await service.getPickingSummary(ORDER_ID);
@@ -288,6 +317,7 @@ describe('PickingService', () => {
         binId: STORAGE_BIN_ID,
         quantity: '10',
         stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
       });
 
       await expect(
@@ -304,6 +334,7 @@ describe('PickingService', () => {
         binId: STORAGE_BIN_ID,
         quantity: '7',
         stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
       });
 
       await expect(service.assertFullyPicked(ORDER_ID)).rejects.toThrow(

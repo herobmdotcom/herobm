@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '../../lib/api';
+import { Button } from './Button';
 import { useTranslations } from 'next-intl';
 import { useRef, useLayoutEffect, useState } from 'react';
 
@@ -154,7 +155,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
         {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
         <Link href="/" className="text-xs hover:opacity-80 transition-opacity" style={{ color: 'var(--text-muted)' }}>{footer || 'herobm'}</Link>
-        <button
+        <Button
           onClick={() => logout()}
           className="text-xs font-medium px-2 py-1 rounded transition-colors"
           style={{ 
@@ -167,7 +168,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
           title={t('signOut')}
         >
           {t('signOut')}
-        </button>
+        </Button>
       </div>
     </aside>
   );

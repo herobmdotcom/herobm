@@ -16,9 +16,15 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ContactsService } from './contacts.service';
-import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
+import {
+  CreateContactDto,
+  UpdateContactDto,
+  ContactResponseDto,
+  EmptyBodyDto,
+} from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -88,7 +94,7 @@ export class ContactsController {
   }
 
   @Delete(':id')
-  @CasbinAction('write')
+  @CasbinAction('delete')
   @ApiOperation({
     summary: 'Delete Contact',
     description: 'Hard delete an existing contact.',
@@ -96,5 +102,37 @@ export class ContactsController {
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.contactsService.deleteContact(id, user.userId);
+  }
+
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Archive Contact',
+    description: 'Archives a contact',
+  })
+  @ApiOkResponse({ type: ContactResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  archive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.contactsService.archiveContact(id, user.userId);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Unarchive Contact',
+    description: 'Unarchives a contact',
+  })
+  @ApiOkResponse({ type: ContactResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  unarchive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.contactsService.unarchiveContact(id, user.userId);
   }
 }

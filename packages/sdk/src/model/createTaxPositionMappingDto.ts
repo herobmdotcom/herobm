@@ -7,6 +7,8 @@
  */
 
 export interface CreateTaxPositionMappingDto {
+  /** @maxLength 255 */
   sourceTaxCategoryId: string;
+  /** @maxLength 255 */
   destinationTaxCategoryId: string;
 }

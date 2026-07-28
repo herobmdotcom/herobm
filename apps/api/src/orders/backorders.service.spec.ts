@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BackordersService } from './backorders.service';
 import type { InventoryGap } from '@herobm/shared';
+import { SALES_ORDER_STATE, PRODUCT_STATE } from '@herobm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
@@ -13,7 +14,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 describe('BackordersService', () => {
@@ -52,6 +53,8 @@ describe('BackordersService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     inventoryService = {
@@ -79,6 +82,12 @@ describe('BackordersService', () => {
       orderNumber: 'ORD-001',
       fulfillmentLocationId: LOCATION_ID,
       currencyCode: 'EUR',
+      stateCode: SALES_ORDER_STATE.DRAFT,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
   }
 
@@ -94,6 +103,11 @@ describe('BackordersService', () => {
         pricePerUnit: '0',
         taxCategoryId: TAX_CAT_ID,
         fulfillmentLocationId: LOCATION_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       });
 
       const gaps = await service.evaluateGaps(ORDER_ID);
@@ -108,6 +122,10 @@ describe('BackordersService', () => {
         name: 'P1',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
       await seedBasicOrder();
       await pg.db.insert(salesOrderLineItems).values({
@@ -119,6 +137,11 @@ describe('BackordersService', () => {
         pricePerUnit: '50',
         fulfillmentLocationId: LOCATION_ID,
         taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       });
 
       inventoryService.findByProductIds.mockResolvedValue({
@@ -143,6 +166,10 @@ describe('BackordersService', () => {
         name: 'P1',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
       await seedBasicOrder();
       await pg.db.insert(salesOrderLineItems).values({
@@ -154,6 +181,11 @@ describe('BackordersService', () => {
         pricePerUnit: '50',
         fulfillmentLocationId: LOCATION_ID,
         taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       });
 
       const gaps: InventoryGap[] = [

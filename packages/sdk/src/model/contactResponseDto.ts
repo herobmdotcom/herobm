@@ -8,6 +8,7 @@
 
 export interface ContactResponseDto {
   contactId: string;
+  stateCode: string;
   firstName: string;
   lastName: string;
   /** @nullable */

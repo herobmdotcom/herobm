@@ -11,7 +11,7 @@ import {
   purchaseInvoiceReceipts,
   purchaseInvoiceLines,
   glSettings,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 
 describe('FX Lifecycle (e2e)', () => {

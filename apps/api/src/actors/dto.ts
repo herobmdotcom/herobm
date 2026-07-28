@@ -8,6 +8,7 @@ import {
   IsArray,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ApiProperty as SwaggerApiProperty } from '@nestjs/swagger';
 
 export class CreateActorDto {
   @IsString()
@@ -76,6 +77,22 @@ export class CreateActorDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  referralMode?: string;
+
+  @IsOptional()
+  @IsUUID()
+  referredByActorId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  referredByContactId?: string;
+
+  @IsOptional()
+  @IsString()
+  referralNote?: string;
 }
 
 export class UpdateActorDto {
@@ -145,6 +162,22 @@ export class UpdateActorDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  referralMode?: string;
+
+  @IsOptional()
+  @IsUUID()
+  referredByActorId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  referredByContactId?: string;
+
+  @IsOptional()
+  @IsString()
+  referralNote?: string;
 }
 
 export class CreateActorNoteDto {
@@ -174,6 +207,9 @@ export class ActorNoteResponseDto {
 export class ActorResponseDto {
   @IsUUID()
   actorId!: string;
+
+  @IsString()
+  stateCode!: string;
 
   @IsString()
   name!: string;
@@ -237,25 +273,48 @@ export class ActorResponseDto {
 
   @IsOptional()
   events?: unknown[];
+
+  @IsOptional()
+  @IsString()
+  referralMode?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  referredByActorId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  referredByContactId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  referredByActorName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  referredByContactName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  referralNote?: string | null;
 }
 
-import { ApiProperty } from '@nestjs/swagger';
-
 export class UpdateActorContactDto {
-  @ApiProperty({ required: true, type: [String] })
+  @SwaggerApiProperty({ required: true, type: [String] })
   @IsArray()
   @IsString({ each: true })
   primaryFor!: string[];
 }
 
 export class CreateActorContactDto {
-  @ApiProperty({ required: true, type: String })
+  @SwaggerApiProperty({ required: true, type: String })
   @IsUUID()
   contactId!: string;
 
-  @ApiProperty({ required: false, type: [String] })
+  @SwaggerApiProperty({ required: false, type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   primaryFor?: string[];
 }
+export class EmptyBodyDto {}

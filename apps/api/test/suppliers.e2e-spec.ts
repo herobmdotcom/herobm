@@ -3,7 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { suppliers, masterDataEvents } from '../src/drizzle/herobm-core-schema';
+import { suppliers, masterDataEvents } from '../src/drizzle/schema';
 import { like, sql } from 'drizzle-orm';
 
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';

@@ -19,7 +19,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { emailOutbox } from '../drizzle/herobm-core-schema';
+import { emailOutbox } from '../drizzle/schema';
 import { eq, and, desc, or } from 'drizzle-orm';
 import { AuthGuard } from '@nestjs/passport';
 import {

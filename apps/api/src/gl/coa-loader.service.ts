@@ -6,7 +6,7 @@ import {
   glSettings,
   taxCategories,
   tradingTerms,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -283,6 +283,8 @@ export class CoaLoaderService {
             isGroup: row.isGroup,
             isSystem: row.isSystem,
             currencyCode: baseCurrency,
+            isBankAccount: false,
+            isActive: true,
           })
           .onConflictDoUpdate({
             target: [glAccounts.accountCode],
@@ -346,6 +348,9 @@ export class CoaLoaderService {
               ? codeToId.get(defaults.expense_account_code)
               : undefined,
             baseCurrency: settings.base_currency || 'AUD',
+            bankMatchDateToleranceDays: 0,
+            revenueRoutingPrecedence: 'product_first',
+            expenseRoutingPrecedence: 'product_first',
           })
           .onConflictDoUpdate({
             target: glSettings.settingsId,
@@ -386,6 +391,8 @@ export class CoaLoaderService {
                 description: term.description,
                 days: term.days,
                 type: term.type,
+                source: 'app',
+                isActive: true,
               })
               .onConflictDoUpdate({
                 target: [tradingTerms.code],

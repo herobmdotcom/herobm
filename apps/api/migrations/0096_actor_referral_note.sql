@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."actors" ADD COLUMN "referral_note" text;

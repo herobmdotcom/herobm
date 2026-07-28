@@ -15,7 +15,7 @@ import {
   glAccounts,
   pipelineJobs,
   tradingTerms,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   ExecuteSetupDto,
   TestAbmConnectionDto,
@@ -31,7 +31,7 @@ import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import * as bcrypt from 'bcrypt';
 import { parse } from 'csv-parse';
-import * as schema from '../drizzle/herobm-core-schema';
+import * as schema from '../drizzle/schema';
 import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 

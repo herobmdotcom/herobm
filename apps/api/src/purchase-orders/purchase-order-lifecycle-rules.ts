@@ -5,7 +5,7 @@ import {
   purchaseOrderLineItems,
   purchaseInvoices,
   purchaseInvoiceLines,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { PURCHASE_ORDER_STATE } from '@herobm/shared';

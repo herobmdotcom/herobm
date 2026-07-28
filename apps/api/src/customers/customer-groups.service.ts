@@ -7,11 +7,12 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerGroups, customers } from '../drizzle/herobm-core-schema';
+import { customerGroups, customers } from '../drizzle/schema';
 import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 import { EntityType, EventType } from '../common/event-types';
+import { CUSTOMER_STATE, CustomerState } from '@herobm/shared';
 
 @Injectable()
 export class CustomerGroupsService {
@@ -47,7 +48,11 @@ export class CustomerGroupsService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(customerGroups)
-        .values({ ...dto } as typeof customerGroups.$inferInsert)
+        .values({
+          isOnCreditHold: false,
+          ...dto,
+          stateCode: CUSTOMER_STATE.ACTIVE,
+        } as typeof customerGroups.$inferInsert)
         .returning();
 
       await emitEvent(tx, {

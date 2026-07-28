@@ -274,6 +274,8 @@ export class AppConfigResponseDto {
   projectStatuses?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   projectTypes?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  referralModes?: OrderedSettingDto[];
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
@@ -381,6 +383,13 @@ export class UpdateAppConfigDto {
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
   projectActorRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  referralModes?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()

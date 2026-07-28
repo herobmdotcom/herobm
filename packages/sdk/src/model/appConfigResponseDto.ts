@@ -33,4 +33,5 @@ export interface AppConfigResponseDto {
   projectActorRoles?: OrderedSettingDto[];
   projectStatuses?: OrderedSettingDto[];
   projectTypes?: OrderedSettingDto[];
+  referralModes?: OrderedSettingDto[];
 }

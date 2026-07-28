@@ -3,11 +3,8 @@ import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  products,
-  productUoms,
-  uomDictionary,
-} from '../drizzle/herobm-core-schema';
+import { products, productUoms, uomDictionary } from '../drizzle/schema';
+import { PRODUCT_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
 describe('UomService', () => {
@@ -65,6 +62,10 @@ describe('UomService', () => {
         name: 'Product 1',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       await pg.db.insert(productUoms).values([
@@ -94,6 +95,10 @@ describe('UomService', () => {
         name: 'Product 1',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       await expect(

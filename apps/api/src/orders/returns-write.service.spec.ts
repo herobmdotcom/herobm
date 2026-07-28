@@ -16,7 +16,7 @@ import {
   taxCategories,
   bins,
   zones,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -207,6 +207,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -402,6 +404,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -466,6 +470,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -478,6 +484,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'HANDLING',
           name: 'Handling',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing();
       await pg.db
@@ -487,6 +495,8 @@ describe('ReturnsWriteService', () => {
           zoneId: '00000000-0000-4000-8000-000000000001',
           binNumber: 'CUSTOMER_RETURNS',
           binType: 'staging',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing();
 
@@ -604,6 +614,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -616,6 +628,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'HANDLING',
           name: 'Handling',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing();
       await pg.db
@@ -625,6 +639,8 @@ describe('ReturnsWriteService', () => {
           binNumber: 'CUSTOMER_RETURNS',
           zoneId: '00000000-0000-4000-8000-000000000001',
           binType: 'staging',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing();
 
@@ -711,6 +727,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -802,6 +820,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -898,6 +918,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -968,6 +990,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -1018,6 +1042,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -1062,6 +1088,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();
@@ -1093,6 +1121,8 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
+          source: 'app',
+          createdBy: 'system',
         })
         .onConflictDoNothing()
         .returning();

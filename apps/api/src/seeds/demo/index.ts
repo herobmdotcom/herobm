@@ -24,15 +24,18 @@ import {
   taxCategories,
   glSettings,
   tradingTerms,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import {
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
   PUTAWAY_STATUS,
+  SUPPLIER_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
-import * as schema from '../../drizzle/herobm-core-schema';
+import * as schema from '../../drizzle/schema';
 import * as readline from 'readline';
 
 // Import standard setup functions
@@ -133,6 +136,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
       stateOrProvince: 'XX',
       postalCode: '00000',
       country: 'USA',
+      source: 'app',
+      createdBy: 'system',
     });
 
     await db.insert(zones).values({
@@ -140,6 +145,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
       locationId: loc.id,
       code: 'MAIN',
       name: 'Main Storage Zone',
+      source: 'app',
+      createdBy: 'system',
     });
 
     await db.insert(bins).values({
@@ -147,6 +154,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
       zoneId: loc.zoneId,
       code: 'A1-01',
       name: 'Default Bin',
+      source: 'app',
+      createdBy: 'system',
     });
   }
 
@@ -179,6 +188,10 @@ async function seedMasterData(db: any): Promise<MasterData> {
       currencyCode: 'USD', // testData
       taxCategoryId: taxCatId,
       tradingTermsId: termId,
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     });
   }
 
@@ -198,6 +211,9 @@ async function seedMasterData(db: any): Promise<MasterData> {
       taxCategoryId: taxCatId,
       tradingTermsId: termId,
       creditLimit: '50000.00',
+      stateCode: CUSTOMER_STATE.DRAFT,
+      source: 'app',
+      createdBy: 'system',
     });
   }
 
@@ -235,6 +251,10 @@ async function seedMasterData(db: any): Promise<MasterData> {
       baseUom: 'EA',
       isActive: true,
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.DRAFT,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
   }
 
@@ -278,6 +298,9 @@ async function generateTransactions(db: any, data: MasterData) {
       stateCode: PURCHASE_ORDER_STATE.RECEIVED,
       currencyCode: 'USD', // testData
       createdOn: poDate,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      createdBy: 'system',
     });
 
     const numLines = randomInt(1, 5);
@@ -295,6 +318,9 @@ async function generateTransactions(db: any, data: MasterData) {
         pricePerUnit: (prod.price * 0.6).toFixed(2), // cost is 60% of retail
         taxCategoryId,
         quantityReceived: qty.toString(),
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
       });
 
       // Insert Inventory Entry and Ledger
@@ -305,6 +331,8 @@ async function generateTransactions(db: any, data: MasterData) {
         entryDate: poDate,
         sourceType: 'PO_RECEIPT',
         sourceId: poId,
+        isReversed: false,
+        createdBy: 'system',
       });
 
       await db
@@ -366,6 +394,11 @@ async function generateTransactions(db: any, data: MasterData) {
         : SALES_ORDER_STATE.CONFIRMED,
       currencyCode: 'USD', // testData
       createdOn: soDate,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
 
     const numLines = randomInt(1, 4);
@@ -384,6 +417,10 @@ async function generateTransactions(db: any, data: MasterData) {
         taxCategoryId,
         fulfillmentLocationId: location.id,
         quantityPicked: isCompleted ? qty.toString() : '0',
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        isPostConfirmation: false,
       });
 
       if (isCompleted) {
@@ -396,6 +433,7 @@ async function generateTransactions(db: any, data: MasterData) {
           quantity: qty.toString(),
           stateCode: SALES_ORDER_PICK_STATE.PICKED,
           createdOn: soDate,
+          createdBy: 'system',
         });
 
         // Inventory deduction
@@ -406,6 +444,8 @@ async function generateTransactions(db: any, data: MasterData) {
           entryDate: soDate,
           sourceType: 'SO_SHIPMENT',
           sourceId: soId,
+          isReversed: false,
+          createdBy: 'system',
         });
 
         // For simplicity, skip proper ledger deduction and just decrease bin_contents directly if it exists
@@ -427,6 +467,7 @@ async function generateTransactions(db: any, data: MasterData) {
         stateCode: SHIPMENT_STATE.DISPATCHED,
         fulfillmentLocationId: location.id,
         createdOn: soDate,
+        createdBy: 'system',
       });
     }
   }

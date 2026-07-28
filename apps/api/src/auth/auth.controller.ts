@@ -5,6 +5,7 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
+/* eslint-disable no-restricted-syntax -- globally skipping throttler guard */
 import {
   Controller,
   Post,
@@ -37,7 +38,7 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   @ApiCreatedResponse({ type: LoginResponseDto })
   @SkipCasbin()
-  @UseGuards(ThrottlerGuard)
+  // No guard needed for login
   @Throttle({
     default: RATE_LIMITS.AUTH_LOGIN,
   })
@@ -53,7 +54,7 @@ export class AuthController {
   @Get('me')
   @ApiOkResponse({ type: MeResponseDto })
   @SkipCasbin()
-  @UseGuards(ThrottlerGuard, AuthGuard(['jwt', 'api-key']))
+  @UseGuards(AuthGuard(['jwt', 'api-key']))
   @Throttle({
     default: RATE_LIMITS.AUTH_ME,
   })

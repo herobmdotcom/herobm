@@ -3,6 +3,11 @@ import { DashboardService } from './dashboard.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
+import {
   customers,
   products,
   salesOrderLineItems,
@@ -14,7 +19,7 @@ import {
   uomDictionary,
   taxCategories,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { sql } from 'drizzle-orm';
 
 describe('DashboardService', () => {
@@ -46,6 +51,8 @@ describe('DashboardService', () => {
       .values({
         name: 'Test Warehouse',
         code: 'WH1',
+        source: 'app',
+        createdBy: 'system',
       })
       .returning();
     testLocationId = loc.locationId;
@@ -96,6 +103,7 @@ describe('DashboardService', () => {
         actorId,
         name: 'Test Customer',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       });
       const [acc] = await pg.db
         .insert(customers)
@@ -103,6 +111,9 @@ describe('DashboardService', () => {
           actorId,
           customerNumber: 'ACC1',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -111,6 +122,10 @@ describe('DashboardService', () => {
         productNumber: 'PROD1',
         productType: 'inventory',
         baseUom: 'EA',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       const [so] = await pg.db
@@ -121,6 +136,12 @@ describe('DashboardService', () => {
           customerId: acc.customerId,
           fulfillmentLocationId: testLocationId,
           currencyCode: 'USD',
+          stateCode: SALES_ORDER_STATE.DRAFT,
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -131,6 +152,11 @@ describe('DashboardService', () => {
         pricePerUnit: '100',
         fulfillmentLocationId: testLocationId,
         taxCategoryId: testTaxCategoryId,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       });
 
       const result = await service.getSummary();
@@ -154,6 +180,10 @@ describe('DashboardService', () => {
           productNumber: 'WA-01',
           productType: 'inventory',
           baseUom: 'EA',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         })
         .returning();
       const actorId2 = '00000000-0000-4000-8000-000000000006';
@@ -161,6 +191,7 @@ describe('DashboardService', () => {
         actorId: actorId2,
         name: 'Alpha Corp',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       });
       const [a] = await pg.db
         .insert(customers)
@@ -168,6 +199,9 @@ describe('DashboardService', () => {
           actorId: actorId2,
           customerNumber: 'AC-01',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -196,6 +230,7 @@ describe('DashboardService', () => {
         actorId: actorId3,
         name: 'Search Acc',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       });
       const [acc] = await pg.db
         .insert(customers)
@@ -203,6 +238,9 @@ describe('DashboardService', () => {
           actorId: actorId3,
           customerNumber: 'SA1',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -214,6 +252,12 @@ describe('DashboardService', () => {
           customerId: acc.customerId,
           fulfillmentLocationId: testLocationId,
           currencyCode: 'USD',
+          stateCode: SALES_ORDER_STATE.DRAFT,
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -233,12 +277,16 @@ describe('DashboardService', () => {
         actorId: actorId4,
         name: 'Timeline Customer',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       });
       await pg.db.insert(customers).values({
         customerId,
         actorId: actorId4,
         customerNumber: 'TACC',
         currencyCode: 'USD',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       await pg.db.insert(systemEvents).values({

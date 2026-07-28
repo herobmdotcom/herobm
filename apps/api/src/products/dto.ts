@@ -92,6 +92,23 @@ export class BaseProductDto {
   @IsString()
   @IsNotEmpty()
   baseUom!: string;
+  @IsOptional()
+  @IsNumberString()
+  weight?: string;
+  @IsOptional()
+  @IsString()
+  alternateInvoiceDescription?: string;
+  @IsOptional()
+  @IsNumber()
+  boxQuantity?: number;
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  defaultSalesUomId?: string;
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  defaultPurchaseUomId?: string;
 }
 
 export class CreateProductDto extends BaseProductDto {}

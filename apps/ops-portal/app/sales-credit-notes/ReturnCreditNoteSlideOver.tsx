@@ -10,6 +10,7 @@ import { getErrorMessage, computeReturnCreditSummary, computeLinePrice, RETURN_R
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
+import { Button } from '@/components/shared/Button';
 export default function ReturnCreditNoteSlideOver({
     isOpen,
     onClose,
@@ -216,10 +217,10 @@ export default function ReturnCreditNoteSlideOver({
             width="max-w-4xl"
             footer={
                 <div className="flex items-center justify-end gap-3 w-full">
-                    <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+                    <Button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
                         {tCommon('cancel')}
-                    </button>
-                    <button 
+                    </Button>
+                    <Button 
                         onClick={handleConfirm} 
                         className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
                         disabled={saving}
@@ -229,7 +230,7 @@ export default function ReturnCreditNoteSlideOver({
                         ) : (
                             t('issueCreditNote')
                         )}
-                    </button>
+                    </Button>
                 </div>
             }
         >

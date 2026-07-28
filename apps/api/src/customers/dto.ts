@@ -114,6 +114,13 @@ export class BaseCustomerDto {
   @IsOptional()
   @Type(() => Number)
   earlyPaymentDiscountDays?: number;
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  parentCustomerId?: string | null;
+  @IsOptional()
+  @IsString()
+  stateCode?: string;
 }
 
 export class CreateCustomerDto extends BaseCustomerDto {}

@@ -20,8 +20,8 @@ export function ProjectsTab({ entityId, entityType }: ProjectsTabProps) {
       setLoading(true);
       try {
         const res = await api.projectsControllerFindAll();
-        if (res?.data) {
-          const filtered = res.data.filter(p => {
+        if (res?.data?.data) {
+          const filtered = res.data.data.filter(p => {
             if (entityType === 'actor') {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Used for generic state
               return p.projectActors?.some((link: any) => link.actorId === entityId);

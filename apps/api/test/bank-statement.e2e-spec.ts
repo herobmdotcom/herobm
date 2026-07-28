@@ -10,7 +10,7 @@ import {
   glJournalEntries,
   glJournalLines,
   glReconciliations,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
 import * as crypto from 'crypto';
@@ -50,6 +50,8 @@ describe('BankStatementController (e2e)', () => {
         currencyCode: 'AUD',
         isBankAccount: true,
         isGroup: false,
+        isSystem: false,
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
@@ -132,6 +134,8 @@ describe('BankStatementController (e2e)', () => {
         entryDate: '2026-06-02',
         sourceType: 'manual',
         sourceId: '00000000-0000-4000-8000-000000000000',
+        isReversed: false,
+        createdBy: 'system',
       })
       .returning();
 
@@ -143,7 +147,12 @@ describe('BankStatementController (e2e)', () => {
           glAccountId: bankAccountId,
           debit: '100.00',
           credit: '0.00',
+          foreignDebit: '100.00',
+          foreignCredit: '0.00',
+          foreignCurrencyCode: 'AUD',
           memo: 'Dummy match line',
+          exchangeRate: '1',
+          isReconciled: false,
         },
       ])
       .returning();
@@ -155,6 +164,7 @@ describe('BankStatementController (e2e)', () => {
         statementDate: '2026-06-02',
         statementBalance: '1000.00',
         status: RECONCILIATION_STATE.DRAFT,
+        createdBy: 'system',
       })
       .returning();
 

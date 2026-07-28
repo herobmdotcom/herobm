@@ -12,9 +12,13 @@ import {
   products,
   uomDictionary,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+} from '@herobm/shared';
 
 describe('OrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -44,6 +48,8 @@ describe('OrdersService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     const [act] = await pg.db
@@ -51,6 +57,7 @@ describe('OrdersService', () => {
       .values({
         name: 'Acme Corp',
         headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
       })
       .returning();
 
@@ -59,6 +66,9 @@ describe('OrdersService', () => {
       customerId: ACCOUNT_ID,
       customerNumber: 'ACC001',
       currencyCode: 'EUR',
+      stateCode: CUSTOMER_STATE.DRAFT,
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(products).values({
@@ -67,6 +77,10 @@ describe('OrdersService', () => {
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
 
     await pg.db.insert(salesOrders).values({
@@ -81,6 +95,9 @@ describe('OrdersService', () => {
       createdOn: new Date('2026-03-12'),
       currencyCode: 'EUR',
       fulfillmentLocationId: LOCATION_ID,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
     });
 
     await pg.db.insert(salesOrderLineItems).values({
@@ -94,6 +111,9 @@ describe('OrdersService', () => {
       amount: '250.00',
       taxCategoryId: TAX_CAT_ID,
       fulfillmentLocationId: LOCATION_ID,
+      discountPercentage: '0',
+      quantityPicked: '0',
+      isPostConfirmation: false,
     });
   });
 

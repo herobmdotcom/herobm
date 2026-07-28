@@ -5,7 +5,17 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { PaginatedResponse } from './paginatedResponse';
-import type { InventoryControllerFindBins200AllOf } from './inventoryControllerFindBins200AllOf';
+import type { InventoryBinResponseDto } from './inventoryBinResponseDto';
 
-export type InventoryControllerFindBins200 = PaginatedResponse & InventoryControllerFindBins200AllOf;
+export type InventoryControllerFindBins200 = {
+  data: InventoryBinResponseDto[];
+  limit: number;
+  /** @nullable */
+  page?: number | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  nextCursor?: string | null;
+  /** @nullable */
+  prevCursor?: string | null;
+};

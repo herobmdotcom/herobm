@@ -3,7 +3,7 @@ import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { apiKeys } from '../drizzle/herobm-core-schema';
+import { apiKeys } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 

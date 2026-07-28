@@ -2,10 +2,7 @@ import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  customerDeliveryAddresses,
-  customers,
-} from '../drizzle/herobm-core-schema';
+import { customerDeliveryAddresses, customers } from '../drizzle/schema';
 import {
   CreateDeliveryAddressDto,
   UpdateDeliveryAddressDto,
@@ -48,6 +45,7 @@ export class DeliveryAddressesService {
         postalCode: dto.postalCode,
         country: dto.country,
         isPrimary: dto.isPrimary ?? false,
+        source: 'app',
       })
       .returning();
 

@@ -47,6 +47,8 @@ export {
   SUPPLIER_STATE,
   PRODUCT_STATE,
   PROJECT_STATE,
+  ACTOR_STATE,
+  CONTACT_STATE,
 
   PAYMENT_TYPE,
   // Lifecycle ordinals (for UI forward/backward styling)
@@ -96,6 +98,9 @@ export type {
   CustomerState,
   SupplierState,
   ProductState,
+  ActorState,
+  ContactState,
+  ProjectState,
   ReconciliationState,
 } from './state-machines';
 
@@ -163,5 +168,6 @@ export * from './encryption';
 export * from './errors';
 export * from './invoice-discounts';
 
-export { SystemResource } from './permissions';
+export { SystemResource, hasPermission, hasAnyPermission } from './permissions';
+export type { Permission } from './permissions';
 export * from './data-sources';

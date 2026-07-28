@@ -11,7 +11,7 @@ import type {
 } from '@nestjs/throttler';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { appSettings } from '../drizzle/herobm-core-schema';
+import { appSettings } from '../drizzle/schema';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -51,6 +51,9 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
       if (settings.length > 0 && settings[0].limit) {
         requestProps.limit = Number(settings[0].limit);
         throttler.limit = Number(settings[0].limit);
+        console.log(
+          `[ThrottlerGuard] Override limit to ${throttler.limit} for IP ${req.ip} URL ${req.url}`,
+        );
       }
     }
 

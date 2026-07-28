@@ -24,7 +24,7 @@ import {
   supplierExpiries,
   appSettings,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { getErrorMessage } from '@herobm/shared';
 import { InventoryService } from '../inventory/inventory.service';
@@ -44,6 +44,8 @@ import {
   getAllowedTransitions,
   computeLinePriceForStorage,
   PURCHASE_INVOICE_STATE,
+  ACTOR_STATE,
+  PRODUCT_STATE,
   BACKORDER_TRANSITIONS,
   BACKORDER_STATE,
   OPEN_PURCHASE_ORDER_STATES,
@@ -183,6 +185,23 @@ export class PurchaseOrdersService {
         throw new BadRequestException('Invalid delivery location ID.');
       }
 
+      console.log('[DEBUG] PO create - checking supplier active status');
+      const [supplier] = await tx
+        .select({ stateCode: actors.stateCode })
+        .from(coreSuppliers)
+        .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+        .where(eq(coreSuppliers.vendorId, createDto.vendorId))
+        .limit(1);
+
+      if (!supplier) {
+        throw new BadRequestException('Supplier not found.');
+      }
+      if (supplier.stateCode !== ACTOR_STATE.ACTIVE) {
+        throw new BadRequestException(
+          'Cannot create purchase order for an inactive supplier.',
+        );
+      }
+
       console.log('[DEBUG] PO create - checking supplier expiries');
       // Option B: Just in time lookup against supplierExpiries
       const expiredDocs = await tx
@@ -231,6 +250,7 @@ export class PurchaseOrdersService {
             expectedDate: createDto.expectedDate
               ? new Date(createDto.expectedDate)
               : null,
+            baseTotalAmount: '0',
           })
           .returning();
         order = inserted;
@@ -246,6 +266,23 @@ export class PurchaseOrdersService {
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
+          const [product] = await tx
+            .select({ stateCode: products.stateCode })
+            .from(products)
+            .where(eq(products.productId, line.productId))
+            .limit(1);
+
+          if (!product) {
+            throw new BadRequestException(
+              `Product '${line.productId}' not found.`,
+            );
+          }
+          if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
+            throw new BadRequestException(
+              `Cannot use product '${line.productId}' as it is not active.`,
+            );
+          }
+
           console.log('[DEBUG] PO create - resolving tax for line', index);
           const { taxCategoryId, rate } = await this.resolveTaxForLine(
             tx,
@@ -859,6 +896,23 @@ export class PurchaseOrdersService {
         0,
       );
 
+      const [product] = await tx
+        .select({ name: products.name, stateCode: products.stateCode })
+        .from(products)
+        .where(eq(products.productId, lineDto.productId))
+        .limit(1);
+
+      if (!product) {
+        throw new BadRequestException(
+          `Product '${lineDto.productId}' not found.`,
+        );
+      }
+      if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
+        throw new BadRequestException(
+          `Cannot use product '${lineDto.productId}' as it is not active.`,
+        );
+      }
+
       const qty = parseFloat(lineDto.quantity || '1');
       const price = parseFloat(lineDto.pricePerUnit || '0');
       const disc = parseFloat(lineDto.discountPercentage || '0');
@@ -888,12 +942,8 @@ export class PurchaseOrdersService {
         tax: pricing.tax,
         totalAmount: pricing.totalAmount,
         taxCategoryId,
+        quantityReceived: '0',
       });
-
-      const [product] = await tx
-        .select({ name: products.name })
-        .from(products)
-        .where(eq(products.productId, lineDto.productId));
 
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,

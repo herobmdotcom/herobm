@@ -18,7 +18,7 @@ import {
   transferOrderLines,
   transferOrderPicks,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   SALES_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_STATE,

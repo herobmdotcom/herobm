@@ -11,7 +11,7 @@ import {
   glJournalEntries,
   glMatchGroups,
   glSettings,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, asc, and, gte, lte } from 'drizzle-orm';
 import {
   CreateMappingProfileDto,

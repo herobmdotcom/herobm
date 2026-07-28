@@ -9,7 +9,7 @@ import {
   suppliers,
   glSettings,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, and, sql, isNull, inArray, lte, or, isNotNull } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';
@@ -125,6 +125,9 @@ export class PaymentRunGeneratorService {
               stateCode: PAYMENT_STATE.DRAFT,
               currencyCode: settings.baseCurrency,
               glAccountBank: glAccountBank,
+              baseTotalAmount: '0',
+              exchangeRate: '1',
+              createdBy: 'system',
             })
             .returning();
 

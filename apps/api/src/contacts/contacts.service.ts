@@ -25,10 +25,11 @@ import {
   actors,
   projects,
   projectContacts,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { CONTACT_STATE } from '@herobm/shared';
 import {
   PaginationQuery,
   parsePagination,
@@ -42,7 +43,7 @@ export class ContactsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, cursor, direction, searchTerm } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -67,6 +68,10 @@ export class ContactsService {
           ilike(contacts.email, `%${rawSearchTerm}%`),
         ),
       );
+    }
+
+    if (!includeArchived) {
+      conditions.push(sql`${contacts.stateCode} != ${CONTACT_STATE.ARCHIVED}`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -335,12 +340,73 @@ export class ContactsService {
     });
   }
 
+  async archiveContact(
+    id: string,
+    userId: string,
+  ): Promise<ContactResponseDto> {
+    const [updatedContact] = await this.db
+      .update(contacts)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: CONTACT_STATE.ARCHIVED, modifiedOn: new Date() })
+      .where(eq(contacts.contactId, id))
+      .returning();
+
+    if (!updatedContact) {
+      throw new NotFoundException(`Contact with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.CONTACT,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Contact',
+      payload: {
+        action: 'contact_archived',
+        contactId: id,
+      },
+      actor: userId,
+    });
+
+    return this.mapToDto(updatedContact);
+  }
+
+  async unarchiveContact(
+    id: string,
+    userId: string,
+  ): Promise<ContactResponseDto> {
+    const [updatedContact] = await this.db
+      .update(contacts)
+      // eslint-disable-next-line no-restricted-syntax -- Allowed for archive/unarchive
+      .set({ stateCode: CONTACT_STATE.ACTIVE, modifiedOn: new Date() })
+      .where(eq(contacts.contactId, id))
+      .returning();
+
+    if (!updatedContact) {
+      throw new NotFoundException(`Contact with ID ${id} not found`);
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.CONTACT,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Contact',
+      payload: {
+        action: 'contact_unarchived',
+        contactId: id,
+      },
+      actor: userId,
+    });
+
+    return this.mapToDto(updatedContact);
+  }
+
   private mapToDto(
     record: typeof contacts.$inferSelect,
     primaryFor?: string[],
   ): ContactResponseDto {
     return {
       contactId: record.contactId,
+      stateCode: record.stateCode,
       firstName: record.firstName || '',
       lastName: record.lastName || '',
       fullName: record.fullName,

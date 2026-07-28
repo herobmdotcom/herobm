@@ -17,7 +17,7 @@ import {
   purchaseOrders,
   inventoryLedger,
   appSettings,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { CreateLocationDto, CreateZoneDto, CreateBinDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

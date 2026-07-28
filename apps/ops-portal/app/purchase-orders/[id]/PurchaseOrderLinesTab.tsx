@@ -44,20 +44,16 @@ interface PurchaseOrderLinesTabProps {
   setActiveTab: (tab: 'lines' | 'availability' | 'status') => void;
   isLinesEditable: boolean;
   saving: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External boundary
-  updateLine: (lineId: string, field: string, value: any) => Promise<void>;
+  updateLine: (lineId: string, field: string, value: string | number | boolean | null | undefined) => Promise<void>;
   updateLineFields: (lineId: string, payload: Record<string, unknown>) => Promise<void>;
   removeLine: (lineId: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External boundary
-  addLineFromProduct: (product: any) => void;
+  addLineFromProduct: (product: import('@/components/shared/ProductSearchInput').Product) => void;
   addBlankLine: () => void;
   subtotal: number;
   totalTax: number;
   taxCategories: TaxCategory[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl hook
-  tPurchase: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl hook
-  tCommon: any;
+  tPurchase: (key: string, args?: Record<string, string | number>) => string;
+  tCommon: (key: string, args?: Record<string, string | number>) => string;
 }
 
 export default function PurchaseOrderLinesTab({

@@ -40,7 +40,7 @@ import { toast } from "react-hot-toast";
 
 import { useAccount } from "./useCustomer";
 import { useAuth } from "@/components/shared/AuthGate";
-import { SystemResource } from "@herobm/shared";
+import { SystemResource, hasPermission } from "@herobm/shared";
 
 export default function AccountDetailPage({
   params: paramsPromise,
@@ -54,8 +54,9 @@ export default function AccountDetailPage({
   const tStates = useTranslations("common.states");
   const params = use(paramsPromise);
   const router = useRouter();
-  const { permissions, role } = useAuth();
-  const canManageCredit = role === "admin" || permissions.some(p => p.resource === SystemResource.CREDIT_CONTROL && p.action === "write");
+  const { permissions } = useAuth();
+  const canManageCredit = hasPermission(permissions, SystemResource.CREDIT_CONTROL, 'write');
+  const canArchive = hasPermission(permissions, SystemResource.CUSTOMERS, 'archive');
 
   const {
     customer,
@@ -392,7 +393,7 @@ export default function AccountDetailPage({
             );
           },
         },
-        {
+        ...(customer.childAccounts && customer.childAccounts.length > 0 ? [{
           id: "hierarchy-section",
           label: "Hierarchy",
           onClick: () => {
@@ -405,7 +406,7 @@ export default function AccountDetailPage({
               50,
             );
           },
-        },
+        }] : []),
         {
           id: "activity-section",
           label: "Activity",
@@ -471,6 +472,30 @@ export default function AccountDetailPage({
             isSaving={saving}
             nav={<PageNav sections={visibleSections} />}
           />
+        }
+        footerActions={
+          canArchive && customer ? (
+            customer.stateCode === CUSTOMER_STATE.ARCHIVED ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={unarchiveAccount}
+                disabled={saving}
+              >
+                {t("salesOrders.buttons.unarchive")}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                style={{ color: "#ef4444", borderColor: "#ef4444" }}
+                onClick={archiveAccount}
+                disabled={saving}
+              >
+                {t("salesOrders.buttons.archive")}
+              </Button>
+            )
+          ) : undefined
         }
       >
         {customer.stateCode === CUSTOMER_STATE.ARCHIVED && (
@@ -907,8 +932,12 @@ export default function AccountDetailPage({
                   <CustomerSelect
                     value={(dto as unknown as { parentCustomerId: string | null }).parentCustomerId || null}
                     onChange={(val) => {
-                      updateField("parentCustomerId", (val as unknown as { customerId: string }).customerId || null);
-                      saveField("parentCustomerId", (val as unknown as { customerId: string }).customerId || null);
+                      const id = val?.customerId || null;
+                      const name = val?.name || "";
+                      updateField("parentCustomerId", id);
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required to bypass generic field constraint for nested state updates
+                      updateField("parentCustomerName" as any, name);
+                      saveField("parentCustomerId", id);
                     }}
                     disabled={!isEditable || saving}
                     excludeId={params.id}
@@ -1694,30 +1723,6 @@ export default function AccountDetailPage({
 
             <div id="activity-section" className="card">
               <ActivityTimeline events={(customer.events as unknown as TimelineEvent[]) || []} />
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="flex justify-end mt-4">
-              {customer.stateCode === CUSTOMER_STATE.ARCHIVED ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={unarchiveAccount}
-                  disabled={saving}
-                >
-                  {t("salesOrders.buttons.unarchive")}
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  style={{ color: "#ef4444", borderColor: "#ef4444" }}
-                  onClick={archiveAccount}
-                  disabled={saving}
-                >
-                  {t("salesOrders.buttons.archive")}
-                </Button>
-              )}
             </div>
           </div>
         )}

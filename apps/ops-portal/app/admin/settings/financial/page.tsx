@@ -77,7 +77,7 @@ export default function FinancialSettingsPage() {
   const tSettings = useTranslations('admin.settings');
   const tCommon = useTranslations('admin.common');
   const t = useTranslations();
-  useDocumentTitle(tSettings('title'));
+  useDocumentTitle('Financial Settings');
   const taxTypes = useMemo(() => TAX_TYPES(t as unknown as (key: string) => string), [t]);
   const router = useRouter();
 
@@ -1049,7 +1049,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
   return (
     <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
-        title={tSettings('title') + ' - ' + tCommon('financial')}
+        title="Financial Settings"
         subtitle={tSettings('subtitle')}
       >
         <PageNav sections={navSections} />

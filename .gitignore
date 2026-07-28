@@ -74,7 +74,12 @@ tsc.log
 e2e-*-output.txt
 tmp_*.txt
 query_erpnext.js
-
+db_writes_report.md
+docs_summary_temp.md
+portal-test-out.txt
+index.html
+Makefile.test
+.cursorrules
 # Environment Profiles
 .active_profile
 .env.*

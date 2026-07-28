@@ -135,6 +135,9 @@ export class BaseSupplierDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
+  @IsOptional()
+  @IsString()
+  stateCode?: string;
 }
 
 export class CreateSupplierDto extends BaseSupplierDto {}

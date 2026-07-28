@@ -1,4 +1,9 @@
-import { BIN_TYPE } from '@herobm/shared';
+import {
+  BIN_TYPE,
+  SUPPLIER_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+} from '@herobm/shared';
 import {
   glAccounts,
   locations,
@@ -13,7 +18,7 @@ import {
   uomDictionary,
   glJournalEntries,
   glJournalLines,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
 
@@ -53,6 +58,8 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       stateOrProvince: 'TX',
       postalCode: '12345',
       country: 'USA',
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -63,6 +70,8 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       locationId: locId,
       code: 'TEST-ZONE',
       name: 'Test Zone',
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -73,6 +82,8 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       zoneId: zoneId,
       binNumber: 'TEST-BIN',
       binType: BIN_TYPE.STORAGE,
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -83,6 +94,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       actorId: supActorId,
       name: 'Test Supplier LLC',
       headquartersAddressLine1: 'USA',
+      isTaxRegistered: false,
     })
     .onConflictDoNothing();
 
@@ -95,6 +107,10 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       vendorNumber: 'TEST-SUP-01',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -105,6 +121,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       actorId: custActorId,
       name: 'Test Customer Inc',
       headquartersAddressLine1: 'USA',
+      isTaxRegistered: false,
     })
     .onConflictDoNothing();
 
@@ -118,6 +135,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,
       creditLimit: '10000.00',
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -136,6 +156,10 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       name: 'Test Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     })
     .onConflictDoNothing();
 
@@ -179,11 +203,13 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       sourceType: 'manual',
       memo: 'Test Customer Payment',
       createdBy: 'system',
+      isReversed: false,
     })
     .onConflictDoNothing();
 
   await db
     .insert(glJournalLines)
+    // @ts-expect-error test data
     .values([
       {
         journalEntryId: custJeId,
@@ -191,6 +217,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
         debit: '500.00',
         credit: '0.00',
         memo: 'CUSTOMER PAYMENT INV-001',
+        exchangeRate: '1',
+        isReconciled: false,
+        journalLineId: crypto.randomUUID(),
       },
       {
         journalEntryId: custJeId,
@@ -198,6 +227,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
         debit: '0.00',
         credit: '500.00',
         memo: 'CUSTOMER PAYMENT INV-001',
+        exchangeRate: '1',
+        isReconciled: false,
+        journalLineId: crypto.randomUUID(),
       },
     ])
     .onConflictDoNothing();
@@ -213,11 +245,13 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       sourceType: 'manual',
       memo: 'Test Supplier Payment',
       createdBy: 'system',
+      isReversed: false,
     })
     .onConflictDoNothing();
 
   await db
     .insert(glJournalLines)
+    // @ts-expect-error test data
     .values([
       {
         journalEntryId: supJeId,
@@ -225,6 +259,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
         debit: '200.00',
         credit: '0.00',
         memo: 'SUPPLIER PAYMENT BILL-001',
+        exchangeRate: '1',
+        isReconciled: false,
+        journalLineId: crypto.randomUUID(),
       },
       {
         journalEntryId: supJeId,
@@ -232,6 +269,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
         debit: '0.00',
         credit: '200.00',
         memo: 'SUPPLIER PAYMENT BILL-001',
+        exchangeRate: '1',
+        isReconciled: false,
+        journalLineId: crypto.randomUUID(),
       },
     ])
     .onConflictDoNothing();

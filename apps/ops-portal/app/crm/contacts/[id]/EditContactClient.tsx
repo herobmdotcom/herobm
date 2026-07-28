@@ -6,12 +6,15 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
+import { useAuth } from '@/components/AuthGate';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import PageNav from '@/components/shared/PageNav';
+import { Button } from '@/components/shared/Button';
 import { ProjectsTab } from '@/components/shared/ProjectsTab';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { CONTACT_STATE, SystemResource, hasPermission } from '@herobm/shared';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 
 interface ContactFormDto {
@@ -135,8 +138,9 @@ function GeneralInfoTab({
 export default function EditContactClient({ contactId }: { contactId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  const initialTab = searchParams.get('tab') as 'overview' | 'projects' || 'overview';
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
+  const initialTab = (searchParams.get('tab') as 'overview' | 'projects') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const {
@@ -161,6 +165,27 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       modifiedOn: (data.modifiedOn as unknown as string) || ''
     }),
   });
+
+  const archiveContact = async () => {
+    if (!confirm('Are you sure you want to archive this contact?')) return;
+    try {
+      await api.contactsControllerArchive(contactId, {});
+      toast.success('Contact archived');
+      loadContact();
+    } catch (e) {
+      reportError(e, 'Archive Contact');
+    }
+  };
+
+  const unarchiveContact = async () => {
+    try {
+      await api.contactsControllerUnarchive(contactId, {});
+      toast.success('Contact unarchived');
+      loadContact();
+    } catch (e) {
+      reportError(e, 'Unarchive Contact');
+    }
+  };
 
   useDocumentTitle(contact ? `${contact.firstName} ${contact.lastName}` : null);
 
@@ -202,6 +227,30 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
           showPrint={false}
           nav={<PageNav sections={navItems} />}
         />
+      }
+      footerActions={
+        canArchive && contact ? (
+          contact.stateCode === CONTACT_STATE.ARCHIVED ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={unarchiveContact}
+              disabled={loading}
+            >
+              Unarchive
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              onClick={archiveContact}
+              disabled={loading}
+            >
+              Archive
+            </Button>
+          )
+        ) : undefined
       }
     >
       <>

@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DrizzleDB, DRIZZLE } from '../src/drizzle/drizzle.module';
-import { apiKeys, webhooks, outbox } from '../src/drizzle/herobm-core-schema';
+import { apiKeys, webhooks, outbox } from '../src/drizzle/schema';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { processEvent } from '../../worker/src/relay.service';

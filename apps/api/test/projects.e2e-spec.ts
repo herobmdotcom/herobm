@@ -94,8 +94,8 @@ describe('Projects (e2e)', () => {
       .set('Authorization', `Bearer ${viewerToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
   });
 
   it('GET /api/projects/:id — returns a project by ID (viewer)', async () => {

@@ -8,6 +8,7 @@ import DataGrid from '@/components/DataGrid';
 import { RETURN_STATE } from '@herobm/shared';
 import AdHocCreditNoteSlideOver from './AdHocCreditNoteSlideOver';
 import ReturnCreditNoteSlideOver from './ReturnCreditNoteSlideOver';
+import { Button } from '@/components/shared/Button';
 
 export default function ReturnsQueuePage() {
     const tCommon = useTranslations('common');
@@ -86,12 +87,12 @@ export default function ReturnsQueuePage() {
                 onRowClicked={handleReturnClick}
                 pageTitle="Credit Notes Queue"
                 headerActions={
-                    <button 
+                    <Button 
                         className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap" 
                         onClick={() => setAdHocOpen(true)}
                     >
                         + {tOrders('returns.creditNote')}
-                    </button>
+                    </Button>
                 }
             />
 

@@ -8,6 +8,7 @@ export interface Contact {
   contactId: string;
   firstName: string;
   lastName: string;
+  fullName?: string | null;
   email?: string | null;
   jobTitle?: string | null;
 }

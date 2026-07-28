@@ -25,8 +25,33 @@ export enum SystemResource {
   GL = 'gl',
   DATA_EXPORT = 'data-export',
   CREDIT_CONTROL = 'credit-control',
-  RECEPTIONS = 'receptions',
-  TAX_CATEGORIES = 'tax-categories',
-  EXTERNAL_API = 'external-api',
   CRM = 'crm',
+}
+
+export interface Permission {
+  resource: string;
+  action: string;
+  effect: string;
+}
+
+export function hasPermission(
+  permissions: Permission[],
+  resource: SystemResource,
+  action: string = 'read'
+): boolean {
+  if (!permissions) return false;
+  return permissions.some(
+    (p) => p.resource === resource && p.action === action && p.effect === 'allow'
+  );
+}
+
+export function hasAnyPermission(
+  permissions: Permission[],
+  resources: SystemResource[],
+  action: string = 'read'
+): boolean {
+  if (!permissions) return false;
+  return permissions.some(
+    (p) => resources.includes(p.resource as SystemResource) && p.action === action && p.effect === 'allow'
+  );
 }

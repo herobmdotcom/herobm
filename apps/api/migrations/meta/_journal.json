@@ -666,6 +666,41 @@
       "when": 1784903367581,
       "tag": "0094_add_actor_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1785161870128,
+      "tag": "0095_curved_smiling_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1785163581148,
+      "tag": "0096_actor_referral_note",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1785167005899,
+      "tag": "0097_remove_schema_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1785171029658,
+      "tag": "0098_add_crm_state_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1785175000000,
+      "tag": "0099_add_referral_modes",
+      "breakpoints": true
     }
   ]
 }

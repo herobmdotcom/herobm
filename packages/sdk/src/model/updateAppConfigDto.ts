@@ -31,6 +31,7 @@ export interface UpdateAppConfigDto {
   actorContactRoles?: OrderedSettingDto[];
   projectContactRoles?: OrderedSettingDto[];
   projectActorRoles?: OrderedSettingDto[];
+  referralModes?: OrderedSettingDto[];
   projectStatuses?: OrderedSettingDto[];
   projectTypes?: OrderedSettingDto[];
 }

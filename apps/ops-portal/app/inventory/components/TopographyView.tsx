@@ -6,7 +6,7 @@ import * as api from '@herobm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
-import { getErrorMessage, BIN_TYPE } from '@herobm/shared';
+import { getErrorMessage, BIN_TYPE, SystemResource, hasPermission } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 interface Bin {
@@ -47,8 +47,8 @@ export default function TopographyView() {
   const tInventory = useTranslations('inventory');
   const tLoc = useTranslations('inventory.locations');
   const tCommon = useTranslations('common');
-  const { role } = useAuth();
-  const canEdit = role === 'admin';
+  const { permissions } = useAuth();
+  const canEdit = hasPermission(permissions, SystemResource.INVENTORY, 'write');
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);

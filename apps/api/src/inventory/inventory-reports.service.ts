@@ -14,7 +14,7 @@ import {
   productDefaultBins,
   productGroups,
   binContents,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { sql, eq, and, gte, lte } from 'drizzle-orm';
 import { isQuarantineBinCondition } from './inventory-math.utils';
 

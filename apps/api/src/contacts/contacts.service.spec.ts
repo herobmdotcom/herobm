@@ -8,11 +8,12 @@ import {
   actors,
   projects,
   projectContacts,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
+import { PROJECT_STATE, CONTACT_STATE } from '@herobm/shared';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -21,7 +22,7 @@ jest.mock('../common/emit-event', () => ({
 describe('ContactsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ContactsService;
-  const mockUserId = 'U001';
+  const mockUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
     await pg.db.delete(actorContactLinks);
@@ -62,7 +63,7 @@ describe('ContactsService', () => {
     it('should create a contact and link to an actor', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Test Actor' })
+        .values({ name: 'Test Actor', isTaxRegistered: false })
         .returning();
 
       const result = await service.createContact(
@@ -89,7 +90,11 @@ describe('ContactsService', () => {
     it('should create a contact and link to a project', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Test Project', type: 'internal' })
+        .values({
+          name: 'Test Project',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
 
       const result = await service.createContact(
@@ -163,12 +168,13 @@ describe('ContactsService', () => {
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor' })
+        .values({ name: 'Actor', isTaxRegistered: false })
         .returning();
       await pg.db.insert(actorContactLinks).values({
         actorId: actor.actorId,
         contactId: contact.contactId,
         primaryFor: [],
+        linkType: 'employee',
       });
 
       await service.updateContact(
@@ -200,12 +206,13 @@ describe('ContactsService', () => {
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor' })
+        .values({ name: 'Actor', isTaxRegistered: false })
         .returning();
       await pg.db.insert(actorContactLinks).values({
         actorId: actor.actorId,
         contactId: contact.contactId,
         primaryFor: [],
+        linkType: 'employee',
       });
 
       await service.deleteContact(contact.contactId, mockUserId);
@@ -227,6 +234,42 @@ describe('ContactsService', () => {
       await expect(
         service.deleteContact(randomUUID(), mockUserId),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('archiveContact', () => {
+    it('should archive a contact', async () => {
+      const [contact] = await pg.db
+        .insert(contacts)
+        .values({ firstName: 'To Archive' })
+        .returning();
+
+      const res = await service.archiveContact(contact.contactId, mockUserId);
+      expect(res.stateCode).toBe(CONTACT_STATE.ARCHIVED);
+
+      const dbRecord = await pg.db.query.contacts.findFirst({
+        where: eq(contacts.contactId, contact.contactId),
+      });
+      expect(dbRecord?.stateCode).toBe(CONTACT_STATE.ARCHIVED);
+    });
+  });
+
+  describe('unarchiveContact', () => {
+    it('should unarchive a contact', async () => {
+      const [contact] = await pg.db
+        .insert(contacts)
+        .values({
+          firstName: 'To Unarchive',
+          stateCode: CONTACT_STATE.ARCHIVED,
+        })
+        .returning();
+
+      const res = await service.unarchiveContact(contact.contactId, mockUserId);
+      expect(res.stateCode).toBe(CONTACT_STATE.ACTIVE);
+
+      const dbRecord = await pg.db.query.contacts.findFirst({
+        where: eq(contacts.contactId, contact.contactId),
+      });
+      expect(dbRecord?.stateCode).toBe(CONTACT_STATE.ACTIVE);
     });
   });
 });

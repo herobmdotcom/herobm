@@ -15,7 +15,8 @@ import GroupSelect from '@/components/shared/GroupSelect';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import { Button } from '@/components/shared/Button';
 import { useSettings } from '@/components/SettingsProvider';
-import { PRODUCT_STATE } from '@herobm/shared';
+import { useAuth } from '@/components/shared/AuthGate';
+import { PRODUCT_STATE, SystemResource, hasPermission } from '@herobm/shared';
 import { ProductKitComponentsTab } from './ProductKitComponentsTab';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
 import { useProduct } from './useProduct';
@@ -25,9 +26,9 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 
 const formatMoney = (val: string | number | undefined | null) => {
-  if (!val) return '0.00';
+  if (val === '' || val === null || val === undefined) return null;
   const num = typeof val === 'string' ? parseFloat(val) : val;
-  if (isNaN(num)) return '0.00';
+  if (isNaN(num)) return null;
   return num.toFixed(2);
 };
 
@@ -36,6 +37,8 @@ export default function ProductDetailPage() {
   const t = useTranslations();
   const tCommon = useTranslations('common');
   const { id } = useParams();
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.PRODUCTS, 'archive');
 
   const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit'>('details');
 
@@ -125,6 +128,30 @@ export default function ProductDetailPage() {
           }
           nav={<PageNav sections={visibleSections} />}
         />
+      }
+      footerActions={
+        canArchive && product ? (
+          product.stateCode === PRODUCT_STATE.ARCHIVED ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={unarchiveProduct}
+              disabled={saving}
+            >
+              {t('salesOrders.buttons.unarchive')}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ color: '#ef4444', borderColor: '#ef4444' }}
+              onClick={archiveProduct}
+              disabled={saving}
+            >
+              {t('salesOrders.buttons.archive')}
+            </Button>
+          )
+        ) : undefined
       }
     >
       {product.stateCode === PRODUCT_STATE.ARCHIVED && (
@@ -679,29 +706,6 @@ export default function ProductDetailPage() {
           <ActivityTimeline events={(product as any).events || []} />
         </div>
 
-        {/* Bottom Actions */}
-        <div className="flex justify-end mt-4">
-            {product.stateCode === PRODUCT_STATE.ARCHIVED ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={unarchiveProduct}
-                disabled={saving}
-              >
-                {t('salesOrders.buttons.unarchive')}
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                onClick={archiveProduct}
-                disabled={saving}
-              >
-                {t('salesOrders.buttons.archive')}
-              </Button>
-            )}
-          </div>
       </div>
       )}
     </DetailsLayout>

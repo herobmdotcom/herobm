@@ -32,7 +32,7 @@ import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
-} from '../../../../auth/casbin.guard';
+} from '@api/auth/casbin.guard';
 
 @ApiTags('Actors')
 @Controller('actors')
@@ -44,7 +44,7 @@ export class MaActorsController {
   // --- Seller Qualifications ---
   @Get(':id/seller-qualifications')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Seller Qualifications', operationId: 'maGetSellerQualifications' })
+  @ApiOperation({ summary: 'Get Seller Qualifications', description: 'Get Seller Qualifications', operationId: 'maGetSellerQualifications' })
   @ApiParam({ name: 'id', required: true })
   @ApiOkResponse({ type: [SellerQualificationResponseDto] })
   getSellerQualifications(@Param('id') id: string) {
@@ -53,7 +53,7 @@ export class MaActorsController {
 
   @Post(':id/seller-qualifications')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Seller Qualification', operationId: 'maAddSellerQualification' })
+  @ApiOperation({ summary: 'Add Seller Qualification', description: 'Add Seller Qualification', operationId: 'maAddSellerQualification' })
   @ApiParam({ name: 'id', required: true })
   @ApiCreatedResponse({ type: SellerQualificationResponseDto })
   addSellerQualification(@Param('id') id: string, @Body() dto: CreateSellerQualificationDto) {
@@ -62,7 +62,7 @@ export class MaActorsController {
 
   @Patch(':id/seller-qualifications/:qualificationId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Seller Qualification', operationId: 'maUpdateSellerQualification' })
+  @ApiOperation({ summary: 'Update Seller Qualification', description: 'Update Seller Qualification', operationId: 'maUpdateSellerQualification' })
   @ApiParam({ name: 'id', required: true })
   @ApiParam({ name: 'qualificationId', required: true })
   @ApiOkResponse({ type: SellerQualificationResponseDto })
@@ -77,7 +77,7 @@ export class MaActorsController {
   // --- Buyer Qualifications ---
   @Get(':id/buyer-qualifications')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Buyer Qualifications', operationId: 'maGetBuyerQualifications' })
+  @ApiOperation({ summary: 'Get Buyer Qualifications', description: 'Get Buyer Qualifications', operationId: 'maGetBuyerQualifications' })
   @ApiParam({ name: 'id', required: true })
   @ApiOkResponse({ type: [BuyerQualificationResponseDto] })
   getBuyerQualifications(@Param('id') id: string) {
@@ -86,7 +86,7 @@ export class MaActorsController {
 
   @Post(':id/buyer-qualifications')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Buyer Qualification', operationId: 'maAddBuyerQualification' })
+  @ApiOperation({ summary: 'Add Buyer Qualification', description: 'Add Buyer Qualification', operationId: 'maAddBuyerQualification' })
   @ApiParam({ name: 'id', required: true })
   @ApiCreatedResponse({ type: BuyerQualificationResponseDto })
   addBuyerQualification(@Param('id') id: string, @Body() dto: CreateBuyerQualificationDto) {
@@ -95,7 +95,7 @@ export class MaActorsController {
 
   @Patch(':id/buyer-qualifications/:qualificationId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Buyer Qualification', operationId: 'maUpdateBuyerQualification' })
+  @ApiOperation({ summary: 'Update Buyer Qualification', description: 'Update Buyer Qualification', operationId: 'maUpdateBuyerQualification' })
   @ApiParam({ name: 'id', required: true })
   @ApiParam({ name: 'qualificationId', required: true })
   @ApiOkResponse({ type: BuyerQualificationResponseDto })
@@ -110,7 +110,7 @@ export class MaActorsController {
   // --- Strategic Intelligence ---
   @Get(':id/strategic-intelligence')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Strategic Intelligence', operationId: 'maGetStrategicIntelligence' })
+  @ApiOperation({ summary: 'Get Strategic Intelligence', description: 'Get Strategic Intelligence', operationId: 'maGetStrategicIntelligence' })
   @ApiParam({ name: 'id', required: true })
   @ApiOkResponse({ type: [StrategicIntelligenceResponseDto] })
   getStrategicIntelligence(@Param('id') id: string) {
@@ -119,7 +119,7 @@ export class MaActorsController {
 
   @Post(':id/strategic-intelligence')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Strategic Intelligence', operationId: 'maAddStrategicIntelligence' })
+  @ApiOperation({ summary: 'Add Strategic Intelligence', description: 'Add Strategic Intelligence', operationId: 'maAddStrategicIntelligence' })
   @ApiParam({ name: 'id', required: true })
   @ApiCreatedResponse({ type: StrategicIntelligenceResponseDto })
   addStrategicIntelligence(@Param('id') id: string, @Body() dto: CreateStrategicIntelligenceDto) {
@@ -128,7 +128,7 @@ export class MaActorsController {
 
   @Patch(':id/strategic-intelligence/:intelligenceId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Strategic Intelligence', operationId: 'maUpdateStrategicIntelligence' })
+  @ApiOperation({ summary: 'Update Strategic Intelligence', description: 'Update Strategic Intelligence', operationId: 'maUpdateStrategicIntelligence' })
   @ApiParam({ name: 'id', required: true })
   @ApiParam({ name: 'intelligenceId', required: true })
   @ApiOkResponse({ type: StrategicIntelligenceResponseDto })

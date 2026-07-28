@@ -21,12 +21,15 @@ import {
   inventoryEntries,
   inventoryLedger,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  ShipmentState,
 } from '@herobm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
 
@@ -38,6 +41,9 @@ const PICKING_ORDER = {
   customerId: '00000000-0000-4000-8000-000000000001',
   fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
   currencyCode: 'AUD',
+  exchangeRate: '1',
+  discrepanciesAcknowledged: false,
+  source: 'app',
 };
 
 const ORDER_LINE = {
@@ -120,6 +126,7 @@ describe('ShipmentService', () => {
           actorId: custActorId,
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         },
       ])
       .onConflictDoNothing();
@@ -133,6 +140,9 @@ describe('ShipmentService', () => {
           actorId: custActorId,
           customerNumber: 'CUST-001',
           currencyCode: 'AUD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         },
       ])
       .onConflictDoNothing();
@@ -147,6 +157,10 @@ describe('ShipmentService', () => {
           name: 'Widget A',
           productType: 'inventory',
           baseUom: 'EA',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         },
       ])
       .onConflictDoNothing();
@@ -171,6 +185,8 @@ describe('ShipmentService', () => {
           locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Location 1',
+          source: 'app',
+          createdBy: 'system',
         },
       ])
       .onConflictDoNothing();
@@ -184,6 +200,7 @@ describe('ShipmentService', () => {
         productId: '00000000-0000-4000-8000-000000000001',
         quantity: '10',
         stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
       },
     ]);
     await pg.db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
@@ -202,6 +219,7 @@ describe('ShipmentService', () => {
         entryDate: new Date(),
         createdBy: 'admin',
         memo: 'Test pick',
+        isReversed: false,
       },
       {
         entryId: 'e0000000-0000-4000-8000-000000000003',
@@ -211,6 +229,7 @@ describe('ShipmentService', () => {
         entryDate: new Date(),
         createdBy: 'admin',
         memo: 'Test dispatch',
+        isReversed: false,
       },
     ]);
 
@@ -258,6 +277,8 @@ describe('ShipmentService', () => {
           ...MOCK_SHIPMENT,
           shipmentId: '10000000-0000-4000-8000-000000000009',
           shipmentNumber: `SHP-${today}-0005`,
+          stateCode: SHIPMENT_STATE.DRAFT,
+          createdBy: 'system',
         },
       ]);
 
@@ -412,7 +433,7 @@ describe('ShipmentService', () => {
     async function setupWithState(currentState: string) {
       await pg.db
         .update(salesOrderShipments)
-        .set({ stateCode: currentState as any })
+        .set({ stateCode: currentState as ShipmentState })
         .where(
           eq(
             salesOrderShipments.shipmentId,
@@ -532,6 +553,11 @@ describe('ShipmentService', () => {
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
           stateCode: 'confirmed',
           currencyCode: 'USD',
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -546,6 +572,11 @@ describe('ShipmentService', () => {
           pricePerUnit: '100',
           taxCategoryId: '00000000-0000-4000-8000-000000000001',
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          amount: '0',
+          tax: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
         })
         .returning();
 
@@ -556,6 +587,7 @@ describe('ShipmentService', () => {
           salesOrderId: so.salesOrderId,
           shipmentNumber: 'SHP-PACKS-01',
           stateCode: 'dispatched',
+          createdBy: 'system',
         })
         .returning();
 
@@ -572,6 +604,8 @@ describe('ShipmentService', () => {
         productId: '00000000-0000-4000-8000-000000000001',
         binId: '00000000-0000-4000-8000-000000000002',
         quantity: '50',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
       });
 
       const entryId = '00000000-0000-4000-8000-000000000005';
@@ -582,6 +616,7 @@ describe('ShipmentService', () => {
         sourceId: shp.shipmentId,
         entryDate: new Date(),
         createdBy: 'admin',
+        isReversed: false,
       });
       await pg.db.insert(inventoryLedger).values({
         ledgerId: '00000000-0000-4000-8000-000000000006',

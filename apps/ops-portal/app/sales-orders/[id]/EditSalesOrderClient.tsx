@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import EntityBanner from '@/components/shared/EntityBanner';
 import { useAuth } from '@/components/shared/AuthGate';
-import { SystemResource, isPhysicalProductLine } from '@herobm/shared';
+import { SystemResource, isPhysicalProductLine, hasPermission } from '@herobm/shared';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import OrderLinesTab from './OrderLinesTab';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
@@ -147,8 +147,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     const o = useOrder(id);
     const [mainTab, setMainTab] = useState<string>('overview');
 
-    const { permissions, role } = useAuth();
-    const canManageCredit = role === 'admin' || permissions.some(p => p.resource === SystemResource.CREDIT_CONTROL && p.action === 'write');
+    const { permissions } = useAuth();
+    const canManageCredit = hasPermission(permissions, SystemResource.CREDIT_CONTROL, 'write');
     const [showCreditOverrideModal, setShowCreditOverrideModal] = useState(false);
 
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
@@ -511,10 +511,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         taxCategories={taxCategories}
                         subtotal={subtotal}
                         totalTax={totalTax}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                        activeTab={activeTab as any}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                        setActiveTab={setActiveTab as any}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
                     />
                 )}
                 {mainTab === 'fulfillment' && (
@@ -649,10 +647,10 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                             <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
-                            <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+                            <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="!text-gray-400 hover:!text-gray-600 !p-2 h-auto !min-h-0 !min-w-0">
                                 {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                 <span className="material-symbols-outlined">close</span>
-                            </button>
+                            </Button>
                         </div>
                         
                         <div className="p-6 flex flex-col gap-4">

@@ -8,7 +8,7 @@ import {
 import { eq, or, and, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { discountMatrix } from '../drizzle/herobm-core-schema';
+import { discountMatrix } from '../drizzle/schema';
 import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
 import type { DiscountRule } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';

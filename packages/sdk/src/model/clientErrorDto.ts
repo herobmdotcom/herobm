@@ -7,8 +7,11 @@
  */
 
 export interface ClientErrorDto {
+  /** @maxLength 1000 */
   message: string;
+  /** @maxLength 5000 */
   stack?: string;
+  /** @maxLength 255 */
   component?: string;
   url?: string;
 }

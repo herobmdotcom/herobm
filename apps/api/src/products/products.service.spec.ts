@@ -3,11 +3,7 @@ import { ProductsService } from './products.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  products,
-  masterDataEvents,
-  uomDictionary,
-} from '../drizzle/herobm-core-schema';
+import { products, masterDataEvents, uomDictionary } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import {
   PRODUCT_STATE,
@@ -50,6 +46,9 @@ describe('ProductsService', () => {
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
           productType: 'inventory',
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         },
         {
           productId: '22222222-2222-2222-2222-222222222222',
@@ -58,6 +57,9 @@ describe('ProductsService', () => {
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
           productType: 'inventory',
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
         },
       ]);
     });
@@ -93,6 +95,9 @@ describe('ProductsService', () => {
         stateCode: PRODUCT_STATE.ACTIVE,
         baseUom: 'EA',
         productType: 'inventory',
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       await pg.db.insert(masterDataEvents).values({

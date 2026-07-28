@@ -38,7 +38,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { transferOrders } from '../drizzle/herobm-core-schema';
+import { transferOrders } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { Inject } from '@nestjs/common';
 

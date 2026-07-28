@@ -2,6 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 import request from 'supertest';
 
@@ -96,6 +97,9 @@ describe('Accounts (e2e)', () => {
         customerNumber,
         name: 'E2E Test Customer',
         emailAddress1: 'e2e@example.com',
+        isTaxRegistered: false,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
       });
 
     expect(res.status).toBe(201);
@@ -111,6 +115,9 @@ describe('Accounts (e2e)', () => {
         billingAddressCountry: 'AU',
         customerNumber: 'FAIL-CUST-001',
         name: 'Unauthorized Customer',
+        isTaxRegistered: false,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
       });
 
     expect(res.status).toBe(403);
@@ -125,6 +132,9 @@ describe('Accounts (e2e)', () => {
         billingAddressCountry: 'AU',
         customerNumber: `PATCH-CUST-${Date.now()}`,
         name: 'Before Patch',
+        isTaxRegistered: false,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
       });
     const customerId = createRes.body.customerId;
 
@@ -163,5 +173,62 @@ describe('Accounts (e2e)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.notes).toBe('E2E: verified editable');
+  });
+
+  it('POST /api/customers — creates a child customer linked to a parent (admin)', async () => {
+    // 1. Create a parent
+    const parentRes = await request(app.getHttpServer())
+      .post('/api/customers')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `PARENT-${Date.now()}`,
+        name: 'E2E Parent',
+        isTaxRegistered: false,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+      });
+    const parentId = parentRes.body.customerId;
+
+    // 2. Create a child
+    const childRes = await request(app.getHttpServer())
+      .post('/api/customers')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CHILD-${Date.now()}`,
+        name: 'E2E Child',
+        parentCustomerId: parentId,
+        isTaxRegistered: false,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+      });
+
+    expect(childRes.status).toBe(201);
+    const childId = childRes.body.customerId;
+
+    // 3. Verify it appears on GET
+    const getRes = await request(app.getHttpServer())
+      .get(`/api/customers/${childRes.body.customerId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.parentCustomerId).toBe(parentId);
+    expect(getRes.body.parentCustomerName).toBe('E2E Parent');
+
+    // 4. Disconnect parent
+    const patchRes = await request(app.getHttpServer())
+      .patch(`/api/customers/${childRes.body.customerId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ parentCustomerId: null });
+
+    expect(patchRes.status).toBe(200);
+
+    // Verify removal via GET
+    const getRes2 = await request(app.getHttpServer())
+      .get(`/api/customers/${childId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(getRes2.status).toBe(200);
+    expect(getRes2.body.parentCustomerId).toBeNull();
   });
 });

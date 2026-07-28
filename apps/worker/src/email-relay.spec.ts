@@ -46,6 +46,8 @@ describe('email-relay', () => {
       }),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      values: vi.fn().mockResolvedValue([]),
     };
 
     mockTransporter = {
@@ -142,5 +144,26 @@ describe('email-relay', () => {
       lastError: 'SMTP error',
       nextRetryAt: expect.any(Date),
     });
+  });
+
+  it('should insert exactly one outbox row when entityType and entityId are present', async () => {
+    pendingEmails[0].entityType = 'sales_order';
+    pendingEmails[0].entityId = 'so-123';
+    
+    await pollEmailOutbox(mockDb);
+
+    expect(mockTransporter.sendMail).toHaveBeenCalled();
+    
+    // We expect exactly 3 inserts total on success:
+    // 1 for emailEventsTable (always logged)
+    // 1 for the specific entity events table (sales_events)
+    // 1 for the outbox
+    expect(mockDb.insert).toHaveBeenCalledTimes(3);
+    expect(mockDb.values).toHaveBeenCalledTimes(3);
+    
+    // Verify that the outbox insert uses the correct payload and event type
+    const valuesCalls = mockDb.values.mock.calls;
+    const outboxCall = valuesCalls.find((call: any[]) => call[0].eventType === 'email.sent' && call[0].outboxId);
+    expect(outboxCall).toBeDefined();
   });
 });

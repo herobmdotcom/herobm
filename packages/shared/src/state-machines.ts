@@ -338,6 +338,18 @@ export const PRODUCT_STATE = {
   DRAFT: 'draft',
 } as const;
 
+export const ACTOR_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  ARCHIVED: 'archived',
+} as const;
+
+export const CONTACT_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  ARCHIVED: 'archived',
+} as const;
+
 export const PROJECT_STATE = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
@@ -388,6 +400,9 @@ export type PaymentState = typeof PAYMENT_STATE[keyof typeof PAYMENT_STATE];
 export type CustomerState = typeof CUSTOMER_STATE[keyof typeof CUSTOMER_STATE];
 export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
 export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
+export type ActorState = typeof ACTOR_STATE[keyof typeof ACTOR_STATE];
+export type ContactState = typeof CONTACT_STATE[keyof typeof CONTACT_STATE];
+export type ProjectState = typeof PROJECT_STATE[keyof typeof PROJECT_STATE];
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
 export type PurchaseReturnShipmentState = typeof PURCHASE_RETURN_SHIPMENT_STATE[keyof typeof PURCHASE_RETURN_SHIPMENT_STATE];
 export type PurchaseDebitNoteState = typeof PURCHASE_DEBIT_NOTE_STATE[keyof typeof PURCHASE_DEBIT_NOTE_STATE];

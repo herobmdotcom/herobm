@@ -9,7 +9,8 @@ import {
   projectActors,
   contacts,
   actors,
-} from '../drizzle/herobm-core-schema';
+  users,
+} from '../drizzle/schema';
 import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';
@@ -23,7 +24,7 @@ jest.mock('../common/emit-event', () => ({
 describe('ProjectsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ProjectsService;
-  const mockUserId = 'U001';
+  const mockUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
     await pg.db.delete(projectActors);
@@ -32,6 +33,21 @@ describe('ProjectsService', () => {
     await pg.db.delete(projects);
     await pg.db.delete(contacts);
     await pg.db.delete(actors);
+
+    await pg.db
+      .insert(users)
+      .values({
+        userId: mockUserId,
+        username: 'mockuser',
+        // eslint-disable-next-line no-restricted-syntax -- Mocking a test user password
+        passwordHash: 'hash',
+        role: 'admin',
+        displayName: 'Mock User',
+        email: 'mock@example.com',
+        isActive: true,
+      })
+      .onConflictDoNothing();
+
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,7 +88,7 @@ describe('ProjectsService', () => {
     it('should update a project', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Old', type: 'internal' })
+        .values({ name: 'Old', type: 'internal', status: PROJECT_STATE.ACTIVE })
         .returning();
 
       const result = await service.updateProject(
@@ -96,15 +112,23 @@ describe('ProjectsService', () => {
 
   describe('getProject / getProjects', () => {
     it('should get all projects', async () => {
-      await pg.db.insert(projects).values({ name: 'Test', type: 'internal' });
+      await pg.db.insert(projects).values({
+        name: 'Test',
+        type: 'internal',
+        status: PROJECT_STATE.ACTIVE,
+      });
       const results = await service.getProjects();
-      expect(results.length).toBe(1);
+      expect(results.data.length).toBe(1);
     });
 
     it('should get project by id', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Test', type: 'internal' })
+        .values({
+          name: 'Test',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
       const result = await service.getProject(project.projectId);
       expect(result.projectId).toBe(project.projectId);
@@ -121,7 +145,11 @@ describe('ProjectsService', () => {
     it('should add and remove a note', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Project', type: 'internal' })
+        .values({
+          name: 'Project',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
 
       const noteResult = await service.addNote(
@@ -148,7 +176,11 @@ describe('ProjectsService', () => {
     it('should add, update, and remove a contact', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Project', type: 'internal' })
+        .values({
+          name: 'Project',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
       const [contact] = await pg.db
         .insert(contacts)
@@ -189,11 +221,15 @@ describe('ProjectsService', () => {
     it('should add and remove an actor', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Project', type: 'internal' })
+        .values({
+          name: 'Project',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor' })
+        .values({ name: 'Actor', isTaxRegistered: false })
         .returning();
 
       await service.addActor(
@@ -219,7 +255,11 @@ describe('ProjectsService', () => {
     it('should delete project', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Project', type: 'internal' })
+        .values({
+          name: 'Project',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
 
       await service.deleteProject(project.projectId, mockUserId);
@@ -235,6 +275,48 @@ describe('ProjectsService', () => {
       await expect(
         service.deleteProject(randomUUID(), mockUserId),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('archiveProject', () => {
+    it('should archive a project', async () => {
+      const [project] = await pg.db
+        .insert(projects)
+        .values({
+          name: 'To Archive',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
+        .returning();
+
+      const res = await service.archiveProject(project.projectId, mockUserId);
+      expect(res.stateCode).toBe(PROJECT_STATE.ARCHIVED);
+
+      const dbRecord = await pg.db.query.projects.findFirst({
+        where: eq(projects.projectId, project.projectId),
+      });
+      expect(dbRecord?.stateCode).toBe(PROJECT_STATE.ARCHIVED);
+    });
+  });
+
+  describe('unarchiveProject', () => {
+    it('should unarchive a project', async () => {
+      const [project] = await pg.db
+        .insert(projects)
+        .values({
+          name: 'Project To Unarchive',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+          stateCode: PROJECT_STATE.ARCHIVED,
+        })
+        .returning();
+
+      const res = await service.unarchiveProject(project.projectId, mockUserId);
+      expect(res.stateCode).toBe(PROJECT_STATE.ACTIVE);
+
+      const dbRecord = await pg.db.query.projects.findFirst({
+        where: eq(projects.projectId, project.projectId),
+      });
+      expect(dbRecord?.stateCode).toBe(PROJECT_STATE.ACTIVE);
     });
   });
 });

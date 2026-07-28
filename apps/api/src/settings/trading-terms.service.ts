@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { tradingTerms } from '../drizzle/herobm-core-schema';
+import { tradingTerms } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { CreateTradingTermDto, UpdateTradingTermDto } from './dto';
 
@@ -39,6 +39,8 @@ export class TradingTermsService {
             description: dto.description,
             days: dto.days,
             type: dto.type,
+            source: 'app',
+            isActive: true,
           })
           .returning();
         return {

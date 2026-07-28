@@ -17,7 +17,7 @@ import {
   customers,
   actors,
   actorActorLinks,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -106,8 +106,8 @@ export class CustomersWriteService {
             .insert(actors)
             .values({
               name: name as string,
-              businessNumber: businessNumber as string,
-              isTaxRegistered: isTaxRegistered as boolean,
+              businessNumber: (businessNumber as string) || null,
+              isTaxRegistered: (isTaxRegistered as boolean) ?? false,
               headquartersAddressLine1: billingAddressLine1 as string,
               headquartersAddressLine2: billingAddressLine2 as string,
               headquartersCity: billingAddressCity as string,
@@ -127,6 +127,9 @@ export class CustomersWriteService {
           .values({
             ...customerFields,
             actorId: actorRecord.actorId,
+            stateCode:
+              (customerFields.stateCode as string) || CUSTOMER_STATE.ACTIVE,
+            source: (customerFields.source as string) || 'system',
             currencyCode:
               (customerFields.currencyCode as string) ||
               this.appConfig.homeCurrency(),

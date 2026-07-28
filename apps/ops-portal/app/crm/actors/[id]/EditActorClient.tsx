@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { useAuth } from '@/components/AuthGate';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -21,6 +22,9 @@ import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { COUNTRIES } from '@herobm/shared';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useSettings } from '@/components/SettingsProvider';
+import { ACTOR_STATE, SystemResource, hasPermission } from '@herobm/shared';
+import ActorSelect, { type Actor } from '@/components/shared/ActorSelect';
+import ContactSelect, { type Contact } from '@/components/shared/ContactSelect';
 
 interface ActorFormDto {
   name: string;
@@ -41,10 +45,15 @@ interface ActorFormDto {
   tags: string[];
   createdOn: string;
   modifiedOn: string;
+  referralMode?: string | null;
+  referredByActorId?: string | null;
+  referredByContactId?: string | null;
+  referredByActorName?: string | null;
+  referredByContactName?: string | null;
+  referralNote?: string | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK missing proper inline types for Actor Contacts
-type ActorContactWithDetails = any;
+
 
 function GeneralInfoTab({
   dto,
@@ -185,12 +194,10 @@ function GeneralInfoTab({
                 const tag = r.value;
                 const isActive = dto.tags.includes(tag);
                 return (
-                  <button
+                  <Button
                     key={tag}
-                    type="button"
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      isActive ? 'bg-[var(--accent)] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    variant={isActive ? "primary" : "secondary"}
+                    size="sm"
                     onClick={() => {
                       const newTags = isActive ? dto.tags.filter(t => t !== tag) : [...dto.tags, tag];
                       updateField('tags', newTags);
@@ -199,7 +206,7 @@ function GeneralInfoTab({
                     disabled={loading}
                   >
                     {tag}
-                  </button>
+                  </Button>
                 );
               })}
               {actorTags.length === 0 && (
@@ -332,6 +339,72 @@ function GeneralInfoTab({
           </div>
         </div>
       </div>
+
+      <div className="card" id="referral-section">
+        <h3 className="section-heading">
+          <span className="material-symbols-outlined">group_add</span>
+          REFERRAL
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Mode</label>
+            <select
+              className="input w-full"
+              value={dto.referralMode || ''}
+              onChange={e => {
+                const val = e.target.value || null;
+                updateField('referralMode', val);
+                saveField('referralMode', val);
+              }}
+              disabled={loading}
+            >
+              <option value="">None</option>
+              {app?.referralModes?.map((m: api.OrderedSettingDto) => (
+                <option key={m.value} value={m.value}>{m.value}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Actor</label>
+            <ActorSelect
+              value={dto.referredByActorId || null}
+              initialSearchTerm={dto.referredByActorName || ''}
+              onChange={(actor: Actor | null) => {
+                updateField('referredByActorId', actor?.actorId || null);
+                updateField('referredByActorName', actor?.name || null);
+                saveField('referredByActorId', actor?.actorId || null);
+              }}
+              disabled={loading}
+              placeholder="Select Actor..."
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Contact</label>
+            <ContactSelect
+              value={dto.referredByContactId || null}
+              initialSearchTerm={dto.referredByContactName || ''}
+              onChange={(contact: Contact | null) => {
+                updateField('referredByContactId', contact?.contactId || null);
+                updateField('referredByContactName', contact?.fullName || null);
+                saveField('referredByContactId', contact?.contactId || null);
+              }}
+              disabled={loading}
+              placeholder="Select Contact..."
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Notes</label>
+          <textarea
+            className="input w-full min-h-[80px]"
+            value={dto.referralNote || ''}
+            onChange={e => updateField('referralNote', e.target.value)}
+            onBlur={e => saveField('referralNote', e.target.value)}
+            disabled={loading}
+            placeholder="Additional context about this referral..."
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -339,7 +412,7 @@ function GeneralInfoTab({
 function NotesTab({ actorId, notes, onNoteAdded }: { actorId: string; notes: api.ActorNoteResponseDto[]; onNoteAdded: () => void }) {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const t = useTranslations();
+  const t = useTranslations('common');
 
   const handleAddNote = async () => {
     if (!content.trim()) return;
@@ -374,7 +447,7 @@ function NotesTab({ actorId, notes, onNoteAdded }: { actorId: string; notes: api
         />
         <div className="flex justify-end mb-6">
           <Button variant="primary" onClick={handleAddNote} disabled={submitting || !content.trim()}>
-            {submitting ? t('common.loading') : t('common.add')}
+            {submitting ? t('loading') : t('add')}
           </Button>
         </div>
 
@@ -387,8 +460,8 @@ function NotesTab({ actorId, notes, onNoteAdded }: { actorId: string; notes: api
                 <div className="flex items-center gap-1 mb-2 text-xs font-medium text-gray-600">
                   <span>{new Date(note.createdOn).toLocaleString()}</span>
                   <span>-</span>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any, no-restricted-syntax -- SDK missing User populated properties and no translation key for system */}
-                  <span>{(note.createdBy as any)?.displayName || (note.createdBy as any)?.username || note.createdById || 'System'}</span>
+
+                  <span>{((note.createdBy as Record<string, unknown>)?.displayName as string) || ((note.createdBy as Record<string, unknown>)?.username as string) || note.createdById || t('system')}</span>
                 </div>
                 <div className="text-sm text-gray-800 whitespace-pre-wrap">
                   {note.content}
@@ -408,11 +481,10 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tCommon = useTranslations();
-  
-
-  
-  const initialTab = searchParams.get('tab') as 'overview' | 'contacts' | 'projects' | 'activity' || 'overview';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   const {
     entity: actor,
@@ -443,9 +515,36 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       headquartersCountry: data.headquartersCountry || '',
       tags: data.tags || [],
       createdOn: (data.createdOn as unknown as string) || '',
-      modifiedOn: (data.modifiedOn as unknown as string) || ''
+      modifiedOn: (data.modifiedOn as unknown as string) || '',
+      referralMode: data.referralMode || null,
+      referralNote: data.referralNote || null,
+      referredByActorId: data.referredByActorId || null,
+      referredByContactId: data.referredByContactId || null,
+      referredByActorName: data.referredByActorName || null,
+      referredByContactName: data.referredByContactName || null,
     }),
   });
+
+  const archiveActor = async () => {
+    if (!confirm('Are you sure you want to archive this actor?')) return;
+    try {
+      await api.actorsControllerArchive(actorId, {});
+      toast.success('Actor archived');
+      loadActor();
+    } catch (e) {
+      reportError(e, 'Archive Actor');
+    }
+  };
+
+  const unarchiveActor = async () => {
+    try {
+      await api.actorsControllerUnarchive(actorId, {});
+      toast.success('Actor unarchived');
+      loadActor();
+    } catch (e) {
+      reportError(e, 'Unarchive Actor');
+    }
+  };
 
   useDocumentTitle(actor ? actor.name : null);
 
@@ -490,7 +589,7 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       label: ext.label,
       isSubPage: true,
       isActive: activeTab === ext.id,
-      onClick: () => setActiveTab(ext.id as any) /* eslint-disable-line @typescript-eslint/no-explicit-any -- dynamic tab */,
+      onClick: () => setActiveTab(ext.id),
     }))
   ];
 
@@ -503,6 +602,30 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
           showPrint={false}
           nav={<PageNav sections={navItems} />}
         />
+      }
+      footerActions={
+        canArchive && actor ? (
+          actor.stateCode === ACTOR_STATE.ARCHIVED ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={unarchiveActor}
+              disabled={loading}
+            >
+              Unarchive
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              onClick={archiveActor}
+              disabled={loading}
+            >
+              Archive
+            </Button>
+          )
+        ) : undefined
       }
     >
       <>

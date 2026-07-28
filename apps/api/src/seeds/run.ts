@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import * as schema from '../drizzle/herobm-core-schema';
+import * as schema from '../drizzle/schema';
 import { PgDatabase } from 'drizzle-orm/pg-core';
 
 // Load environment variables from the root .env file

@@ -17,7 +17,8 @@ import {
   binContents,
   uomDictionary,
   productUoms,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
+import { PRODUCT_STATE } from '@herobm/shared';
 import { eq, sql } from 'drizzle-orm';
 
 jest.mock('../common/emit-event', () => ({
@@ -44,6 +45,8 @@ describe('InventoryService', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(zones).values({
@@ -51,6 +54,8 @@ describe('InventoryService', () => {
       locationId: LOCATION_ID,
       code: 'Z1',
       name: 'Zone 1',
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(bins).values({
@@ -58,6 +63,10 @@ describe('InventoryService', () => {
       zoneId: ZONE_ID,
       binNumber: 'B-01-01',
       binType: 'storage',
+      source: 'app',
+      createdBy: 'system',
+      isUnavailable: false,
+      isBonded: false,
     });
 
     await pg.db.insert(products).values({
@@ -66,6 +75,10 @@ describe('InventoryService', () => {
       name: 'Product 1',
       baseUom: 'EA',
       productType: 'inventory',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     });
   });
 
@@ -195,6 +208,10 @@ describe('InventoryService', () => {
         zoneId: ZONE_ID,
         binNumber: 'B-01-02',
         binType: 'storage',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       });
 
       // Seed initial stock
@@ -262,6 +279,10 @@ describe('InventoryService', () => {
         zoneId: ZONE_ID,
         binNumber: 'QUARANTINE-1',
         binType: 'quarantine',
+        source: 'app',
+        createdBy: 'system',
+        isUnavailable: false,
+        isBonded: false,
       });
 
       // Seed initial stock
@@ -309,6 +330,8 @@ describe('InventoryService', () => {
         entryNumber: 'E1',
         sourceType: 'INIT',
         entryDate: new Date(),
+        isReversed: false,
+        createdBy: 'system',
       });
       await pg.db.insert(inventoryLedger).values({
         entryId,
@@ -348,6 +371,8 @@ describe('InventoryService', () => {
         entryNumber: 'E-LOC-1',
         sourceType: 'INIT',
         entryDate: new Date(),
+        isReversed: false,
+        createdBy: 'system',
       });
       await pg.db.insert(inventoryLedger).values({
         entryId,
@@ -430,6 +455,10 @@ describe('InventoryService', () => {
         name: 'Fractional Product',
         baseUom: 'EA',
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       await pg.db.insert(productUoms).values({

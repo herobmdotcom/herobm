@@ -149,22 +149,25 @@ describe('API E2E — Purchase Order Returns', () => {
     );
 
     // Receive the items to ensure they are returnable
-    await request(app.getHttpServer())
+    const grRes = await request(app.getHttpServer())
       .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         vendorId: validVendorId,
         locationId: validLocationId,
+        purchaseOrderId: purchaseOrderId,
         packingSlipNumber: 'PS-PRET',
         notes: 'Initial receipt for return test',
         lines: [
           {
             productId: appProductId,
             quantityReceived: '10',
+            purchaseOrderLineId: lineIds[0],
           },
         ],
-      })
-      .expect(201);
+      });
+    if (grRes.status !== 201) console.error('GR Error:', grRes.body);
+    expect(grRes.status).toBe(201);
 
     return { purchaseOrderId, lineIds };
   }
@@ -197,8 +200,9 @@ describe('API E2E — Purchase Order Returns', () => {
               returnFee: '15.00',
             },
           ],
-        })
-        .expect(201);
+        });
+      console.log('CREATE RETURN RESPONSE:', res.status, res.body);
+      expect(res.status).toBe(201);
 
       expect(res.body).toHaveProperty('returnId');
       expect(res.body).toHaveProperty('stateCode', PURCHASE_RETURN_STATE.DRAFT);

@@ -16,6 +16,10 @@ export class CreateGoodsReceivedLineDto {
 
   @IsNumberString()
   quantityReceived!: string;
+
+  @IsOptional()
+  @IsUUID()
+  purchaseOrderLineId?: string;
 }
 
 export class CreateGoodsReceivedDto {
@@ -30,6 +34,10 @@ export class CreateGoodsReceivedDto {
   @IsString()
   @IsNotEmpty()
   locationId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  purchaseOrderId?: string;
 
   @IsOptional()
   @IsString()

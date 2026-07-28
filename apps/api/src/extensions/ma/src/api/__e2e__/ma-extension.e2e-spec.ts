@@ -1,5 +1,5 @@
 import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from '../../../../../../test/utils/e2e-module';
+import { createE2eModule } from '@test/utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 

@@ -41,7 +41,7 @@ import {
   glJournalLines,
   tradingTerms,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
@@ -1941,7 +1941,7 @@ export class PurchaseInvoiceService {
         .update(purchaseInvoices)
         .set({
           // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-          stateCode: newState as typeof purchaseInvoices.$inferInsert.stateCode,
+          stateCode: newState,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseInvoices.invoiceId, invoiceId))

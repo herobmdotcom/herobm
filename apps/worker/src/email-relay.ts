@@ -161,48 +161,38 @@ export async function pollEmailOutbox(db: any) {
           })
           .where(eq(emailOutbox.id, email.id));
 
-        if (email.entityType && email.entityId) {
-          const attachmentNames = metadataAttachments.map((a: any) => a.filename);
-          const payload: any = {
-            emailId: email.id,
-            toAddress: email.toAddress,
-            subject: email.subject,
-          };
-          if (attachmentNames.length > 0) {
-            payload.attachments = attachmentNames;
-          }
+        const attachmentNames = metadataAttachments.map((a: any) => a.filename);
+        const payload: any = {
+          emailId: email.id,
+          toAddress: email.toAddress,
+          subject: email.subject,
+        };
+        if (attachmentNames.length > 0) {
+          payload.attachments = attachmentNames;
+        }
 
-          // Always log to the EMAIL generic entity
-          await db.insert(emailEventsTable).values({
+        // Always log to the EMAIL generic entity
+        await db.insert(emailEventsTable).values({
+          eventId: crypto.randomUUID(),
+          entityType: 'email',
+          entityId: email.id,
+          eventType: 'sent',
+          payload,
+          actor,
+          createdOn: new Date()
+        });
+        
+        if (email.entityType && email.entityId) {
+          const dynamicTable = getEventTable(email.entityType);
+          await db.insert(dynamicTable).values({
             eventId: crypto.randomUUID(),
-            entityType: 'email',
-            entityId: email.id,
-            eventType: 'sent',
+            entityType: email.entityType,
+            entityId: email.entityId,
+            eventType: 'email.sent',
             payload,
             actor,
             createdOn: new Date()
           });
-          
-          if (email.entityType && email.entityId) {
-            const dynamicTable = getEventTable(email.entityType);
-            await db.insert(dynamicTable).values({
-              eventId: crypto.randomUUID(),
-              entityType: email.entityType,
-              entityId: email.entityId,
-              eventType: 'email.sent',
-              payload,
-              actor,
-              createdOn: new Date()
-            });
-            await db.insert(outbox).values({
-              outboxId: crypto.randomUUID(),
-              entityType: email.entityType,
-              entityId: email.entityId,
-              eventType: 'email.sent',
-              payload,
-              createdOn: new Date()
-            });
-          }
           await db.insert(outbox).values({
             outboxId: crypto.randomUUID(),
             entityType: email.entityType,

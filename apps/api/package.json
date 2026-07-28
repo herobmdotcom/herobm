@@ -104,9 +104,9 @@
   },
   "jest": {
     "moduleFileExtensions": [
+      "ts",
       "js",
-      "json",
-      "ts"
+      "json"
     ],
     "rootDir": "src",
     "testTimeout": 30000,
@@ -147,11 +147,9 @@
       "node_modules/(?!(uuid)/)"
     ],
     "moduleNameMapper": {
+      "^@api/(.*)$": "<rootDir>/$1",
       "^@herobm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
       "^uuid$": "<rootDir>/../test/utils/uuid-mock.js"
-    },
-    "setupFiles": [
-      "<rootDir>/test-setup.ts"
-    ]
+    }
   }
 }

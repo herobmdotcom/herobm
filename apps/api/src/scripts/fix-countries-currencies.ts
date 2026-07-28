@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { customers, suppliers, actors } from '../drizzle/herobm-core-schema';
+import { customers, suppliers, actors } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';

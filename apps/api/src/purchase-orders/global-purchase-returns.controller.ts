@@ -33,7 +33,7 @@ import {
   purchaseOrderReturnLines,
   suppliers,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import {
   PurchaseReturnResponseDto,

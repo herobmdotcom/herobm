@@ -30,3 +30,12 @@ logs/
 **/.playwright/
 .venv/
 scratch/
+
+# Large data/backup files
+*.tar.gz
+*.tar
+*.csv
+
+# Reports and test outputs
+*.md
+portal-test-out.txt

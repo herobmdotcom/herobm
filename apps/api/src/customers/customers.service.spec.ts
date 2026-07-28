@@ -14,7 +14,7 @@ import {
   glJournalLines,
   glAccounts,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { sql } from 'drizzle-orm';
 import {
   CUSTOMER_STATE,
@@ -64,8 +64,16 @@ describe('CustomersService', () => {
       const acts = await pg.db
         .insert(actors)
         .values([
-          { name: 'Customer A', headquartersAddressLine1: 'AU' },
-          { name: 'Customer B', headquartersAddressLine1: 'AU' },
+          {
+            name: 'Customer A',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
+          {
+            name: 'Customer B',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
         ])
         .returning();
 
@@ -74,11 +82,17 @@ describe('CustomersService', () => {
           actorId: acts[0].actorId,
           customerNumber: 'A1',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         },
         {
           actorId: acts[1].actorId,
           customerNumber: 'B1',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         },
       ]);
 
@@ -92,8 +106,16 @@ describe('CustomersService', () => {
       const acts = await pg.db
         .insert(actors)
         .values([
-          { name: 'Acme Corp', headquartersAddressLine1: 'AU' },
-          { name: 'Other Inc', headquartersAddressLine1: 'AU' },
+          {
+            name: 'Acme Corp',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
+          {
+            name: 'Other Inc',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
         ])
         .returning();
 
@@ -102,11 +124,17 @@ describe('CustomersService', () => {
           actorId: acts[0].actorId,
           customerNumber: 'ACME',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         },
         {
           actorId: acts[1].actorId,
           customerNumber: 'OTHER',
           currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         },
       ]);
 
@@ -129,6 +157,8 @@ describe('CustomersService', () => {
         .values({
           name: 'VIP',
           groupCode: 'VIP01',
+          isOnCreditHold: false,
+          stateCode: CUSTOMER_STATE.DRAFT,
         })
         .returning();
 
@@ -137,6 +167,7 @@ describe('CustomersService', () => {
         .values({
           name: 'VIP Client',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -146,6 +177,9 @@ describe('CustomersService', () => {
         currencyCode: 'AUD',
         customerGroupId: ag.customerGroupId,
         taxPositionId: tc.taxPositionId,
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       const result = await service.findAll();
@@ -159,8 +193,16 @@ describe('CustomersService', () => {
       const acts = await pg.db
         .insert(actors)
         .values([
-          { name: 'Active', headquartersAddressLine1: 'AU' },
-          { name: 'Archived', headquartersAddressLine1: 'AU' },
+          {
+            name: 'Active',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
+          {
+            name: 'Archived',
+            headquartersAddressLine1: 'AU',
+            isTaxRegistered: false,
+          },
         ])
         .returning();
 
@@ -170,12 +212,16 @@ describe('CustomersService', () => {
           customerNumber: 'ACT',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.ACTIVE,
+          source: 'app',
+          createdBy: 'system',
         },
         {
           actorId: acts[1].actorId,
           customerNumber: 'ARC',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.ARCHIVED,
+          source: 'app',
+          createdBy: 'system',
         },
       ]);
 
@@ -197,6 +243,7 @@ describe('CustomersService', () => {
         .values({
           name: 'Main Customer',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -206,6 +253,9 @@ describe('CustomersService', () => {
           actorId: act.actorId,
           customerNumber: 'MAIN',
           currencyCode: 'GBP',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -229,6 +279,7 @@ describe('CustomersService', () => {
         .values({
           name: 'Legacy Customer',
           headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -237,6 +288,9 @@ describe('CustomersService', () => {
         customerNumber: 'LEG1',
         currencyCode: 'USD',
         sourceId: 'ABM-999',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       });
 
       const result = await service.findOne('ABM-999');
@@ -258,6 +312,7 @@ describe('CustomersService', () => {
         .values({
           name: 'Balance Test Customer',
           headquartersAddressLine1: 'US',
+          isTaxRegistered: false,
         })
         .returning();
 
@@ -269,6 +324,9 @@ describe('CustomersService', () => {
           currencyCode: 'USD',
           isOnCreditHold: true,
           creditLimit: '5000.00',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -289,6 +347,11 @@ describe('CustomersService', () => {
           fulfillmentLocationId: locId,
           currencyCode: 'USD',
           stateCode: SALES_ORDER_STATE.DRAFT,
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
 
@@ -307,6 +370,11 @@ describe('CustomersService', () => {
           totalAmount: '100.00',
           currencyCode: 'USD',
           dueDate: currentDue,
+          exchangeRate: '1',
+          baseTotalAmount: '0',
+          taxAmount: '0',
+          baseOutstandingAmount: '0',
+          createdBy: 'system',
         },
         {
           invoiceNumber: 'INV-2',
@@ -316,6 +384,11 @@ describe('CustomersService', () => {
           totalAmount: '300.00',
           currencyCode: 'USD',
           dueDate: overdueDue,
+          exchangeRate: '1',
+          baseTotalAmount: '0',
+          taxAmount: '0',
+          baseOutstandingAmount: '0',
+          createdBy: 'system',
         },
       ]);
 
@@ -327,6 +400,8 @@ describe('CustomersService', () => {
           entryNumber: 'JE-1',
           entryDate: new Date().toISOString().split('T')[0],
           sourceType: 'manual',
+          isReversed: false,
+          createdBy: 'system',
         })
         .returning();
 
@@ -337,6 +412,10 @@ describe('CustomersService', () => {
           name: 'Test AR',
           accountType: 'asset',
           currencyCode: 'USD',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
         })
         .returning();
 
@@ -347,6 +426,10 @@ describe('CustomersService', () => {
         partyId: acc.customerId,
         debit: '350.00',
         credit: '0.00',
+        foreignDebit: '350.00',
+        foreignCredit: '0.00',
+        exchangeRate: '1',
+        isReconciled: false,
       });
 
       // 5. Assert getAgedBalances

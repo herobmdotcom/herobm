@@ -24,8 +24,8 @@ SELECT
         WHERE bc.product_id = p.product_id
           AND z.location_id = l.location_id
           AND b.bin_type NOT IN ('staging', 'quarantine')
-          AND b.is_unavailable = false
-          AND b.is_bonded = false
+          AND COALESCE(b.is_unavailable, false) = false
+          AND COALESCE(b.is_bonded, false) = false
     ), 0) AS quantity_on_hand,
     COALESCE((
         -- Committed: Backorders marked 'received_reserved' AND any confirmed sales orders that haven't been picked.

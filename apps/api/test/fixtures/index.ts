@@ -14,7 +14,7 @@ import {
   salesInvoices,
   uomDictionary,
   actors,
-} from '../../src/drizzle/herobm-core-schema';
+} from '../../src/drizzle/schema';
 import {
   SalesOrderState,
   ReturnState,
@@ -26,6 +26,9 @@ import {
   PURCHASE_ORDER_STATE,
   SALES_INVOICE_STATE,
   SHIPMENT_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
 
 // Ensures random order numbers during test isolation
@@ -40,6 +43,7 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
     .values({
       name,
       country: 'AU',
+      isTaxRegistered: false,
     })
     .returning();
 
@@ -48,6 +52,9 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
     customerId,
     customerNumber: `CUST-TEST-${++_sequence}`,
     currencyCode: 'AUD', // fixture
+    stateCode: CUSTOMER_STATE.ACTIVE,
+    source: 'app',
+    createdBy: 'system',
   });
   return { customerId };
 }
@@ -83,6 +90,9 @@ export async function createTestProduct(
     weightedAverageCost: opts?.weightedAverageCost || '10.00',
     listPrice: opts?.listPrice || '0.00',
     salesTaxCategoryId: opts?.salesTaxCategoryId,
+    stateCode: PRODUCT_STATE.ACTIVE,
+    source: 'app',
+    createdBy: 'system',
   });
   return { productId };
 }
@@ -107,6 +117,10 @@ export async function createTestSalesOrder(
     deliveryAddressLine1: 'Test Address 123',
     currencyCode: 'AUD', // fixture
     source: 'app',
+    baseTotalAmount: '0',
+    exchangeRate: '1',
+    discrepanciesAcknowledged: false,
+    createdBy: 'system',
   });
 
   return { salesOrderId, orderNumber };
@@ -135,6 +149,10 @@ export async function createTestSalesOrderLine(
     amount: (opts.quantity * opts.price).toString(),
     fulfillmentLocationId: '10000000-0000-4000-8000-000000000001', // Should ideally be passed in
     taxCategoryId: opts.taxCategoryId,
+    discountPercentage: '0',
+    tax: '0',
+    quantityPicked: '0',
+    isPostConfirmation: false,
   });
 
   return { salesOrderLineId };
@@ -155,6 +173,7 @@ export async function createTestReturn(
     returnNumber,
     salesOrderId: opts.salesOrderId,
     stateCode: opts.state || RETURN_STATE.DRAFT,
+    createdBy: 'system',
   });
 
   return { returnId, returnNumber };
@@ -178,6 +197,9 @@ export async function createTestReturnLine(
     quantityReturned: opts.quantity.toString(),
     returnFee: (opts.returnFee || 0).toString(),
     reason: 'Defective',
+    resolution: 'refund',
+    quantityReceived: '0',
+    putawayStatus: 'pending',
   });
 
   return { returnLineId };
@@ -192,6 +214,7 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     .insert(actors)
     .values({
       name,
+      isTaxRegistered: false,
     })
     .returning();
 
@@ -200,6 +223,9 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     customerId,
     customerNumber: `SUPP-TEST-${++_sequence}`,
     currencyCode: 'AUD', // fixture
+    stateCode: SUPPLIER_STATE.ACTIVE,
+    source: 'app',
+    createdBy: 'system',
   });
   return { customerId };
 }
@@ -222,6 +248,9 @@ export async function createTestPurchaseOrder(
     deliveryLocationId: opts.locationId,
     stateCode: opts.state || PURCHASE_ORDER_STATE.DRAFT,
     currencyCode: 'AUD', // fixture
+    baseTotalAmount: '0',
+    exchangeRate: '1',
+    createdBy: 'system',
   });
 
   return { purchaseOrderId, orderNumber };
@@ -243,6 +272,8 @@ export async function createTestGlEntry(
     sourceId: opts.sourceId,
     sourceType: opts.sourceType,
     entryDate: new Date().toISOString(),
+    isReversed: false,
+    createdBy: 'system',
   });
 
   return { journalEntryId };
@@ -265,6 +296,12 @@ export async function createTestInvoice(
     stateCode: opts.state || SALES_INVOICE_STATE.DRAFT,
     totalAmount: '100.00',
     currencyCode: 'AUD', // fixture
+    outstandingAmount: '0',
+    taxAmount: '0',
+    baseTotalAmount: '0',
+    baseOutstandingAmount: '0',
+    exchangeRate: '1',
+    createdBy: 'system',
   });
 
   return { invoiceId };
@@ -288,6 +325,7 @@ export async function createTestShipment(
     stateCode: opts.state || SHIPMENT_STATE.DISPATCHED,
     fulfillmentLocationId:
       opts.locationId || '10000000-0000-4000-8000-000000000001',
+    createdBy: 'system',
   });
 
   return { shipmentId, shipmentNumber };

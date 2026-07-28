@@ -30,7 +30,7 @@ import {
   salesOrderReturnLines,
   inventoryLedger,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';

@@ -9,10 +9,14 @@ import {
 } from '@nestjs/common';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { pdfTemplates, pdfTemplateHooks } from '../drizzle/herobm-core-schema';
+import { pdfTemplates, pdfTemplateHooks } from '../drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
+
+jest.mock('../common/utils/security.util', () => ({
+  verifySystemHealth: jest.fn().mockResolvedValue(true),
+}));
 
 // Mock fs and child_process for Typst compilation testing
 jest.mock('fs', () => {

@@ -10,7 +10,7 @@ import {
   actors,
   products,
   productGroups,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { sql, eq, and, gte, lte, asc } from 'drizzle-orm';
 import {
   getAggregationPeriod,

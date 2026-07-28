@@ -518,7 +518,8 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                 setActiveTab={setActiveTab}
                 isLinesEditable={isLinesEditable}
                 saving={saving}
-                updateLine={updateLine}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Types mismatch with PurchaseOrderLinesTab
+                updateLine={updateLine as any}
                 updateLineFields={updateLineFields}
                 removeLine={removeLine}
                 addLineFromProduct={addLineFromProduct}
@@ -526,8 +527,10 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                 subtotal={subtotal}
                 totalTax={totalTax}
                 taxCategories={taxCategories}
-                tPurchase={tPurchase}
-                tCommon={tCommon}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl TFunction types mismatch with Record
+                tPurchase={tPurchase as any}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl TFunction types mismatch with Record
+                tCommon={tCommon as any}
               />
 
         <AllocationsSection 

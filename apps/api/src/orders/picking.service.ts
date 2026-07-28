@@ -29,7 +29,7 @@ import {
   transferOrderShipments,
   transferOrderShipmentLines,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
   findOrder,
@@ -353,6 +353,7 @@ export class PickingService {
           binId: binId,
           quantity: quantity,
           createdBy: actor,
+          stateCode: SALES_ORDER_PICK_STATE.PICKED,
         })
         .returning();
 

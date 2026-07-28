@@ -26,7 +26,7 @@ import {
 } from '../auth/casbin.guard';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { outbox } from '../drizzle/herobm-core-schema';
+import { outbox } from '../drizzle/schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
 export class SyncSummaryDto {

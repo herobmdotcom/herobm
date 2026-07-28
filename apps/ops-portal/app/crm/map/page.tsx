@@ -1,0 +1,10 @@
+import MapContent from './MapContent';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Map - CRM',
+};
+
+export default function MapPage() {
+  return <MapContent />;
+}

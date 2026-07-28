@@ -21,7 +21,7 @@ import {
   actors,
   customerDeliveryAddresses,
   actorActorLinks,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import {
   PaginationQuery,
   parsePagination,

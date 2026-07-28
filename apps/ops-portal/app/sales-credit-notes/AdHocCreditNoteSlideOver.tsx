@@ -8,6 +8,7 @@ import SlideOver from '@/components/shared/SlideOver';
 import { getErrorMessage } from '@herobm/shared';
 
 import CustomerSelect from '@/components/shared/CustomerSelect';
+import { Button } from '@/components/shared/Button';
 
 export default function AdHocCreditNoteSlideOver({
     isOpen,
@@ -88,10 +89,10 @@ export default function AdHocCreditNoteSlideOver({
             width="max-w-2xl"
             footer={
                 <div className="flex items-center justify-end gap-3 w-full">
-                    <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+                    <Button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
                         {tCommon('cancel')}
-                    </button>
-                    <button 
+                    </Button>
+                    <Button 
                         onClick={handleConfirm} 
                         className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
                         disabled={saving || isInvalid}
@@ -101,7 +102,7 @@ export default function AdHocCreditNoteSlideOver({
                         ) : (
                             t('issueCreditNote')
                         )}
-                    </button>
+                    </Button>
                 </div>
             }
         >
@@ -130,10 +131,10 @@ export default function AdHocCreditNoteSlideOver({
                 <div className="mt-4 border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-secondary)]">
                     <div className="flex justify-between items-center p-3 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
                         <span className="font-medium">{t('creditLines')}</span>
-                        <button onClick={handleAddLine} className="btn btn-xs btn-outline">
+                        <Button onClick={handleAddLine} className="btn btn-xs btn-outline">
                             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-sm">add</span> {t('addLine')}
-                        </button>
+                        </Button>
                     </div>
                     
                     <table className="table-lines w-full">
@@ -181,14 +182,14 @@ export default function AdHocCreditNoteSlideOver({
                                         />
                                     </td>
                                     <td>
-                                        <button 
+                                        <Button 
                                             className="btn btn-ghost btn-xs text-error" 
                                             onClick={() => handleRemoveLine(index)}
                                             disabled={lines.length === 1}
                                         >
                                             { }
                                             <span className="material-symbols-outlined text-sm">delete</span>
-                                        </button>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}

@@ -8,6 +8,7 @@ import {
   Param,
   Body,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -15,6 +16,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
 import {
@@ -27,7 +29,9 @@ import {
   UpdateProjectContactDto,
   CreateProjectActorDto,
   UpdateProjectActorDto,
+  EmptyBodyDto,
 } from './dto';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { SystemResource } from '@herobm/shared';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -46,7 +50,7 @@ export class ProjectsController {
 
   @Post()
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Create Project' })
+  @ApiOperation({ summary: 'Create Project', description: 'Create Project' })
   @ApiCreatedResponse({ type: ProjectResponseDto })
   create(@Body() dto: CreateProjectDto, @AuthUser() user: JwtUser) {
     return this.projectsService.createProject(dto, user.userId);
@@ -54,15 +58,21 @@ export class ProjectsController {
 
   @Get()
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get all Projects' })
-  @ApiOkResponse({ type: [ProjectResponseDto] })
-  findAll() {
-    return this.projectsService.getProjects();
+  @ApiOperation({
+    summary: 'Get all Projects',
+    description: 'Get all Projects',
+  })
+  @ApiPaginatedResponse(ProjectResponseDto)
+  findAll(@Query() query: PaginationQuery) {
+    return this.projectsService.getProjects(query);
   }
 
   @Get(':id')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get Project by ID' })
+  @ApiOperation({
+    summary: 'Get Project by ID',
+    description: 'Get Project by ID',
+  })
   @ApiOkResponse({ type: ProjectResponseDto })
   findOne(@Param('id') id: string) {
     return this.projectsService.getProject(id);
@@ -70,7 +80,7 @@ export class ProjectsController {
 
   @Patch(':id')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Project' })
+  @ApiOperation({ summary: 'Update Project', description: 'Update Project' })
   @ApiOkResponse({ type: ProjectResponseDto })
   update(
     @Param('id') id: string,
@@ -80,9 +90,44 @@ export class ProjectsController {
     return this.projectsService.updateProject(id, dto, user.userId);
   }
 
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Archive Project',
+    description: 'Archives a project',
+  })
+  @ApiOkResponse({ type: ProjectResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  archive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.projectsService.archiveProject(id, user.userId);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Unarchive Project',
+    description: 'Unarchives a project',
+  })
+  @ApiOkResponse({ type: ProjectResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  unarchive(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.projectsService.unarchiveProject(id, user.userId);
+  }
+
   @Post(':id/notes')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Note to Project' })
+  @ApiOperation({
+    summary: 'Add Note to Project',
+    description: 'Add Note to Project',
+  })
   @ApiCreatedResponse({ type: ProjectNoteResponseDto })
   addNote(
     @Param('id') id: string,
@@ -94,7 +139,10 @@ export class ProjectsController {
 
   @Delete(':id/notes/:noteId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Delete Note from Project' })
+  @ApiOperation({
+    summary: 'Delete Note from Project',
+    description: 'Delete Note from Project',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   removeNote(
     @Param('id') id: string,
@@ -106,7 +154,10 @@ export class ProjectsController {
 
   @Post(':id/contacts')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Contact to Project' })
+  @ApiOperation({
+    summary: 'Add Contact to Project',
+    description: 'Add Contact to Project',
+  })
   @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
   addContact(
     @Param('id') id: string,
@@ -118,7 +169,10 @@ export class ProjectsController {
 
   @Delete(':id/contacts/:contactId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Remove Contact from Project' })
+  @ApiOperation({
+    summary: 'Remove Contact from Project',
+    description: 'Remove Contact from Project',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   removeContact(
     @Param('id') id: string,
@@ -130,7 +184,10 @@ export class ProjectsController {
 
   @Patch(':id/contacts/:contactId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Contact Role on Project' })
+  @ApiOperation({
+    summary: 'Update Contact Role on Project',
+    description: 'Update Contact Role on Project',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   updateContact(
     @Param('id') id: string,
@@ -143,7 +200,10 @@ export class ProjectsController {
 
   @Post(':id/actors')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Add Actor to Project' })
+  @ApiOperation({
+    summary: 'Add Actor to Project',
+    description: 'Add Actor to Project',
+  })
   @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
   addActor(
     @Param('id') id: string,
@@ -155,7 +215,10 @@ export class ProjectsController {
 
   @Put(':id/actors/:actorId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Update Actor Role on Project' })
+  @ApiOperation({
+    summary: 'Update Actor Role on Project',
+    description: 'Update Actor Role on Project',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   updateActor(
     @Param('id') id: string,
@@ -168,7 +231,10 @@ export class ProjectsController {
 
   @Delete(':id/actors/:actorId')
   @CasbinAction('write')
-  @ApiOperation({ summary: 'Remove Actor from Project' })
+  @ApiOperation({
+    summary: 'Remove Actor from Project',
+    description: 'Remove Actor from Project',
+  })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   removeActor(
     @Param('id') id: string,
@@ -179,8 +245,8 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  @CasbinAction('write')
-  @ApiOperation({ summary: 'Delete Project' })
+  @CasbinAction('delete')
+  @ApiOperation({ summary: 'Delete Project', description: 'Delete Project' })
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.projectsService.deleteProject(id, user.userId);

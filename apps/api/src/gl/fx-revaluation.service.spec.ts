@@ -22,10 +22,19 @@ import {
   products,
   uomDictionary,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { MATCH_STATUS } from '@herobm/shared';
+import {
+  MATCH_STATUS,
+  CUSTOMER_STATE,
+  SUPPLIER_STATE,
+  GOODS_RECEIVED_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+  PURCHASE_ORDER_STATE,
+  PUTAWAY_STATUS,
+} from '@herobm/shared';
 
 describe('FxRevaluationService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -68,6 +77,8 @@ describe('FxRevaluationService', () => {
                 entryDate: meta.entryDate,
                 stateCode: 'POSTED',
                 entryNumber: `JE-${randomUUID().substring(0, 5)}`,
+                isReversed: false,
+                createdBy: 'system',
               });
 
               for (const line of lines) {
@@ -84,6 +95,7 @@ describe('FxRevaluationService', () => {
                   foreignDebit: (line.foreignDebit || 0).toString(),
                   foreignCredit: (line.foreignCredit || 0).toString(),
                   exchangeRate: (line.exchangeRate || 1).toString(),
+                  isReconciled: false,
                 });
               }
             },
@@ -125,6 +137,10 @@ describe('FxRevaluationService', () => {
         name: 'Accounts Payable',
         accountType: 'liability',
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       },
       {
         glAccountId: arAccountId,
@@ -132,6 +148,10 @@ describe('FxRevaluationService', () => {
         name: 'Accounts Receivable',
         accountType: 'asset',
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       },
       {
         glAccountId: grniAccountId,
@@ -139,6 +159,10 @@ describe('FxRevaluationService', () => {
         name: 'GRNI',
         accountType: 'liability',
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       },
       {
         glAccountId: fxGainAccountId,
@@ -146,6 +170,10 @@ describe('FxRevaluationService', () => {
         name: 'Unrealised FX Gain',
         accountType: 'revenue',
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       },
       {
         glAccountId: fxLossAccountId,
@@ -153,12 +181,19 @@ describe('FxRevaluationService', () => {
         name: 'Unrealised FX Loss',
         accountType: 'expense',
         currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        isActive: true,
       },
     ]);
 
     await pg.db.insert(glSettings).values({
       fiscalYearStartMonth: 1,
       baseCurrency: 'AUD',
+      bankMatchDateToleranceDays: 0,
+      revenueRoutingPrecedence: 'product_first',
+      expenseRoutingPrecedence: 'product_first',
       defaultApAccountId: apAccountId,
       defaultArAccountId: arAccountId,
       defaultGrniAccountId: grniAccountId,
@@ -172,6 +207,7 @@ describe('FxRevaluationService', () => {
       actorId: vendorActorId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'USA',
+      isTaxRegistered: false,
     });
     vendorId = randomUUID();
     await pg.db.insert(suppliers).values({
@@ -180,6 +216,9 @@ describe('FxRevaluationService', () => {
       vendorNumber: 'V-001',
       isPurchasingBlocked: false,
       currencyCode: 'USD',
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      createdBy: 'system',
     });
 
     const customerActorId = randomUUID();
@@ -187,6 +226,7 @@ describe('FxRevaluationService', () => {
       actorId: customerActorId,
       name: 'Test Customer',
       headquartersAddressLine1: 'USA',
+      isTaxRegistered: false,
     });
     customerId = randomUUID();
     await pg.db.insert(customers).values({
@@ -194,6 +234,9 @@ describe('FxRevaluationService', () => {
       actorId: customerActorId,
       customerNumber: 'C-001',
       currencyCode: 'USD',
+      stateCode: CUSTOMER_STATE.DRAFT,
+      source: 'app',
+      createdBy: 'system',
     });
 
     const locId = randomUUID();
@@ -201,6 +244,8 @@ describe('FxRevaluationService', () => {
       locationId: locId,
       code: 'LOC-1',
       name: 'Main',
+      source: 'app',
+      createdBy: 'system',
     });
 
     // Seed Exchange Rates
@@ -236,6 +281,10 @@ describe('FxRevaluationService', () => {
         exchangeRate: '1.40', // 1000 USD = 1400 AUD
         stateCode: 'approved',
         invoiceDate: new Date('2026-01-15'),
+        baseTotalAmount: '0',
+        taxAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
       });
 
       // Run Revaluation on Jan 31st where rate is 1.50. Liability is now 1500 AUD.
@@ -306,6 +355,12 @@ describe('FxRevaluationService', () => {
         fulfillmentLocationId: (
           await pg.db.select().from(locations).limit(1)
         )[0].locationId,
+        stateCode: SALES_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
       });
 
       const invoiceId = randomUUID();
@@ -319,6 +374,10 @@ describe('FxRevaluationService', () => {
         exchangeRate: '1.40', // 1000 USD = 1400 AUD
         stateCode: 'invoiced',
         invoiceDate: new Date('2026-01-15'),
+        baseTotalAmount: '0',
+        taxAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
       });
 
       // Run Revaluation on Jan 31st where rate is 1.50. Asset is now 1500 AUD.
@@ -365,6 +424,9 @@ describe('FxRevaluationService', () => {
         currencyCode: 'USD',
         exchangeRate: '1.40',
         deliveryLocationId: locId,
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        createdBy: 'system',
       });
 
       const grId = randomUUID();
@@ -374,6 +436,8 @@ describe('FxRevaluationService', () => {
         vendorId,
         locationId: locId,
         createdOn: new Date('2026-01-15T10:00:00Z'),
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
       });
 
       await pg.db
@@ -391,6 +455,10 @@ describe('FxRevaluationService', () => {
         name: 'Test Product',
         productType: 'inventory',
         baseUom: 'ea',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       });
 
       await pg.db.insert(goodsReceivedLines).values({
@@ -400,6 +468,7 @@ describe('FxRevaluationService', () => {
         quantityReceived: '10',
         unitCost: '100', // 1000 USD total
         matchStatus: MATCH_STATUS.UNMATCHED,
+        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
       });
 
       const genRes = await service.generateCandidates({
@@ -478,6 +547,10 @@ describe('FxRevaluationService', () => {
         exchangeRate: '1.40',
         stateCode: 'approved',
         invoiceDate: new Date('2026-01-15'),
+        baseTotalAmount: '0',
+        taxAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
       });
 
       const genRes = await service.generateCandidates({

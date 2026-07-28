@@ -24,7 +24,7 @@ import {
   taxCategories,
   glSettings,
   tradingTerms,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import {
   BIN_TYPE,
   SALES_ORDER_STATE,
@@ -32,8 +32,11 @@ import {
   SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
   PUTAWAY_STATUS,
+  SUPPLIER_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
 } from '@herobm/shared';
-import * as schema from '../../drizzle/herobm-core-schema';
+import * as schema from '../../drizzle/schema';
 import * as readline from 'readline';
 
 // Import standard setup functions
@@ -136,6 +139,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
         state: 'XX',
         postCode: '00000',
         country: 'USA',
+        source: 'app',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
 
@@ -146,6 +151,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
         locationId: loc.id,
         code: 'MAIN',
         name: 'Main Storage Zone',
+        source: 'app',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
 
@@ -156,6 +163,8 @@ async function seedMasterData(db: any): Promise<MasterData> {
         zoneId: loc.zoneId,
         binNumber: 'A1-01',
         binType: BIN_TYPE.STORAGE,
+        source: 'app',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
   }
@@ -188,6 +197,10 @@ async function seedMasterData(db: any): Promise<MasterData> {
         taxCategoryId: taxCatId,
         tradingTermsId: termId,
         address1Country: 'USA',
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        source: 'app',
+        isPurchasingBlocked: false,
+        createdBy: 'system',
       })
       .onConflictDoNothing();
   }
@@ -211,6 +224,9 @@ async function seedMasterData(db: any): Promise<MasterData> {
         tradingTermsId: termId,
         creditLimit: '50000.00',
         billingAddressCountry: 'USA',
+        stateCode: CUSTOMER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
   }
@@ -251,6 +267,10 @@ async function seedMasterData(db: any): Promise<MasterData> {
         baseUom: 'EA',
         isActive: true,
         productType: 'inventory',
+        stateCode: PRODUCT_STATE.DRAFT,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
       })
       .onConflictDoNothing();
   }

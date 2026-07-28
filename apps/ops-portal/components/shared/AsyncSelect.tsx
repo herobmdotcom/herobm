@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, ReactNode } from 'react';
+import { Button } from './Button';
 
 function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,15 +51,23 @@ export default function AsyncSelect<T>({
   const [showDropdown, setShowDropdown] = useState(false);
   const [results, setResults] = useState<T[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isTypingRef = useRef(false);
 
   // Sync display value when it changes externally
   useEffect(() => {
+    if (isTypingRef.current) {
+      return;
+    }
     if (!value) {
       setSearchTerm('');
-    } else if (displayValue && !searchTerm) {
+    } else if (displayValue) {
       setSearchTerm(displayValue);
     }
   }, [value, displayValue]);
+
+  useEffect(() => {
+    isTypingRef.current = false;
+  });
 
   // Click outside to close
   useEffect(() => {
@@ -115,6 +124,7 @@ export default function AsyncSelect<T>({
           required={required && !value}
           onChange={(e) => {
             const val = e.target.value.trimStart();
+            isTypingRef.current = true;
             setSearchTerm(val);
             setShowDropdown(true);
             if (value && !clearOnSelect) onChange(null);
@@ -131,13 +141,15 @@ export default function AsyncSelect<T>({
           }}
         />
         {searchTerm && !disabled && !clearOnSelect && (
-          <button
+          <Button
             type="button"
-            className="absolute right-3 text-xs cursor-pointer text-gray-400 hover:text-gray-600"
+            variant="ghost"
+            size="icon"
+            className="absolute right-3 text-xs cursor-pointer text-gray-400 hover:text-gray-600 !w-4 !h-4"
             onClick={handleClear}
           >
             <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-          </button>
+          </Button>
         )}
       </div>
 

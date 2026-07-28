@@ -7,6 +7,7 @@ import AuthGate from '@/components/AuthGate';
 import { SettingsProvider } from '@/components/SettingsProvider';
 import { LicenseProvider } from '@/components/LicenseProvider';
 import LicenseBanner from '@/components/LicenseBanner';
+import { Button } from '@/components/shared/Button';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -46,9 +47,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               </main>
 
               {/* Floating Toggle Button for Mobile/Tablet */}
-              <button 
-                className="fixed bottom-6 left-6 z-[9999] lg:hidden w-14 h-14 rounded-full flex items-center justify-center print:hidden -[0_4px_12px_rgba(0,0,0,0.3)] transition-transform hover:scale-105 cursor-pointer"
-                style={{ background: 'var(--accent)', color: '#fff' }}
+              <Button 
+                variant="primary"
+                className="fixed bottom-6 left-6 z-[9999] lg:hidden w-14 h-14 rounded-full flex items-center justify-center print:hidden shadow-md transition-transform hover:scale-105 cursor-pointer !p-0"
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 aria-label="Toggle Navigation"
               >
@@ -56,7 +57,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                   {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   {isSidebarOpen ? 'close' : 'menu'}
                 </span>
-              </button>
+              </Button>
             </div>
           </div>
         </LicenseProvider>

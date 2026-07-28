@@ -7,6 +7,8 @@
  */
 
 export interface LoginDto {
+  /** @maxLength 255 */
   username: string;
+  /** @maxLength 255 */
   password: string;
 }

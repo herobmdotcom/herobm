@@ -3,6 +3,7 @@
 
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useLicense } from '@/components/LicenseProvider';
 import { licenseControllerApplyLicense, LicenseStatusDtoState, LicenseStatusDtoType } from '@herobm/sdk';
 import toast from 'react-hot-toast';
@@ -14,6 +15,7 @@ import { useRouter } from 'next/navigation';
 
 export default function LicensePage() {
   const tPortal = useTranslations('portal');
+  useDocumentTitle('License Management');
   const { status, isLoading, reloadStatus } = useLicense();
   const [licenseKey, setLicenseKey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

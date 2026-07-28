@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { userSettings } from '../drizzle/herobm-core-schema';
+import { userSettings } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 

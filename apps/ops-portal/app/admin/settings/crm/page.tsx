@@ -13,7 +13,7 @@ import { Button } from '@/components/shared/Button';
 
 export default function CRMSettingsPage() {
   const tSettings = useTranslations('admin.settings');
-  useDocumentTitle(tSettings('title'));
+  useDocumentTitle('CRM Settings');
   const t = useTranslations();
 
   // ── App Settings state ─────────────────────────────────────────────────────
@@ -50,6 +50,7 @@ export default function CRMSettingsPage() {
   const navSections = useMemo(() => [
     { id: 'roles-section', label: 'Roles', show: true },
     { id: 'projects-section', label: 'Projects', show: true },
+    { id: 'referrals-section', label: 'Referrals', show: true },
   ], []);
 
   const flushCache = async () => {
@@ -68,7 +69,7 @@ export default function CRMSettingsPage() {
   return (
     <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
-        title={tSettings('title') + ' - CRM'}
+        title="CRM Settings"
         subtitle={tSettings('subtitle')}
       >
         <PageNav sections={navSections} />
@@ -128,6 +129,22 @@ export default function CRMSettingsPage() {
               columnTitle="Type"
               items={appForm?.projectTypes || []}
               onChange={(newTypes) => updateAppField('projectTypes', newTypes)}
+            />
+          </div>
+        </div>
+
+        {/* ── Referrals Settings ─────────────────────────────────────────────── */}
+        <div id="referrals-section" className="card">
+          <h3 className="section-heading flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined">group_add</span>
+            Referrals
+          </h3>
+          <div className="flex flex-col gap-8">
+            <OrderedSettingEditor
+              title="Referral Modes"
+              columnTitle="Mode"
+              items={appForm?.referralModes || []}
+              onChange={(newModes) => updateAppField('referralModes', newModes)}
             />
           </div>
         </div>

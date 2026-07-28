@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as schema from '../../src/drizzle/herobm-core-schema';
+import * as schema from '../../src/drizzle/schema';
 import {
   seedCoaSettings,
   seedCoaAccounts,
@@ -27,8 +27,17 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   for (const file of files) {
     let sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
     sql = sql.replace(/^\uFEFF/, ''); // Strip BOM if present
+
+    // Drizzle uses --> statement-breakpoint to separate statements
+    const statements = sql
+      .split('--> statement-breakpoint')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
     try {
-      await client.exec(sql);
+      for (const statement of statements) {
+        await client.exec(statement);
+      }
     } catch (e) {
       console.warn(`Migration failed on file ${file}: ${e.message}`);
       throw e;

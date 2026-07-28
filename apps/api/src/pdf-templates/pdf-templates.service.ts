@@ -14,7 +14,7 @@ import {
   pdfTemplateHooks,
   pdfTemplateContexts,
   organization,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq, like, or, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';

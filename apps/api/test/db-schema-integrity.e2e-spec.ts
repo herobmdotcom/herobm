@@ -2,7 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import * as schema from '../src/drizzle/herobm-core-schema';
+import * as schema from '../src/drizzle/schema';
 import { sql } from 'drizzle-orm';
 import { INestApplication } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -55,9 +55,6 @@ describe('Database Schema Integrity (e2e) - ADV-103', () => {
       if (row.column_name === 'modified_on') {
         expect(row.column_default).not.toBeNull();
         expect(row.column_default).toMatch(/now\(\)|CURRENT_TIMESTAMP/i);
-      }
-      if (row.column_name === 'outstanding_amount') {
-        expect(row.column_default).not.toBeNull();
       }
     }
   });

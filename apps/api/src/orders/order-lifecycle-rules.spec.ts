@@ -14,7 +14,7 @@ import {
   taxCategories,
   salesEvents,
   outbox,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { SALES_ORDER_STATE, SHIPMENT_STATE } from '@herobm/shared';
 
@@ -49,6 +49,8 @@ describe('Order Lifecycle Rules', () => {
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main',
+      source: 'app',
+      createdBy: 'system',
     });
 
     await pg.db.insert(taxCategories).values({
@@ -69,6 +71,11 @@ describe('Order Lifecycle Rules', () => {
       stateCode: state as any,
       fulfillmentLocationId: LOCATION_ID,
       currencyCode: 'AUD',
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
     });
     await pg.db.insert(salesOrderLineItems).values([
       {
@@ -79,6 +86,11 @@ describe('Order Lifecycle Rules', () => {
         pricePerUnit: '0',
         fulfillmentLocationId: LOCATION_ID,
         taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       },
       {
         salesOrderLineId: LINE_2_ID,
@@ -88,6 +100,11 @@ describe('Order Lifecycle Rules', () => {
         pricePerUnit: '0',
         fulfillmentLocationId: LOCATION_ID,
         taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
       },
     ]);
   }
@@ -108,6 +125,7 @@ describe('Order Lifecycle Rules', () => {
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: SHIPMENT_STATE.DISPATCHED,
+        createdBy: 'system',
       });
       await pg.db.insert(salesOrderShipmentLines).values([
         {
@@ -146,6 +164,7 @@ describe('Order Lifecycle Rules', () => {
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: 'dispatched',
+        createdBy: 'system',
       });
       await pg.db.insert(salesOrderShipmentLines).values([
         {
@@ -187,6 +206,7 @@ describe('Order Lifecycle Rules', () => {
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: SHIPMENT_STATE.CANCELLED,
+        createdBy: 'system',
       });
 
       const result = await revertToPickingOnShipmentCancel.evaluate(
@@ -210,6 +230,7 @@ describe('Order Lifecycle Rules', () => {
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: 'dispatched',
+        createdBy: 'system',
       });
       await pg.db.insert(salesOrderShipmentLines).values([
         {

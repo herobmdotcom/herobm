@@ -5,10 +5,10 @@ import {
   customers,
   customerGroups,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { sql, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { CUSTOMER_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE, SALES_ORDER_STATE } from '@herobm/shared';
 
 describe('orders.sql - getCreditBlockedSql', () => {
   const pg = setupPgliteSuite();
@@ -21,6 +21,7 @@ describe('orders.sql - getCreditBlockedSql', () => {
       .insert(actors)
       .values({
         name: 'Test Customer',
+        isTaxRegistered: false,
       })
       .returning();
 
@@ -29,6 +30,9 @@ describe('orders.sql - getCreditBlockedSql', () => {
       customerId,
       customerNumber: `CUST-${customerId.substring(0, 8)}`,
       currencyCode: 'AUD',
+      stateCode: CUSTOMER_STATE.DRAFT,
+      source: 'app',
+      createdBy: 'system',
       ...overrides,
     });
     return customerId;
@@ -45,6 +49,12 @@ describe('orders.sql - getCreditBlockedSql', () => {
       customerId,
       currencyCode: 'AUD',
       fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+      stateCode: SALES_ORDER_STATE.DRAFT,
+      baseTotalAmount: '0',
+      exchangeRate: '1',
+      discrepanciesAcknowledged: false,
+      source: 'app',
+      createdBy: 'system',
       ...overrides,
     });
     return salesOrderId;

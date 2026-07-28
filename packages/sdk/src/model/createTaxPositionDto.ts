@@ -7,6 +7,8 @@
  */
 
 export interface CreateTaxPositionDto {
+  /** @maxLength 255 */
   code: string;
+  /** @maxLength 255 */
   title: string;
 }

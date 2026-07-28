@@ -1,4 +1,9 @@
-import { SystemResource } from '@herobm/shared';
+import {
+  SystemResource,
+  PRODUCT_STATE,
+  CUSTOMER_STATE,
+  SUPPLIER_STATE,
+} from '@herobm/shared';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
@@ -25,7 +30,7 @@ import {
   bins,
   customers,
   suppliers,
-} from '../../drizzle/herobm-core-schema';
+} from '../../drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
@@ -87,7 +92,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     return;
   }
 
-  const { casbinRule } = await import('../../drizzle/herobm-core-schema.js');
+  const { casbinRule } = await import('../../drizzle/schema/index.js');
 
   const existingSet = new Set();
 
@@ -305,6 +310,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v0: 'admin',
       v1: SystemResource.CRM,
       v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CRM,
+      v2: 'delete',
       v3: 'allow',
     },
 
@@ -1346,6 +1358,10 @@ async function seedProducts(db: SeedDB, dryRun: boolean) {
       name: 'Custom Line Product',
       productType: 'non-stock',
       baseUom: 'EA',
+      stateCode: PRODUCT_STATE.ACTIVE,
+      source: 'app',
+      structureType: 'standard',
+      createdBy: 'system',
     })
     .onConflictDoUpdate({
       target: products.productNumber,
@@ -1473,6 +1489,7 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         { value: 'Purchasing', order: 2 },
         { value: 'Billing', order: 3 },
       ],
+      apiRateLimit: '100',
     })
     .onConflictDoNothing();
 
@@ -1507,9 +1524,14 @@ async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
   await db
     .insert(glSettings)
     .values({
+      // @ts-expect-error -- Mock data
       settingsId: '4e185bce-d31a-4caa-8462-73c261864eff', // Use same constant ID
+      apiRateLimit: '100',
       fiscalYearStartMonth: 7, // default
       baseCurrency: 'AUD', // fallback
+      bankMatchDateToleranceDays: 0,
+      revenueRoutingPrecedence: 0,
+      expenseRoutingPrecedence: 0,
     })
     .onConflictDoNothing();
 
@@ -1594,6 +1616,8 @@ export async function seedCoaAccounts(
         isGroup: row.isGroup,
         isSystem: true,
         currencyCode: prefix === 'us_standard' ? 'USD' : 'AUD', // testData
+        isBankAccount: false,
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
@@ -1669,6 +1693,8 @@ export async function seedTaxCategoriesAndTerms(
         description: term.description,
         days: term.days,
         type: term.type,
+        source: 'app',
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: tradingTerms.code,
@@ -1715,6 +1741,9 @@ export async function seedCoaSettings(
     settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
     baseCurrency,
     fiscalYearStartMonth: fiscalMonth,
+    revenueRoutingPrecedence: 'product_first',
+    expenseRoutingPrecedence: 'product_first',
+    bankMatchDateToleranceDays: 3,
   };
 
   const mappings = [
@@ -1866,6 +1895,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       actorId: custActorId,
       name: 'E2E Default Customer',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     })
     .onConflictDoUpdate({
       target: actors.actorId,
@@ -1883,6 +1913,9 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       customerNumber: 'CUST-E2E-001',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       creditLimit: '1000000000',
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      source: 'app',
+      createdBy: 'system',
     })
     .onConflictDoUpdate({
       target: customers.customerId,
@@ -1899,6 +1932,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       actorId: vendActorId,
       name: 'E2E Default Vendor',
       headquartersAddressLine1: 'AU',
+      isTaxRegistered: false,
     })
     .onConflictDoUpdate({
       target: actors.actorId,
@@ -1912,6 +1946,10 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       actorId: vendActorId,
       vendorNumber: 'VEND-E2E-001',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
+      stateCode: SUPPLIER_STATE.ACTIVE,
+      source: 'app',
+      isPurchasingBlocked: false,
+      createdBy: 'system',
     })
     .onConflictDoUpdate({
       target: suppliers.vendorId,

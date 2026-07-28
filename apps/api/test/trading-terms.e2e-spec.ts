@@ -8,11 +8,7 @@ import { register } from 'prom-client';
 import { CreditAssessmentService } from '../src/customers/credit-assessment.service';
 
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesInvoices,
-  locations,
-} from '../src/drizzle/herobm-core-schema';
+import { salesOrders, salesInvoices, locations } from '../src/drizzle/schema';
 import * as crypto from 'crypto';
 import request from 'supertest';
 
@@ -244,6 +240,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           currencyCode: 'USD',
           fulfillmentLocationId: locId,
           stateCode: 'invoiced',
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
       await db.insert(salesInvoices).values({
@@ -254,6 +255,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         currencyCode: 'USD',
         stateCode: 'unpaid',
         dueDate: yesterday,
+        taxAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);
@@ -293,6 +299,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           currencyCode: 'USD',
           fulfillmentLocationId: locId,
           stateCode: 'invoiced',
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
       await db.insert(salesInvoices).values({
@@ -303,6 +314,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         currencyCode: 'USD',
         stateCode: 'unpaid',
         dueDate: future,
+        taxAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       const [pastOrder2] = await db
@@ -313,6 +329,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           currencyCode: 'USD',
           fulfillmentLocationId: locId,
           stateCode: 'invoiced',
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
         })
         .returning();
       await db.insert(salesInvoices).values({
@@ -323,6 +344,11 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         currencyCode: 'USD',
         stateCode: 'unpaid',
         dueDate: past,
+        taxAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
       });
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);

@@ -20,9 +20,19 @@
         "**/jest.config.*",
         "**/jest.setup.*",
         "apps/ops-portal/e2e/**",
-        "apps/mcp-server/**"
+        "apps/mcp-server/**",
+        "extensions/**",
+        "apps/api/src/extensions/**",
+        "apps/api/run-migrations.ts",
+        "apps/api/scratch.ts",
+        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx"
       ],
       "ignoreDependencies": [
+        "@asyncapi/specs",
+        "@nestjs/cli",
+        "es-abstract",
+        "es-aggregate-error",
+        "@csstools/css-parser-algorithms",
         "@testing-library/*",
         "jest-*",
         "supertest",

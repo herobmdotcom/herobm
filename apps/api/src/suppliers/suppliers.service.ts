@@ -7,7 +7,7 @@ import {
   supplierGroups,
   supplierExpiries,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { EntityType } from '../common/event-types';
 import {
   eq,
@@ -244,8 +244,7 @@ export class SuppliersService {
   async findSupplierExpiries(vendorId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { supplierExpiries } =
-      await import('../drizzle/herobm-core-schema.js');
+    const { supplierExpiries } = await import('../drizzle/schema/index.js');
 
     const whereClause = eq(supplierExpiries.vendorId, vendorId);
     const qb = this.db
@@ -311,7 +310,7 @@ export class SuppliersService {
     const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, products } =
-      await import('../drizzle/herobm-core-schema.js');
+      await import('../drizzle/schema/index.js');
 
     const whereClause = eq(productSuppliers.vendorId, vendorId);
     const qb = this.db
@@ -386,7 +385,7 @@ export class SuppliersService {
     const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, suppliers, actors } =
-      await import('../drizzle/herobm-core-schema.js');
+      await import('../drizzle/schema/index.js');
 
     const whereClause = eq(productSuppliers.productId, productId);
     const qb = this.db

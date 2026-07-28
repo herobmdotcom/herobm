@@ -19,7 +19,7 @@ import {
   activities,
   outbox,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -258,6 +258,7 @@ export class GlService implements OnModuleInit {
           sourceType: meta.sourceType,
           sourceId: meta.sourceId,
           createdBy: meta.actor,
+          isReversed: false,
         })
         .returning();
 
@@ -279,7 +280,9 @@ export class GlService implements OnModuleInit {
         memo: l.memo,
       }));
 
-      await db.insert(glJournalLines).values(lineValues);
+      await db
+        .insert(glJournalLines)
+        .values(lineValues.map((line) => ({ isReconciled: false, ...line })));
 
       // Write 'gl_posted' event for sync routing + audit trail
       await emitEvent(db, {
@@ -429,6 +432,8 @@ export class GlService implements OnModuleInit {
           isBankAccount: data.isBankAccount ?? false,
           currencyCode: data.currencyCode ?? this.appConfig.homeCurrency(),
           metadata: data.metadata ?? {},
+          isSystem: false,
+          isActive: true,
         })
         .returning();
 

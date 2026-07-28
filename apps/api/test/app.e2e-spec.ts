@@ -20,7 +20,7 @@ import {
   taxCategories,
   binContents,
   products,
-} from '../src/drizzle/herobm-core-schema';
+} from '../src/drizzle/schema';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import request from 'supertest';
 
@@ -78,6 +78,11 @@ describe('API E2E — Data Pipeline Verification', () => {
               fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
               currencyCode: 'AUD',
               stateCode: SALES_ORDER_STATE.DRAFT,
+              baseTotalAmount: '0',
+              exchangeRate: '1',
+              discrepanciesAcknowledged: false,
+              source: 'app',
+              createdBy: 'system',
             })
             .onConflictDoNothing();
 
@@ -110,6 +115,11 @@ describe('API E2E — Data Pipeline Verification', () => {
               pricePerUnit: '10.00',
               taxCategoryId: taxCategory.taxCategoryId,
               fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+              discountPercentage: '0',
+              amount: '0',
+              tax: '0',
+              quantityPicked: '0',
+              isPostConfirmation: false,
             })
             .onConflictDoNothing();
 

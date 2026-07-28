@@ -22,7 +22,7 @@ import {
   locations,
   appSettings,
   actors,
-} from '../drizzle/herobm-core-schema';
+} from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { eq, sql, and, inArray } from 'drizzle-orm';
@@ -487,6 +487,8 @@ export class BackordersService {
             currencyCode,
             notes: `Generated ${soNotes}`,
             createdBy: actor,
+            baseTotalAmount: '0',
+            exchangeRate: '1',
           })
           .returning();
 
@@ -519,6 +521,10 @@ export class BackordersService {
               quantity: line.quantity.toString(),
               pricePerUnit: line.pricePerUnit.toString(),
               taxCategoryId: coreProd?.purchaseTaxCategoryId || fallbackTaxId,
+              discountPercentage: '0',
+              amount: '0',
+              tax: '0',
+              quantityReceived: '0',
             })
             .returning();
 
@@ -904,7 +910,7 @@ export class BackordersService {
     const [updated] = await db
       .update(backorders)
       .set({
-        stateCode: newState as typeof backorders.$inferInsert.stateCode,
+        stateCode: newState,
         modifiedOn: new Date(),
         ...additionalFields,
       })
