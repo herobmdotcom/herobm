@@ -24,7 +24,6 @@ import {
 } from '../drizzle/schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { InventoryService } from '../inventory/inventory.service';
 import { CreatePurchaseReturnDto } from './dto';
 import {
   PURCHASE_RETURN_STATE,
@@ -39,15 +38,17 @@ import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+
 const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);
 
 @Injectable()
 export class PurchaseReturnsService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
     private readonly appConfig: AppConfigService,
     private readonly glService: GlService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   private readonly logger = new Logger(PurchaseReturnsService.name);
@@ -412,7 +413,7 @@ export class PurchaseReturnsService {
         }));
 
         if (moveLines.length > 0) {
-          await this.inventoryService.recordInventoryMovement(tx, {
+          await this.inventoryMovementService.recordInventoryMovement(tx, {
             entryNumber:
               'RSH-' +
               shipment.shipmentNumber +

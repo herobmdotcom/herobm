@@ -76,7 +76,7 @@ import {
   loadGridState,
   clearGridState,
   STORAGE_PREFIX,
-} from '../DataGrid';
+} from '../datagrid/DataGridStateHelpers';
 
 describe('DataGrid — localStorage helpers', () => {
   beforeEach(() => {

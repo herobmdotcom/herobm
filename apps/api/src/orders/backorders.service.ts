@@ -33,11 +33,11 @@ import {
   OPEN_PURCHASE_ORDER_STATES,
   BACKORDER_TRANSITIONS,
 } from '@herobm/shared';
-import { InventoryService } from '../inventory/inventory.service';
 import { calculateInventoryGaps } from '@herobm/shared';
 import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 @Injectable()
 export class BackordersService {
@@ -45,8 +45,8 @@ export class BackordersService {
 
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
     private readonly appConfig: AppConfigService,
+    private readonly inventoryQueryService: InventoryQueryService,
   ) {}
 
   /**
@@ -98,7 +98,7 @@ export class BackordersService {
 
     const productIds = validLines.map((l) => l.productId as string);
     const { data: levels } =
-      await this.inventoryService.findByProductIds(productIds);
+      await this.inventoryQueryService.findByProductIds(productIds);
 
     const gaps = calculateInventoryGaps(
       lines as unknown as Parameters<typeof calculateInventoryGaps>[0],

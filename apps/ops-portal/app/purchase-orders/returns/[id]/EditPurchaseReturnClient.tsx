@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
@@ -107,11 +106,6 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-4">
-        <PageNav
-          sections={[
-            { id: 'details-section', label: 'Details' }
-          ]}
-        />
         {error && (
           <InlineAlert type="error" message={error} />
         )}

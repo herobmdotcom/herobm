@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PurchaseReturnsService } from './purchase-returns.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
@@ -32,6 +31,8 @@ import {
   PRODUCT_STATE,
 } from '@herobm/shared';
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 describe('PurchaseReturnsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -91,9 +92,10 @@ describe('PurchaseReturnsService', () => {
       providers: [
         PurchaseReturnsService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfig },
+        { provide: InventoryMovementService, useValue: mockInventoryService },
       ],
     }).compile();
 

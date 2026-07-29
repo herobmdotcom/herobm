@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
-import { OrdersWriteService } from '../orders/orders-write.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -43,7 +43,7 @@ export interface SalesQuoteData {
 export class SalesQuoteService {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly ordersWriteService: OrdersWriteService,
+    private readonly ordersQueryService: OrdersQueryService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly appConfig: AppConfigService,
   ) {}
@@ -56,7 +56,7 @@ export class SalesQuoteService {
     options?: Record<string, unknown>,
   ): Promise<SalesQuoteData> {
     const orderDetail = await resolveOrderDetail(
-      this.ordersWriteService,
+      this.ordersQueryService,
       this.ordersService,
       orderId,
       source,

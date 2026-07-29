@@ -58,6 +58,7 @@ export default function ActorSelect({
       }}
       onChange={onChange}
       getKey={(a) => a.actorId}
+      getLabel={(a) => a.name}
       renderOption={(a) => (
         <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
           <div style={{ minWidth: 0 }}>

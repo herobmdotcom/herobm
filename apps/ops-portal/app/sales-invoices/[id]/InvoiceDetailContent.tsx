@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
 import { ValidState } from '@/types/states';
@@ -218,14 +217,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <PageNav
-          sections={[
-            { id: 'details-section', label: 'Details' },
-            { id: 'lines-section', label: 'Line Items' },
-            { id: 'payments-section', label: 'Payments' },
-            { id: 'activity-section', label: 'Activity' },
-          ]}
-        />
         {isOverdue && (
           <div className="px-4 lg:px-6 pt-4">
             <EntityBanner

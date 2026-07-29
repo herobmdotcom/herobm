@@ -83,7 +83,7 @@
       },
       {
         "name": "get_api_endpoints",
-        "description": "Get available API endpoints for a given domain. Valid domains are: crm, customer, delivery_address, general_ledger, payment, product, project, purchase_invoice, purchase_order, purchase_return, sales_invoice, sales_order, sales_return, supplier, system, tax, transfer_order, warehouse.",
+        "description": "Get available API endpoints for a given domain. Valid domains are: actor, contact, crm_map, customer, delivery_address, general_ledger, payment, product, project, purchase_invoice, purchase_order, purchase_return, sales_invoice, sales_order, sales_return, supplier, system, tax, transfer_order, warehouse.",
         "inputSchema": {
           "type": "object",
           "properties": {

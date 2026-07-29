@@ -1,0 +1,179 @@
+import { useState, useEffect } from 'react';
+import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
+import { useTranslations } from 'next-intl';
+import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
+
+interface TradingTermsSectionProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  appSettings: Record<string, any> | null;
+  updateAppSetting: (field: string, value: unknown) => void;
+}
+
+export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTermsSectionProps) {
+  const tSettings = useTranslations('admin.settings');
+  const tCommon = useTranslations('admin.common');
+
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
+  const [tradingTermsLoading, setTradingTermsLoading] = useState(true);
+
+  const loadTradingTerms = async () => {
+    try {
+      setTradingTermsLoading(true);
+      const res = await api.tradingTermsControllerFindAll();
+      setTradingTerms(res.data as unknown as api.TradingTermResponseDto[]);
+    } catch (err: unknown) {
+      toast.error('Failed to load trading terms: ' + getErrorMessage(err));
+    } finally {
+      setTradingTermsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTradingTerms();
+  }, []);
+
+  const tradingTermsColumns: import('@/components/shared/InlineSettingsTable').InlineTableColumn<api.TradingTermResponseDto>[] = [
+    { key: 'code', title: 'Code', type: 'text', width: '20%' },
+    { key: 'description', title: 'Description', type: 'text', width: '30%' },
+    { key: 'days', title: 'Days', type: 'number', width: '10%' },
+    { key: 'type', title: 'Type', type: 'select', options: [
+      { value: 'net', label: 'Net (Days from Invoice)' },
+      { value: 'end_of_month', label: 'End of Month (EOM)' },
+      { value: 'cash_on_delivery', label: 'Cash on Delivery (COD)' }
+    ], width: '20%' },
+  ];
+
+  const handleTradingTermSave = async (row: api.TradingTermResponseDto, isNew: boolean) => {
+    try {
+      if (!row.code || !row.description || !row.type) {
+        toast.error('Code, description, and type are required');
+        throw new Error('Code, description, and type are required');
+      }
+      
+      const payload = {
+        code: row.code,
+        description: row.description,
+        days: Number(row.days),
+        type: row.type,
+      };
+
+      if (isNew) {
+        await api.tradingTermsControllerCreate(payload as api.CreateTradingTermDto);
+        toast.success('Trading Term created');
+      } else {
+        await api.tradingTermsControllerUpdate(row.tradingTermsId, payload as api.CreateTradingTermDto);
+        toast.success('Trading Term updated');
+      }
+      loadTradingTerms();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const handleTradingTermDelete = async (row: api.TradingTermResponseDto) => {
+    if (!confirm('Are you sure you want to delete this trading term?')) return;
+    try {
+      await api.tradingTermsControllerDelete(row.tradingTermsId);
+      toast.success('Trading Term deleted');
+      loadTradingTerms();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  return (
+    <div id="credit-policy" className="card">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="section-heading !mb-0">
+          {''}
+          {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+          <span className="material-symbols-outlined">{'policy'}</span>
+          {''}
+          <span>{tSettings('financialSettings.credit')}</span>
+        </h3>
+      </div>
+      <div className="flex flex-col gap-1 mb-6">
+        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+          {''}
+          {tSettings('financialSettings.creditLimitBehavior')}
+        </label>
+        <select 
+          className="input max-w-sm" 
+          value={(appSettings?.creditLimitBehavior as string) || 'hard'} 
+          onChange={(e) => updateAppSetting('creditLimitBehavior', e.target.value)}
+        >
+          {''}
+          <option value="hard">{tSettings('financialSettings.hardBlock')}</option>
+          {''}
+          <option value="soft">{tSettings('financialSettings.softWarning')}</option>
+        </select>
+      </div>
+
+      <div className="flex gap-8 mb-6">
+        <div className="flex flex-col gap-1 flex-1 max-w-sm">
+          <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Default Customer Terms
+          </label>
+          <select
+            className="input"
+             
+            value={(appSettings?.defaultCustomerTermsId as string) || ''}
+            onChange={(e) => updateAppSetting('defaultCustomerTermsId', e.target.value)}
+          >
+            <option value="">{tCommon('notConfigured')}</option>
+            {tradingTerms.map(t => (
+              <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="flex flex-col gap-1 flex-1 max-w-sm">
+          <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Default Supplier Terms
+          </label>
+          <select
+            className="input"
+             
+            value={(appSettings?.defaultSupplierTermsId as string) || ''}
+            onChange={(e) => updateAppSetting('defaultSupplierTermsId', e.target.value)}
+          >
+            <option value="">{tCommon('notConfigured')}</option>
+            {tradingTerms.map(t => (
+              <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      <div className="mb-2">
+        {tradingTermsLoading ? (
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-[var(--border)] rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-[var(--border)] rounded"></div>
+                <div className="h-4 bg-[var(--border)] rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <InlineSettingsTable
+            columns={tradingTermsColumns}
+            data={tradingTerms}
+            rowKey={(row) => row.tradingTermsId}
+            onSave={handleTradingTermSave}
+            onDelete={handleTradingTermDelete}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
+            onAdd={() => ({ id: '', code: '', description: '', days: 0, type: 'EOM' } as any)}
+            addLabel="+ Create"
+            emptyLabel="No trading terms defined."
+          />
+        )}
+      </div>
+    </div>
+  );
+}

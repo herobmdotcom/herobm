@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GoodsReceivedService } from './goods-received.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
@@ -32,6 +31,8 @@ import {
   SUPPLIER_STATE,
   PRODUCT_STATE,
 } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -88,7 +89,7 @@ describe('GoodsReceivedService', () => {
       providers: [
         GoodsReceivedService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfig },
         {
@@ -102,6 +103,7 @@ describe('GoodsReceivedService', () => {
             changePurchaseOrderState: jest.fn(),
           },
         },
+        { provide: InventoryMovementService, useValue: mockInventoryService },
       ],
     }).compile();
 

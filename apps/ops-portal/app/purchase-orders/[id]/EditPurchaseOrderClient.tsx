@@ -14,7 +14,6 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
 
@@ -41,7 +40,6 @@ interface CustomLineColumn extends DataTableColumn<OrderLine> {
 }
 
 export default function EditPurchaseOrderClient({ id }: { id: string }) {
-  const [mainTab, setMainTab] = useState<'details' | 'activities'>('details');
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
@@ -63,17 +61,6 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
   } = o;
 
   useDocumentTitle(order ? (order.name ? `${order.orderNumber} - ${order.name}` : order.orderNumber) : null);
-
-
-
-  const sections = {
-    details: { id: 'details-section', label: 'Details', show: true },
-    allocations: { id: 'allocations-section', label: 'Allocations', show: true },
-    receptions: { id: 'receptions-section', label: 'Receptions', show: true },
-    invoices: { id: 'Invoices-section', label: 'Invoices', show: true },
-    activity: { id: 'activity-section', label: 'Activity', show: true },
-  };
-  const visibleSections = Object.values(sections).filter(s => s.show);
 
   const lineColumns: CustomLineColumn[] = useMemo(() => [
     {
@@ -330,7 +317,6 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
             subtitle={order.name === order.orderNumber ? null : (order.name || tPurchase('untitledOrder'))}
             isSaving={saving}
             badges={<StateBadge state={order.stateCode as ValidState} />}
-            nav={<PageNav sections={visibleSections} />}
             actions={
               <>
 

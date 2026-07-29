@@ -30,7 +30,6 @@ import {
   transferOrderShipmentLines,
   actors,
 } from '../drizzle/schema';
-import { InventoryService } from '../inventory/inventory.service';
 import {
   findOrder,
   findOrderLine,
@@ -55,6 +54,7 @@ import {
   BACKORDER_STATE,
   getValidStates,
 } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 
@@ -63,7 +63,7 @@ export class PickingService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly shipmentService: ShipmentService,
-    private readonly inventoryService: InventoryService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   private readonly logger = new Logger(PickingService.name);
@@ -319,7 +319,7 @@ export class PickingService {
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // 1. Record physical inventory movement
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `PCK-${orderId.substring(0, 8)}-${line.lineNumber}-${Date.now()
           .toString()
           .slice(-4)}`,
@@ -754,7 +754,7 @@ export class PickingService {
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // 1. Record physical inventory movement (reverse the pick)
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `UPK-${orderId.substring(0, 8)}-${Date.now()
           .toString()
           .slice(-4)}`,

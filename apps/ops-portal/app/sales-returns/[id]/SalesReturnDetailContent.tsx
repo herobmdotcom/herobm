@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -304,12 +303,6 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <PageNav
-          sections={[
-            { id: 'details-section', label: 'Details' },
-            { id: 'lines-section', label: 'Line Items' }
-          ]}
-        />
         {(hasPendingPutaway || hasQuarantined) && ret.stateCode !== RETURN_STATE.PROCESSED && ret.stateCode !== RETURN_STATE.CANCELLED && (
           <EntityBanner 
             type="warning" 

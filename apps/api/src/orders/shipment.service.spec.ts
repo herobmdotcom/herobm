@@ -1,7 +1,6 @@
 import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShipmentService } from './shipment.service';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -32,6 +31,8 @@ import {
   ShipmentState,
 } from '@herobm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 // Shared test data
 const PICKING_ORDER = {
@@ -88,7 +89,8 @@ describe('ShipmentService', () => {
 
     const module: TestingModule = await setupTestModule([
       ShipmentService,
-      { provide: InventoryService, useValue: mockInventoryService },
+      { provide: InventoryQueryService, useValue: mockInventoryService },
+      { provide: InventoryMovementService, useValue: mockInventoryService },
     ])
       .overrideProvider(DRIZZLE)
       .useValue(pg.db)

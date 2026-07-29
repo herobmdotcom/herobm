@@ -48,6 +48,7 @@ export default function SupplierSelect({
       }}
       onChange={onChange}
       getKey={(s) => s.vendorId}
+      getLabel={(s) => `${s.vendorNumber} — ${s.name}`}
       renderOption={(s) => (
         <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
           <div style={{ minWidth: 0 }}>

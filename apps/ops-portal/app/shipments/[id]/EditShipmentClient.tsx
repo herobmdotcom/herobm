@@ -10,7 +10,6 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -151,13 +150,6 @@ export default function EditShipmentClient({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <PageNav
-          sections={[
-            { id: 'details-section', label: 'Details' },
-            { id: 'lines-section', label: 'Line Items' },
-            { id: 'activity-section', label: 'Activity' },
-          ]}
-        />
         
         {/* Shipment Details Card */}
         <div id="details-section" className="card">

@@ -3,14 +3,22 @@ import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
-import { OrdersWriteService } from './orders-write.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderStateService } from './order-state.service';
+import { OrderNotificationService } from './order-notification.service';
+import { OrdersQueryService } from './orders-query.service';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import { CreateOrderDto, ChangeOrderStateDto, CreateOrderLineDto } from './dto';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
   let readService: OrdersService;
-  let writeService: OrdersWriteService;
+  let orderCreationService: OrderCreationService;
+  let orderLinesService: OrderLinesService;
+  let orderStateService: OrderStateService;
+  let orderNotificationService: OrderNotificationService;
+  let ordersQueryService: OrdersQueryService;
 
   const mockOrdersList = {
     data: [{ salesOrderId: 'uuid-1', orderNumber: 'ORD-001' }],
@@ -48,17 +56,36 @@ describe('OrdersController', () => {
       findAll: jest.fn().mockResolvedValue(mockOrdersList),
     };
 
-    const mockWriteService = {
-      findOne: jest.fn().mockResolvedValue(mockOrder),
+    const mockCreationService = {
       create: jest.fn().mockResolvedValue(mockOrder),
       update: jest.fn().mockResolvedValue(mockOrder),
+      updateLine: jest.fn().mockResolvedValue(mockLine),
+      archive: jest.fn().mockResolvedValue(mockOrder),
+      unarchive: jest.fn().mockResolvedValue(mockOrder),
+    };
+
+    const mockLinesService = {
+      addLine: jest.fn().mockResolvedValue(mockLine),
+      updateLine: jest.fn().mockResolvedValue(mockLine),
+      removeLine: jest.fn().mockResolvedValue(undefined),
+      addPostConfirmationLine: jest.fn().mockResolvedValue(mockLine),
+    };
+
+    const mockStateService = {
       changeSalesOrderState: jest.fn().mockResolvedValue({
         ...mockOrder,
         stateCode: SALES_ORDER_STATE.QUOTED,
       }),
-      addLine: jest.fn().mockResolvedValue(mockLine),
-      updateLine: jest.fn().mockResolvedValue(mockLine),
-      removeLine: jest.fn().mockResolvedValue(undefined),
+      triggerTaxCalculation: jest.fn().mockResolvedValue(mockOrder),
+      overrideCreditHold: jest.fn().mockResolvedValue(mockOrder),
+    };
+
+    const mockNotificationService = {
+      emailDocument: jest.fn().mockResolvedValue({ success: true }),
+    };
+
+    const mockQueryService = {
+      findOne: jest.fn().mockResolvedValue(mockOrder),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,13 +98,24 @@ describe('OrdersController', () => {
           },
         },
         { provide: OrdersService, useValue: mockReadService },
-        { provide: OrdersWriteService, useValue: mockWriteService },
+        { provide: OrderCreationService, useValue: mockCreationService },
+        { provide: OrderLinesService, useValue: mockLinesService },
+        { provide: OrderStateService, useValue: mockStateService },
+        {
+          provide: OrderNotificationService,
+          useValue: mockNotificationService,
+        },
+        { provide: OrdersQueryService, useValue: mockQueryService },
       ],
     }).compile();
 
     controller = module.get<OrdersController>(OrdersController);
     readService = module.get(OrdersService);
-    writeService = module.get(OrdersWriteService);
+    orderCreationService = module.get(OrderCreationService);
+    orderLinesService = module.get(OrderLinesService);
+    orderStateService = module.get(OrderStateService);
+    orderNotificationService = module.get(OrderNotificationService);
+    ordersQueryService = module.get(OrdersQueryService);
   });
 
   // ---------------------------------------------------------------------------
@@ -99,10 +137,10 @@ describe('OrdersController', () => {
   });
 
   describe('findOne', () => {
-    it('should route to writeService.findOne', async () => {
+    it('should route to ordersQueryService.findOne', async () => {
       const result = await controller.findOne('uuid-1');
       expect(result).toEqual(mockOrder);
-      expect(writeService.findOne).toHaveBeenCalledWith('uuid-1');
+      expect(ordersQueryService.findOne).toHaveBeenCalledWith('uuid-1');
     });
   });
 
@@ -111,23 +149,27 @@ describe('OrdersController', () => {
   // ---------------------------------------------------------------------------
 
   describe('create', () => {
-    it('should call writeService.create with body and actor', async () => {
+    it('should call orderCreationService.create with body and actor', async () => {
       const body = {
         customerId: '00000000-0000-4000-8000-000000000001',
         lines: [{ productId: 'P001', quantity: '5', pricePerUnit: '10.00' }],
       };
       const result = await controller.create(body as CreateOrderDto, mockUser);
       expect(result).toEqual(mockOrder);
-      expect(writeService.create).toHaveBeenCalledWith(body, 'admin');
+      expect(orderCreationService.create).toHaveBeenCalledWith(body, 'admin');
     });
   });
 
   describe('update', () => {
-    it('should call writeService.update with id, body, and actor', async () => {
+    it('should call orderCreationService.update with id, body, and actor', async () => {
       const body = { name: 'Updated Order', notes: 'Changed notes' };
       const result = await controller.update('uuid-1', body, mockUser);
       expect(result).toEqual(mockOrder);
-      expect(writeService.update).toHaveBeenCalledWith('uuid-1', body, 'admin');
+      expect(orderCreationService.update).toHaveBeenCalledWith(
+        'uuid-1',
+        body,
+        'admin',
+      );
     });
   });
 
@@ -139,7 +181,7 @@ describe('OrdersController', () => {
         mockUser,
       );
       expect(result.stateCode).toBe(SALES_ORDER_STATE.QUOTED);
-      expect(writeService.changeSalesOrderState).toHaveBeenCalledWith(
+      expect(orderStateService.changeSalesOrderState).toHaveBeenCalledWith(
         'uuid-1',
         SALES_ORDER_STATE.QUOTED,
         'admin',
@@ -150,7 +192,7 @@ describe('OrdersController', () => {
   });
 
   describe('addLine', () => {
-    it('should call writeService.addLine with orderId, body, and actor', async () => {
+    it('should call orderLinesService.addLine with orderId, body, and actor', async () => {
       const body = { productId: 'P001', quantity: '10', pricePerUnit: '25.00' };
       const result = await controller.addLine(
         'uuid-1',
@@ -158,7 +200,7 @@ describe('OrdersController', () => {
         mockUser,
       );
       expect(result).toEqual(mockLine);
-      expect(writeService.addLine).toHaveBeenCalledWith(
+      expect(orderLinesService.addLine).toHaveBeenCalledWith(
         'uuid-1',
         body,
         'admin',
@@ -167,7 +209,7 @@ describe('OrdersController', () => {
   });
 
   describe('updateLine', () => {
-    it('should call writeService.updateLine with orderId, lineId, body, and actor', async () => {
+    it('should call orderLinesService.updateLine with orderId, lineId, body, and actor', async () => {
       const body = { quantity: '20' };
       const result = await controller.updateLine(
         'uuid-1',
@@ -176,7 +218,7 @@ describe('OrdersController', () => {
         mockUser,
       );
       expect(result).toEqual(mockLine);
-      expect(writeService.updateLine).toHaveBeenCalledWith(
+      expect(orderLinesService.updateLine).toHaveBeenCalledWith(
         'uuid-1',
         'line-uuid-1',
         body,
@@ -186,9 +228,9 @@ describe('OrdersController', () => {
   });
 
   describe('removeLine', () => {
-    it('should call writeService.removeLine with orderId, lineId, and actor', async () => {
+    it('should call orderLinesService.removeLine with orderId, lineId, and actor', async () => {
       await controller.removeLine('uuid-1', 'line-uuid-1', mockUser);
-      expect(writeService.removeLine).toHaveBeenCalledWith(
+      expect(orderLinesService.removeLine).toHaveBeenCalledWith(
         'uuid-1',
         'line-uuid-1',
         'admin',

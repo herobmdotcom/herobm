@@ -1,6 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SalesInvoiceService } from './sales-invoice.service';
-import { PurchaseInvoiceService } from './purchase-invoice.service';
+import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
+import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
+import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
 import { SalesCreditNoteService } from './sales-credit-note.service';
 import {
   SalesInvoiceController,
@@ -25,12 +27,16 @@ import { SalesCreditNotesController } from './sales-credit-notes.controller';
   ],
   providers: [
     SalesInvoiceService,
-    PurchaseInvoiceService,
+    PurchaseInvoiceCoreService,
+    PurchaseInvoiceDraftService,
+    PurchaseInvoicePostingService,
     SalesCreditNoteService,
   ],
   exports: [
     SalesInvoiceService,
-    PurchaseInvoiceService,
+    PurchaseInvoiceCoreService,
+    PurchaseInvoiceDraftService,
+    PurchaseInvoicePostingService,
     SalesCreditNoteService,
   ],
 })

@@ -1,10 +1,95 @@
 import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrdersWriteService } from './orders-write.service';
+import { OrdersCoreService } from './orders-core.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderStateService } from './order-state.service';
+import { OrderNotificationService } from './order-notification.service';
+import { OrdersQueryService } from './orders-query.service';
+
+class OrdersWriteService {
+  core: OrdersCoreService;
+  query: OrdersQueryService;
+  creation: OrderCreationService;
+  lines: OrderLinesService;
+  state: OrderStateService;
+  notif: OrderNotificationService;
+
+  constructor(...args: any[]) {
+    this.core = new (OrdersCoreService as any)(...args);
+    this.query = new (OrdersQueryService as any)(...args, this.core);
+    this.state = new (OrderStateService as any)(...args, this.core, this.query);
+    this.creation = new (OrderCreationService as any)(
+      ...args,
+      this.core,
+      this.query,
+      this.state,
+    );
+    this.lines = new (OrderLinesService as any)(...args, this.core, this.query);
+    this.notif = new (OrderNotificationService as any)(
+      ...args,
+      this.core,
+      this.query,
+    );
+  }
+
+  create(...args: any[]) {
+    return this.creation.create(...(args as [any, any]));
+  }
+  update(...args: any[]) {
+    return this.creation.update(...(args as [any, any, any]));
+  }
+  archive(...args: any[]) {
+    return this.creation.archive(...(args as [any, any]));
+  }
+  unarchive(...args: any[]) {
+    return this.creation.unarchive(...(args as [any, any]));
+  }
+
+  addLine(...args: any[]) {
+    return this.lines.addLine(...(args as [any, any, any]));
+  }
+  updateLine(...args: any[]) {
+    return this.lines.updateLine(...(args as [any, any, any, any]));
+  }
+  removeLine(...args: any[]) {
+    return this.lines.removeLine(...(args as [any, any, any]));
+  }
+  addPostConfirmationLine(...args: any[]) {
+    return this.lines.addPostConfirmationLine(...(args as [any, any, any]));
+  }
+
+  changeSalesOrderState(...args: any[]) {
+    return this.state.changeSalesOrderState(
+      ...(args as [any, any, any, any, any]),
+    );
+  }
+  triggerTaxCalculation(...args: any[]) {
+    return this.state.triggerTaxCalculation(...(args as [any, any]));
+  }
+  overrideCreditHold(...args: any[]) {
+    return this.state.overrideCreditHold(...(args as [any, any, any]));
+  }
+
+  emailDocument(...args: any[]) {
+    return this.notif.emailDocument(...(args as [any, any, any]));
+  }
+
+  findOne(...args: any[]) {
+    return this.query.findOne(...(args as [any]));
+  }
+
+  generateOrderNumber(...args: any[]) {
+    return this.core.generateOrderNumber(...(args as [any]));
+  }
+}
+(OrdersWriteService.prototype as any).computeLineAmount = (
+  OrdersCoreService.prototype as any
+).computeLineAmount;
+
 import { BackordersService } from './backorders.service';
 import { PickingService } from './picking.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
   NotFoundException,
@@ -54,8 +139,6 @@ describe('OrdersWriteService', () => {
   let service: OrdersWriteService;
 
   let mockPickingService: any;
-
-  let mockInventoryService: any;
 
   let mockCustomersService: any;
 
@@ -142,9 +225,6 @@ describe('OrdersWriteService', () => {
       assertFullyShipped: jest.fn().mockResolvedValue(undefined),
     };
 
-    mockInventoryService = {
-      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
-    };
     mockCustomersService = {
       findOne: jest.fn().mockResolvedValue({
         customerId: '00000000-0000-4000-8000-000000000001',
@@ -199,7 +279,6 @@ describe('OrdersWriteService', () => {
       mocktaxService,
       mockTaxResolutionEngine,
       mockPickingService,
-      mockInventoryService,
       mockCustomersService,
       mockCreditAssessmentService,
       mockProductsService,
@@ -507,8 +586,7 @@ describe('OrdersWriteService', () => {
 
       // Mock generateOrderNumber to return the same number
       jest
-
-        .spyOn(service as any, 'generateOrderNumber')
+        .spyOn(service.core as any, 'generateOrderNumber')
         .mockResolvedValue('DUPE-001');
 
       try {
@@ -695,9 +773,7 @@ describe('OrdersWriteService', () => {
         SALES_ORDER_STATE.CANCELLED,
         'admin',
       );
-      expect(
-        mockInventoryService.recordInventoryMovement,
-      ).not.toHaveBeenCalled();
+      // No inventory side-effects expected (inventory is handled by picking/shipment services)
     });
   });
 

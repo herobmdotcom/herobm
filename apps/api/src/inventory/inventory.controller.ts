@@ -20,7 +20,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { InventoryService } from './inventory.service';
+import { InventoryQueryService } from './inventory-query.service';
+import { InventoryMovementService } from './inventory-movement.service';
 import {
   CasbinGuard,
   CasbinResource,
@@ -53,7 +54,10 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.INVENTORY)
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(
+    private readonly inventoryQueryService: InventoryQueryService,
+    private readonly inventoryMovementService: InventoryMovementService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -68,7 +72,7 @@ export class InventoryController {
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
   ) {
-    return this.inventoryService.findAll({ ...query, locationNo });
+    return this.inventoryQueryService.findAll({ ...query, locationNo });
   }
 
   @Get('by-products')
@@ -90,7 +94,10 @@ export class InventoryController {
           .map((id) => id.trim())
           .filter(Boolean)
       : [];
-    const res = await this.inventoryService.findByProductIds(ids, locationId);
+    const res = await this.inventoryQueryService.findByProductIds(
+      ids,
+      locationId,
+    );
     return res.data;
   }
 
@@ -102,7 +109,7 @@ export class InventoryController {
   })
   @ApiCreatedResponse({ type: [InventoryResponseDto] })
   async findByProductIdsBulk(@Body() dto: FindByProductIdsBulkDto) {
-    const res = await this.inventoryService.findByProductIds(
+    const res = await this.inventoryQueryService.findByProductIds(
       dto.productIds || [],
       dto.locationId,
     );
@@ -123,7 +130,11 @@ export class InventoryController {
     @Query('locationNo') locationNo?: string,
     @Query('binType') binType?: string,
   ) {
-    return this.inventoryService.findBins({ ...query, locationNo, binType });
+    return this.inventoryQueryService.findBins({
+      ...query,
+      locationNo,
+      binType,
+    });
   }
 
   @Get('putaway-context')
@@ -140,7 +151,7 @@ export class InventoryController {
     if (!productId || !locationId) {
       throw new NotFoundException('productId and locationId are required');
     }
-    return this.inventoryService.getPutawayContext(productId, locationId);
+    return this.inventoryQueryService.getPutawayContext(productId, locationId);
   }
 
   @Get('locations')
@@ -152,7 +163,7 @@ export class InventoryController {
   @ApiQuery({ name: 'productId', required: false, type: String })
   @ApiOkResponse({ type: [InventoryLocationResponseDto] })
   async findAllLocations(@Query('productId') productId?: string) {
-    return this.inventoryService.findAllLocations(productId);
+    return this.inventoryQueryService.findAllLocations(productId);
   }
 
   @Get('locations/:id/bins')
@@ -169,7 +180,7 @@ export class InventoryController {
     @Query('binType') binType?: string,
     @Query('zoneCode') zoneCode?: string,
   ) {
-    return this.inventoryService.findBinsByLocation(id, binType, zoneCode);
+    return this.inventoryQueryService.findBinsByLocation(id, binType, zoneCode);
   }
 
   @Get('topography')
@@ -180,7 +191,7 @@ export class InventoryController {
   })
   @ApiOkResponse({ type: [TopographyLocationResponseDto] })
   async getTopography() {
-    return this.inventoryService.getTopography();
+    return this.inventoryQueryService.getTopography();
   }
 
   @Get('ledger')
@@ -193,7 +204,7 @@ export class InventoryController {
   @ApiQuery({ name: 'days', required: false })
   getLedger(@Query('days') days?: string) {
     const daysInt = parseInt(days || '30', 10);
-    return this.inventoryService.getLedger(isNaN(daysInt) ? 30 : daysInt);
+    return this.inventoryQueryService.getLedger(isNaN(daysInt) ? 30 : daysInt);
   }
 
   @Get('entries/:id')
@@ -204,7 +215,7 @@ export class InventoryController {
   })
   @ApiOkResponse({ type: InventoryEntryDetailsResponseDto })
   getEntryDetails(@Param('id') id: string) {
-    return this.inventoryService.getEntryDetails(id);
+    return this.inventoryQueryService.getEntryDetails(id);
   }
 
   @Get('pending-putaway')
@@ -216,7 +227,7 @@ export class InventoryController {
   @ApiOkResponse({ type: [PendingPutawayResponseDto] })
   @ApiQuery({ name: 'locationId', required: false })
   async getPendingPutaway(@Query('locationId') locationId?: string) {
-    return this.inventoryService.getPendingPutaway(locationId);
+    return this.inventoryQueryService.getPendingPutaway(locationId);
   }
 
   @Post('putaway')
@@ -230,7 +241,7 @@ export class InventoryController {
     description: 'Putaway successful',
   })
   async putaway(@Body() dto: PutawayBulkDto, @AuthUser() user: JwtUser) {
-    return this.inventoryService.putaway(dto, user.username);
+    return this.inventoryMovementService.putaway(dto, user.username);
   }
 
   @Post('quarantine/move')
@@ -247,7 +258,7 @@ export class InventoryController {
     @Body() dto: QuarantineMoveDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.inventoryService.quarantineStock(dto, user.username);
+    return this.inventoryMovementService.quarantineStock(dto, user.username);
   }
 
   @Post('move')
@@ -261,7 +272,7 @@ export class InventoryController {
     description: 'Move successful',
   })
   async moveStock(@Body() dto: MoveStockDto, @AuthUser() user: JwtUser) {
-    return this.inventoryService.moveStock(dto, user.username);
+    return this.inventoryMovementService.moveStock(dto, user.username);
   }
 
   @Post('adjust')
@@ -275,6 +286,6 @@ export class InventoryController {
     description: 'Adjustment successful',
   })
   async adjustStock(@Body() dto: AdjustStockDto, @AuthUser() user: JwtUser) {
-    return this.inventoryService.adjustStock(dto, user.username);
+    return this.inventoryMovementService.adjustStock(dto, user.username);
   }
 }

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BackordersService } from './backorders.service';
 import type { InventoryGap } from '@herobm/shared';
 import { SALES_ORDER_STATE, PRODUCT_STATE } from '@herobm/shared';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -16,12 +15,14 @@ import {
   taxCategories,
 } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 describe('BackordersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: BackordersService;
-  let inventoryService: { findByProductIds: jest.Mock };
-
+  let inventoryQueryService: any;
+  let inventoryMovementService: InventoryMovementService;
   const ORDER_ID = '00000000-0000-4000-8000-000000000001';
   const PROD_ID = '00000000-0000-4000-8000-00000000000a';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
@@ -57,7 +58,7 @@ describe('BackordersService', () => {
       createdBy: 'system',
     });
 
-    inventoryService = {
+    inventoryQueryService = {
       findByProductIds: jest.fn(),
     };
 
@@ -65,11 +66,12 @@ describe('BackordersService', () => {
       providers: [
         BackordersService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: InventoryService, useValue: inventoryService },
+        { provide: InventoryQueryService, useValue: inventoryQueryService },
         {
           provide: AppConfigService,
           useValue: { homeCurrency: () => 'EUR' },
         },
+        { provide: InventoryMovementService, useValue: inventoryQueryService },
       ],
     }).compile();
 
@@ -112,7 +114,7 @@ describe('BackordersService', () => {
 
       const gaps = await service.evaluateGaps(ORDER_ID);
       expect(gaps).toEqual([]);
-      expect(inventoryService.findByProductIds).not.toHaveBeenCalled();
+      expect(inventoryQueryService.findByProductIds).not.toHaveBeenCalled();
     });
 
     it('should calculate gaps correctly based on ordered vs available quantity', async () => {
@@ -144,7 +146,7 @@ describe('BackordersService', () => {
         isPostConfirmation: false,
       });
 
-      inventoryService.findByProductIds.mockResolvedValue({
+      inventoryQueryService.findByProductIds.mockResolvedValue({
         data: [
           { productId: PROD_ID, locationId: LOCATION_ID, quantityAvailable: 3 }, // Short 7
         ],

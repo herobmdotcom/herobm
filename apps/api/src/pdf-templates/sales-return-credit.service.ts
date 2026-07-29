@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { OrdersService } from '../orders/orders.service';
-import { OrdersWriteService } from '../orders/orders-write.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { resolveOrderDetail } from './report-data.helper';
@@ -65,7 +65,7 @@ export interface SalesReturnCreditData {
 export class SalesReturnCreditService {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly ordersWriteService: OrdersWriteService,
+    private readonly ordersQueryService: OrdersQueryService,
     private readonly returnsWriteService: ReturnsWriteService,
     private readonly creditNoteService: SalesCreditNoteService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
@@ -91,7 +91,7 @@ export class SalesReturnCreditService {
     }
 
     const orderDetail = await resolveOrderDetail(
-      this.ordersWriteService,
+      this.ordersQueryService,
       this.ordersService,
       ret.salesOrderId,
       source,

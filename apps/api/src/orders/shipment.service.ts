@@ -47,7 +47,6 @@ import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
-import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 import {
   CreateShipmentDto,
@@ -65,6 +64,7 @@ import {
   getValidStates,
 } from '@herobm/shared';
 import type { SalesOrderPickState } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 
@@ -83,8 +83,8 @@ export class ShipmentService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly appConfig: AppConfigService,
-    private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   private readonly logger = new Logger(ShipmentService.name);
@@ -509,18 +509,21 @@ export class ShipmentService {
           }
 
           if (returnLines.length > 0) {
-            await this.inventoryService.recordInventoryMovement(innerTx, {
-              entryNumber:
-                'REV-' +
-                shipment.shipmentNumber +
-                '-' +
-                Date.now().toString().slice(-4),
-              sourceType: 'SO_SHIPMENT',
-              sourceId: shipmentId,
-              memo: 'Dispatch Reversed',
-              userId: actor,
-              lines: returnLines,
-            });
+            await this.inventoryMovementService.recordInventoryMovement(
+              innerTx,
+              {
+                entryNumber:
+                  'REV-' +
+                  shipment.shipmentNumber +
+                  '-' +
+                  Date.now().toString().slice(-4),
+                sourceType: 'SO_SHIPMENT',
+                sourceId: shipmentId,
+                memo: 'Dispatch Reversed',
+                userId: actor,
+                lines: returnLines,
+              },
+            );
           }
 
           // Revert sales_order_picks from shipped back to picked
@@ -1272,7 +1275,7 @@ export class ShipmentService {
     }
 
     if (dispatchLines.length > 0) {
-      await this.inventoryService.recordInventoryMovement(innerTx, {
+      await this.inventoryMovementService.recordInventoryMovement(innerTx, {
         entryNumber:
           'DSP-' +
           shipment.shipmentNumber +

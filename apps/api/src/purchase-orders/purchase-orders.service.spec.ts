@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PurchaseOrdersService } from './purchase-orders.service';
-import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SuppliersService } from '../suppliers/suppliers.service';
@@ -28,6 +27,8 @@ import {
   PRODUCT_STATE,
   ACTOR_STATE,
 } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 jest.setTimeout(120000);
 
@@ -122,7 +123,7 @@ describe('PurchaseOrdersService', () => {
       providers: [
         PurchaseOrdersService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },
         { provide: TaxCategoriesService, useValue: mockTaxCategoriesService },
         { provide: TaxResolutionEngine, useValue: mockTaxResolutionEngine },
@@ -137,6 +138,7 @@ describe('PurchaseOrdersService', () => {
           provide: BackordersService,
           useValue: { changeBackorderState: jest.fn() },
         },
+        { provide: InventoryMovementService, useValue: mockInventoryService },
       ],
     }).compile();
 

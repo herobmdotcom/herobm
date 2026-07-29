@@ -5,7 +5,9 @@ import {
   InvoiceDetailController,
 } from './invoices.controller';
 import { SalesInvoiceService } from './sales-invoice.service';
-import { PurchaseInvoiceService } from './purchase-invoice.service';
+import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
+import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
+import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
 
 describe('Invoices Controllers', () => {
   let salesController: SalesInvoiceController;
@@ -13,8 +15,14 @@ describe('Invoices Controllers', () => {
   let detailController: InvoiceDetailController;
 
   let mockSalesService: Partial<Record<keyof SalesInvoiceService, jest.Mock>>;
-  let mockPurchaseService: Partial<
-    Record<keyof PurchaseInvoiceService, jest.Mock>
+  let mockPurchaseCoreService: Partial<
+    Record<keyof PurchaseInvoiceCoreService, jest.Mock>
+  >;
+  let mockPurchaseDraftService: Partial<
+    Record<keyof PurchaseInvoiceDraftService, jest.Mock>
+  >;
+  let mockPurchasePostingService: Partial<
+    Record<keyof PurchaseInvoicePostingService, jest.Mock>
   >;
 
   beforeEach(async () => {
@@ -25,10 +33,13 @@ describe('Invoices Controllers', () => {
       findActiveInvoices: jest.fn().mockResolvedValue([{ id: 'si-1' }]),
     };
 
-    mockPurchaseService = {
+    mockPurchaseCoreService = {
       findByOrder: jest.fn().mockResolvedValue([{ id: 'pi-1' }]),
       findOne: jest.fn().mockResolvedValue({ id: 'pi-1', total: 200 }),
     };
+
+    mockPurchaseDraftService = {};
+    mockPurchasePostingService = {};
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [
@@ -38,7 +49,18 @@ describe('Invoices Controllers', () => {
       ],
       providers: [
         { provide: SalesInvoiceService, useValue: mockSalesService },
-        { provide: PurchaseInvoiceService, useValue: mockPurchaseService },
+        {
+          provide: PurchaseInvoiceCoreService,
+          useValue: mockPurchaseCoreService,
+        },
+        {
+          provide: PurchaseInvoiceDraftService,
+          useValue: mockPurchaseDraftService,
+        },
+        {
+          provide: PurchaseInvoicePostingService,
+          useValue: mockPurchasePostingService,
+        },
       ],
     }).compile();
 
@@ -100,7 +122,9 @@ describe('Invoices Controllers', () => {
     it('should get purchase bills by order ID', async () => {
       const result = await purchaseController.getPurchaseBills('p-order-1');
       expect(result).toEqual([{ id: 'pi-1' }]);
-      expect(mockPurchaseService.findByOrder).toHaveBeenCalledWith('p-order-1');
+      expect(mockPurchaseCoreService.findByOrder).toHaveBeenCalledWith(
+        'p-order-1',
+      );
     });
   });
 
@@ -152,7 +176,7 @@ describe('Invoices Controllers', () => {
     it('should get purchase bill details by ID', async () => {
       const result = await detailController.getPurchaseBillDetails('pi-1');
       expect(result).toEqual({ id: 'pi-1', total: 200 });
-      expect(mockPurchaseService.findOne).toHaveBeenCalledWith('pi-1');
+      expect(mockPurchaseCoreService.findOne).toHaveBeenCalledWith('pi-1');
     });
   });
 });

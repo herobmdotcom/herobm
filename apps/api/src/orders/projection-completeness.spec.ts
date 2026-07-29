@@ -9,7 +9,10 @@
  * Root cause: the GST select widget bug in the Sales Order Detail page
  * was caused by `findOne` missing `taxCategoryId` in its projection.
  */
-import { getSchemaColumns, getFindOneProjectionFields } from '../common/testing/schema-parity.utils';
+import {
+  getSchemaColumns,
+  getFindOneProjectionFields,
+} from '../common/testing/schema-parity.utils';
 import * as path from 'path';
 
 // ---------------------------------------------------------------------------
@@ -22,19 +25,18 @@ import * as path from 'path';
 // ---------------------------------------------------------------------------
 
 describe('Projection Completeness', () => {
-
   const schemaPath = path.resolve(
     __dirname,
     '../drizzle/schema/sales.schema.ts',
   );
-  
-  const servicePath = path.resolve(__dirname, './orders-write.service.ts');
+
+  const servicePath = path.join(__dirname, 'orders-query.service.ts');
 
   // =========================================================================
   // Test: salesOrderLineItems columns must be present in findOne projection
   // =========================================================================
 
-  describe('OrdersWriteService.findOne — salesOrderLineItems', () => {
+  describe('OrdersQueryService.findOne — salesOrderLineItems', () => {
     const SCHEMA_TABLE = 'salesOrderLineItems';
 
     // These columns are intentionally NOT projected because they come
@@ -44,7 +46,10 @@ describe('Projection Completeness', () => {
 
     it('should project every schema column from salesOrderLineItems', () => {
       const schemaColumns = getSchemaColumns(schemaPath, SCHEMA_TABLE);
-      const projectionFields = getFindOneProjectionFields(servicePath, 'async findOne(');
+      const projectionFields = getFindOneProjectionFields(
+        servicePath,
+        'async findOne(',
+      );
 
       // If the service uses bare select() (no explicit projection), all
       // columns are returned automatically — nothing to check.
@@ -61,7 +66,10 @@ describe('Projection Completeness', () => {
     });
 
     it('should include joined fields (productNumber) in the projection', () => {
-      const projectionFields = getFindOneProjectionFields(servicePath, 'async findOne(');
+      const projectionFields = getFindOneProjectionFields(
+        servicePath,
+        'async findOne(',
+      );
       if (projectionFields.length === 0) return;
 
       for (const field of JOINED_EXTRAS) {
@@ -71,7 +79,10 @@ describe('Projection Completeness', () => {
 
     it('should not have unknown fields in the projection', () => {
       const schemaColumns = getSchemaColumns(schemaPath, SCHEMA_TABLE);
-      const projectionFields = getFindOneProjectionFields(servicePath, 'async findOne(');
+      const projectionFields = getFindOneProjectionFields(
+        servicePath,
+        'async findOne(',
+      );
       if (projectionFields.length === 0) return;
 
       const allKnown = [...schemaColumns, ...JOINED_EXTRAS];

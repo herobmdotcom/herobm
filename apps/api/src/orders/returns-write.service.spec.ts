@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppConfigService } from '../settings/app-config.service';
 import { ReturnsWriteService } from './returns-write.service';
-import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
-import { OrdersWriteService } from './orders-write.service';
+
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
@@ -36,6 +35,8 @@ import {
 } from '../../test/fixtures';
 import { SALES_ORDER_STATE, RETURN_STATE } from '@herobm/shared';
 import type { ReturnState, SalesOrderState } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 // Shared test data
 const INVOICED_ORDER = {
@@ -137,7 +138,7 @@ describe('ReturnsWriteService', () => {
         },
         ReturnsWriteService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: TaxCategoriesService, useValue: mocktaxService },
         {
@@ -149,12 +150,7 @@ describe('ReturnsWriteService', () => {
             }),
           },
         },
-        {
-          provide: OrdersWriteService,
-          useValue: {
-            updateOrderState: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: InventoryMovementService, useValue: mockInventoryService },
       ],
     }).compile();
 

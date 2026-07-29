@@ -23,7 +23,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
-import { OrdersWriteService } from './orders-write.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderStateService } from './order-state.service';
+import { OrderNotificationService } from './order-notification.service';
+import { OrdersQueryService } from './orders-query.service';
 import {
   CasbinGuard,
   CasbinResource,
@@ -62,7 +66,11 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly ordersWriteService: OrdersWriteService,
+    private readonly orderCreationService: OrderCreationService,
+    private readonly orderLinesService: OrderLinesService,
+    private readonly orderStateService: OrderStateService,
+    private readonly orderNotificationService: OrderNotificationService,
+    private readonly ordersQueryService: OrdersQueryService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -100,7 +108,7 @@ export class OrdersController {
     idBodyPath: 'salesOrderId',
   })
   create(@Body() body: CreateOrderDto, @AuthUser() user: JwtUser) {
-    return this.ordersWriteService.create(body, user.username);
+    return this.orderCreationService.create(body, user.username);
   }
 
   @Post(':id/tax')
@@ -115,7 +123,7 @@ export class OrdersController {
     @Param('id') id: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.triggerTaxCalculation(id, user.username);
+    return this.orderStateService.triggerTaxCalculation(id, user.username);
   }
 
   @Post(':id/email-document')
@@ -135,7 +143,7 @@ export class OrdersController {
     @Body() dto: EmailDocumentDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.emailDocument(id, dto, user);
+    return this.orderNotificationService.emailDocument(id, dto, user);
   }
 
   @Patch(':id/state')
@@ -151,7 +159,7 @@ export class OrdersController {
     @Body() dto: ChangeOrderStateDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.changeSalesOrderState(
+    return this.orderStateService.changeSalesOrderState(
       id,
       dto.stateCode,
       user.username,
@@ -175,7 +183,7 @@ export class OrdersController {
     @Body() dto: OverrideCreditHoldDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.overrideCreditHold(
+    return this.orderStateService.overrideCreditHold(
       id,
       dto.reason,
       user.username,
@@ -191,7 +199,7 @@ export class OrdersController {
   })
   @ApiCreatedResponse({ type: OrderResponseDto })
   archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.ordersWriteService.archive(id, user.username);
+    return this.orderCreationService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
@@ -203,7 +211,7 @@ export class OrdersController {
   })
   @ApiCreatedResponse({ type: OrderResponseDto })
   unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.ordersWriteService.unarchive(id, user.username);
+    return this.orderCreationService.unarchive(id, user.username);
   }
 
   @Post(':id/lines')
@@ -219,7 +227,7 @@ export class OrdersController {
     @Body() body: CreateOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.addLine(id, body, user.username);
+    return this.orderLinesService.addLine(id, body, user.username);
   }
 
   @Patch(':id/lines/:lineId')
@@ -236,7 +244,7 @@ export class OrdersController {
     @Body() body: UpdateOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.updateLine(id, lineId, body, user.username);
+    return this.orderLinesService.updateLine(id, lineId, body, user.username);
   }
 
   @Delete(':id/lines/:lineId')
@@ -251,7 +259,7 @@ export class OrdersController {
     @Param('lineId') lineId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.removeLine(id, lineId, user.username);
+    return this.orderLinesService.removeLine(id, lineId, user.username);
   }
 
   @Post(':id/post-confirmation-lines')
@@ -267,7 +275,7 @@ export class OrdersController {
     @Body() body: CreateOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.addPostConfirmationLine(
+    return this.orderLinesService.addPostConfirmationLine(
       id,
       body,
       user.username,
@@ -283,7 +291,7 @@ export class OrdersController {
   @ApiFieldMask()
   @ApiOkResponse({ type: OrderResponseDto })
   findOne(@Param('id') id: string) {
-    return this.ordersWriteService.findOne(id);
+    return this.ordersQueryService.findOne(id);
   }
 
   @Patch(':id')
@@ -299,6 +307,6 @@ export class OrdersController {
     @Body() body: UpdateOrderDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.update(id, body, user.username);
+    return this.orderCreationService.update(id, body, user.username);
   }
 }

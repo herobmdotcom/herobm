@@ -4,7 +4,6 @@ import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { InventoryService } from '../inventory/inventory.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
@@ -28,6 +27,8 @@ import {
   PRODUCT_STATE,
   CUSTOMER_STATE,
 } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
 
 describe('PickingService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -150,8 +151,9 @@ describe('PickingService', () => {
           useValue: { defaultFulfillmentLocationId: () => LOCATION_ID },
         },
         { provide: ShipmentService, useValue: mockShipmentService },
-        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: DRIZZLE, useValue: pg.db },
+        { provide: InventoryMovementService, useValue: mockInventoryService },
       ],
     }).compile();
 

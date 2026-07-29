@@ -99,8 +99,11 @@ export class BaseProductDto {
   @IsString()
   alternateInvoiceDescription?: string;
   @IsOptional()
-  @IsNumber()
-  boxQuantity?: number;
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
+  @IsNumberString()
+  boxQuantity?: string;
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()

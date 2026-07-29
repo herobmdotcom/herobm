@@ -64,7 +64,8 @@ export const DOMAIN_MAP: Record<string, string> = {
   'Delivery Addresses': 'delivery_address',
   'Tax': 'tax',
   'Actors': 'actor',
-  'Projects': 'project'
+  'Projects': 'project',
+  'CRM Map': 'crm_map'
 };
 
 async function main() {

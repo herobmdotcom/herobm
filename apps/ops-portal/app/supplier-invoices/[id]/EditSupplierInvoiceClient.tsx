@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import PageNav from '@/components/shared/PageNav';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
 import { ValidState } from '@/types/states';
@@ -194,13 +193,6 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <PageNav
-          sections={[
-            { id: 'details-section', label: 'Details' },
-            { id: 'lines-section', label: 'Line Items' },
-            { id: 'allocations-section', label: 'Allocations' },
-          ]}
-        />
         <div id="details-section" className="card">
           <h3 className="section-heading">
             <span className="material-symbols-outlined">receipt_long</span>

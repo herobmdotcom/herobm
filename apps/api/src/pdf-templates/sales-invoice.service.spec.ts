@@ -2,14 +2,14 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { OrdersService } from '../orders/orders.service';
-import { OrdersWriteService } from '../orders/orders-write.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
 
 describe('SalesInvoiceService', () => {
   let service: SalesInvoiceService;
   let ordersService: OrdersService;
-  let ordersWriteService: OrdersWriteService;
+  let ordersQueryService: OrdersQueryService;
 
   const mockOrder = {
     salesOrderId: 'order-1',
@@ -49,7 +49,7 @@ describe('SalesInvoiceService', () => {
           },
         },
         {
-          provide: OrdersWriteService,
+          provide: OrdersQueryService,
           useValue: {
             findOne: jest.fn().mockResolvedValue(mockOrder),
           },
@@ -72,7 +72,7 @@ describe('SalesInvoiceService', () => {
 
     service = module.get<SalesInvoiceService>(SalesInvoiceService);
     ordersService = module.get<OrdersService>(OrdersService);
-    ordersWriteService = module.get<OrdersWriteService>(OrdersWriteService);
+    ordersQueryService = module.get<OrdersQueryService>(OrdersQueryService);
   });
 
   it('should be defined', () => {

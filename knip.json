@@ -10,6 +10,7 @@
         "infra/tests/**",
         "infra/heavy_tests/**",
         "infra/test-utils/**",
+        "apps/api/src/common/testing/**",
         "**/scripts/**",
         "**/tools/**",
         "scripts/**",

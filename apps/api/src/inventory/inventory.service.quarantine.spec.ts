@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InventoryService } from './inventory.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
@@ -28,11 +27,13 @@ import {
 } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
 
 describe('InventoryService - Quarantine', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
-  let service: InventoryService;
-
+  let service: InventoryMovementService;
+  let queryService: InventoryQueryService;
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
   const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
   let RECV_BIN_ID = '00000000-0000-4000-8000-00000000000b';
@@ -44,7 +45,8 @@ describe('InventoryService - Quarantine', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        InventoryService,
+        InventoryMovementService,
+        InventoryQueryService,
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
@@ -65,7 +67,8 @@ describe('InventoryService - Quarantine', () => {
       ],
     }).compile();
 
-    service = module.get<InventoryService>(InventoryService);
+    service = module.get<InventoryMovementService>(InventoryMovementService);
+    queryService = module.get<InventoryQueryService>(InventoryQueryService);
 
     await pg.db.delete(inventoryLedger);
     await pg.db.delete(goodsReceivedLines);

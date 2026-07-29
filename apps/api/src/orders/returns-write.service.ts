@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
-import { OrdersWriteService } from './orders-write.service';
+
 import { randomUUID } from 'crypto';
 import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -33,7 +33,6 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 
 import {
@@ -61,6 +60,7 @@ import {
   ReceiveReturnDto,
   CreateOrderDto,
 } from './dto';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
@@ -70,11 +70,10 @@ const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 export class ReturnsWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
     private readonly appConfig: AppConfigService,
     public readonly creditNoteService: SalesCreditNoteService,
-    private readonly ordersWriteService: OrdersWriteService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -646,7 +645,7 @@ export class ReturnsWriteService {
             uomCode: line.uomCode || 'EA',
           }));
 
-          await this.inventoryService.recordInventoryMovement(innerTx, {
+          await this.inventoryMovementService.recordInventoryMovement(innerTx, {
             entryNumber:
               'RET-' + ret.returnNumber + '-' + Date.now().toString().slice(-4),
             sourceType: 'SO_RETURN',

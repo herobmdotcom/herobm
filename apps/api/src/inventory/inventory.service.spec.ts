@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InventoryService } from './inventory.service';
 import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
@@ -20,6 +19,8 @@ import {
 } from '../drizzle/schema';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { eq, sql } from 'drizzle-orm';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -27,8 +28,8 @@ jest.mock('../common/emit-event', () => ({
 
 describe('InventoryService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
-  let service: InventoryService;
-
+  let service: InventoryMovementService;
+  let queryService: InventoryQueryService;
   const PRODUCT_ID = '00000000-0000-4000-8000-00000000000a';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
   const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
@@ -87,7 +88,8 @@ describe('InventoryService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        InventoryService,
+        InventoryMovementService,
+        InventoryQueryService,
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
@@ -108,7 +110,8 @@ describe('InventoryService', () => {
       ],
     }).compile();
 
-    service = module.get<InventoryService>(InventoryService);
+    service = module.get<InventoryMovementService>(InventoryMovementService);
+    queryService = module.get<InventoryQueryService>(InventoryQueryService);
 
     // Clean transactional data
     await pg.db.delete(inventoryLedger);
@@ -347,7 +350,7 @@ describe('InventoryService', () => {
         actualQuantity: '100',
       });
 
-      const result = await service.findAll();
+      const result = await queryService.findAll();
       expect(result.data).toHaveLength(1);
       expect(result.data[0].productNumber).toBe('P1');
       expect(result.data[0].quantityAvailable).toBe(100);
@@ -356,7 +359,7 @@ describe('InventoryService', () => {
 
   describe('findAllLocations', () => {
     it('omits availableQty when no productId is supplied', async () => {
-      const result = await service.findAllLocations();
+      const result = await queryService.findAllLocations();
       expect(result.length).toBeGreaterThan(0);
       for (const loc of result) {
         expect((loc as { availableQty?: number }).availableQty).toBeUndefined();
@@ -388,7 +391,7 @@ describe('InventoryService', () => {
         actualQuantity: '42',
       });
 
-      const result = await service.findAllLocations(PRODUCT_ID);
+      const result = await queryService.findAllLocations(PRODUCT_ID);
       const main = (
         result as { locationId: string; availableQty?: number }[]
       ).find((l) => l.locationId === LOCATION_ID);
@@ -397,7 +400,7 @@ describe('InventoryService', () => {
     });
 
     it('returns 0 availableQty for locations with no stock of the product', async () => {
-      const result = await service.findAllLocations(PRODUCT_ID);
+      const result = await queryService.findAllLocations(PRODUCT_ID);
       // The seeded LOCATION_ID has nothing in bin_contents for this product
       const main = (
         result as { locationId: string; availableQty?: number }[]
@@ -495,7 +498,7 @@ describe('InventoryService', () => {
       expect(Number(ledgerEntries[0].quantity)).toBe(15);
 
       // Also verify available quantity
-      const locs = await service.findAllLocations(FRAC_PROD_ID);
+      const locs = await queryService.findAllLocations(FRAC_PROD_ID);
       const mainLoc = locs.find((l: any) => l.locationId === LOCATION_ID);
       expect(mainLoc!.availableQty).toBe(15);
     });
@@ -503,7 +506,7 @@ describe('InventoryService', () => {
 
   describe('findBinsByLocation', () => {
     it('should return all bins for a given location', async () => {
-      const bins = await service.findBinsByLocation(LOCATION_ID);
+      const bins = await queryService.findBinsByLocation(LOCATION_ID);
       expect(bins).toHaveLength(6); // 1 manual bin + 5 auto-generated handling bins
       const manualBin = bins.find((b) => b.binId === BIN_ID);
       expect(manualBin).toBeDefined();
@@ -512,14 +515,14 @@ describe('InventoryService', () => {
 
     it('should filter by binType', async () => {
       // Test matching binType
-      const matchingBins = await service.findBinsByLocation(
+      const matchingBins = await queryService.findBinsByLocation(
         LOCATION_ID,
         'storage',
       );
       expect(matchingBins).toHaveLength(1);
 
       // Test non-matching binType
-      const emptyBins = await service.findBinsByLocation(
+      const emptyBins = await queryService.findBinsByLocation(
         LOCATION_ID,
         'quarantine',
       );
@@ -528,7 +531,7 @@ describe('InventoryService', () => {
 
     it('should filter by zoneCode', async () => {
       // Test matching zoneCode
-      const matchingBins = await service.findBinsByLocation(
+      const matchingBins = await queryService.findBinsByLocation(
         LOCATION_ID,
         undefined,
         'Z1',
@@ -536,7 +539,7 @@ describe('InventoryService', () => {
       expect(matchingBins).toHaveLength(1);
 
       // Test non-matching zoneCode
-      const emptyBins = await service.findBinsByLocation(
+      const emptyBins = await queryService.findBinsByLocation(
         LOCATION_ID,
         undefined,
         'Z2',
@@ -545,7 +548,7 @@ describe('InventoryService', () => {
     });
 
     it('should filter by both binType and zoneCode', async () => {
-      const bins = await service.findBinsByLocation(
+      const bins = await queryService.findBinsByLocation(
         LOCATION_ID,
         'storage',
         'Z1',

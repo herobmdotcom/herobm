@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PurchaseInvoiceService } from './purchase-invoice.service';
+import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
+import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
+import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -35,6 +37,71 @@ import {
   GOODS_RECEIVED_STATE,
   PRODUCT_STATE,
 } from '@herobm/shared';
+
+/**
+ * Local wrapper that proxies to the 3 sub-services so existing tests
+ * continue to work without rewriting every `service.xxx()` call.
+ */
+class PurchaseInvoiceService {
+  core: PurchaseInvoiceCoreService;
+  draft: PurchaseInvoiceDraftService;
+  posting: PurchaseInvoicePostingService;
+
+  constructor(
+    core: PurchaseInvoiceCoreService,
+    draft: PurchaseInvoiceDraftService,
+    posting: PurchaseInvoicePostingService,
+  ) {
+    this.core = core;
+    this.draft = draft;
+    this.posting = posting;
+  }
+
+  findOne(...args: any[]) {
+    return this.core.findOne(...(args as [any, any]));
+  }
+  findByOrder(...args: any[]) {
+    return this.core.findByOrder(...(args as [any]));
+  }
+  findActiveInvoices(...args: any[]) {
+    return this.core.findActiveInvoices(...(args as [any]));
+  }
+  createDraftInvoice(...args: any[]) {
+    return this.draft.createDraftInvoice(...(args as [any, any]));
+  }
+  updateInvoice(...args: any[]) {
+    return this.draft.updateInvoice(...(args as [any, any, any]));
+  }
+  updateLine(...args: any[]) {
+    return this.draft.updateLine(...(args as [any, any, any, any]));
+  }
+  removeLine(...args: any[]) {
+    return this.draft.removeLine(...(args as [any, any, any]));
+  }
+  addLine(...args: any[]) {
+    return this.draft.addLine(...(args as [any, any, any]));
+  }
+  changePurchaseInvoiceState(...args: any[]) {
+    return this.draft.changePurchaseInvoiceState(
+      ...(args as [any, any, any, any, any]),
+    );
+  }
+  adminMarkPaid(...args: any[]) {
+    return this.draft.adminMarkPaid(...(args as [any, any]));
+  }
+  postInvoice(...args: any[]) {
+    return this.posting.postInvoice(...(args as [any, any]));
+  }
+  resolveInvoiceLine(...args: any[]) {
+    return this.posting.resolveInvoiceLine(...(args as [any, any, any]));
+  }
+  autoMatchPurchaseOrder(...args: any[]) {
+    return this.posting.autoMatchPurchaseOrder(...(args as [any, any, any]));
+  }
+  unresolveInvoiceLine(...args: any[]) {
+    return this.posting.unresolveInvoiceLine(...(args as [any, any]));
+  }
+}
 
 describe('PurchaseInvoiceService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -132,7 +199,9 @@ describe('PurchaseInvoiceService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PurchaseInvoiceService,
+        PurchaseInvoiceCoreService,
+        PurchaseInvoiceDraftService,
+        PurchaseInvoicePostingService,
         { provide: DRIZZLE, useValue: pg.db },
         { provide: GlService, useValue: mockGlService },
         {
@@ -149,7 +218,16 @@ describe('PurchaseInvoiceService', () => {
       ],
     }).compile();
 
-    service = module.get<PurchaseInvoiceService>(PurchaseInvoiceService);
+    const core = module.get<PurchaseInvoiceCoreService>(
+      PurchaseInvoiceCoreService,
+    );
+    const draft = module.get<PurchaseInvoiceDraftService>(
+      PurchaseInvoiceDraftService,
+    );
+    const posting = module.get<PurchaseInvoicePostingService>(
+      PurchaseInvoicePostingService,
+    );
+    service = new PurchaseInvoiceService(core, draft, posting);
 
     // Clean transactional data
     await pg.db.delete(purchaseOrderLineItems);

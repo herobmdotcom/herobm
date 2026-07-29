@@ -30,7 +30,6 @@ const parseInitialPhone = (val: string) => {
   return '';
 };
 
-import PageNav from '@/components/shared/PageNav';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 import InvoicesSection from './InvoicesSection';
@@ -145,7 +144,6 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     const tConfirm = useTranslations('confirm');
 
     const o = useOrder(id);
-    const [mainTab, setMainTab] = useState<string>('overview');
 
     const { permissions } = useAuth();
     const canManageCredit = hasPermission(permissions, SystemResource.CREDIT_CONTROL, 'write');
@@ -286,16 +284,6 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         'legacy',
         SALES_ORDER_STATE.ARCHIVED
     ];
-    const navItems = [
-        { id: 'overview', label: (tSales as (k: string) => string)('tabs.overview') || 'Overview', isActive: mainTab === 'overview', onClick: () => setMainTab('overview') },
-        { id: 'lines', label: (tSales as (k: string) => string)('tabs.lines') || 'Lines', isActive: mainTab === 'lines', onClick: () => setMainTab('lines') },
-        ...(PICKING_INVOICE_STATES.includes(order.stateCode) ? [
-            { id: 'fulfillment', label: (tSales as (k: string) => string)('tabs.fulfillment') || 'Fulfillment', isActive: mainTab === 'fulfillment', onClick: () => setMainTab('fulfillment') },
-            { id: 'shipments', label: (tSales as (k: string) => string)('tabs.shipments') || 'Shipments', isActive: mainTab === 'shipments', onClick: () => setMainTab('shipments') },
-            { id: 'invoices', label: (tSales as (k: string) => string)('tabs.invoices') || 'Invoices', isActive: mainTab === 'invoices', onClick: () => setMainTab('invoices') },
-            { id: 'returns', label: (tSales as (k: string) => string)('tabs.returns') || 'Returns', isActive: mainTab === 'returns', onClick: () => setMainTab('returns') }
-        ] : [])
-    ];
     
     // Pre-calculate gaps for the Availability tab
     const gaps = calculateInventoryGaps(
@@ -334,7 +322,6 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         subtitle={order.name === order.orderNumber ? null : (order.name || tSales('untitledOrder'))}
                         isSaving={saving}
                         badges={order.stateCode ? <StateBadge state={order.stateCode as ValidState} /> : ''}
-                        nav={<PageNav sections={navItems} />}
                         actions={
                             <>
 
@@ -423,139 +410,116 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
             )}
 
             <div className="flex flex-col gap-3">
-                {mainTab === 'overview' && (
-                    <>
-                    <OrderDetailsCard
-                        order={order}
-                        isOrderDetailsEditable={isOrderDetailsEditable}
-                        editName={editName}
-                        setEditName={setEditName}
-                        editPO={editPO}
-                        setEditPO={setEditPO}
-                        editFulfillmentLocationId={editFulfillmentLocationId}
-                        setEditFulfillmentLocationId={setEditFulfillmentLocationId}
-                        editNotes={editNotes}
-                        setEditNotes={setEditNotes}
-                        saveHeader={saveHeader}
-                        locations={locations}
-                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
-                        reportError={reportError}
-                        setError={setError}
-                        customerDeliveryAddresses={customerDeliveryAddresses}
-                        customerCountry={customerCountry}
-                        editShippingNotes={editShippingNotes}
-                        setEditShippingNotes={setEditShippingNotes}
-                        editDeliveryCompanyName={editDeliveryCompanyName}
-                        setEditDeliveryCompanyName={setEditDeliveryCompanyName}
-                        editDeliveryName={editDeliveryName}
-                        setEditDeliveryName={setEditDeliveryName}
-                        editDeliveryPhone={editDeliveryPhone}
-                        setEditDeliveryPhone={setEditDeliveryPhone}
-                        editDeliveryAddressLine1={editDeliveryAddressLine1}
-                        setEditDeliveryAddressLine1={setEditDeliveryAddressLine1}
-                        editDeliveryAddressLine2={editDeliveryAddressLine2}
-                        setEditDeliveryAddressLine2={setEditDeliveryAddressLine2}
-                        editDeliveryCity={editDeliveryCity}
-                        setEditDeliveryCity={setEditDeliveryCity}
-                        editDeliveryState={editDeliveryState}
-                        setEditDeliveryState={setEditDeliveryState}
-                        editDeliveryPostalCode={editDeliveryPostalCode}
-                        setEditDeliveryPostalCode={setEditDeliveryPostalCode}
-                        editDeliveryCountry={editDeliveryCountry}
-                        setEditDeliveryCountry={setEditDeliveryCountry}
-                    />
+                <OrderDetailsCard
+                    order={order}
+                    isOrderDetailsEditable={isOrderDetailsEditable}
+                    editName={editName}
+                    setEditName={setEditName}
+                    editPO={editPO}
+                    setEditPO={setEditPO}
+                    editFulfillmentLocationId={editFulfillmentLocationId}
+                    setEditFulfillmentLocationId={setEditFulfillmentLocationId}
+                    editNotes={editNotes}
+                    setEditNotes={setEditNotes}
+                    saveHeader={saveHeader}
+                    locations={locations}
+                    onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
+                    reportError={reportError}
+                    setError={setError}
+                    customerDeliveryAddresses={customerDeliveryAddresses}
+                    customerCountry={customerCountry}
+                    editShippingNotes={editShippingNotes}
+                    setEditShippingNotes={setEditShippingNotes}
+                    editDeliveryCompanyName={editDeliveryCompanyName}
+                    setEditDeliveryCompanyName={setEditDeliveryCompanyName}
+                    editDeliveryName={editDeliveryName}
+                    setEditDeliveryName={setEditDeliveryName}
+                    editDeliveryPhone={editDeliveryPhone}
+                    setEditDeliveryPhone={setEditDeliveryPhone}
+                    editDeliveryAddressLine1={editDeliveryAddressLine1}
+                    setEditDeliveryAddressLine1={setEditDeliveryAddressLine1}
+                    editDeliveryAddressLine2={editDeliveryAddressLine2}
+                    setEditDeliveryAddressLine2={setEditDeliveryAddressLine2}
+                    editDeliveryCity={editDeliveryCity}
+                    setEditDeliveryCity={setEditDeliveryCity}
+                    editDeliveryState={editDeliveryState}
+                    setEditDeliveryState={setEditDeliveryState}
+                    editDeliveryPostalCode={editDeliveryPostalCode}
+                    setEditDeliveryPostalCode={setEditDeliveryPostalCode}
+                    editDeliveryCountry={editDeliveryCountry}
+                    setEditDeliveryCountry={setEditDeliveryCountry}
+                />
 
-                    <div id="activity-section" className="card mt-3">
-                        <h3 className="section-heading mb-4">
-                            { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material icon text */}
-                            <span className="material-symbols-outlined">history</span>
-                            {tCommon('activity')}
-                        </h3>
-                        {order?.events?.length ? (
-                            <ActivityTimeline
-                                events={(order as { events: React.ComponentProps<typeof ActivityTimeline>['events'] }).events}
-                            />
-                        ) : (
-                            <p className="text-sm text-gray-500 italic px-2">
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl hook */}
-                                {(tCommon as any)('noActivityRecorded')}
-                            </p>
-                        )}
-                    </div>
+                <OrderLinesTab
+                    order={order}
+                    saving={saving}
+                    editFulfillmentLocationId={editFulfillmentLocationId}
+                    inventoryData={inventoryData}
+                    inventoryLoading={inventoryLoading}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
+                    activeBackorders={activeBackorders as any}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
+                    gapMap={gapMap as any}
+                    isOrderLinesEditable={isOrderLinesEditable}
+                    isOrderDetailsEditable={isOrderDetailsEditable}
+                    isPostConfirmationAddingEnabled={isPostConfirmationAddingEnabled}
+                    setIsPostConfirmationAddingEnabled={setIsPostConfirmationAddingEnabled}
+                    addLineFromProduct={addLineFromProduct}
+                    addBlankLine={addPostConfirmationBlankLine}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
+                    updateLine={updateLine as any}
+                    updateLineFields={updateLineFields}
+                    removeLine={removeLine}
+                    calculateTaxes={calculateTaxes}
+                    taxCategories={taxCategories}
+                    subtotal={subtotal}
+                    totalTax={totalTax}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
+
+                {PICKING_INVOICE_STATES.includes(order.stateCode) && (
+                    <>
+                        <FulfillmentSection orderId={id} pickingSummary={pickingSummary} order={order} />
+
+                        <ShipmentsSection orderId={id} />
+
+                        <InvoicesSection 
+                            orderId={id}
+                            order={order} 
+                            invoices={invoices} 
+                            returns={returns}
+                            taxCategories={taxCategories}
+                            pickingSummary={pickingSummary}
+                            setError={setError}
+                            loadInvoices={loadInvoices}
+                            loadOrder={loadOrder}
+                            onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
+                        />
+
+                        <ReturnsSection 
+                            orderId={id}
+                            order={order} 
+                                                            returns={returns} 
+                            returnsLoading={returnsLoading}
+                            showCreateReturn={showCreateReturn}
+                            setShowCreateReturn={setShowCreateReturn} 
+                            setError={setError}
+                            loadReturns={loadReturns}
+                            loadOrder={loadOrder}
+                            pickingSummary={pickingSummary}
+                            taxCategories={taxCategories}
+                            locations={locations}
+                            onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
+                        />
                     </>
                 )}
 
-                {mainTab === 'lines' && (
-                    <OrderLinesTab
-                        order={order}
-                        saving={saving}
-                        editFulfillmentLocationId={editFulfillmentLocationId}
-                        inventoryData={inventoryData}
-                        inventoryLoading={inventoryLoading}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                        activeBackorders={activeBackorders as any}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                        gapMap={gapMap as any}
-                        isOrderLinesEditable={isOrderLinesEditable}
-                        isOrderDetailsEditable={isOrderDetailsEditable}
-                        isPostConfirmationAddingEnabled={isPostConfirmationAddingEnabled}
-                        setIsPostConfirmationAddingEnabled={setIsPostConfirmationAddingEnabled}
-                        addLineFromProduct={addLineFromProduct}
-                        addBlankLine={addPostConfirmationBlankLine}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                        updateLine={updateLine as any}
-                        updateLineFields={updateLineFields}
-                        removeLine={removeLine}
-                        calculateTaxes={calculateTaxes}
-                        taxCategories={taxCategories}
-                        subtotal={subtotal}
-                        totalTax={totalTax}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
+                <div id="activity-section" className="card mt-3">
+                    <ActivityTimeline
+                        events={(order as { events: React.ComponentProps<typeof ActivityTimeline>['events'] }).events || []}
                     />
-                )}
-                {mainTab === 'fulfillment' && (
-                    <FulfillmentSection orderId={id} pickingSummary={pickingSummary} order={order} />
-                )}
-
-                {mainTab === 'shipments' && (
-                    <ShipmentsSection orderId={id} />
-                )}
-
-                {mainTab === 'invoices' && (
-                    <InvoicesSection 
-                        orderId={id}
-                        order={order} 
-                        invoices={invoices} 
-                        returns={returns}
-                        taxCategories={taxCategories}
-                        pickingSummary={pickingSummary}
-                        setError={setError}
-                        loadInvoices={loadInvoices}
-                        loadOrder={loadOrder}
-                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
-                    />
-                )}
-
-                {mainTab === 'returns' && (
-                    <ReturnsSection 
-                        orderId={id}
-                        order={order} 
-                                                        returns={returns} 
-                        returnsLoading={returnsLoading}
-                        showCreateReturn={showCreateReturn}
-                        setShowCreateReturn={setShowCreateReturn} 
-                        setError={setError}
-                        loadReturns={loadReturns}
-                        loadOrder={loadOrder}
-                        pickingSummary={pickingSummary}
-                        taxCategories={taxCategories}
-                        locations={locations}
-                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
-                    />
-                )}
-
+                </div>
             </div>
 
             </DetailsLayout>

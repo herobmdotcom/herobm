@@ -8,7 +8,7 @@
  * - Integers → locale-formatted without decimals
  * - Decimals → locale-formatted with exactly 2 decimal places
  */
-import { numericFormatter } from '../DataGrid';
+import { numericFormatter } from '../datagrid/DataGridFormatters';
 
 // Mock ag-grid-community (imported by DataGrid at module level)
 jest.mock('ag-grid-community', () => ({

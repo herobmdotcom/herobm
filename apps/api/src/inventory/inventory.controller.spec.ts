@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller';
-import { InventoryService } from './inventory.service';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
@@ -55,7 +56,10 @@ describe('InventoryController', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InventoryController],
-      providers: [{ provide: InventoryService, useValue: mockService }],
+      providers: [
+        { provide: InventoryQueryService, useValue: mockService },
+        { provide: InventoryMovementService, useValue: mockService },
+      ],
     }).compile();
 
     controller = module.get<InventoryController>(InventoryController);

@@ -1,4 +1,4 @@
-import { OrdersWriteService } from '../orders/orders-write.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
 import { SalesQuoteData } from './sales-quote.service';
 import { computeOrderTotals } from '@herobm/shared';
 
@@ -14,12 +14,12 @@ import { computeOrderTotals } from '@herobm/shared';
 // ---------------------------------------------------------------------------
 
 export async function resolveOrderDetail(
-  ordersWriteService: OrdersWriteService,
+  ordersQueryService: OrdersQueryService,
   _ordersService: unknown,
   orderId: string,
   _source?: string,
-): Promise<Awaited<ReturnType<OrdersWriteService['findOne']>>> {
-  return ordersWriteService.findOne(orderId);
+): Promise<Awaited<ReturnType<OrdersQueryService['findOne']>>> {
+  return ordersQueryService.findOne(orderId);
 }
 
 // ---------------------------------------------------------------------------

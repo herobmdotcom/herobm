@@ -26,7 +26,12 @@ import { OrderShipmentsController } from './order-shipments.controller';
 import { GlobalShipmentsController } from './global-shipments.controller';
 import { GlobalReturnsController } from './global-returns.controller';
 import { OrdersService } from './orders.service';
-import { OrdersWriteService } from './orders-write.service';
+import { OrdersCoreService } from './orders-core.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderStateService } from './order-state.service';
+import { OrderNotificationService } from './order-notification.service';
+import { OrdersQueryService } from './orders-query.service';
 import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
@@ -78,7 +83,12 @@ import { EmailModule } from '../email/email.module';
   ],
   providers: [
     OrdersService,
-    OrdersWriteService,
+    OrdersCoreService,
+    OrderCreationService,
+    OrderLinesService,
+    OrderStateService,
+    OrderNotificationService,
+    OrdersQueryService,
     BackordersService,
     ReturnsWriteService,
     PickingService,
@@ -90,7 +100,16 @@ import { EmailModule } from '../email/email.module';
     ShippingDocketService,
     TransferService,
   ],
-  exports: [OrdersService, OrdersWriteService, BackordersService],
+  exports: [
+    OrdersService,
+    OrdersCoreService,
+    OrderCreationService,
+    OrderLinesService,
+    OrderStateService,
+    OrderNotificationService,
+    OrdersQueryService,
+    BackordersService,
+  ],
 })
 export class OrdersModule implements OnModuleInit {
   constructor(

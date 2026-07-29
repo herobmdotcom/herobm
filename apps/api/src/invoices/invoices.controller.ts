@@ -21,7 +21,9 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SalesInvoiceService } from './sales-invoice.service';
-import { PurchaseInvoiceService } from './purchase-invoice.service';
+import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
+import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
+import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
   CasbinGuard,
@@ -98,7 +100,7 @@ export class SalesInvoiceController {
 @ApiTags('Purchase Invoices')
 export class PurchaseInvoiceController {
   constructor(
-    private readonly purchaseInvoiceService: PurchaseInvoiceService,
+    private readonly purchaseInvoiceCoreService: PurchaseInvoiceCoreService,
   ) {}
 
   @Get(':id/invoices')
@@ -109,7 +111,7 @@ export class PurchaseInvoiceController {
   })
   @ApiOkResponse({ type: [PurchaseInvoiceResponseDto] })
   async getPurchaseBills(@Param('id') id: string) {
-    return await this.purchaseInvoiceService.findByOrder(id);
+    return await this.purchaseInvoiceCoreService.findByOrder(id);
   }
 }
 
@@ -122,7 +124,9 @@ export class PurchaseInvoiceController {
 export class InvoiceDetailController {
   constructor(
     private readonly salesInvoiceService: SalesInvoiceService,
-    private readonly purchaseInvoiceService: PurchaseInvoiceService,
+    private readonly purchaseInvoiceCoreService: PurchaseInvoiceCoreService,
+    private readonly purchaseInvoiceDraftService: PurchaseInvoiceDraftService,
+    private readonly purchaseInvoicePostingService: PurchaseInvoicePostingService,
   ) {}
 
   @ApiTags('Sales Invoices')
@@ -234,7 +238,7 @@ export class InvoiceDetailController {
     @Query('balanceStatus') balanceStatus?: string,
   ) {
     const { limit, cursor, direction, searchTerm } = parsePagination(query);
-    const data = await this.purchaseInvoiceService.findActiveInvoices({
+    const data = await this.purchaseInvoiceCoreService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       vendorId,
       invoiceId,
@@ -257,7 +261,7 @@ export class InvoiceDetailController {
   })
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async getPurchaseBillDetails(@Param('id') id: string) {
-    return this.purchaseInvoiceService.findOne(id);
+    return this.purchaseInvoiceCoreService.findOne(id);
   }
 
   @ApiTags('Purchase Invoices')
@@ -277,7 +281,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.adminMarkPaid(id, actor);
+    return this.purchaseInvoiceDraftService.adminMarkPaid(id, actor);
   }
 
   @ApiTags('Purchase Invoices')
@@ -294,7 +298,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.createDraftInvoice(dto, actor);
+    return this.purchaseInvoiceDraftService.createDraftInvoice(dto, actor);
   }
 
   @ApiTags('Purchase Invoices')
@@ -313,7 +317,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.postInvoice(id, actor);
+    return this.purchaseInvoicePostingService.postInvoice(id, actor);
   }
 
   @ApiTags('Purchase Invoices')
@@ -331,7 +335,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.changePurchaseInvoiceState(
+    return this.purchaseInvoiceDraftService.changePurchaseInvoiceState(
       id,
       dto.stateCode,
       actor,
@@ -354,7 +358,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.updateInvoice(id, dto, actor);
+    return this.purchaseInvoiceDraftService.updateInvoice(id, dto, actor);
   }
 
   @ApiTags('Purchase Invoices')
@@ -373,7 +377,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.updateLine(
+    return this.purchaseInvoiceDraftService.updateLine(
       invoiceId,
       lineId,
       dto,
@@ -396,7 +400,11 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.removeLine(invoiceId, lineId, actor);
+    return this.purchaseInvoiceDraftService.removeLine(
+      invoiceId,
+      lineId,
+      actor,
+    );
   }
 
   @ApiTags('Purchase Invoices')
@@ -414,7 +422,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.addLine(invoiceId, dto, actor);
+    return this.purchaseInvoiceDraftService.addLine(invoiceId, dto, actor);
   }
 
   @ApiTags('Purchase Invoices')
@@ -433,7 +441,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.resolveInvoiceLine(
+    return this.purchaseInvoicePostingService.resolveInvoiceLine(
       lineId,
       dto.purchaseOrderLineId,
       actor,
@@ -456,7 +464,10 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.unresolveInvoiceLine(lineId, actor);
+    return this.purchaseInvoicePostingService.unresolveInvoiceLine(
+      lineId,
+      actor,
+    );
   }
 
   @ApiTags('Purchase Invoices')
@@ -475,7 +486,7 @@ export class InvoiceDetailController {
     @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.autoMatchPurchaseOrder(
+    return this.purchaseInvoicePostingService.autoMatchPurchaseOrder(
       invoiceId,
       dto.purchaseOrderId,
       actor,

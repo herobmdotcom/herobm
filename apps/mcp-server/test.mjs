@@ -24,9 +24,9 @@ async function main() {
   console.log("Listing tools...");
   const tools = await client.listTools();
   
-  const targetTool = tools.tools.find(t => t.name === "ProductsController_findAll");
+  const targetTool = tools.tools.find(t => t.name === "call_herobm_api");
   if (targetTool) {
-    console.log("Found ProductsController_findAll:");
+    console.log("Found call_herobm_api:");
     console.dir(targetTool.inputSchema, { depth: null });
   } else {
     console.log("Tool not found!");

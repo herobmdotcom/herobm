@@ -27,7 +27,6 @@ import {
 } from '../drizzle/schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { getErrorMessage } from '@herobm/shared';
-import { InventoryService } from '../inventory/inventory.service';
 import {
   PaginationQuery,
   parsePagination,
@@ -77,7 +76,6 @@ import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 export class PurchaseOrdersService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
     private readonly suppliersService: SuppliersService,
     private readonly taxService: TaxCategoriesService,
     private readonly taxResolutionEngine: TaxResolutionEngine,

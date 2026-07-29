@@ -58,6 +58,7 @@ export default function CustomerSelect({
       }}
       onChange={onChange}
       getKey={(c) => c.customerId}
+      getLabel={(c) => `${c.customerNumber} — ${c.name}`}
       renderOption={(c) => (
         <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
           <div style={{ minWidth: 0 }}>

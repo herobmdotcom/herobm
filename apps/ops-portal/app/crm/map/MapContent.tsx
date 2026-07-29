@@ -182,9 +182,8 @@ export default function MapContent() {
   const { data: mapData, isLoading, error } = useSWR(
     focalNodeId ? ['crm-map', focalNodeId] : null,
     async () => {
-      const res = await api.crmMapControllerGetMap({ focalNodeId, maxDistance: 2 });
-      // Depending on the SDK, the data might be in res.data or res itself
-      return (res as any).data || res;
+      const { data } = await api.crmMapControllerGetMap({ focalNodeId, maxDistance: 2 });
+      return data;
     }
   );
 
@@ -296,8 +295,7 @@ export default function MapContent() {
   const handleExpand = useCallback(async (rawId: string) => {
     try {
       setIsExpanding(true);
-      const res = await api.crmMapControllerGetMap({ focalNodeId: rawId, maxDistance: 1 });
-      const payload = (res as any).data || res;
+      const { data: payload } = await api.crmMapControllerGetMap({ focalNodeId: rawId, maxDistance: 1 });
       
       if (payload && payload.nodes && payload.edges) {
         const currentNodes = nodesRef.current;

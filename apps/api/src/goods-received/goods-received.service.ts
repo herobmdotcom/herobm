@@ -25,8 +25,6 @@ import {
   glJournalLines,
   actors,
 } from '../drizzle/schema';
-
-import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -66,6 +64,7 @@ import {
   PUTAWAY_STATUS,
   MATCH_STATUS,
 } from '@herobm/shared';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_GRN_STATES = getValidStates(GOODS_RECEIVED_TRANSITIONS);
 
@@ -75,11 +74,11 @@ export class GoodsReceivedService {
 
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
     private readonly appConfig: AppConfigService,
     private readonly glService: GlService,
     private readonly backordersService: BackordersService,
     private readonly purchaseOrdersService: PurchaseOrdersService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   /**
@@ -326,7 +325,7 @@ export class GoodsReceivedService {
           );
 
         // Create inventory ledger entries via inventoryService
-        await this.inventoryService.recordInventoryMovement(tx, {
+        await this.inventoryMovementService.recordInventoryMovement(tx, {
           entryNumber: `GRN-${receipt.receiptNumber}`,
           sourceType: 'PO_RECEIPT',
           sourceId: receipt.goodsReceivedId,
@@ -656,7 +655,7 @@ export class GoodsReceivedService {
         );
       }
 
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `CAN-${receipt.receiptNumber}`,
         sourceType: 'PO_RECEIPT',
         sourceId: receipt.goodsReceivedId,

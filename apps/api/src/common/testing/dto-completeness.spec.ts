@@ -9,7 +9,16 @@ describe('Global DTO Completeness', () => {
       tableName: 'customers',
       dtoFile: '../../customers/dto.ts',
       dtoClass: 'BaseCustomerDto',
-      ignoredColumns: ['customerId', 'externalId', 'sourceId', 'source', 'priceTier', 'createdBy', 'createdOn', 'modifiedOn'], // Generated/Metadata
+      ignoredColumns: [
+        'customerId',
+        'externalId',
+        'sourceId',
+        'source',
+        'priceTier',
+        'createdBy',
+        'createdOn',
+        'modifiedOn',
+      ], // Generated/Metadata
     },
     {
       module: 'Suppliers',
@@ -17,7 +26,15 @@ describe('Global DTO Completeness', () => {
       tableName: 'suppliers',
       dtoFile: '../../suppliers/dto.ts',
       dtoClass: 'BaseSupplierDto',
-      ignoredColumns: ['vendorId', 'externalId', 'sourceId', 'source', 'createdBy', 'createdOn', 'modifiedOn'], // Generated/Metadata
+      ignoredColumns: [
+        'vendorId',
+        'externalId',
+        'sourceId',
+        'source',
+        'createdBy',
+        'createdOn',
+        'modifiedOn',
+      ], // Generated/Metadata
     },
     {
       module: 'Products',
@@ -25,7 +42,16 @@ describe('Global DTO Completeness', () => {
       tableName: 'products',
       dtoFile: '../../products/dto.ts',
       dtoClass: 'BaseProductDto',
-      ignoredColumns: ['productId', 'weightedAverageCost', 'externalId', 'sourceId', 'source', 'createdBy', 'createdOn', 'modifiedOn'], // Generated/Metadata
+      ignoredColumns: [
+        'productId',
+        'weightedAverageCost',
+        'externalId',
+        'sourceId',
+        'source',
+        'createdBy',
+        'createdOn',
+        'modifiedOn',
+      ], // Generated/Metadata
     },
   ];
 
@@ -38,11 +64,16 @@ describe('Global DTO Completeness', () => {
         const columns = getSchemaColumns(schemaPath, map.tableName);
         const dtoProps = getDtoProperties(dtoPath, map.dtoClass);
 
-        const missing = columns.filter(col => !dtoProps.includes(col) && !map.ignoredColumns.includes(col));
-        
+        const missing = columns.filter(
+          (col) => !dtoProps.includes(col) && !map.ignoredColumns.includes(col),
+        );
+
         // Print useful error message if missing
         if (missing.length > 0) {
-          console.error(`Missing properties in ${map.dtoClass} for ${map.tableName} schema:`, missing);
+          console.error(
+            `Missing properties in ${map.dtoClass} for ${map.tableName} schema:`,
+            missing,
+          );
         }
 
         expect(missing).toEqual([]);

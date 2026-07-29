@@ -2884,6 +2884,14 @@
     "unknownCustomer": "Unknown Customer"
   },
   "salesOrders": {
+    "tabs": {
+      "overview": "Overview",
+      "lines": "Lines",
+      "fulfillment": "Fulfillment",
+      "shipments": "Shipments",
+      "invoices": "Invoices",
+      "returns": "Returns"
+    },
     "allocated": "Allocated",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
     "archivedBannerTitle": "This record is archived.",

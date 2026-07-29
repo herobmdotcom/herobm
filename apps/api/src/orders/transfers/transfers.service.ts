@@ -42,7 +42,6 @@ import {
   TransferPaginationQuery,
 } from './dto';
 import { CreateShipmentDto } from '../dto';
-import { InventoryService } from '../../inventory/inventory.service';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
 import {
@@ -61,6 +60,7 @@ import type {
   TransferOrderPickState,
 } from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 
 const VALID_TRANSFER_STATES = getValidStates(TRANSFER_ORDER_TRANSITIONS);
 const VALID_PICK_STATES = getValidStates(TRANSFER_ORDER_PICK_TRANSITIONS);
@@ -69,7 +69,7 @@ const VALID_PICK_STATES = getValidStates(TRANSFER_ORDER_PICK_TRANSITIONS);
 export class TransferService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly inventoryService: InventoryService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -681,7 +681,7 @@ export class TransferService {
         }
       }
 
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `TR-DISP-${shipmentNumber}`,
         sourceType: 'TO_DISPATCH',
         sourceId: transferOrderId,
@@ -883,7 +883,7 @@ export class TransferService {
       await tx.insert(transferOrderShipmentLines).values(shipmentLinesInsert);
 
       // 6) Execute Inventory Movement
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `INTRA-OUT-${shipmentNumber}-${Date.now().toString().slice(-4)}`,
         sourceType: 'TRANSFER_OUT',
         sourceId: shipmentId,
@@ -1019,7 +1019,7 @@ export class TransferService {
 
       // Execute Inventory Movement
       if (inventoryLines.length > 0) {
-        await this.inventoryService.recordInventoryMovement(tx, {
+        await this.inventoryMovementService.recordInventoryMovement(tx, {
           entryNumber: `INTRA-REV-${shipment.shipmentNumber}-${Date.now().toString().slice(-4)}`,
           sourceType: 'TRANSFER_OUT',
           sourceId: shipment.shipmentId,
@@ -1281,7 +1281,7 @@ export class TransferService {
       await tx.insert(transferOrderReceiptLines).values(receiptLinesInsert);
 
       // 5) Execute Inventory Movement
-      await this.inventoryService.recordInventoryMovement(tx, {
+      await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `INTRA-IN-${receiptNumber}-${Date.now().toString().slice(-4)}`,
         sourceType: 'TRANSFER_IN',
         sourceId: receiptId,

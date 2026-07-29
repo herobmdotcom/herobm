@@ -24,6 +24,7 @@ export interface AsyncSelectProps<T> {
   onChange: (item: T | null) => void;
   
   getKey: (item: T) => string;
+  getLabel?: (item: T) => string;
   renderOption: (item: T) => ReactNode;
   
   clearOnSelect?: boolean;
@@ -42,6 +43,7 @@ export default function AsyncSelect<T>({
   onSearch,
   onChange,
   getKey,
+  getLabel,
   renderOption,
   clearOnSelect,
   noResultsText = 'No matching results',
@@ -101,6 +103,8 @@ export default function AsyncSelect<T>({
     if (clearOnSelect) {
       setSearchTerm('');
       setResults([]);
+    } else if (getLabel) {
+      setSearchTerm(getLabel(item));
     }
     onChange(item);
   };
