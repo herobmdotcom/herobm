@@ -18,10 +18,7 @@ import {
   Query,
   BadRequestException,
 } from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { DiscountMatrixService } from './discount-matrix.service';
 import {
   CreateDiscountMatrixDto,

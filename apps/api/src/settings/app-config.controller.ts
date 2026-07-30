@@ -1,15 +1,7 @@
 import { SystemResource } from '@herobm/shared';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiBody } from '@nestjs/swagger';
 import { Controller, Patch, Body, Get } from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';

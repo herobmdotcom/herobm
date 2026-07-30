@@ -16,9 +16,20 @@ let content = `// AUTO-GENERATED FILE - DO NOT EDIT\n\n/* eslint-disable @typesc
 let imports = [];
 let registryItems = [];
 
+const configPath = path.resolve(__dirname, '../../../herobm.json');
+let enabledExtensions = [];
+if (fs.existsSync(configPath)) {
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  if (Array.isArray(config.extensions)) {
+    enabledExtensions = config.extensions;
+  }
+}
+
 if (fs.existsSync(extensionsDir)) {
   const extensions = fs.readdirSync(extensionsDir);
   for (const ext of extensions) {
+    if (!enabledExtensions.includes(ext)) continue;
+
     const extDir = path.join(extensionsDir, ext);
     if (!fs.statSync(extDir).isDirectory()) continue;
 
@@ -36,8 +47,8 @@ if (fs.existsSync(extensionsDir)) {
         const componentName = file.replace(/\.tsx?$/, '');
         if (componentName === 'index') continue;
 
-        // E.g. @herobm/extension-ma/ui/projects/FeedbackTab
-        const importPath = `@herobm/extension-${ext}/ui/${target}/${componentName}`;
+        // E.g. @extensions/ma/src/ui/projects/FeedbackTab
+        const importPath = `@extensions/${ext}/src/ui/${target}/${componentName}`;
         imports.push(`import ${componentName} from '${importPath}';`);
         
         // Assume default export or named export? 

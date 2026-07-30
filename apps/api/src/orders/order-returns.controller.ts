@@ -15,10 +15,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { ReturnsWriteService } from './returns-write.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateReturnDto,
   UpdateReturnDto,

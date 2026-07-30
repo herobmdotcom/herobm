@@ -16,10 +16,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateBusinessReportDto,
   UpdateBusinessReportDto,

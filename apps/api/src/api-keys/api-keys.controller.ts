@@ -7,20 +7,10 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateApiKeyDto,
   ApiKeyResponseDto,

@@ -4,16 +4,8 @@ import {
   ApiOkResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SystemLogResponseDto } from './dto';

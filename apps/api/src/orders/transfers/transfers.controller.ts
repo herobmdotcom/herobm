@@ -31,10 +31,7 @@ import {
   ReceiveTransferDto,
   TransferPaginationQuery,
 } from './dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../../auth/casbin.guard';
 import { AuthUser } from '../../auth/auth-user.decorator';
 import type { JwtUser } from '../../auth/auth-user.decorator';
 
@@ -129,10 +126,7 @@ export class TransfersController {
     description: 'Mark a transfer order as shipped and dispatch inventory.',
   })
   @ApiCreatedResponse({ type: TransferResponseDto })
-  async shipTransferOrder(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async shipTransferOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.transferService.shipTransferOrder(id, user.username);
   }
 

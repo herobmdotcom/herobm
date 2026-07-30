@@ -6,17 +6,8 @@ import {
   ApiOkResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Delete,
-  Query,
-  Inject,
-} from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { Controller, Get, Delete, Query, Inject } from '@nestjs/common';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/schema';

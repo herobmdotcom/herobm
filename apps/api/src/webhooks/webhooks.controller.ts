@@ -20,13 +20,8 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
-import {
-  CasbinResource,
-  CasbinAction,
-  SkipCasbin,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
 import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
-
 
 import { WebhooksService } from './webhooks.service';
 

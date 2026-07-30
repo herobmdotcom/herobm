@@ -33,10 +33,7 @@ import {
   GeneratePaymentRunResponseDto,
   PaymentRunCandidateResponseDto,
 } from './dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import { ApiPaginatedResponse } from '../common/pagination';
 

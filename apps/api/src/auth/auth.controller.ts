@@ -6,13 +6,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 /* eslint-disable no-restricted-syntax -- globally skipping throttler guard */
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SkipCasbin } from './casbin.guard';
 import { Throttle } from '@nestjs/throttler';

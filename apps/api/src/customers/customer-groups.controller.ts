@@ -15,10 +15,7 @@ import {
   Body,
   Delete,
 } from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { CustomerGroupsService } from './customer-groups.service';
 import {

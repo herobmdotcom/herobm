@@ -17,10 +17,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { PickingService } from './picking.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {

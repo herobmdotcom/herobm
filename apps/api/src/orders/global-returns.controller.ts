@@ -8,10 +8,7 @@ import {
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ReturnsWriteService } from './returns-write.service';
 import { GlobalReturnListResponseDto, ReturnResponseDto } from './dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Sales Returns')
 @Controller('sales-returns')

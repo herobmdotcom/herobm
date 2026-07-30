@@ -21,10 +21,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { PdfTemplatesService } from './pdf-templates.service';
-import {
-  CasbinAction,
-  CasbinResource,
-} from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import {

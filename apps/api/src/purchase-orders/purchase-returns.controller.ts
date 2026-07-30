@@ -6,19 +6,9 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, HttpCode } from '@nestjs/common';
 import { PurchaseReturnsService } from './purchase-returns.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreatePurchaseReturnDto,
   PurchaseReturnResponseDto,

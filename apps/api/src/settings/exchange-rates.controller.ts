@@ -16,10 +16,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { ExchangeRatesService } from './exchange-rates.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import {
   CreateExchangeRateDto,

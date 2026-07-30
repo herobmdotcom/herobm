@@ -17,10 +17,7 @@ import {
   ApiCreatedResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import {
-  CasbinAction,
-  CasbinResource,
-} from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { BankStatementService } from './bank-statement.service';
 import { BankFeedsService } from './bank-feeds.service';
 import { AuthUser } from '../auth/auth-user.decorator';

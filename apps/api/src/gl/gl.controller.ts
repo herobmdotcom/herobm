@@ -16,10 +16,7 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';

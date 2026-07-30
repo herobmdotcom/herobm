@@ -1,16 +1,6 @@
 import { SystemResource } from '@herobm/shared';
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-} from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { RolesService } from './roles.service';
 import {
   SetRolePermissionsDto,

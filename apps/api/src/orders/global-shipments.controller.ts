@@ -6,10 +6,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { ShipmentService } from './shipment.service';
 import { ShipmentResponseDto } from './dto';
 

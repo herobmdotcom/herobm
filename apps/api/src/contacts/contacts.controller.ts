@@ -28,10 +28,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Contacts')
 @Controller('contacts')

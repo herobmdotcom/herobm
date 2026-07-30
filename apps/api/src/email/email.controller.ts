@@ -19,10 +19,7 @@ import {
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { emailOutbox } from '../drizzle/schema';
 import { eq, and, desc, or } from 'drizzle-orm';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { SystemResource } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';

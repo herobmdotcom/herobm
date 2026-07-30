@@ -26,10 +26,7 @@ import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
 import { OrderNotificationService } from './order-notification.service';
 import { OrdersQueryService } from './orders-query.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateOrderDto,
   UpdateOrderDto,

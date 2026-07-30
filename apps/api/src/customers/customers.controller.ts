@@ -13,10 +13,7 @@ import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
   CreateCustomerDto,
@@ -131,10 +128,7 @@ export class CustomersController {
     description: 'Archive a customer.',
   })
   @ApiCreatedResponse({ type: CustomerResponseDto })
-  archive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customersWriteService.archive(id, user.username);
   }
 
@@ -145,10 +139,7 @@ export class CustomersController {
     description: 'Unarchive a customer.',
   })
   @ApiCreatedResponse({ type: CustomerResponseDto })
-  unarchive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customersWriteService.unarchive(id, user.username);
   }
 }

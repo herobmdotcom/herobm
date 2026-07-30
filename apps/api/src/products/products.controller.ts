@@ -29,10 +29,7 @@ import {
   UpdateProductComponentDto,
   EmptyBodyDto,
 } from './dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -111,10 +108,7 @@ export class ProductsController {
       'Mark a product as archived to prevent it from being used in new transactions.',
   })
   @ApiCreatedResponse({ type: ProductResponseDto })
-  archive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.productsWriteService.archive(id, user.username);
   }
 
@@ -126,10 +120,7 @@ export class ProductsController {
     description: 'Restore an archived product to active status.',
   })
   @ApiCreatedResponse({ type: ProductResponseDto })
-  unarchive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.productsWriteService.unarchive(id, user.username);
   }
 

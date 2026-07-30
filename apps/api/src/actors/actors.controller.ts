@@ -30,10 +30,7 @@ import {
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 import { SystemResource } from '@herobm/shared';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Actors')
 @Controller('actors')

@@ -23,10 +23,7 @@ import { SalesInvoiceService } from './sales-invoice.service';
 import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
 import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
 import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateSalesInvoiceDto,
   CreateStandaloneInvoiceDto,

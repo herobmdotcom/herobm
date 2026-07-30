@@ -33,10 +33,7 @@ import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { SystemResource } from '@herobm/shared';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Projects')
 @Controller('projects')

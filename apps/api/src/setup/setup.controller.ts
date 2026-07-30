@@ -19,10 +19,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { SetupService } from './setup.service';
-import {
-  CasbinResource,
-  CasbinAction
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import {
   ExecuteCsvDto,

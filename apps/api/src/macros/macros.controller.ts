@@ -19,10 +19,7 @@ import {
 import { MacrosService } from './macros.service';
 import { CreateMacroDto } from './dto/create-macro.dto';
 import { UpdateMacroDto } from './dto/update-macro.dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { MacroResponseDto } from './dto/macro-response.dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';

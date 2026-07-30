@@ -16,10 +16,7 @@ import {
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  CasbinAction,
-  CasbinResource,
-} from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import {
   purchaseOrderReturns,
   purchaseOrders,
@@ -28,9 +25,7 @@ import {
   actors,
 } from '../drizzle/schema';
 import { eq, desc, inArray } from 'drizzle-orm';
-import {
-  PurchaseReturnResponseDto,
-} from './dto';
+import { PurchaseReturnResponseDto } from './dto';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
   @ApiProperty({ required: false })

@@ -16,10 +16,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { TradingTermsService } from './trading-terms.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   TradingTermResponseDto,
   CreateTradingTermDto,

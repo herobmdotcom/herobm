@@ -8,13 +8,39 @@ const __dirname = path.dirname(__filename);
 const extensionsDir = path.resolve(__dirname, '../../../extensions');
 const generatedDir = path.resolve(__dirname, '../src/generated');
 
+const configPath = path.resolve(__dirname, '../../../herobm.json');
+let enabledExtensions = [];
+if (fs.existsSync(configPath)) {
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  if (Array.isArray(config.extensions)) {
+    enabledExtensions = config.extensions;
+  }
+}
+
 if (!fs.existsSync(generatedDir)) {
   fs.mkdirSync(generatedDir, { recursive: true });
 }
 
 const junctionPath = path.resolve(__dirname, '../src/extensions');
+if (fs.existsSync(junctionPath)) {
+  if (fs.lstatSync(junctionPath).isSymbolicLink() || (fs.statSync(junctionPath).isDirectory() && !fs.readdirSync(junctionPath).length)) {
+    // It's a symlink or empty dir, we can try to remove it. But actually on Windows, lstatSync on a junction returns isSymbolicLink() false sometimes, so we should just rmSync it.
+    try { fs.rmSync(junctionPath, { recursive: true, force: true }); } catch (e) {}
+  }
+}
 if (!fs.existsSync(junctionPath)) {
-  fs.symlinkSync('../../../extensions', junctionPath, 'junction');
+  fs.mkdirSync(junctionPath, { recursive: true });
+} else {
+  // Clear existing symlinks inside it
+  for (const item of fs.readdirSync(junctionPath)) {
+    try { fs.rmSync(path.join(junctionPath, item), { recursive: true, force: true }); } catch (e) {}
+  }
+}
+
+for (const ext of enabledExtensions) {
+  try {
+    fs.symlinkSync(path.resolve(extensionsDir, ext), path.join(junctionPath, ext), 'junction');
+  } catch (e) {}
 }
 
 // 1. Generate extension-schemas.ts
@@ -28,6 +54,8 @@ let moduleExports = [];
 if (fs.existsSync(extensionsDir)) {
   const extensions = fs.readdirSync(extensionsDir);
   for (const ext of extensions) {
+    if (!enabledExtensions.includes(ext)) continue;
+
     const extDir = path.join(extensionsDir, ext);
     if (!fs.statSync(extDir).isDirectory()) continue;
 

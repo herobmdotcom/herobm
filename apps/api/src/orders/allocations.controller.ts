@@ -5,18 +5,8 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Post,
-  Get,
-  Param,
-  Body,
-  Query,
-} from '@nestjs/common';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { Controller, Post, Get, Param, Body, Query } from '@nestjs/common';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { BackordersService } from './backorders.service';

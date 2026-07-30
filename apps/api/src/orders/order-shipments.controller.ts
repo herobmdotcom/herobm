@@ -16,10 +16,7 @@ import {
 } from '@nestjs/common';
 import { ShipmentService } from './shipment.service';
 import { TransferService } from './transfers/transfers.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateShipmentDto,
   UpdateShipmentDto,

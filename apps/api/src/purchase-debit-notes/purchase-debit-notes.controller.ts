@@ -17,10 +17,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { PurchaseDebitNotesService } from './purchase-debit-notes.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateDebitNoteDto,
   PurchaseDebitNoteResponseDto,
@@ -72,10 +69,7 @@ export class PurchaseDebitNotesController {
   @ApiOkResponse({ type: PurchaseDebitNoteResponseDto })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)
-  postDebitNote(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  postDebitNote(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.debitNotesService.postDebitNote(id, user.username);
   }
 }

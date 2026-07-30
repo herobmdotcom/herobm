@@ -22,10 +22,7 @@ import {
   BulkImportResultDto,
   ActivityResponseDto,
 } from './dto';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';

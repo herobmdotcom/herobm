@@ -17,10 +17,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { SalesCreditNoteService } from './sales-credit-note.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
@@ -95,10 +92,7 @@ export class SalesCreditNotesController {
   })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)
-  postCreditNote(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  postCreditNote(@Param('id') id: string, @AuthUser() user: JwtUser) {
     // Re-using state transition to match purchase debit notes style
     return this.creditNoteService.changeCreditNoteState(
       id,

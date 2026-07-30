@@ -19,7 +19,7 @@
       "@api/*": ["./src/*"],
       "@herobm/shared": ["../../packages/shared/dist/index"],
       "@herobm/shared/*": ["../../packages/shared/dist/*"],
-      "@herobm/extension-ma/*": ["../../extensions/ma/src/*"],
+      "@extensions/*": ["../../extensions/*"],
       "@test/*": ["./test/*"]
     },
     "incremental": true,

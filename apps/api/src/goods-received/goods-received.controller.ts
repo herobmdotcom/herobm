@@ -22,10 +22,7 @@ import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery } from '../common/pagination';
 import { ApiPaginatedResponse } from '../common/pagination';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateGoodsReceivedDto,
   ResolveAllocationDto,
@@ -41,7 +38,6 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
-
 
 @Controller('goods-received')
 @CasbinResource(SystemResource.GOODS_RECEIVED)
@@ -131,10 +127,7 @@ export class GoodsReceivedController {
   @ApiOkResponse({
     schema: { type: 'object', properties: { success: { type: 'boolean' } } },
   })
-  async cancelReception(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async cancelReception(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.goodsReceivedService.cancelReception(id, user.username);
   }
 

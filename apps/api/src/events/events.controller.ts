@@ -10,10 +10,7 @@ import { Controller, Post, Body, Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/schema';
 
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PublishEventDto } from './dto';
 import * as crypto from 'crypto';
 

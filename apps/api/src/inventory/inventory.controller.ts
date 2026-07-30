@@ -17,10 +17,7 @@ import {
 } from '@nestjs/common';
 import { InventoryQueryService } from './inventory-query.service';
 import { InventoryMovementService } from './inventory-movement.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import {

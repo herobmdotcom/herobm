@@ -23,10 +23,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
@@ -41,7 +38,6 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
-
 
 @Controller('purchase-orders')
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
@@ -143,10 +139,7 @@ export class PurchaseOrdersController {
   @ApiOkResponse({ type: PurchaseOrderResponseDto })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)
-  async archive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.purchaseOrdersService.archive(id, user.username);
   }
 
@@ -159,10 +152,7 @@ export class PurchaseOrdersController {
   @ApiOkResponse({ type: PurchaseOrderResponseDto })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)
-  async unarchive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.purchaseOrdersService.unarchive(id, user.username);
   }
 

@@ -16,10 +16,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { UomDictionaryService } from './uom-dictionary.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { CreateUomDto, UpdateUomDto, UomResponseDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';

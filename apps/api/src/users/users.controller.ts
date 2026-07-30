@@ -17,10 +17,7 @@ import {
 } from '@nestjs/common';
 import { ApiPaginatedResponse } from '../common/pagination';
 import { UsersService } from './users.service';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
@@ -99,10 +96,7 @@ export class UsersController {
   })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBody({ type: EmptyBodyDto })
-  toggleActive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  toggleActive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.usersService.toggleActive(id, user.userId, user.username);
   }
 

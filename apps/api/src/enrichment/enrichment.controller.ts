@@ -10,11 +10,7 @@ import {
 } from '@nestjs/common';
 import { EnrichmentService } from './enrichment.service';
 import { EnrichmentPayloadDto } from './enrichment.dto';
-import {
-  CasbinResource,
-  CasbinAction,
-  SkipCasbin,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
 import { ApiOkResponse, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 

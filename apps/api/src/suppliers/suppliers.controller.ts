@@ -20,10 +20,7 @@ import {
 import { SuppliersService } from './suppliers.service';
 import { SuppliersWriteService } from './suppliers-write.service';
 import { PaginationQuery } from '../common/pagination';
-import {
-  CasbinResource,
-  CasbinAction,
-} from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
@@ -154,10 +151,7 @@ export class SuppliersController {
     description: 'Mark a supplier as archived.',
   })
   @ApiCreatedResponse({ type: SupplierResponseDto })
-  async archive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.suppliersWriteService.archive(id, user.username);
   }
 
@@ -169,10 +163,7 @@ export class SuppliersController {
     description: 'Restore an archived supplier to active status.',
   })
   @ApiCreatedResponse({ type: SupplierResponseDto })
-  async unarchive(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ) {
+  async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.suppliersWriteService.unarchive(id, user.username);
   }
 
