@@ -23,7 +23,6 @@
         "apps/ops-portal/e2e/**",
         "apps/mcp-server/**",
         "extensions/**",
-        "apps/api/src/extensions/**",
         "apps/api/run-migrations.ts",
         "apps/api/scratch.ts",
         "apps/ops-portal/components/shared/SnapshotTabContainer.tsx"

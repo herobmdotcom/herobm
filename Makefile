@@ -12,7 +12,7 @@ Containers (Podman):
   make up             - Start full stack (Portal + API + DB)
   make down           - Stop full stack
   make logs           - View container logs
-  make clean          - Stop containers and remove volumes
+  make clean          - Stop containers (volumes are preserved)
   make nuke           - Complete teardown (containers, volumes, images)
 
 Database & Migrations:
@@ -175,7 +175,7 @@ status:
 ps: status
 
 clean:
-	$(COMPOSE_CMD) down -v
+	$(COMPOSE_CMD) down
 
 nuke:
 	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
@@ -414,12 +414,15 @@ endif
 build-shared:
 	npm run build -w packages/shared
 
+build-db-schema:
+	npm run build -w packages/db-schema
+
 build-sdk:
 	npm run build -w packages/sdk
 
 # --- Quality Gates & Verification ---
 
-check-types: build-shared build-sdk
+check-types: build-shared build-sdk build-db-schema
 	@npm run typecheck -w apps/api
 	@npm run typecheck -w apps/ops-portal
 
@@ -433,6 +436,8 @@ clean-build:
 	$(CLEAN_BUILD_CMD)
 	npm install
 	$(MAKE) build-shared
+	$(MAKE) build-db-schema
+	$(MAKE) build-sdk
 	$(MAKE) build-all
 
 # --- CLI Specific Workflow (Granular & Explicit) ---
@@ -488,6 +493,7 @@ cli-migrate: migrate
 
 cli-bootstrap:
 	$(MAKE) build-shared
+	$(MAKE) build-db-schema
 	$(MAKE) build-api
 	npm run seed
 	$(MAKE) verify-db
@@ -515,6 +521,8 @@ test-single:
 	@npx tsx infra/test-utils/run-single.ts $(TEST)
 
 test-structural:
+	@$(MAKE) build-shared
+	@$(MAKE) build-db-schema
 	@python infra/tests/test_docker_env_alignment.py
 	@npx tsx infra/test-utils/run-structural.ts
 	@npx knip
