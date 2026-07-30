@@ -3,25 +3,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 import { ShipmentService } from './shipment.service';
-import { GlobalShipmentListResponseDto, ShipmentResponseDto } from './dto';
+import { ShipmentResponseDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Warehouse')
 @Controller('shipments')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class GlobalShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}

@@ -5,9 +5,6 @@ import {
   ApiCreatedResponse,
   ApiQuery,
   ApiTags,
-  ApiExtraModels,
-  getSchemaPath,
-  ApiResponse,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -15,15 +12,12 @@ import {
   Post,
   Body,
   Query,
-  UseGuards,
   Param,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { InventoryQueryService } from './inventory-query.service';
 import { InventoryMovementService } from './inventory-movement.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -37,7 +31,6 @@ import {
   InventoryResponseDto,
   InventoryBinResponseDto,
   PutawayContextResponseDto,
-  InventoryMovementResponseDto,
   InventoryLedgerResponseDto,
   InventoryEntryDetailsResponseDto,
   FindByProductIdsBulkDto,
@@ -51,7 +44,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Warehouse')
 @Controller('inventory')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.INVENTORY)
 export class InventoryController {
   constructor(

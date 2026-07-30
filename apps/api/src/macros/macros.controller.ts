@@ -4,7 +4,6 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
 import {
@@ -15,15 +14,12 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { MacrosService } from './macros.service';
 import { CreateMacroDto } from './dto/create-macro.dto';
 import { UpdateMacroDto } from './dto/update-macro.dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +29,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('System')
 @Controller('macros')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class MacrosController {
   constructor(private readonly macrosService: MacrosService) {}

@@ -1,11 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TaxBasService } from './tax-bas.service';
 import { BasSummaryQueryDto, BasSummaryRowDto } from './tax-bas.dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
@@ -13,7 +12,6 @@ import { SystemResource } from '@herobm/shared';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @CasbinResource(SystemResource.GL)
 @Controller('tax')
 export class TaxBasController {

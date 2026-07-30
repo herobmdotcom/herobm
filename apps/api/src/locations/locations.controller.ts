@@ -14,12 +14,8 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
-  Req,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -39,7 +35,6 @@ import {
 
 @ApiTags('Warehouse')
 @Controller('inventory')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}

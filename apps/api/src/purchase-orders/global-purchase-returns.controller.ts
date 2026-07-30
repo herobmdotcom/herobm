@@ -1,13 +1,9 @@
 import { SystemResource, PurchaseReturnState } from '@herobm/shared';
 import {
   ApiTags,
-  ApiBearerAuth,
   ApiProperty,
-  ApiConsumes,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
 import {
@@ -15,15 +11,12 @@ import {
   Get,
   Param,
   Query,
-  UseGuards,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  CasbinGuard,
   CasbinAction,
   CasbinResource,
 } from '../auth/casbin.guard';
@@ -37,7 +30,6 @@ import {
 import { eq, desc, inArray } from 'drizzle-orm';
 import {
   PurchaseReturnResponseDto,
-  PurchaseReturnLineResponseDto,
 } from './dto';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
@@ -57,7 +49,6 @@ export class GlobalPurchaseReturnsListDto {
 }
 
 @Controller('purchase-returns')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('Purchase Returns')
 export class GlobalPurchaseReturnsController {

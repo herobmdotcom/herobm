@@ -2,8 +2,6 @@ import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
-  ApiProperty,
-  ApiConsumes,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
@@ -16,14 +14,10 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
-  Inject,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -39,7 +33,6 @@ import { ApiKeysService } from './api-keys.service';
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('api-keys')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.API_KEYS)
 export class ApiKeysController {
   constructor(private readonly apiKeysService: ApiKeysService) {}

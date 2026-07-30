@@ -1,13 +1,9 @@
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
-  ApiBearerAuth,
   ApiProperty,
-  ApiConsumes,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
 import {
@@ -15,12 +11,9 @@ import {
   Get,
   Delete,
   Query,
-  UseGuards,
   Inject,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -72,7 +65,6 @@ export class DeleteEventsResponseDto {
 
 @ApiTags('System')
 @Controller('settings/external-sync')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class ExternalSyncController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}

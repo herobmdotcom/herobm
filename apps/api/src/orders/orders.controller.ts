@@ -15,11 +15,9 @@ import {
   Param,
   Query,
   Body,
-  UseGuards,
   UseInterceptors,
   HttpCode,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
@@ -29,7 +27,6 @@ import { OrderStateService } from './order-state.service';
 import { OrderNotificationService } from './order-notification.service';
 import { OrdersQueryService } from './orders-query.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -61,7 +58,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Sales Orders')
 @Controller('sales-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class OrdersController {
   constructor(

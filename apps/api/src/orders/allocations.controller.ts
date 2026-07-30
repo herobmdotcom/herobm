@@ -10,14 +10,10 @@ import {
   Post,
   Get,
   Param,
-  UseGuards,
-  Req,
   Body,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -31,9 +27,6 @@ import {
   SystemResource,
 } from '@herobm/shared';
 import {
-  OpenDemandsListResponseDto,
-  PoAllocationsListResponseDto,
-  AvailablePoLinesListResponseDto,
   AllocationSuccessResponseDto,
   AllocationResolveResponseDto,
   LinkDemandToPoDto,
@@ -64,7 +57,6 @@ import { sql, eq, and, inArray } from 'drizzle-orm';
 
 @ApiTags('Warehouse')
 @Controller('allocations')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
 export class AllocationsController {
   constructor(

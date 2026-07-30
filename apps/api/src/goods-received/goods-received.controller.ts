@@ -14,19 +14,15 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   UseInterceptors,
-  HttpCode,
 } from '@nestjs/common';
 
 import { GoodsReceivedService } from './goods-received.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
-import { AuthGuard } from '@nestjs/passport';
 import { PaginationQuery } from '../common/pagination';
 import { ApiPaginatedResponse } from '../common/pagination';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -46,7 +42,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
+
 @Controller('goods-received')
 @CasbinResource(SystemResource.GOODS_RECEIVED)
 @ApiTags('Warehouse')
@@ -137,7 +133,6 @@ export class GoodsReceivedController {
   })
   async cancelReception(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.goodsReceivedService.cancelReception(id, user.username);
@@ -176,7 +171,6 @@ export class GoodsReceivedController {
   @ApiOkResponse({ type: GoodsReceivedLineResponseDto })
   async unresolveAllocation(
     @Param('lineId') lineId: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.goodsReceivedService.unresolveAllocation(lineId, user.username);

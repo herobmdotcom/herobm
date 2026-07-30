@@ -4,7 +4,6 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiBody,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -14,13 +13,10 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ShipmentService } from './shipment.service';
 import { TransferService } from './transfers/transfers.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -31,7 +27,6 @@ import {
   UpdateShipmentLineDto,
   ShipmentResponseDto,
   ChangeShipmentStateDto,
-  EmptyBodyDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -44,7 +39,6 @@ import { Inject } from '@nestjs/common';
 
 @ApiTags('Warehouse')
 @Controller('sales-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class OrderShipmentsController {
   constructor(
@@ -147,7 +141,6 @@ export class OrderShipmentsController {
   cancelShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.cancelShipment(shipmentId, user.username);

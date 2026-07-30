@@ -19,13 +19,12 @@ import {
   CreateTaxPositionMappingDto,
   TaxPositionMappingResponseDto,
 } from './tax-positions.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { SkipCasbin } from '../auth/casbin.guard';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 @SkipCasbin()
 @Controller('tax-positions')
 export class TaxPositionMappingsController {

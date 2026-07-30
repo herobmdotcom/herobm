@@ -14,14 +14,10 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
-  HttpCode,
 } from '@nestjs/common';
 import { ApiPaginatedResponse } from '../common/pagination';
-import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -38,7 +34,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('System')
 @Controller('users')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.USERS)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -107,7 +102,6 @@ export class UsersController {
   toggleActive(
     @Param('id') id: string,
     @AuthUser() user: JwtUser,
-    @Body() body: EmptyBodyDto,
   ) {
     return this.usersService.toggleActive(id, user.userId, user.username);
   }

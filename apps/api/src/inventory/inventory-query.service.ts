@@ -422,7 +422,7 @@ export class InventoryQueryService {
     }
 
     if (query?.binType) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Casting any to bypass structural string literals
       filters.push(eq(bins.binType, query.binType as any));
     }
 

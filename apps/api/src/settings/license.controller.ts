@@ -1,5 +1,4 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBody,
   ApiOkResponse,
@@ -52,7 +51,7 @@ export class LicenseStatusDto implements LicenseStatus {
 // to be able to apply the license key to recover.
 @ApiTags('System')
 @Controller('settings')
-@UseGuards(AuthGuard(['jwt']), ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 @SkipCasbin()
 export class LicenseController {
   constructor(private readonly licenseService: LicenseService) {}

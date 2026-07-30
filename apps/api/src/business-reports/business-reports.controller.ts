@@ -5,8 +5,6 @@ import {
   Post,
   Param,
   Body,
-  UseGuards,
-  Req,
   HttpCode,
   Put,
   Delete,
@@ -18,9 +16,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -34,7 +30,6 @@ import { BusinessReportsService } from './business-reports.service';
 
 @ApiTags('System')
 @Controller('business-reports')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.BUSINESS_REPORT)
 export class BusinessReportsController {
   constructor(private readonly service: BusinessReportsService) {}

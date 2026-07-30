@@ -14,12 +14,9 @@ import {
   Param,
   Patch,
   Query,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -28,7 +25,6 @@ import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { FxRevaluationService } from './fx-revaluation.service';
 import {
-  JournalLineDto,
   CreateJournalEntryDto,
   GlAccountResponseDto,
   JournalEntryResponseDto,
@@ -44,22 +40,19 @@ import {
   SeedTaxRequestDto,
   EmptyBodyDto,
   PaginatedJournalEntriesDto,
-  PaginatedGeneralLedgerDto,
-  UpdateGLSettingsDto,
   CommitFxRevaluationDto,
   RunFxRevaluationDto,
   FxRevalCandidatesResponseDto,
   FxRevalCommitResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
-import { GLAccountType, SystemResource } from '@herobm/shared';
+import { SystemResource } from '@herobm/shared';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { ApiPaginatedResponse } from '../common/pagination';
 
 @ApiTags('General Ledger')
 @Controller('gl')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)
 export class GlController {
   constructor(

@@ -12,12 +12,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -45,7 +42,6 @@ import {
 
 @ApiTags('General Ledger')
 @Controller('gl/bank-feeds')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)
 export class BankFeedsController {
   constructor(private readonly bankFeedsService: BankFeedsService) {}

@@ -501,7 +501,7 @@ verify-db: migrate-status
 verify-all: build-all check-all verify-db test-all
 
 # Supports skipping phases using environment variables, e.g. make verify-fast SKIP_CHECK=1 SKIP_UNIT=1
-verify-fast: $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
+verify-fast: generate-extensions $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
 
 test-pipeline:
 	@powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1

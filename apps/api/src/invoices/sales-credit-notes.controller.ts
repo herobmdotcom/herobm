@@ -13,14 +13,11 @@ import {
   Post,
   Param,
   Body,
-  UseGuards,
   HttpCode,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { SalesCreditNoteService } from './sales-credit-note.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +30,6 @@ import {
 } from './sales-credit-notes.dto';
 
 @Controller('sales-credit-notes')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_CREDIT_NOTES)
 @ApiTags('Sales Returns')
 export class SalesCreditNotesController {
@@ -101,7 +97,6 @@ export class SalesCreditNotesController {
   @HttpCode(200)
   postCreditNote(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     // Re-using state transition to match purchase debit notes style

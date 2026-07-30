@@ -14,28 +14,20 @@ import {
   Param,
   Query,
   Res,
-  Req,
   Body,
   Delete,
-  UseGuards,
   UnauthorizedException,
   HttpCode,
-  ValidationPipe,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { PdfTemplatesService } from './pdf-templates.service';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinAction,
   CasbinResource,
 } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import {
-  EmptyBodyDto,
-  RandomIdResponseDto,
-  ReportResponseDto,
   CreateReportDto,
   UpdateReportDto,
   PreviewReportDto,
@@ -49,7 +41,6 @@ import {
 
 @ApiTags('System')
 @Controller('pdf-templates')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.REPORT)
 export class PdfTemplatesController {
   constructor(private readonly pdfTemplatesService: PdfTemplatesService) {}

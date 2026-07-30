@@ -1,5 +1,6 @@
 // AUTO-GENERATED FILE - DO NOT EDIT
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
 export interface ExtensionTab {

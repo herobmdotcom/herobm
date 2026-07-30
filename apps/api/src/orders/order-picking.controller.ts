@@ -12,16 +12,12 @@ import {
   Get,
   Post,
   Delete,
-  Patch,
   Param,
   Body,
-  UseGuards,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { PickingService } from './picking.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -38,7 +34,6 @@ import {
 
 @ApiTags('Warehouse')
 @Controller('sales-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}

@@ -7,10 +7,8 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
   ApiOperation,
@@ -36,14 +34,12 @@ import { SystemResource } from '@herobm/shared';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 
 @ApiTags('Projects')
 @Controller('projects')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.CRM)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}

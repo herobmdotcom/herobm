@@ -6,13 +6,11 @@ import {
   ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import { Controller, Post, Body, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/schema';
 
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -22,7 +20,6 @@ import * as crypto from 'crypto';
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('events')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.EVENTS) // Assigning 'events' resource for Casbin
 export class EventsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}

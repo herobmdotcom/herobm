@@ -2,8 +2,6 @@ import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
-  ApiProperty,
-  ApiConsumes,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
@@ -18,29 +16,23 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
 } from '@nestjs/common';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
   SkipCasbin,
 } from '../auth/casbin.guard';
 import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
-import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 import { WebhooksService } from './webhooks.service';
 
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('webhooks')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.WEBHOOKS)
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}

@@ -7,12 +7,10 @@ import {
   Put,
   Post,
   Body,
-  Param,
 } from '@nestjs/common';
 import { EnrichmentService } from './enrichment.service';
 import { EnrichmentPayloadDto } from './enrichment.dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
   SkipCasbin,
@@ -22,7 +20,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('System')
 @Controller('enrichment')
-@UseGuards(CasbinGuard, ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 export class EnrichmentController {
   constructor(private readonly enrichmentService: EnrichmentService) {}
 

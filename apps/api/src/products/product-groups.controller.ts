@@ -10,15 +10,12 @@ import {
   Controller,
   Get,
   Param,
-  UseGuards,
   Post,
   Patch,
   Body,
   Delete,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -35,7 +32,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Products')
 @Controller('product-groups')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class ProductGroupsController {
   constructor(private readonly productGroupsService: ProductGroupsService) {}

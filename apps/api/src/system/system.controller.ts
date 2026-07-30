@@ -2,8 +2,6 @@ import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
 import {
@@ -11,11 +9,8 @@ import {
   Get,
   Query,
   BadRequestException,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -30,7 +25,6 @@ import { getErrorMessage, SystemResource } from '@herobm/shared';
  */
 @ApiTags('System')
 @Controller('admin')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SYSTEM_LOGS)
 export class SystemController {
   @Get('system-logs')

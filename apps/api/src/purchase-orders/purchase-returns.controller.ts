@@ -10,17 +10,12 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
-  Delete,
   Param,
   Body,
-  UseGuards,
   HttpCode,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { PurchaseReturnsService } from './purchase-returns.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +28,6 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-orders/:id/returns')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('Purchase Returns')
 export class PurchaseReturnsController {
@@ -91,7 +85,6 @@ export class PurchaseReturnsController {
   stageReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseReturnsService.stageReturn(returnId, user.username);
@@ -109,7 +102,6 @@ export class PurchaseReturnsController {
   shipReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseReturnsService.shipReturn(returnId, user.username);
@@ -127,7 +119,6 @@ export class PurchaseReturnsController {
   cancelReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseReturnsService.cancelReturn(returnId, user.username);

@@ -16,14 +16,11 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { SuppliersWriteService } from './suppliers-write.service';
 import { PaginationQuery } from '../common/pagination';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -42,7 +39,6 @@ import { ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Suppliers')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('suppliers')
 @CasbinResource(SystemResource.SUPPLIERS)
 export class SuppliersController {
@@ -160,7 +156,6 @@ export class SuppliersController {
   @ApiCreatedResponse({ type: SupplierResponseDto })
   async archive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.suppliersWriteService.archive(id, user.username);
@@ -176,7 +171,6 @@ export class SuppliersController {
   @ApiCreatedResponse({ type: SupplierResponseDto })
   async unarchive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.suppliersWriteService.unarchive(id, user.username);

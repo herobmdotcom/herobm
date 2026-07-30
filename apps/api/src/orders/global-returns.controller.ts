@@ -3,23 +3,18 @@ import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ReturnsWriteService } from './returns-write.service';
 import { GlobalReturnListResponseDto, ReturnResponseDto } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 
 @ApiTags('Sales Returns')
 @Controller('sales-returns')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_RETURNS)
 export class GlobalReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}

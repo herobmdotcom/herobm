@@ -13,14 +13,11 @@ import {
   Post,
   Param,
   Body,
-  UseGuards,
   HttpCode,
   Query,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { PurchaseDebitNotesService } from './purchase-debit-notes.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +30,6 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-debit-notes')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_DEBIT_NOTES)
 @ApiTags('Purchase Invoices')
 export class PurchaseDebitNotesController {
@@ -78,7 +74,6 @@ export class PurchaseDebitNotesController {
   @HttpCode(200)
   postDebitNote(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.debitNotesService.postDebitNote(id, user.username);

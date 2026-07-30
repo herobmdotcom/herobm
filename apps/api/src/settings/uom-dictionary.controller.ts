@@ -14,12 +14,9 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { UomDictionaryService } from './uom-dictionary.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -28,7 +25,6 @@ import { CreateUomDto, UpdateUomDto, UomResponseDto } from './dto';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @Controller('settings/uom-dictionary')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class UomDictionaryController {

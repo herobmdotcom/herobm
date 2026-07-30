@@ -5,7 +5,6 @@ import {
   Post,
   Param,
   Query,
-  UseGuards,
   Body,
   Delete,
 } from '@nestjs/common';
@@ -18,9 +17,7 @@ import {
   ApiCreatedResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinAction,
   CasbinResource,
 } from '../auth/casbin.guard';
@@ -45,7 +42,6 @@ import { MatchConfirmedResponseDto } from './dto';
 
 @ApiTags('General Ledger')
 @ApiBearerAuth()
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)
 @Controller('gl/bank-statement')
 export class BankStatementController {

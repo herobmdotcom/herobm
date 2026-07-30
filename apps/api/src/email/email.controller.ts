@@ -5,8 +5,6 @@ import {
   Param,
   Query,
   Inject,
-  UseGuards,
-  NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import {
@@ -21,9 +19,7 @@ import {
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { emailOutbox } from '../drizzle/schema';
 import { eq, and, desc, or } from 'drizzle-orm';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -39,7 +35,6 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('emails')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class EmailController {
   constructor(

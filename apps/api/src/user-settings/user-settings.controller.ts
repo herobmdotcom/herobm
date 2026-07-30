@@ -1,6 +1,5 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiBody } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { SkipCasbin } from '../auth/casbin.guard';
 import { UserSettingsService } from './user-settings.service';
@@ -12,7 +11,7 @@ import {
 
 @ApiTags('System')
 @Controller('user-settings')
-@UseGuards(AuthGuard(['jwt', 'api-key']), ThrottlerGuard) // Note: No CasbinGuard needed as users always can access their own settings
+@UseGuards(ThrottlerGuard) // Note: No CasbinGuard needed as users always can access their own settings
 @SkipCasbin()
 export class UserSettingsController {
   constructor(private readonly service: UserSettingsService) {}

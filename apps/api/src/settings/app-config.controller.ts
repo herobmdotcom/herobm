@@ -3,13 +3,10 @@ import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
-  ApiCreatedResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import { Controller, Patch, Body, UseGuards, Get } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Patch, Body, Get } from '@nestjs/common';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -28,7 +25,6 @@ interface UpdatePayload extends Partial<UpdateAppConfigDto> {
 }
 
 @Controller('settings/app')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class AppConfigController {

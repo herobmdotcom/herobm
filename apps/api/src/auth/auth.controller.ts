@@ -11,14 +11,11 @@ import {
   Post,
   Get,
   Body,
-  UseGuards,
   Request,
 } from '@nestjs/common';
-import { IsString, IsNotEmpty } from 'class-validator';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { SkipCasbin } from './casbin.guard';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { RATE_LIMITS } from '../common/config/throttler.config';
 import { LoginDto, LoginResponseDto, MeResponseDto } from './dto';
 import { Enforcer } from 'casbin';
@@ -54,7 +51,6 @@ export class AuthController {
   @Get('me')
   @ApiOkResponse({ type: MeResponseDto })
   @SkipCasbin()
-  @UseGuards(AuthGuard(['jwt', 'api-key']))
   @Throttle({
     default: RATE_LIMITS.AUTH_ME,
   })

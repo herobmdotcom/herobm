@@ -2,12 +2,9 @@ import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
-  ApiProperty,
-  ApiConsumes,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
 import {
@@ -20,11 +17,8 @@ import {
   Param,
   Query,
   BadRequestException,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -41,7 +35,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('discount-matrix')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class DiscountMatrixController {
   constructor(private readonly service: DiscountMatrixService) {}

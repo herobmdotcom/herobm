@@ -14,9 +14,7 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ActivitiesService } from './activities.service';
 import {
   CreateActivityDto,
@@ -25,7 +23,6 @@ import {
   ActivityResponseDto,
 } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -35,7 +32,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('System')
 @Controller('settings/activities')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class ActivitiesController {
   constructor(private readonly service: ActivitiesService) {}

@@ -6,10 +6,8 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
 } from '@nestjs/common';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -27,7 +25,6 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('System')
-@UseGuards(CasbinGuard)
 @CasbinResource(SystemResource.ROLES)
 @Controller('roles')
 export class RolesController {

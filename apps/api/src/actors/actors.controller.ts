@@ -7,9 +7,7 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
   ApiOperation,
@@ -33,14 +31,12 @@ import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 import { SystemResource } from '@herobm/shared';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 
 @ApiTags('Actors')
 @Controller('actors')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.CRM)
 export class ActorsController {
   constructor(private readonly actorsService: ActorsService) {}

@@ -16,17 +16,14 @@ import {
   Delete,
   Param,
   Query,
-  UseGuards,
   UseInterceptors,
   HttpCode,
 } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
-import { AuthGuard } from '@nestjs/passport';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -45,7 +42,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
+
 @Controller('purchase-orders')
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
 @ApiTags('Purchase Orders')
@@ -148,7 +145,6 @@ export class PurchaseOrdersController {
   @HttpCode(200)
   async archive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.archive(id, user.username);
@@ -165,7 +161,6 @@ export class PurchaseOrdersController {
   @HttpCode(200)
   async unarchive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.unarchive(id, user.username);

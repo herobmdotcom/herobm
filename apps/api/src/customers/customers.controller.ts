@@ -4,19 +4,16 @@ import {
   Get,
   Param,
   Query,
-  UseGuards,
   Post,
   Patch,
   Body,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { CustomersService } from './customers.service';
 import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -24,7 +21,6 @@ import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
   CreateCustomerDto,
   UpdateCustomerDto,
-  EmptyBodyDto,
   CustomerResponseDto,
   CreditAssessmentResponseDto,
   AgedBalanceResponseDto,
@@ -41,7 +37,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Customers')
 @Controller('customers')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.CUSTOMERS)
 export class CustomersController {
   constructor(
@@ -138,7 +133,6 @@ export class CustomersController {
   @ApiCreatedResponse({ type: CustomerResponseDto })
   archive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.customersWriteService.archive(id, user.username);
@@ -153,7 +147,6 @@ export class CustomersController {
   @ApiCreatedResponse({ type: CustomerResponseDto })
   unarchive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.customersWriteService.unarchive(id, user.username);

@@ -14,12 +14,9 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ExchangeRatesService } from './exchange-rates.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +30,6 @@ import {
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @Controller('settings/exchange-rates')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 @ApiTags('General Ledger')
 export class ExchangeRatesController {

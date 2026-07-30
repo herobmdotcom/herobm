@@ -1,8 +1,6 @@
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
-  ApiBearerAuth,
-  ApiProperty,
   ApiConsumes,
   ApiOperation,
   ApiOkResponse,
@@ -23,10 +21,8 @@ import {
 import { SetupService } from './setup.service';
 import {
   CasbinResource,
-  CasbinAction,
-  CasbinGuard,
+  CasbinAction
 } from '../auth/casbin.guard';
-import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import {
   ExecuteCsvDto,
@@ -47,7 +43,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @ApiTags('System')
 @Controller('setup')
 @CasbinResource(SystemResource.IMPORT)
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}
 

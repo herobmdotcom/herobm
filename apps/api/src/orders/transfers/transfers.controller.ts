@@ -6,8 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
-  Req,
   Patch,
   Query,
 } from '@nestjs/common';
@@ -17,7 +15,6 @@ import {
   ApiTags,
   ApiOperation,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { TransferService } from './transfers.service';
 import { ShipmentResponseDto } from '../dto';
 import { ApiPaginatedResponse } from '../../common/pagination';
@@ -32,11 +29,9 @@ import {
   CreateTransferFromDemandsDto,
   PickLineDto,
   ReceiveTransferDto,
-  EmptyBodyDto,
   TransferPaginationQuery,
 } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../../auth/casbin.guard';
@@ -47,7 +42,6 @@ import { ApiFieldMask } from '../../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Transfer Orders')
 @Controller('transfers')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class TransfersController {
   constructor(private readonly transferService: TransferService) {}
@@ -137,7 +131,6 @@ export class TransfersController {
   @ApiCreatedResponse({ type: TransferResponseDto })
   async shipTransferOrder(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.shipTransferOrder(id, user.username);
@@ -171,7 +164,6 @@ export class TransfersController {
   @ApiCreatedResponse({ type: TransferResponseDto })
   async cancelTransferOrder(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.cancelTransferOrder(id, user.username);
@@ -186,7 +178,6 @@ export class TransfersController {
   @ApiCreatedResponse({ type: TransferResponseDto })
   async cancelTransferOrderShipment(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.cancelActiveShipment(id, user.username);

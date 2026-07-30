@@ -4,7 +4,6 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiBody,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -14,12 +13,9 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ReturnsWriteService } from './returns-write.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -37,7 +33,6 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 @ApiTags('Sales Returns')
 @Controller('sales-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_RETURNS)
 export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}

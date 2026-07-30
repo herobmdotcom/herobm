@@ -8,9 +8,7 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
   ApiOperation,
@@ -31,14 +29,12 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 
 @ApiTags('Contacts')
 @Controller('contacts')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 // TODO: When expanding to suppliers, this needs to dynamically check permissions based on entityType
 @CasbinResource(SystemResource.CRM)
 export class ContactsController {

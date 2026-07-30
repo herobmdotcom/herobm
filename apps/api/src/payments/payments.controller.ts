@@ -13,13 +13,11 @@ import {
   Post,
   Body,
   Param,
-  UseGuards,
   Patch,
   Query,
   UseInterceptors,
   Delete,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaymentsService } from './payments.service';
@@ -36,7 +34,6 @@ import {
   PaymentRunCandidateResponseDto,
 } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -48,7 +45,6 @@ import { PaymentRunGeneratorService } from './payment-run-generator.service';
 
 @ApiTags('Payments')
 @Controller('payments')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PAYMENTS)
 export class PaymentsController {
   constructor(
@@ -153,7 +149,6 @@ export class PaymentsController {
   @ApiOkResponse({ type: PaymentResponseDto })
   async submit(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.submitPaymentEntry(id, user.username);
@@ -185,7 +180,6 @@ export class PaymentsController {
   @ApiOkResponse({ type: PaymentResponseDto })
   async cancel(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.cancelPayment(id, user.username);

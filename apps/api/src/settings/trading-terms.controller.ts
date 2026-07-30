@@ -14,12 +14,9 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { TradingTermsService } from './trading-terms.service';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -33,7 +30,6 @@ import {
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @Controller('settings/trading-terms')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class TradingTermsController {

@@ -11,13 +11,11 @@ import {
   Get,
   Param,
   Query,
-  UseGuards,
   Post,
   Patch,
   Body,
   Delete,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
 import {
@@ -32,7 +30,6 @@ import {
   EmptyBodyDto,
 } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -44,7 +41,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Products')
 @Controller('products')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PRODUCTS)
 export class ProductsController {
   constructor(
@@ -117,7 +113,6 @@ export class ProductsController {
   @ApiCreatedResponse({ type: ProductResponseDto })
   archive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.archive(id, user.username);
@@ -133,7 +128,6 @@ export class ProductsController {
   @ApiCreatedResponse({ type: ProductResponseDto })
   unarchive(
     @Param('id') id: string,
-    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.unarchive(id, user.username);
@@ -234,7 +228,6 @@ export class ProductsController {
   })
   @ApiOkResponse({ type: ProductResponseDto })
   removeDefaultBin(
-    @Param('id') productId: string,
     @Param('binLinkId') binLinkId: string,
     @AuthUser() user: JwtUser,
   ) {

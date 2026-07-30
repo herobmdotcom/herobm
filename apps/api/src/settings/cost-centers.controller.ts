@@ -14,9 +14,7 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { CostCentersService } from './cost-centers.service';
 import {
   CreateCostCenterDto,
@@ -25,7 +23,6 @@ import {
   CostCenterResponseDto,
 } from './dto';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -35,7 +32,6 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('General Ledger')
 @Controller('settings/cost-centers')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class CostCentersController {
   constructor(private readonly service: CostCentersService) {}

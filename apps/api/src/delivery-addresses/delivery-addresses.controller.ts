@@ -5,9 +5,7 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
@@ -16,7 +14,6 @@ import {
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -30,7 +27,6 @@ import {
 
 @ApiTags('Delivery Addresses')
 @Controller('delivery-addresses')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.CUSTOMERS)
 export class DeliveryAddressesController {
   constructor(

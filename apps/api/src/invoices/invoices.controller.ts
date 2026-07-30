@@ -8,7 +8,6 @@ import {
   Param,
   Body,
   Request,
-  UseGuards,
   Query,
   HttpCode,
 } from '@nestjs/common';
@@ -24,9 +23,7 @@ import { SalesInvoiceService } from './sales-invoice.service';
 import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
 import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
 import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
-import { AuthGuard } from '@nestjs/passport';
 import {
-  CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
@@ -40,8 +37,6 @@ import {
   AutoMatchPurchaseOrderDto,
   PurchaseInvoiceResponseDto,
   SalesInvoiceResponseDto,
-  PurchaseInvoiceListResponseDto,
-  SalesInvoiceListResponseDto,
 } from './dto';
 import {
   PaginationQuery,
@@ -56,7 +51,6 @@ export class EmptyBodyDto {}
  * Uses the same 'sales-orders' prefix so routes nest under that path.
  */
 @Controller('sales-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 @ApiTags('Sales Invoices')
 export class SalesInvoiceController {
@@ -95,7 +89,6 @@ export class SalesInvoiceController {
  * Uses the same 'purchase-orders' prefix so routes nest under that path.
  */
 @Controller('purchase-orders')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
 @ApiTags('Purchase Invoices')
 export class PurchaseInvoiceController {
@@ -119,7 +112,6 @@ export class PurchaseInvoiceController {
  * Standalone invoice detail endpoints (not scoped to an order).
  */
 @Controller()
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @ApiTags('Sales Invoices')
 export class InvoiceDetailController {
   constructor(
