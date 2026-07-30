@@ -16,6 +16,8 @@ import { Enforcer } from 'casbin';
 import { CASBIN_ENFORCER } from './casbin.provider';
 import { Inject } from '@nestjs/common';
 
+import { Public } from './public.decorator';
+
 @ApiTags('System')
 @Controller('auth')
 @SkipCasbin()
@@ -29,7 +31,7 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   @ApiCreatedResponse({ type: LoginResponseDto })
   @SkipCasbin()
-  // No guard needed for login
+  @Public()
   @Throttle({
     default: RATE_LIMITS.AUTH_LOGIN,
   })

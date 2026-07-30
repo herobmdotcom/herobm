@@ -309,8 +309,7 @@ export class SuppliersService {
   async findSupplierProducts(vendorId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { productSuppliers, products } =
-      await import('@herobm/db-schema');
+    const { productSuppliers, products } = await import('@herobm/db-schema');
 
     const whereClause = eq(productSuppliers.vendorId, vendorId);
     const qb = this.db
