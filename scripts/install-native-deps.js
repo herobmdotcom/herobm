@@ -22,9 +22,13 @@ if (platform === 'win32') {
 } else if (platform === 'darwin') {
   packages.push(`@parcel/watcher-darwin-${arch}`);
   packages.push(`@swc/core-darwin-${arch}`);
+  packages.push(`lightningcss-darwin-${arch}`);
+  packages.push(`@tailwindcss/oxide-darwin-${arch}`);
 } else {
   packages.push(`@parcel/watcher-${platform}-${arch}-${parcelLibc}`);
   packages.push(`@swc/core-${platform}-${arch}-${libc}`);
+  packages.push(`lightningcss-${platform}-${arch}-${libc}`);
+  packages.push(`@tailwindcss/oxide-${platform}-${arch}-${libc}`);
 }
 
 if (packages.length > 0) {

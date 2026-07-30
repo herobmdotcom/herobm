@@ -475,6 +475,7 @@ endif
 
 cli-install-npm:
 	npm install
+	node scripts/install-native-deps.js
 
 cli-up-db: up-db
 
