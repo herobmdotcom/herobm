@@ -1243,6 +1243,9 @@
     "selectEllipsis": "Select...",
     "selectNone": "(None)",
     "selectOption": "-- Select --",
+    "showLess": "Show Less",
+    "showMore": "+ {count} More",
+    "showUnpublished": "Show Unpublished",
     "sources": {
       "abm": "ABM",
       "app": "App"
@@ -2884,14 +2887,6 @@
     "unknownCustomer": "Unknown Customer"
   },
   "salesOrders": {
-    "tabs": {
-      "overview": "Overview",
-      "lines": "Lines",
-      "fulfillment": "Fulfillment",
-      "shipments": "Shipments",
-      "invoices": "Invoices",
-      "returns": "Returns"
-    },
     "allocated": "Allocated",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
     "archivedBannerTitle": "This record is archived.",
@@ -3096,6 +3091,14 @@
       "title": "Stock Shortage Detected"
     },
     "subtitle": "Manage customer orders and quotes",
+    "tabs": {
+      "fulfillment": "Fulfillment",
+      "invoices": "Invoices",
+      "lines": "Lines",
+      "overview": "Overview",
+      "returns": "Returns",
+      "shipments": "Shipments"
+    },
     "taxNeedsToBeCalculated": "Tax needs to be calculated by {provider}",
     "timeline": {
       "by": "by {actor}"

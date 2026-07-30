@@ -27,18 +27,18 @@ import {
 } from "@herobm/shared";
 
 interface CustomerDetailsTabProps {
-  customer: any;
-  dto: any;
+  customer: api.AccountResponseDto | null;
+  dto: Partial<api.AccountResponseDto>;
   isEditable: boolean;
   saving: boolean;
-  updateField: (field: keyof api.AccountResponseDto, value: any) => void;
-  saveField: (field: keyof api.AccountResponseDto, value: any) => Promise<void>;
+  updateField: (field: keyof api.AccountResponseDto, value: unknown) => void;
+  saveField: (field: keyof api.AccountResponseDto, value: unknown) => Promise<void>;
   canManageCredit: boolean;
-  taxPositions: any[];
-  tradingTerms: any[];
+  taxPositions: api.TaxPositionResponseDto[];
+  tradingTerms: api.TradingTermResponseDto[];
   hasDiscountRules: boolean;
-  creditAssessment: any;
-  accountGroups: any[];
+  creditAssessment: api.CreditAssessmentResponseDto | null;
+  accountGroups: api.CustomerGroupResponseDto[];
   paramsId: string;
 }
 
@@ -61,6 +61,8 @@ export function CustomerDetailsTab({
   const tCommon = useTranslations("common");
   const { baseCurrency, app } = useSettings();
   const [showDiscounts, setShowDiscounts] = useState(false);
+
+  if (!customer) return null;
 
   const selectedGroup = useGroup(accountGroups, dto?.customerGroupId);
 
@@ -922,7 +924,8 @@ export function CustomerDetailsTab({
                   })}
                 </label>
                 <div className="flex flex-col gap-2">
-                  {customer.childAccounts.map((child: any) => (
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type missing childAccounts */
+                  customer.childAccounts.map((child: any) => (
                     <Link
                       key={child.customerId}
                       href={`/customers/${child.customerId}`}

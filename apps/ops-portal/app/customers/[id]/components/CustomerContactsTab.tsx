@@ -10,14 +10,17 @@ import { ContactCard } from "@/components/shared/ContactCard";
 import { ContactSlideOver } from "@/components/shared/ContactSlideOver";
 
 interface CustomerContactsTabProps {
-  customer: any;
+  customer: api.AccountResponseDto | null;
   loadAccount: () => void;
 }
 
 export function CustomerContactsTab({ customer, loadAccount }: CustomerContactsTabProps) {
   const t = useTranslations();
+
   const [isContactSlideOverOpen, setIsContactSlideOverOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<api.ContactResponseDto | null>(null);
+
+  if (!customer) return null;
 
   const handleAddContactClick = () => {
     setEditingContact(null);

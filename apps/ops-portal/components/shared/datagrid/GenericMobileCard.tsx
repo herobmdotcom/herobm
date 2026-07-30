@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { type ColDef } from "ag-grid-community";
 import { getCellValue } from "./DataGridFormatters";
 
+import { useTranslations } from "next-intl";
+
 export function GenericMobileCard<T>({ 
   row, 
   columns, 
@@ -18,6 +20,7 @@ export function GenericMobileCard<T>({
   onToggleSelect?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const t = useTranslations("common");
   const visibleCols = columns.filter(c => !c.hide);
   if (visibleCols.length === 0) return null;
 
@@ -87,7 +90,7 @@ export function GenericMobileCard<T>({
                 setExpanded(!expanded);
               }}
             >
-              {expanded ? 'Show Less' : `+ ${validRestCols.length - displayLimit} More`}
+              {expanded ? t('showLess') : t('showMore', { count: validRestCols.length - displayLimit })}
             </div>
           )}
         </div>

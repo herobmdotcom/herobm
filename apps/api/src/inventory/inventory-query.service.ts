@@ -64,9 +64,10 @@ import {
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
-  PICKABLE_BIN_TYPES,
   filterPickableBins,
   calculatePickableOnHand,
+  isQuarantineBinCondition,
+  isPickableBinCondition,
 } from './inventory-math.utils';
 import { BIN_TYPE } from '@herobm/shared';
 import { UomService } from './uom.service';
@@ -421,18 +422,8 @@ export class InventoryQueryService {
     }
 
     if (query?.binType) {
-      filters.push(
-        eq(
-          bins.binType,
-          query.binType as
-            | 'storage'
-            | 'pick'
-            | 'bulk'
-            | 'staging'
-            | 'quarantine'
-            | 'in_transit',
-        ),
-      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      filters.push(eq(bins.binType, query.binType as any));
     }
 
     filters.push(sql`${binContents.actualQuantity}::numeric > 0`);
@@ -526,7 +517,7 @@ export class InventoryQueryService {
       .where(
         and(
           eq(zones.locationId, locationId),
-          inArray(bins.binType, [...PICKABLE_BIN_TYPES, 'quarantine']),
+          or(isPickableBinCondition(bins), isQuarantineBinCondition(bins)),
         ),
       );
 

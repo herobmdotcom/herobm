@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { TaxCategory } from './TaxSettingsSection';
 
 interface TaxPositionsSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   appSettings: Record<string, any> | null;
   updateAppSetting: (field: string, value: unknown) => Promise<void>;
 }
@@ -69,7 +69,7 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
             <div className="flex items-center justify-between">
               <h3 className="section-heading !mb-0 flex items-center gap-2">
                 { }
-                {/* eslint-disable-next-line no-restricted-syntax */}
+                {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string for icon */}
                 <span className="material-symbols-outlined">{'map'}</span>
                 {tSettings('sections.taxPositions')}
               </h3>

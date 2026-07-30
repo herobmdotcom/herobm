@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 
 interface GlSettingsSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   glSettings: Record<string, any> | null;
   updateGlSetting: (field: string, value: unknown) => void;
   glLoading: boolean;

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 
 interface TradingTermsSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   appSettings: Record<string, any> | null;
   updateAppSetting: (field: string, value: unknown) => void;
 }

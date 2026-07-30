@@ -11,7 +11,7 @@ import DeliveryAddressSlideOver from "@/components/shared/DeliveryAddressSlideOv
 import { COUNTRIES } from "@herobm/shared";
 
 interface CustomerAddressesTabProps {
-  customer: any; // Using any for now to match the caller, but could be typed properly
+  customer: api.AccountResponseDto | null;
   loadAccount: () => void;
 }
 
@@ -23,6 +23,8 @@ export function CustomerAddressesTab({
 
   const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<api.DeliveryAddressResponseDto | null>(null);
+
+  if (!customer) return null;
 
   const handleAddAddressClick = () => {
     setEditingAddress(null);

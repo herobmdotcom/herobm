@@ -64,9 +64,9 @@ import {
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
-  PICKABLE_BIN_TYPES,
   filterPickableBins,
   calculatePickableOnHand,
+  isQuarantineBinCondition,
 } from './inventory-math.utils';
 import { BIN_TYPE } from '@herobm/shared';
 import { UomService } from './uom.service';
@@ -555,7 +555,8 @@ export class InventoryMovementService {
         ]);
 
         const newStatus =
-          destBin?.binType === 'quarantine'
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- DB enum compared to TS enum
+          destBin?.binType === BIN_TYPE.QUARANTINE
             ? PUTAWAY_STATUS.QUARANTINED
             : PUTAWAY_STATUS.COMPLETED;
 
@@ -886,7 +887,7 @@ export class InventoryMovementService {
             .where(
               and(
                 eq(zones.locationId, sourceBin.locationId),
-                eq(bins.binType, 'quarantine'),
+                isQuarantineBinCondition(bins),
               ),
             )
             .limit(1);

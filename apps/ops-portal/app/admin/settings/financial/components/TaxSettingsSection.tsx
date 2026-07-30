@@ -17,7 +17,7 @@ export interface TaxCategory {
 }
 
 interface TaxSettingsSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   appSettings: Record<string, any> | null;
   updateAppSetting: (field: string, value: unknown) => Promise<void>;
 }
@@ -52,7 +52,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
         <div className="flex items-center justify-between mb-6">
           <h3 className="section-heading !mb-0 flex items-center gap-2">
             { }
-            {/* eslint-disable-next-line no-restricted-syntax */}
+            {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string for icon */}
             <span className="material-symbols-outlined">{'payments'}</span>
             {tSettings('sections.tax')}
           </h3>
@@ -105,7 +105,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
             const payload = {
               code: row.code.toUpperCase(),
               title: row.title,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
               type: String(row.type) as any,
               rate: String(row.rate),
               exemptionReason: row.exemptionReason ? String(row.exemptionReason) : undefined

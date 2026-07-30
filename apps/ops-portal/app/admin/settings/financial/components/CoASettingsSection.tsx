@@ -9,11 +9,11 @@ import { toast } from 'react-hot-toast';
 import { getErrorMessage, CURRENCIES, GL_ACCOUNT_TYPE } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
 type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string };
 
 interface CoASettingsSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   glSettings: Record<string, any> | null;
   updateGlSetting: (field: string, value: unknown) => Promise<void>;
   glAccounts: api.GlAccountResponseDto[];
@@ -24,13 +24,13 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
   const tSettings = useTranslations('admin.settings');
   const tCommon = useTranslations('admin.common');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   const [schemaObj, setSchemaObj] = useState<Record<string, any>>(glSettings?.accountMetadataSchema || { type: 'object', properties: {} });
   const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   const [viewMetadataObj, setViewMetadataObj] = useState<Record<string, any> | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
   const [coaForm, setCoaForm] = useState<Record<string, any>>({});
   const [coaCreating, setCoaCreating] = useState(false);
   const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
