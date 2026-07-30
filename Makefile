@@ -536,7 +536,8 @@ test-data:
 test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
-	npm run build --workspaces --if-present
+	npm run build -w apps/api -w apps/ops-portal -w packages/shared -w packages/db-schema -w packages/sdk --if-present
+	node scripts/run-on-enabled-extensions.mjs build
 
 clean-dev:
 	$(CLEAN_BUILD_CMD)

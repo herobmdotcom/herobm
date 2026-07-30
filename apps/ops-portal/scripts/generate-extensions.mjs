@@ -12,7 +12,7 @@ if (!fs.existsSync(generatedDir)) {
   fs.mkdirSync(generatedDir, { recursive: true });
 }
 
-let content = `// AUTO-GENERATED FILE - DO NOT EDIT\n\n/* eslint-disable @typescript-eslint/no-explicit-any -- We need any here because extensions can pass varied props */\nimport React from 'react';\n\nexport interface ExtensionTab {\n  target: string;\n  id: string;\n  label: string;\n  component: React.ComponentType<any>;\n}\n\n`;
+let content = `// AUTO-GENERATED FILE - DO NOT EDIT\n\nimport React from 'react';\n\nexport interface ExtensionTab {\n  target: string;\n  id: string;\n  label: string;\n  component: React.ComponentType<Record<string, unknown>>;\n}\n\n`;
 let imports = [];
 let registryItems = [];
 

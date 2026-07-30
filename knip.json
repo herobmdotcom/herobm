@@ -48,7 +48,6 @@
       ],
       "ignoreBinaries": [
         "cross-env",
-        "tsx",
         "make"
       ]
     }

@@ -11,7 +11,7 @@
     "test": "make test-api",
     "verify": "make verify-local",
     "typecheck": "make typecheck-portal",
-    "lint": "npm run lint --workspaces --if-present",
+    "lint": "npm run lint -w apps/api -w apps/ops-portal -w packages/db-schema -w packages/shared -w packages/sdk && node scripts/run-on-enabled-extensions.mjs lint",
     "knip": "knip",
     "knip-report": "knip --reporter markdown > knip-report.md"
   },
