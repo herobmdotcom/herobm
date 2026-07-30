@@ -8,7 +8,7 @@ import {
   actors,
   projects,
   projectContacts,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';

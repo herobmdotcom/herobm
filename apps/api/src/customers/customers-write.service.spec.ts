@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, masterDataEvents, actors } from '../drizzle/schema';
+import { customers, masterDataEvents, actors } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
 

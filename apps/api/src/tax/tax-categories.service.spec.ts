@@ -3,7 +3,7 @@ import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { taxCategories, appSettings } from '../drizzle/schema';
+import { taxCategories, appSettings } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 
 describe('TaxCategoriesService', () => {

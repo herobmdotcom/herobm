@@ -1,5 +1,5 @@
 import { Job, Queue } from 'bullmq';
-import { outbox, webhooks } from './schema';
+import { outbox, webhooks } from '@herobm/db-schema';
 import { eq, isNull, inArray, and, or, lt, sql } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import { relayLogger, processingLogger } from './logger';

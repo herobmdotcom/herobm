@@ -14,7 +14,7 @@ import {
   binContents,
   uomDictionary,
   taxCategories,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   BACKORDER_STATE,
   PRODUCT_STATE,

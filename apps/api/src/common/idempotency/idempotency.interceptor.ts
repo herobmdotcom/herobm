@@ -12,7 +12,7 @@ import { Observable, throwError, from, of } from 'rxjs';
 import { catchError, mergeMap } from 'rxjs/operators';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import * as schema from '../../drizzle/schema';
+import * as schema from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import { IDEMPOTENT_KEY, IdempotentConfig } from './idempotent.decorator';

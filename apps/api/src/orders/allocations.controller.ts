@@ -42,7 +42,7 @@ import {
   inventoryLevels,
   purchaseOrders,
   transferOrders,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
 @ApiTags('Warehouse')

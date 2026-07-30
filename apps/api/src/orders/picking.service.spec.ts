@@ -19,7 +19,7 @@ import {
   salesEvents,
   outbox,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,

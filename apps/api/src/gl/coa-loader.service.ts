@@ -6,7 +6,7 @@ import {
   glSettings,
   taxCategories,
   tradingTerms,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';

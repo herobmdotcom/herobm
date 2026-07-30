@@ -12,7 +12,7 @@ import {
   products,
   uomDictionary,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,

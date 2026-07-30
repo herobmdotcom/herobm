@@ -23,7 +23,7 @@ import {
   purchaseInvoiceReceipts,
   glAccounts,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';

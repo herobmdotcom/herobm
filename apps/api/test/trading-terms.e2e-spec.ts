@@ -8,7 +8,7 @@ import { register } from 'prom-client';
 import { CreditAssessmentService } from '../src/customers/credit-assessment.service';
 
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { salesOrders, salesInvoices, locations } from '../src/drizzle/schema';
+import { salesOrders, salesInvoices, locations } from '@herobm/db-schema';
 import * as crypto from 'crypto';
 import request from 'supertest';
 

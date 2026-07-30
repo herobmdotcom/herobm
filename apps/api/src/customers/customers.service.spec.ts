@@ -14,7 +14,7 @@ import {
   glJournalLines,
   glAccounts,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
 import {
   CUSTOMER_STATE,

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { tradingTerms } from '../drizzle/schema';
+import { tradingTerms } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { CreateTradingTermDto, UpdateTradingTermDto } from './dto';
 

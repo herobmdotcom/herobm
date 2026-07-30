@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { outbox, herobmCore } from './schema';
+import { outbox, herobmCore } from '@herobm/db-schema';
 import { eq, isNull, sql } from 'drizzle-orm';
 import express from 'express';
 import { collectDefaultMetrics, Registry, Counter } from 'prom-client';

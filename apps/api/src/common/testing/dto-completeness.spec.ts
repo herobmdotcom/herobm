@@ -5,7 +5,7 @@ describe('Global DTO Completeness', () => {
   const mappings = [
     {
       module: 'Customers',
-      schemaFile: '../../drizzle/schema/crm.schema.ts',
+      schemaFile: '@herobm/db-schema',
       tableName: 'customers',
       dtoFile: '../../customers/dto.ts',
       dtoClass: 'BaseCustomerDto',
@@ -22,7 +22,7 @@ describe('Global DTO Completeness', () => {
     },
     {
       module: 'Suppliers',
-      schemaFile: '../../drizzle/schema/crm.schema.ts',
+      schemaFile: '@herobm/db-schema',
       tableName: 'suppliers',
       dtoFile: '../../suppliers/dto.ts',
       dtoClass: 'BaseSupplierDto',
@@ -38,7 +38,7 @@ describe('Global DTO Completeness', () => {
     },
     {
       module: 'Products',
-      schemaFile: '../../drizzle/schema/products.schema.ts',
+      schemaFile: '@herobm/db-schema',
       tableName: 'products',
       dtoFile: '../../products/dto.ts',
       dtoClass: 'BaseProductDto',

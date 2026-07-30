@@ -38,7 +38,7 @@ import {
   tradingTerms,
   taxCategories,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   CreateOrderDto,
   UpdateOrderDto,

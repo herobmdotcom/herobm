@@ -14,7 +14,7 @@ import {
   locations,
   taxCategories,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,

@@ -7,7 +7,7 @@ import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories, locations } from '../drizzle/schema';
+import { taxCategories, locations } from '@herobm/db-schema';
 import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 

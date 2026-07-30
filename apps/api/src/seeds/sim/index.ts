@@ -24,7 +24,7 @@ import {
   taxCategories,
   glSettings,
   tradingTerms,
-} from '../../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   BIN_TYPE,
   SALES_ORDER_STATE,
@@ -36,7 +36,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
 } from '@herobm/shared';
-import * as schema from '../../drizzle/schema';
+import * as schema from '@herobm/db-schema';
 import * as readline from 'readline';
 
 // Import standard setup functions

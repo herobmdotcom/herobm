@@ -27,7 +27,7 @@ import * as path from 'path';
 describe('Projection Completeness', () => {
   const schemaPath = path.resolve(
     __dirname,
-    '../drizzle/schema/sales.schema.ts',
+    '@herobm/db-schema',
   );
 
   const servicePath = path.join(__dirname, 'orders-query.service.ts');

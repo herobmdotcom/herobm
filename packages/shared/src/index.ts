@@ -147,7 +147,7 @@ export {
   BIN_TYPE,
   isPhysicalProductLine,
 } from './inventory';
-export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData } from './inventory';
+export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType } from './inventory';
 
 export type { ReportDefinition } from './reports';
 
@@ -155,7 +155,6 @@ export type { ProductUom } from './uom';
 export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRule } from './pricing';
 export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from './currency';
 
-export type ProductType = 'inventory' | 'non-stock' | 'service';
 
 export {
   GL_ACCOUNT_TYPE,
@@ -163,8 +162,6 @@ export {
 } from './accounting';
 export type { GLAccountType, AgedBalanceRow, AgedTotals } from './accounting';
 
-export * from './currency';
-export * from './encryption';
 export * from './errors';
 export * from './invoice-discounts';
 

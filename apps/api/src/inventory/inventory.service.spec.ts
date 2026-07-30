@@ -16,7 +16,7 @@ import {
   binContents,
   uomDictionary,
   productUoms,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { eq, sql } from 'drizzle-orm';
 import { InventoryMovementService } from './inventory-movement.service';

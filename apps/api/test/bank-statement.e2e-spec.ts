@@ -10,7 +10,7 @@ import {
   glJournalEntries,
   glJournalLines,
   glReconciliations,
-} from '../src/drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
 import * as crypto from 'crypto';

@@ -6,7 +6,7 @@ import {
   IsBoolean,
   IsIn,
 } from 'class-validator';
-import { binTypeEnum } from '../drizzle/schema';
+import { binTypeEnum } from '@herobm/db-schema';
 import { PartialType } from '@nestjs/swagger';
 
 export class CreateLocationDto {

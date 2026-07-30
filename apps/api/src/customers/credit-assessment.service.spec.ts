@@ -11,7 +11,7 @@ import {
   glAccounts,
   locations,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('CreditAssessmentService', () => {

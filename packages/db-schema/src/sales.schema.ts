@@ -39,7 +39,7 @@ import {
   purchaseOrderLineItems,
   transferOrders,
   transferOrderLines,
-} from '../schema';
+} from './index';
 
 // ---------------------------------------------------------------------------
 // sales_orders  (CDM: SalesOrder)

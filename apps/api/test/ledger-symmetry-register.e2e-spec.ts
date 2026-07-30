@@ -7,7 +7,7 @@ import * as crypto from 'crypto';
 import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
-import { salesOrders, salesOrderLineItems } from '../src/drizzle/schema';
+import { salesOrders, salesOrderLineItems } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 
 interface LedgerSnapshot {

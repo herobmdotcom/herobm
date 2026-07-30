@@ -7,7 +7,7 @@ import {
   numeric,
 } from 'drizzle-orm/pg-core';
 import { herobmCore, validCurrencyCheck } from './core.schema';
-import { users } from '../schema';
+import { users } from './index';
 import { glAccounts, costCenters, activities } from './gl.schema';
 import { taxPositions } from './tax.schema';
 import {

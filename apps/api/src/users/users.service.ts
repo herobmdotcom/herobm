@@ -10,7 +10,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users, userEvents } from '../drizzle/schema';
+import { users, userEvents } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';

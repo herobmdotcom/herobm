@@ -1,4 +1,4 @@
-import { businessReports } from '../../drizzle/schema';
+import { businessReports } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import type { SeedDB } from '../run';
 

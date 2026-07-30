@@ -10,7 +10,7 @@ import {
   products as coreProducts,
   customers as coreAccounts,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 export interface ShippingDocketData {
   header: {

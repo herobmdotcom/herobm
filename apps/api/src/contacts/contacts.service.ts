@@ -25,7 +25,7 @@ import {
   actors,
   projects,
   projectContacts,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

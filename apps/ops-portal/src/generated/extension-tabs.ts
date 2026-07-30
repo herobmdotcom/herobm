@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE - DO NOT EDIT
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- We need any here because extensions can pass varied props */
 import React from 'react';
 
 export interface ExtensionTab {

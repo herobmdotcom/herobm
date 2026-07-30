@@ -10,7 +10,7 @@ import { Controller, Get, Delete, Query, Inject } from '@nestjs/common';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { outbox } from '../drizzle/schema';
+import { outbox } from '@herobm/db-schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
 export class SyncSummaryDto {

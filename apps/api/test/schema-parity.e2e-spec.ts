@@ -2,7 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import * as schema from '../src/drizzle/schema';
+import * as schema from '@herobm/db-schema';
 import { is } from 'drizzle-orm';
 import { PgTable, PgView } from 'drizzle-orm/pg-core';
 

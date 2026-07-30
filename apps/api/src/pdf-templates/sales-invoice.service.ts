@@ -11,7 +11,7 @@ import {
   salesInvoices,
   salesInvoiceLines,
   taxCategories,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { SALES_INVOICE_STATE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 

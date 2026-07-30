@@ -15,7 +15,7 @@ import {
   taxCategories,
   bins,
   zones,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

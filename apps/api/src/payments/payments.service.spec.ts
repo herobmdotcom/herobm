@@ -28,7 +28,7 @@ import {
   glJournalLines,
   exchangeRates,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {

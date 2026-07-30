@@ -24,7 +24,7 @@ import {
   supplierExpiries,
   appSettings,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { getErrorMessage } from '@herobm/shared';
 import {

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { Controller, Post, Body, Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { outbox } from '../drizzle/schema';
+import { outbox } from '@herobm/db-schema';
 
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PublishEventDto } from './dto';

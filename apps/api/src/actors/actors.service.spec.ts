@@ -8,7 +8,7 @@ import {
   actorNotes,
   contacts,
   users,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { ACTOR_STATE } from '@herobm/shared';
 import { NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';

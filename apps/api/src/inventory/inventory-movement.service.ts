@@ -47,7 +47,7 @@ import {
   transferOrderReceipts,
   transferOrderReceiptLines,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

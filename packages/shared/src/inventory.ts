@@ -1,4 +1,4 @@
-import { ProductType } from './index';
+export type ProductType = 'inventory' | 'non-stock' | 'service';
 export enum BIN_TYPE {
   /** Standard racking or shelving intended for general long-term or short-term storage */
   STORAGE = 'storage',

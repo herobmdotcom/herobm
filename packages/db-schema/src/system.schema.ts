@@ -12,7 +12,7 @@ import { herobmCore } from './core.schema';
 
 import { locations } from './inventory.schema';
 import { taxPositions, taxCategories } from './tax.schema';
-import { tradingTerms } from '../schema';
+import { tradingTerms } from './index';
 
 export const outbox = herobmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey().defaultRandom(),

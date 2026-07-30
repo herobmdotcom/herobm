@@ -18,7 +18,7 @@ import {
   uomDictionary,
   glJournalEntries,
   glJournalLines,
-} from '../../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
 

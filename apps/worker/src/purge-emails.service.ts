@@ -1,5 +1,5 @@
 import { Job } from 'bullmq';
-import { emailOutbox } from './schema';
+import { emailOutbox } from '@herobm/db-schema';
 import { eq, lt, and } from 'drizzle-orm';
 import { relayLogger as logger } from './logger';
 

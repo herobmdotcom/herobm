@@ -30,7 +30,7 @@ import {
   transferOrderLines,
   locations,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';

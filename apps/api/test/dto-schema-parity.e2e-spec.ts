@@ -2,7 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
-import * as schema from '../src/drizzle/schema';
+import * as schema from '@herobm/db-schema';
 
 describe('DTO-Schema Reflection Parity (e2e)', () => {
   let app: INestApplication;

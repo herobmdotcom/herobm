@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerDeliveryAddresses, customers } from '../drizzle/schema';
+import { customerDeliveryAddresses, customers } from '@herobm/db-schema';
 import {
   CreateDeliveryAddressDto,
   UpdateDeliveryAddressDto,

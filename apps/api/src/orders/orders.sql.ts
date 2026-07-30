@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { customers, customerGroups } from '../drizzle/schema';
-import { salesOrders } from '../drizzle/schema';
+import { customers, customerGroups } from '@herobm/db-schema';
+import { salesOrders } from '@herobm/db-schema';
 
 export function getCreditBlockedSql() {
   return sql<boolean>`CASE 

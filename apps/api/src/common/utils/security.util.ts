@@ -1,5 +1,5 @@
 import { DrizzleDB } from '../../drizzle/drizzle.module';
-import { appSettings } from '../../drizzle/schema';
+import { appSettings } from '@herobm/db-schema';
 import * as crypto from 'crypto';
 import { TRUSTED_PUBLIC_KEYS } from '../constants/security.constants';
 

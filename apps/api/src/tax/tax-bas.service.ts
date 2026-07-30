@@ -5,7 +5,7 @@ import {
   glJournalLines,
   glJournalEntries,
   glSettings,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { BasSummaryQueryDto, BasSummaryRowDto } from './tax-bas.dto';
 

@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerGroups, customers } from '../drizzle/schema';
+import { customerGroups, customers } from '@herobm/db-schema';
 import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';

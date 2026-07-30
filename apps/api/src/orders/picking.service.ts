@@ -29,7 +29,7 @@ import {
   transferOrderShipments,
   transferOrderShipmentLines,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   findOrder,
   findOrderLine,

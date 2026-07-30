@@ -3,7 +3,7 @@ import { ProductsService } from './products.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { products, masterDataEvents, uomDictionary } from '../drizzle/schema';
+import { products, masterDataEvents, uomDictionary } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
   PRODUCT_STATE,

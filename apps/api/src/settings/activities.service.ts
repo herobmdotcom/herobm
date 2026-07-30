@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { activities } from '../drizzle/schema';
+import { activities } from '@herobm/db-schema';
 import { CreateActivityDto, UpdateActivityDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

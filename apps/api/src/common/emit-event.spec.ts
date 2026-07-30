@@ -53,7 +53,7 @@ import {
   financialEvents,
   inventoryEvents,
   outbox,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 // ---------------------------------------------------------------------------
 // Tests

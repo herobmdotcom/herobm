@@ -1,4 +1,4 @@
-import { glSettings } from '../drizzle/schema';
+import { glSettings } from '@herobm/db-schema';
 import { getTableColumns } from 'drizzle-orm';
 async function run() {
   const columns = getTableColumns(glSettings);

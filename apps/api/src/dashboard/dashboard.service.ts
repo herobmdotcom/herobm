@@ -11,7 +11,7 @@ import {
   binContents as coreBinContents,
   salesOrderLineItems as coreSalesOrderLines,
   actors as coreActors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import { EventType } from '../common/event-types';
 export interface SearchResult {

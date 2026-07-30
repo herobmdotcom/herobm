@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq } from 'drizzle-orm';
-import { glSettings, appSettings } from '../drizzle/schema';
+import { glSettings, appSettings } from '@herobm/db-schema';
 import type {
   RevenueRoutingStrategy,
   ExpenseRoutingStrategy,

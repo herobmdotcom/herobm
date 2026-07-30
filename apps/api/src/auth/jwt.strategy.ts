@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users } from '../drizzle/schema';
+import { users } from '@herobm/db-schema';
 
 export interface JwtPayload {
   sub: string;

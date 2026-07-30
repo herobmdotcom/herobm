@@ -20,7 +20,7 @@ import {
   uomDictionary,
   taxCategories,
   glJournalEntries,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import {

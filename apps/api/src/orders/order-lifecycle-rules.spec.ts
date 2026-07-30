@@ -14,7 +14,7 @@ import {
   taxCategories,
   salesEvents,
   outbox,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { SALES_ORDER_STATE, SHIPMENT_STATE } from '@herobm/shared';
 

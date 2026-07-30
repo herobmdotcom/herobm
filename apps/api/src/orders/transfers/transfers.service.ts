@@ -26,7 +26,7 @@ import {
   inventoryLedger,
   inventoryEntries,
   products as coreProducts,
-} from '../../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {

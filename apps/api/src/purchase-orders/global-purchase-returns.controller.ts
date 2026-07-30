@@ -23,7 +23,7 @@ import {
   purchaseOrderReturnLines,
   suppliers,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import { PurchaseReturnResponseDto } from './dto';
 

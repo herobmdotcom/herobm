@@ -14,7 +14,7 @@ import {
   salesInvoices,
   uomDictionary,
   actors,
-} from '../../src/drizzle/schema';
+} from '@herobm/db-schema';
 import {
   SalesOrderState,
   ReturnState,

@@ -3,7 +3,7 @@ import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, actors } from '../drizzle/schema';
+import { suppliers, actors } from '@herobm/db-schema';
 import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 

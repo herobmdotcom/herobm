@@ -121,9 +121,9 @@ import {
   productComponents,
   locations,
   exchangeRates,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
-import { taxCategories } from '../drizzle/schema';
+import { taxCategories } from '@herobm/db-schema';
 import { getErrorMessage } from '@herobm/shared';
 
 // Default GST categories used across tests

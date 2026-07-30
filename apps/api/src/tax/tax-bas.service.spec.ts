@@ -5,7 +5,7 @@ import {
   glSettings,
   glJournalLines,
   glJournalEntries,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 describe('TaxBasService', () => {
   let service: TaxBasService;

@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as schema from '../../src/drizzle/schema';
+import * as schema from '@herobm/db-schema';
 import {
   seedCoaSettings,
   seedCoaAccounts,

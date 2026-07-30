@@ -4,7 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as fs from 'fs';
 import * as path from 'path';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { glAccounts, glSettings } from '../drizzle/schema';
+import { glAccounts, glSettings } from '@herobm/db-schema';
 import { count, eq } from 'drizzle-orm';
 
 describe('CoaLoaderService', () => {

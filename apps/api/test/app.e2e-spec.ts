@@ -20,7 +20,7 @@ import {
   taxCategories,
   binContents,
   products,
-} from '../src/drizzle/schema';
+} from '@herobm/db-schema';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import request from 'supertest';
 

@@ -1,6 +1,6 @@
 import { eq, sql, isNull, lte, and, or } from 'drizzle-orm';
 import * as nodemailer from 'nodemailer';
-import { emailOutbox, appSettings, outbox, systemEvents } from './schema';
+import { emailOutbox, appSettings, outbox, systemEvents } from '@herobm/db-schema';
 import { relayLogger as logger } from './logger';
 import { deriveEncryptionKey, decrypt } from '@herobm/shared';
 
@@ -92,31 +92,27 @@ export async function pollEmailOutbox(db: any) {
       return;
     }
 
-    const { pgSchema, uuid, text, jsonb, timestamp } = require('drizzle-orm/pg-core');
-    const getEventTable = (eType: string) => {
-      let targetTableName = 'system_events';
-      if (['sales_order', 'sales_invoice', 'sales_return'].includes(eType)) targetTableName = 'sales_events';
-      else if (['purchase_order', 'purchase_invoice', 'purchase_return'].includes(eType)) targetTableName = 'procurement_events';
-      else if (['product', 'customer', 'supplier', 'product_supplier'].includes(eType)) targetTableName = 'master_data_events';
-      else if (['shipment', 'transfer_order', 'warehouse', 'location', 'zone', 'bin'].includes(eType)) targetTableName = 'warehouse_events';
-      else if (['payment', 'csv_mapping_profile', 'tax_category', 'tax_position', 'tax_position_mapping', 'exchange_rate', 'cost_center', 'activity', 'gl_account'].includes(eType)) targetTableName = 'financial_events';
-      else if (['inventory_ledger'].includes(eType)) targetTableName = 'inventory_events';
-      else if (['user'].includes(eType)) targetTableName = 'user_events';
-      else if (['reconciliation_rule', 'bank_statement_line', 'gl_match_group', 'gl_reconciliation'].includes(eType)) targetTableName = 'reconciliation_events';
-      else if (['product_group', 'customer_group', 'supplier_group'].includes(eType)) targetTableName = 'group_events';
-      else if (['email'].includes(eType)) targetTableName = 'email_events';
-      else if (['business_report'].includes(eType)) targetTableName = 'business_report_events';
-      else if (['integration'].includes(eType)) targetTableName = 'integration_events';
+    const { 
+      systemEvents, salesEvents, procurementEvents, masterDataEvents, 
+      warehouseEvents, financialEvents, inventoryEvents, userEvents, 
+      reconciliationEvents, groupEvents, emailEvents: dbEmailEvents, 
+      businessReportEvents, integrationEvents 
+    } = require('@herobm/db-schema');
 
-      return pgSchema('herobm_core').table(targetTableName, {
-        eventId: uuid('event_id').primaryKey(),
-        entityType: text('entity_type').notNull(),
-        entityId: uuid('entity_id').notNull(),
-        eventType: text('event_type').notNull(),
-        payload: jsonb('payload'),
-        actor: text('actor'),
-        createdOn: timestamp('created_on', { withTimezone: true }),
-      });
+    const getEventTable = (eType: string) => {
+      if (['sales_order', 'sales_invoice', 'sales_return'].includes(eType)) return salesEvents;
+      if (['purchase_order', 'purchase_invoice', 'purchase_return'].includes(eType)) return procurementEvents;
+      if (['product', 'customer', 'supplier', 'product_supplier'].includes(eType)) return masterDataEvents;
+      if (['shipment', 'transfer_order', 'warehouse', 'location', 'zone', 'bin'].includes(eType)) return warehouseEvents;
+      if (['payment', 'csv_mapping_profile', 'tax_category', 'tax_position', 'tax_position_mapping', 'exchange_rate', 'cost_center', 'activity', 'gl_account'].includes(eType)) return financialEvents;
+      if (['inventory_ledger'].includes(eType)) return inventoryEvents;
+      if (['user'].includes(eType)) return userEvents;
+      if (['reconciliation_rule', 'bank_statement_line', 'gl_match_group', 'gl_reconciliation'].includes(eType)) return reconciliationEvents;
+      if (['product_group', 'customer_group', 'supplier_group'].includes(eType)) return groupEvents;
+      if (['email'].includes(eType)) return dbEmailEvents;
+      if (['business_report'].includes(eType)) return businessReportEvents;
+      if (['integration'].includes(eType)) return integrationEvents;
+      return systemEvents;
     };
 
     const emailEventsTable = getEventTable('email');

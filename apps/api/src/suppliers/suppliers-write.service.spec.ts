@@ -5,7 +5,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SUPPLIER_STATE } from '@herobm/shared';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, masterDataEvents, actors } from '../drizzle/schema';
+import { suppliers, masterDataEvents, actors } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {

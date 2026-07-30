@@ -19,7 +19,7 @@ import {
   uomDictionary,
   taxCategories,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
 
 describe('DashboardService', () => {

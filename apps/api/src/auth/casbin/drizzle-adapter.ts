@@ -1,7 +1,7 @@
 import { Adapter, Model, Helper } from 'casbin';
 import { eq, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import { casbinRule } from '../../drizzle/schema';
+import { casbinRule } from '@herobm/db-schema';
 
 export class DrizzleAdapter implements Adapter {
   private db: DrizzleDB;

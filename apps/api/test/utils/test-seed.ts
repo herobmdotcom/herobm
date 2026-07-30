@@ -4,7 +4,7 @@ import {
   bins,
   appSettings,
   users,
-} from '../../src/drizzle/schema';
+} from '@herobm/db-schema';
 import * as bcrypt from 'bcrypt';
 import type { SeedDB } from '../../src/seeds/run';
 

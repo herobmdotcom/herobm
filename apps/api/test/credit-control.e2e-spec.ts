@@ -10,7 +10,7 @@ import {
   salesOrders,
   salesInvoices,
   locations,
-} from '../src/drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import request from 'supertest';

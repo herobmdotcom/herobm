@@ -9,7 +9,7 @@ import {
   suppliers,
   glSettings,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and, sql, isNull, inArray, lte, or, isNotNull } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';

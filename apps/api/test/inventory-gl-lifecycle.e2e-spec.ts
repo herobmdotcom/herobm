@@ -13,7 +13,7 @@ import {
   purchaseInvoiceLines,
   customers,
   suppliers,
-} from '../src/drizzle/schema';
+} from '@herobm/db-schema';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 
 describe('Inventory & GL Lifecycle (e2e)', () => {

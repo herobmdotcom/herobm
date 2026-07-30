@@ -5,7 +5,7 @@ import {
   customers,
   customerGroups,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { sql, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { CUSTOMER_STATE, SALES_ORDER_STATE } from '@herobm/shared';

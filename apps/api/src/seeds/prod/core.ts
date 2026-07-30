@@ -30,7 +30,7 @@ import {
   bins,
   customers,
   suppliers,
-} from '../../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
@@ -92,7 +92,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     return;
   }
 
-  const { casbinRule } = await import('../../drizzle/schema/index.js');
+  const { casbinRule } = await import('@herobm/db-schema');
 
   const existingSet = new Set();
 

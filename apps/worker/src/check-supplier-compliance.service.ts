@@ -1,6 +1,6 @@
 import { Job } from 'bullmq';
 import { eq, lt, and, inArray, sql } from 'drizzle-orm';
-import { suppliers, supplierExpiries, systemEvents, outbox } from './schema';
+import { suppliers, supplierExpiries, systemEvents, outbox } from '@herobm/db-schema';
 import { relayLogger as logger } from './logger';
 import { randomUUID } from 'crypto';
 

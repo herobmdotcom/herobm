@@ -1,7 +1,7 @@
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { PGlite } from '@electric-sql/pglite';
 import { createMemoryDb } from '../../test/utils/memory-db';
-import { glAccounts } from '../../src/drizzle/schema';
+import { glAccounts } from '@herobm/db-schema';
 
 async function main() {
   const { db } = await createMemoryDb();

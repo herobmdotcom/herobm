@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { pdfTemplates, pdfTemplateHooks } from '../drizzle/schema';
+import { pdfTemplates, pdfTemplateHooks } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as child_process from 'child_process';

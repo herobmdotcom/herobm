@@ -5,7 +5,7 @@ import { createMemoryDb } from '../../test/utils/memory-db';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '../drizzle/schema';
+import * as schema from '@herobm/db-schema';
 
 export interface PgliteTestContext {
   readonly db: DrizzleDB;

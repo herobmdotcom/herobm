@@ -19,7 +19,7 @@ import {
   customerGroups,
   customers,
   suppliers,
-} from '../schema';
+} from './index';
 import { taxCategories } from './tax.schema';
 
 // ---------------------------------------------------------------------------

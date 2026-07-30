@@ -9,7 +9,7 @@ import {
   actorContactLinks,
   projectActors,
   projectContacts,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 @Injectable()
 export class CrmMapService {

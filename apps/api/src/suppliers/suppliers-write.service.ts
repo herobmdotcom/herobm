@@ -13,7 +13,7 @@ import {
   masterDataEvents,
   supplierExpiries,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {

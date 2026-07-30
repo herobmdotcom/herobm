@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users } from '../drizzle/schema';
+import { users } from '@herobm/db-schema';
 
 @Injectable()
 export class AuthService {

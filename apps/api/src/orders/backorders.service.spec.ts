@@ -13,7 +13,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';

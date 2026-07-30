@@ -21,7 +21,7 @@ dotenv.config({ path: rootEnv });
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from '../../src/drizzle/schema';
+import * as schema from '@herobm/db-schema';
 import {
   runCoreSeeds,
   seedCoaAccounts,

@@ -3,7 +3,7 @@ import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { products, productUoms, uomDictionary } from '../drizzle/schema';
+import { products, productUoms, uomDictionary } from '@herobm/db-schema';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 

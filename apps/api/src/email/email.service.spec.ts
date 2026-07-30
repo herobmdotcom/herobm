@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailService } from './email.service';
-import { emailOutbox } from '../drizzle/schema';
+import { emailOutbox } from '@herobm/db-schema';
 
 describe('EmailService', () => {
   let service: EmailService;

@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { supplierGroups, suppliers } from '../drizzle/schema';
+import { supplierGroups, suppliers } from '@herobm/db-schema';
 import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

@@ -16,7 +16,7 @@ import {
   customers,
   suppliers,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
 import { CreateReconciliationDto, CreateAdjustmentDto } from './dto';
 import { RECONCILIATION_STATE } from '@herobm/shared';

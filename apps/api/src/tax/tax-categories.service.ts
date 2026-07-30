@@ -14,7 +14,7 @@ import {
 import { eq, ne, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories, appSettings } from '../drizzle/schema';
+import { taxCategories, appSettings } from '@herobm/db-schema';
 import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

@@ -28,7 +28,7 @@ import {
   emailEvents,
   businessReportEvents,
   integrationEvents,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------

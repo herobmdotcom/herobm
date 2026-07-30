@@ -16,7 +16,7 @@ import {
   inventoryEntries,
   uomDictionary,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import {
   PUTAWAY_STATUS,
   PRODUCT_STATE,

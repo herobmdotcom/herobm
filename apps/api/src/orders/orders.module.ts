@@ -16,7 +16,7 @@ import {
   salesOrderShipments,
   customers as coreAccounts,
   transferOrders,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersController } from './orders.controller';

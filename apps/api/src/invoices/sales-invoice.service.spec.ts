@@ -18,7 +18,7 @@ import {
   uomDictionary,
   salesInvoices,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import {

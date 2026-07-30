@@ -15,7 +15,7 @@ import {
   purchaseOrders,
   customers,
   suppliers,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { and, desc, eq, gt, lte, ne } from 'drizzle-orm';
 import { MATCH_STATUS } from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';

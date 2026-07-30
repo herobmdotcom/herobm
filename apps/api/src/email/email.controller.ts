@@ -17,7 +17,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { emailOutbox } from '../drizzle/schema';
+import { emailOutbox } from '@herobm/db-schema';
 import { eq, and, desc, or } from 'drizzle-orm';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';

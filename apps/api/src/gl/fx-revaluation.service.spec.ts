@@ -22,7 +22,7 @@ import {
   products,
   uomDictionary,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import {

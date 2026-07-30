@@ -10,7 +10,7 @@ import {
   masterDataEvents,
   contacts,
   actors,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 
 import {
   CreateProjectDto,

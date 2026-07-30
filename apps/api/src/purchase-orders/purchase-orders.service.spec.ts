@@ -19,7 +19,7 @@ import {
   actors,
   procurementEvents,
   exchangeRates,
-} from '../drizzle/schema';
+} from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,

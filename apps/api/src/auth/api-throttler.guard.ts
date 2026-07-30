@@ -11,7 +11,7 @@ import type {
 } from '@nestjs/throttler';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { appSettings } from '../drizzle/schema';
+import { appSettings } from '@herobm/db-schema';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()

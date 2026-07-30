@@ -7,7 +7,7 @@ import {
 import { eq, ne, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxPositions, taxPositionMappings } from '../drizzle/schema';
+import { taxPositions, taxPositionMappings } from '@herobm/db-schema';
 import {
   CreateTaxPositionDto,
   UpdateTaxPositionDto,

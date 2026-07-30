@@ -6,7 +6,7 @@ import {
 import { AbrProvider } from './providers/abr.provider';
 import { TaxJarProvider } from './providers/taxjar.provider';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { integrations } from '../drizzle/schema';
+import { integrations } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { EncryptionService } from '../common/encryption.service';
 import { AppConfigService } from '../settings/app-config.service';

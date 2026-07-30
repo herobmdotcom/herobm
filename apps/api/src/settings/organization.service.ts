@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { organization } from '../drizzle/schema';
+import { organization } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { UpdateOrganizationDto } from './dto';
