@@ -435,6 +435,7 @@ check-lint:
 clean-build:
 	$(CLEAN_BUILD_CMD)
 	npm install
+	node scripts/install-native-deps.js
 	$(MAKE) build-shared
 	$(MAKE) build-db-schema
 	$(MAKE) build-sdk
