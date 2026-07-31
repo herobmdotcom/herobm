@@ -3,9 +3,11 @@ import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { SetupService } from './setup.service';
 import { ApiExcludeController, ApiCreatedResponse } from '@nestjs/swagger';
 import { SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiExcludeController()
+@Public()
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
 @Controller('internal/setup/webhook')
