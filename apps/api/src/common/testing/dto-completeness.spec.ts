@@ -58,9 +58,13 @@ describe('Global DTO Completeness', () => {
   for (const map of mappings) {
     describe(map.module, () => {
       it(`should include all ${map.tableName} columns in ${map.dtoClass}`, () => {
-        const schemaPath = map.schemaFile === '@herobm/db-schema' 
-          ? path.resolve(__dirname, '../../../../../packages/db-schema/src/index.ts')
-          : path.resolve(__dirname, map.schemaFile);
+        const schemaPath =
+          map.schemaFile === '@herobm/db-schema'
+            ? path.resolve(
+                __dirname,
+                '../../../../../packages/db-schema/src/index.ts',
+              )
+            : path.resolve(__dirname, map.schemaFile);
         const dtoPath = path.resolve(__dirname, map.dtoFile);
 
         const columns = getSchemaColumns(schemaPath, map.tableName);

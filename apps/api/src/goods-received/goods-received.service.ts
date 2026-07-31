@@ -1,4 +1,4 @@
-    // security-ignore: sql-raw
+// security-ignore: sql-raw
 import {
   Injectable,
   Inject,

@@ -1,4 +1,4 @@
-  // security-ignore: dto-validation
+// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   Controller,

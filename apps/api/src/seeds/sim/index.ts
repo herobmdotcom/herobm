@@ -1,4 +1,4 @@
-    // security-ignore: sql-raw\nimport 'dotenv/config';
+// security-ignore: sql-raw\nimport 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { sql } from 'drizzle-orm';

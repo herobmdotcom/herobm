@@ -189,10 +189,11 @@ export class SetupService {
         };
       }
     } catch (error) {
-      const runnerUrl = process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
+      const runnerUrl =
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       this.logger.error(
         `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
-        error.stack
+        error.stack,
       );
       return { success: false, message: 'Pipeline runner error' };
     }
@@ -256,10 +257,11 @@ export class SetupService {
         };
       }
     } catch (error) {
-      const runnerUrl = process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
+      const runnerUrl =
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       this.logger.error(
         `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
-        error.stack
+        error.stack,
       );
       return { success: false, message: 'Pipeline runner error' };
     }

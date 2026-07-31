@@ -1,4 +1,4 @@
-    // security-ignore: sql-raw
+// security-ignore: sql-raw
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';

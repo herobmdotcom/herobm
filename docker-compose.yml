@@ -162,6 +162,8 @@ services:
       dockerfile: Dockerfile.pipeline
     container_name: pipeline-runner
     restart: unless-stopped
+    ports:
+      - "${BIND_IP:-127.0.0.1}:8001:8001"
     environment:
       POSTGRES_HOST: postgres-custom
       POSTGRES_PORT: "5432"

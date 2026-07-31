@@ -1,4 +1,4 @@
-    // security-ignore: sql-raw
+// security-ignore: sql-raw
 import { SQL, sql, inArray, eq, and } from 'drizzle-orm';
 import { BIN_TYPE } from '@herobm/shared';
 import { bins } from '@herobm/db-schema';
