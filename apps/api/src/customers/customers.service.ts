@@ -1,4 +1,5 @@
-    // security-ignore: sql-raw\nimport { Injectable, Inject, NotFoundException } from '@nestjs/common';
+    // security-ignore: sql-raw
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import {
   eq,
   ilike,

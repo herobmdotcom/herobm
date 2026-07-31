@@ -1,4 +1,5 @@
-  // security-ignore: dto-validation\nimport {
+  // security-ignore: dto-validation
+import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,

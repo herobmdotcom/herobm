@@ -1,4 +1,5 @@
-    // security-ignore: sql-raw\nimport {
+// security-ignore: sql-raw
+import {
   Inject,
   Injectable,
   Logger,

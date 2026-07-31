@@ -1,4 +1,5 @@
-  // security-ignore: dto-validation\nimport { Controller, Post, Body, UseGuards } from '@nestjs/common';
+  // security-ignore: dto-validation
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { SetupService } from './setup.service';
 import { ApiExcludeController, ApiCreatedResponse } from '@nestjs/swagger';
 import { SkipCasbin } from '../auth/casbin.guard';
