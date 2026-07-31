@@ -8,7 +8,23 @@ export function getSchemaColumns(
   schemaFilePath: string,
   tableName: string,
 ): string[] {
-  const src = fs.readFileSync(schemaFilePath, 'utf-8');
+  let src = '';
+  if (fs.statSync(schemaFilePath).isDirectory()) {
+    const files = fs
+      .readdirSync(schemaFilePath)
+      .filter((f) => f.endsWith('.ts'));
+    for (const file of files) {
+      src += fs.readFileSync(path.join(schemaFilePath, file), 'utf-8') + '\\n';
+    }
+  } else if (schemaFilePath.endsWith('index.ts')) {
+    const dir = path.dirname(schemaFilePath);
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.ts'));
+    for (const file of files) {
+      src += fs.readFileSync(path.join(dir, file), 'utf-8') + '\\n';
+    }
+  } else {
+    src = fs.readFileSync(schemaFilePath, 'utf-8');
+  }
 
   // Find the table definition block: export const <tableName> = herobmCore.table(...)
   const tableRegex = new RegExp(

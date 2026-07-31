@@ -144,7 +144,7 @@ export class SetupService {
 
     try {
       const runnerUrl =
-        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,7 +209,7 @@ export class SetupService {
 
     try {
       const runnerUrl =
-        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -976,7 +976,7 @@ export class SetupService {
     if (job.type !== 'csv') {
       try {
         const runnerUrl =
-          process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+          process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
         await fetch(`${runnerUrl}/run/${jobId}`, {
           method: 'DELETE',
           signal: AbortSignal.timeout(3000),
@@ -1063,7 +1063,7 @@ export class SetupService {
         `[Job ${jobId}] Sending POST to pipeline-runner/run with command ${cmd}...`,
       );
       const runnerUrl =
-        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       const envToPass: Record<string, string | undefined> = {
         ...process.env,
         NO_COLOR: '1',
