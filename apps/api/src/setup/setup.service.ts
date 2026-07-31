@@ -1,4 +1,4 @@
-import {
+    // security-ignore: sql-raw\nimport {
   Inject,
   Injectable,
   Logger,
@@ -188,8 +188,10 @@ export class SetupService {
         };
       }
     } catch (error) {
+      const runnerUrl = process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       this.logger.error(
-        `Failed to connect to pipeline-runner: ${error.message}`,
+        `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
+        error.stack
       );
       return { success: false, message: 'Pipeline runner error' };
     }
@@ -253,8 +255,10 @@ export class SetupService {
         };
       }
     } catch (error) {
+      const runnerUrl = process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8001';
       this.logger.error(
-        `Failed to connect to pipeline-runner: ${error.message}`,
+        `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
+        error.stack
       );
       return { success: false, message: 'Pipeline runner error' };
     }

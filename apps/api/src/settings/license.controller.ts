@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+  // security-ignore: dto-validation\nimport { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,

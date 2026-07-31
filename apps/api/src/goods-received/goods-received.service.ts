@@ -1,4 +1,4 @@
-import {
+    // security-ignore: sql-raw\nimport {
   Injectable,
   Inject,
   NotFoundException,

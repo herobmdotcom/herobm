@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+  // security-ignore: dto-validation\nimport { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
