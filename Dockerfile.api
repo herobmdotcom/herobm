@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # To use NPM workspaces effectively in Docker, copy package info first to cache
 COPY package.json package-lock.json ./
-COPY packages/ ./packages/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/db-schema/package.json ./packages/db-schema/
+COPY packages/sdk/package.json ./packages/sdk/
 COPY apps/api/package*.json ./apps/api/
 
 # Install the monorepo dependencies (this scopes to API and its dependencies due to -w)

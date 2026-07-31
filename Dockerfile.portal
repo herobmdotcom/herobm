@@ -22,7 +22,9 @@ WORKDIR /app
 
 # Copy workspace metadata for cacheable dependency installation
 COPY package.json package-lock.json ./
-COPY packages/ ./packages/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/db-schema/package.json ./packages/db-schema/
+COPY packages/sdk/package.json ./packages/sdk/
 # Only copy package.json for the portal app right now to cache deps
 COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
