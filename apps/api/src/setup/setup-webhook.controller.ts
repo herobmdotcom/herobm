@@ -6,6 +6,26 @@ import { SkipCasbin } from '../auth/casbin.guard';
 import { Public } from '../auth/public.decorator';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
+import { IsString, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class WebhookPayloadDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  jobId!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  logLine!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  status!: string;
+}
+
 @ApiExcludeController()
 @Public()
 @SkipCasbin()
@@ -18,9 +38,7 @@ export class SetupWebhookController {
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCreatedResponse({ description: 'Webhook received', type: Object }) // BYPASS-TYPING-TEST
-  async handleWebhook(
-    @Body() payload: { jobId: string; logLine: string; status: string },
-  ) {
+  async handleWebhook(@Body() payload: WebhookPayloadDto) {
     this.setupService.handleWebhook(payload);
     return { success: true };
   }

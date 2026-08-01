@@ -26,6 +26,15 @@ import { ThrottlerGuard } from '@nestjs/throttler';
  * potential criminal penalties under applicable copyright laws (e.g., DMCA).
  * ============================================================================
  */
+import { IsString, IsNotEmpty } from 'class-validator';
+
+export class ApplyLicenseDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  licenseKey!: string;
+}
+
 export class LicenseStatusDto implements LicenseStatus {
   // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Swagger Metadata).
   @ApiProperty({ enum: ['active', 'warning', 'read_only'] })
@@ -78,9 +87,7 @@ export class LicenseController {
   @ApiBody({
     schema: { type: 'object', properties: { licenseKey: { type: 'string' } } },
   })
-  async applyLicense(
-    @Body() dto: { licenseKey: string },
-  ): Promise<LicenseStatus> {
+  async applyLicense(@Body() dto: ApplyLicenseDto): Promise<LicenseStatus> {
     return this.licenseService.applyLicense(dto.licenseKey);
   }
 }

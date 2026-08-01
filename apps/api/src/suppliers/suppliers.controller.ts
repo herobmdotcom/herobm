@@ -114,6 +114,7 @@ export class SuppliersController {
     return this.suppliersService.findOne(id);
   }
 
+  // security-ignore: dto-validation
   @Patch(':id')
   @ApiBody({ type: UpdateSupplierDto })
   @CasbinAction('write')

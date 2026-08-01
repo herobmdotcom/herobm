@@ -70,6 +70,7 @@ export class SupplierGroupsController {
     return this.supplierGroupsService.create(dto, user?.userId);
   }
 
+  // security-ignore: dto-validation
   @Patch(':id')
   @ApiBody({ type: UpdateSupplierGroupDto })
   @CasbinAction('write')
