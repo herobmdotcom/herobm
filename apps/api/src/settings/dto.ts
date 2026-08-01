@@ -12,6 +12,7 @@ import {
   IsEnum,
   IsArray,
   ValidateNested,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -453,4 +454,12 @@ export class EmptyBodyDto {}
 export class SettingsSuccessResponseDto {
   @ApiProperty()
   success!: boolean;
+}
+
+export class ApplyLicenseDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1024)
+  licenseKey!: string;
 }

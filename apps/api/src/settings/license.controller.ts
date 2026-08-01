@@ -26,15 +26,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
  * potential criminal penalties under applicable copyright laws (e.g., DMCA).
  * ============================================================================
  */
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
-
-export class ApplyLicenseDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(1024)
-  licenseKey!: string;
-}
+import { ApplyLicenseDto } from './dto';
 
 export class LicenseStatusDto implements LicenseStatus {
   // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Swagger Metadata).
