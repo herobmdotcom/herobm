@@ -174,7 +174,9 @@ export class SetupService {
             result.stdout?.substring(0, 200) ||
             result.error;
         }
-        this.logger.error(`ABM test connection failed. Runner returned code ${result.returncode}. Stdout: ${result.stdout}. Stderr: ${result.stderr}. Error: ${result.error}`);
+        this.logger.error(
+          `ABM test connection failed. Runner returned code ${result.returncode}. Stdout: ${result.stdout}. Stderr: ${result.stderr}. Error: ${result.error}`,
+        );
         return { success: false, message: msg };
       }
 
@@ -243,7 +245,9 @@ export class SetupService {
             result.stdout?.substring(0, 200) ||
             result.error;
         }
-        this.logger.error(`Odoo test connection failed. Runner returned code ${result.returncode}. Stdout: ${result.stdout}. Stderr: ${result.stderr}. Error: ${result.error}`);
+        this.logger.error(
+          `Odoo test connection failed. Runner returned code ${result.returncode}. Stdout: ${result.stdout}. Stderr: ${result.stderr}. Error: ${result.error}`,
+        );
         return { success: false, message: msg };
       }
 
@@ -645,7 +649,7 @@ export class SetupService {
         const updateSet: Record<string, unknown> = {};
         for (const colName of colNames) {
           if (colName !== entry.uniqueKey) {
-            updateSet[colName] = sql.raw(`EXCLUDED.${colName}`);
+            updateSet[colName] = sql`EXCLUDED.${sql.identifier(colName)}`;
           }
         }
 

@@ -893,7 +893,7 @@ export class GoodsReceivedService {
 
     if (days && days > 0) {
       conditions.push(
-        sql`${goodsReceived.createdOn} >= now() - interval '${sql.raw(String(days))} days'`,
+        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${days}`,
       );
     }
 
@@ -1110,7 +1110,7 @@ export class GoodsReceivedService {
 
     if (days && days > 0) {
       conditions.push(
-        sql`${goodsReceived.createdOn} >= now() - interval '${sql.raw(String(days))} days'`,
+        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${days}`,
       );
     }
 

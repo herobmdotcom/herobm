@@ -483,11 +483,11 @@ export class CustomersService {
         c.customer_group_id as "customerGroupId",
         g.is_on_credit_hold as "gIsOnCreditHold",
         g.credit_limit as "gCreditLimit",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
+        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
+        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
+        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
+        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
+        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.customers c
       LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id

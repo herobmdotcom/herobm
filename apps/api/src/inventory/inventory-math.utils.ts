@@ -85,7 +85,10 @@ export function isQuarantineBinCondition(binTable: typeof bins) {
  * Expects the alias of the bins table (e.g. 'b').
  */
 export function isPickableBinSqlCondition(binTableAlias: string): SQL {
-  return sql`${sql.raw(binTableAlias)}.bin_type IN (${sql.raw(PICKABLE_BIN_TYPES.map((t) => `'${t}'`).join(', '))}) 
-         AND ${sql.raw(binTableAlias)}.is_unavailable = false 
-         AND ${sql.raw(binTableAlias)}.is_bonded = false`;
+  return sql`${sql.identifier(binTableAlias)}.bin_type IN (${sql.join(
+    PICKABLE_BIN_TYPES.map((t) => sql`${t}`),
+    sql`, `,
+  )}) 
+         AND ${sql.identifier(binTableAlias)}.is_unavailable = false 
+         AND ${sql.identifier(binTableAlias)}.is_bonded = false`;
 }

@@ -27,7 +27,7 @@ import * as path from 'path';
 describe('Projection Completeness', () => {
   const schemaPath = path.resolve(
     __dirname,
-    '../../../../../packages/db-schema/src/index.ts',
+    '../../../../packages/db-schema/src/index.ts',
   );
 
   const servicePath = path.join(__dirname, 'orders-query.service.ts');

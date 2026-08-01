@@ -4,7 +4,7 @@ import { SetupService } from './setup.service';
 import { ApiExcludeController, ApiCreatedResponse } from '@nestjs/swagger';
 import { SkipCasbin } from '../auth/casbin.guard';
 import { Public } from '../auth/public.decorator';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 @ApiExcludeController()
 @Public()
@@ -16,6 +16,7 @@ export class SetupWebhookController {
 
   @SkipCasbin()
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCreatedResponse({ description: 'Webhook received', type: Object }) // BYPASS-TYPING-TEST
   async handleWebhook(
     @Body() payload: { jobId: string; logLine: string; status: string },
