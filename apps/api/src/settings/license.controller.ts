@@ -26,12 +26,13 @@ import { ThrottlerGuard } from '@nestjs/throttler';
  * potential criminal penalties under applicable copyright laws (e.g., DMCA).
  * ============================================================================
  */
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class ApplyLicenseDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(1024)
   licenseKey!: string;
 }
 

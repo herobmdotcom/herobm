@@ -168,4 +168,3 @@ export * from './invoice-discounts';
 export { SystemResource, hasPermission, hasAnyPermission } from './permissions';
 export type { Permission } from './permissions';
 export * from './data-sources';
-export * from './encryption';
