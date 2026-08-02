@@ -288,6 +288,12 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                {t('customerPO')}
+              </label>
+              <div className="text-sm">{invoice.customerOrderNumber || '—'}</div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('columns.currency')}
               </label>
               <div className="text-sm">{invoice.currencyCode}</div>

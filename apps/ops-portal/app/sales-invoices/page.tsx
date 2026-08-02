@@ -38,6 +38,7 @@ export default function GlobalInvoicesPage() {
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'orderNumber', headerName: t('columns.orderNumber'), width: 160 },
+        { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
         { field: 'customerName', headerName: t('columns.customer'), width: 250 },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },

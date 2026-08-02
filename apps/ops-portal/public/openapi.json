@@ -18277,506 +18277,6 @@
           "CRM Map"
         ]
       }
-    },
-    "/projects/{id}/feedback": {
-      "get": {
-        "description": "Get Project Feedback",
-        "operationId": "maController_getFeedback",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Project Feedback",
-        "tags": [
-          "Projects"
-        ]
-      },
-      "post": {
-        "description": "Add Project Feedback",
-        "operationId": "maController_addFeedback",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectFeedbackDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Project Feedback",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/feedback/{feedbackId}": {
-      "patch": {
-        "description": "Update Project Feedback",
-        "operationId": "maController_updateFeedback",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "feedbackId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProjectFeedbackDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Project Feedback",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/actors/{id}/seller-qualifications": {
-      "get": {
-        "description": "Get Seller Qualifications",
-        "operationId": "maGetSellerQualifications",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SellerQualificationResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Seller Qualifications",
-        "tags": [
-          "Actors"
-        ]
-      },
-      "post": {
-        "description": "Add Seller Qualification",
-        "operationId": "maAddSellerQualification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSellerQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SellerQualificationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Seller Qualification",
-        "tags": [
-          "Actors"
-        ]
-      }
-    },
-    "/actors/{id}/seller-qualifications/{qualificationId}": {
-      "patch": {
-        "description": "Update Seller Qualification",
-        "operationId": "maUpdateSellerQualification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "qualificationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSellerQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SellerQualificationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Seller Qualification",
-        "tags": [
-          "Actors"
-        ]
-      }
-    },
-    "/actors/{id}/buyer-qualifications": {
-      "get": {
-        "description": "Get Buyer Qualifications",
-        "operationId": "maGetBuyerQualifications",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BuyerQualificationResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Buyer Qualifications",
-        "tags": [
-          "Actors"
-        ]
-      },
-      "post": {
-        "description": "Add Buyer Qualification",
-        "operationId": "maAddBuyerQualification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBuyerQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BuyerQualificationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Buyer Qualification",
-        "tags": [
-          "Actors"
-        ]
-      }
-    },
-    "/actors/{id}/buyer-qualifications/{qualificationId}": {
-      "patch": {
-        "description": "Update Buyer Qualification",
-        "operationId": "maUpdateBuyerQualification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "qualificationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBuyerQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BuyerQualificationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Buyer Qualification",
-        "tags": [
-          "Actors"
-        ]
-      }
-    },
-    "/actors/{id}/strategic-intelligence": {
-      "get": {
-        "description": "Get Strategic Intelligence",
-        "operationId": "maGetStrategicIntelligence",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Strategic Intelligence",
-        "tags": [
-          "Actors"
-        ]
-      },
-      "post": {
-        "description": "Add Strategic Intelligence",
-        "operationId": "maAddStrategicIntelligence",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateStrategicIntelligenceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Strategic Intelligence",
-        "tags": [
-          "Actors"
-        ]
-      }
-    },
-    "/actors/{id}/strategic-intelligence/{intelligenceId}": {
-      "patch": {
-        "description": "Update Strategic Intelligence",
-        "operationId": "maUpdateStrategicIntelligence",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "intelligenceId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStrategicIntelligenceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Strategic Intelligence",
-        "tags": [
-          "Actors"
-        ]
-      }
     }
   },
   "info": {
@@ -19433,6 +18933,14 @@
           },
           "earlyPaymentDiscountDays": {
             "type": "number"
+          },
+          "parentCustomerId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "stateCode": {
+            "type": "string"
           }
         },
         "required": [
@@ -19530,6 +19038,14 @@
           },
           "earlyPaymentDiscountDays": {
             "type": "number"
+          },
+          "parentCustomerId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "stateCode": {
+            "type": "string"
           }
         }
       },
@@ -19867,6 +19383,23 @@
           },
           "baseUom": {
             "type": "string"
+          },
+          "weight": {
+            "type": "string"
+          },
+          "alternateInvoiceDescription": {
+            "type": "string"
+          },
+          "boxQuantity": {
+            "type": "string"
+          },
+          "defaultSalesUomId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "defaultPurchaseUomId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -19934,6 +19467,23 @@
           },
           "baseUom": {
             "type": "string"
+          },
+          "weight": {
+            "type": "string"
+          },
+          "alternateInvoiceDescription": {
+            "type": "string"
+          },
+          "boxQuantity": {
+            "type": "string"
+          },
+          "defaultSalesUomId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "defaultPurchaseUomId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -26168,6 +25718,9 @@
           "taxPositionId": {
             "type": "string",
             "format": "uuid"
+          },
+          "stateCode": {
+            "type": "string"
           }
         },
         "required": [
@@ -26286,6 +25839,9 @@
           "taxPositionId": {
             "type": "string",
             "format": "uuid"
+          },
+          "stateCode": {
+            "type": "string"
           }
         }
       },
@@ -29673,403 +29229,6 @@
           "nodes",
           "edges"
         ]
-      },
-      "ProjectFeedbackResponseDto": {
-        "type": "object",
-        "properties": {
-          "feedbackId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "projectId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "dealProposalReason": {
-            "type": "string"
-          },
-          "dealRefusalReason": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          },
-          "actor": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "feedbackId",
-          "projectId",
-          "actorId"
-        ]
-      },
-      "CreateProjectFeedbackDto": {
-        "type": "object",
-        "properties": {
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "dealProposalReason": {
-            "type": "string"
-          },
-          "dealRefusalReason": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "actorId"
-        ]
-      },
-      "UpdateProjectFeedbackDto": {
-        "type": "object",
-        "properties": {
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "dealProposalReason": {
-            "type": "string"
-          },
-          "dealRefusalReason": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "SellerQualificationResponseDto": {
-        "type": "object",
-        "properties": {
-          "qualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "marketContext": {
-            "type": "string"
-          },
-          "competitiveEnvironment": {
-            "type": "string"
-          },
-          "marketTrends": {
-            "type": "string"
-          },
-          "addedValue": {
-            "type": "string"
-          },
-          "specificClients": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "consolidationPerspectives": {
-            "type": "string"
-          },
-          "interestedBuyersExist": {
-            "type": "boolean"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "qualificationId",
-          "actorId"
-        ]
-      },
-      "CreateSellerQualificationDto": {
-        "type": "object",
-        "properties": {
-          "marketContext": {
-            "type": "string"
-          },
-          "competitiveEnvironment": {
-            "type": "string"
-          },
-          "marketTrends": {
-            "type": "string"
-          },
-          "addedValue": {
-            "type": "string"
-          },
-          "specificClients": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "consolidationPerspectives": {
-            "type": "string"
-          },
-          "interestedBuyersExist": {
-            "type": "boolean"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateSellerQualificationDto": {
-        "type": "object",
-        "properties": {
-          "marketContext": {
-            "type": "string"
-          },
-          "competitiveEnvironment": {
-            "type": "string"
-          },
-          "marketTrends": {
-            "type": "string"
-          },
-          "addedValue": {
-            "type": "string"
-          },
-          "specificClients": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "consolidationPerspectives": {
-            "type": "string"
-          },
-          "interestedBuyersExist": {
-            "type": "boolean"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "BuyerQualificationResponseDto": {
-        "type": "object",
-        "properties": {
-          "qualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "buyerActivity": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "geography": {
-            "type": "string"
-          },
-          "sizeCriteria": {
-            "type": "string"
-          },
-          "financialCapacity": {
-            "type": "string"
-          },
-          "strategicFit": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "qualificationId",
-          "actorId"
-        ]
-      },
-      "CreateBuyerQualificationDto": {
-        "type": "object",
-        "properties": {
-          "buyerActivity": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "geography": {
-            "type": "string"
-          },
-          "sizeCriteria": {
-            "type": "string"
-          },
-          "financialCapacity": {
-            "type": "string"
-          },
-          "strategicFit": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateBuyerQualificationDto": {
-        "type": "object",
-        "properties": {
-          "buyerActivity": {
-            "type": "string"
-          },
-          "businessModel": {
-            "type": "string"
-          },
-          "geography": {
-            "type": "string"
-          },
-          "sizeCriteria": {
-            "type": "string"
-          },
-          "financialCapacity": {
-            "type": "string"
-          },
-          "strategicFit": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "StrategicIntelligenceResponseDto": {
-        "type": "object",
-        "properties": {
-          "intelligenceId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "actorId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "managerIntent": {
-            "type": "string"
-          },
-          "sectorInterests": {
-            "type": "string"
-          },
-          "externalGrowthProjects": {
-            "type": "string"
-          },
-          "futureSaleIntent": {
-            "type": "string"
-          },
-          "timeline": {
-            "type": "string"
-          },
-          "strategicRationale": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "intelligenceId",
-          "actorId"
-        ]
-      },
-      "CreateStrategicIntelligenceDto": {
-        "type": "object",
-        "properties": {
-          "managerIntent": {
-            "type": "string"
-          },
-          "sectorInterests": {
-            "type": "string"
-          },
-          "externalGrowthProjects": {
-            "type": "string"
-          },
-          "futureSaleIntent": {
-            "type": "string"
-          },
-          "timeline": {
-            "type": "string"
-          },
-          "strategicRationale": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateStrategicIntelligenceDto": {
-        "type": "object",
-        "properties": {
-          "managerIntent": {
-            "type": "string"
-          },
-          "sectorInterests": {
-            "type": "string"
-          },
-          "externalGrowthProjects": {
-            "type": "string"
-          },
-          "futureSaleIntent": {
-            "type": "string"
-          },
-          "timeline": {
-            "type": "string"
-          },
-          "strategicRationale": {
-            "type": "string"
-          },
-          "snapshotName": {
-            "type": "string"
-          },
-          "asOfDate": {
-            "type": "string"
-          }
-        }
       }
     }
   }

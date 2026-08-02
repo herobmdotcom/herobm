@@ -555,6 +555,7 @@ export class SalesInvoiceService {
           invoiceId: randomUUID(),
           invoiceNumber,
           salesOrderId,
+          customerOrderNumber: order.customerOrderNumber,
           totalAmount: String(combinedTotal), // AR takes the whole amount dynamically
           outstandingAmount: String(combinedTotal),
           taxAmount: String(taxAmount),
@@ -875,10 +876,23 @@ export class SalesInvoiceService {
       .select({
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
+        customerOrderNumber: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerOrderNumber}, ${salesOrders.customerOrderNumber})`.as(
+          'customer_order_number',
+        ),
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
-        customerId: salesOrders.customerId,
-        customerName: actors.name,
+        customerId: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId})`.as(
+          'customer_id',
+        ),
+        customerName: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerNameDisplay}, ${actors.name})`.as(
+          'customer_name',
+        ),
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -897,7 +911,13 @@ export class SalesInvoiceService {
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+      .leftJoin(
+        customers,
+        eq(
+          sql`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId})`,
+          customers.customerId,
+        ),
+      )
       .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .where(eq(salesInvoices.invoiceId, invoiceId))
       .limit(1);
@@ -917,7 +937,7 @@ export class SalesInvoiceService {
         amount: salesInvoiceLines.amount,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
-        description: coreProducts.name, // Use product name as default description
+        description: sql<string>`COALESCE(${salesOrderLineItems.productDescription}, ${coreProducts.name})`,
       })
       .from(salesInvoiceLines)
       .innerJoin(
@@ -927,7 +947,7 @@ export class SalesInvoiceService {
           salesOrderLineItems.salesOrderLineId,
         ),
       )
-      .innerJoin(
+      .leftJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
       )
@@ -1096,10 +1116,23 @@ export class SalesInvoiceService {
       .select({
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
+        customerOrderNumber: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerOrderNumber}, ${salesOrders.customerOrderNumber})`.as(
+          'customer_order_number',
+        ),
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
-        customerId: salesOrders.customerId,
-        customerName: actors.name,
+        customerId: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId})`.as(
+          'customer_id',
+        ),
+        customerName: sql<
+          string | null
+        >`COALESCE(${salesInvoices.customerNameDisplay}, ${actors.name})`.as(
+          'customer_name',
+        ),
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -1115,7 +1148,13 @@ export class SalesInvoiceService {
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+      .leftJoin(
+        customers,
+        eq(
+          sql`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId})`,
+          customers.customerId,
+        ),
+      )
       .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .$dynamic();
 

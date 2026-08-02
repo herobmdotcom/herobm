@@ -93,7 +93,11 @@ export class SalesInvoiceService {
 
     // Build the invoice-specific report data
     const invoiceData = assembleOrderData(
-      { ...orderDetail, lines: filteredLines },
+      {
+        ...orderDetail,
+        customerName: invoice.customerNameDisplay || orderDetail.customerName,
+        lines: filteredLines,
+      },
       this.appConfig.homeCurrency(),
     );
 

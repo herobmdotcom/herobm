@@ -22,6 +22,7 @@ import {
   CustomerResponseDto,
   CreditAssessmentResponseDto,
   AgedBalanceResponseDto,
+  EmptyBodyDto,
 } from './dto';
 import {
   ApiTags,
@@ -29,6 +30,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -128,6 +130,7 @@ export class CustomersController {
     summary: 'Archive Customer',
     description: 'Archive a customer.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: CustomerResponseDto })
   archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customersWriteService.archive(id, user.username);
@@ -139,6 +142,7 @@ export class CustomersController {
     summary: 'Unarchive Customer',
     description: 'Unarchive a customer.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: CustomerResponseDto })
   unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customersWriteService.unarchive(id, user.username);

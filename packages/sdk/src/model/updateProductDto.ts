@@ -27,4 +27,9 @@ export interface UpdateProductDto {
   notes?: string;
   stateCode?: string;
   baseUom?: string;
+  weight?: string;
+  alternateInvoiceDescription?: string;
+  boxQuantity?: string;
+  defaultSalesUomId?: string;
+  defaultPurchaseUomId?: string;
 }

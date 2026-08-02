@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN "customer_order_number" text;

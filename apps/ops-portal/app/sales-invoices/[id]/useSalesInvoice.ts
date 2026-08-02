@@ -10,6 +10,7 @@ export interface SalesInvoiceDetails {
   orderNumber: string;
   customerId: string;
   customerName: string;
+  customerOrderNumber?: string;
   invoiceDate: string;
   dueDate?: string;
   createdOn: string;

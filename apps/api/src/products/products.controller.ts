@@ -220,6 +220,7 @@ export class ProductsController {
   })
   @ApiOkResponse({ type: ProductResponseDto })
   removeDefaultBin(
+    @Param('id') id: string,
     @Param('binLinkId') binLinkId: string,
     @AuthUser() user: JwtUser,
   ) {

@@ -701,6 +701,20 @@
       "when": 1785175000000,
       "tag": "0099_add_referral_modes",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1785670496205,
+      "tag": "0100_add_invoice_customer_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1785671836296,
+      "tag": "0101_add_invoice_customer_po",
+      "breakpoints": true
     }
   ]
 }

@@ -1755,6 +1755,7 @@
   "salesInvoices.columns.product",
   "salesInvoices.columns.qty",
   "salesInvoices.customer",
+  "salesInvoices.customerPO",
   "salesInvoices.date",
   "salesInvoices.errorLoading",
   "salesInvoices.invoiceDetails",

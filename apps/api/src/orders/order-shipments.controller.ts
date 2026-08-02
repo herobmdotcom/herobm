@@ -4,6 +4,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -24,6 +25,7 @@ import {
   UpdateShipmentLineDto,
   ShipmentResponseDto,
   ChangeShipmentStateDto,
+  EmptyBodyDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -135,6 +137,7 @@ export class OrderShipmentsController {
     summary: 'Cancel Shipment',
     description: 'Cancel an open shipment and revert picked inventory.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   cancelShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,

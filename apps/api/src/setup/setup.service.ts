@@ -1125,7 +1125,7 @@ export class SetupService {
 
   public handleWebhook(payload: {
     jobId: string;
-    logLine: string;
+    logLine?: string;
     status: string;
   }) {
     if (payload.logLine) {

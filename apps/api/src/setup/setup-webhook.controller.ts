@@ -1,15 +1,22 @@
 // security-ignore: dto-validation
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { SetupService } from './setup.service';
 import { ApiExcludeController, ApiCreatedResponse } from '@nestjs/swagger';
 import { SkipCasbin } from '../auth/casbin.guard';
-import { Public } from '../auth/public.decorator';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Public as InternalPublic } from '../auth/public.decorator';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 import { WebhookPayloadDto } from './dto';
 
 @ApiExcludeController()
-@Public()
+@InternalPublic()
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
 @Controller('internal/setup/webhook')
@@ -18,7 +25,8 @@ export class SetupWebhookController {
 
   @SkipCasbin()
   @Post()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @SkipThrottle()
+  @HttpCode(HttpStatus.OK)
   @ApiCreatedResponse({ description: 'Webhook received', type: Object }) // BYPASS-TYPING-TEST
   async handleWebhook(@Body() payload: WebhookPayloadDto) {
     this.setupService.handleWebhook(payload);

@@ -189,6 +189,8 @@ nuke:
 
 # Create the active profile database and base schemas on a running container
 init-db:
+	@echo "Ensuring database $(POSTGRES_DB) exists..."
+	@podman exec -i postgres-custom sh -c "psql -U $(POSTGRES_USER) -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = '$(POSTGRES_DB)'\" | grep -q 1 || psql -U $(POSTGRES_USER) -d postgres -c \"CREATE DATABASE $(POSTGRES_DB)\""
 	@echo "Initializing database: $(POSTGRES_DB)"
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -f /docker-entrypoint-initdb.d/init-schemas.sql
 

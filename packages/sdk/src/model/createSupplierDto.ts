@@ -39,4 +39,5 @@ export interface CreateSupplierDto {
   businessNumber?: string;
   isTaxRegistered?: boolean;
   taxPositionId?: string;
+  stateCode?: string;
 }

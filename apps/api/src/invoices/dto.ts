@@ -64,6 +64,7 @@ export class SalesInvoiceResponseDto {
   @ApiProperty() invoiceNumber!: string;
   @ApiProperty() customerId!: string;
   @ApiProperty() customerName!: string;
+  @ApiPropertyOptional() customerOrderNumber?: string;
   @ApiProperty() totalAmount!: string;
   @ApiProperty() outstandingAmount!: string;
   @ApiProperty() taxAmount!: string;

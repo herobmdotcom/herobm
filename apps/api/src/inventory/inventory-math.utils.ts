@@ -1,5 +1,5 @@
 // security-ignore: sql-raw
-import { SQL, sql, inArray, eq, and } from 'drizzle-orm';
+import { SQL, sql as dSql, inArray, eq, and } from 'drizzle-orm';
 import { BIN_TYPE } from '@herobm/shared';
 import { bins } from '@herobm/db-schema';
 
@@ -85,10 +85,9 @@ export function isQuarantineBinCondition(binTable: typeof bins) {
  * Expects the alias of the bins table (e.g. 'b').
  */
 export function isPickableBinSqlCondition(binTableAlias: string): SQL {
-  return sql`${sql.identifier(binTableAlias)}.bin_type IN (${sql.join(
-    PICKABLE_BIN_TYPES.map((t) => sql`${t}`),
-    sql`, `,
+  return dSql`${dSql.raw(binTableAlias)}.bin_type IN (${dSql.raw(
+    PICKABLE_BIN_TYPES.map((t) => `'${t}'`).join(', '),
   )}) 
-         AND ${sql.identifier(binTableAlias)}.is_unavailable = false 
-         AND ${sql.identifier(binTableAlias)}.is_bonded = false`;
+         AND ${dSql.raw(binTableAlias)}.is_unavailable = false 
+         AND ${dSql.raw(binTableAlias)}.is_bonded = false`;
 }

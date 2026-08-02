@@ -2874,6 +2874,7 @@
       "qty": "Qty"
     },
     "customer": "Customer",
+    "customerPO": "Customer PO #",
     "date": "Date",
     "errorLoading": "Error loading invoice: {message}",
     "invoiceDetails": "Invoice Details",

@@ -9,7 +9,7 @@ const dbUrl = process.env.DATABASE_URL || `postgres://${process.env.POSTGRES_USE
 
 export default defineConfig({
   schema: [
-    './src/drizzle/schema/index.ts',
+    '../../packages/db-schema/src/index.ts',
     './src/extensions/*/src/db/*schema.ts',
     './src/extensions/*/src/db/*.ts'
   ],

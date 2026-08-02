@@ -34,4 +34,7 @@ export interface CreateCustomerDto {
   overrideCreditHoldUntil?: string;
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  /** @nullable */
+  parentCustomerId?: string | null;
+  stateCode?: string;
 }

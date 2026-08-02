@@ -16,7 +16,7 @@ import {
   customers,
   suppliers,
 } from '@herobm/db-schema';
-import { and, desc, eq, gt, lte, ne } from 'drizzle-orm';
+import { and, desc, eq, gt, lte, ne, sql } from 'drizzle-orm';
 import { MATCH_STATUS } from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -167,14 +167,17 @@ export class FxRevaluationService {
           currencyCode: salesInvoices.currencyCode,
           exchangeRate: salesInvoices.exchangeRate,
           outstandingAmount: salesInvoices.outstandingAmount,
-          customerId: salesOrders.customerId,
+          customerId: sql<
+            string | null
+          >`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId})`.as(
+            'customer_id',
+          ),
         })
         .from(salesInvoices)
         .leftJoin(
           salesOrders,
           eq(salesOrders.salesOrderId, salesInvoices.salesOrderId),
         )
-        .leftJoin(customers, eq(customers.customerId, salesOrders.customerId))
         .where(
           and(
             gt(salesInvoices.outstandingAmount, '0'),

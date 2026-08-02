@@ -53,7 +53,6 @@ import type {
   BusinessReportsControllerGetReportById200,
   BusinessReportsControllerGetReports200Item,
   BusinessReportsControllerRunReport200Item,
-  BuyerQualificationResponseDto,
   CancelReceptionResponseDto,
   ChangeInvoiceStateDto,
   ChangeOrderStateDto,
@@ -81,7 +80,6 @@ import type {
   CreateBankStatementLineDto,
   CreateBinDto,
   CreateBusinessReportDto,
-  CreateBuyerQualificationDto,
   CreateContactDto,
   CreateCostCenterDto,
   CreateCustomerDto,
@@ -103,7 +101,6 @@ import type {
   CreateProjectActorDto,
   CreateProjectContactDto,
   CreateProjectDto,
-  CreateProjectFeedbackDto,
   CreateProjectNoteDto,
   CreatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
@@ -115,10 +112,8 @@ import type {
   CreateReturnDto,
   CreateSalesCreditNoteDto,
   CreateSalesInvoiceDto,
-  CreateSellerQualificationDto,
   CreateShipmentDto,
   CreateStandaloneInvoiceDto,
-  CreateStrategicIntelligenceDto,
   CreateSupplierDto,
   CreateSupplierExpiryDto,
   CreateSupplierGroupDto,
@@ -304,7 +299,6 @@ import type {
   ProductsControllerFindAllParams,
   ProductsControllerFindOneParams,
   ProductsControllerGetComponents200,
-  ProjectFeedbackResponseDto,
   ProjectNoteResponseDto,
   ProjectResponseDto,
   ProjectsControllerAddActor201,
@@ -356,7 +350,6 @@ import type {
   SampleReportDto,
   SeedRequestDto,
   SeedTaxRequestDto,
-  SellerQualificationResponseDto,
   SetRolePermissionsDto,
   SettingsFileDto,
   SettingsResponseDto,
@@ -368,7 +361,6 @@ import type {
   ShipmentResponseDto,
   ShippingContextDto,
   ShippingQueueOrderDto,
-  StrategicIntelligenceResponseDto,
   SuccessMessageResponseDto,
   SupplierAgedBalanceResponseDto,
   SupplierGroupResponseDto,
@@ -421,7 +413,6 @@ import type {
   UpdateAppConfigDto,
   UpdateBinDto,
   UpdateBusinessReportDto,
-  UpdateBuyerQualificationDto,
   UpdateContactDto,
   UpdateCostCenterDto,
   UpdateCustomerDto,
@@ -443,7 +434,6 @@ import type {
   UpdateProjectActorDto,
   UpdateProjectContactDto,
   UpdateProjectDto,
-  UpdateProjectFeedbackDto,
   UpdatePurchaseInvoiceDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
@@ -451,10 +441,8 @@ import type {
   UpdateReportDto,
   UpdateReturnDto,
   UpdateReturnLineDto,
-  UpdateSellerQualificationDto,
   UpdateShipmentDto,
   UpdateShipmentLineDto,
-  UpdateStrategicIntelligenceDto,
   UpdateSupplierDto,
   UpdateSupplierExpiryDto,
   UpdateSupplierGroupDto,
@@ -17351,474 +17339,6 @@ export const crmMapControllerGetMap = async (params?: CrmMapControllerGetMapPara
     method: 'GET'
     
     
-  }
-);}
-
-
-
-/**
- * Get Project Feedback
- * @summary Get Project Feedback
- */
-export type maControllerGetFeedbackResponse200 = {
-  data: ProjectFeedbackResponseDto[]
-  status: 200
-}
-    
-export type maControllerGetFeedbackResponseSuccess = (maControllerGetFeedbackResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maControllerGetFeedbackResponse = (maControllerGetFeedbackResponseSuccess)
-
-export const getMaControllerGetFeedbackUrl = (id: string,) => {
-
-
-  
-
-  return `/projects/${id}/feedback`
-}
-
-export const maControllerGetFeedback = async (id: string, options?: RequestInit): Promise<maControllerGetFeedbackResponse> => {
-  
-  return customFetch<maControllerGetFeedbackResponse>(getMaControllerGetFeedbackUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Add Project Feedback
- * @summary Add Project Feedback
- */
-export type maControllerAddFeedbackResponse201 = {
-  data: ProjectFeedbackResponseDto
-  status: 201
-}
-    
-export type maControllerAddFeedbackResponseSuccess = (maControllerAddFeedbackResponse201) & {
-  headers: Headers;
-};
-;
-
-export type maControllerAddFeedbackResponse = (maControllerAddFeedbackResponseSuccess)
-
-export const getMaControllerAddFeedbackUrl = (id: string,) => {
-
-
-  
-
-  return `/projects/${id}/feedback`
-}
-
-export const maControllerAddFeedback = async (id: string,
-    createProjectFeedbackDto: CreateProjectFeedbackDto, options?: RequestInit): Promise<maControllerAddFeedbackResponse> => {
-  
-  return customFetch<maControllerAddFeedbackResponse>(getMaControllerAddFeedbackUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createProjectFeedbackDto,)
-  }
-);}
-
-
-
-/**
- * Update Project Feedback
- * @summary Update Project Feedback
- */
-export type maControllerUpdateFeedbackResponse200 = {
-  data: ProjectFeedbackResponseDto
-  status: 200
-}
-    
-export type maControllerUpdateFeedbackResponseSuccess = (maControllerUpdateFeedbackResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maControllerUpdateFeedbackResponse = (maControllerUpdateFeedbackResponseSuccess)
-
-export const getMaControllerUpdateFeedbackUrl = (id: string,
-    feedbackId: string,) => {
-
-
-  
-
-  return `/projects/${id}/feedback/${feedbackId}`
-}
-
-export const maControllerUpdateFeedback = async (id: string,
-    feedbackId: string,
-    updateProjectFeedbackDto: UpdateProjectFeedbackDto, options?: RequestInit): Promise<maControllerUpdateFeedbackResponse> => {
-  
-  return customFetch<maControllerUpdateFeedbackResponse>(getMaControllerUpdateFeedbackUrl(id,feedbackId),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateProjectFeedbackDto,)
-  }
-);}
-
-
-
-/**
- * Get Seller Qualifications
- * @summary Get Seller Qualifications
- */
-export type maGetSellerQualificationsResponse200 = {
-  data: SellerQualificationResponseDto[]
-  status: 200
-}
-    
-export type maGetSellerQualificationsResponseSuccess = (maGetSellerQualificationsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maGetSellerQualificationsResponse = (maGetSellerQualificationsResponseSuccess)
-
-export const getMaGetSellerQualificationsUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/seller-qualifications`
-}
-
-export const maGetSellerQualifications = async (id: string, options?: RequestInit): Promise<maGetSellerQualificationsResponse> => {
-  
-  return customFetch<maGetSellerQualificationsResponse>(getMaGetSellerQualificationsUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Add Seller Qualification
- * @summary Add Seller Qualification
- */
-export type maAddSellerQualificationResponse201 = {
-  data: SellerQualificationResponseDto
-  status: 201
-}
-    
-export type maAddSellerQualificationResponseSuccess = (maAddSellerQualificationResponse201) & {
-  headers: Headers;
-};
-;
-
-export type maAddSellerQualificationResponse = (maAddSellerQualificationResponseSuccess)
-
-export const getMaAddSellerQualificationUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/seller-qualifications`
-}
-
-export const maAddSellerQualification = async (id: string,
-    createSellerQualificationDto: CreateSellerQualificationDto, options?: RequestInit): Promise<maAddSellerQualificationResponse> => {
-  
-  return customFetch<maAddSellerQualificationResponse>(getMaAddSellerQualificationUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createSellerQualificationDto,)
-  }
-);}
-
-
-
-/**
- * Update Seller Qualification
- * @summary Update Seller Qualification
- */
-export type maUpdateSellerQualificationResponse200 = {
-  data: SellerQualificationResponseDto
-  status: 200
-}
-    
-export type maUpdateSellerQualificationResponseSuccess = (maUpdateSellerQualificationResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maUpdateSellerQualificationResponse = (maUpdateSellerQualificationResponseSuccess)
-
-export const getMaUpdateSellerQualificationUrl = (id: string,
-    qualificationId: string,) => {
-
-
-  
-
-  return `/actors/${id}/seller-qualifications/${qualificationId}`
-}
-
-export const maUpdateSellerQualification = async (id: string,
-    qualificationId: string,
-    updateSellerQualificationDto: UpdateSellerQualificationDto, options?: RequestInit): Promise<maUpdateSellerQualificationResponse> => {
-  
-  return customFetch<maUpdateSellerQualificationResponse>(getMaUpdateSellerQualificationUrl(id,qualificationId),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateSellerQualificationDto,)
-  }
-);}
-
-
-
-/**
- * Get Buyer Qualifications
- * @summary Get Buyer Qualifications
- */
-export type maGetBuyerQualificationsResponse200 = {
-  data: BuyerQualificationResponseDto[]
-  status: 200
-}
-    
-export type maGetBuyerQualificationsResponseSuccess = (maGetBuyerQualificationsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maGetBuyerQualificationsResponse = (maGetBuyerQualificationsResponseSuccess)
-
-export const getMaGetBuyerQualificationsUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/buyer-qualifications`
-}
-
-export const maGetBuyerQualifications = async (id: string, options?: RequestInit): Promise<maGetBuyerQualificationsResponse> => {
-  
-  return customFetch<maGetBuyerQualificationsResponse>(getMaGetBuyerQualificationsUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Add Buyer Qualification
- * @summary Add Buyer Qualification
- */
-export type maAddBuyerQualificationResponse201 = {
-  data: BuyerQualificationResponseDto
-  status: 201
-}
-    
-export type maAddBuyerQualificationResponseSuccess = (maAddBuyerQualificationResponse201) & {
-  headers: Headers;
-};
-;
-
-export type maAddBuyerQualificationResponse = (maAddBuyerQualificationResponseSuccess)
-
-export const getMaAddBuyerQualificationUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/buyer-qualifications`
-}
-
-export const maAddBuyerQualification = async (id: string,
-    createBuyerQualificationDto: CreateBuyerQualificationDto, options?: RequestInit): Promise<maAddBuyerQualificationResponse> => {
-  
-  return customFetch<maAddBuyerQualificationResponse>(getMaAddBuyerQualificationUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createBuyerQualificationDto,)
-  }
-);}
-
-
-
-/**
- * Update Buyer Qualification
- * @summary Update Buyer Qualification
- */
-export type maUpdateBuyerQualificationResponse200 = {
-  data: BuyerQualificationResponseDto
-  status: 200
-}
-    
-export type maUpdateBuyerQualificationResponseSuccess = (maUpdateBuyerQualificationResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maUpdateBuyerQualificationResponse = (maUpdateBuyerQualificationResponseSuccess)
-
-export const getMaUpdateBuyerQualificationUrl = (id: string,
-    qualificationId: string,) => {
-
-
-  
-
-  return `/actors/${id}/buyer-qualifications/${qualificationId}`
-}
-
-export const maUpdateBuyerQualification = async (id: string,
-    qualificationId: string,
-    updateBuyerQualificationDto: UpdateBuyerQualificationDto, options?: RequestInit): Promise<maUpdateBuyerQualificationResponse> => {
-  
-  return customFetch<maUpdateBuyerQualificationResponse>(getMaUpdateBuyerQualificationUrl(id,qualificationId),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateBuyerQualificationDto,)
-  }
-);}
-
-
-
-/**
- * Get Strategic Intelligence
- * @summary Get Strategic Intelligence
- */
-export type maGetStrategicIntelligenceResponse200 = {
-  data: StrategicIntelligenceResponseDto[]
-  status: 200
-}
-    
-export type maGetStrategicIntelligenceResponseSuccess = (maGetStrategicIntelligenceResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maGetStrategicIntelligenceResponse = (maGetStrategicIntelligenceResponseSuccess)
-
-export const getMaGetStrategicIntelligenceUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/strategic-intelligence`
-}
-
-export const maGetStrategicIntelligence = async (id: string, options?: RequestInit): Promise<maGetStrategicIntelligenceResponse> => {
-  
-  return customFetch<maGetStrategicIntelligenceResponse>(getMaGetStrategicIntelligenceUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Add Strategic Intelligence
- * @summary Add Strategic Intelligence
- */
-export type maAddStrategicIntelligenceResponse201 = {
-  data: StrategicIntelligenceResponseDto
-  status: 201
-}
-    
-export type maAddStrategicIntelligenceResponseSuccess = (maAddStrategicIntelligenceResponse201) & {
-  headers: Headers;
-};
-;
-
-export type maAddStrategicIntelligenceResponse = (maAddStrategicIntelligenceResponseSuccess)
-
-export const getMaAddStrategicIntelligenceUrl = (id: string,) => {
-
-
-  
-
-  return `/actors/${id}/strategic-intelligence`
-}
-
-export const maAddStrategicIntelligence = async (id: string,
-    createStrategicIntelligenceDto: CreateStrategicIntelligenceDto, options?: RequestInit): Promise<maAddStrategicIntelligenceResponse> => {
-  
-  return customFetch<maAddStrategicIntelligenceResponse>(getMaAddStrategicIntelligenceUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createStrategicIntelligenceDto,)
-  }
-);}
-
-
-
-/**
- * Update Strategic Intelligence
- * @summary Update Strategic Intelligence
- */
-export type maUpdateStrategicIntelligenceResponse200 = {
-  data: StrategicIntelligenceResponseDto
-  status: 200
-}
-    
-export type maUpdateStrategicIntelligenceResponseSuccess = (maUpdateStrategicIntelligenceResponse200) & {
-  headers: Headers;
-};
-;
-
-export type maUpdateStrategicIntelligenceResponse = (maUpdateStrategicIntelligenceResponseSuccess)
-
-export const getMaUpdateStrategicIntelligenceUrl = (id: string,
-    intelligenceId: string,) => {
-
-
-  
-
-  return `/actors/${id}/strategic-intelligence/${intelligenceId}`
-}
-
-export const maUpdateStrategicIntelligence = async (id: string,
-    intelligenceId: string,
-    updateStrategicIntelligenceDto: UpdateStrategicIntelligenceDto, options?: RequestInit): Promise<maUpdateStrategicIntelligenceResponse> => {
-  
-  return customFetch<maUpdateStrategicIntelligenceResponse>(getMaUpdateStrategicIntelligenceUrl(id,intelligenceId),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateStrategicIntelligenceDto,)
   }
 );}
 

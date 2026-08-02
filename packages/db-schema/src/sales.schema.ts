@@ -261,6 +261,9 @@ export const salesInvoices = herobmCore.table(
     salesOrderId: uuid('sales_order_id')
       .notNull()
       .references(() => salesOrders.salesOrderId),
+    customerId: uuid('customer_id').references(() => customers.customerId),
+    customerNameDisplay: text('customer_name_display'),
+    customerOrderNumber: text('customer_order_number'),
     totalAmount: numeric('total_amount').notNull(),
     outstandingAmount: numeric('outstanding_amount').notNull(),
     taxAmount: numeric('tax_amount'),

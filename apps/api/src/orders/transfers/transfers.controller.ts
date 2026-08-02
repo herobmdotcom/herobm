@@ -14,6 +14,7 @@ import {
   ApiCreatedResponse,
   ApiTags,
   ApiOperation,
+  ApiBody,
 } from '@nestjs/swagger';
 import { TransferService } from './transfers.service';
 import { ShipmentResponseDto } from '../dto';
@@ -30,6 +31,7 @@ import {
   PickLineDto,
   ReceiveTransferDto,
   TransferPaginationQuery,
+  EmptyBodyDto,
 } from './dto';
 import { CasbinResource, CasbinAction } from '../../auth/casbin.guard';
 import { AuthUser } from '../../auth/auth-user.decorator';
@@ -125,6 +127,7 @@ export class TransfersController {
     summary: 'Ship Transfer Order',
     description: 'Mark a transfer order as shipped and dispatch inventory.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: TransferResponseDto })
   async shipTransferOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.transferService.shipTransferOrder(id, user.username);
@@ -155,6 +158,7 @@ export class TransfersController {
     summary: 'Cancel Transfer Order',
     description: 'Cancel an open transfer order and revert any picks.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: TransferResponseDto })
   async cancelTransferOrder(
     @Param('id') id: string,
@@ -169,6 +173,7 @@ export class TransfersController {
     summary: 'Cancel Transfer Order Shipment',
     description: 'Cancel the active dispatched shipment of a transfer order.',
   })
+  @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: TransferResponseDto })
   async cancelTransferOrderShipment(
     @Param('id') id: string,
