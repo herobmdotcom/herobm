@@ -457,6 +457,7 @@ export default function DataGrid<T>({
   const effectiveData = useMemo(() => {
     if (rowData) return rowData;
     if (swrResponse) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const body = swrResponse as any;
       return Array.isArray(body) ? body : (body?.data || []);
     }
