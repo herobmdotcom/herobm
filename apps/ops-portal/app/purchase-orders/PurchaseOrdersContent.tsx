@@ -79,8 +79,13 @@ export default function PurchaseOrdersContent() {
     },
   ], [tCommon]);
 
-  const handleRowClicked = useCallback((order: UnifiedPurchaseOrderRow) => {
-    router.push(`/purchase-orders/${order.id}`);
+  const handleRowClicked = useCallback((order: UnifiedPurchaseOrderRow, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
+    const url = `/purchase-orders/${order.id}`;
+    if (ev && (ev.ctrlKey || ev.metaKey)) {
+      window.open(url, '_blank');
+    } else {
+      router.push(url);
+    }
   }, [router]);
 
   return (

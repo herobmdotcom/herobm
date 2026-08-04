@@ -65,8 +65,13 @@ export default function CustomersContent() {
     },
   ], [tCommon, tAccounts]);
 
-  const handleRowClicked = useCallback((row: { customerId: string }) => {
-    router.push(`/customers/${row.customerId}`);
+  const handleRowClicked = useCallback((row: { customerId: string }, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
+    const url = `/customers/${row.customerId}`;
+    if (ev && (ev.ctrlKey || ev.metaKey)) {
+      window.open(url, '_blank');
+    } else {
+      router.push(url);
+    }
   }, [router]);
 
   return (

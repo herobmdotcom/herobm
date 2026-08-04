@@ -23,9 +23,14 @@ export default function GlobalInvoicesPage() {
     const [days, setDays, isReady] = usePersistedFilter('sales-invoices-days', '90');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const handleRowClicked = useCallback((row: any) => {
+    const handleRowClicked = useCallback((row: any, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
         if (row.invoiceId) {
-            router.push(`/sales-invoices/${row.invoiceId}`);
+            const url = `/sales-invoices/${row.invoiceId}`;
+            if (ev && (ev.ctrlKey || ev.metaKey)) {
+                window.open(url, '_blank');
+            } else {
+                router.push(url);
+            }
         }
     }, [router]);
 

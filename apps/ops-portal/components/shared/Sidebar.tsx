@@ -34,7 +34,7 @@ export interface SidebarProps {
 export default function Sidebar({ title, subtitle, sections, footer }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('common.auth');
-  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   return (
     <aside
@@ -60,7 +60,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
             {section.label && (
               <div 
                 className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
-                onClick={() => setCollapsed(prev => ({ ...prev, [si]: !prev[si] }))}
+                onClick={() => setExpanded(prev => ({ ...prev, [si]: !prev[si] }))}
               >
                 <p
                   className="text-[10px] font-semibold uppercase tracking-wider transition-colors group-hover:text-[var(--text-primary)]"
@@ -70,11 +70,11 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
                 </p>
                 <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: 'var(--text-muted)' }}>
                   {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                  {collapsed[si] ? 'expand_more' : 'expand_less'}
+                  {!expanded[si] ? 'expand_more' : 'expand_less'}
                 </span>
               </div>
             )}
-            {!collapsed[si] && section.items.map((item) => {
+            {(!section.label || expanded[si]) && section.items.map((item) => {
               const allItems = sections.flatMap((s) => s.items);
               const isActive =
                 item.href === '/'

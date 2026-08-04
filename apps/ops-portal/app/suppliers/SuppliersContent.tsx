@@ -90,8 +90,13 @@ export default function SuppliersContent() {
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },
   ], [tCommon, tStates, tSuppliers]);
 
-  const handleRowClicked = useCallback((supplier: UnifiedSupplierRow) => {
-    router.push(`/suppliers/${supplier.vendorId}`);
+  const handleRowClicked = useCallback((supplier: UnifiedSupplierRow, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
+    const url = `/suppliers/${encodeURIComponent(supplier.vendorId)}`;
+    if (ev && (ev.ctrlKey || ev.metaKey)) {
+      window.open(url, '_blank');
+    } else {
+      router.push(url);
+    }
   }, [router]);
 
   return (
@@ -103,7 +108,7 @@ export default function SuppliersContent() {
       exportFileName="suppliers"
       showArchivedToggle
       rowIdField="vendorId"
-      onRowClicked={(row) => router.push(`/suppliers/${encodeURIComponent(row.vendorId)}`)}
+      onRowClicked={handleRowClicked}
       pageTitle={tSuppliers('title')}
       headerActions={
         <Button asChild variant="primary">

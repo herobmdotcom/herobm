@@ -21,9 +21,14 @@ export default function GlobalPurchaseInvoicesPage() {
     const invoiceFilter = searchParams.get('invoiceId') || '';
     const [days, setDays, isReady] = usePersistedFilter('supplier-invoices-days', '90');
 
-    const handleRowClicked = useCallback((row: { invoiceId?: string }) => {
+    const handleRowClicked = useCallback((row: { invoiceId?: string }, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
         if (row.invoiceId) {
-            router.push(`/supplier-invoices/${row.invoiceId}`);
+            const url = `/supplier-invoices/${row.invoiceId}`;
+            if (ev && (ev.ctrlKey || ev.metaKey)) {
+                window.open(url, '_blank');
+            } else {
+                router.push(url);
+            }
         }
     }, [router]);
 

@@ -14,7 +14,7 @@ export function GenericMobileCard<T>({
 }: { 
   row: T; 
   columns: ColDef<T>[]; 
-  onRowClicked?: (row: T) => void;
+  onRowClicked?: (row: T, event?: React.MouseEvent) => void;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -49,7 +49,7 @@ export function GenericMobileCard<T>({
   return (
     <div 
       className={`p-4 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
-      onClick={() => onRowClicked?.(row)}
+      onClick={(e) => onRowClicked?.(row, e)}
     >
       <div className="flex justify-between items-start gap-4">
         <div>

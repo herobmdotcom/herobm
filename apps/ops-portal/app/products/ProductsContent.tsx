@@ -76,7 +76,14 @@ export default function ProductsContent() {
       exportFileName="products"
       showArchivedToggle
       rowIdField="productId"
-      onRowClicked={(row: Record<string, unknown>) => router.push(`/products/${row.productId as string}`)}
+      onRowClicked={(row: Record<string, unknown>, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
+        const url = `/products/${row.productId as string}`;
+        if (ev && (ev.ctrlKey || ev.metaKey)) {
+          window.open(url, '_blank');
+        } else {
+          router.push(url);
+        }
+      }}
       pageTitle={tProducts('title')}
       headerActions={
         <Button asChild variant="primary">

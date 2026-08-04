@@ -51,7 +51,9 @@ export interface DataGridProps<T> {
   /** Error reporter — called when data fetching fails */
   onError?: (err: unknown, component: string) => void;
   /** Optional callback when a row is clicked */
-  onRowClicked?: (data: T) => void;
+  onRowClicked?: (data: T, event?: MouseEvent | KeyboardEvent) => void;
+  /** Optional function returning a URL for a row. Automatically handles normal clicks (push) vs control-clicks (new tab). Mutually exclusive with onRowClicked. */
+  rowHref?: (data: T) => string;
   /** When true, fetch the entire dataset in one request (no pagination). AG Grid handles sorting/filtering client-side. */
   fetchAll?: boolean;
   /** Whether to show a toggle to include archived records */
@@ -116,6 +118,7 @@ export default function DataGrid<T>({
   exportFileName = "export",
   onError,
   onRowClicked,
+  rowHref,
   fetchAll = false,
   showArchivedToggle = false,
   pageTitle,
@@ -693,7 +696,7 @@ export default function DataGrid<T>({
         }
       }
       if (onRowClicked && event.data) {
-        onRowClicked(event.data);
+        onRowClicked(event.data, event.event as MouseEvent | KeyboardEvent);
       }
     },
     [onRowClicked, gridKey],
@@ -1221,12 +1224,12 @@ export default function DataGrid<T>({
                 }
               }
             } : undefined}
-            onRowClicked={onRowClicked ? (r) => {
+            onRowClicked={onRowClicked ? (r, e) => {
               const main = document.querySelector('main');
               if (main && gridKey) {
                 sessionStorage.setItem(`datagrid-mobile-scroll-${gridKey}`, String(main.scrollTop));
               }
-              onRowClicked(r);
+              onRowClicked(r, e as unknown as MouseEvent);
             } : undefined} 
           />;
           });
