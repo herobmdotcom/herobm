@@ -1201,7 +1201,7 @@ export default function DataGrid<T>({
 
           const dataToMap = sortedData.length > 0 ? sortedData : (effectiveData || []);
 
-          return dataToMap.map((row, idx) => {
+          return dataToMap.map((row: T, idx: number) => {
             const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
             const isSelected = selectedRowIds.has(String(key));
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
