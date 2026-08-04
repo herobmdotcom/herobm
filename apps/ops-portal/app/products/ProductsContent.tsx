@@ -30,7 +30,7 @@ export default function ProductsContent() {
       width: 120
     },
     { field: 'quantityOnHand', headerName: tProducts('columns.quantityOnHand'), width: 130, type: 'numericColumn',
-      valueFormatter: (p: ValueFormatterParams) => p.value ? parseFloat(p.value as string).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0' },
+      valueFormatter: (p: ValueFormatterParams) => p.value ? parseFloat(p.value as string).toLocaleString(undefined, { maximumFractionDigits: 4 }) : '0' },
     { field: 'productGroupName', headerName: tCommon('columns.group'), width: 160 },
     { field: 'defaultVendorName', headerName: tProducts('columns.vendor'), width: 160, hide: true },
     { field: 'standardCost', headerName: tProducts('columns.stdCost'), width: 100, type: 'numericColumn',

@@ -87,7 +87,7 @@ export function OrderLinesTable({
             header: tSales('columns.description'),
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
-                return (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isEditable ? (
+                return isEditable ? (
                     <input
                         className="input"
                         style={{ width: '100%', fontSize: 13 }}

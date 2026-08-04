@@ -535,7 +535,7 @@ export default function AccountDetailPage({
         )}
 
         {activeTab === "salesOrders" && (
-          <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
+          <div className="flex-1 min-h-[600px] flex flex-col w-full h-full p-4 lg:p-6">
             <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
@@ -592,7 +592,7 @@ export default function AccountDetailPage({
         )}
 
         {activeTab === "invoices" && (
-          <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
+          <div className="flex-1 min-h-[600px] flex flex-col w-full h-full p-4 lg:p-6">
             <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/sales-invoices?customerId=${encodeURIComponent(params.id)}&days=0&limit=50`}
@@ -641,7 +641,7 @@ export default function AccountDetailPage({
         )}
 
         {activeTab === "payments" && (
-          <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+          <div className="flex-1 min-h-[600px] flex flex-col z-10 w-full h-full pb-6">
             <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}

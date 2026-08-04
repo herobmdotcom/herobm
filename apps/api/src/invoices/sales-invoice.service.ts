@@ -1071,12 +1071,21 @@ export class SalesInvoiceService {
     }
 
     if (customerId) {
-      conditions.push(
-        or(
-          eq(salesOrders.customerId, customerId),
-          eq(customers.externalId, customerId),
-        ),
-      );
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          customerId,
+        );
+      
+      if (isUuid) {
+        conditions.push(
+          or(
+            eq(customers.customerId, customerId),
+            eq(customers.externalId, customerId),
+          ),
+        );
+      } else {
+        conditions.push(eq(customers.externalId, customerId));
+      }
     }
 
     if (balanceStatus === 'unpaid') {
@@ -1144,7 +1153,7 @@ export class SalesInvoiceService {
         score: scoreSql,
       })
       .from(salesInvoices)
-      .innerJoin(
+      .leftJoin(
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )

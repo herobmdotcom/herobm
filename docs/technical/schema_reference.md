@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-08-02 12:02 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-08-03 12:41 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`

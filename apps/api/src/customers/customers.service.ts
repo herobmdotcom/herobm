@@ -489,11 +489,11 @@ export class CustomersService {
         COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
         COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
-      FROM herobm_core.customers c
+      FROM herobm_core.sales_invoices i
+      LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
+      JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
       LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
       LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
-      JOIN herobm_core.sales_orders so ON so.customer_id = c.customer_id
-      JOIN herobm_core.sales_invoices i ON i.sales_order_id = so.sales_order_id
       WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
       GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
     `;

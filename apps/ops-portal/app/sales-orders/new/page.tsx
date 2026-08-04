@@ -578,16 +578,12 @@ export default function NewOrderPage() {
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
                   </div>
                   <div className="text-sm text-slate-600 font-medium mb-3">
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                      line.productDescription || '—'
-                    ) : (
                       <input
                         className="input w-full text-sm h-8 !py-1"
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder={tSales('salesOrders.placeholders.customDescription')}
                       />
-                    )}
                   </div>
                   <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
                     <MobileCardField label={tSales('salesOrders.columns.qty')} value={
@@ -749,9 +745,6 @@ export default function NewOrderPage() {
                     )}
                   </td>
                   <td>
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                      line.productDescription || '—'
-                    ) : (
                       <input
                         className="input"
                         style={{ width: '100%', fontSize: 13 }}
@@ -759,7 +752,6 @@ export default function NewOrderPage() {
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder={tSales('salesOrders.placeholders.customDescription')}
                       />
-                    )}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <input

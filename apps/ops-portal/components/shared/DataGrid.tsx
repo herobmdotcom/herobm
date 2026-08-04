@@ -189,7 +189,6 @@ export default function DataGrid<T>({
   const [isCustomView, setIsCustomView] = useState(false);
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [internalLoading, setInternalLoading] = useState(true);
-  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false
   );
@@ -455,6 +454,19 @@ export default function DataGrid<T>({
     { revalidateOnFocus: false, keepPreviousData: true }
   );
 
+  const effectiveData = useMemo(() => {
+    if (rowData) return rowData;
+    if (swrResponse) {
+      const body = swrResponse as any;
+      return Array.isArray(body) ? body : (body?.data || []);
+    }
+    return data;
+  }, [rowData, swrResponse, data]);
+
+  const loading = externalLoading !== undefined 
+    ? externalLoading 
+    : (swrResponse ? false : internalLoading);
+
   useEffect(() => {
     if (!isRestored) return;
 
@@ -492,7 +504,7 @@ export default function DataGrid<T>({
 
   // Restore scroll position after data loads
   useEffect(() => {
-    if (!loading && data && data.length > 0 && gridKey) {
+    if (!loading && effectiveData && effectiveData.length > 0 && gridKey) {
       if (isMobile) {
         const key = `datagrid-mobile-scroll-${gridKey}`;
         const savedScroll = sessionStorage.getItem(key);
@@ -518,7 +530,7 @@ export default function DataGrid<T>({
         }
       }
     }
-  }, [loading, data, gridKey, isMobile]);
+  }, [loading, effectiveData, gridKey, isMobile]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
@@ -1091,7 +1103,7 @@ export default function DataGrid<T>({
         <div ref={containerRef} className={`${gridTheme} ${domLayout === 'autoHeight' ? 'w-full' : 'absolute inset-0'}`}>
           <AgGridReact<T>
             ref={gridRef}
-            rowData={data}
+            rowData={effectiveData}
             loading={loading}
             columnDefs={enhancedColumns}
             defaultColDef={defaultColDef}
@@ -1187,7 +1199,7 @@ export default function DataGrid<T>({
               })
             : enhancedColumns.filter(c => !c.hide);
 
-          const dataToMap = sortedData.length > 0 ? sortedData : (data || []);
+          const dataToMap = sortedData.length > 0 ? sortedData : (effectiveData || []);
 
           return dataToMap.map((row, idx) => {
             const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
@@ -1218,7 +1230,7 @@ export default function DataGrid<T>({
           />;
           });
         })()}
-        {data && data.length > 0 && renderPaginationControls(true)}
+        {effectiveData && effectiveData.length > 0 && renderPaginationControls(true)}
       </div>
     </div>
   );

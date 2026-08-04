@@ -194,7 +194,7 @@ export class InvoiceDetailController {
   ) {
     const { limit, cursor, direction, searchTerm } = parsePagination(query);
     const data = await this.salesInvoiceService.findActiveInvoices({
-      days: days ? parseInt(days, 10) : undefined,
+      days: days !== undefined ? parseInt(String(days), 10) : undefined,
       customerId,
       invoiceId,
       balanceStatus,
@@ -228,7 +228,7 @@ export class InvoiceDetailController {
   ) {
     const { limit, cursor, direction, searchTerm } = parsePagination(query);
     const data = await this.purchaseInvoiceCoreService.findActiveInvoices({
-      days: days ? parseInt(days, 10) : undefined,
+      days: days !== undefined ? parseInt(String(days), 10) : undefined,
       vendorId,
       invoiceId,
       balanceStatus,

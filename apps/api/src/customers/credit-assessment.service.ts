@@ -10,6 +10,7 @@ import {
 } from '@herobm/db-schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { resolveEffectiveTradingTermsId } from './credit-control.utils';
+import { SALES_INVOICE_STATE } from '@herobm/shared';
 
 export interface CreditAssessmentResult {
   totalInvoiceBalance: number;
@@ -61,9 +62,10 @@ export class CreditAssessmentService {
         (array_agg(si.invoice_number ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice,
         (array_agg(si.invoice_id ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice_id
       FROM herobm_core.sales_invoices si
-      JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
-      WHERE so.customer_id = ${customerId}
-        AND si.state_code NOT IN ('draft', 'cancelled', 'paid')
+      LEFT JOIN herobm_core.sales_orders so ON si.sales_order_id = so.sales_order_id
+      WHERE COALESCE(si.customer_id, so.customer_id) = ${customerId}
+        AND si.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
+        AND si.outstanding_amount > 0
     `;
 
     // 3. Query the GL for net balance transparency
@@ -137,16 +139,16 @@ export class CreditAssessmentService {
 
     const invoicesQuery = sql`
       SELECT 
-        so.customer_id,
+        COALESCE(si.customer_id, so.customer_id) AS customer_id,
         COALESCE(SUM(si.outstanding_amount), 0) AS total_invoice_balance,
         COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance,
         (array_agg(si.invoice_number ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice,
         (array_agg(si.invoice_id ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice_id
       FROM herobm_core.sales_invoices si
-      JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
-      WHERE so.customer_id IN (${idsSql})
+      LEFT JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
+      WHERE COALESCE(si.customer_id, so.customer_id) IN (${idsSql})
         AND si.state_code NOT IN ('draft', 'cancelled', 'paid')
-      GROUP BY so.customer_id
+      GROUP BY COALESCE(si.customer_id, so.customer_id)
     `;
 
     const glQuery = sql`

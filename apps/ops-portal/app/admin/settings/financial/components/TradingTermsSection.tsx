@@ -168,7 +168,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
             onSave={handleTradingTermSave}
             onDelete={handleTradingTermDelete}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-            onAdd={() => ({ id: '', code: '', description: '', days: 0, type: 'EOM' } as any)}
+            onAdd={() => ({ tradingTermsId: '', code: '', description: '', days: 0, type: 'EOM' } as any)}
             addLabel="+ Create"
             emptyLabel="No trading terms defined."
           />

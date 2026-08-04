@@ -2,18 +2,31 @@ $ErrorActionPreference = "Stop"
 Write-Host "Starting Fast Install Sequence..." -ForegroundColor Cyan
 
 # 1. Install prerequisites interactively (preserves choices) but skip auto-run
+# (Aligns with: make cli-install-prereqs)
 & .\scripts\setup.ps1 -SkipRun
 
-# 2. Refresh environment variables in case 'make' was just installed
+# (Refresh environment variables in case 'make' was just installed)
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-# 3. Proceed through the CLI sequence
+# 2. Create .env and secrets
 make cli-init-env
+
+# 3. Install npm dependencies
 make cli-install-npm
+
+# 4. Start containers
 make cli-up-db
+
+# 5. Initialize schemas (waits for PG)
 make cli-init-db
+
+# 6. Apply SQL migrations
 make cli-migrate
+
+# 7. Seed data & verify
 make cli-bootstrap
+
+# 8. Start FE and API containers (or user's startup choice)
 if (Test-Path ".startup_choice") {
     $choice = Get-Content ".startup_choice"
     Invoke-Expression "make $choice"

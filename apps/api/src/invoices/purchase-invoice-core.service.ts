@@ -461,12 +461,21 @@ export class PurchaseInvoiceCoreService {
     }
 
     if (vendorId) {
-      conditions.push(
-        or(
-          eq(purchaseInvoices.vendorId, vendorId),
-          eq(suppliers.externalId, vendorId),
-        ) as import('drizzle-orm').SQL,
-      );
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          vendorId,
+        );
+      
+      if (isUuid) {
+        conditions.push(
+          or(
+            eq(purchaseInvoices.vendorId, vendorId),
+            eq(suppliers.externalId, vendorId),
+          ) as import('drizzle-orm').SQL,
+        );
+      } else {
+        conditions.push(eq(suppliers.externalId, vendorId) as import('drizzle-orm').SQL);
+      }
     }
 
     if (balanceStatus === 'unpaid') {

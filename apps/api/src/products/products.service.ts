@@ -60,6 +60,7 @@ export class ProductsService {
         productGroupName: productGroups.name,
         productGroupCode: productGroups.groupCode,
         score: scoreSql,
+        quantityOnHand: sql<number>`(SELECT COALESCE(SUM(quantity_on_hand), 0) FROM herobm_core.inventory_levels WHERE product_id = ${coreProducts.productId})`.mapWith(Number),
       })
       .from(coreProducts)
       .leftJoin(

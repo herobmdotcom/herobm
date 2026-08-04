@@ -20,7 +20,7 @@ export class TradingTermsService {
       .from(tradingTerms)
       .orderBy(tradingTerms.code);
     return records.map((r) => ({
-      id: r.tradingTermsId,
+      tradingTermsId: r.tradingTermsId,
       code: r.code,
       description: r.description,
       days: r.days,
@@ -44,7 +44,7 @@ export class TradingTermsService {
           })
           .returning();
         return {
-          id: record.tradingTermsId,
+          tradingTermsId: record.tradingTermsId,
           code: record.code,
           description: record.description,
           days: record.days,
@@ -75,7 +75,7 @@ export class TradingTermsService {
         if (!record) throw new NotFoundException('Trading term not found');
 
         return {
-          id: record.tradingTermsId,
+          tradingTermsId: record.tradingTermsId,
           code: record.code,
           description: record.description,
           days: record.days,
