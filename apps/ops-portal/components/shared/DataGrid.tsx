@@ -695,11 +695,18 @@ export default function DataGrid<T>({
           saveScrollState(gridKey, state.scroll);
         }
       }
-      if (onRowClicked && event.data) {
+      if (rowHref && event.data) {
+        const url = rowHref(event.data);
+        if (event.event && ((event.event as MouseEvent).ctrlKey || (event.event as MouseEvent).metaKey)) {
+          window.open(url, '_blank');
+        } else {
+          router.push(url);
+        }
+      } else if (onRowClicked && event.data) {
         onRowClicked(event.data, event.event as MouseEvent | KeyboardEvent);
       }
     },
-    [onRowClicked, gridKey],
+    [onRowClicked, rowHref, gridKey, router],
   );
 
   const searchInputNode = hideSearch ? null : (
@@ -1224,12 +1231,21 @@ export default function DataGrid<T>({
                 }
               }
             } : undefined}
-            onRowClicked={onRowClicked ? (r, e) => {
+            onRowClicked={(onRowClicked || rowHref) ? (r, e) => {
               const main = document.querySelector('main');
               if (main && gridKey) {
                 sessionStorage.setItem(`datagrid-mobile-scroll-${gridKey}`, String(main.scrollTop));
               }
-              onRowClicked(r, e as unknown as MouseEvent);
+              if (rowHref) {
+                const url = rowHref(r);
+                if (e && (e.ctrlKey || e.metaKey)) {
+                  window.open(url, '_blank');
+                } else {
+                  router.push(url);
+                }
+              } else if (onRowClicked) {
+                onRowClicked(r, e as unknown as MouseEvent);
+              }
             } : undefined} 
           />;
           });

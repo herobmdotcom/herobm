@@ -77,14 +77,7 @@ export default function SalesOrdersContent() {
     { field: 'createdBy', headerName: tCommon('columns.createdBy'), width: 120 },
   ], [tCommon, baseCurrency, tStates]);
 
-  const handleRowClicked = useCallback((order: UnifiedOrder, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-    const url = `/sales-orders/${order.id}`;
-    if (ev && (ev.ctrlKey || ev.metaKey)) {
-      window.open(url, '_blank');
-    } else {
-      router.push(url);
-    }
-  }, [router]);
+
 
   return (
     <DataGrid<UnifiedOrder>
@@ -95,7 +88,7 @@ export default function SalesOrdersContent() {
       exportFileName="orders"
       showArchivedToggle
       rowIdField="id"
-      onRowClicked={handleRowClicked}
+      rowHref={(order) => `/sales-orders/${order.id}`}
       pageTitle={tSales('title')}
       headerFilters={
         <select

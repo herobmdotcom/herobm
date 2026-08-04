@@ -22,17 +22,7 @@ export default function GlobalInvoicesPage() {
     const invoiceFilter = searchParams.get('invoice') || '';
     const [days, setDays, isReady] = usePersistedFilter('sales-invoices-days', '90');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const handleRowClicked = useCallback((row: any, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-        if (row.invoiceId) {
-            const url = `/sales-invoices/${row.invoiceId}`;
-            if (ev && (ev.ctrlKey || ev.metaKey)) {
-                window.open(url, '_blank');
-            } else {
-                router.push(url);
-            }
-        }
-    }, [router]);
+
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
     const gridEndpoint = !isReady ? undefined : (invoiceFilter
@@ -79,7 +69,7 @@ export default function GlobalInvoicesPage() {
             columns={gridColumns} 
             gridKey="global-invoices"
             rowIdField="invoiceId"
-            onRowClicked={handleRowClicked}
+            rowHref={(row) => `/sales-invoices/${row.invoiceId}`}
             pageTitle={t('invoicesCardHeading')}
             headerFilters={
                 <select

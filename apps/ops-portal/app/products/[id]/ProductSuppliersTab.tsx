@@ -91,7 +91,7 @@ export function ProductSuppliersTab({ productId, productName, productNumber, isE
             fetchAll
             rowIdField="vendorId"
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-            onRowClicked={(row: any) => router.push(`/suppliers/${row.vendorId}`)}
+            rowHref={(row: any) => `/suppliers/${row.vendorId}`}
             renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
               <div className="flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-4 flex-1">

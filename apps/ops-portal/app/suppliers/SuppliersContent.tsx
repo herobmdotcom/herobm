@@ -90,14 +90,7 @@ export default function SuppliersContent() {
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },
   ], [tCommon, tStates, tSuppliers]);
 
-  const handleRowClicked = useCallback((supplier: UnifiedSupplierRow, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-    const url = `/suppliers/${encodeURIComponent(supplier.vendorId)}`;
-    if (ev && (ev.ctrlKey || ev.metaKey)) {
-      window.open(url, '_blank');
-    } else {
-      router.push(url);
-    }
-  }, [router]);
+
 
   return (
     <DataGrid<UnifiedSupplierRow>
@@ -108,7 +101,7 @@ export default function SuppliersContent() {
       exportFileName="suppliers"
       showArchivedToggle
       rowIdField="vendorId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => `/suppliers/${encodeURIComponent(row.vendorId)}`}
       pageTitle={tSuppliers('title')}
       headerActions={
         <Button asChild variant="primary">

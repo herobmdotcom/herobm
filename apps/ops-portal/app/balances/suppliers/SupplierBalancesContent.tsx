@@ -144,7 +144,7 @@ export default function SupplierBalancesContent() {
       pageTitle="Supplier Balances"
       loading={isLoading}
       hideSearch={true}
-      onRowClicked={(row) => router.push(`/suppliers/${row.supplierId}?tab=invoices`)}
+      rowHref={(row) => `/suppliers/${row.supplierId}?tab=invoices`}
       headerActions={
         <div className="flex items-center gap-3">
           <select

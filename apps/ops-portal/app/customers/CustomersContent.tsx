@@ -65,14 +65,7 @@ export default function CustomersContent() {
     },
   ], [tCommon, tAccounts]);
 
-  const handleRowClicked = useCallback((row: { customerId: string }, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-    const url = `/customers/${row.customerId}`;
-    if (ev && (ev.ctrlKey || ev.metaKey)) {
-      window.open(url, '_blank');
-    } else {
-      router.push(url);
-    }
-  }, [router]);
+
 
   return (
     <DataGrid
@@ -83,7 +76,7 @@ export default function CustomersContent() {
       exportFileName="customers"
       showArchivedToggle
       rowIdField="customerId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => `/customers/${row.customerId}`}
       pageTitle={tAccounts('title')}
       headerActions={
         <Button asChild variant="primary">

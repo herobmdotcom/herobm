@@ -79,14 +79,7 @@ export default function PurchaseOrdersContent() {
     },
   ], [tCommon]);
 
-  const handleRowClicked = useCallback((order: UnifiedPurchaseOrderRow, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-    const url = `/purchase-orders/${order.id}`;
-    if (ev && (ev.ctrlKey || ev.metaKey)) {
-      window.open(url, '_blank');
-    } else {
-      router.push(url);
-    }
-  }, [router]);
+
 
   return (
     <DataGrid<UnifiedPurchaseOrderRow>
@@ -97,7 +90,7 @@ export default function PurchaseOrdersContent() {
       exportFileName="purchase-orders"
       showArchivedToggle
       rowIdField="id"
-      onRowClicked={handleRowClicked}
+      rowHref={(order) => `/purchase-orders/${order.id}`}
       pageTitle={tPurchase('title')}
       headerFilters={
         <select

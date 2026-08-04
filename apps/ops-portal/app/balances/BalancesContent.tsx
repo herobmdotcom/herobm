@@ -153,7 +153,7 @@ export default function BalancesContent() {
       pageTitle="Balances"
       loading={isLoading}
       hideSearch={true}
-      onRowClicked={(row) => router.push(`/customers/${row.customerId}?tab=invoices`)}
+      rowHref={(row) => `/customers/${row.customerId}?tab=invoices`}
       headerActions={
         <div className="flex items-center gap-3">
           <select

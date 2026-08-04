@@ -21,16 +21,7 @@ export default function GlobalPurchaseInvoicesPage() {
     const invoiceFilter = searchParams.get('invoiceId') || '';
     const [days, setDays, isReady] = usePersistedFilter('supplier-invoices-days', '90');
 
-    const handleRowClicked = useCallback((row: { invoiceId?: string }, ev?: MouseEvent | KeyboardEvent | React.MouseEvent) => {
-        if (row.invoiceId) {
-            const url = `/supplier-invoices/${row.invoiceId}`;
-            if (ev && (ev.ctrlKey || ev.metaKey)) {
-                window.open(url, '_blank');
-            } else {
-                router.push(url);
-            }
-        }
-    }, [router]);
+
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
     const gridEndpoint = !isReady ? undefined : (invoiceFilter
@@ -76,7 +67,7 @@ export default function GlobalPurchaseInvoicesPage() {
             columns={gridColumns} 
             gridKey="global-purchase-invoices"
             rowIdField="invoiceId"
-            onRowClicked={handleRowClicked}
+            rowHref={(row) => row.invoiceId ? `/supplier-invoices/${row.invoiceId}` : ''}
             pageTitle={t('supplierInvoicesCardHeading')}
             headerFilters={
                 <select
