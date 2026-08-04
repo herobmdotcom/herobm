@@ -69,9 +69,7 @@ export default function ShipmentsPage() {
     },
   ], [t, tStates]);
 
-  const handleRowClicked = useCallback((data: Record<string, unknown>) => {
-    router.push(`/shipments/${data.shipmentId}`);
-  }, [router]);
+
 
   return (
     <DataGrid
@@ -81,7 +79,7 @@ export default function ShipmentsPage() {
       searchPlaceholder={t('placeholders.searchShipments')}
       exportFileName="shipments"
       rowIdField="shipmentId"
-      onRowClicked={handleRowClicked}
+      rowHref={(data: Record<string, unknown>) => `/shipments/${data.shipmentId}`}
       pageTitle={t('title')}
       headerFilters={
         <select

@@ -100,21 +100,9 @@ export default function AccountDetailPage({
 
 
 
-  const handleOrderRowClicked = useCallback(
-    (order: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Row data passed from DataGrid is dynamically typed */) => {
-      router.push(`/sales-orders/${order.id}`);
-    },
-    [router],
-  );
 
-  const handleInvoiceRowClicked = useCallback(
-    (row: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Row data passed from DataGrid is dynamically typed */) => {
-      if (row.salesOrderId) {
-        router.push(`/sales-orders/${row.salesOrderId}#invoices-section`);
-      }
-    },
-    [router],
-  );
+
+
 
   const orderColumns = useMemo<any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- ColDef typing requires structural compatibility workaround */>(
     () => [
@@ -546,7 +534,7 @@ export default function AccountDetailPage({
                 exportFileName={`orders-${customer.customerNumber}`}
                 fetchAll
                 rowIdField="id"
-                onRowClicked={handleOrderRowClicked}
+                rowHref={(order: any) => `/sales-orders/${order.id}`}
                 renderHeader={({
                   searchInput,
                   optionsButton,
@@ -601,7 +589,7 @@ export default function AccountDetailPage({
                 urlPrefix="invoices"
                 fetchAll
                 rowIdField="invoiceId"
-                onRowClicked={handleInvoiceRowClicked}
+                rowHref={(row: any) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
                 renderHeader={({
                   searchInput,
                   optionsButton,

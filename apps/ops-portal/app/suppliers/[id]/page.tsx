@@ -312,7 +312,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 columns={productColumns}
                 gridKey="supplier-products"
                 fetchAll
-                onRowClicked={(row: { productId?: string }) => router.push(`/products/${row.productId}`)}
+                rowHref={(row: { productId?: string }) => `/products/${row.productId}`}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
@@ -349,7 +349,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 columns={orderColumns}
                 gridKey="supplier-orders"
                 fetchAll
-                onRowClicked={(row: { id?: string }) => router.push(`/purchase-orders/${row.id}`)}
+                rowHref={(row: { id?: string }) => `/purchase-orders/${row.id}`}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
@@ -387,7 +387,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 columns={invoiceColumns}
                 gridKey="supplier-invoices"
                 fetchAll
-                onRowClicked={(row: { invoiceId?: string }) => router.push(`/supplier-invoices/${row.invoiceId}`)}
+                rowHref={(row: { invoiceId?: string }) => `/supplier-invoices/${row.invoiceId}`}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">

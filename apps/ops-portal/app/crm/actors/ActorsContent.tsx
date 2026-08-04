@@ -34,9 +34,7 @@ export default function ActorsContent() {
     }
   ], []);
 
-  const handleRowClicked = useCallback((row: { actorId: string }) => {
-    router.push(`/crm/actors/${row.actorId}`);
-  }, [router]);
+
 
   return (
     <DataGrid
@@ -46,7 +44,7 @@ export default function ActorsContent() {
       searchPlaceholder="Search actors..."
       exportFileName="actors"
       rowIdField="actorId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => `/crm/actors/${row.actorId}`}
       pageTitle="Actors"
       headerActions={
         <Button asChild variant="primary">

@@ -159,13 +159,21 @@ export default function DataGrid<T>({
 
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
   // into a single initialState — read once on mount
-  const savedInitialState = useMemo<GridState | undefined>(() => {
-    const gridState = gridKey ? loadGridState(gridKey) : null;
-    const scroll = gridKey ? loadScrollState(gridKey) : null;
-    if (!gridState && !scroll && !defaultSortModel) return undefined;
+  const savedInitialState = useMemo(() => {
+    const state = gridKey ? loadGridState(gridKey) : null;
+    const fromUrl = searchParams?.get(limitParam);
+    if (state && fromUrl !== '99999') {
+      // If we are not restoring a custom view explicitly from the URL (e.g. Back button),
+      // ignore saved sort/filter so we don't accidentally load a custom view when clicking from sidebar
+      delete state.sort;
+      delete state.filter;
+    }
     
-    const state: GridState = {
-      ...(gridState ?? {}),
+    const scroll = gridKey ? loadScrollState(gridKey) : null;
+    if (!state && !scroll && !defaultSortModel) return undefined;
+    
+    const finalState: GridState = {
+      ...(state ?? {}),
       ...(scroll ? { scroll } : {}),
       partialColumnState: true, // we may not have all column properties
     };
@@ -212,8 +220,8 @@ export default function DataGrid<T>({
         const savedLimit = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
         if (savedLimit) {
           const parsed = Number(savedLimit);
-          // Don't use desktop's large limits on mobile
-          if (!initialIsMobile || parsed <= 50) {
+          // Don't restore 99999 from localStorage, and don't use desktop limits on mobile
+          if (parsed !== 99999 && (!initialIsMobile || parsed <= 50)) {
             return parsed;
           }
         }
@@ -228,6 +236,7 @@ export default function DataGrid<T>({
   const [previousLimit, setPreviousLimit] = useState<number | null>(null);
 
   const isGridFilteredRef = useRef(false);
+  const lastActionRef = useRef<string | null>(null);
 
   // If there's an initial search param, we want to ensure custom view is active on load
   useEffect(() => {
@@ -241,7 +250,9 @@ export default function DataGrid<T>({
   useEffect(() => {
     if (gridKey && typeof window !== 'undefined') {
       try {
-        localStorage.setItem(`${STORAGE_PREFIX}${gridKey}-limit`, String(limit));
+        if (limit !== 99999) {
+          localStorage.setItem(`${STORAGE_PREFIX}${gridKey}-limit`, String(limit));
+        }
       } catch (e) {
         /* ignore */
       }
@@ -1128,9 +1139,8 @@ export default function DataGrid<T>({
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onStateUpdated={onStateUpdated}
-            onFilterChanged={(e) => {
-              // We don't strictly need this, but it forces an update if grid filters change internally.
-            }}
+            onSortChanged={(e) => { lastActionRef.current = e.source ?? null; }}
+            onFilterChanged={(e) => { lastActionRef.current = e.source ?? null; }}
             onModelUpdated={(e) => {
               setDisplayedRowCount(e.api.getDisplayedRowCount());
               const nodes: T[] = [];
@@ -1156,17 +1166,23 @@ export default function DataGrid<T>({
               isGridFilteredRef.current = isSortedOrFiltered;
               const hasSearch = typeof search === 'string' && search.trim() !== '';
               
-              if (isSortedOrFiltered && !wasSortedOrFiltered) {
-                if (limit !== 99999) {
-                  setPreviousLimit(limit);
-                  setLimit(99999);
-                }
-              } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
-                if (limit === 99999) {
-                  if (previousLimit !== null) {
-                    setLimit(previousLimit);
-                  } else if (!fetchAll || isMobile) {
-                    setLimit(isMobile ? 25 : 200);
+              // Only automatically toggle limits if this was initiated by a user interacting with the UI
+              // (API calls like "Clear Custom View" handle their own limit transitions)
+              const isUserAction = lastActionRef.current === 'uiColumnSorted' || lastActionRef.current === 'uiColumnFilter';
+              
+              if (isUserAction) {
+                if (isSortedOrFiltered && !wasSortedOrFiltered) {
+                  if (limit !== 99999) {
+                    setPreviousLimit(limit);
+                    setLimit(99999);
+                  }
+                } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
+                  if (limit === 99999) {
+                    if (previousLimit !== null) {
+                      setLimit(previousLimit);
+                    } else if (!fetchAll || isMobile) {
+                      setLimit(isMobile ? 25 : 200);
+                    }
                   }
                 }
               }
@@ -1176,8 +1192,10 @@ export default function DataGrid<T>({
               } else {
                 setIsCustomView(hasSearch);
               }
+              
+              lastActionRef.current = null;
             }}
-            onRowClicked={onRowClicked ? handleRowClicked : undefined}
+            onRowClicked={(onRowClicked || rowHref) ? handleRowClicked : undefined}
             onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => {
               if (rowIdField) {
                 const selectedNodes = e.api.getSelectedNodes();

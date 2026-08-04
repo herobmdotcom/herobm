@@ -45,7 +45,7 @@ export default function ReconciliationsPage() {
           endpoint="/api/gl/reconciliations"
           columns={columns}
           fetchAll={true}
-          onRowClicked={(row: unknown) => router.push(`/reconciliations/${(row as { reconciliationId: string }).reconciliationId}`)}
+          rowHref={(row: unknown) => `/reconciliations/${(row as { reconciliationId: string }).reconciliationId}`}
           pageTitle={t('title')}
           headerActions={
             <div className="flex gap-2">

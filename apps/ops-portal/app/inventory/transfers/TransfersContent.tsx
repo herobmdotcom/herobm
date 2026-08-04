@@ -62,12 +62,7 @@ export default function TransfersContent() {
     { field: 'createdBy', headerName: tTransfers('columns.createdBy'), width: 120 },
   ], [tTransfers]);
 
-  const handleRowClicked = useCallback((order: UnifiedTransferOrderRow) => {
-    const id = order.id || order.transferOrderId;
-    if (id) {
-      router.push(`/inventory/transfers/${id}`);
-    }
-  }, [router]);
+
 
   return (
     <>
@@ -81,7 +76,7 @@ export default function TransfersContent() {
               exportFileName="transfer-orders"
               showArchivedToggle
               rowIdField="id"
-              onRowClicked={handleRowClicked}
+              rowHref={(order) => (order.id || order.transferOrderId) ? `/inventory/transfers/${order.id || order.transferOrderId}` : ''}
               pageTitle={tTransfers('title')}
               headerActions={
                 <Button 

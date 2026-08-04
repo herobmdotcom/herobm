@@ -22,9 +22,7 @@ export default function ProjectsContent() {
     }
   ], []);
 
-  const handleRowClicked = useCallback((row: { projectId: string }) => {
-    router.push(`/crm/projects/${row.projectId}`);
-  }, [router]);
+
 
   return (
     <DataGrid
@@ -34,7 +32,7 @@ export default function ProjectsContent() {
       searchPlaceholder="Search projects..."
       exportFileName="projects"
       rowIdField="projectId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => `/crm/projects/${row.projectId}`}
       pageTitle="Projects"
       headerActions={
         <Button asChild variant="primary">
