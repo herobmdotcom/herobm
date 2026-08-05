@@ -701,9 +701,15 @@ export default function DataGrid<T>({
   const handleRowClicked = useCallback(
     (event: RowClickedEvent<T>) => {
       if (gridKey && event.api) {
-        const state = event.api.getState();
-        if (state.scroll) {
-          saveScrollState(gridKey, state.scroll);
+        try {
+          if (typeof event.api.getState === 'function') {
+            const state = event.api.getState();
+            if (state && state.scroll) {
+              saveScrollState(gridKey, state.scroll);
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to get grid state:", e);
         }
       }
       if (rowHref && event.data) {

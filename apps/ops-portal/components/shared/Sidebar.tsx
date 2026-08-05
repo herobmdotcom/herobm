@@ -36,6 +36,42 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
   const t = useTranslations('common.auth');
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
+  useLayoutEffect(() => {
+    setExpanded(prev => {
+      const next = { ...prev };
+      let changed = false;
+      
+      sections.forEach((section, si) => {
+        if (!section.label) return;
+        const allItems = sections.flatMap((s) => s.items);
+        const isSectionActive = section.items.some(item => {
+          return item.href === '/'
+            ? pathname === '/'
+            : item.subItems
+              ? item.subItems.some(
+                  (sub) =>
+                    pathname === sub.href ||
+                    pathname.startsWith(sub.href + '/'),
+                )
+              : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+                !allItems.some(
+                  (other) =>
+                    other.href !== item.href &&
+                    other.href.length > item.href.length &&
+                    (pathname === other.href || pathname.startsWith(other.href + '/')),
+                );
+        });
+        
+        if (isSectionActive && !next[si]) {
+          next[si] = true;
+          changed = true;
+        }
+      });
+      
+      return changed ? next : prev;
+    });
+  }, [pathname, sections]);
+
   return (
     <aside
       className="w-60 h-full flex flex-col print:hidden"
