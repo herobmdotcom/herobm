@@ -91,7 +91,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           days: 0,
         })
         .expect(201);
-      codTermId = codRes.body.id;
+      codTermId = codRes.body.tradingTermsId;
 
       // Net 30
       const netRes = await request(app.getHttpServer())
@@ -104,7 +104,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           days: 30,
         })
         .expect(201);
-      net30TermId = netRes.body.id;
+      net30TermId = netRes.body.tradingTermsId;
 
       // EOM 30
       const eomRes = await request(app.getHttpServer())
@@ -117,7 +117,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           days: 30,
         })
         .expect(201);
-      eom30TermId = eomRes.body.id;
+      eom30TermId = eomRes.body.tradingTermsId;
     });
   });
 

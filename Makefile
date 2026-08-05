@@ -310,33 +310,44 @@ dev-pipeline:
 
 rebuild-api:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	-$(COMPOSE_CMD) stop custom-api
+	-$(COMPOSE_CMD) rm -f custom-api
 	-podman stop custom-api
-	-podman rm custom-api
+	-podman rm -f custom-api
 	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api
 	$(COMPOSE_CMD) ps
 
 rebuild-portal:
 	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	-$(COMPOSE_CMD) stop ops-portal
+	-$(COMPOSE_CMD) rm -f ops-portal
 	-podman stop ops-portal
-	-podman rm ops-portal
+	-podman rm -f ops-portal
 	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
 	$(COMPOSE_CMD) ps
 
 rebuild-pipeline:
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	-$(COMPOSE_CMD) stop pipeline-runner
+	-$(COMPOSE_CMD) rm -f pipeline-runner
 	-podman stop pipeline-runner
-	-podman rm pipeline-runner
+	-podman rm -f pipeline-runner
 	$(COMPOSE_CMD) up -d --no-build --no-deps pipeline-runner
 	$(COMPOSE_CMD) ps
 
 rebuild-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	-$(COMPOSE_CMD) stop outbox-worker
+	-$(COMPOSE_CMD) rm -f outbox-worker
 	-podman stop outbox-worker
-	-podman rm outbox-worker
+	-podman rm -f outbox-worker
 	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
 	$(COMPOSE_CMD) ps
 
 rebuild-apps:
+	-$(COMPOSE_CMD) stop custom-api ops-portal pipeline-runner outbox-worker
+	-$(COMPOSE_CMD) rm -f custom-api ops-portal pipeline-runner outbox-worker
+	-podman stop custom-api ops-portal pipeline-runner outbox-worker
 	-podman rm -f custom-api ops-portal pipeline-runner outbox-worker
 	-podman system prune -f
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .

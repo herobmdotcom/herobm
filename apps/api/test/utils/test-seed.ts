@@ -47,6 +47,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
+        isBonded: false,
+        isConsignment: false,
         createdBy: 'system',
       },
       {
@@ -56,6 +58,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
+        isBonded: false,
+        isConsignment: false,
         createdBy: 'system',
       },
       {
@@ -65,6 +69,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         binType: 'storage',
         source: 'app',
         isUnavailable: false,
+        isBonded: false,
+        isConsignment: false,
         createdBy: 'system',
       },
     ])
