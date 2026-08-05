@@ -219,7 +219,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     // After null guard, destructure everything for JSX use
     const {
         order, error, setError, saving, locations,
-        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editFulfillmentLocationId, setEditFulfillmentLocationId, headerDirty,
+        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editAnalysisCode, setEditAnalysisCode, editFulfillmentLocationId, setEditFulfillmentLocationId, headerDirty,
         taxCategories,
         activeTab, setActiveTab, inventoryData, inventoryLoading,
         returns, returnsLoading, showCreateReturn, setShowCreateReturn,
@@ -303,7 +303,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         })), 
         editFulfillmentLocationId || order.fulfillmentLocationId
     );
-    const gapMap = new Map(gaps.map(g => [g.salesOrderLineId, g]));
+    const gapMap = Object.fromEntries(gaps.map(g => [g.salesOrderLineId, g]));
 
     const isDraft = order.stateCode === SALES_ORDER_STATE.DRAFT;
     const isPreConfirmation = order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED;
@@ -421,6 +421,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     setEditFulfillmentLocationId={setEditFulfillmentLocationId}
                     editNotes={editNotes}
                     setEditNotes={setEditNotes}
+                    editAnalysisCode={editAnalysisCode}
+                    setEditAnalysisCode={setEditAnalysisCode}
                     saveHeader={saveHeader}
                     locations={locations}
                     onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
@@ -448,6 +450,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     setEditDeliveryPostalCode={setEditDeliveryPostalCode}
                     editDeliveryCountry={editDeliveryCountry}
                     setEditDeliveryCountry={setEditDeliveryCountry}
+                    onAddAddress={() => setIsAddressSlideOverOpen(true)}
                 />
 
                 <OrderLinesTab
@@ -632,9 +635,9 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {order.lines
-                                            .filter(l => gapMap.has(l.salesOrderLineId))
+                                            .filter(l => !!gapMap[l.salesOrderLineId])
                                             .map((line) => {
-                                                const gap = gapMap.get(line.salesOrderLineId);
+                                                const gap = gapMap[line.salesOrderLineId];
                                                 return (
                                                     <tr key={line.salesOrderLineId} className="hover:bg-gray-50 transition-colors">
                                                         <td className="px-4 py-3 text-xs text-gray-500 font-medium">{line.lineNumber}</td>

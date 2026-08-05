@@ -41,6 +41,7 @@ These records are specifically designed to handle data integrity issues during m
 | **SO Line** | `00000000-0000-0000-0000-000000000010` | `(System Line)` | `import_abm_sales_orders.sql` pre_hook | Anchor for legacy sales events and history. |
 | **PO Line** | `00000000-0000-0000-0000-000000000020` | `(System Line)` | `import_abm_purchase_orders.sql` pre_hook | Anchor for legacy purchase events and history. |
 | **Supplier** | `00000000-0000-0000-0000-000000000003` | `ABM Import Fallback` | `import_abm_suppliers.sql` pre_hook | Dummy supplier for imported purchase records lacking a supplier. |
+| **Customer** | `00000000-0000-0000-0000-000000000004` | `ABM Import Fallback` | `import_abm_customers.sql` pre_hook | Dummy customer for imported sales records lacking a customer. |
 | **Organization** | *(overwrite)* | *(from ABM)* | `import_organization.sql` | Imports company details from `raw_abm.company`, overwriting the seed fallback. |
 
 ---

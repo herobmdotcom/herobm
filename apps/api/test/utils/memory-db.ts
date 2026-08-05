@@ -47,6 +47,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   // Schema drift catch-up (missing in migrations but present in Drizzle schema)
   await client.exec(`
     ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+    ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "customer_id" uuid;
     ALTER TABLE "herobm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
     ALTER TABLE "herobm_core"."api_keys" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'system' NOT NULL;
     ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN IF NOT EXISTS "default_discounts_received_account_id" uuid;

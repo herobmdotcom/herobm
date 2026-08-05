@@ -24,6 +24,7 @@ interface UnifiedOrder {
   createdOn: string | null;
   totalPrice: string | null;
   currencyCode: string | null;
+  customFields: Record<string, unknown> | null;
 }
 
 export default function SalesOrdersContent() {
@@ -50,6 +51,15 @@ export default function SalesOrdersContent() {
       },
     },
     { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
+    {
+      colId: 'analysisCode',
+      headerName: 'Analysis Code',
+      width: 140,
+      valueGetter: (params: { data?: UnifiedOrder }) => {
+        if (!params.data?.customFields) return '';
+        return (params.data.customFields as Record<string, string>)?.analysisCode || '';
+      },
+    },
     {
       field: 'totalPrice',
       headerName: tCommon('columns.totalPrice'),

@@ -8,7 +8,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "paths": {}
+    "paths": {
+      "@herobm/shared": ["../../packages/shared/dist/index"],
+      "@herobm/shared/*": ["../../packages/shared/dist/*"]
+    }
   },
   "include": ["src/**/*", "test/**/*"]
 }

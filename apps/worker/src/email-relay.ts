@@ -2,7 +2,7 @@ import { eq, sql, isNull, lte, and, or } from 'drizzle-orm';
 import * as nodemailer from 'nodemailer';
 import { emailOutbox, appSettings, outbox, systemEvents } from '@herobm/db-schema';
 import { relayLogger as logger } from './logger';
-import { deriveEncryptionKey, decrypt } from '@herobm/shared';
+import { deriveEncryptionKey, decrypt } from '@herobm/shared/node';
 
 export async function pollEmailOutbox(db: any) {
   try {

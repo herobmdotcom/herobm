@@ -60,16 +60,27 @@ export function ProductInventoryTab({
         setInventoryLevels(invLevels);
         
         if (product?.structureType === 'kit' && kitComponents.length && invLevels.length) {
-          const inventoryByProduct = invLevels.reduce((acc, lvl) => {
-            acc[lvl.productId] = (acc[lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
-            return acc;
-          }, {} as Record<string, number>);
-
-          const maxBuildable = kitComponents.map(c => {
-            const available = inventoryByProduct[c.childProductId] || 0;
-            return Math.floor(available / (c.parentQuantity || 1));
+          // Group inventory by location to ensure we only count kits that can be physically built at a single site
+          const inventoryByLocation: Record<string, Record<string, number>> = {};
+          invLevels.forEach(lvl => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing
+            const locationId = (lvl as any).locationId;
+            if (!locationId) return;
+            if (!inventoryByLocation[locationId]) inventoryByLocation[locationId] = {};
+            inventoryByLocation[locationId][lvl.productId] = (inventoryByLocation[locationId][lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
           });
-          setBuildableQuantity(Math.min(...maxBuildable));
+
+          let totalBuildable = 0;
+          for (const locId in inventoryByLocation) {
+            const locInv = inventoryByLocation[locId];
+            const maxBuildableAtLoc = kitComponents.map(c => {
+              // Ensure we don't calculate negative buildable quantities if stock is negative
+              const available = Math.max(0, locInv[c.childProductId] || 0);
+              return Math.floor(available / (c.parentQuantity || 1));
+            });
+            totalBuildable += Math.min(...maxBuildableAtLoc);
+          }
+          setBuildableQuantity(totalBuildable);
         } else {
           setBuildableQuantity(null);
         }

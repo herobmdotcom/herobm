@@ -19,6 +19,15 @@ export default function Sidebar() {
       ],
     },
     {
+      label: t('groups.sales'),
+      items: [
+        { href: '/customers', label: t('items.customers'), icon: 'storefront' },
+        { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
+        { href: '/shipments', label: t('items.shipments'), icon: 'local_post_office' },
+        { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
+      ],
+    },
+    {
       label: t('groups.inventory'),
       items: [
         { href: '/products', label: t('items.products'), icon: 'category' },
@@ -55,15 +64,6 @@ export default function Sidebar() {
             { href: '/shipments/returns', label: 'Supplier Returns' }
           ]
         },
-      ],
-    },
-    {
-      label: t('groups.sales'),
-      items: [
-        { href: '/customers', label: t('items.customers'), icon: 'storefront' },
-        { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
-        { href: '/shipments', label: t('items.shipments'), icon: 'local_post_office' },
-        { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
       ],
     },
     {

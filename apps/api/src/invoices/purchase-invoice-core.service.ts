@@ -465,7 +465,7 @@ export class PurchaseInvoiceCoreService {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           vendorId,
         );
-      
+
       if (isUuid) {
         conditions.push(
           or(
@@ -474,7 +474,7 @@ export class PurchaseInvoiceCoreService {
           ) as import('drizzle-orm').SQL,
         );
       } else {
-        conditions.push(eq(suppliers.externalId, vendorId) as import('drizzle-orm').SQL);
+        conditions.push(eq(suppliers.externalId, vendorId));
       }
     }
 

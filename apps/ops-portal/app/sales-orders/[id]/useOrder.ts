@@ -69,6 +69,7 @@ export function useOrder(id: string) {
     const [editName, setEditName] = useState('');
     const [editPO, setEditPO] = useState('');
     const [editNotes, setEditNotes] = useState('');
+    const [editAnalysisCode, setEditAnalysisCode] = useState('');
     const [editFulfillmentLocationId, setEditFulfillmentLocationId] = useState('');
     const [headerDirty, setHeaderDirty] = useState(false);
     const [discrepanciesAcknowledged, setDiscrepanciesAcknowledged] = useState(false);
@@ -130,6 +131,7 @@ export function useOrder(id: string) {
             setEditName(orderData?.name || '');
             setEditPO(orderData?.customerOrderNumber || '');
             setEditNotes(orderData?.notes || '');
+            setEditAnalysisCode((orderData?.customFields as Record<string, string>)?.analysisCode || '');
             setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
             setEditShippingNotes(orderData?.shippingNotes || '');
             setEditDeliveryCompanyName(orderData?.deliveryCompanyName || '');
@@ -237,6 +239,7 @@ export function useOrder(id: string) {
             editName !== (order.name || '') ||
             editPO !== (order.customerOrderNumber || '') ||
             editNotes !== (order.notes || '') ||
+            editAnalysisCode !== ((order.customFields as Record<string, string>)?.analysisCode || '') ||
             editFulfillmentLocationId !== (order.fulfillmentLocationId || '') ||
             editShippingNotes !== (order.shippingNotes || '') ||
             editDeliveryCompanyName !== (order.deliveryCompanyName || '') ||
@@ -250,7 +253,7 @@ export function useOrder(id: string) {
             editDeliveryCountry !== (order.deliveryCountry || '');
         setHeaderDirty(changed);
     }, [
-        editName, editPO, editNotes,        editFulfillmentLocationId, editNotes,
+        editName, editPO, editNotes, editAnalysisCode, editFulfillmentLocationId, editNotes,
         editShippingNotes, editDeliveryCompanyName, editDeliveryName, editDeliveryPhone,
         editDeliveryAddressLine1, editDeliveryAddressLine2,
         editDeliveryCity, editDeliveryState, editDeliveryPostalCode, editDeliveryCountry,
@@ -279,6 +282,7 @@ export function useOrder(id: string) {
                 deliveryState: editDeliveryState ?? undefined,
                 deliveryPostalCode: editDeliveryPostalCode ?? undefined,
                 deliveryCountry: editDeliveryCountry ?? undefined,
+                customFields: { analysisCode: editAnalysisCode || undefined },
                 ...(overrides || {})
             });
             await loadOrder(undefined, false);
@@ -496,7 +500,7 @@ export function useOrder(id: string) {
         order, loading, error, setError, saving, setSaving, locations,
 
         // Header editing
-        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
+        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editAnalysisCode, setEditAnalysisCode, headerDirty,
 
         // GST
         taxCategories,

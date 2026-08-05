@@ -336,11 +336,17 @@ rebuild-worker:
 	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
 	$(COMPOSE_CMD) ps
 
-ifeq ($(USE_PGLITE),true)
-  TEST_API_TARGET = test:pglite
-else
-  TEST_API_TARGET = test
-endif
+rebuild-apps:
+	-podman rm -f custom-api ops-portal pipeline-runner outbox-worker
+	-podman system prune -f
+	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api ops-portal pipeline-runner outbox-worker
+	$(COMPOSE_CMD) ps
+
+TEST_API_TARGET = test:pglite
 
 # E2E tests always run against real Postgres.
 # PGlite (WASM) is too slow for multi-step transactional workflows

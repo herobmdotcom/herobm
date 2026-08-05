@@ -519,6 +519,7 @@ export class OrdersService implements OnModuleInit {
         createdBy: salesOrders.createdBy,
         createdOn: salesOrders.createdOn,
         currencyCode: salesOrders.currencyCode,
+        customFields: salesOrders.customFields,
         score: scoreSql,
       })
       .from(salesOrders)

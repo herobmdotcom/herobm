@@ -11,7 +11,7 @@ interface OrderAvailabilityTabProps {
     order: OrderDetail;
     inventoryData: import('../types').InventoryLevel[];
     inventoryLoading: boolean;
-    gapMap: Record<string, number>;
+    gapMap: Record<string, import('@herobm/shared').InventoryGap>;
     activeBackorders: Set<string>;
     editFulfillmentLocationId: string | null;
     isPreConfirmation: boolean;
@@ -127,7 +127,7 @@ export function OrderAvailabilityTab({
                                                 if (canFulfil) {
                                                     return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
                                                 }
-                                                if (gap && totalAvail >= gap) {
+                                                if (gap && totalAvail >= gap.orderedQuantity) {
                                                     return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
                                                 }
                                                 return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
@@ -198,7 +198,7 @@ export function OrderAvailabilityTab({
                                                 return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
                                             }
                                             if (canFulfil) return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
-                                            if (gap && totalAvail >= gap) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
+                                            if (gap && totalAvail >= gap.orderedQuantity) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
                                             return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
                                         })()}
                                     </span>

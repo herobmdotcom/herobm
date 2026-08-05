@@ -17,7 +17,7 @@ interface OrderLinesTableProps {
     isOrderDetailsEditable: boolean;
     isPostConfirmationAddingEnabled: boolean;
     isPreConfirmation: boolean;
-    gapMap: Record<string, number>;
+    gapMap: Record<string, import('@herobm/shared').InventoryGap>;
     activeBackorders: Set<string>;
     updateLine: (lineId: string, field: string, value: string | boolean | null | undefined | number) => Promise<void> | void;
     updateLineFields: (lineId: string, fields: Partial<OrderLine>) => Promise<void> | void;

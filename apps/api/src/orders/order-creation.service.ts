@@ -237,10 +237,10 @@ export class OrderCreationService {
           deliveryPostalCode: dto.deliveryPostalCode,
           deliveryCountry: dto.deliveryCountry,
           termsDescription: termsDescription,
-          createdBy: actor,
           baseTotalAmount: '0',
           discrepanciesAcknowledged: false,
           source: 'app',
+          customFields: dto.customFields || null,
         })
         .returning();
 
@@ -471,6 +471,14 @@ export class OrderCreationService {
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // Safely merge custom fields before calculating diff
+      if (dto.customFields !== undefined) {
+        dto.customFields = {
+          ...(existing.customFields as object),
+          ...dto.customFields,
+        };
+      }
+
       const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
       const [updated] = await tx

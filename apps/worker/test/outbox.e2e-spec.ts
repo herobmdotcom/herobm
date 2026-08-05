@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { pollOutbox, processEvent } from '../src/relay.service';
 
-import { outbox, herobmCore, accounts, webhooks } from '../src/schema';
+import { outbox, herobmCore, webhooks } from '@herobm/db-schema';
 
 describe('Worker E2E - Outbox Integration', () => {
   let pgClient: postgres.Sql;
@@ -27,7 +27,7 @@ describe('Worker E2E - Outbox Integration', () => {
     const pgDb = process.env.POSTGRES_DB || 'herobm';
 
     pgClient = postgres(`postgres://${pgUser}:${pgPass}@${pgHost}:${pgPort}/${pgDb}`);
-    db = drizzle(pgClient, { schema: { herobmCore, outbox, accounts, webhooks } });
+    db = drizzle(pgClient, { schema: { herobmCore, outbox, webhooks } });
 
     const redisHost = process.env.REDIS_HOST || 'localhost';
     const redisPassword = process.env.REDIS_PASSWORD;

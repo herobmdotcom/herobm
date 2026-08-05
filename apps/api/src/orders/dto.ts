@@ -14,6 +14,12 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { RETURN_RESOLUTION, type ReturnResolution } from '@herobm/shared';
 
+export class OrderCustomFieldsDto {
+  @IsOptional()
+  @IsString()
+  analysisCode?: string;
+}
+
 export class ReturnLineResponseDto {
   @ApiProperty() lineId!: string;
   @ApiProperty() description!: string;
@@ -184,6 +190,11 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderLineDto)
   lines!: CreateOrderLineDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OrderCustomFieldsDto)
+  customFields?: OrderCustomFieldsDto;
 }
 
 export class UpdateOrderDto {
@@ -242,6 +253,11 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsString()
   deliveryCountry?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OrderCustomFieldsDto)
+  customFields?: OrderCustomFieldsDto;
 }
 
 // ── Return DTOs ──

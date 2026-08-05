@@ -126,7 +126,7 @@ export async function processEvent(job: Job, db: any) {
     }
 
     if (!processedAny) {
-      processingLogger.warn({ eventId, eventType: type }, 'Unrecognized event type or no webhooks — skipping');
+      processingLogger.debug({ eventId, eventType: type }, 'Unrecognized event type or no webhooks — skipping');
     }
 
     // Terminal Success

@@ -534,7 +534,7 @@ export default function AccountDetailPage({
                 exportFileName={`orders-${customer.customerNumber}`}
                 fetchAll
                 rowIdField="id"
-                rowHref={(order: any) => `/sales-orders/${order.id}`}
+                rowHref={(order: { id: string }) => `/sales-orders/${order.id}`}
                 renderHeader={({
                   searchInput,
                   optionsButton,
@@ -589,7 +589,7 @@ export default function AccountDetailPage({
                 urlPrefix="invoices"
                 fetchAll
                 rowIdField="invoiceId"
-                rowHref={(row: any) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
+                rowHref={(row: { invoiceId: string; salesOrderId?: string }) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
                 renderHeader={({
                   searchInput,
                   optionsButton,

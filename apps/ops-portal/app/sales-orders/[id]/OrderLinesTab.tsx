@@ -17,7 +17,7 @@ interface OrderLinesTabProps {
     inventoryData: import('./types').InventoryLevel[];
     inventoryLoading: boolean;
     activeBackorders: Set<string>;
-    gapMap: Record<string, number>;
+    gapMap: Record<string, import('@herobm/shared').InventoryGap>;
     isOrderLinesEditable: boolean;
     isOrderDetailsEditable: boolean;
     isPostConfirmationAddingEnabled: boolean;

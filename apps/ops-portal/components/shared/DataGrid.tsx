@@ -160,20 +160,20 @@ export default function DataGrid<T>({
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
   // into a single initialState — read once on mount
   const savedInitialState = useMemo(() => {
-    const state = gridKey ? loadGridState(gridKey) : null;
+    const gridState = gridKey ? loadGridState(gridKey) : null;
     const fromUrl = searchParams?.get(limitParam);
-    if (state && fromUrl !== '99999') {
+    if (gridState && fromUrl !== '99999') {
       // If we are not restoring a custom view explicitly from the URL (e.g. Back button),
       // ignore saved sort/filter so we don't accidentally load a custom view when clicking from sidebar
-      delete state.sort;
-      delete state.filter;
+      delete gridState.sort;
+      delete gridState.filter;
     }
     
     const scroll = gridKey ? loadScrollState(gridKey) : null;
-    if (!state && !scroll && !defaultSortModel) return undefined;
+    if (!gridState && !scroll && !defaultSortModel) return undefined;
     
-    const finalState: GridState = {
-      ...(state ?? {}),
+    const state: GridState = {
+      ...(gridState ?? {}),
       ...(scroll ? { scroll } : {}),
       partialColumnState: true, // we may not have all column properties
     };
@@ -183,7 +183,7 @@ export default function DataGrid<T>({
     }
 
     return state;
-  }, [gridKey, defaultSortModel]);
+  }, [gridKey, searchParams, limitParam, defaultSortModel]);
 
   const [data, setData] = useState<T[] | undefined>(undefined);
   const [sortedData, setSortedData] = useState<T[]>([]);
