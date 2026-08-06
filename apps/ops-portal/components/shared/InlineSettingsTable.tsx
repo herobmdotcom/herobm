@@ -146,8 +146,6 @@ export function InlineSettingsTable<T extends Record<string, any>>({
             {headerActions}
             {onAdd && (
               <Button onClick={handleAdd} variant="primary" size="sm" className="flex items-center gap-1.5" disabled={editingId !== null}>
-                {/* eslint-disable-next-line i18next/no-literal-string -- icon */}
-<span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
                 {actualAddLabel}
               </Button>
             )}

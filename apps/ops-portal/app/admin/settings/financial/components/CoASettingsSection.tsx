@@ -103,7 +103,8 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       if (glSettings.defaultShrinkageAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultShrinkage'));
       if (glSettings.defaultFeeRevenueAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultFeeRevenue'));
       if (glSettings.defaultDiscountsReceivedAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultDiscountsReceived'));
-      if (glSettings.defaultTaxAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultTax'));
+      if (glSettings.defaultSalesTaxAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultSalesTax'));
+      if (glSettings.defaultPurchaseTaxAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultPurchaseTax'));
     }
 
     return (

@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-dotenv.config({ path: path.join(process.cwd(), '..', '..', '.env') });
+dotenv.config({ path: path.join(process.cwd(), '..', '..', process.env.ENV_FILE || '.env') });
 
 import { createMemoryDb } from '../../test/utils/memory-db';
 import * as fs from 'fs';

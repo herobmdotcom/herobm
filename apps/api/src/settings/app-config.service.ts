@@ -139,8 +139,12 @@ export class AppConfigService implements OnModuleInit {
   }
 
   /** Default Tax customer UUID. */
-  defaultTaxAccountId(): string | null {
-    return this.getGl().defaultTaxAccountId;
+  defaultSalesTaxAccountId(): string | null {
+    return this.getGl().defaultSalesTaxAccountId;
+  }
+
+  defaultPurchaseTaxAccountId(): string | null {
+    return this.getGl().defaultPurchaseTaxAccountId;
   }
 
   /** Default Inventory Asset customer UUID. */

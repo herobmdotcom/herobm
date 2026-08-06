@@ -15,12 +15,14 @@ import {
   taxCategories,
   products,
   locations,
+  actors,
+  glAccounts,
   uomDictionary,
   salesInvoices,
-  actors,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
+
 import {
   SALES_ORDER_STATE,
   SALES_INVOICE_STATE,
@@ -117,6 +119,10 @@ describe('SalesInvoiceService', () => {
       homeCurrency: jest.fn().mockReturnValue('AUD'),
       taxProviderMappings: jest.fn().mockReturnValue({}),
       getAppSettingsRaw: jest.fn().mockReturnValue({}),
+      defaultSalesTaxAccountId: jest.fn().mockReturnValue(null),
+      defaultRevenueAccountId: jest.fn().mockReturnValue(null),
+      defaultCostCenterId: jest.fn().mockReturnValue(null),
+      defaultActivityId: jest.fn().mockReturnValue(null),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -235,6 +241,192 @@ describe('SalesInvoiceService', () => {
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should post GL lines split by tax categories if matrix routing is used', async () => {
+      const TAX_CAT_1_UUID = '00000000-0000-4000-8000-000000000101';
+      const TAX_CAT_2_UUID = '00000000-0000-4000-8000-000000000102';
+      const SPECIFIC_TAX_ID = '00000000-0000-4000-8000-000000000103';
+      const DEFAULT_TAX_ID = '00000000-0000-4000-8000-000000000104';
+      const AR_ID = '00000000-0000-4000-8000-000000000105';
+      const REV_ID = '00000000-0000-4000-8000-000000000106';
+
+      const glAccountsData = [
+        {
+          glAccountId: AR_ID,
+          accountCode: 'AR-01',
+          name: 'AR Account',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'AUD',
+          isActive: true,
+        },
+        {
+          glAccountId: REV_ID,
+          accountCode: 'REV-01',
+          name: 'Rev Account',
+          accountType: 'revenue',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'AUD',
+          isActive: true,
+        },
+        {
+          glAccountId: DEFAULT_TAX_ID,
+          accountCode: 'TAX-DEF',
+          name: 'Def Tax',
+          accountType: 'liability',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'AUD',
+          isActive: true,
+        },
+        {
+          glAccountId: SPECIFIC_TAX_ID,
+          accountCode: 'TAX-SPEC',
+          name: 'Spec Tax',
+          accountType: 'liability',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'AUD',
+          isActive: true,
+        },
+      ];
+      for (const account of glAccountsData) {
+        await pg.db.insert(glAccounts).values(account as any);
+      }
+
+      // Setup mock GL settings
+      mockGlService.getSettings.mockResolvedValue({
+        defaultArAccountId: AR_ID,
+        defaultRevenueAccountId: REV_ID,
+        defaultSalesTaxAccountId: DEFAULT_TAX_ID,
+      });
+      mockAppConfigService.defaultSalesTaxAccountId.mockReturnValue(
+        DEFAULT_TAX_ID,
+      );
+      mockAppConfigService.defaultRevenueAccountId.mockReturnValue(REV_ID);
+
+      // Seed an order with two lines having different tax categories
+      const orderId = '00000000-0000-4000-8000-000000000099';
+      const SERVICE_PRODUCT_ID = '00000000-0000-4000-8000-000000000098';
+
+      await pg.db.insert(products).values({
+        productId: SERVICE_PRODUCT_ID,
+        productNumber: 'SRV-1',
+        name: 'Service Product',
+        baseUom: 'EA',
+        productType: 'service',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(taxCategories).values({
+        taxCategoryId: TAX_CAT_1_UUID,
+        code: 'CAT-1',
+        title: 'Tax Cat 1',
+        type: 'sales',
+        rate: '10.0',
+      });
+      await pg.db.insert(taxCategories).values({
+        taxCategoryId: TAX_CAT_2_UUID,
+        code: 'CAT-2',
+        title: 'Tax Cat 2',
+        type: 'sales',
+        rate: '20.0',
+      });
+
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: orderId,
+        orderNumber: 'ORD-TEST-TAX',
+        customerId: CUSTOMER_ID,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
+        currencyCode: 'AUD',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      // Line 1: Non-physical product (can be invoiced without shipment) - Category 1
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderId: orderId,
+        lineNumber: 1,
+        productId: SERVICE_PRODUCT_ID,
+        quantity: '10',
+        pricePerUnit: '10.00', // Amount = 100
+        taxCategoryId: TAX_CAT_1_UUID,
+        fulfillmentLocationId: LOCATION_ID,
+        amount: '100.00',
+        totalAmount: '110.00',
+        tax: '10.00',
+        discountPercentage: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      // Line 2: Non-physical product - Category 2
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderId: orderId,
+        lineNumber: 2,
+        productId: SERVICE_PRODUCT_ID,
+        quantity: '5',
+        pricePerUnit: '20.00', // Amount = 100
+        taxCategoryId: TAX_CAT_2_UUID,
+        fulfillmentLocationId: LOCATION_ID,
+        amount: '100.00',
+        totalAmount: '120.00',
+        tax: '20.00',
+        discountPercentage: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      // Mock tax service to return different salesGlAccountId
+      const taxCategoriesService = (service as any).taxService;
+      taxCategoriesService.getById = jest
+        .fn()
+        .mockImplementation((id: string) => {
+          if (id === TAX_CAT_1_UUID) {
+            return Promise.resolve({
+              rate: '0.1',
+              salesGlAccountId: SPECIFIC_TAX_ID,
+            });
+          } else if (id === TAX_CAT_2_UUID) {
+            // No specific account, should fall back to default
+            return Promise.resolve({ rate: '0.2', salesGlAccountId: null });
+          }
+          return Promise.resolve({ rate: '0' });
+        });
+
+      const res = await service.createInvoice(orderId, {}, 'admin');
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalled();
+      const glLinesArg = mockGlService.postJournalEntry.mock.calls[0][0];
+
+      // We should see two distinct tax lines (one for SPECIFIC_TAX_ID, one for DEFAULT_TAX_ID)
+      const taxLines = glLinesArg.filter((l: any) =>
+        l.accountCode.startsWith('TAX-'),
+      );
+      console.log('taxLines:', taxLines, 'all lines:', glLinesArg);
+
+      const specificLine = taxLines.find(
+        (l: any) => l.accountCode === 'TAX-SPEC',
+      );
+      const defaultLine = taxLines.find(
+        (l: any) => l.accountCode === 'TAX-DEF',
+      );
+      expect(specificLine).toBeDefined();
+      expect(defaultLine).toBeDefined();
     });
   });
 

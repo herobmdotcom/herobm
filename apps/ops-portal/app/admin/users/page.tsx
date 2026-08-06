@@ -24,9 +24,7 @@ interface User {
   events?: TimelineEvent[];
 }
 
-const ROLES = ['admin', 'viewer', 'sales', 'warehouse', 'procurement', 'finance'] as const;
 
-type RoleKey = typeof ROLES[number];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,19 +48,22 @@ export default function UsersPage() {
   useDocumentTitle(t('title'));
   const router = useRouter();
 
-  /** Static role label lookup — avoids dynamic template literal type errors with next-intl. */
-  const roleLabels: Record<RoleKey, string> = {
-    admin: t('roles.admin'),
-    viewer: t('roles.viewer'),
-    sales: t('roles.sales'),
-    warehouse: t('roles.warehouse'),
-    procurement: t('roles.procurement'),
-    finance: t('roles.finance'),
+  /** Static role label lookup for built-in roles. */
+  const roleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      admin: t('roles.admin'),
+      viewer: t('roles.viewer'),
+      sales: t('roles.sales'),
+      warehouse: t('roles.warehouse'),
+      procurement: t('roles.procurement'),
+      finance: t('roles.finance'),
+    };
+    return labels[role] ?? role;
   };
-  const roleLabel = (role: string) => roleLabels[role as RoleKey] ?? role;
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -72,11 +73,15 @@ export default function UsersPage() {
 
   // ── Data Loading ───────────────────────────────────────────────────────────
 
-  const loadUsers = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const res = await api.usersControllerFindAll();
-      setUsers(res.data as unknown as User[]);
+      const [usersRes, rolesRes] = await Promise.all([
+        api.usersControllerFindAll(),
+        api.rolesControllerFindAll()
+      ]);
+      setUsers(usersRes.data as unknown as User[]);
+      setRoles((rolesRes.data as any[]).map(r => r.role));
     } catch (err: unknown) {
       toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
     } finally {
@@ -85,8 +90,17 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
+
+  const loadUsers = async () => {
+    try {
+      const res = await api.usersControllerFindAll();
+      setUsers(res.data as unknown as User[]);
+    } catch (err: unknown) {
+      toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
+    }
+  };
 
   const allEvents = useMemo(() => {
     const evts: TimelineEvent[] = [];
@@ -235,7 +249,7 @@ export default function UsersPage() {
             disabled={!creating && isSelf(data.userId)}
             title={!creating && isSelf(data.userId) ? t('cannotChangeOwnRoleError') : undefined}
           >
-            {ROLES.map(r => (
+            {roles.map(r => (
               <option key={r} value={r}>{roleLabel(r)}</option>
             ))}
           </select>

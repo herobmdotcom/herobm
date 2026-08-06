@@ -6,7 +6,7 @@ import * as schema from '@herobm/db-schema';
 import { PgDatabase } from 'drizzle-orm/pg-core';
 
 // Load environment variables from the root .env file
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')) });
 
 // Define the common SeedDB type exported for all seed scripts
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle complex types

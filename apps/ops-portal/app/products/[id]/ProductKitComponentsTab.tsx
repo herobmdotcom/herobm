@@ -112,8 +112,6 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
                   onClick={() => setSlideOverState({ isOpen: true })}
                   disabled={!isEditable}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-          <span className="material-symbols-outlined text-[16px]">add</span>
                   {t('addComponent')}
                 </Button>
               </div>

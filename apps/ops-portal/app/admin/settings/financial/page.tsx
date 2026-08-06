@@ -133,7 +133,7 @@ export default function FinancialSettingsPage() {
       if (!glSettings?.baseCurrency) {
         w.push('Base Currency is not configured.');
       }
-      if (!glSettings?.defaultArAccountId || !glSettings?.defaultApAccountId || !glSettings?.defaultRevenueAccountId || !glSettings?.defaultExpenseAccountId || !glSettings?.defaultTaxAccountId || !glSettings?.defaultInventoryAccountId || !glSettings?.defaultCogsAccountId) {
+      if (!glSettings?.defaultArAccountId || !glSettings?.defaultApAccountId || !glSettings?.defaultRevenueAccountId || !glSettings?.defaultExpenseAccountId || !glSettings?.defaultSalesTaxAccountId || !glSettings?.defaultPurchaseTaxAccountId || !glSettings?.defaultInventoryAccountId || !glSettings?.defaultCogsAccountId) {
         w.push('One or more default General Ledger accounts are missing (AR, AP, Revenue, Expense, Tax, Inventory, COGS).');
       }
       if (!appSettings?.defaultSalesTaxCategoryId || !appSettings?.defaultPurchaseTaxCategoryId) {

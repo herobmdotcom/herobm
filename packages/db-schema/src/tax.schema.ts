@@ -10,6 +10,8 @@ export const taxCategories = herobmCore.table('tax_categories', {
   title: text('title').notNull(),
   type: text('type').notNull(), // not_relevant | exempt | zero_rated | tax_applies
   rate: numeric('rate'), // percentage, e.g. '9' = 9%
+  salesGlAccountId: uuid('sales_gl_account_id'),
+  purchaseGlAccountId: uuid('purchase_gl_account_id'),
 });
 
 // ---------------------------------------------------------------------------

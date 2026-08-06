@@ -177,7 +177,7 @@ describe('PurchaseInvoiceService', () => {
     mockGlService = {
       getSettings: jest.fn().mockResolvedValue({
         defaultApAccountId: 'gl-ap',
-        defaultTaxAccountId: 'gl-tax',
+        defaultPurchaseTaxAccountId: 'gl-tax',
         defaultGrniAccountId: 'gl-grni',
         defaultExpenseAccountId: 'gl-expense',
       }),
@@ -282,7 +282,7 @@ describe('PurchaseInvoiceService', () => {
     it('should post invoice with PPV when invoice cost differs from receipt cost', async () => {
       mockGlService.getSettings = jest.fn().mockResolvedValue({
         defaultApAccountId: '00000000-0000-4000-8000-0000000000a1',
-        defaultTaxAccountId: '00000000-0000-4000-8000-0000000000a2',
+        defaultPurchaseTaxAccountId: '00000000-0000-4000-8000-0000000000a2',
         defaultGrniAccountId: '00000000-0000-4000-8000-0000000000a3',
         defaultExpenseAccountId: '00000000-0000-4000-8000-0000000000a4',
         defaultPpvAccountId: '00000000-0000-4000-8000-0000000000a5',
@@ -438,7 +438,7 @@ describe('PurchaseInvoiceService', () => {
     it('should post invoice with FX Variance and PPV when invoice cost and exchange rate differ from receipt', async () => {
       mockGlService.getSettings = jest.fn().mockResolvedValue({
         defaultApAccountId: '00000000-0000-4000-8000-0000000000a1',
-        defaultTaxAccountId: '00000000-0000-4000-8000-0000000000a2',
+        defaultPurchaseTaxAccountId: '00000000-0000-4000-8000-0000000000a2',
         defaultGrniAccountId: '00000000-0000-4000-8000-0000000000a3',
         defaultExpenseAccountId: '00000000-0000-4000-8000-0000000000a4',
         defaultPpvAccountId: '00000000-0000-4000-8000-0000000000a5',

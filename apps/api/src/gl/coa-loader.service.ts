@@ -341,7 +341,10 @@ export class CoaLoaderService {
             defaultCogsAccountId: defaults.cogs_account_code
               ? codeToId.get(defaults.cogs_account_code)
               : undefined,
-            defaultTaxAccountId: defaults.tax_account_code
+            defaultSalesTaxAccountId: defaults.tax_account_code
+              ? codeToId.get(defaults.tax_account_code)
+              : undefined,
+            defaultPurchaseTaxAccountId: defaults.tax_account_code
               ? codeToId.get(defaults.tax_account_code)
               : undefined,
             defaultExpenseAccountId: defaults.expense_account_code
@@ -367,7 +370,10 @@ export class CoaLoaderService {
               defaultCogsAccountId: defaults.cogs_account_code
                 ? codeToId.get(defaults.cogs_account_code)
                 : undefined,
-              defaultTaxAccountId: defaults.tax_account_code
+              defaultSalesTaxAccountId: defaults.tax_account_code
+                ? codeToId.get(defaults.tax_account_code)
+                : undefined,
+              defaultPurchaseTaxAccountId: defaults.tax_account_code
                 ? codeToId.get(defaults.tax_account_code)
                 : undefined,
               defaultExpenseAccountId: defaults.expense_account_code

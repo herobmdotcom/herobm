@@ -5,6 +5,7 @@ import {
   glSettings,
   glJournalLines,
   glJournalEntries,
+  taxCategories,
 } from '@herobm/db-schema';
 
 describe('TaxBasService', () => {
@@ -16,13 +17,19 @@ describe('TaxBasService', () => {
       query: {
         glSettings: {
           findFirst: jest.fn().mockResolvedValue({
-            defaultTaxAccountId: 'tax-id',
+            defaultSalesTaxAccountId: 'tax-id',
+            defaultPurchaseTaxAccountId: 'tax-id',
             defaultRevenueAccountId: 'rev-id',
           }),
         },
       },
       select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
+      from: jest.fn().mockImplementation((table) => {
+        if (table === taxCategories) {
+          return Promise.resolve([]);
+        }
+        return mockDb;
+      }),
       innerJoin: jest.fn().mockReturnThis(),
       where: jest
         .fn()

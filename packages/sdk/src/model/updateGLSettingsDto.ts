@@ -19,7 +19,8 @@ export interface UpdateGLSettingsDto {
   /** @nullable */
   defaultCogsAccountId?: string | null;
   /** @nullable */
-  defaultTaxAccountId?: string | null;
+  defaultSalesTaxAccountId?: string | null;
+  defaultPurchaseTaxAccountId?: string | null;
   /** @nullable */
   defaultExpenseAccountId?: string | null;
   /** @nullable */

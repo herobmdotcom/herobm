@@ -1,5 +1,6 @@
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: process.env.ENV_FILE || '.env' });
 import { Queue, Worker, Job } from 'bullmq';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';

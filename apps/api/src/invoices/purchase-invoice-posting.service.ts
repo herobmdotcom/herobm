@@ -340,8 +340,8 @@ export class PurchaseInvoicePostingService {
       if (effectiveApAccountId) {
         const distinctAccountIds = new Set<string>();
         distinctAccountIds.add(effectiveApAccountId);
-        if (settings?.defaultTaxAccountId)
-          distinctAccountIds.add(settings.defaultTaxAccountId);
+        if (settings?.defaultPurchaseTaxAccountId)
+          distinctAccountIds.add(settings.defaultPurchaseTaxAccountId);
         if (settings?.defaultExpenseAccountId)
           distinctAccountIds.add(settings.defaultExpenseAccountId);
         if (settings?.defaultGrniAccountId)
@@ -392,8 +392,8 @@ export class PurchaseInvoicePostingService {
             fallbackExpCode,
           );
 
-          const taxCode = settings.defaultTaxAccountId
-            ? idToCode.get(settings.defaultTaxAccountId)
+          const taxCode = settings.defaultPurchaseTaxAccountId
+            ? idToCode.get(settings.defaultPurchaseTaxAccountId)
             : null;
 
           const ppvCode = settings?.defaultPpvAccountId

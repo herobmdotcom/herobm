@@ -74,10 +74,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
         createdBy: 'system',
       },
     ])
-    .onConflictDoUpdate({
-      target: bins.binId,
-      set: { binNumber: 'RECEIVING', binType: 'staging' },
-    });
+    .onConflictDoNothing();
 
   await db.update(appSettings).set({
     defaultFulfillmentLocationId: '10000000-0000-4000-8000-000000000001',

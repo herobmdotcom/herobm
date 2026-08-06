@@ -227,7 +227,8 @@ export class UpdateGLSettingsDto {
   @IsOptional() @IsString() defaultApAccountId?: string | null;
   @IsOptional() @IsString() defaultRevenueAccountId?: string | null;
   @IsOptional() @IsString() defaultCogsAccountId?: string | null;
-  @IsOptional() @IsString() defaultTaxAccountId?: string | null;
+  @IsOptional() @IsString() defaultSalesTaxAccountId?: string | null;
+  @IsOptional() @IsString() defaultPurchaseTaxAccountId?: string | null;
   @IsOptional() @IsString() defaultExpenseAccountId?: string | null;
   @IsOptional() @IsString() defaultInventoryAccountId?: string | null;
   @IsOptional() @IsString() defaultGrniAccountId?: string | null;

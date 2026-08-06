@@ -152,9 +152,15 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
             {/* Tax */}
             <div className="flex flex-col gap-1">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {tSettings('labels.defaultTax')}
+                {tSettings('labels.defaultSalesTax')}
               </label>
-              {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId as string | undefined)}
+              {renderGlAccountSelect('defaultSalesTaxAccountId', glSettings?.defaultSalesTaxAccountId as string | undefined)}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tSettings('labels.defaultPurchaseTax')}
+              </label>
+              {renderGlAccountSelect('defaultPurchaseTaxAccountId', glSettings?.defaultPurchaseTaxAccountId as string | undefined)}
             </div>
             <div className="hidden md:block"></div>
           </div>

@@ -611,7 +611,9 @@
         "defaultFeeRevenue": "Default Fee Revenue",
         "defaultGrni": "Default GRNI",
         "defaultInventory": "Default Inventory",
+        "defaultPurchaseTax": "Default Purchase Tax",
         "defaultRevenue": "Default Revenue",
+        "defaultSalesTax": "Default Sales Tax",
         "defaultShrinkage": "Default Shrinkage",
         "defaultTax": "Default Tax",
         "description": "Description",
@@ -2386,7 +2388,7 @@
     "yes": "Yes"
   },
   "products": {
-    "addComponent": "Add Component",
+    "addComponent": "+ Add Component",
     "addConversion": "+ Add Conversion",
     "availableToAssemble": "Available to Assemble: {quantity}",
     "baseUom": "Base UoM",

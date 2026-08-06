@@ -355,6 +355,7 @@ export class SalesInvoiceService {
         activityId: string | null;
       }
     >();
+    const taxGroups = new Map<string, number>(); // glAccountId -> amount
     let defaultRevenue = 0;
     let defaultRevenueCostCenterId: string | null = null;
     let defaultRevenueActivityId: string | null = null;
@@ -421,10 +422,12 @@ export class SalesInvoiceService {
 
       // Resolve GST rate from the line's category (not the stored tax dollar amount)
       let taxRate = 0;
+      let lineSalesTaxAcctId: string | null = null;
       if (line.taxCategoryId) {
         try {
           const cat = await this.taxService.getById(line.taxCategoryId);
           taxRate = parseFloat(cat.rate ?? '0');
+          lineSalesTaxAcctId = cat.salesGlAccountId;
         } catch {
           // Category not found — fall back to 0% tax
         }
@@ -439,6 +442,14 @@ export class SalesInvoiceService {
 
       rawTotal += pricing.amount;
       rawTax += pricing.tax;
+
+      if (pricing.tax > 0) {
+        const effTaxGl =
+          lineSalesTaxAcctId ||
+          this.appConfig.defaultSalesTaxAccountId() ||
+          'fallback';
+        taxGroups.set(effTaxGl, (taxGroups.get(effTaxGl) || 0) + pricing.tax);
+      }
 
       const sysDefaultRevAcct = this.appConfig.defaultRevenueAccountId();
       const sysDefaultCC = this.appConfig.defaultCostCenterId();
@@ -625,8 +636,13 @@ export class SalesInvoiceService {
         // Collect all distinct Customer IDs logically needed
         const distinctAccountIds = new Set<string>();
         distinctAccountIds.add(effectiveArAccountId);
-        if (settings?.defaultTaxAccountId)
-          distinctAccountIds.add(settings.defaultTaxAccountId);
+        if (settings?.defaultSalesTaxAccountId)
+          distinctAccountIds.add(settings.defaultSalesTaxAccountId);
+        for (const acctId of taxGroups.keys()) {
+          if (acctId !== 'fallback') {
+            distinctAccountIds.add(acctId);
+          }
+        }
         if (settings?.defaultRevenueAccountId)
           distinctAccountIds.add(settings.defaultRevenueAccountId);
         for (const group of revenueGroups.values()) {
@@ -655,8 +671,8 @@ export class SalesInvoiceService {
           );
 
           const arCode = idToCode.get(effectiveArAccountId);
-          const taxCode = settings?.defaultTaxAccountId
-            ? idToCode.get(settings.defaultTaxAccountId)
+          const taxCode = settings?.defaultSalesTaxAccountId
+            ? idToCode.get(settings.defaultSalesTaxAccountId)
             : null;
 
           if (arCode) {
@@ -726,16 +742,22 @@ export class SalesInvoiceService {
               }
             }
 
-            if (taxCode && taxAmount > 0) {
-              glLines.push({
-                accountCode: taxCode,
-                debit: 0,
-                credit: taxAmount * fx.rate,
-                foreignCurrency: order.currencyCode,
-                foreignDebit: 0,
-                foreignCredit: taxAmount,
-                memo: `GST: ${invoiceNumber}`,
-              });
+            for (const [acctId, taxAmt] of taxGroups.entries()) {
+              if (taxAmt > 0) {
+                const effectiveTaxCode =
+                  acctId !== 'fallback' ? idToCode.get(acctId) : taxCode;
+                if (effectiveTaxCode) {
+                  glLines.push({
+                    accountCode: effectiveTaxCode,
+                    debit: 0,
+                    credit: taxAmt * fx.rate,
+                    foreignCurrency: order.currencyCode,
+                    foreignDebit: 0,
+                    foreignCredit: taxAmt,
+                    memo: `GST: ${invoiceNumber}`,
+                  });
+                }
+              }
             }
 
             await this.glService.postJournalEntry(

@@ -132,8 +132,7 @@ export default function AdHocCreditNoteSlideOver({
                     <div className="flex justify-between items-center p-3 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
                         <span className="font-medium">{t('creditLines')}</span>
                         <Button onClick={handleAddLine} className="btn btn-xs btn-outline">
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                            <span className="material-symbols-outlined text-sm">add</span> {t('addLine')}
+                            {t('addLine')}
                         </Button>
                     </div>
                     

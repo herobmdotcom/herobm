@@ -128,7 +128,7 @@ export class SalesCreditNoteService {
       const settingsIds = [
         settings.defaultArAccountId,
         settings.defaultRevenueAccountId,
-        settings.defaultTaxAccountId,
+        settings.defaultSalesTaxAccountId,
         settings.defaultFeeRevenueAccountId,
       ].filter((id): id is string => !!id);
 
@@ -152,8 +152,8 @@ export class SalesCreditNoteService {
       const revCode = settings.defaultRevenueAccountId
         ? idToCode.get(settings.defaultRevenueAccountId)
         : null;
-      const taxCode = settings.defaultTaxAccountId
-        ? idToCode.get(settings.defaultTaxAccountId)
+      const taxCode = settings.defaultSalesTaxAccountId
+        ? idToCode.get(settings.defaultSalesTaxAccountId)
         : null;
       const feeCode = settings.defaultFeeRevenueAccountId
         ? idToCode.get(settings.defaultFeeRevenueAccountId)

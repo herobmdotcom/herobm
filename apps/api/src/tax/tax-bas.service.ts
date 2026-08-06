@@ -5,8 +5,9 @@ import {
   glJournalLines,
   glJournalEntries,
   glSettings,
+  taxCategories,
 } from '@herobm/db-schema';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, inArray } from 'drizzle-orm';
 import { BasSummaryQueryDto, BasSummaryRowDto } from './tax-bas.dto';
 
 @Injectable()
@@ -18,15 +19,34 @@ export class TaxBasService {
 
     if (
       !settings ||
-      !settings.defaultTaxAccountId ||
+      !settings.defaultSalesTaxAccountId ||
+      !settings.defaultPurchaseTaxAccountId ||
       !settings.defaultRevenueAccountId
     ) {
       throw new Error(
-        'GL Settings: defaultTaxAccountId and defaultRevenueAccountId must be configured.',
+        'GL Settings: defaultSalesTaxAccountId, defaultPurchaseTaxAccountId, and defaultRevenueAccountId must be configured.',
       );
     }
 
-    const { defaultTaxAccountId, defaultRevenueAccountId } = settings;
+    const {
+      defaultSalesTaxAccountId,
+      defaultPurchaseTaxAccountId,
+      defaultRevenueAccountId,
+    } = settings;
+
+    // Retrieve all active tax categories to find specific account mappings
+    const allTaxCats = await this.db.select().from(taxCategories);
+    const salesTaxAccountIds = new Set<string>();
+    const purchaseTaxAccountIds = new Set<string>();
+
+    salesTaxAccountIds.add(defaultSalesTaxAccountId);
+    purchaseTaxAccountIds.add(defaultPurchaseTaxAccountId);
+
+    for (const cat of allTaxCats) {
+      if (cat.salesGlAccountId) salesTaxAccountIds.add(cat.salesGlAccountId);
+      if (cat.purchaseGlAccountId)
+        purchaseTaxAccountIds.add(cat.purchaseGlAccountId);
+    }
 
     // Build the date filter condition for journal entries
     let dateFilter = undefined;
@@ -42,9 +62,25 @@ export class TaxBasService {
     }
 
     // 1. Calculate Tax (1A and 1B)
-    const taxAmounts = await this.db
+    const salesTaxAmounts = await this.db
       .select({
         totalCredit: sql<string>`SUM(${glJournalLines.credit})`,
+      })
+      .from(glJournalLines)
+      .innerJoin(
+        glJournalEntries,
+        eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
+      )
+      .where(
+        and(
+          inArray(glJournalLines.glAccountId, Array.from(salesTaxAccountIds)),
+          eq(glJournalEntries.isReversed, false),
+          dateFilter,
+        ),
+      );
+
+    const purchaseTaxAmounts = await this.db
+      .select({
         totalDebit: sql<string>`SUM(${glJournalLines.debit})`,
       })
       .from(glJournalLines)
@@ -54,14 +90,17 @@ export class TaxBasService {
       )
       .where(
         and(
-          eq(glJournalLines.glAccountId, defaultTaxAccountId),
+          inArray(
+            glJournalLines.glAccountId,
+            Array.from(purchaseTaxAccountIds),
+          ),
           eq(glJournalEntries.isReversed, false),
           dateFilter,
         ),
       );
 
-    const taxCredit = parseFloat(taxAmounts[0]?.totalCredit || '0');
-    const taxDebit = parseFloat(taxAmounts[0]?.totalDebit || '0');
+    const taxCredit = parseFloat(salesTaxAmounts[0]?.totalCredit || '0');
+    const taxDebit = parseFloat(purchaseTaxAmounts[0]?.totalDebit || '0');
 
     // 1A GST on sales = Credits to Tax Account
     const gstOnSales = Math.round(taxCredit);

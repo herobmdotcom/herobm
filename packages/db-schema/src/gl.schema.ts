@@ -221,7 +221,10 @@ export const glSettings = herobmCore.table('gl_settings', {
   defaultCogsAccountId: uuid('default_cogs_account_id').references(
     () => glAccounts.glAccountId,
   ),
-  defaultTaxAccountId: uuid('default_tax_account_id').references(
+  defaultSalesTaxAccountId: uuid('default_sales_tax_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultPurchaseTaxAccountId: uuid('default_purchase_tax_account_id').references(
     () => glAccounts.glAccountId,
   ),
   defaultExpenseAccountId: uuid('default_expense_account_id').references(

@@ -715,6 +715,13 @@
       "when": 1785671836296,
       "tag": "0101_add_invoice_customer_po",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1786020044966,
+      "tag": "0102_split_tax_accounts",
+      "breakpoints": true
     }
   ]
 }

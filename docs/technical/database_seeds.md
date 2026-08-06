@@ -40,8 +40,10 @@ These records are specifically designed to handle data integrity issues during m
 | **Purchase Order** | `00000000-0000-0000-0000-000000000002` | `ABM Import Fallback` | `import_abm_purchase_orders.sql` pre_hook | Parent for imported Purchase Invoices that lack a matching PO. |
 | **SO Line** | `00000000-0000-0000-0000-000000000010` | `(System Line)` | `import_abm_sales_orders.sql` pre_hook | Anchor for legacy sales events and history. |
 | **PO Line** | `00000000-0000-0000-0000-000000000020` | `(System Line)` | `import_abm_purchase_orders.sql` pre_hook | Anchor for legacy purchase events and history. |
+| **Purchase Return** | `00000000-0000-0000-0000-000000000030` | `ABM Import Fallback` | `import_abm_purchase_debit_notes.sql` pre_hook | Dummy return for imported purchase credit notes. |
 | **Supplier** | `00000000-0000-0000-0000-000000000003` | `ABM Import Fallback` | `import_abm_suppliers.sql` pre_hook | Dummy supplier for imported purchase records lacking a supplier. |
 | **Customer** | `00000000-0000-0000-0000-000000000004` | `ABM Import Fallback` | `import_abm_customers.sql` pre_hook | Dummy customer for imported sales records lacking a customer. |
+| **Bank Account** | `00000000-0000-0000-0000-000000000040` | `ABM Import Fallback Bank` | `import_abm_payment_entries.sql` pre_hook | Dummy bank GL account for legacy payments lacking one. |
 | **Organization** | *(overwrite)* | *(from ABM)* | `import_organization.sql` | Imports company details from `raw_abm.company`, overwriting the seed fallback. |
 
 ---

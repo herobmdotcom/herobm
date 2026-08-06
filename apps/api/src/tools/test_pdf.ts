@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../../../../.env') });
+dotenv.config({ path: path.join(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')) });
 
 async function run() {
   const moduleRef = await Test.createTestingModule({
