@@ -234,10 +234,17 @@ test-transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=abm|odoo))
 	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-# Rebuild a single model: make transform-select SOURCE=abm MODEL=import_customers
+transform-dry:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-dry SOURCE=abm|odoo))
+	"$(DBT)" run --empty --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
 transform-select:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=abm|odoo MODEL=name))
 	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+transform-select-dry:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select-dry SOURCE=abm|odoo MODEL=name))
+	"$(DBT)" run --empty --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-refresh:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=abm|odoo MODEL=name))

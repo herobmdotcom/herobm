@@ -820,13 +820,8 @@ export class SetupService {
         envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
       }
 
-      if (dto.enableCustomImports) {
-        envOverride.ENABLE_CUSTOM_IMPORTS = 'true';
-      }
-
-      if (dto.importInventoryFromLocations) {
-        envOverride.IMPORT_INVENTORY_FROM_LOCATIONS = 'true';
-      }
+      envOverride.ENABLE_CUSTOM_IMPORTS = dto.enableCustomImports ? 'true' : 'false';
+      envOverride.IMPORT_INVENTORY_FROM_LOCATIONS = dto.importInventoryFromLocations ? 'true' : 'false';
 
       const source = dto.source;
       if (!source) {
