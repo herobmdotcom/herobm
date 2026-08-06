@@ -76,11 +76,8 @@ read -p "Do you want to receive an email with the backup log? (Enter email or le
 
 MAIL_CMD=""
 if [ -n "$EMAIL_DEST" ]; then
-    if ! command -v mail >/dev/null 2>&1; then
-        echo -e "\e[33mWarning: 'mail' command not found.\e[0m"
-        echo "You will need to install a mail utility (e.g., 'sudo apt install mailutils') for emails to work."
-    fi
-    MAIL_CMD=" | mail -s \"HeroBM DB Backup Log\" ${EMAIL_DEST}"
+    # We pipe to our Python script which hits the local exe.dev email gateway
+    MAIL_CMD=" | python3 \"${PROJECT_DIR}/scripts/send-email.py\" --to \"${EMAIL_DEST}\" --subject \"HeroBM DB Backup Log\""
 fi
 
 # 4. Install Cron Job
