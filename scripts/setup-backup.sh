@@ -116,3 +116,11 @@ echo -e "\e[0m"
 echo "Logs will be written to: $LOG_FILE"
 echo "You can view your active scheduled tasks anytime by running 'crontab -l'."
 echo ""
+
+# 5. Run Test Backup
+echo -e "\n\e[33m5. Test Configuration\e[0m"
+read -p "Would you like to run a backup now to verify everything works? (y/N): " runNowChoice
+if [[ "$runNowChoice" =~ ^[Yy]$ ]]; then
+    echo -e "\n\e[36mRunning backup...\e[0m"
+    bash "$BACKUP_SCRIPT"
+fi
