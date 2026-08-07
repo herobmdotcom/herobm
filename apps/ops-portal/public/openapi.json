@@ -279,6 +279,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -874,6 +882,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -1872,6 +1888,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "locationNo",
             "required": false,
             "in": "query",
@@ -2104,6 +2128,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -5881,6 +5913,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -8259,6 +8299,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "destinationLocationId",
             "required": false,
             "in": "query",
@@ -9840,6 +9888,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "invoiceId",
             "required": false,
             "in": "query",
@@ -9993,6 +10049,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -11916,6 +11980,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -12139,6 +12211,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -12376,6 +12456,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -12606,6 +12694,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13223,6 +13319,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -15030,6 +15134,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -15144,6 +15256,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -16512,6 +16632,14 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -17030,6 +17158,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -17631,6 +17767,14 @@
           },
           {
             "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -22865,6 +23009,14 @@
           "pricePerUnit"
         ]
       },
+      "OrderCustomFieldsDto": {
+        "type": "object",
+        "properties": {
+          "analysisCode": {
+            "type": "string"
+          }
+        }
+      },
       "CreateOrderDto": {
         "type": "object",
         "properties": {
@@ -22922,6 +23074,9 @@
             "items": {
               "$ref": "#/components/schemas/CreateOrderLineDto"
             }
+          },
+          "customFields": {
+            "$ref": "#/components/schemas/OrderCustomFieldsDto"
           }
         },
         "required": [
@@ -23071,6 +23226,9 @@
           },
           "deliveryCountry": {
             "type": "string"
+          },
+          "customFields": {
+            "$ref": "#/components/schemas/OrderCustomFieldsDto"
           }
         }
       },
@@ -24495,6 +24653,9 @@
             "type": "string"
           },
           "customerName": {
+            "type": "string"
+          },
+          "customerOrderNumber": {
             "type": "string"
           },
           "totalAmount": {
@@ -27204,9 +27365,6 @@
           },
           "defaultTaxCategoryCode": {
             "type": "string"
-          },
-          "enableCustomImports": {
-            "type": "boolean"
           },
           "importInventoryFromLocations": {
             "type": "boolean"

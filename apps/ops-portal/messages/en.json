@@ -2571,6 +2571,7 @@
       "allocatedAmount": "Allocated Amount",
       "allocation": "Allocation",
       "amount": "Amount",
+      "deliveredQty": "Delivered Qty",
       "available": "Available",
       "billed": "Billed",
       "committed": "Committed",
@@ -2587,6 +2588,7 @@
       "location": "Location",
       "onHand": "On Hand",
       "ordered": "On Order",
+      "orderedQty": "Ordered Qty",
       "paymentNo": "Payment No.",
       "product": "Product",
       "qty": "Qty",
@@ -2613,6 +2615,7 @@
       "tax": "Tax",
       "taxCategory": "Tax",
       "thisOrder": "This Order",
+      "totalAmount": "Total Amount",
       "unitPrice": "Unit Price",
       "uom": "UOM",
       "vendor": "Supplier"

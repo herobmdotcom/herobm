@@ -446,6 +446,7 @@ export * from './object';
 export * from './openDemandDto';
 export * from './openDemandLocationAvailabilityDto';
 export * from './openDemandsListResponseDto';
+export * from './orderCustomFieldsDto';
 export * from './orderPickingControllerCancelPick200';
 export * from './orderPickingControllerGetPickingQueue200';
 export * from './orderPickingControllerGetPickingQueue200Item';

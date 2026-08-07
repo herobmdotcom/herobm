@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-08-06 14:05 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-08-06 16:00 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`
@@ -103,7 +103,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`sales_order_shipment_lines`](#sales_order_shipment_lines) | 0 | `shipment_line_id` | |
 | [`sales_order_shipments`](#sales_order_shipments) | 0 | `shipment_id` | |
 | [`sales_orders`](#sales_orders) | 201 | `sales_order_id` | |
-| [`schema_migrations`](#schema_migrations) | 103 | `filename` | |
+| [`schema_migrations`](#schema_migrations) | 104 | `filename` | |
 | [`supplier_expiries`](#supplier_expiries) | 0 | `expiry_id` | |
 | [`supplier_groups`](#supplier_groups) | 3 | `supplier_group_id` | |
 | [`suppliers`](#suppliers) | 636 | `vendor_id` | |
@@ -664,6 +664,7 @@ graph LR
 | 5 | `logs_json` | `jsonb` | ✓ |  |  |
 | 6 | `created_at` | `timestamp` |  | now() |  |
 | 7 | `updated_at` | `timestamp` |  | now() |  |
+| 8 | `config_json` | `jsonb` | ✓ |  |  |
 
 ### `herobm_core.activities` (9 rows)
 
@@ -2133,7 +2134,7 @@ graph LR
 | 31 | `exchange_rate` | `numeric` |  |  |  |
 | 32 | `delivery_company_name` | `text` | ✓ |  |  |
 
-### `herobm_core.schema_migrations` (103 rows)
+### `herobm_core.schema_migrations` (104 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|

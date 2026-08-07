@@ -22,6 +22,7 @@ import { useGroup, useInheritance } from '@/hooks/useInheritance';
 import { useProduct } from './useProduct';
 import { ProductSuppliersTab } from './ProductSuppliersTab';
 import { ProductInventoryTab } from './ProductInventoryTab';
+import { ProductPurchaseOrdersTab } from './ProductPurchaseOrdersTab';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 
@@ -40,7 +41,7 @@ export default function ProductDetailPage() {
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.PRODUCTS, 'archive');
 
-  const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit' | 'purchase-orders'>('details');
 
   const {
     product,
@@ -104,6 +105,13 @@ export default function ProductDetailPage() {
       isSubPage: true,
       isActive: activeTab === 'inventory',
       onClick: () => setActiveTab('inventory'),
+    },
+    {
+      id: 'tab-purchase-orders',
+      label: t('purchaseOrders.title'),
+      isSubPage: true,
+      isActive: activeTab === 'purchase-orders',
+      onClick: () => setActiveTab('purchase-orders'),
     },
     ...(product.structureType === 'kit' ? [{
       id: 'tab-kit',
@@ -184,6 +192,12 @@ export default function ProductDetailPage() {
           product={product} 
           isEditable={isEditable} 
           onRefresh={loadProduct}
+        />
+      )}
+
+      {activeTab === 'purchase-orders' && (
+        <ProductPurchaseOrdersTab 
+          productId={id as string} 
         />
       )}
 

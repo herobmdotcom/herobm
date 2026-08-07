@@ -14,6 +14,7 @@ export interface SalesInvoiceResponseDto {
   invoiceNumber: string;
   customerId: string;
   customerName: string;
+  customerOrderNumber?: string;
   totalAmount: string;
   outstandingAmount: string;
   taxAmount: string;

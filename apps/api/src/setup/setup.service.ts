@@ -744,6 +744,10 @@ export class SetupService {
       jobId,
       type: dto.source || 'abm',
       status: 'running',
+      configJson: {
+        importInventoryFromLocations: dto.importInventoryFromLocations ?? false,
+        legacyInvoicesPaidBeforeDate: dto.legacyInvoicesPaidBeforeDate,
+      },
       progressJson: [
         { step: 1, name: 'Importing Data (ELT)', status: 'running' },
       ],
@@ -820,17 +824,9 @@ export class SetupService {
         envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
       }
 
-      envOverride.ENABLE_CUSTOM_IMPORTS = dto.enableCustomImports ? 'true' : 'false';
-      envOverride.IMPORT_INVENTORY_FROM_LOCATIONS = dto.importInventoryFromLocations ? 'true' : 'false';
-
       const source = dto.source;
       if (!source) {
         throw new BadRequestException('Import source is required');
-      }
-
-      if (dto.legacyInvoicesPaidBeforeDate) {
-        envOverride.LEGACY_INVOICES_PAID_BEFORE_DATE =
-          dto.legacyInvoicesPaidBeforeDate;
       }
 
       if (dto.dbConfig) {
@@ -863,10 +859,15 @@ export class SetupService {
       }
 
       this.log(jobId, 'Running Transformations & Report...');
+      
+      const extraDbtVars = jobId ? `EXTRA_DBT_VARS={"job_id": "${jobId}"}` : '';
+      const makeArgs = ['elt-no-extract', `SOURCE=${source}`];
+      if (extraDbtVars) makeArgs.push(extraDbtVars);
+
       await this.runCommandStream(
         jobId,
         'make',
-        ['elt-no-extract', `SOURCE=${source}`],
+        makeArgs,
         envOverride,
       );
 

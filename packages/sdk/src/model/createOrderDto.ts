@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { CreateOrderLineDto } from './createOrderLineDto';
+import type { OrderCustomFieldsDto } from './orderCustomFieldsDto';
 
 export interface CreateOrderDto {
   salesOrderId: string;
@@ -25,4 +26,5 @@ export interface CreateOrderDto {
   deliveryPostalCode?: string;
   deliveryCountry?: string;
   lines: CreateOrderLineDto[];
+  customFields?: OrderCustomFieldsDto;
 }

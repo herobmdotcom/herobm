@@ -81,7 +81,7 @@ export default function UsersPage() {
         api.rolesControllerFindAll()
       ]);
       setUsers(usersRes.data as unknown as User[]);
-      setRoles((rolesRes.data as any[]).map(r => r.role));
+      setRoles((rolesRes.data as { role: string }[]).map(r => r.role));
     } catch (err: unknown) {
       toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
     } finally {

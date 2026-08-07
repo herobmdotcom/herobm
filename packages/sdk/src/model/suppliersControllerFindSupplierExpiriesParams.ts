@@ -19,4 +19,5 @@ customerId?: string;
 vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
+productId?: string;
 };

@@ -63,6 +63,9 @@ export interface UnifiedPurchaseOrderRow {
   createdOn: string | null;
   totalPrice: string | null;
   currencyCode: string | null;
+
+  productQuantity?: string | null;
+  productQuantityReceived?: string | null;
 }
 
 import { SuppliersService } from '../suppliers/suppliers.service';
@@ -354,6 +357,7 @@ export class PurchaseOrdersService {
       days,
       states,
       vendorId,
+      productId,
     } = parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -407,6 +411,18 @@ export class PurchaseOrdersService {
 
     if (vendorId) {
       conditions.push(eq(purchaseOrders.vendorId, vendorId));
+    }
+
+    if (productId) {
+      conditions.push(
+        inArray(
+          purchaseOrders.purchaseOrderId,
+          this.db
+            .select({ purchaseOrderId: purchaseOrderLineItems.purchaseOrderId })
+            .from(purchaseOrderLineItems)
+            .where(eq(purchaseOrderLineItems.productId, productId))
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -520,6 +536,9 @@ export class PurchaseOrdersService {
 
     // --- Aggregate line totals per app order ---
     const appTotalMap = new Map<string, string>();
+    const appProductQtyMap = new Map<string, string>();
+    const appProductReceivedMap = new Map<string, string>();
+    
     const appOrderIds = appRows.map((r) => r.id);
     if (appOrderIds.length > 0) {
       const totals = await this.db
@@ -533,6 +552,28 @@ export class PurchaseOrdersService {
 
       for (const row of totals) {
         appTotalMap.set(row.purchaseOrderId, row.total);
+      }
+
+      if (productId) {
+        const productQtys = await this.db
+          .select({
+            purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+            qty: sql<string>`COALESCE(SUM(${purchaseOrderLineItems.quantity}::numeric), 0)::text`,
+            received: sql<string>`COALESCE(SUM(${purchaseOrderLineItems.quantityReceived}::numeric), 0)::text`,
+          })
+          .from(purchaseOrderLineItems)
+          .where(
+            and(
+              inArray(purchaseOrderLineItems.purchaseOrderId, appOrderIds),
+              eq(purchaseOrderLineItems.productId, productId)
+            )
+          )
+          .groupBy(purchaseOrderLineItems.purchaseOrderId);
+
+        for (const row of productQtys) {
+          appProductQtyMap.set(row.purchaseOrderId, row.qty);
+          appProductReceivedMap.set(row.purchaseOrderId, row.received);
+        }
       }
     }
 
@@ -551,6 +592,8 @@ export class PurchaseOrdersService {
           : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
         currencyCode: r.currencyCode ?? 'EUR',
+        productQuantity: productId ? (appProductQtyMap.get(r.id) ?? '0') : undefined,
+        productQuantityReceived: productId ? (appProductReceivedMap.get(r.id) ?? '0') : undefined,
       };
     });
 

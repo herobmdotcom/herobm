@@ -58,4 +58,9 @@ export class PaginationQuery {
   @IsOptional()
   @IsString()
   purchaseOrderId?: string;
+
+  /** Optional filter by product ID */
+  @IsOptional()
+  @IsString()
+  productId?: string;
 }

@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { OrderCustomFieldsDto } from './orderCustomFieldsDto';
 
 export interface UpdateOrderDto {
   name?: string;
@@ -21,4 +22,5 @@ export interface UpdateOrderDto {
   deliveryState?: string;
   deliveryPostalCode?: string;
   deliveryCountry?: string;
+  customFields?: OrderCustomFieldsDto;
 }

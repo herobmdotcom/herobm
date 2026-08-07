@@ -19,6 +19,7 @@ customerId?: string;
 vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
+productId?: string;
 putawayStatus?: string;
 locationId?: string;
 };

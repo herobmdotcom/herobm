@@ -722,6 +722,13 @@
       "when": 1786020044966,
       "tag": "0102_split_tax_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1786031622338,
+      "tag": "0103_add_pipeline_jobs_config_json",
+      "breakpoints": true
     }
   ]
 }

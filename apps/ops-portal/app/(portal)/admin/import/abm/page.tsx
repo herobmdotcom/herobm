@@ -32,7 +32,6 @@ export default function AdminImportPage() {
     defaultLocationCode: '',
     baseCurrency: 'AUD',
     defaultTaxCategoryCode: '',
-    enableCustomImports: false,
     importInventoryFromLocations: false,
     enableLegacyInvoicesRule: false,
     legacyInvoicesPaidBeforeDate: ''
@@ -170,7 +169,6 @@ export default function AdminImportPage() {
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
-        enableCustomImports: config.enableCustomImports,
         importInventoryFromLocations: config.importInventoryFromLocations,
         legacyInvoicesPaidBeforeDate: config.enableLegacyInvoicesRule ? config.legacyInvoicesPaidBeforeDate : '',
       };
@@ -390,19 +388,6 @@ export default function AdminImportPage() {
                 </select>
               </div>
             )}
-            
-            <div className={abmTaxCategories.length > 0 ? "col-span-2 mt-2" : "col-span-1 mt-2"}>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.enableCustomImports')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('options.enableCustomImportsDesc')}</p>
-              <select
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
-                value={config.enableCustomImports ? 'true' : 'false'}
-                onChange={(e) => setConfig({ ...config, enableCustomImports: e.target.value === 'true' })}
-              >
-                <option value="false">No</option>
-                <option value="true">Yes</option>
-              </select>
-            </div>
 
             {hasLocationInventory && (
               <div className="col-span-2 mt-2">
@@ -632,3 +617,4 @@ export default function AdminImportPage() {
     </div>
   );
 }
+
