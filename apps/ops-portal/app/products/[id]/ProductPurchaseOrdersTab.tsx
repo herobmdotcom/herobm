@@ -11,7 +11,7 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid column definition lacks strict type
   const columns: any[] = useMemo(() => [
     { field: 'orderNumber', headerName: tCommon('columns.number'), width: 140 },
     { field: 'vendorName', headerName: t('purchaseOrders.columns.vendor'), flex: 1, minWidth: 160 },
@@ -21,7 +21,7 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
       headerName: t('purchaseOrders.columns.orderedQty'), 
       type: 'numericColumn', 
       width: 120,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '—' 
     },
     { 
@@ -29,7 +29,7 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
       headerName: t('purchaseOrders.columns.deliveredQty'), 
       type: 'numericColumn', 
       width: 120,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '—' 
     },
     { 
@@ -37,27 +37,27 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
       headerName: t('purchaseOrders.columns.totalAmount'), 
       type: 'numericColumn', 
       width: 120, 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' 
     },
     { 
       field: 'createdOn', 
       headerName: tCommon('columns.created'), 
       width: 140,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
     },
     { 
       field: 'stateCode', 
       headerName: tCommon('columns.status'), 
       width: 110, 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       valueFormatter: (p: any) => {
         if (!p.value) return '';
         const s = String(p.value).toLowerCase();
         return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
       cellRenderer: (p: any) => {
         if (!p.value) return '';
         const s = String(p.value).toLowerCase();
@@ -77,7 +77,7 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
           urlPrefix="purchase-orders"
           fetchAll={false}
           rowIdField="id"
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid row lacks strict type
           rowHref={(row: any) => `/purchase-orders/${row.id}`}
           renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
             <div className="flex items-center justify-between px-6 py-4">

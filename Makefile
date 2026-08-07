@@ -361,6 +361,7 @@ rebuild-apps:
 	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	$(MAKE) migrate
 	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api ops-portal pipeline-runner outbox-worker
 	$(COMPOSE_CMD) ps
 
