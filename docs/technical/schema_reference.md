@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-08-06 16:00 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-08-07 16:02 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`
@@ -35,7 +35,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`discount_matrix`](#discount_matrix) | 0 | `discount_matrix_id` | |
 | [`email_events`](#email_events) | 0 | `event_id` | |
 | [`email_outbox`](#email_outbox) | 0 | `id` | |
-| [`exchange_rates`](#exchange_rates) | 2 | `exchange_rate_id` | |
+| [`exchange_rates`](#exchange_rates) | 3 | `exchange_rate_id` | |
 | [`ext_ma_buyer_qualifications`](#ext_ma_buyer_qualifications) | 0 | `qualification_id` | |
 | [`ext_ma_project_feedback`](#ext_ma_project_feedback) | 0 | `feedback_id` | |
 | [`ext_ma_seller_qualifications`](#ext_ma_seller_qualifications) | 0 | `qualification_id` | |
@@ -1048,7 +1048,7 @@ graph LR
 | 13 | `entity_type` | `text` | ✓ |  |  |
 | 14 | `entity_id` | `uuid` | ✓ |  |  |
 
-### `herobm_core.exchange_rates` (2 rows)
+### `herobm_core.exchange_rates` (3 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|

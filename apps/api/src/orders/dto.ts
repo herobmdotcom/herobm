@@ -446,6 +446,8 @@ export class OrderResponseDto {
   createdBy?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
+  productQuantity?: number;
+  productQuantityShipped?: number;
 }
 
 export class EmptyBodyDto {}

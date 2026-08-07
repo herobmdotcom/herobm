@@ -761,6 +761,7 @@ export class GoodsReceivedService {
           newPoState,
           userId,
           tx,
+          true,
         );
 
         const [po] = await tx

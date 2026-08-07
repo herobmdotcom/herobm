@@ -729,6 +729,7 @@ export class PurchaseOrdersService {
     stateCode: PurchaseOrderState,
     actor: string = 'system',
     tx?: DrizzleDB,
+    bypassValidation: boolean = false,
   ) {
     const db = tx || this.db;
     const validStates = getValidStates(PURCHASE_ORDER_TRANSITIONS);
@@ -741,15 +742,17 @@ export class PurchaseOrdersService {
       throw new NotFoundException(`Purchase Order ${id} not found`);
     }
 
-    const allowed = getAllowedTransitions(
-      PURCHASE_ORDER_TRANSITIONS,
-      existing.stateCode,
-    );
-    if (!allowed.includes(stateCode)) {
-      throw new BadRequestException(
-        `Cannot transition from '${existing.stateCode}' to '${stateCode}'. ` +
-          `Allowed transitions: ${allowed.join(', ') || 'none'}`,
+    if (!bypassValidation) {
+      const allowed = getAllowedTransitions(
+        PURCHASE_ORDER_TRANSITIONS,
+        existing.stateCode,
       );
+      if (!allowed.includes(stateCode)) {
+        throw new BadRequestException(
+          `Cannot transition from '${existing.stateCode}' to '${stateCode}'. ` +
+            `Allowed transitions: ${allowed.join(', ') || 'none'}`,
+        );
+      }
     }
 
     if (

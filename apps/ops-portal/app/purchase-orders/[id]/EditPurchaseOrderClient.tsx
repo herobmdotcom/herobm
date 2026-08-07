@@ -526,7 +526,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
           onAllocationsChanged={loadAllocations} 
         />
 
-        <ReceptionsSection orderId={id} />
+        {order.createdBy !== 'abm-import' && <ReceptionsSection orderId={id} />}
 
         <ReturnsSection
           orderId={id}

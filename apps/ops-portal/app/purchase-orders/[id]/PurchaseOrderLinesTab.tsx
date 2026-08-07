@@ -142,6 +142,15 @@ export default function PurchaseOrderLinesTab({
         } />
     },
     {
+        header: tPurchase('columns.received'), width: 90, align: 'right',
+        render: (line) => (
+            <span className="text-sm tabular-nums" style={{ color: parseFloat(line.quantityReceived || '0') > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: parseFloat(line.quantityReceived || '0') > 0 ? 600 : 400 }}>
+                {parseFloat(line.quantityReceived || '0')}
+            </span>
+        ),
+        mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.received')} value={defaultRender} />
+    },
+    {
         header: tPurchase('columns.uom'), width: 80, align: 'right',
         render: (line) => {
             if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>;
@@ -378,7 +387,7 @@ export default function PurchaseOrderLinesTab({
               columns={lineColumns}
               mobileCard={(line: OrderLine) => {
                 const isAmountCol = (colHeader: React.ReactNode) => colHeader === tPurchase('columns.amount');
-                const actionCol = lineColumns.length > 9 ? lineColumns[9].render?.(line, 0) : null;
+                const actionCol = lineColumns.length > 10 ? lineColumns[10].render?.(line, 0) : null;
                 return (
                   <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                     <div className="flex justify-between items-start gap-2 mb-2">
@@ -391,7 +400,7 @@ export default function PurchaseOrderLinesTab({
                       {lineColumns[2].render?.(line, 0)}
                     </div>
                     <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                      {[3, 4, 5, 6, 7, 8].map(colIdx => {
+                      {[3, 4, 5, 6, 7, 8, 9].map(colIdx => {
                         const col = lineColumns[colIdx];
                         return (
                           <MobileCardField

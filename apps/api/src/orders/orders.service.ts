@@ -35,6 +35,8 @@ export interface UnifiedOrderRow {
   createdOn: string | null;
   totalPrice: string | null;
   currencyCode: string | null;
+  productQuantity?: number;
+  productQuantityShipped?: number;
 }
 
 @Injectable()
@@ -422,6 +424,7 @@ export class OrdersService implements OnModuleInit {
       customerId,
       days,
       states,
+      productId,
     } = parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -491,6 +494,18 @@ export class OrdersService implements OnModuleInit {
           ),
         );
       }
+    }
+
+    if (productId) {
+      conditions.push(
+        inArray(
+          salesOrders.salesOrderId,
+          this.db
+            .select({ id: salesOrderLineItems.salesOrderId })
+            .from(salesOrderLineItems)
+            .where(eq(salesOrderLineItems.productId, productId)),
+        ),
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -605,18 +620,39 @@ export class OrdersService implements OnModuleInit {
     // Aggregate line totals for the returned orders
     const orderIds = rows.map((r) => r.id);
     const totalMap = new Map<string, string>();
+    const productQuantityMap = new Map<string, number>();
+    const productQuantityShippedMap = new Map<string, number>();
+
     if (orderIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic aggregation select
+      const selectObject: any = {
+        salesOrderId: salesOrderLineItems.salesOrderId,
+        total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
+      };
+
+      if (productId) {
+        selectObject.prodQty = sql<number>`COALESCE(SUM(CASE WHEN ${salesOrderLineItems.productId} = ${productId} THEN ${salesOrderLineItems.quantity} ELSE 0 END), 0)::numeric`;
+        selectObject.prodQtyShipped = sql<number>`COALESCE((
+          SELECT SUM(sl.quantity_shipped)
+          FROM herobm_core.sales_order_shipment_lines sl
+          JOIN herobm_core.sales_order_lines sol ON sol.sales_order_line_id = sl.sales_order_line_id
+          WHERE sol.sales_order_id = "herobm_core"."sales_order_lines"."sales_order_id"
+            AND sol.product_id = ${productId}
+        ), 0)::numeric`;
+      }
+
       const totals = await this.db
-        .select({
-          salesOrderId: salesOrderLineItems.salesOrderId,
-          total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
-        })
+        .select(selectObject)
         .from(salesOrderLineItems)
         .where(inArray(salesOrderLineItems.salesOrderId, orderIds))
         .groupBy(salesOrderLineItems.salesOrderId);
 
       for (const row of totals) {
         totalMap.set(row.salesOrderId, row.total);
+        if (productId) {
+          productQuantityMap.set(row.salesOrderId, Number(row.prodQty || 0));
+          productQuantityShippedMap.set(row.salesOrderId, Number(row.prodQtyShipped || 0));
+        }
       }
     }
 
@@ -632,6 +668,10 @@ export class OrdersService implements OnModuleInit {
       createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
       totalPrice: totalMap.get(r.id) ?? null,
       currencyCode: r.currencyCode ?? 'EUR',
+      ...(productId ? {
+        productQuantity: productQuantityMap.get(r.id) ?? 0,
+        productQuantityShipped: productQuantityShippedMap.get(r.id) ?? 0,
+      } : {})
     }));
 
     return { data, page, limit, total: Number(count), nextCursor, prevCursor };

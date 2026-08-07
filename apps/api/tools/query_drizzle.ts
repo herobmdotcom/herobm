@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import path from 'path';
 import * as dotenv from 'dotenv';
 import url from 'url';
+import * as schema from '@herobm/db-schema';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
@@ -36,9 +37,6 @@ async function run() {
       console.error("Error: Target script must export a default function.");
       return;
     }
-    
-    const schemaFileUrl = url.pathToFileURL(path.resolve(process.cwd(), 'src/drizzle/herobm-core-schema.ts')).href;
-    const schema = await import(schemaFileUrl);
     
     const result = await module.default(db, schema);
     if (result) {

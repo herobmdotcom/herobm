@@ -225,6 +225,10 @@ transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=abm|odoo))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_sales_order_shipments --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-seed:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-seed SOURCE=abm|odoo))
@@ -263,7 +267,12 @@ import-legacy:
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_sales_order_shipments --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+import-legacy-shipments:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy-shipments SOURCE=abm|odoo))
+	"$(DBT)" run-operation sync_sales_order_shipments --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 # --- Schema Reference & Docs ---
 
@@ -351,19 +360,23 @@ rebuild-worker:
 	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
 	$(COMPOSE_CMD) ps
 
-rebuild-apps:
+build-images:
+	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+
+rebuild-apps: build-images
 	-$(COMPOSE_CMD) stop custom-api ops-portal pipeline-runner outbox-worker
 	-$(COMPOSE_CMD) rm -f custom-api ops-portal pipeline-runner outbox-worker
 	-podman stop custom-api ops-portal pipeline-runner outbox-worker
 	-podman rm -f custom-api ops-portal pipeline-runner outbox-worker
 	-podman system prune -f
-	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
-	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
 	$(MAKE) migrate
 	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api ops-portal pipeline-runner outbox-worker
 	$(COMPOSE_CMD) ps
+
+pre-push: verify-all build-images
 
 TEST_API_TARGET = test:pglite
 
@@ -458,6 +471,8 @@ check-lint:
 	@npm run lint -w apps/ops-portal
 	@npm run lint:oas -w apps/api
 
+verify-i18n:
+	@npm run lint:i18n -w apps/ops-portal
 
 clean-build:
 	$(CLEAN_BUILD_CMD)
@@ -555,6 +570,12 @@ test-structural:
 	@python infra/tests/test_docker_env_alignment.py
 	@npx tsx infra/test-utils/run-structural.ts
 	@npx knip
+
+query-drizzle:
+	cd apps/api && npx tsx tools/query_drizzle.ts ../../tmp/test_query.ts
+
+query-postgres:
+	cd apps/api && npx tsx tools/query_pg.ts ../../tmp/query.sql
 
 test-heavy:
 	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
