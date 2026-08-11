@@ -115,6 +115,7 @@ export const salesOrderLineItems = herobmCore.table(
     productDescription: text('product_description'),
     quantity: numeric('quantity').notNull(),
     pricePerUnit: numeric('price_per_unit').notNull(),
+    unitCost: numeric('unit_cost'),
     discountPercentage: numeric('discount_percentage'),
     amount: numeric('amount'),
     taxCategoryId: uuid('tax_category_id')

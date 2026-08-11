@@ -14,8 +14,9 @@ import { CASBIN_ENFORCER } from './casbin.provider';
 import { SetMetadata } from '@nestjs/common';
 export const CASBIN_RESOURCE = 'casbin_resource';
 export const CASBIN_ACTION = 'casbin_action';
-export const CasbinResource = (resource: string) =>
-  SetMetadata(CASBIN_RESOURCE, resource);
+export const CasbinResource = (
+  resource: string | ((req: import('express').Request) => string),
+) => SetMetadata(CASBIN_RESOURCE, resource);
 export const CasbinAction = (action: string) =>
   SetMetadata(CASBIN_ACTION, action);
 
@@ -40,10 +41,13 @@ export class CasbinGuard implements CanActivate {
       return true;
     }
 
-    const resource = this.reflector.getAllAndOverride<string>(CASBIN_RESOURCE, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const resourceMeta = this.reflector.getAllAndOverride<
+      string | ((req: Request) => string)
+    >(CASBIN_RESOURCE, [context.getHandler(), context.getClass()]);
+    const request = context.switchToHttp().getRequest();
+    const resource =
+      typeof resourceMeta === 'function' ? resourceMeta(request) : resourceMeta;
+
     const action = this.reflector.getAllAndOverride<string>(CASBIN_ACTION, [
       context.getHandler(),
       context.getClass(),
@@ -56,7 +60,6 @@ export class CasbinGuard implements CanActivate {
       );
     }
 
-    const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user) {

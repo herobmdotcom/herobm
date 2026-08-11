@@ -50,6 +50,7 @@ describe('ContactsService', () => {
           firstName: 'John',
           lastName: 'Doe',
           email: 'john@example.com',
+          mobile: '555-1234',
         },
         mockUserId,
       );
@@ -57,6 +58,7 @@ describe('ContactsService', () => {
       expect(result.contactId).toBeDefined();
       expect(result.firstName).toBe('John');
       expect(result.fullName).toBe('John Doe');
+      expect(result.mobile).toBe('555-1234');
       expect(emitEvent).toHaveBeenCalled();
     });
 
@@ -147,12 +149,14 @@ describe('ContactsService', () => {
         contact.contactId,
         {
           firstName: 'New',
+          mobile: '555-9999',
         },
         mockUserId,
       );
 
       expect(result.firstName).toBe('New');
       expect(result.fullName).toBe('New Name');
+      expect(result.mobile).toBe('555-9999');
       expect(emitEvent).toHaveBeenCalled();
 
       const dbRecord = await pg.db.query.contacts.findFirst({

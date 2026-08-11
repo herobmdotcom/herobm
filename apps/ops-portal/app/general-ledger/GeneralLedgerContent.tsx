@@ -166,6 +166,7 @@ export default function GeneralLedgerContent() {
       gridKey="gl-general-ledger"
       exportFileName="general-ledger"
       fetchAll={true}
+      defaultSortModel={[{ colId: 'entryDate', sort: 'desc' }]}
       onRowClicked={(row) => {
         setSelectedEntry({
           journalEntryId: row.journalEntryId,

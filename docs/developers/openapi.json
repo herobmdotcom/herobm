@@ -302,37 +302,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CustomerResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/CustomerResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -912,37 +895,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -1417,37 +1383,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -1609,37 +1558,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductGroupResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductGroupResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -1919,37 +1851,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/InventoryResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/InventoryResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -2165,37 +2080,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/InventoryBinResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/InventoryBinResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -3054,37 +2952,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GeneralLedgerResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GeneralLedgerResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -5936,37 +5817,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OrderResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrderResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -8330,37 +8194,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/TransferResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/TransferResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -9918,37 +9765,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -10086,37 +9916,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -11415,37 +11228,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PaymentResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PaymentResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -12003,37 +11799,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SupplierResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SupplierResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -12232,37 +12011,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SupplierResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SupplierResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -12472,37 +12234,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SupplierResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SupplierResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -12715,37 +12460,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SupplierResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SupplierResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -13349,37 +13077,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -14371,6 +14082,29 @@
           }
         },
         "summary": "Get System Logs",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/admin/version": {
+      "get": {
+        "description": "Retrieves backend system environment and version data.",
+        "operationId": "SystemController_getSystemVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemVersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get System Version",
         "tags": [
           "System"
         ]
@@ -16655,37 +16389,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ContactResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ContactResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -17188,37 +16905,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ActorResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ActorResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -17788,37 +17488,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProjectResponseDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProjectResponseDto"
+                          }
+                        }
                       }
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "nextCursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "prevCursor": {
-                      "type": "string",
-                      "nullable": true
                     }
-                  },
-                  "required": [
-                    "data",
-                    "limit"
                   ]
                 }
               }
@@ -18880,6 +18563,12 @@
           },
           "effectiveCreditLimit": {
             "type": "string"
+          },
+          "totalOutstanding": {
+            "type": "number"
+          },
+          "uninvoicedOrdersTotal": {
+            "type": "number"
           }
         },
         "required": [
@@ -18931,6 +18620,9 @@
             "type": "number"
           },
           "discrepancyAmount": {
+            "type": "number"
+          },
+          "uninvoicedOrdersTotal": {
             "type": "number"
           },
           "currencyCode": {
@@ -22960,6 +22652,12 @@
             "format": "date-time",
             "type": "string",
             "nullable": true
+          },
+          "productQuantity": {
+            "type": "number"
+          },
+          "productQuantityShipped": {
+            "type": "number"
           }
         },
         "required": [
@@ -22986,6 +22684,9 @@
             "type": "string"
           },
           "pricePerUnit": {
+            "type": "string"
+          },
+          "unitCost": {
             "type": "string"
           },
           "discountPercentage": {
@@ -23160,6 +22861,9 @@
             "type": "string"
           },
           "pricePerUnit": {
+            "type": "string"
+          },
+          "unitCost": {
             "type": "string"
           },
           "discountPercentage": {
@@ -26929,6 +26633,7 @@
         "type": "object",
         "properties": {
           "lines": {
+            "description": "Array of log lines",
             "type": "array",
             "items": {
               "type": "string"
@@ -26937,6 +26642,38 @@
         },
         "required": [
           "lines"
+        ]
+      },
+      "SystemVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "string",
+            "description": "API version number"
+          },
+          "apiBuildTime": {
+            "type": "string",
+            "description": "API build timestamp"
+          },
+          "nodeVersion": {
+            "type": "string",
+            "description": "Node.js version"
+          },
+          "osPlatform": {
+            "type": "string",
+            "description": "OS platform"
+          },
+          "osRelease": {
+            "type": "string",
+            "description": "OS release"
+          }
+        },
+        "required": [
+          "apiVersion",
+          "apiBuildTime",
+          "nodeVersion",
+          "osPlatform",
+          "osRelease"
         ]
       },
       "LocationResponseDto": {

@@ -4,7 +4,6 @@ import { OrdersCoreService } from './orders-core.service';
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
-import { OrderNotificationService } from './order-notification.service';
 import { OrdersQueryService } from './orders-query.service';
 
 class OrdersWriteService {
@@ -13,7 +12,6 @@ class OrdersWriteService {
   creation: OrderCreationService;
   lines: OrderLinesService;
   state: OrderStateService;
-  notif: OrderNotificationService;
 
   constructor(...args: any[]) {
     this.core = new (OrdersCoreService as any)(...args);
@@ -26,11 +24,6 @@ class OrdersWriteService {
       this.state,
     );
     this.lines = new (OrderLinesService as any)(...args, this.core, this.query);
-    this.notif = new (OrderNotificationService as any)(
-      ...args,
-      this.core,
-      this.query,
-    );
   }
 
   create(...args: any[]) {
@@ -69,10 +62,6 @@ class OrdersWriteService {
   }
   overrideCreditHold(...args: any[]) {
     return this.state.overrideCreditHold(...(args as [any, any, any]));
-  }
-
-  emailDocument(...args: any[]) {
-    return this.notif.emailDocument(...(args as [any, any, any]));
   }
 
   findOne(...args: any[]) {

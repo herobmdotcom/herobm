@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { ProductResponseDto } from './productResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { ProductsControllerGetComponents200AllOf } from './productsControllerGetComponents200AllOf';
 
-export type ProductsControllerGetComponents200 = {
-  data: ProductResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type ProductsControllerGetComponents200 = PaginatedResponse & ProductsControllerGetComponents200AllOf;

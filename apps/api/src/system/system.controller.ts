@@ -8,8 +8,12 @@ import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SystemLogResponseDto } from './dto';
+import * as os from 'os';
+import { execSync } from 'child_process';
+import { SystemLogResponseDto, SystemVersionResponseDto } from './dto';
 import { getErrorMessage, SystemResource } from '@herobm/shared';
+
+let cachedApiVersion: string | null = null;
 
 /**
  * Endpoint for streaming backend logs securely to the frontend Ops Portal.
@@ -64,5 +68,41 @@ export class SystemController {
         `Failed to read log file: ${getErrorMessage(e)}`,
       );
     }
+  }
+
+  @Get('version')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get System Version',
+    description: 'Retrieves backend system environment and version data.',
+  })
+  @ApiOkResponse({ type: SystemVersionResponseDto })
+  getSystemVersion(): SystemVersionResponseDto {
+    if (!cachedApiVersion) {
+      const packageJsonPath = path.resolve(__dirname, '../../package.json');
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      let gitVersion = '';
+      try {
+        gitVersion = execSync(
+          'git log -1 --format="%cd.%h" --date=format:%Y%m%d',
+          { stdio: 'pipe' },
+        )
+          .toString()
+          .trim();
+      } catch (e) {
+        // Ignore error
+      }
+      cachedApiVersion = gitVersion
+        ? `v${packageJson.version}-${gitVersion}`
+        : `v${packageJson.version}`;
+    }
+
+    return {
+      apiVersion: cachedApiVersion,
+      apiBuildTime: process.env.BUILD_TIME || 'Unknown',
+      nodeVersion: process.version,
+      osPlatform: os.platform(),
+      osRelease: os.release(),
+    };
   }
 }

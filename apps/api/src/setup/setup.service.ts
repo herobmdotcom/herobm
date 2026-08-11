@@ -198,7 +198,10 @@ export class SetupService {
         `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
         error.stack,
       );
-      return { success: false, message: 'Pipeline runner error' };
+      return {
+        success: false,
+        message: `Failed to connect to pipeline-runner at ${runnerUrl}. Please ensure the service is running.`,
+      };
     }
   }
 
@@ -269,7 +272,10 @@ export class SetupService {
         `Failed to connect to pipeline-runner at ${runnerUrl}: ${error.message} (Code: ${error.code || 'unknown'}, Cause: ${error.cause || 'unknown'})`,
         error.stack,
       );
-      return { success: false, message: 'Pipeline runner error' };
+      return {
+        success: false,
+        message: `Failed to connect to pipeline-runner at ${runnerUrl}. Please ensure the service is running.`,
+      };
     }
   }
 
@@ -756,6 +762,8 @@ export class SetupService {
 
     this.runEltCore(dto, jobId).catch(async (err) => {
       this.logger.error(`ELT job ${jobId} failed`, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.log(jobId, `[ERROR] Pipeline failed: ${msg}`, 'error');
       await this.db
         .update(pipelineJobs)
         .set({ status: 'failed', updatedAt: new Date() })
@@ -859,17 +867,12 @@ export class SetupService {
       }
 
       this.log(jobId, 'Running Transformations & Report...');
-      
+
       const extraDbtVars = jobId ? `EXTRA_DBT_VARS={"job_id": "${jobId}"}` : '';
       const makeArgs = ['elt-no-extract', `SOURCE=${source}`];
       if (extraDbtVars) makeArgs.push(extraDbtVars);
 
-      await this.runCommandStream(
-        jobId,
-        'make',
-        makeArgs,
-        envOverride,
-      );
+      await this.runCommandStream(jobId, 'make', makeArgs, envOverride);
 
       if (dto.defaultLocationCode) {
         const [loc] = await this.db
@@ -1102,7 +1105,11 @@ export class SetupService {
             const body = await response.text();
             console.error(`[Job ${jobId}] Failed to trigger sidecar: ${body}`);
             delete this.jobResolvers[jobId];
-            reject(new Error(`Failed to trigger sidecar: ${body}`));
+            reject(
+              new Error(
+                `Failed to trigger pipeline-runner at ${runnerUrl}: HTTP ${response.status} - ${body}`,
+              ),
+            );
           } else {
             // Consume the response body to free the socket
             await response.text().catch(() => {});
@@ -1114,7 +1121,12 @@ export class SetupService {
             err,
           );
           delete this.jobResolvers[jobId];
-          reject(err instanceof Error ? err : new Error(String(err)));
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          reject(
+            new Error(
+              `Failed to connect to pipeline-runner at ${runnerUrl}. Is the service running? Details: ${errorMsg}`,
+            ),
+          );
         });
     });
   }

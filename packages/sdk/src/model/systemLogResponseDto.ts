@@ -7,5 +7,6 @@
  */
 
 export interface SystemLogResponseDto {
+  /** Array of log lines */
   lines: string[];
 }

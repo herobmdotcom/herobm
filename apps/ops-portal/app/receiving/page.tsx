@@ -294,8 +294,7 @@ export default function GoodsReceivedListPage() {
                 columns={gridColumns} 
                 gridKey="goods-received-lines-list"
                 defaultSortModel={[
-                    { colId: 'putawayStatus', sort: 'asc' },
-                    { colId: 'createdOn', sort: 'desc' }
+                    { colId: 'receiptNumber', sort: 'desc' }
                 ]}
                 rowIdField="goodsReceivedLineId"
                 rowSelection="multiple"

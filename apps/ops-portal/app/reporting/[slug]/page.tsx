@@ -1,10 +1,9 @@
 /* eslint-disable -- Highly dynamic reporting engine rendering requires bypassing strict linting */
-// @ts-nocheck
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@herobm/sdk';
+import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, BusinessReportsControllerGetReports200Item, BusinessReportsControllerRunReport200Item } from '@herobm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { AgGridReact } from 'ag-grid-react';
@@ -24,8 +23,8 @@ export default function ReportViewer() {
   const [filters, setFilters] = useState<Record<string, unknown>>({});
   const gridRef = useRef<AgGridReact>(null);
 
-  const [reports, setReports] = useState<Record<string, unknown>[]>([]);
-  const [reportData, setReportData] = useState<Record<string, unknown> | null>(null);
+  const [reports, setReports] = useState<BusinessReportsControllerGetReports200Item[]>([]);
+  const [reportData, setReportData] = useState<BusinessReportsControllerRunReport200Item[] | null>(null);
    
   const [filteredChartData, setFilteredChartData] = useState<any[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -139,7 +138,7 @@ export default function ReportViewer() {
 
   useEffect(() => {
     businessReportsControllerGetReports()
-      .then((res: Record<string, unknown>) => setReports((res.data as Record<string, unknown>[]) || (res as Record<string, unknown>[])))
+      .then((res) => setReports(res.data))
       .catch(console.error);
   }, []);
 
@@ -151,7 +150,7 @@ export default function ReportViewer() {
     setIsLoadingData(true);
     setFilteredChartData(null);
     businessReportsControllerRunReport(slug, overrideFilters || filters)
-      .then((res: Record<string, unknown>) => setReportData((res.data as Record<string, unknown>[]) || (res as Record<string, unknown>[])))
+      .then((res) => setReportData(res.data))
       .catch(console.error)
       .finally(() => setIsLoadingData(false));
   }, [report, slug, filters]);
@@ -207,10 +206,10 @@ export default function ReportViewer() {
 
   if (!report) return <div className="p-8">Loading report configuration...</div>;
 
-  const salesReports = (reports || []).filter(r => r.slug.startsWith('sales-'));
-  const warehouseReports = (reports || []).filter(r => r.slug.startsWith('inventory-'));
-  const purchasingReports = (reports || []).filter(r => r.slug.startsWith('purchasing-'));
-  const financialReports = (reports || []).filter(r => !r.slug.startsWith('sales-') && !r.slug.startsWith('inventory-') && !r.slug.startsWith('purchasing-'));
+  const salesReports = (reports || []).filter((r: any) => r.slug.startsWith('sales-'));
+  const warehouseReports = (reports || []).filter((r: any) => r.slug.startsWith('inventory-'));
+  const purchasingReports = (reports || []).filter((r: any) => r.slug.startsWith('purchasing-'));
+  const financialReports = (reports || []).filter((r: any) => !r.slug.startsWith('sales-') && !r.slug.startsWith('inventory-') && !r.slug.startsWith('purchasing-'));
 
   const isSalesActive = slug.startsWith('sales-');
   const isWarehouseActive = slug.startsWith('inventory-');
@@ -221,7 +220,7 @@ export default function ReportViewer() {
     <DetailsLayout
       header={
         <EntityHeader
-          title={loadedConfig ? `${report.name} - ${loadedConfig.name}` : report.name}
+          title={loadedConfig ? `${report.name} - ${loadedConfig.name}` : (report.name as string)}
           nav={undefined}
           actions={
             <div className="flex items-center gap-2">
@@ -235,22 +234,22 @@ export default function ReportViewer() {
                 <option value="" disabled>Load Standard View...</option>
                 {warehouseReports.length > 0 && (
                   <optgroup label="Warehouse">
-                    {warehouseReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                    {warehouseReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
                   </optgroup>
                 )}
                 {salesReports.length > 0 && (
                   <optgroup label="Sales">
-                    {salesReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                    {salesReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
                   </optgroup>
                 )}
                 {purchasingReports.length > 0 && (
                   <optgroup label="Purchasing">
-                    {purchasingReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                    {purchasingReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
                   </optgroup>
                 )}
                 {financialReports.length > 0 && (
                   <optgroup label="Financial">
-                    {financialReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                    {financialReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
                   </optgroup>
                 )}
               </select>
@@ -266,7 +265,7 @@ export default function ReportViewer() {
                    
                   if (!configs || (configs as any[]).length === 0) return null;
                   return (
-                    <optgroup key={rSlug} label={rName}>
+                    <optgroup key={rSlug} label={rName as string}>
                       { }
                       {(configs as any[]).map((c) => (
                         <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
@@ -421,7 +420,7 @@ export default function ReportViewer() {
           <div className={`h-full w-full ${viewMode === 'chart' ? 'hidden' : 'block'}`}>
             <AgGridReact
               ref={gridRef}
-              rowData={Array.isArray(reportData) ? reportData : reportData?.data || []}
+              rowData={reportData || []}
               columnDefs={dynamicColumns}
               defaultColDef={defaultColDef}
               animateRows={true}
@@ -433,7 +432,7 @@ export default function ReportViewer() {
           {viewMode === 'chart' && (
             <div className="h-full w-full">
               <ReportChartViewer 
-                data={filteredChartData || (Array.isArray(reportData) ? reportData : reportData?.data || [])}
+                data={filteredChartData || reportData || []}
                 config={uiConfig.chartConfig}
                  
                 activeDrillDown={drillDownOptions.find((o: any) => o.id === selectedDrillDownId)}

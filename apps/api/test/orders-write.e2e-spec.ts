@@ -82,7 +82,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body[0].locationId;
+    const mainLoc =
+      locRes.body.find((l: any) => l.code === 'MAIN') || locRes.body[0];
+    locationId = mainLoc.locationId;
 
     // Login as viewer (read-only)
     const viewerLogin = await request(app.getHttpServer())

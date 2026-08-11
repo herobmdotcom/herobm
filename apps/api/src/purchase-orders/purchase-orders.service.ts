@@ -420,8 +420,8 @@ export class PurchaseOrdersService {
           this.db
             .select({ purchaseOrderId: purchaseOrderLineItems.purchaseOrderId })
             .from(purchaseOrderLineItems)
-            .where(eq(purchaseOrderLineItems.productId, productId))
-        )
+            .where(eq(purchaseOrderLineItems.productId, productId)),
+        ),
       );
     }
 
@@ -538,7 +538,7 @@ export class PurchaseOrdersService {
     const appTotalMap = new Map<string, string>();
     const appProductQtyMap = new Map<string, string>();
     const appProductReceivedMap = new Map<string, string>();
-    
+
     const appOrderIds = appRows.map((r) => r.id);
     if (appOrderIds.length > 0) {
       const totals = await this.db
@@ -565,8 +565,8 @@ export class PurchaseOrdersService {
           .where(
             and(
               inArray(purchaseOrderLineItems.purchaseOrderId, appOrderIds),
-              eq(purchaseOrderLineItems.productId, productId)
-            )
+              eq(purchaseOrderLineItems.productId, productId),
+            ),
           )
           .groupBy(purchaseOrderLineItems.purchaseOrderId);
 
@@ -592,8 +592,12 @@ export class PurchaseOrdersService {
           : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
         currencyCode: r.currencyCode ?? 'EUR',
-        productQuantity: productId ? (appProductQtyMap.get(r.id) ?? '0') : undefined,
-        productQuantityReceived: productId ? (appProductReceivedMap.get(r.id) ?? '0') : undefined,
+        productQuantity: productId
+          ? (appProductQtyMap.get(r.id) ?? '0')
+          : undefined,
+        productQuantityReceived: productId
+          ? (appProductReceivedMap.get(r.id) ?? '0')
+          : undefined,
       };
     });
 

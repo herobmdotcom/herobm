@@ -236,6 +236,8 @@ export class CustomerResponseDto {
     oldestOverdueInvoiceId?: string;
   };
   effectiveCreditLimit?: string;
+  totalOutstanding?: number;
+  uninvoicedOrdersTotal?: number;
 }
 
 export class CustomerGroupResponseDto {
@@ -275,6 +277,7 @@ export class AgedBalanceResponseDto {
   totalOutstanding!: number;
   glBalance!: number;
   discrepancyAmount!: number;
+  uninvoicedOrdersTotal?: number;
   currencyCode!: string;
   isOnCreditHold!: boolean;
   creditLimit!: string | null;

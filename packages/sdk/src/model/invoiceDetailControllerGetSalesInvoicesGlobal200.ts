@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { SalesInvoiceResponseDto } from './salesInvoiceResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { InvoiceDetailControllerGetSalesInvoicesGlobal200AllOf } from './invoiceDetailControllerGetSalesInvoicesGlobal200AllOf';
 
-export type InvoiceDetailControllerGetSalesInvoicesGlobal200 = {
-  data: SalesInvoiceResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type InvoiceDetailControllerGetSalesInvoicesGlobal200 = PaginatedResponse & InvoiceDetailControllerGetSalesInvoicesGlobal200AllOf;

@@ -87,6 +87,7 @@ function LedgerViewContent() {
         exportFileName="inventory-ledger"
         fetchAll
         pageTitle={tInventory('tabs.ledger')}
+        defaultSortModel={[{ colId: 'date', sort: 'desc' }]}
         headerFilters={
           <select
             value={days}

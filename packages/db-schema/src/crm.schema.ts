@@ -66,6 +66,7 @@ export const contacts = herobmCore.table('contacts', {
   jobTitle: text('job_title'),
   email: text('email'),
   phone: text('phone'),
+  mobile: text('mobile'),
   linkedinProfile: text('linkedin_profile'),
   referredByActorId: uuid('referred_by_actor_id').references(
     () => actors.actorId,

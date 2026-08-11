@@ -1,6 +1,9 @@
 import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ShipmentService } from './shipment.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { GlService } from '../gl/gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -76,9 +79,51 @@ const MOCK_SHIPMENT_LINE = {
   quantityShipped: '5',
 };
 
+class ShipmentServiceProxy {
+  constructor(
+    private readonly core: ShipmentsCoreService,
+    private readonly write: ShipmentsWriteService,
+    private readonly state: ShipmentsStateService,
+  ) {}
+  generateShipmentNumber(tx?: any) {
+    return this.core.generateShipmentNumber(tx);
+  }
+  findOne(id: string) {
+    return this.core.findOne(id);
+  }
+  findByOrder(id: string) {
+    return this.core.findByOrder(id);
+  }
+  findAll(q: any) {
+    return this.core.findAll(q);
+  }
+  createShipment(id: string, body: any, actor: string) {
+    return this.write.createShipment(id, body, actor);
+  }
+  updateShipment(id: string, body: any, actor: string) {
+    return this.write.updateShipment(id, body, actor);
+  }
+  addShipmentLine(id: string, body: any, actor: string) {
+    return this.write.addShipmentLine(id, body, actor);
+  }
+  updateShipmentLine(id: string, lineId: string, body: any, actor: string) {
+    return this.write.updateShipmentLine(id, lineId, body, actor);
+  }
+  removeShipmentLine(id: string, lineId: string, actor: string) {
+    return this.write.removeShipmentLine(id, lineId, actor);
+  }
+  changeShipmentState(id: string, state: string, actor: string, tx?: any) {
+    return this.state.changeShipmentState(id, state, actor, tx);
+  }
+  cancelShipment(id: string, actor: string) {
+    return this.state.cancelShipment(id, actor);
+  }
+}
+
 describe('ShipmentService', () => {
   const pg = setupPgliteSuite();
-  let service: ShipmentService;
+  let service: ShipmentServiceProxy;
+  let glService: GlService;
 
   let mockInventoryService: any;
 
@@ -88,7 +133,19 @@ describe('ShipmentService', () => {
     };
 
     const module: TestingModule = await setupTestModule([
-      ShipmentService,
+      ShipmentsCoreService,
+      ShipmentsWriteService,
+      ShipmentsStateService,
+      {
+        provide: ShipmentServiceProxy,
+        useFactory: (core, write, state) =>
+          new ShipmentServiceProxy(core, write, state),
+        inject: [
+          ShipmentsCoreService,
+          ShipmentsWriteService,
+          ShipmentsStateService,
+        ],
+      },
       { provide: InventoryQueryService, useValue: mockInventoryService },
       { provide: InventoryMovementService, useValue: mockInventoryService },
     ])
@@ -96,7 +153,8 @@ describe('ShipmentService', () => {
       .useValue(pg.db)
       .compile();
 
-    service = module.get<ShipmentService>(ShipmentService);
+    service = module.get(ShipmentServiceProxy);
+    glService = module.get(GlService);
 
     // Clean only transactional tables
     await pg.client.exec(`
@@ -311,6 +369,98 @@ describe('ShipmentService', () => {
       );
 
       expect(result).toBeDefined();
+    });
+
+    it('should use unitCost from order line for COGS calculation if present', async () => {
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: '15.50' })
+        .where(
+          eq(
+            salesOrderLineItems.salesOrderLineId,
+            '00000000-0000-4000-8000-000000000002',
+          ),
+        );
+
+      const postSpy = jest
+        .spyOn(glService, 'postJournalEntry')
+        .mockResolvedValue({ journalEntryId: 'jl-001' } as any);
+
+      const dto = {
+        stateCode: SHIPMENT_STATE.DISPATCHED,
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+
+      await service.createShipment(
+        '00000000-0000-4000-8000-000000000001',
+        dto,
+        'admin',
+      );
+
+      // COGS should be exactly 15.50 * 5 = 77.50
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 77.5,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('should fall back to standard valuation if unitCost is null', async () => {
+      // 1. Ensure product standardCost is set in the mock
+      await pg.db
+        .update(products)
+        .set({ standardCost: '10.00' })
+        .where(eq(products.productId, '00000000-0000-4000-8000-000000000001'));
+
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: null })
+        .where(
+          eq(
+            salesOrderLineItems.salesOrderLineId,
+            '00000000-0000-4000-8000-000000000002',
+          ),
+        );
+
+      const postSpy = jest
+        .spyOn(glService, 'postJournalEntry')
+        .mockResolvedValue({ journalEntryId: 'jl-002' } as any);
+
+      const dto = {
+        stateCode: SHIPMENT_STATE.DISPATCHED,
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+
+      await service.createShipment(
+        '00000000-0000-4000-8000-000000000001',
+        dto,
+        'admin',
+      );
+
+      // Standard cost is 10.00, shipped qty 5 -> COGS = 50.00
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 50,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     it('should reject if order is not in picking state', async () => {

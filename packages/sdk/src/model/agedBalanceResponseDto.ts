@@ -18,6 +18,7 @@ export interface AgedBalanceResponseDto {
   totalOutstanding: number;
   glBalance: number;
   discrepancyAmount: number;
+  uninvoicedOrdersTotal?: number;
   currencyCode: string;
   isOnCreditHold: boolean;
   /** @nullable */

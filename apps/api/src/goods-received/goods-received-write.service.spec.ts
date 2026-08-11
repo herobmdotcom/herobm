@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GoodsReceivedService } from './goods-received.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { GoodsReceivedWriteService } from './goods-received-write.service';
+import { NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { BackordersService } from '../orders/backorders.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedStateService } from './goods-received-state.service';
 import {
   suppliers,
   locations,
@@ -21,8 +23,7 @@ import {
   taxCategories,
   actors,
 } from '@herobm/db-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   MATCH_STATUS,
@@ -38,9 +39,9 @@ jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),
 }));
 
-describe('GoodsReceivedService', () => {
+describe('GoodsReceivedWriteService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
-  let service: GoodsReceivedService;
+  let service: GoodsReceivedWriteService;
   let mockInventoryService: any;
   let mockGlService: unknown;
   let mockAppConfig: unknown;
@@ -48,8 +49,6 @@ describe('GoodsReceivedService', () => {
   const VENDOR_ID = '00000000-0000-4000-8000-000000000001';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
   const PROD_ID = '00000000-0000-4000-8000-00000000000a';
-  const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
-  const BIN_ID = '00000000-0000-4000-8000-00000000000b';
   const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
@@ -87,7 +86,9 @@ describe('GoodsReceivedService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        GoodsReceivedService,
+        GoodsReceivedWriteService,
+        GoodsReceivedCoreService,
+        GoodsReceivedStateService,
         { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
@@ -107,7 +108,7 @@ describe('GoodsReceivedService', () => {
       ],
     }).compile();
 
-    service = module.get<GoodsReceivedService>(GoodsReceivedService);
+    service = module.get<GoodsReceivedWriteService>(GoodsReceivedWriteService);
 
     // Clean tables in order
     await pg.db.delete(goodsReceivedLines);
@@ -304,40 +305,6 @@ describe('GoodsReceivedService', () => {
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, receipt.goodsReceivedId));
       expect(lines[0].matchStatus).toBe(MATCH_STATUS.UNMATCHED);
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return a receipt with lines', async () => {
-      await seedBasics();
-      const [gr] = await pg.db
-        .insert(goodsReceived)
-        .values({
-          receiptNumber: 'GR-001',
-          vendorId: VENDOR_ID,
-          locationId: LOCATION_ID,
-          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
-        })
-        .returning();
-
-      await pg.db.insert(goodsReceivedLines).values({
-        goodsReceivedId: gr.goodsReceivedId,
-        productId: PROD_ID,
-        quantityReceived: '10',
-        matchStatus: MATCH_STATUS.UNMATCHED,
-        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
-      });
-
-      const result = await service.findOne(gr.goodsReceivedId);
-      expect(result.receiptNumber).toBe('GR-001');
-      expect(result.lines).toHaveLength(1);
-      expect(result.lines[0].productNumber).toBe('P1');
-    });
-
-    it('should throw NotFoundException when receipt does not exist', async () => {
-      await expect(
-        service.findOne('00000000-0000-4000-8000-000000000999'),
-      ).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -100,6 +100,7 @@ export default function SalesOrdersContent() {
       rowIdField="id"
       rowHref={(order) => `/sales-orders/${order.id}`}
       pageTitle={tSales('title')}
+      defaultSortModel={[{ colId: 'orderNumber', sort: 'desc' }]}
       headerFilters={
         <select
             value={days}

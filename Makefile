@@ -138,7 +138,7 @@ down-portal-api:
 
 # Queue Worker (Outbox relay)
 build-worker:
-	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 up-redis: build-worker check-postgres-logs
 	$(COMPOSE_CMD) --profile queue up -d outbox-worker
@@ -352,7 +352,7 @@ rebuild-pipeline:
 	$(COMPOSE_CMD) ps
 
 rebuild-worker:
-	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 	-$(COMPOSE_CMD) stop outbox-worker
 	-$(COMPOSE_CMD) rm -f outbox-worker
 	-podman stop outbox-worker
@@ -364,7 +364,7 @@ build-images:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
 	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
-	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 rebuild-apps: build-images
 	-$(COMPOSE_CMD) stop custom-api ops-portal pipeline-runner outbox-worker
@@ -412,8 +412,11 @@ dev-portal:
 
 # --- Migrations (herobm_core) ---
 
-migrate:
+migrate: check-schema-drift
 	$(PYTHON_CMD) tools/migrate.py
+
+check-schema-drift:
+	npx tsx tools/check_schema_drift.ts
 
 migrate-status:
 	$(PYTHON_CMD) tools/migrate.py --status
@@ -551,7 +554,7 @@ verify-db: migrate-status
 verify-all: build-all check-all verify-db test-all
 
 # Supports skipping phases using environment variables, e.g. make verify-fast SKIP_CHECK=1 SKIP_UNIT=1
-verify-fast: generate-extensions $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
+verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
 
 test-pipeline:
 	@powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1

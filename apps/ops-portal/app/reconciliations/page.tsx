@@ -47,13 +47,14 @@ export default function ReconciliationsPage() {
           fetchAll={true}
           rowHref={(row: unknown) => `/reconciliations/${(row as { reconciliationId: string }).reconciliationId}`}
           pageTitle={t('title')}
+          defaultSortModel={[{ colId: 'statementDate', sort: 'desc' }]}
           headerActions={
             <div className="flex gap-2">
               <Button variant="primary"
                 onClick={() => router.push('/reconciliations/new')}
                 className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
               >
-                + {t('newReconciliation')}
+                {t('newReconciliation')}
               </Button>
             </div>
           }

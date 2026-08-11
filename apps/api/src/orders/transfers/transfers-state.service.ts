@@ -15,32 +15,15 @@ import {
   transferOrderShipmentLines,
   transferOrderReceipts,
   transferOrderReceiptLines,
-  warehouseEvents,
   locations,
   bins,
   zones,
   binContents,
   backorders,
-  salesOrderLineItems,
   products,
-  inventoryLedger,
-  inventoryEntries,
   products as coreProducts,
 } from '@herobm/db-schema';
-import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
-import {
-  PaginationQuery,
-  parsePagination,
-  withCursorPagination,
-} from '../../common/pagination';
-import {
-  CreateTransferOrderDto,
-  UpdateTransferOrderDto,
-  CreateTransferOrderLineDto,
-  UpdateTransferOrderLineDto,
-  TransferPaginationQuery,
-} from './dto';
+import { eq, and, inArray, sql, desc } from 'drizzle-orm';
 import { CreateShipmentDto } from '../dto';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
@@ -61,153 +44,18 @@ import type {
 } from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
+import { TransfersCoreService } from './transfers-core.service';
 
 const VALID_TRANSFER_STATES = getValidStates(TRANSFER_ORDER_TRANSITIONS);
 const VALID_PICK_STATES = getValidStates(TRANSFER_ORDER_PICK_TRANSITIONS);
 
 @Injectable()
-export class TransferService {
+export class TransfersStateService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryMovementService: InventoryMovementService,
+    private readonly coreService: TransfersCoreService,
   ) {}
-
-  // -------------------------------------------------------------------------
-  // Creation
-  // -------------------------------------------------------------------------
-
-  async createTransferFromDemands(
-    sourceLocationId: string,
-    backorderIds: string[],
-    actor: string,
-  ) {
-    if (!backorderIds || backorderIds.length === 0) {
-      throw new BadRequestException('No demands specified');
-    }
-
-    return await this.db.transaction(async (tx) => {
-      // Find backorders
-      const lines = await tx
-        .select({
-          backorderId: backorders.backorderId,
-          productId: backorders.productId,
-          quantity: backorders.quantity,
-          locationId: salesOrderLineItems.fulfillmentLocationId,
-          salesOrderId: backorders.salesOrderId,
-          salesOrderLineId: backorders.salesOrderLineId,
-        })
-        .from(backorders)
-        .innerJoin(
-          salesOrderLineItems,
-          eq(backorders.salesOrderLineId, salesOrderLineItems.salesOrderLineId),
-        )
-        .where(
-          and(
-            inArray(backorders.backorderId, backorderIds),
-            eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
-            sql`${backorders.purchaseOrderId} IS NULL`,
-            sql`${backorders.transferOrderId} IS NULL`,
-          ),
-        );
-
-      if (lines.length !== backorderIds.length) {
-        throw new BadRequestException(
-          'Some demands could not be found or are not open',
-        );
-      }
-
-      // Check they are all for the same destination location
-      const destLocationId = lines[0].locationId;
-      if (!lines.every((l) => l.locationId === destLocationId)) {
-        throw new BadRequestException(
-          'All demands must be for the same destination location',
-        );
-      }
-
-      // 1) Generate transfer_order_number
-      const prefix = `TO-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
-      const lastOrder = await tx
-        .select({ orderNumber: transferOrders.orderNumber })
-        .from(transferOrders)
-        .where(sql`${transferOrders.orderNumber} LIKE ${prefix + '%'}`)
-        .orderBy(desc(transferOrders.orderNumber))
-        .limit(1);
-
-      let nextNum = 1;
-      if (lastOrder.length > 0) {
-        const parts = lastOrder[0].orderNumber.split('-');
-        nextNum = parseInt(parts[2], 10) + 1;
-      }
-      const orderNumber = `${prefix}${String(nextNum).padStart(3, '0')}`;
-
-      const transferOrderId = uuidv4();
-
-      // 2) Insert Header
-      await tx.insert(transferOrders).values({
-        transferOrderId,
-        orderNumber,
-        sourceLocationId,
-        destinationLocationId: destLocationId,
-        stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
-        createdBy: actor,
-      });
-
-      // 3) Insert Lines and Update Backorders
-      for (const line of lines) {
-        const transferOrderLineId = uuidv4();
-        await tx.insert(transferOrderLines).values({
-          transferOrderLineId,
-          transferOrderId,
-          productId: line.productId,
-          quantity: line.quantity,
-        });
-
-        // "Allocate" the backorder to this transfer order
-        await tx
-          .update(backorders)
-          .set({
-            transferOrderId,
-            transferOrderLineId,
-            // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-            stateCode: BACKORDER_STATE.AWAITING_RECEIPT,
-          })
-          .where(eq(backorders.backorderId, line.backorderId));
-      }
-
-      const [[sourceLoc], [destLoc]] = await Promise.all([
-        tx
-          .select({ name: locations.name })
-          .from(locations)
-          .where(eq(locations.locationId, sourceLocationId)),
-        tx
-          .select({ name: locations.name })
-          .from(locations)
-          .where(eq(locations.locationId, destLocationId)),
-      ]);
-
-      await emitEvent(tx as unknown as DrizzleDB, {
-        entityType: EntityType.TRANSFER_ORDER,
-        entityId: transferOrderId,
-        eventType: EventType.CREATED,
-        entityDisplayName: orderNumber,
-        payload: {
-          orderNumber,
-          sourceLocationId,
-          sourceLocationName: sourceLoc?.name,
-          destinationLocationId: destLocationId,
-          destinationLocationName: destLoc?.name,
-          lineCount: lines.length,
-        },
-        actor,
-      });
-
-      return { transferOrderId, orderNumber };
-    });
-  }
-
-  // -------------------------------------------------------------------------
-  // Picking
-  // -------------------------------------------------------------------------
 
   async getPickingSummary(transferOrderId: string, tx?: DrizzleDB) {
     const db = tx || this.db;
@@ -226,7 +74,7 @@ export class TransferService {
     const lines = await db
       .select({
         transferOrderLineId: transferOrderLines.transferOrderLineId,
-        salesOrderLineId: transferOrderLines.transferOrderLineId, // Alias for UI
+        salesOrderLineId: transferOrderLines.transferOrderLineId,
         productId: transferOrderLines.productId,
         productNumber: coreProducts.productNumber,
         productType: coreProducts.productType,
@@ -246,7 +94,7 @@ export class TransferService {
         pickId: transferOrderPicks.pickId,
         transferOrderId: transferOrderPicks.transferOrderId,
         transferOrderLineId: transferOrderPicks.transferOrderLineId,
-        salesOrderLineId: transferOrderPicks.transferOrderLineId, // Alias for UI
+        salesOrderLineId: transferOrderPicks.transferOrderLineId,
         productId: transferOrderPicks.productId,
         binId: transferOrderPicks.binId,
         binName: bins.binNumber,
@@ -285,7 +133,6 @@ export class TransferService {
             )
         : [];
 
-    // For each line, compute remaining and get available bins
     const enrichedLines = lines.map((line: Record<string, unknown>) => {
       const linePicks = picks.filter(
         (p: Record<string, unknown>) =>
@@ -330,7 +177,7 @@ export class TransferService {
         isFullyPicked: remaining <= 0,
         isPhysical: line.productType === 'inventory',
         onHand: totalOnHand.toString(),
-        hasAllocation: false, // Transfer orders don't have backorder allocations in the same way
+        hasAllocation: false,
       };
     });
 
@@ -404,7 +251,7 @@ export class TransferService {
       throw new BadRequestException('Insufficient stock in selected bin');
     }
 
-    const result = await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx) => {
       await tx.insert(transferOrderPicks).values({
         transferOrderId,
         transferOrderLineId: lineId,
@@ -432,7 +279,7 @@ export class TransferService {
         );
       }
 
-      const [bin] = binId
+      const [binEntity] = binId
         ? await tx
             .select({ binNumber: bins.binNumber })
             .from(bins)
@@ -450,12 +297,11 @@ export class TransferService {
           transferOrderId,
           quantity,
           binId,
-          binNumber: bin?.binNumber,
+          binNumber: binEntity?.binNumber,
         },
       });
+      return { success: true };
     });
-
-    return result;
   }
 
   async cancelPick(transferOrderId: string, pickId: string, actor: string) {
@@ -485,7 +331,7 @@ export class TransferService {
         .select({ orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
-      // @herobm-skip-audit - DB write is performed by changePickState, emitting cross-entity event here
+      // @herobm-skip-audit DB write is performed in helper method changePickState
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
@@ -496,10 +342,6 @@ export class TransferService {
       });
     });
   }
-
-  // -------------------------------------------------------------------------
-  // Shipping
-  // -------------------------------------------------------------------------
 
   async createShipment(
     transferOrderId: string,
@@ -521,7 +363,6 @@ export class TransferService {
         );
       }
 
-      // 1) Get the INTRA_TRANSIT bin for the source location
       const [transitBin] = await tx
         .select({ binId: bins.binId })
         .from(bins)
@@ -539,7 +380,6 @@ export class TransferService {
         );
       }
 
-      // 2) Find picks matching the requested lines
       const picks = await tx.query.transferOrderPicks.findMany({
         where: and(
           eq(transferOrderPicks.transferOrderId, transferOrderId),
@@ -547,7 +387,6 @@ export class TransferService {
         ),
       });
 
-      // Filter and allocate quantities
       const requestedLines = dto.lines.filter(
         (l) => parseFloat(l.quantityShipped) > 0,
       );
@@ -557,23 +396,7 @@ export class TransferService {
         );
       }
 
-      // Generate Shipment Number
-      const shipmentPrefix = `TSH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
-      const lastShipment = await tx
-        .select({ shipmentNumber: transferOrderShipments.shipmentNumber })
-        .from(transferOrderShipments)
-        .where(
-          sql`${transferOrderShipments.shipmentNumber} LIKE ${shipmentPrefix + '%'}`,
-        )
-        .orderBy(desc(transferOrderShipments.shipmentNumber))
-        .limit(1);
-
-      let nextNum = 1;
-      if (lastShipment.length > 0) {
-        const parts = lastShipment[0].shipmentNumber.split('-');
-        nextNum = parseInt(parts[2], 10) + 1;
-      }
-      const shipmentNumber = `${shipmentPrefix}${String(nextNum).padStart(3, '0')}`;
+      const shipmentNumber = await this.coreService.generateShipmentNumber(tx);
       const shipmentId = uuidv4();
 
       await tx.insert(transferOrderShipments).values({
@@ -613,7 +436,6 @@ export class TransferService {
 
           remainingToShip -= shipQty;
 
-          // A. Create shipment line
           await tx.insert(transferOrderShipmentLines).values({
             shipmentLineId: uuidv4(),
             shipmentId,
@@ -625,7 +447,6 @@ export class TransferService {
 
           const uomCode = uomMap.get(pick.productId) || 'EA';
 
-          // B. Decrease from source pick bin
           inventoryLines.push({
             productId: pick.productId,
             binId: pick.binId!,
@@ -633,7 +454,6 @@ export class TransferService {
             uomCode,
           });
 
-          // C. Increase into INTRA_TRANSIT bin
           inventoryLines.push({
             productId: pick.productId,
             binId: transitBin.binId,
@@ -641,11 +461,10 @@ export class TransferService {
             uomCode,
           });
 
-          // D. Mark pick as shipped or partial
           if (shipQty === pickQty) {
             await tx
               .update(transferOrderPicks)
-              // eslint-disable-next-line no-restricted-syntax -- Needed for legacy code
+              // eslint-disable-next-line no-restricted-syntax -- State bypass required
               .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED })
               .where(eq(transferOrderPicks.pickId, pick.pickId));
           } else {
@@ -661,7 +480,6 @@ export class TransferService {
             });
           }
 
-          // E. Update shipped quantity on order line
           await tx
             .update(transferOrderLines)
             .set({
@@ -690,13 +508,12 @@ export class TransferService {
         lines: inventoryLines,
       });
 
-      // Update transfer order status
       const summary = await this.getPickingSummary(
         transferOrderId,
         tx as unknown as DrizzleDB,
       );
       const isFullyShipped = summary.lines.every(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for legacy code
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Any allowed here
         (l: any) => parseFloat(l.quantityShipped) >= parseFloat(l.quantity),
       );
 
@@ -754,7 +571,6 @@ export class TransferService {
         );
       }
 
-      // 1) Get the INTRA_TRANSIT bin for the source location
       const [transitBin] = await tx
         .select({ binId: bins.binId })
         .from(bins)
@@ -772,7 +588,6 @@ export class TransferService {
         );
       }
 
-      // 2) Find all picked items
       const picks = await tx.query.transferOrderPicks.findMany({
         where: and(
           eq(transferOrderPicks.transferOrderId, transferOrderId),
@@ -784,26 +599,9 @@ export class TransferService {
         throw new BadRequestException('No items have been picked to ship');
       }
 
-      // 3) Generate Shipment Number
-      const shipmentPrefix = `TSH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
-      const lastShipment = await tx
-        .select({ shipmentNumber: transferOrderShipments.shipmentNumber })
-        .from(transferOrderShipments)
-        .where(
-          sql`${transferOrderShipments.shipmentNumber} LIKE ${shipmentPrefix + '%'}`,
-        )
-        .orderBy(desc(transferOrderShipments.shipmentNumber))
-        .limit(1);
-
-      let nextNum = 1;
-      if (lastShipment.length > 0) {
-        const parts = lastShipment[0].shipmentNumber.split('-');
-        nextNum = parseInt(parts[2], 10) + 1;
-      }
-      const shipmentNumber = `${shipmentPrefix}${String(nextNum).padStart(3, '0')}`;
+      const shipmentNumber = await this.coreService.generateShipmentNumber(tx);
       const shipmentId = uuidv4();
 
-      // 4) Create Shipment Header
       await tx.insert(transferOrderShipments).values({
         shipmentId,
         transferOrderId,
@@ -812,7 +610,6 @@ export class TransferService {
         shippedBy: actor,
       });
 
-      // 5) Build Inventory Movements
       const inventoryLines: {
         productId: string;
         binId: string;
@@ -831,7 +628,6 @@ export class TransferService {
       for (const pick of picks) {
         const pickQty = parseFloat(pick.quantity);
 
-        // A. Create shipment line
         shipmentLinesInsert.push({
           shipmentLineId: uuidv4(),
           shipmentId,
@@ -843,7 +639,6 @@ export class TransferService {
 
         const uomCode = uomMap.get(pick.productId) || 'EA';
 
-        // B. Decrease from source pick bin
         inventoryLines.push({
           productId: pick.productId,
           binId: pick.binId!,
@@ -851,7 +646,6 @@ export class TransferService {
           uomCode,
         });
 
-        // C. Increase into INTRA_TRANSIT bin
         inventoryLines.push({
           productId: pick.productId,
           binId: transitBin.binId,
@@ -859,14 +653,12 @@ export class TransferService {
           uomCode,
         });
 
-        // D. Mark pick as shipped
         await tx
           .update(transferOrderPicks)
-          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
+          // eslint-disable-next-line no-restricted-syntax -- State bypass required
           .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED })
           .where(eq(transferOrderPicks.pickId, pick.pickId));
 
-        // E. Update shipped quantity on order line
         await tx
           .update(transferOrderLines)
           .set({
@@ -882,7 +674,6 @@ export class TransferService {
 
       await tx.insert(transferOrderShipmentLines).values(shipmentLinesInsert);
 
-      // 6) Execute Inventory Movement
       await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `INTRA-OUT-${shipmentNumber}-${Date.now().toString().slice(-4)}`,
         sourceType: 'TRANSFER_OUT',
@@ -892,7 +683,6 @@ export class TransferService {
         lines: inventoryLines,
       });
 
-      // 7) Update Order State
       await this.changeTransferState(
         transferOrderId,
         TRANSFER_ORDER_STATE.SHIPPED,
@@ -936,7 +726,6 @@ export class TransferService {
         .from(transferOrderShipmentLines)
         .where(eq(transferOrderShipmentLines.shipmentId, shipmentId));
 
-      // 1) Find the INTRA_TRANSIT bin for the source location
       const order = await tx.query.transferOrders.findFirst({
         where: eq(transferOrders.transferOrderId, transferOrderId),
       });
@@ -958,7 +747,6 @@ export class TransferService {
         );
       }
 
-      // 2) Revert inventory movement
       const productIds = Array.from(new Set(lines.map((p) => p.productId)));
       const productUoms = await tx
         .select({ productId: products.productId, baseUom: products.baseUom })
@@ -973,29 +761,26 @@ export class TransferService {
 
         if (!line.pickId) continue;
 
-        // Fetch original pick to know which bin it was picked from
         const pick = await tx.query.transferOrderPicks.findFirst({
           where: eq(transferOrderPicks.pickId, line.pickId),
         });
 
         if (!pick) throw new NotFoundException(`Pick ${line.pickId} not found`);
 
-        // Revert from INTRA_TRANSIT back to source pick bin
         inventoryLines.push({
           productId: line.productId,
           binId: transitBin.binId,
-          quantity: -pickQty, // Remove from transit
+          quantity: -pickQty,
           uomCode,
         });
 
         inventoryLines.push({
           productId: line.productId,
           binId: pick.binId!,
-          quantity: pickQty, // Put back in pick bin
+          quantity: pickQty,
           uomCode,
         });
 
-        // Mark pick as PICKED
         await this.changePickState(
           pick.pickId,
           TRANSFER_ORDER_PICK_STATE.PICKED,
@@ -1003,7 +788,6 @@ export class TransferService {
           tx,
         );
 
-        // Decrease shipped quantity on order line
         await tx
           .update(transferOrderLines)
           .set({
@@ -1017,7 +801,6 @@ export class TransferService {
           );
       }
 
-      // Execute Inventory Movement
       if (inventoryLines.length > 0) {
         await this.inventoryMovementService.recordInventoryMovement(tx, {
           entryNumber: `INTRA-REV-${shipment.shipmentNumber}-${Date.now().toString().slice(-4)}`,
@@ -1029,14 +812,12 @@ export class TransferService {
         });
       }
 
-      // Mark shipment as cancelled
       await tx
         .update(transferOrderShipments)
-        // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
+        // eslint-disable-next-line no-restricted-syntax -- State bypass required
         .set({ stateCode: SHIPMENT_STATE.CANCELLED })
         .where(eq(transferOrderShipments.shipmentId, shipmentId));
 
-      // Revert order state to PICKING
       await this.changeTransferState(
         transferOrderId,
         TRANSFER_ORDER_STATE.PICKING,
@@ -1044,7 +825,6 @@ export class TransferService {
         tx,
       );
 
-      // Emit Event
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
@@ -1091,12 +871,8 @@ export class TransferService {
     }
 
     await this.cancelShipment(transferOrderId, shipment.shipmentId, actor);
-    return this.findOne(transferOrderId);
+    return this.coreService.findOne(transferOrderId);
   }
-
-  // -------------------------------------------------------------------------
-  // Receiving
-  // -------------------------------------------------------------------------
 
   async receiveTransferOrder(
     transferOrderId: string,
@@ -1118,8 +894,6 @@ export class TransferService {
         );
       }
 
-      // 1) Verify destination bin is valid for the destination location
-      // Using RECEIVING bin for general receipt
       const [destBin] = await tx
         .select({ binId: bins.binId })
         .from(bins)
@@ -1138,7 +912,6 @@ export class TransferService {
       }
       const destinationBinId = destBin.binId;
 
-      // 2) Get the INTRA_TRANSIT bin for the source location (where stock currently resides)
       const [transitBin] = await tx
         .select({ binId: bins.binId })
         .from(bins)
@@ -1156,8 +929,6 @@ export class TransferService {
         );
       }
 
-      // 3) Find all shipments that haven't been fully received yet
-      // For simplicity, we'll receive the entire 'shipped' balance of the order.
       const orderLines = await tx.query.transferOrderLines.findMany({
         where: eq(transferOrderLines.transferOrderId, transferOrderId),
       });
@@ -1171,23 +942,7 @@ export class TransferService {
       }[] = [];
       const receiptLinesInsert = [];
 
-      // 4) Generate Receipt Number
-      const receiptPrefix = `TRC-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
-      const lastReceipt = await tx
-        .select({ receiptNumber: transferOrderReceipts.receiptNumber })
-        .from(transferOrderReceipts)
-        .where(
-          sql`${transferOrderReceipts.receiptNumber} LIKE ${receiptPrefix + '%'}`,
-        )
-        .orderBy(desc(transferOrderReceipts.receiptNumber))
-        .limit(1);
-
-      let nextNum = 1;
-      if (lastReceipt.length > 0) {
-        const parts = lastReceipt[0].receiptNumber.split('-');
-        nextNum = parseInt(parts[2], 10) + 1;
-      }
-      const receiptNumber = `${receiptPrefix}${String(nextNum).padStart(3, '0')}`;
+      const receiptNumber = await this.coreService.generateReceiptNumber(tx);
       const receiptId = uuidv4();
 
       await tx.insert(transferOrderReceipts).values({
@@ -1241,7 +996,6 @@ export class TransferService {
             matchStatus: MATCH_STATUS.MATCHED,
           });
 
-          // Decrease from INTRA_TRANSIT bin
           inventoryLines.push({
             productId: line.productId,
             binId: transitBin.binId,
@@ -1249,7 +1003,6 @@ export class TransferService {
             uomCode: uomMap.get(line.productId) || 'EA',
           });
 
-          // Increase into Destination Bin
           inventoryLines.push({
             productId: line.productId,
             binId: destinationBinId,
@@ -1257,7 +1010,6 @@ export class TransferService {
             uomCode: uomMap.get(line.productId) || 'EA',
           });
 
-          // Update received quantity on order line
           await tx
             .update(transferOrderLines)
             .set({
@@ -1280,7 +1032,6 @@ export class TransferService {
 
       await tx.insert(transferOrderReceiptLines).values(receiptLinesInsert);
 
-      // 5) Execute Inventory Movement
       await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `INTRA-IN-${receiptNumber}-${Date.now().toString().slice(-4)}`,
         sourceType: 'TRANSFER_IN',
@@ -1290,7 +1041,6 @@ export class TransferService {
         lines: inventoryLines,
       });
 
-      // 6) Check if fully received
       const updatedOrderLines = await tx.query.transferOrderLines.findMany({
         where: eq(transferOrderLines.transferOrderId, transferOrderId),
       });
@@ -1306,7 +1056,6 @@ export class TransferService {
         ? TRANSFER_ORDER_STATE.RECEIVED
         : TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED;
 
-      // Update Order State
       await this.changeTransferState(transferOrderId, nextState, actor, tx);
 
       await emitEvent(tx as unknown as DrizzleDB, {
@@ -1322,14 +1071,11 @@ export class TransferService {
     });
   }
 
-  /**
-   * Universal changeState for Transfer Orders
-   */
   async changeTransferState(
     transferOrderId: string,
     newState: TransferOrderState,
     actor: string,
-    tx: DrizzleDB,
+    tx?: DrizzleDB,
   ) {
     if (!VALID_TRANSFER_STATES.includes(newState)) {
       throw new BadRequestException(
@@ -1337,7 +1083,9 @@ export class TransferService {
       );
     }
 
-    const [order] = await tx
+    const db = tx || this.db;
+
+    const [order] = await db
       .select()
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, transferOrderId));
@@ -1368,13 +1116,13 @@ export class TransferService {
       );
     }
 
-    const [updated] = await tx
+    const [updated] = await db
       .update(transferOrders)
       .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(transferOrders.transferOrderId, transferOrderId))
       .returning();
 
-    await emitEvent(tx as unknown as DrizzleDB, {
+    await emitEvent(db as unknown as DrizzleDB, {
       entityType: EntityType.TRANSFER_ORDER,
       entityId: transferOrderId,
       eventType: EventType.STATUS_CHANGED,
@@ -1440,483 +1188,6 @@ export class TransferService {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // CRUD
-  // -------------------------------------------------------------------------
-
-  async findAll(query?: TransferPaginationQuery) {
-    const { page, limit, cursor, direction, searchTerm, states } =
-      parsePagination(query);
-
-    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
-    const scoreSql = searchTerm
-      ? sql<number>`
-          CASE 
-            WHEN ${transferOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${transferOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${transferOrders.notes} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${transferOrders.notes} ILIKE ${rawSearchTerm + '%'} THEN 2
-            ELSE 1
-          END
-        `
-      : sql<number>`0::int`;
-
-    const conditions = [];
-
-    if (searchTerm) {
-      conditions.push(
-        or(
-          ilike(transferOrders.orderNumber, `%${rawSearchTerm}%`),
-          ilike(transferOrders.notes, `%${rawSearchTerm}%`),
-        ),
-      );
-    }
-
-    if (states && states.length > 0) {
-      if (states.length === 1) {
-        conditions.push(eq(transferOrders.stateCode, states[0]));
-      } else {
-        conditions.push(inArray(transferOrders.stateCode, states));
-      }
-    }
-
-    if (query?.destinationLocationId) {
-      conditions.push(
-        eq(transferOrders.destinationLocationId, query.destinationLocationId),
-      );
-    }
-
-    const destLoc = alias(locations, 'destLoc');
-    const sourceLoc = alias(locations, 'sourceLoc');
-
-    let qb = this.db
-      .select({
-        id: transferOrders.transferOrderId,
-        orderNumber: transferOrders.orderNumber,
-        stateCode: transferOrders.stateCode,
-        sourceLocationId: transferOrders.sourceLocationId,
-        sourceLocationName: sourceLoc.name,
-        destinationLocationId: transferOrders.destinationLocationId,
-        destinationLocationName: destLoc.name,
-        createdBy: transferOrders.createdBy,
-        createdOn: transferOrders.createdOn,
-        notes: transferOrders.notes,
-        shippingNotes: transferOrders.shippingNotes,
-        score: scoreSql,
-      })
-      .from(transferOrders)
-      .leftJoin(
-        sourceLoc,
-        eq(transferOrders.sourceLocationId, sourceLoc.locationId),
-      )
-      .leftJoin(
-        destLoc,
-        eq(transferOrders.destinationLocationId, destLoc.locationId),
-      )
-      .$dynamic();
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    if (whereClause) {
-      qb = qb.where(whereClause);
-    }
-
-    const { data, nextCursor, prevCursor } = await withCursorPagination({
-      qb,
-      limit,
-      cursorObj: cursor as {
-        score: number;
-        createdOn: string;
-        id: string;
-      } | null,
-      direction: direction,
-      applyWhere: (q, c, dir) => {
-        const cDate = c.createdOn;
-        if (dir === 'next') {
-          const cursorCond = or(
-            sql`${scoreSql} < ${c.score}`,
-            and(
-              eq(scoreSql, c.score),
-              sql`${transferOrders.createdOn} < ${cDate}::timestamp`,
-            ),
-            and(
-              eq(scoreSql, c.score),
-              eq(transferOrders.createdOn, sql`${cDate}::timestamp`),
-              sql`${transferOrders.transferOrderId} < ${c.id}`,
-            ),
-          );
-          return q.where(
-            whereClause ? and(whereClause, cursorCond) : cursorCond,
-          );
-        } else {
-          const cursorCond = or(
-            sql`${scoreSql} > ${c.score}`,
-            and(
-              eq(scoreSql, c.score),
-              sql`${transferOrders.createdOn} > ${cDate}::timestamp`,
-            ),
-            and(
-              eq(scoreSql, c.score),
-              eq(transferOrders.createdOn, sql`${cDate}::timestamp`),
-              sql`${transferOrders.transferOrderId} > ${c.id}`,
-            ),
-          );
-          return q.where(
-            whereClause ? and(whereClause, cursorCond) : cursorCond,
-          );
-        }
-      },
-      applyOrderBy: (q, dir) => {
-        const orderFn = dir === 'next' ? desc : asc;
-        return q.orderBy(
-          orderFn(scoreSql),
-          orderFn(transferOrders.createdOn),
-          orderFn(transferOrders.transferOrderId),
-        );
-      },
-      encodeRow: (row) => ({
-        score: Number(row.score) || 0,
-        createdOn: (row.createdOn || new Date()).toISOString(),
-        id: row.id,
-      }),
-    });
-
-    let countQb = this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(transferOrders)
-      .$dynamic();
-
-    if (conditions.length > 0) {
-      countQb = countQb.where(and(...conditions));
-    }
-
-    const [{ count }] = await countQb;
-
-    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
-  }
-
-  async findShipments(transferOrderId: string) {
-    const data = await this.db
-      .select({
-        shipmentId: transferOrderShipments.shipmentId,
-        shipmentNumber: transferOrderShipments.shipmentNumber,
-        stateCode: transferOrderShipments.stateCode,
-        notes: sql<string | null>`NULL`,
-        trackingNumber: transferOrderShipments.trackingNumber,
-        createdOn: transferOrderShipments.createdOn,
-        createdBy: transferOrderShipments.shippedBy,
-      })
-      .from(transferOrderShipments)
-      .where(eq(transferOrderShipments.transferOrderId, transferOrderId))
-      .orderBy(desc(transferOrderShipments.createdOn));
-
-    if (data.length === 0) return [];
-
-    const shipmentIds = data.map((s) => s.shipmentId);
-
-    const linesData = await this.db
-      .select({
-        shipmentLineId: transferOrderShipmentLines.shipmentLineId,
-        shipmentId: transferOrderShipmentLines.shipmentId,
-        salesOrderLineId: transferOrderShipmentLines.transferOrderLineId, // mapping to match UI
-        quantityShipped: transferOrderShipmentLines.quantity,
-      })
-      .from(transferOrderShipmentLines)
-      .where(
-        sql`${transferOrderShipmentLines.shipmentId} IN (${sql.join(
-          shipmentIds.map((id) => sql`${id}`),
-          sql`, `,
-        )})`,
-      );
-
-    const linesMap = new Map<string, typeof linesData>();
-    for (const line of linesData) {
-      if (!linesMap.has(line.shipmentId)) linesMap.set(line.shipmentId, []);
-      linesMap.get(line.shipmentId)!.push(line);
-    }
-
-    return data.map((s) => ({
-      ...s,
-      lines: linesMap.get(s.shipmentId) || [],
-    }));
-  }
-
-  async findOne(id: string) {
-    const destLoc = alias(locations, 'destLoc');
-    const sourceLoc = alias(locations, 'sourceLoc');
-
-    const [order] = await this.db
-      .select({
-        id: transferOrders.transferOrderId,
-        transferOrderId: transferOrders.transferOrderId,
-        orderNumber: transferOrders.orderNumber,
-        stateCode: transferOrders.stateCode,
-        sourceLocationId: transferOrders.sourceLocationId,
-        sourceLocationName: sourceLoc.name,
-        destinationLocationId: transferOrders.destinationLocationId,
-        destinationLocationName: destLoc.name,
-        createdBy: transferOrders.createdBy,
-        createdOn: transferOrders.createdOn,
-        notes: transferOrders.notes,
-        shippingNotes: transferOrders.shippingNotes,
-      })
-      .from(transferOrders)
-      .leftJoin(
-        sourceLoc,
-        eq(transferOrders.sourceLocationId, sourceLoc.locationId),
-      )
-      .leftJoin(
-        destLoc,
-        eq(transferOrders.destinationLocationId, destLoc.locationId),
-      )
-      .where(eq(transferOrders.transferOrderId, id));
-
-    if (!order) {
-      throw new NotFoundException('Transfer Order not found');
-    }
-
-    const lines = await this.db
-      .select({
-        id: transferOrderLines.transferOrderLineId,
-        transferOrderLineId: transferOrderLines.transferOrderLineId,
-        productId: transferOrderLines.productId,
-        productNumber: coreProducts.productNumber,
-        productDescription: coreProducts.name,
-        quantity: transferOrderLines.quantity,
-        quantityShipped: transferOrderLines.quantityShipped,
-        quantityReceived: transferOrderLines.quantityReceived,
-      })
-      .from(transferOrderLines)
-      .innerJoin(
-        coreProducts,
-        eq(transferOrderLines.productId, coreProducts.productId),
-      )
-      .where(eq(transferOrderLines.transferOrderId, id));
-
-    const events = await this.db
-      .select({
-        eventId: warehouseEvents.eventId,
-        eventType: warehouseEvents.eventType,
-        payload: warehouseEvents.payload,
-        actor: warehouseEvents.actor,
-        createdOn: warehouseEvents.createdOn,
-      })
-      .from(warehouseEvents)
-      .where(
-        and(
-          eq(warehouseEvents.entityType, EntityType.TRANSFER_ORDER),
-          eq(warehouseEvents.entityId, id),
-        ),
-      )
-      .orderBy(desc(warehouseEvents.createdOn));
-
-    return { ...order, lines, events };
-  }
-
-  async create(dto: CreateTransferOrderDto, actor: string) {
-    return await this.db.transaction(async (tx) => {
-      const prefix = `TO-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
-      const lastOrder = await tx
-        .select({ orderNumber: transferOrders.orderNumber })
-        .from(transferOrders)
-        .where(sql`${transferOrders.orderNumber} LIKE ${prefix + '%'}`)
-        .orderBy(desc(transferOrders.orderNumber))
-        .limit(1);
-
-      let nextNum = 1;
-      if (lastOrder.length > 0) {
-        const parts = lastOrder[0].orderNumber.split('-');
-        nextNum = parseInt(parts[2], 10) + 1;
-      }
-      const orderNumber = `${prefix}${String(nextNum).padStart(3, '0')}`;
-      const transferOrderId = uuidv4();
-
-      await tx.insert(transferOrders).values({
-        transferOrderId,
-        orderNumber,
-        sourceLocationId: dto.sourceLocationId,
-        destinationLocationId: dto.destinationLocationId,
-        notes: dto.notes,
-        shippingNotes: dto.shippingNotes,
-        stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
-        createdBy: actor,
-      });
-
-      if (dto.lines && dto.lines.length > 0) {
-        const linesInsert = dto.lines.map((l) => ({
-          transferOrderLineId: uuidv4(),
-          transferOrderId,
-          productId: l.productId,
-          quantity: l.quantity,
-        }));
-        await tx.insert(transferOrderLines).values(linesInsert);
-      }
-
-      await emitEvent(tx as unknown as DrizzleDB, {
-        entityType: EntityType.TRANSFER_ORDER,
-        entityId: transferOrderId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: orderNumber,
-        payload: { orderNumber },
-        actor,
-      });
-
-      return { id: transferOrderId, transferOrderId, orderNumber };
-    });
-  }
-
-  async update(id: string, dto: UpdateTransferOrderDto, actor: string) {
-    const [existing] = await this.db
-      .select({ stateCode: transferOrders.stateCode })
-      .from(transferOrders)
-      .where(eq(transferOrders.transferOrderId, id));
-
-    if (!existing) throw new NotFoundException('Transfer order not found');
-
-    if (existing.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
-      if (dto.sourceLocationId || dto.destinationLocationId) {
-        throw new BadRequestException(
-          'Cannot edit locations on an order that is already in progress',
-        );
-      }
-    }
-
-    const updates: Record<string, unknown> = { modifiedOn: new Date() };
-    if (dto.sourceLocationId) updates.sourceLocationId = dto.sourceLocationId;
-    if (dto.destinationLocationId)
-      updates.destinationLocationId = dto.destinationLocationId;
-    if (dto.notes !== undefined) updates.notes = dto.notes;
-    if (dto.shippingNotes !== undefined)
-      updates.shippingNotes = dto.shippingNotes;
-
-    if (Object.keys(updates).length > 1) {
-      const [updatedRecord] = await this.db
-        .update(transferOrders)
-        .set(updates)
-        .where(eq(transferOrders.transferOrderId, id))
-        .returning();
-
-      if (updatedRecord) {
-        await emitEvent(this.db, {
-          entityType: EntityType.TRANSFER_ORDER,
-          entityId: id,
-          eventType: EventType.UPDATED,
-          entityDisplayName: updatedRecord.orderNumber,
-          payload: { changes: updates },
-          actor,
-        });
-      }
-    }
-
-    return { success: true };
-  }
-
-  async addLine(id: string, dto: CreateTransferOrderLineDto, actor: string) {
-    const [existing] = await this.db
-      .select({
-        stateCode: transferOrders.stateCode,
-        orderNumber: transferOrders.orderNumber,
-      })
-      .from(transferOrders)
-      .where(eq(transferOrders.transferOrderId, id));
-
-    if (!existing) throw new NotFoundException('Transfer order not found');
-    if (existing.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
-      throw new BadRequestException(
-        'Cannot edit an order that is already in progress',
-      );
-    }
-
-    const lineId = uuidv4();
-    await this.db.insert(transferOrderLines).values({
-      transferOrderLineId: lineId,
-      transferOrderId: id,
-      productId: dto.productId,
-      quantity: dto.quantity,
-    });
-
-    await emitEvent(this.db, {
-      entityType: EntityType.TRANSFER_ORDER,
-      entityId: id,
-      eventType: EventType.LINE_ADDED,
-      entityDisplayName: existing.orderNumber,
-      payload: { action: 'addLine', lineId },
-      actor,
-    });
-
-    return { lineId };
-  }
-
-  async updateLine(
-    id: string,
-    lineId: string,
-    dto: UpdateTransferOrderLineDto,
-    actor: string,
-  ) {
-    const [existing] = await this.db
-      .select({
-        stateCode: transferOrders.stateCode,
-        orderNumber: transferOrders.orderNumber,
-      })
-      .from(transferOrders)
-      .where(eq(transferOrders.transferOrderId, id));
-
-    if (!existing) throw new NotFoundException('Transfer order not found');
-    if (existing.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
-      throw new BadRequestException(
-        'Cannot edit an order that is already in progress',
-      );
-    }
-
-    if (dto.quantity !== undefined) {
-      await this.db
-        .update(transferOrderLines)
-        .set({ quantity: dto.quantity })
-        .where(eq(transferOrderLines.transferOrderLineId, lineId));
-
-      await emitEvent(this.db, {
-        entityType: EntityType.TRANSFER_ORDER,
-        entityId: id,
-        eventType: EventType.LINE_UPDATED,
-        entityDisplayName: existing.orderNumber,
-        payload: { action: 'updateLine', lineId },
-        actor,
-      });
-    }
-    return { success: true };
-  }
-
-  async removeLine(id: string, lineId: string, actor: string) {
-    const [existing] = await this.db
-      .select({
-        stateCode: transferOrders.stateCode,
-        orderNumber: transferOrders.orderNumber,
-      })
-      .from(transferOrders)
-      .where(eq(transferOrders.transferOrderId, id));
-
-    if (!existing) throw new NotFoundException('Transfer order not found');
-    if (existing.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
-      throw new BadRequestException(
-        'Cannot edit an order that is already in progress',
-      );
-    }
-
-    await this.db
-      .delete(transferOrderLines)
-      .where(eq(transferOrderLines.transferOrderLineId, lineId));
-
-    await emitEvent(this.db, {
-      entityType: EntityType.TRANSFER_ORDER,
-      entityId: id,
-      eventType: EventType.LINE_REMOVED,
-      entityDisplayName: existing.orderNumber,
-      payload: { action: 'removeLine', lineId },
-      actor,
-    });
-
-    return { success: true };
-  }
-
   async cancelTransferOrder(id: string, actor: string) {
     return await this.db.transaction(async (tx) => {
       const [order] = await tx
@@ -1934,13 +1205,12 @@ export class TransferService {
         tx,
       );
 
-      // Reset linked backorders
       await tx
         .update(backorders)
         .set({
           transferOrderId: null,
           transferOrderLineId: null,
-          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
+          // eslint-disable-next-line no-restricted-syntax -- State bypass required
           stateCode: BACKORDER_STATE.PENDING_SUPPLY,
         })
         .where(eq(backorders.transferOrderId, id));
@@ -1961,26 +1231,5 @@ export class TransferService {
 
       return { success: true };
     });
-  }
-
-  async findEvents(transferOrderId: string) {
-    const events = await this.db
-      .select({
-        eventId: warehouseEvents.eventId,
-        eventType: warehouseEvents.eventType,
-        payload: warehouseEvents.payload,
-        actor: warehouseEvents.actor,
-        createdOn: warehouseEvents.createdOn,
-      })
-      .from(warehouseEvents)
-      .where(
-        and(
-          eq(warehouseEvents.entityType, EntityType.TRANSFER_ORDER),
-          eq(warehouseEvents.entityId, transferOrderId),
-        ),
-      )
-      .orderBy(desc(warehouseEvents.createdOn));
-
-    return events;
   }
 }

@@ -39,6 +39,10 @@ import {
   CustomerProfile,
   CustomerGroupProfile,
 } from './customer-risk.domain';
+import {
+  AgedBalanceResult,
+  calculateCustomerBalances,
+} from './customer-balances.util';
 
 @Injectable()
 export class CustomersService {
@@ -151,6 +155,22 @@ export class CustomersService {
         billingAddressCountry: actors.headquartersCountry,
         parentCustomerId: parentCustomer.customerId,
         parentCustomerName: parentActor.name,
+        telephone: actors.telephone,
+        email: actors.email,
+        salesContactName: sql<string>`(
+          SELECT c.first_name || ' ' || c.last_name
+          FROM ${actorContactLinks} acl
+          JOIN ${contacts} c ON acl.contact_id = c.contact_id
+          WHERE acl.actor_id = ${customers.actorId} AND 'sales' = ANY(acl.primary_for)
+          LIMIT 1
+        )`,
+        accountsContactName: sql<string>`(
+          SELECT c.first_name || ' ' || c.last_name
+          FROM ${actorContactLinks} acl
+          JOIN ${contacts} c ON acl.contact_id = c.contact_id
+          WHERE acl.actor_id = ${customers.actorId} AND 'accounts' = ANY(acl.primary_for)
+          LIMIT 1
+        )`,
       })
       .from(customers)
       .leftJoin(
@@ -224,54 +244,29 @@ export class CustomersService {
       .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .where(whereClause);
 
+    // Fetch balances and uninvoiced totals for the paginated customers
     const customerIds = data.map((c) => c.customerId);
-    const assessments =
-      await this.creditAssessmentService.assessCreditBatch(customerIds);
-
-    const enrichedData = data.map((row) => {
-      const custProfile: CustomerProfile = {
-        stateCode: row.stateCode,
-        isOnCreditHold: Boolean(row.isOnCreditHold),
-        creditLimit: row.creditLimit?.toString() || null,
-        tradingTermsId: row.tradingTermsId,
-        overrideCreditHoldUntil: row.overrideCreditHoldUntil,
-        earlyPaymentDiscount: row.earlyPaymentDiscount?.toString() || null,
-        earlyPaymentDiscountDays: row.earlyPaymentDiscountDays,
-      };
-
-      let groupProfile: CustomerGroupProfile | null = null;
-      if (row.customerGroupId) {
-        groupProfile = {
-          stateCode: row.stateCode, // Groups don't have an independent stateCode
-          isOnCreditHold: Boolean(row.customerGroupIsOnCreditHold),
-          creditLimit: row.customerGroupCreditLimit?.toString() || null,
-          tradingTermsId: row.customerGroupTradingTermsId,
-        };
-      }
-
-      const risk = resolveCustomerRiskProfile(
-        custProfile,
-        groupProfile,
-        assessments[row.customerId] || {
-          glBalance: 0,
-          totalInvoiceBalance: 0,
-          overdueInvoiceBalance: 0,
-          isOverdue: false,
-        },
-        0,
-        'hard',
-        'confirm',
+    let balancesMap = new Map<string, AgedBalanceResult>();
+    if (customerIds.length > 0) {
+      const balancesList = await calculateCustomerBalances(
+        this.db,
+        'dueDate',
+        customerIds,
       );
+      balancesMap = new Map(balancesList.map((b) => [b.customerId, b]));
+    }
 
+    const customersWithBalances = data.map((c) => {
+      const b = balancesMap.get(c.customerId);
       return {
-        ...row,
-        isSalesBlocked: risk.isSalesBlocked,
-        salesBlockReasons: risk.salesBlockReasons,
+        ...c,
+        totalOutstanding: b ? b.totalOutstanding : 0,
+        uninvoicedOrdersTotal: b ? b.uninvoicedOrdersTotal : 0,
       };
     });
 
     return {
-      data: enrichedData,
+      data: customersWithBalances,
       page,
       limit,
       total: Number(count),
@@ -300,9 +295,9 @@ export class CustomersService {
         billingAddressStateOrProvince: actors.headquartersStateOrProvince,
         billingAddressPostalCode: actors.headquartersPostalCode,
         billingAddressCountry: actors.headquartersCountry,
-        telephone1: sql<string>`''`, // legacy mock
-        fax: sql<string>`''`, // legacy mock
-        emailAddress1: sql<string>`''`, // legacy mock
+        telephone1: actors.telephone,
+        fax: actors.fax,
+        emailAddress1: actors.email,
       })
       .from(customers)
       .leftJoin(
@@ -345,7 +340,7 @@ export class CustomersService {
               fullName: sql<string>`${contacts.firstName} || ' ' || ${contacts.lastName}`,
               email: contacts.email,
               phone: contacts.phone,
-              mobile: sql<string>`''`, // legacy mock
+              mobile: contacts.mobile,
               jobTitle: contacts.jobTitle,
               primaryFor: actorContactLinks.primaryFor,
               createdOn: contacts.createdOn,
@@ -468,102 +463,34 @@ export class CustomersService {
   }
 
   async getAgedBalances(agingBasis: 'invoiceDate' | 'dueDate' = 'dueDate') {
-    const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
+    const balances = await calculateCustomerBalances(this.db, agingBasis);
 
-    const invoicesQuery = sql`
-      SELECT 
-        c.customer_id as "customerId",
-        a.name as "customerName",
-        c.customer_number as "customerNumber",
-        c.currency_code as "currencyCode",
-        c.state_code as "stateCode",
-        c.is_on_credit_hold as "cIsOnCreditHold",
-        c.credit_limit as "cCreditLimit",
-        c.override_credit_hold_until as "cOverride",
-        c.customer_group_id as "customerGroupId",
-        g.is_on_credit_hold as "gIsOnCreditHold",
-        g.credit_limit as "gCreditLimit",
-        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
-        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
-        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
-        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
-        COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
-        COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
-      FROM herobm_core.sales_invoices i
-      LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
-      JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
-      LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
-      LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
-      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
-      GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
-    `;
-
-    const glQuery = sql`
-      SELECT 
-        l.party_id as "customerId",
-        COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) as "glBalance"
-      FROM herobm_core.gl_journal_lines l
-      JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
-      WHERE l.party_type = 'customer'
-      GROUP BY l.party_id
-    `;
-
-    const [invoicesRes, glRes] = await Promise.all([
-      this.db.execute(invoicesQuery),
-      this.db.execute(glQuery),
-    ]);
-
-    const invoicesRows = ((invoicesRes as unknown as Record<string, unknown>)
-      .rows ?? invoicesRes) as Record<string, unknown>[];
-    const glRows = ((glRes as unknown as Record<string, unknown>).rows ??
-      glRes) as Record<string, unknown>[];
-
-    const glMap = new Map<string, number>();
-    for (const row of glRows) {
-      if (row.customerId) {
-        glMap.set(row.customerId as string, Number(row.glBalance));
-      }
-    }
-
-    return invoicesRows.map((row) => {
-      const glBalance = glMap.get(row.customerId as string) || 0;
-      const totalOutstanding = Number(row.totalOutstanding);
-      const current = Number(row.current);
-      const overdueInvoiceBalance = totalOutstanding - current;
-
+    return balances.map((b) => {
       const custProfile = {
-        stateCode: row.stateCode as string,
-        isOnCreditHold: Boolean(row.cIsOnCreditHold),
-        creditLimit:
-          row.cCreditLimit !== null
-            ? String(row.cCreditLimit as string | number)
-            : null,
+        stateCode: b.stateCode as string,
+        isOnCreditHold: Boolean(b.isOnCreditHold),
+        creditLimit: b.creditLimit ?? null,
         tradingTermsId: null,
-        overrideCreditHoldUntil: row.cOverride
-          ? new Date(row.cOverride as string)
-          : null,
+        overrideCreditHoldUntil: b.overrideCreditHoldUntil ?? null,
       };
 
-      const groupProfile = row.customerGroupId
+      const groupProfile = b.customerGroupId
         ? {
-            stateCode: row.stateCode as string,
-            isOnCreditHold: Boolean(row.gIsOnCreditHold),
-            creditLimit:
-              row.gCreditLimit !== null
-                ? String(row.gCreditLimit as string | number)
-                : null,
+            stateCode: b.stateCode as string,
+            isOnCreditHold: Boolean(b.groupIsOnCreditHold),
+            creditLimit: b.groupCreditLimit ?? null,
             tradingTermsId: null,
           }
         : null;
 
       const risk = resolveCustomerRiskProfile(
-        custProfile,
-        groupProfile,
+        custProfile as CustomerProfile,
+        groupProfile as CustomerGroupProfile,
         {
-          totalInvoiceBalance: totalOutstanding,
-          overdueInvoiceBalance,
-          glBalance,
-          isOverdue: overdueInvoiceBalance > 0,
+          totalInvoiceBalance: b.totalOutstanding,
+          overdueInvoiceBalance: b.totalOutstanding - b.current,
+          glBalance: b.glBalance,
+          isOverdue: b.totalOutstanding - b.current > 0,
         },
         0,
         'hard',
@@ -571,21 +498,22 @@ export class CustomersService {
       );
 
       return {
-        customerId: row.customerId as string,
-        customerName: row.customerName as string,
-        customerNumber: row.customerNumber as string,
-        currencyCode: row.currencyCode,
-        current,
-        days1To30: Number(row.days1To30),
-        days31To60: Number(row.days31To60),
-        days61To90: Number(row.days61To90),
-        days90Plus: Number(row.days90Plus),
-        totalOutstanding,
-        glBalance,
-        discrepancyAmount: Math.abs(totalOutstanding - glBalance),
+        customerId: b.customerId,
+        customerName: b.customerName as string,
+        customerNumber: b.customerNumber as string,
+        currencyCode: b.currencyCode,
+        current: b.current,
+        days1To30: b.days1To30,
+        days31To60: b.days31To60,
+        days61To90: b.days61To90,
+        days90Plus: b.days90Plus,
+        totalOutstanding: b.totalOutstanding,
+        glBalance: b.glBalance,
+        discrepancyAmount: b.discrepancyAmount,
+        uninvoicedOrdersTotal: b.uninvoicedOrdersTotal,
         isOnCreditHold: risk.isSalesBlocked,
         creditLimit: risk.effectiveCreditLimit,
-        stateCode: row.stateCode as string,
+        stateCode: b.stateCode as string,
       };
     });
   }

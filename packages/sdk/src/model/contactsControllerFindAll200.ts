@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { ContactResponseDto } from './contactResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { ContactsControllerFindAll200AllOf } from './contactsControllerFindAll200AllOf';
 
-export type ContactsControllerFindAll200 = {
-  data: ContactResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type ContactsControllerFindAll200 = PaginatedResponse & ContactsControllerFindAll200AllOf;

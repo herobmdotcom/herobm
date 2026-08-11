@@ -7,7 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { ShipmentService } from './shipment.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
 import { ShipmentResponseDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -16,7 +17,10 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('shipments')
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class GlobalShipmentsController {
-  constructor(private readonly shipmentService: ShipmentService) {}
+  constructor(
+    private readonly shipmentsCoreService: ShipmentsCoreService,
+    private readonly shipmentsWriteService: ShipmentsWriteService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ type: [ShipmentResponseDto] })
@@ -34,7 +38,7 @@ export class GlobalShipmentsController {
     @Query('salesOrderId') salesOrderId?: string,
     @Query('limit') limit?: string,
   ) {
-    const data = await this.shipmentService.findAll({
+    const data = await this.shipmentsCoreService.findAll({
       days: days ? parseInt(days, 10) : undefined,
       salesOrderId,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -51,6 +55,6 @@ export class GlobalShipmentsController {
   })
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
-    return this.shipmentService.findOne(id);
+    return this.shipmentsCoreService.findOne(id);
   }
 }

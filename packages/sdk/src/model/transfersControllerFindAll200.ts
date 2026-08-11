@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { TransferResponseDto } from './transferResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { TransfersControllerFindAll200AllOf } from './transfersControllerFindAll200AllOf';
 
-export type TransfersControllerFindAll200 = {
-  data: TransferResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type TransfersControllerFindAll200 = PaginatedResponse & TransfersControllerFindAll200AllOf;

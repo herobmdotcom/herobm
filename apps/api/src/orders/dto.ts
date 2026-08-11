@@ -66,6 +66,10 @@ export class CreateOrderLineDto {
 
   @IsOptional()
   @IsNumberString()
+  unitCost?: string;
+
+  @IsOptional()
+  @IsNumberString()
   discountPercentage?: string;
 
   @IsOptional()
@@ -93,6 +97,10 @@ export class UpdateOrderLineDto {
   @IsOptional()
   @IsNumberString()
   pricePerUnit?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  unitCost?: string;
 
   @IsOptional()
   @IsNumberString()

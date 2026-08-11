@@ -30,15 +30,18 @@ import { OrdersCoreService } from './orders-core.service';
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
-import { OrderNotificationService } from './order-notification.service';
 import { OrdersQueryService } from './orders-query.service';
 import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
-import { ShipmentService } from './shipment.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
 import { AllocationsController } from './allocations.controller';
 import { TransfersController } from './transfers/transfers.controller';
-import { TransferService } from './transfers/transfers.service';
+import { TransfersCoreService } from './transfers/transfers-core.service';
+import { TransfersWriteService } from './transfers/transfers-write.service';
+import { TransfersStateService } from './transfers/transfers-state.service';
 import { TaxModule } from '../tax/tax.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -87,18 +90,21 @@ import { EmailModule } from '../email/email.module';
     OrderCreationService,
     OrderLinesService,
     OrderStateService,
-    OrderNotificationService,
     OrdersQueryService,
     BackordersService,
     ReturnsWriteService,
     PickingService,
-    ShipmentService,
+    ShipmentsCoreService,
+    ShipmentsWriteService,
+    ShipmentsStateService,
     PickingSlipService,
     ReportSalesInvoiceService,
     SalesQuoteService,
     SalesReturnCreditService,
     ShippingDocketService,
-    TransferService,
+    TransfersCoreService,
+    TransfersWriteService,
+    TransfersStateService,
   ],
   exports: [
     OrdersService,
@@ -106,7 +112,6 @@ import { EmailModule } from '../email/email.module';
     OrderCreationService,
     OrderLinesService,
     OrderStateService,
-    OrderNotificationService,
     OrdersQueryService,
     BackordersService,
   ],

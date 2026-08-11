@@ -381,6 +381,7 @@ import type {
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
   SystemLogResponseDto,
+  SystemVersionResponseDto,
   TaxBasControllerGetBasSummaryParams,
   TaxCategoriesControllerFindAllParams,
   TaxCategoriesControllerFindOneParams,
@@ -13693,6 +13694,43 @@ export const getSystemControllerGetSystemLogsUrl = (params?: SystemControllerGet
 export const systemControllerGetSystemLogs = async (params?: SystemControllerGetSystemLogsParams, options?: RequestInit): Promise<systemControllerGetSystemLogsResponse> => {
   
   return customFetch<systemControllerGetSystemLogsResponse>(getSystemControllerGetSystemLogsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retrieves backend system environment and version data.
+ * @summary Get System Version
+ */
+export type systemControllerGetSystemVersionResponse200 = {
+  data: SystemVersionResponseDto
+  status: 200
+}
+    
+export type systemControllerGetSystemVersionResponseSuccess = (systemControllerGetSystemVersionResponse200) & {
+  headers: Headers;
+};
+;
+
+export type systemControllerGetSystemVersionResponse = (systemControllerGetSystemVersionResponseSuccess)
+
+export const getSystemControllerGetSystemVersionUrl = () => {
+
+
+  
+
+  return `/admin/version`
+}
+
+export const systemControllerGetSystemVersion = async ( options?: RequestInit): Promise<systemControllerGetSystemVersionResponse> => {
+  
+  return customFetch<systemControllerGetSystemVersionResponse>(getSystemControllerGetSystemVersionUrl(),
   {      
     ...options,
     method: 'GET'

@@ -71,6 +71,7 @@ export default function GlobalInvoicesPage() {
             rowIdField="invoiceId"
             rowHref={(row) => `/sales-invoices/${row.invoiceId}`}
             pageTitle={t('invoicesCardHeading')}
+            defaultSortModel={[{ colId: 'invoiceNumber', sort: 'desc' }]}
             headerFilters={
                 <select
                     value={days}

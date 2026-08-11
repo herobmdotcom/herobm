@@ -41,6 +41,15 @@ export function saveScrollState(gridKey: string, scroll: ScrollState): void {
   }
 }
 
+export function clearScrollState(gridKey: string): void {
+  try {
+    sessionStorage.removeItem(`${SCROLL_STORAGE_PREFIX}${gridKey}`);
+    sessionStorage.removeItem(`datagrid-mobile-scroll-${gridKey}`);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function loadScrollState(gridKey: string): ScrollState | null {
   try {
     const raw = sessionStorage.getItem(`${SCROLL_STORAGE_PREFIX}${gridKey}`);

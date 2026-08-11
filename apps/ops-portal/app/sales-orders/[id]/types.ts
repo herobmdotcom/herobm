@@ -7,6 +7,7 @@ export interface OrderLine {
     productDescription: string;
     quantity: string;
     pricePerUnit: string;
+    unitCost?: string | null;
     discountPercentage: string;
     amount: string;
     taxCategoryId: string | null;

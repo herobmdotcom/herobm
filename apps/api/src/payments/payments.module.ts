@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
-import { PaymentsService } from './payments.service';
+import { PaymentsCoreService } from './payments-core.service';
+import { PaymentsWriteService } from './payments-write.service';
+import { PaymentsAllocationService } from './payments-allocation.service';
+import { PaymentsPostingService } from './payments-posting.service';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { GlModule } from '../gl/gl.module';
 import { SuppliersModule } from '../suppliers/suppliers.module';
@@ -13,7 +16,10 @@ import { PaymentRunGeneratorService } from './payment-run-generator.service';
   imports: [DrizzleModule, GlModule, SuppliersModule],
   controllers: [PaymentsController],
   providers: [
-    PaymentsService,
+    PaymentsCoreService,
+    PaymentsWriteService,
+    PaymentsAllocationService,
+    PaymentsPostingService,
     AbaGeneratorService,
     NachaGeneratorService,
     PaymentRunGeneratorService,

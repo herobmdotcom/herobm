@@ -24,13 +24,12 @@ import {
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import PartialAllocationModal from './PartialAllocationModal';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME
-const ToggleCell = (p: any) => {
+const ToggleCell = (p: ICellRendererParams<OutstandingInvoice>) => {
   const data = p.data;
-  const context = p.context;
+  const context = p.context as { handleToggle: (inv: OutstandingInvoice) => void, t: (key: string) => string };
   
   if (!data || !context) return null;
   const { handleToggle, t } = context;
@@ -79,6 +78,8 @@ interface Allocation {
   allocatedAmount: string;
 }
 
+interface PaymentLine { accountId: string; amount: string; memo: string; accountName: string }
+
 interface PaymentData {
   paymentId: string;
   paymentNumber: string;
@@ -94,7 +95,7 @@ interface PaymentData {
   glAccountBank: string;
   referenceNumber?: string;
   allocations: Allocation[];
-  lines?: { accountId: string; amount: string; memo: string; accountName: string }[];
+  lines?: PaymentLine[];
 }
 
 interface OutstandingInvoice {
@@ -121,7 +122,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const [journalEntry, setJournalEntry] = useState<Record<string, unknown> | null>(null);
   const [data, setData] = useState<PaymentData | null>(null);
   const [partialModalOpen, setPartialModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Record<string, unknown> | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<OutstandingInvoice | null>(null);
 
   
   // Creation Form State
@@ -284,8 +285,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     }
   }, [data?.stateCode, data?.unallocatedAmount, loadOutstandingInvoices]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME
-  const handleToggle = useCallback((invoice: any) => {
+  const handleToggle = useCallback((invoice: OutstandingInvoice) => {
     if (!data) return;
     setOutstandingInvoices(prev => prev.map(p => {
       if (p.id !== invoice.id) return p;
@@ -619,7 +619,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     >
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 opacity-50">
-            {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol identifier */}
             <span className="material-symbols-outlined animate-spin text-3xl mb-2">sync</span>
             <p className="text-sm font-medium">{t('loadingEllipsis')}</p>
           </div>
@@ -876,8 +876,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME */}
-                              {data.lines.map((l: any, idx: number) => (
+                              {data.lines.map((l: PaymentLine, idx: number) => (
                                 <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                                   <td className="px-5 py-3">
                                     <div>{l.accountName}</div>
@@ -957,7 +956,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     {data?.allocations && data.allocations.length > 0 && (
                       <div className="mt-6">
                         <h3 className="section-heading mb-3">
-                          {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+                          {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol identifier */}
                           <span className="material-symbols-outlined">history</span>
                           {t('manager.messages.allocationHistory')}
                         </h3>
@@ -1015,7 +1014,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     <h3 className="section-heading mb-2">{t('allocate')}</h3>
                     {loadingInvoices ? (
                       <div className="flex flex-col items-center justify-center flex-1 opacity-50">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol identifier */}
                         <span className="material-symbols-outlined animate-spin text-3xl mb-4">sync</span>
                         <p className="text-sm font-medium">{t('manager.messages.loadingInvoices')}</p>
                       </div>
@@ -1109,8 +1108,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         onClose={() => setPartialModalOpen(false)}
         invoice={selectedInvoice}
         currencyCode={data?.currencyCode || baseCurrency}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME
-        maxAvailable={data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow + ((selectedInvoice as any)?.pendingAllocation || 0) : 0}
+        maxAvailable={data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow + (selectedInvoice?.pendingAllocation || 0) : 0}
         onSave={(invoiceId, amount, discountAmount) => {
           setOutstandingInvoices(prev => prev.map(p => p.id === invoiceId ? { ...p, pendingAllocation: amount, pendingDiscountAmount: discountAmount } : p));
         }}

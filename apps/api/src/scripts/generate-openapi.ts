@@ -2,7 +2,12 @@
 export {};
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-dotenv.config({ path: path.resolve(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')) });
+dotenv.config({
+  path: path.resolve(
+    __dirname,
+    '../../../../' + (process.env.ENV_FILE || '.env'),
+  ),
+});
 
 // Imports will be dynamic to allow dotenv to run first
 

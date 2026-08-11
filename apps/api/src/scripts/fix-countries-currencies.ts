@@ -6,7 +6,9 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load .env.volzau from root
-dotenv.config({ path: path.join(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')) });
+dotenv.config({
+  path: path.join(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')),
+});
 
 function mapCountryCode(val: string | null): string | undefined {
   if (!val) return undefined;

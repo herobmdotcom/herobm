@@ -1,7 +1,7 @@
 import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PickingService } from './picking.service';
-import { ShipmentService } from './shipment.service';
+
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -35,8 +35,6 @@ describe('PickingService', () => {
   let service: PickingService;
 
   let mockInventoryService: any;
-
-  let mockShipmentService: any;
 
   const ORDER_ID = '00000000-0000-4000-8000-000000000001';
   const CUSTOMER_ID = '00000000-0000-4000-8000-000000000002';
@@ -141,7 +139,6 @@ describe('PickingService', () => {
 
     // Mocks
     mockInventoryService = { recordInventoryMovement: jest.fn() };
-    mockShipmentService = { createShipment: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -150,7 +147,7 @@ describe('PickingService', () => {
           provide: AppConfigService,
           useValue: { defaultFulfillmentLocationId: () => LOCATION_ID },
         },
-        { provide: ShipmentService, useValue: mockShipmentService },
+
         { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryMovementService, useValue: mockInventoryService },

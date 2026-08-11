@@ -37,4 +37,6 @@ export interface OrderResponseDto {
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;
+  productQuantity?: number;
+  productQuantityShipped?: number;
 }

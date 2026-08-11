@@ -167,6 +167,7 @@ export default function BinContentsView() {
         exportFileName="bins"
         fetchAll
         pageTitle={tInventory('tabs.binContents')}
+        defaultSortModel={[{ colId: 'binNumber', sort: 'asc' }]}
         headerActions={
           <div className="flex items-center">
             {selectedRows.length > 0 && !canMove && (

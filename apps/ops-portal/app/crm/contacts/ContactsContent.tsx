@@ -54,6 +54,7 @@ export default function ContactsContent() {
         onRowClicked={handleRowClicked}
         pageTitle="Contacts"
         refreshTrigger={refreshTrigger}
+        defaultSortModel={[{ colId: 'lastName', sort: 'asc' }]}
         headerActions={
           <Button variant="primary" onClick={handleCreateContact}>
             Create Contact

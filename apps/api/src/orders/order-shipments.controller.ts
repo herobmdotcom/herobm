@@ -15,8 +15,10 @@ import {
   Param,
   Body,
 } from '@nestjs/common';
-import { ShipmentService } from './shipment.service';
-import { TransferService } from './transfers/transfers.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { TransfersStateService } from './transfers/transfers-state.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateShipmentDto,
@@ -41,8 +43,10 @@ import { Inject } from '@nestjs/common';
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class OrderShipmentsController {
   constructor(
-    private readonly shipmentService: ShipmentService,
-    private readonly transfersService: TransferService,
+    private readonly shipmentsCoreService: ShipmentsCoreService,
+    private readonly shipmentsWriteService: ShipmentsWriteService,
+    private readonly shipmentsStateService: ShipmentsStateService,
+    private readonly transfersStateService: TransfersStateService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
@@ -63,9 +67,9 @@ export class OrderShipmentsController {
     });
 
     if (isTransfer) {
-      return this.transfersService.createShipment(id, body, user.username);
+      return this.transfersStateService.createShipment(id, body, user.username);
     }
-    return this.shipmentService.createShipment(id, body, user.username);
+    return this.shipmentsWriteService.createShipment(id, body, user.username);
   }
 
   @Get(':id/shipments')
@@ -77,7 +81,7 @@ export class OrderShipmentsController {
       'Retrieve all shipments associated with a specific sales order.',
   })
   findShipments(@Param('id') id: string) {
-    return this.shipmentService.findByOrder(id);
+    return this.shipmentsCoreService.findByOrder(id);
   }
 
   @Get(':id/shipments/:shipmentId')
@@ -91,7 +95,7 @@ export class OrderShipmentsController {
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
   ) {
-    return this.shipmentService.findOne(shipmentId);
+    return this.shipmentsCoreService.findOne(shipmentId);
   }
 
   @Patch(':id/shipments/:shipmentId')
@@ -107,7 +111,11 @@ export class OrderShipmentsController {
     @Body() body: UpdateShipmentDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.updateShipment(shipmentId, body, user.username);
+    return this.shipmentsWriteService.updateShipment(
+      shipmentId,
+      body,
+      user.username,
+    );
   }
 
   @Patch(':id/shipments/:shipmentId/state')
@@ -123,7 +131,7 @@ export class OrderShipmentsController {
     @Body() dto: ChangeShipmentStateDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.changeShipmentState(
+    return this.shipmentsStateService.changeShipmentState(
       shipmentId,
       dto.stateCode,
       user.username,
@@ -143,7 +151,7 @@ export class OrderShipmentsController {
     @Param('shipmentId') shipmentId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.cancelShipment(shipmentId, user.username);
+    return this.shipmentsStateService.cancelShipment(shipmentId, user.username);
   }
 
   @Post(':id/shipments/:shipmentId/lines')
@@ -159,7 +167,7 @@ export class OrderShipmentsController {
     @Body() body: AddShipmentLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.addShipmentLine(
+    return this.shipmentsWriteService.addShipmentLine(
       shipmentId,
       body,
       user.username,
@@ -180,7 +188,7 @@ export class OrderShipmentsController {
     @Body() body: UpdateShipmentLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.updateShipmentLine(
+    return this.shipmentsWriteService.updateShipmentLine(
       shipmentId,
       lineId,
       body,
@@ -201,7 +209,7 @@ export class OrderShipmentsController {
     @Param('lineId') lineId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.removeShipmentLine(
+    return this.shipmentsWriteService.removeShipmentLine(
       shipmentId,
       lineId,
       user.username,

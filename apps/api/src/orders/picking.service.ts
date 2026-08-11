@@ -38,7 +38,6 @@ import {
 import { getCreditBlockedSql } from './orders.sql';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import {
@@ -62,7 +61,6 @@ const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 export class PickingService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly shipmentService: ShipmentService,
     private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 

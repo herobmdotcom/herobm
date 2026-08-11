@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { ProjectResponseDto } from './projectResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { ProjectsControllerFindAll200AllOf } from './projectsControllerFindAll200AllOf';
 
-export type ProjectsControllerFindAll200 = {
-  data: ProjectResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type ProjectsControllerFindAll200 = PaginatedResponse & ProjectsControllerFindAll200AllOf;

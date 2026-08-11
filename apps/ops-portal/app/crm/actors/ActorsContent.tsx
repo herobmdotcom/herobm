@@ -46,6 +46,7 @@ export default function ActorsContent() {
       rowIdField="actorId"
       rowHref={(row) => `/crm/actors/${row.actorId}`}
       pageTitle="Actors"
+      defaultSortModel={[{ colId: 'name', sort: 'asc' }]}
       headerActions={
         <Button asChild variant="primary">
           <Link href="/crm/actors/new">

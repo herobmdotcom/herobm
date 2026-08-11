@@ -133,6 +133,7 @@ export class OrdersQueryService {
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
         isPostConfirmation: salesOrderLineItems.isPostConfirmation,
         parentLineId: salesOrderLineItems.parentLineId,
+        unitCost: salesOrderLineItems.unitCost,
         baseUom: coreProducts.baseUom,
       })
       .from(salesOrderLineItems)

@@ -6,7 +6,8 @@ import { OrdersService } from './orders.service';
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
-import { OrderNotificationService } from './order-notification.service';
+import { OrdersCoreService } from './orders-core.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 import { OrdersQueryService } from './orders-query.service';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import { CreateOrderDto, ChangeOrderStateDto, CreateOrderLineDto } from './dto';
@@ -17,7 +18,8 @@ describe('OrdersController', () => {
   let orderCreationService: OrderCreationService;
   let orderLinesService: OrderLinesService;
   let orderStateService: OrderStateService;
-  let orderNotificationService: OrderNotificationService;
+  let ordersCoreService: OrdersCoreService;
+  let documentDispatchService: DocumentDispatchService;
   let ordersQueryService: OrdersQueryService;
 
   const mockOrdersList = {
@@ -80,9 +82,11 @@ describe('OrdersController', () => {
       overrideCreditHold: jest.fn().mockResolvedValue(mockOrder),
     };
 
-    const mockNotificationService = {
+    const mockDocumentDispatchService = {
       emailDocument: jest.fn().mockResolvedValue({ success: true }),
     };
+
+    const mockCoreService = {};
 
     const mockQueryService = {
       findOne: jest.fn().mockResolvedValue(mockOrder),
@@ -102,9 +106,10 @@ describe('OrdersController', () => {
         { provide: OrderLinesService, useValue: mockLinesService },
         { provide: OrderStateService, useValue: mockStateService },
         {
-          provide: OrderNotificationService,
-          useValue: mockNotificationService,
+          provide: DocumentDispatchService,
+          useValue: mockDocumentDispatchService,
         },
+        { provide: OrdersCoreService, useValue: mockCoreService },
         { provide: OrdersQueryService, useValue: mockQueryService },
       ],
     }).compile();
@@ -114,7 +119,8 @@ describe('OrdersController', () => {
     orderCreationService = module.get(OrderCreationService);
     orderLinesService = module.get(OrderLinesService);
     orderStateService = module.get(OrderStateService);
-    orderNotificationService = module.get(OrderNotificationService);
+    documentDispatchService = module.get(DocumentDispatchService);
+    ordersCoreService = module.get(OrdersCoreService);
     ordersQueryService = module.get(OrdersQueryService);
   });
 
@@ -173,6 +179,23 @@ describe('OrdersController', () => {
     });
   });
 
+  describe('emailDocument', () => {
+    it('should queue the document for email using DocumentDispatchService', async () => {
+      const dto = {
+        emailAddress: 'customer@test.com',
+        subject: 'Your Quote',
+        body: 'Please find your quote attached.',
+      };
+
+      const result = await controller.emailDocument(
+        mockOrder.salesOrderId,
+        dto,
+        mockUser,
+      );
+      expect(documentDispatchService.emailDocument).toHaveBeenCalled();
+      expect(result).toEqual({ success: true });
+    });
+  });
   describe('changeState', () => {
     it('should call writeService.changeState with id, stateCode, and actor', async () => {
       const result = await controller.changeState(

@@ -729,6 +729,20 @@
       "when": 1786031622338,
       "tag": "0103_add_pipeline_jobs_config_json",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1786370455660,
+      "tag": "0104_resolve_drift",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1786370670240,
+      "tag": "0105_add_mobile_to_contacts",
+      "breakpoints": true
     }
   ]
 }

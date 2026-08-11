@@ -34,6 +34,7 @@ export default function ProjectsContent() {
       rowIdField="projectId"
       rowHref={(row) => `/crm/projects/${row.projectId}`}
       pageTitle="Projects"
+      defaultSortModel={[{ colId: 'name', sort: 'asc' }]}
       headerActions={
         <Button asChild variant="primary">
           <Link href="/crm/projects/new">

@@ -57,7 +57,7 @@ export class ContactsService {
             ELSE 1
           END
         `
-      : sql<number>`0::int`;
+      : sql<number>`0 + 0`;
 
     const conditions = [];
 
@@ -208,6 +208,7 @@ export class ContactsService {
           fullName: `${dto.firstName} ${dto.lastName}`.trim(),
           email: dto.email,
           phone: dto.phone,
+          mobile: dto.mobile,
           jobTitle: dto.jobTitle,
         })
         .returning();
@@ -273,6 +274,7 @@ export class ContactsService {
           fullName: fullName || null,
           email: dto.email,
           phone: dto.phone,
+          mobile: dto.mobile,
           jobTitle: dto.jobTitle,
           modifiedOn: new Date(),
         })
@@ -412,7 +414,7 @@ export class ContactsService {
       fullName: record.fullName,
       email: record.email,
       phone: record.phone,
-      mobile: null, // Legacy compatibility
+      mobile: record.mobile,
       jobTitle: record.jobTitle,
       primaryFor: primaryFor || [],
       createdOn: record.createdOn,

@@ -17,6 +17,8 @@ import {
   Body,
   UseInterceptors,
   HttpCode,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
@@ -24,8 +26,10 @@ import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interc
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
-import { OrderNotificationService } from './order-notification.service';
+import { OrdersCoreService } from './orders-core.service';
 import { OrdersQueryService } from './orders-query.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { DATA_SOURCE_CONTEXT, SALES_ORDER_STATE } from '@herobm/shared';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateOrderDto,
@@ -62,7 +66,8 @@ export class OrdersController {
     private readonly orderCreationService: OrderCreationService,
     private readonly orderLinesService: OrderLinesService,
     private readonly orderStateService: OrderStateService,
-    private readonly orderNotificationService: OrderNotificationService,
+    private readonly ordersCoreService: OrdersCoreService,
+    private readonly documentDispatchService: DocumentDispatchService,
     private readonly ordersQueryService: OrdersQueryService,
   ) {}
 
@@ -136,7 +141,40 @@ export class OrdersController {
     @Body() dto: EmailDocumentDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.orderNotificationService.emailDocument(id, dto, user);
+    const order = await this.ordersQueryService.findOne(id);
+    if (!order) {
+      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+    }
+
+    const hookSlug = dto.hookSlug || 'sales-order-quote';
+
+    if (hookSlug === 'sales-order-quote') {
+      if (
+        order.stateCode !== SALES_ORDER_STATE.DRAFT &&
+        order.stateCode !== SALES_ORDER_STATE.QUOTED
+      ) {
+        throw new HttpException(
+          'Can only email quotes for orders in draft or quoted state',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug: dto.contextSlug || DATA_SOURCE_CONTEXT.SALES_ORDER,
+        entityType: 'sales_order',
+        entityId: id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName: `Document-${order.orderNumber}.pdf`,
+      },
+      user,
+    );
   }
 
   @Patch(':id/state')

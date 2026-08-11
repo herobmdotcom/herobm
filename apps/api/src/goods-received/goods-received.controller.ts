@@ -17,7 +17,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 
-import { GoodsReceivedService } from './goods-received.service';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedWriteService } from './goods-received-write.service';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery } from '../common/pagination';
@@ -43,7 +44,10 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @CasbinResource(SystemResource.GOODS_RECEIVED)
 @ApiTags('Warehouse')
 export class GoodsReceivedController {
-  constructor(private readonly goodsReceivedService: GoodsReceivedService) {}
+  constructor(
+    private readonly coreService: GoodsReceivedCoreService,
+    private readonly writeService: GoodsReceivedWriteService,
+  ) {}
 
   @Post()
   @ApiBody({ type: CreateGoodsReceivedDto })
@@ -63,7 +67,7 @@ export class GoodsReceivedController {
     @Body() createDto: CreateGoodsReceivedDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.goodsReceivedService.create(createDto, user.username);
+    return this.writeService.create(createDto, user.username);
   }
 
   @Get()
@@ -76,7 +80,7 @@ export class GoodsReceivedController {
   @ApiPaginatedResponse(GoodsReceivedResponseDto)
   @ApiFieldMask()
   async findAll(@Query() query: PaginationQuery) {
-    return this.goodsReceivedService.findAll(query);
+    return this.coreService.findAll(query);
   }
 
   @Get('lines')
@@ -96,7 +100,7 @@ export class GoodsReceivedController {
     @Query('putawayStatus') putawayStatus?: string,
     @Query('locationId') locationId?: string,
   ) {
-    return this.goodsReceivedService.findAllLines(
+    return this.coreService.findAllLines(
       query,
       purchaseOrderId,
       putawayStatus,
@@ -113,7 +117,7 @@ export class GoodsReceivedController {
   @ApiOkResponse({ type: GoodsReceivedResponseDto })
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
-    return this.goodsReceivedService.findOne(id);
+    return this.coreService.findOne(id);
   }
 
   @Post(':id/cancel')
@@ -128,7 +132,7 @@ export class GoodsReceivedController {
     schema: { type: 'object', properties: { success: { type: 'boolean' } } },
   })
   async cancelReception(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.goodsReceivedService.cancelReception(id, user.username);
+    return this.writeService.cancelReception(id, user.username);
   }
 
   @Post('lines/:lineId/resolve')
@@ -145,7 +149,7 @@ export class GoodsReceivedController {
     @Body() resolveDto: ResolveAllocationDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.goodsReceivedService.resolveAllocation(
+    return this.writeService.resolveAllocation(
       lineId,
       resolveDto.purchaseOrderLineId,
       user.username,
@@ -166,6 +170,6 @@ export class GoodsReceivedController {
     @Param('lineId') lineId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.goodsReceivedService.unresolveAllocation(lineId, user.username);
+    return this.writeService.unresolveAllocation(lineId, user.username);
   }
 }

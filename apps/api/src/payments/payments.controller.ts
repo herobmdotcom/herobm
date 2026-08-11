@@ -17,10 +17,15 @@ import {
   Query,
   UseInterceptors,
   Delete,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
-import { PaymentsService } from './payments.service';
+import { PaymentsCoreService } from './payments-core.service';
+import { PaymentsWriteService } from './payments-write.service';
+import { PaymentsAllocationService } from './payments-allocation.service';
+import { PaymentsPostingService } from './payments-posting.service';
 import {
   CreatePaymentDto,
   AllocatePaymentDto,
@@ -45,7 +50,15 @@ import { PaymentRunGeneratorService } from './payment-run-generator.service';
 @CasbinResource(SystemResource.PAYMENTS)
 export class PaymentsController {
   constructor(
-    private readonly paymentsService: PaymentsService,
+    @Inject(forwardRef(() => PaymentsCoreService))
+    private readonly paymentsCoreService: PaymentsCoreService,
+    @Inject(forwardRef(() => PaymentsWriteService))
+    private readonly paymentsWriteService: PaymentsWriteService,
+    @Inject(forwardRef(() => PaymentsAllocationService))
+    private readonly paymentsAllocationService: PaymentsAllocationService,
+    @Inject(forwardRef(() => PaymentsPostingService))
+    private readonly paymentsPostingService: PaymentsPostingService,
+    @Inject(forwardRef(() => PaymentRunGeneratorService))
     private readonly paymentRunGeneratorService: PaymentRunGeneratorService,
   ) {}
 
@@ -66,7 +79,7 @@ export class PaymentsController {
     @Query('allocation') allocation?: string,
     @Query('partyId') partyId?: string,
   ) {
-    return this.paymentsService.findAll(days, allocation, partyId);
+    return this.paymentsCoreService.findAll(days, allocation, partyId);
   }
 
   @Get('run-candidates')
@@ -112,7 +125,7 @@ export class PaymentsController {
   @ApiOkResponse({ type: PaymentResponseDto })
   @ApiFieldMask()
   findOne(@Param('id') id: string) {
-    return this.paymentsService.findOne(id);
+    return this.paymentsCoreService.findOne(id);
   }
 
   @Post()
@@ -133,7 +146,7 @@ export class PaymentsController {
     @Body() dto: CreatePaymentDto,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.createPaymentEntry(dto, user.username);
+    return this.paymentsWriteService.createPaymentEntry(dto, user.username);
   }
 
   @Patch(':id/submit')
@@ -148,7 +161,7 @@ export class PaymentsController {
     @Param('id') id: string,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.submitPaymentEntry(id, user.username);
+    return this.paymentsPostingService.submitPaymentEntry(id, user.username);
   }
 
   @Patch(':id/allocate')
@@ -164,7 +177,11 @@ export class PaymentsController {
     @Body() dto: AllocatePaymentDto,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.allocatePayment(id, dto, user.username);
+    return this.paymentsAllocationService.allocatePayment(
+      id,
+      dto,
+      user.username,
+    );
   }
 
   @Patch(':id/cancel')
@@ -179,7 +196,7 @@ export class PaymentsController {
     @Param('id') id: string,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.cancelPayment(id, user.username);
+    return this.paymentsWriteService.cancelPayment(id, user.username);
   }
 
   @Delete(':id')
@@ -193,7 +210,7 @@ export class PaymentsController {
     type: ConfirmRejectResponseDto,
   })
   remove(@Param('id') id: string) {
-    return this.paymentsService.removePayment(id);
+    return this.paymentsWriteService.removePayment(id);
   }
 
   @Post('export-aba')
@@ -208,7 +225,7 @@ export class PaymentsController {
     @Body() dto: BatchPaymentActionDto,
     @AuthUser() user: { username: string },
   ) {
-    const fileContent = await this.paymentsService.exportAba(
+    const fileContent = await this.paymentsPostingService.exportAba(
       dto.paymentIds,
       user.username,
     );
@@ -227,7 +244,7 @@ export class PaymentsController {
     @Body() dto: BatchPaymentActionDto,
     @AuthUser() user: { username: string },
   ) {
-    const fileContent = await this.paymentsService.exportNacha(
+    const fileContent = await this.paymentsPostingService.exportNacha(
       dto.paymentIds,
       user.username,
     );
@@ -246,7 +263,10 @@ export class PaymentsController {
     @Body() dto: BatchPaymentActionDto,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.confirmExported(dto.paymentIds, user.username);
+    return this.paymentsPostingService.confirmExported(
+      dto.paymentIds,
+      user.username,
+    );
   }
 
   @Post('reject-exported')
@@ -261,6 +281,9 @@ export class PaymentsController {
     @Body() dto: BatchPaymentActionDto,
     @AuthUser() user: { username: string },
   ) {
-    return this.paymentsService.rejectExported(dto.paymentIds, user.username);
+    return this.paymentsPostingService.rejectExported(
+      dto.paymentIds,
+      user.username,
+    );
   }
 }

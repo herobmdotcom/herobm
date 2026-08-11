@@ -235,6 +235,45 @@ export function OrderLinesTable({
             }
         },
         {
+            id: 'unitCost',
+            header: 'Unit Cost',
+            width: 110,
+            align: 'right',
+            render: (line: OrderLine) => {
+                const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
+                if (isEditable) {
+                    return (
+                        <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            style={{ width: '100%', textAlign: 'right' }}
+                            defaultValue={line.unitCost ? parseFloat(line.unitCost).toFixed(2) : ''}
+                            key={`cost-${line.salesOrderLineId}-${line.unitCost}`}
+                            placeholder="Auto"
+                            onBlur={(e) => {
+                                const val = e.target.value;
+                                if (!val) {
+                                    if (line.unitCost !== null && line.unitCost !== undefined) {
+                                        updateLine(line.salesOrderLineId, 'unitCost', null);
+                                    }
+                                    return;
+                                }
+                                const parsed = parseFloat(val);
+                                const formatted = isNaN(parsed) ? '0.00' : parsed.toFixed(2);
+                                e.target.value = formatted;
+                                if (formatted !== (line.unitCost ? parseFloat(line.unitCost).toFixed(2) : null)) {
+                                    updateLine(line.salesOrderLineId, 'unitCost', formatted);
+                                }
+                            }}
+                        />
+                    );
+                }
+                return <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{line.unitCost ? formatAmount(parseFloat(line.unitCost), order.currencyCode || 'EUR') : tCommon('auto')}</span>;
+            }
+        },
+        {
             id: 'discountPct',
             header: tSales('columns.discountPct'),
             width: 80,
@@ -397,7 +436,7 @@ export function OrderLinesTable({
                             {lineColumns.find(c => c.id === 'description')?.render?.(line, 0)}
                         </div>
                         <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                            {lineColumns.filter(c => ['qty', 'uom', 'unitPrice', 'discountPct', 'tax', 'amount'].includes(c.id!)).map(col => (
+                            {lineColumns.filter(c => ['qty', 'uom', 'unitCost', 'unitPrice', 'discountPct', 'tax', 'amount'].includes(c.id!)).map(col => (
                                 <MobileCardField 
                                     key={col.id} 
                                     label={col.id === 'tax' ? tSales('columns.tax') : col.header} 

@@ -75,8 +75,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const mainLoc =
-      locations.body.find((l: any) => l.locationNo === 'MAIN') ||
-      locations.body[0];
+      locations.body.find((l: any) => l.code === 'MAIN') || locations.body[0];
     locationId = mainLoc.locationId;
 
     console.log('Setup: Getting GL accounts from API...');
@@ -313,8 +312,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .where(and(eq(zones.locationId, locationId), eq(bins.binType, 'storage')))
       .limit(1);
 
-    console.log('Found storage bin:', storageBin);
-
     binId = storageBin.binId as string;
 
     // Process Putaway
@@ -482,7 +479,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         salesOrderId: crypto.randomUUID(),
-        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        fulfillmentLocationId: locationId,
         customerId,
         deliveryAddressLine1: '123 E2E St',
         deliveryCity: 'E2E City',

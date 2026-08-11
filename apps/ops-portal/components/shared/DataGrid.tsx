@@ -28,7 +28,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 import { 
   saveGridState, loadGridState, clearGridState, STORAGE_PREFIX,
-  saveScrollState, loadScrollState, SCROLL_STORAGE_PREFIX
+  saveScrollState, loadScrollState, SCROLL_STORAGE_PREFIX, clearScrollState
 } from "./datagrid/DataGridStateHelpers";
 import { numericFormatter } from "./datagrid/DataGridFormatters";
 import { GenericMobileCard } from "./datagrid/GenericMobileCard";
@@ -632,6 +632,21 @@ export default function DataGrid<T>({
 
   const [isExporting, setIsExporting] = useState(false);
 
+  const resetScroll = useCallback(() => {
+    if (gridKey) clearScrollState(gridKey);
+    if (isMobile) {
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
+    } else {
+      if (containerRef.current) {
+        const viewport = containerRef.current.querySelector('.ag-body-viewport') as HTMLElement;
+        if (viewport) {
+          viewport.scrollTop = 0;
+        }
+      }
+    }
+  }, [gridKey, isMobile]);
+
   /** CSV export handler */
   const handleExport = useCallback(async () => {
     if (effectiveFetchAll || rowData) {
@@ -742,6 +757,7 @@ export default function DataGrid<T>({
         onChange={(e) => {
           setSearch(e.target.value.trimStart());
           setCursor(null);
+          resetScroll();
         }}
         onFocus={(e) => e.target.style.borderColor = "var(--accent)"}
         onBlur={(e) => {
@@ -773,8 +789,8 @@ export default function DataGrid<T>({
               style={{
                 position: "absolute",
                 top: "100%",
-                right: isMobile ? "auto" : (secondaryHeader ? 0 : "auto"),
-                left: isMobile ? "50%" : (secondaryHeader ? "auto" : 0),
+                right: "auto",
+                left: isMobile ? "50%" : 0,
                 transform: isMobile ? "translateX(-50%)" : "none",
                 marginTop: 4,
                 background: "var(--bg-card)",
@@ -1020,6 +1036,7 @@ export default function DataGrid<T>({
                       }
                       setCursor(null); // Reset to first page
                       setColPickerOpen(false); // Optionally close the menu, but keeping it open is fine too
+                      resetScroll();
                     }}
                     style={{ accentColor: "var(--accent)" }}
                   />
@@ -1037,6 +1054,7 @@ export default function DataGrid<T>({
       onClick={() => {
         setCursor(prevCursor);
         setDirection('prev');
+        resetScroll();
       }}
       disabled={!cursor || !prevCursor}
       className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"
@@ -1055,6 +1073,7 @@ export default function DataGrid<T>({
       onClick={() => {
         setCursor(nextCursor);
         setDirection('next');
+        resetScroll();
       }}
       disabled={!nextCursor}
       className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"

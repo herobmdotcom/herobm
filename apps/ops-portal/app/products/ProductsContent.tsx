@@ -78,6 +78,7 @@ export default function ProductsContent() {
       rowIdField="productId"
       rowHref={(row: Record<string, unknown>) => `/products/${row.productId as string}`}
       pageTitle={tProducts('title')}
+      defaultSortModel={[{ colId: 'productNumber', sort: 'asc' }]}
       headerActions={
         <Button asChild variant="primary">
           <Link href="/products/new">

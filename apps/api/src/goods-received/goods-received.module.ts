@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GoodsReceivedController } from './goods-received.controller';
-import { GoodsReceivedService } from './goods-received.service';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedWriteService } from './goods-received-write.service';
+import { GoodsReceivedStateService } from './goods-received-state.service';
 import { InventoryModule } from '../inventory/inventory.module';
 import { GlModule } from '../gl/gl.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -18,7 +20,15 @@ import { OrdersModule } from '../orders/orders.module';
     OrdersModule,
   ],
   controllers: [GoodsReceivedController],
-  providers: [GoodsReceivedService],
-  exports: [GoodsReceivedService],
+  providers: [
+    GoodsReceivedCoreService,
+    GoodsReceivedWriteService,
+    GoodsReceivedStateService,
+  ],
+  exports: [
+    GoodsReceivedCoreService,
+    GoodsReceivedWriteService,
+    GoodsReceivedStateService,
+  ],
 })
 export class GoodsReceivedModule {}

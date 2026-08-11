@@ -237,6 +237,7 @@ export default function Sidebar() {
           subItems: [
             { href: '/admin/event-queue', label: t('items.eventQueue') },
             { href: '/admin/system-logs', label: t('items.systemLogs') },
+            { href: '/admin/version', label: t('items.version') },
           ]
         },
       ],

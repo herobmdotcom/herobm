@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { SystemResource } from '@herobm/shared';
 import {
   Controller,
@@ -32,8 +33,12 @@ import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Contacts')
 @Controller('contacts')
-// TODO: When expanding to suppliers, this needs to dynamically check permissions based on entityType
-@CasbinResource(SystemResource.CRM)
+@CasbinResource((req: Request) => {
+  const entityType = req.body?.entityType || req.query?.entityType;
+  return entityType === 'supplier'
+    ? SystemResource.SUPPLIERS
+    : SystemResource.CRM;
+})
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 

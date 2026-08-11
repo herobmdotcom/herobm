@@ -595,14 +595,20 @@ export class ReturnsWriteService {
                 .where(eq(coreProducts.productId, orderLine.productId!));
 
               if (product) {
-                const cost = valuationStrategy.getCogs(
-                  {
-                    productId: product.productId,
-                    standardCost: product.standardCost || '0',
-                    weightedAverageCost: product.weightedAverageCost || '0',
-                  },
-                  newlyReceived,
-                );
+                const cost =
+                  orderLine.unitCost != null
+                    ? (parseFloat(orderLine.unitCost) * newlyReceived).toFixed(
+                        2,
+                      )
+                    : valuationStrategy.getCogs(
+                        {
+                          productId: product.productId,
+                          standardCost: product.standardCost || '0',
+                          weightedAverageCost:
+                            product.weightedAverageCost || '0',
+                        },
+                        newlyReceived,
+                      );
                 totalReturnCost += parseFloat(cost);
               }
             }

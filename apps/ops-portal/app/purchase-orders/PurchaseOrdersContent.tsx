@@ -92,6 +92,7 @@ export default function PurchaseOrdersContent() {
       rowIdField="id"
       rowHref={(order) => `/purchase-orders/${order.id}`}
       pageTitle={tPurchase('title')}
+      defaultSortModel={[{ colId: 'orderNumber', sort: 'desc' }]}
       headerFilters={
         <select
             value={days}

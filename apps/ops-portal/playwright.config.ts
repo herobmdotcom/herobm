@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import dotenv from 'dotenv';
 
-// Load environment variables from the root .env file
-dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+// Load environment variables from the root .env file, respecting ENV_FILE override
+dotenv.config({ path: path.join(__dirname, '..', '..', process.env.ENV_FILE || '.env') });
 
 const authFile = path.join(__dirname, '.playwright', '.auth', 'user.json');
 

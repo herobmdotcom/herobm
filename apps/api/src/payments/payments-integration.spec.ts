@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentsService } from './payments.service';
+import { PaymentsCoreService } from './payments-core.service';
+import { PaymentsWriteService } from './payments-write.service';
+import { PaymentsAllocationService } from './payments-allocation.service';
+import { PaymentsPostingService } from './payments-posting.service';
 import { GlService } from '../gl/gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { SuppliersService } from '../suppliers/suppliers.service';
@@ -42,7 +45,7 @@ import {
 
 describe('PaymentsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
-  let service: PaymentsService;
+  let service: any;
   let glService: GlService;
   let mockSuppliersService: { assessRisk: jest.Mock };
 
@@ -262,7 +265,10 @@ describe('PaymentsService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PaymentsService,
+        PaymentsCoreService,
+        PaymentsWriteService,
+        PaymentsAllocationService,
+        PaymentsPostingService,
         GlService,
         {
           provide: SuppliersService,
@@ -293,7 +299,22 @@ describe('PaymentsService', () => {
       ],
     }).compile();
 
-    service = module.get<PaymentsService>(PaymentsService);
+    const core = module.get(PaymentsCoreService);
+    const write = module.get(PaymentsWriteService);
+    const alloc = module.get(PaymentsAllocationService);
+    const posting = module.get(PaymentsPostingService);
+    service = new Proxy(
+      {},
+      {
+        get(target, prop) {
+          if (prop in core) return (core as any)[prop]?.bind(core);
+          if (prop in write) return (write as any)[prop]?.bind(write);
+          if (prop in alloc) return (alloc as any)[prop]?.bind(alloc);
+          if (prop in posting) return (posting as any)[prop]?.bind(posting);
+          return undefined;
+        },
+      },
+    );
     glService = module.get<GlService>(GlService);
     mockSuppliersService = module.get(SuppliersService);
   });
@@ -402,8 +423,8 @@ describe('PaymentsService', () => {
         'admin',
       );
 
-      const seq1 = parseInt(p1.paymentNumber.split('-').pop()!, 10);
-      const seq2 = parseInt(p2.paymentNumber.split('-').pop()!, 10);
+      const seq1 = parseInt(p1.paymentNumber.split('-').pop(), 10);
+      const seq2 = parseInt(p2.paymentNumber.split('-').pop(), 10);
       expect(seq2).toBe(seq1 + 1);
     });
   });

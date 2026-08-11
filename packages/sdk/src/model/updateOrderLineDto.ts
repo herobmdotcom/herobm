@@ -9,6 +9,7 @@
 export interface UpdateOrderLineDto {
   quantity?: string;
   pricePerUnit?: string;
+  unitCost?: string;
   discountPercentage?: string;
   taxCategoryId?: string;
   tax?: string;

@@ -16,6 +16,7 @@ import {
   Edge,
   Handle,
   Position,
+  NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/shared/Button';
@@ -84,7 +85,42 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   return { nodes: layoutedNodes, edges: layoutedEdges };
 };
 
-const ActorNode = ({ data }: any) => (
+export interface NodeData {
+  id?: string;
+  label?: string;
+  rawId?: string;
+  type?: string;
+  group?: string;
+  role?: string;
+  isSubcontractor?: boolean;
+  actorId?: string;
+  name?: string;
+  contactId?: string;
+  firstName?: string;
+  lastName?: string;
+  projectId?: string;
+  industry?: string;
+  title?: string;
+  onExpand?: (id: string) => void;
+  [key: string]: unknown;
+}
+
+export interface EdgeData {
+  sourceActorId?: string;
+  targetActorId?: string;
+  actorId?: string;
+  contactId?: string;
+  projectId?: string;
+  fromId?: string;
+  toId?: string;
+  type?: string;
+  primaryFor?: string[];
+  roles?: string[];
+}
+
+export type CustomNode = Node<NodeData>;
+
+const ActorNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-md relative group w-[250px] min-h-[80px] flex flex-col justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
@@ -103,7 +139,7 @@ const ActorNode = ({ data }: any) => (
     </div>
     
     <Button 
-      onClick={() => data.onExpand(data.rawId)} 
+      onClick={() => data.onExpand?.(data.rawId!)} 
       className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
@@ -112,7 +148,7 @@ const ActorNode = ({ data }: any) => (
   </div>
 );
 
-const ContactNode = ({ data }: any) => (
+const ContactNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-full relative group w-[250px] min-h-[80px] flex items-center justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
@@ -130,7 +166,7 @@ const ContactNode = ({ data }: any) => (
     </div>
 
     <Button 
-      onClick={() => data.onExpand(data.rawId)} 
+      onClick={() => data.onExpand?.(data.rawId!)} 
       className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
@@ -139,7 +175,7 @@ const ContactNode = ({ data }: any) => (
   </div>
 );
 
-const ProjectNode = ({ data }: any) => (
+const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-lg relative group w-[250px] min-h-[80px] flex items-center justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
@@ -157,7 +193,7 @@ const ProjectNode = ({ data }: any) => (
     </div>
 
     <Button 
-      onClick={() => data.onExpand(data.rawId)} 
+      onClick={() => data.onExpand?.(data.rawId!)} 
       className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
@@ -167,9 +203,9 @@ const ProjectNode = ({ data }: any) => (
 );
 
 const nodeTypes = {
-  actor: ActorNode,
-  contact: ContactNode,
-  project: ProjectNode,
+  actor: ActorNode as any,
+  contact: ContactNode as any,
+  project: ProjectNode as any,
 };
 
 import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
@@ -200,11 +236,11 @@ export default function MapContent() {
     edgesRef.current = edges;
   }, [nodes, edges]);
 
-  const processPayload = useCallback((payload: any, onExpandCb: (id: string) => void) => {
+  const processPayload = useCallback((payload: api.CrmMapResponseDto, onExpandCb: (id: string) => void) => {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
 
-    payload.nodes.actors?.forEach((a: any) => {
+    payload.nodes.actors?.forEach((a) => {
       newNodes.push({
         id: `actor-${a.actorId}`,
         type: 'actor',
@@ -213,7 +249,7 @@ export default function MapContent() {
       });
     });
 
-    payload.nodes.contacts?.forEach((c: any) => {
+    payload.nodes.contacts?.forEach((c) => {
       newNodes.push({
         id: `contact-${c.contactId}`,
         type: 'contact',
@@ -222,7 +258,7 @@ export default function MapContent() {
       });
     });
 
-    payload.nodes.projects?.forEach((p: any) => {
+    payload.nodes.projects?.forEach((p) => {
       newNodes.push({
         id: `project-${p.projectId}`,
         type: 'project',
@@ -231,7 +267,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.actorActor?.forEach((e: any) => {
+    payload.edges.actorActor?.forEach((e) => {
       newEdges.push({
         id: `aa-${e.sourceActorId}-${e.targetActorId}`,
         source: `actor-${e.sourceActorId}`,
@@ -240,7 +276,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.actorContact?.forEach((e: any) => {
+    payload.edges.actorContact?.forEach((e) => {
       newEdges.push({
         id: `ac-${e.actorId}-${e.contactId}`,
         source: `actor-${e.actorId}`,
@@ -249,7 +285,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.projectActor?.forEach((e: any) => {
+    payload.edges.projectActor?.forEach((e) => {
       newEdges.push({
         id: `pa-${e.projectId}-${e.actorId}`,
         source: `project-${e.projectId}`,
@@ -258,7 +294,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.projectContact?.forEach((e: any) => {
+    payload.edges.projectContact?.forEach((e) => {
       newEdges.push({
         id: `pc-${e.projectId}-${e.contactId}`,
         source: `project-${e.projectId}`,
@@ -267,7 +303,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.referralActorActor?.forEach((e: any) => {
+    payload.edges.referralActorActor?.forEach((e) => {
       newEdges.push({
         id: `ref-aa-${e.sourceActorId}-${e.targetActorId}`,
         source: `actor-${e.sourceActorId}`,
@@ -278,7 +314,7 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.referralContactActor?.forEach((e: any) => {
+    payload.edges.referralContactActor?.forEach((e) => {
       newEdges.push({
         id: `ref-ca-${e.contactId}-${e.actorId}`,
         source: `contact-${e.contactId}`,

@@ -5,10 +5,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('BankFeedsService', () => {
   let service: BankFeedsService;
-  // FIXME: Replace `any` with proper mock types (e.g. `jest.MockedObjectDeep`)
-  let dbMock: any;
-  // FIXME: Replace `any` with proper mock types
-  let glServiceMock: any;
+  let dbMock: Record<string, jest.Mock>;
+  let glServiceMock: { postJournalEntry: jest.Mock };
 
   beforeEach(async () => {
     dbMock = {
@@ -71,10 +69,11 @@ describe('BankFeedsService', () => {
       dbMock.from.mockReturnThis();
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
-      // FIXME: Type callback parameters properly
-      dbMock.transaction.mockImplementation(async (cb: any) => {
-        return cb(dbMock);
-      });
+      dbMock.transaction.mockImplementation(
+        async (cb: (tx: Record<string, jest.Mock>) => Promise<unknown>) => {
+          return cb(dbMock);
+        },
+      );
     });
 
     it('should correctly evaluate rules and post journal entries for matched rows', async () => {
@@ -282,24 +281,21 @@ describe('BankFeedsService', () => {
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
       dbMock.limit.mockReturnThis();
-      // FIXME: Type callback parameters properly
-      dbMock.transaction.mockImplementation(async (cb: any) => {
-        return cb(dbMock);
-      });
+      dbMock.transaction.mockImplementation(
+        async (cb: (tx: Record<string, jest.Mock>) => Promise<unknown>) => {
+          return cb(dbMock);
+        },
+      );
     });
 
     const setupMocks = (
-      // FIXME: Use strict typings for test setup arrays
-      rules: any[],
-      // FIXME: Use strict typings for test setup arrays
-      lines: any[],
-      // FIXME: Use strict typings for test setup objects
-      settings: any = { bankMatchDateToleranceDays: 7 },
+      rules: Record<string, unknown>[],
+      lines: Record<string, unknown>[],
+      settings: Record<string, unknown> = { bankMatchDateToleranceDays: 7 },
     ) => {
       jest
         .spyOn(service, 'getReconciliationRules')
-        // FIXME: Replace `any` cast with proper type matching the resolved value
-        .mockResolvedValue(rules as any);
+        .mockResolvedValue(rules as never);
       dbMock.limit.mockResolvedValueOnce([settings]);
       dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
       dbMock.where.mockResolvedValueOnce(lines);

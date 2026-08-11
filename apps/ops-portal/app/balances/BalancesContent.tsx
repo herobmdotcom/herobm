@@ -18,6 +18,7 @@ export default function BalancesContent() {
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations('common');
   const tStates = useTranslations('common.states');
+  const tAccounts = useTranslations('customers');
 
   const fetchBalances = async (basis: 'invoiceDate' | 'dueDate') => {
     setIsLoading(true);
@@ -105,6 +106,13 @@ export default function BalancesContent() {
       valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
     },
     {
+      field: 'uninvoicedOrdersTotal',
+      headerName: tAccounts('columns.uninvoicedOrders'),
+      width: 150,
+      type: 'numericColumn',
+      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
+    },
+    {
       field: 'glBalance',
       headerName: 'GL Balance',
       width: 150,
@@ -153,6 +161,7 @@ export default function BalancesContent() {
       pageTitle="Balances"
       loading={isLoading}
       hideSearch={true}
+      defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
       rowHref={(row) => `/customers/${row.customerId}?tab=invoices`}
       headerActions={
         <div className="flex items-center gap-3">

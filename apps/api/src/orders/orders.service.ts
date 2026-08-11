@@ -631,14 +631,17 @@ export class OrdersService implements OnModuleInit {
       };
 
       if (productId) {
-        selectObject.prodQty = sql<number>`COALESCE(SUM(CASE WHEN ${salesOrderLineItems.productId} = ${productId} THEN ${salesOrderLineItems.quantity} ELSE 0 END), 0)::numeric`;
+        selectObject.prodQty =
+          sql<number>`COALESCE(SUM(CASE WHEN ${salesOrderLineItems.productId} = ${productId} THEN ${salesOrderLineItems.quantity} ELSE 0 END), 0)`.mapWith(
+            Number,
+          );
         selectObject.prodQtyShipped = sql<number>`COALESCE((
           SELECT SUM(sl.quantity_shipped)
           FROM herobm_core.sales_order_shipment_lines sl
           JOIN herobm_core.sales_order_lines sol ON sol.sales_order_line_id = sl.sales_order_line_id
           WHERE sol.sales_order_id = "herobm_core"."sales_order_lines"."sales_order_id"
             AND sol.product_id = ${productId}
-        ), 0)::numeric`;
+        ), 0)`.mapWith(Number);
       }
 
       const totals = await this.db
@@ -651,7 +654,10 @@ export class OrdersService implements OnModuleInit {
         totalMap.set(row.salesOrderId, row.total);
         if (productId) {
           productQuantityMap.set(row.salesOrderId, Number(row.prodQty || 0));
-          productQuantityShippedMap.set(row.salesOrderId, Number(row.prodQtyShipped || 0));
+          productQuantityShippedMap.set(
+            row.salesOrderId,
+            Number(row.prodQtyShipped || 0),
+          );
         }
       }
     }
@@ -668,10 +674,12 @@ export class OrdersService implements OnModuleInit {
       createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
       totalPrice: totalMap.get(r.id) ?? null,
       currencyCode: r.currencyCode ?? 'EUR',
-      ...(productId ? {
-        productQuantity: productQuantityMap.get(r.id) ?? 0,
-        productQuantityShipped: productQuantityShippedMap.get(r.id) ?? 0,
-      } : {})
+      ...(productId
+        ? {
+            productQuantity: productQuantityMap.get(r.id) ?? 0,
+            productQuantityShipped: productQuantityShippedMap.get(r.id) ?? 0,
+          }
+        : {}),
     }));
 
     return { data, page, limit, total: Number(count), nextCursor, prevCursor };

@@ -69,6 +69,7 @@ export default function GlobalPurchaseInvoicesPage() {
             rowIdField="invoiceId"
             rowHref={(row) => row.invoiceId ? `/supplier-invoices/${row.invoiceId}` : ''}
             pageTitle={t('supplierInvoicesCardHeading')}
+            defaultSortModel={[{ colId: 'invoiceNumber', sort: 'desc' }]}
             headerFilters={
                 <select
                     value={days}

@@ -881,6 +881,30 @@
         "toggled": "User status updated",
         "updated": "User updated"
       }
+    },
+    "version": {
+      "fields": {
+        "apiVersion": "API Version",
+        "appVersion": "App Version",
+        "buildTime": "Build Time",
+        "environment": "Environment",
+        "licenseHash": "License Hash",
+        "na": "N/A",
+        "nextVersion": "Next.js Version",
+        "nodeVersion": "Node.js Version",
+        "osPlatform": "OS Platform",
+        "osRelease": "OS Release",
+        "reactVersion": "React Version",
+        "systemId": "System ID",
+        "unlicensed": "Unlicensed"
+      },
+      "labels": {
+        "backend": "Backend (API Core)",
+        "frontend": "Frontend (Ops Portal)",
+        "platform": "Platform Information"
+      },
+      "subtitle": "Platform and deployment version information",
+      "title": "System Version"
     }
   },
   "allocation": {
@@ -930,6 +954,7 @@
       "signOut": "Sign Out",
       "username": "Username"
     },
+    "auto": "Auto",
     "buttons": {
       "add": "Add",
       "cancel": "Cancel",
@@ -1329,10 +1354,16 @@
     },
     "columns": {
       "accountType": "Type",
+      "accountsContact": "Accounts Contact",
       "creditHold": "Credit Hold",
       "customerId": "Customer ID",
       "customerNumber": "Customer Number",
-      "discountPct": "Customer Discount %"
+      "discountPct": "Customer Discount %",
+      "email": "Email",
+      "outstandingBalance": "Outstanding Balance",
+      "salesContact": "Sales Contact",
+      "telephone": "Telephone",
+      "uninvoicedOrders": "Uninvoiced Orders"
     },
     "company": "Customer",
     "contactManagement": {
@@ -2526,7 +2557,6 @@
     "uomRatioLabel": "{uom} (x{ratio})"
   },
   "purchaseOrders": {
-    "purchases": "Purchases",
     "addLine": "+ Line",
     "addRoundingAdj": "+ Rounding Adj",
     "allocated": "Allocated",
@@ -2572,11 +2602,11 @@
       "allocatedAmount": "Allocated Amount",
       "allocation": "Allocation",
       "amount": "Amount",
-      "deliveredQty": "Delivered Qty",
       "available": "Available",
       "billed": "Billed",
       "committed": "Committed",
       "date": "Date",
+      "deliveredQty": "Delivered Qty",
       "description": "Description",
       "details": "Details",
       "discountPct": "Disc %",
@@ -2742,6 +2772,7 @@
       "searchSuppliers": "Search suppliers..."
     },
     "poNumberLabel": "PO {number}",
+    "purchases": "Purchases",
     "reallocateModal": {
       "cancel": "Cancel",
       "newLocation": "New Fulfillment Location",
@@ -2894,7 +2925,6 @@
     "unknownCustomer": "Unknown Customer"
   },
   "salesOrders": {
-    "sales": "Sales",
     "allocated": "Allocated",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
     "archivedBannerTitle": "This record is archived.",
@@ -2946,9 +2976,6 @@
     "columns": {
       "allocatedTo": "Allocated To",
       "amount": "Amount",
-      "orderedQty": "Ordered Qty",
-      "shippedQty": "Shipped Qty",
-      "totalAmount": "Total Amount",
       "available": "Available",
       "committed": "Committed",
       "customer": "Customer",
@@ -2968,6 +2995,7 @@
       "onHand": "On Hand",
       "orderNumber": "Order No.",
       "ordered": "Ordered",
+      "orderedQty": "Ordered Qty",
       "picked": "Picked",
       "poStatus": "PO Status",
       "postConfirmation": "Post-Confirmation",
@@ -2980,12 +3008,14 @@
       "reserved": "Reserved",
       "returnQty": "Return Qty",
       "shipped": "Shipped",
+      "shippedQty": "Shipped Qty",
       "soStatus": "SO Status",
       "state": "State",
       "status": "Status",
       "tax": "Tax",
       "taxPosition": "Tax Position",
       "taxRate": "Tax Rate",
+      "totalAmount": "Total Amount",
       "type": "Type",
       "unitPrice": "Unit Price",
       "uom": "UOM"
@@ -3091,6 +3121,7 @@
       "totalFees": "Total Fees"
     },
     "returnsHeading": "Returns",
+    "sales": "Sales",
     "selectLocation": "Select Location",
     "shortages": {
       "available": "Available",
@@ -3522,7 +3553,8 @@
       "systemLogs": "System Logs",
       "transfers": "Transfers",
       "trialBalance": "Trial Balance",
-      "users": "Users"
+      "users": "Users",
+      "version": "Version"
     },
     "subtitle": "Your business, your data",
     "title": "herobm"

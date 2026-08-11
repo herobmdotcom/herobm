@@ -199,9 +199,9 @@ export class SuppliersService {
         address1Country: actors.headquartersCountry,
         businessNumber: actors.businessNumber,
         isTaxRegistered: actors.isTaxRegistered,
-        telephone1: sql<string>`''`, // legacy mock
-        fax: sql<string>`''`, // legacy mock
-        emailAddress1: sql<string>`''`, // legacy mock
+        telephone1: actors.telephone,
+        fax: actors.fax,
+        emailAddress1: actors.email,
       })
       .from(coreSuppliers)
       .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))

@@ -16,7 +16,9 @@ import {
   ApiOperation,
   ApiBody,
 } from '@nestjs/swagger';
-import { TransferService } from './transfers.service';
+import { TransfersCoreService } from './transfers-core.service';
+import { TransfersWriteService } from './transfers-write.service';
+import { TransfersStateService } from './transfers-state.service';
 import { ShipmentResponseDto } from '../dto';
 import { ApiPaginatedResponse } from '../../common/pagination';
 import {
@@ -36,14 +38,17 @@ import {
 import { CasbinResource, CasbinAction } from '../../auth/casbin.guard';
 import { AuthUser } from '../../auth/auth-user.decorator';
 import type { JwtUser } from '../../auth/auth-user.decorator';
-
 import { ApiFieldMask } from '../../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Transfer Orders')
 @Controller('transfers')
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class TransfersController {
-  constructor(private readonly transferService: TransferService) {}
+  constructor(
+    private readonly coreService: TransfersCoreService,
+    private readonly writeService: TransfersWriteService,
+    private readonly stateService: TransfersStateService,
+  ) {}
 
   @Post('from-demands')
   @CasbinAction('write')
@@ -56,7 +61,7 @@ export class TransfersController {
     @Body() body: CreateTransferFromDemandsDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.createTransferFromDemands(
+    return this.writeService.createTransferFromDemands(
       body.sourceLocationId,
       body.backorderIds,
       user.username,
@@ -71,7 +76,7 @@ export class TransfersController {
   })
   @ApiOkResponse({ type: [TransferEventResponseDto] })
   async findEvents(@Param('id') id: string) {
-    return this.transferService.findEvents(id);
+    return this.coreService.findEvents(id);
   }
 
   @Get(':id/picking')
@@ -82,7 +87,7 @@ export class TransfersController {
   })
   @ApiOkResponse({ type: [TransferPickingSummaryResponseDto] })
   async getPickingSummary(@Param('id') id: string) {
-    return this.transferService.getPickingSummary(id);
+    return this.stateService.getPickingSummary(id);
   }
 
   @Post(':id/picking/lines/:lineId')
@@ -98,7 +103,7 @@ export class TransfersController {
     @Body() body: PickLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.pickLine(
+    return this.stateService.pickLine(
       id,
       lineId,
       body.binId,
@@ -119,7 +124,7 @@ export class TransfersController {
     @Param('pickId') pickId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.cancelPick(id, pickId, user.username);
+    return this.stateService.cancelPick(id, pickId, user.username);
   }
   @Post(':id/ship')
   @CasbinAction('handle')
@@ -130,7 +135,7 @@ export class TransfersController {
   @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: TransferResponseDto })
   async shipTransferOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.transferService.shipTransferOrder(id, user.username);
+    return this.stateService.shipTransferOrder(id, user.username);
   }
 
   @Post(':id/receive')
@@ -145,7 +150,7 @@ export class TransfersController {
     @Body() body: ReceiveTransferDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.receiveTransferOrder(
+    return this.stateService.receiveTransferOrder(
       id,
       body.lines,
       user.username,
@@ -164,7 +169,7 @@ export class TransfersController {
     @Param('id') id: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.cancelTransferOrder(id, user.username);
+    return this.stateService.cancelTransferOrder(id, user.username);
   }
 
   @Post(':id/cancel-shipment')
@@ -179,7 +184,7 @@ export class TransfersController {
     @Param('id') id: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.cancelActiveShipment(id, user.username);
+    return this.stateService.cancelActiveShipment(id, user.username);
   }
 
   @Get()
@@ -191,7 +196,7 @@ export class TransfersController {
   @ApiPaginatedResponse(TransferResponseDto)
   @ApiFieldMask()
   async findAll(@Query() query: TransferPaginationQuery) {
-    return this.transferService.findAll(query);
+    return this.coreService.findAll(query);
   }
 
   @Get(':id')
@@ -203,7 +208,7 @@ export class TransfersController {
   @ApiOkResponse({ type: TransferResponseDto })
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
-    return this.transferService.findOne(id);
+    return this.coreService.findOne(id);
   }
 
   @Get(':id/shipments')
@@ -214,7 +219,7 @@ export class TransfersController {
   })
   @ApiOkResponse({ type: [ShipmentResponseDto] })
   async findShipments(@Param('id') id: string) {
-    return this.transferService.findShipments(id);
+    return this.coreService.findShipments(id);
   }
 
   @Post()
@@ -228,7 +233,7 @@ export class TransfersController {
     @Body() body: CreateTransferOrderDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.create(body, user.username);
+    return this.writeService.create(body, user.username);
   }
 
   @Patch(':id')
@@ -243,7 +248,7 @@ export class TransfersController {
     @Body() body: UpdateTransferOrderDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.update(id, body, user.username);
+    return this.writeService.update(id, body, user.username);
   }
 
   @Post(':id/lines')
@@ -258,7 +263,7 @@ export class TransfersController {
     @Body() body: CreateTransferOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.addLine(id, body, user.username);
+    return this.writeService.addLine(id, body, user.username);
   }
 
   @Patch(':id/lines/:lineId')
@@ -274,7 +279,7 @@ export class TransfersController {
     @Body() body: UpdateTransferOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.updateLine(id, lineId, body, user.username);
+    return this.writeService.updateLine(id, lineId, body, user.username);
   }
 
   @Delete(':id/lines/:lineId')
@@ -289,6 +294,6 @@ export class TransfersController {
     @Param('lineId') lineId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.transferService.removeLine(id, lineId, user.username);
+    return this.writeService.removeLine(id, lineId, user.username);
   }
 }

@@ -5,17 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { GeneralLedgerResponseDto } from './generalLedgerResponseDto';
+import type { PaginatedResponse } from './paginatedResponse';
+import type { GlControllerGetGeneralLedger200AllOf } from './glControllerGetGeneralLedger200AllOf';
 
-export type GlControllerGetGeneralLedger200 = {
-  data: GeneralLedgerResponseDto[];
-  limit: number;
-  /** @nullable */
-  page?: number | null;
-  /** @nullable */
-  total?: number | null;
-  /** @nullable */
-  nextCursor?: string | null;
-  /** @nullable */
-  prevCursor?: string | null;
-};
+export type GlControllerGetGeneralLedger200 = PaginatedResponse & GlControllerGetGeneralLedger200AllOf;

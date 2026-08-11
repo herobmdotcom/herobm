@@ -103,6 +103,7 @@ export default function SuppliersContent() {
       rowIdField="vendorId"
       rowHref={(row) => `/suppliers/${encodeURIComponent(row.vendorId)}`}
       pageTitle={tSuppliers('title')}
+      defaultSortModel={[{ colId: 'vendorNumber', sort: 'asc' }]}
       headerActions={
         <Button asChild variant="primary">
           <Link href="/suppliers/new">

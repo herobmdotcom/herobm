@@ -38,19 +38,17 @@ export function ApiPaginatedResponse<TModel extends Type<unknown>>(
     ApiExtraModels(PaginatedResponse, model),
     ApiOkResponse({
       schema: {
-        type: 'object',
-        properties: {
-          data: {
-            type: 'array',
-            items: { $ref: getSchemaPath(model) },
+        allOf: [
+          { $ref: getSchemaPath(PaginatedResponse) },
+          {
+            properties: {
+              data: {
+                type: 'array',
+                items: { $ref: getSchemaPath(model) },
+              },
+            },
           },
-          limit: { type: 'number' },
-          page: { type: 'number', nullable: true },
-          total: { type: 'number', nullable: true },
-          nextCursor: { type: 'string', nullable: true },
-          prevCursor: { type: 'string', nullable: true },
-        },
-        required: ['data', 'limit'],
+        ],
       },
     }),
   );

@@ -15,6 +15,9 @@ import {
   taxCategories,
   bins,
   zones,
+  salesOrderReturnLines,
+  salesOrderLineItems,
+  products,
 } from '@herobm/db-schema';
 
 jest.mock('../common/emit-event', () => ({
@@ -671,7 +674,12 @@ describe('ReturnsWriteService', () => {
         returnFee: 10,
       });
 
-      return { retId: ret.returnId, retLineId: retLine.returnLineId };
+      return {
+        retId: ret.returnId,
+        retLineId: retLine.returnLineId,
+        orderLineId: orderLine.salesOrderLineId,
+        productId: prod.productId,
+      };
     }
 
     it('should post inventory GL reversal on RECEIVED transition', async () => {
@@ -693,6 +701,75 @@ describe('ReturnsWriteService', () => {
       expect(
         mockInventoryService.recordInventoryMovement,
       ).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reverse COGS using the original order line unitCost if present', async () => {
+      const { retId, retLineId, orderLineId } = await setupGlTransitionTest(
+        RETURN_STATE.CONFIRMED,
+      );
+
+      // Update unitCost to '25.00'
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: '25.00' })
+        .where(eq(salesOrderLineItems.salesOrderLineId, orderLineId));
+
+      await service.receiveReturnLines(
+        retId,
+        {
+          locationId: '10000000-0000-4000-8000-000000000001',
+          lines: [{ returnLineId: retLineId, quantityReceived: '5' }],
+        },
+        'admin',
+      );
+
+      // COGS should be exactly 25.00 * 5 = 125.00
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 125,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('should reverse COGS using standard valuation if unitCost is null', async () => {
+      const { retId, retLineId, orderLineId, productId } =
+        await setupGlTransitionTest(RETURN_STATE.CONFIRMED);
+
+      // Ensure product standardCost is set in the mock
+      await pg.db
+        .update(products)
+        .set({ standardCost: '10.00' })
+        .where(eq(products.productId, productId));
+
+      // Ensure unitCost is null
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: null })
+        .where(eq(salesOrderLineItems.salesOrderLineId, orderLineId));
+
+      await service.receiveReturnLines(
+        retId,
+        {
+          locationId: '10000000-0000-4000-8000-000000000001',
+          lines: [{ returnLineId: retLineId, quantityReceived: '5' }],
+        },
+        'admin',
+      );
+
+      // Standard cost is 10.00, received qty 5 -> COGS = 50.00
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 50,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
     });
   });
 

@@ -63,6 +63,8 @@ import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
   computeLinePriceForStorage,
+  isBackTransition,
+  SALES_ORDER_LIFECYCLE,
 } from '@herobm/shared';
 import {
   resolveEffectiveCreditHold,
@@ -189,13 +191,18 @@ export class OrderStateService {
         if (lv.totalAmount) orderTotal += parseFloat(lv.totalAmount);
       });
       // A status change to quoted, confirmed, or allocated constitutes a review process
-      await this.coreService.assertAccountStanding(
-        existing.customerId,
-        orderTotal,
-        newState === SALES_ORDER_STATE.QUOTED ? 'quote' : 'confirm',
-        undefined,
-        existing.creditHoldOverrideAt,
-      );
+      // Skip the credit check if we are transitioning backwards (e.g. from confirmed back to quoted)
+      if (
+        !isBackTransition(SALES_ORDER_LIFECYCLE, existing.stateCode, newState)
+      ) {
+        await this.coreService.assertAccountStanding(
+          existing.customerId,
+          orderTotal,
+          newState === SALES_ORDER_STATE.QUOTED ? 'quote' : 'confirm',
+          undefined,
+          existing.creditHoldOverrideAt,
+        );
+      }
     }
 
     // INVENTORY GAP CHECK - Ensure we evaluate backorders upon Sales confirmation
@@ -462,14 +469,7 @@ export class OrderStateService {
   async overrideCreditHold(id: string, reason: string, actor: string) {
     const existing = await this.ordersQueryService.findOrder(id);
 
-    if (
-      existing.stateCode !== SALES_ORDER_STATE.DRAFT &&
-      existing.stateCode !== SALES_ORDER_STATE.QUOTED
-    ) {
-      throw new BadRequestException(
-        `Cannot override credit hold on order in '${existing.stateCode}' state`,
-      );
-    }
+    // State restriction removed per design decision, allowing credit hold overrides at any time
 
     const [updated] = await this.db
       .update(salesOrders)

@@ -11,6 +11,7 @@ export interface CreateOrderLineDto {
   productDescription?: string;
   quantity: string;
   pricePerUnit: string;
+  unitCost?: string;
   discountPercentage?: string;
   taxCategoryId?: string;
   tax?: string;

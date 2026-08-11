@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GoodsReceivedController } from './goods-received.controller';
-import { GoodsReceivedService } from './goods-received.service';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedWriteService } from './goods-received-write.service';
 
 describe('GoodsReceivedController', () => {
   let controller: GoodsReceivedController;
@@ -10,10 +11,15 @@ describe('GoodsReceivedController', () => {
       controllers: [GoodsReceivedController],
       providers: [
         {
-          provide: GoodsReceivedService,
+          provide: GoodsReceivedCoreService,
           useValue: {
             findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
             findOne: jest.fn().mockResolvedValue({}),
+          },
+        },
+        {
+          provide: GoodsReceivedWriteService,
+          useValue: {
             create: jest.fn().mockResolvedValue({}),
           },
         },

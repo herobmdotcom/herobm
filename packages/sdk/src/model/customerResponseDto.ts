@@ -58,4 +58,6 @@ export interface CustomerResponseDto {
   deliveryAddresses?: CustomerResponseDtoDeliveryAddressesItem[];
   creditAssessment?: CustomerResponseDtoCreditAssessment;
   effectiveCreditLimit?: string;
+  totalOutstanding?: number;
+  uninvoicedOrdersTotal?: number;
 }

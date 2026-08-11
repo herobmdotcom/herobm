@@ -24,6 +24,10 @@ export default function CustomersContent() {
     { field: 'billingAddressStateOrProvince', headerName: tCommon('columns.state'), width: 90 },
     { field: 'billingAddressPostalCode', headerName: tCommon('columns.postalCode'), width: 110 },
     { field: 'billingAddressCountry', headerName: tCommon('columns.country'), width: 100 },
+    { field: 'telephone', headerName: tAccounts('columns.telephone'), width: 130 },
+    { field: 'email', headerName: tAccounts('columns.email'), width: 200 },
+    { field: 'salesContactName', headerName: tAccounts('columns.salesContact'), width: 180 },
+    { field: 'accountsContactName', headerName: tAccounts('columns.accountsContact'), width: 180 },
     { field: 'customerGroupName', headerName: tCommon('columns.group'), width: 100 },
     {
       colId: 'status',
@@ -39,6 +43,22 @@ export default function CustomersContent() {
     },
     { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },
     { field: 'currencyCode', headerName: tCommon('columns.currency'), width: 90 },
+    {
+      field: 'uninvoicedOrdersTotal',
+      headerName: tAccounts('columns.uninvoicedOrders'),
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: (p: { value?: number, data?: { currencyCode?: string } }) => 
+        p.value != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: p.data?.currencyCode || 'USD' }).format(p.value) : '—',
+    },
+    {
+      field: 'totalOutstanding',
+      headerName: tAccounts('columns.outstandingBalance'),
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: (p: { value?: number, data?: { currencyCode?: string } }) => 
+        p.value != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: p.data?.currencyCode || 'USD' }).format(p.value) : '—',
+    },
     {
       field: 'createdOn',
       headerName: tCommon('columns.created'),
@@ -78,6 +98,7 @@ export default function CustomersContent() {
       rowIdField="customerId"
       rowHref={(row) => `/customers/${row.customerId}`}
       pageTitle={tAccounts('title')}
+      defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
       headerActions={
         <Button asChild variant="primary">
           <Link href="/customers/new">
