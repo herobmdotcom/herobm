@@ -1303,7 +1303,8 @@ describe('OrdersWriteService', () => {
       // Create Parent Kit Product
       kitProduct = await createTestProduct(pg.db, {
         name: 'Parent Kit',
-        productType: 'kit',
+        productType: 'non-stock',
+        structureType: 'kit',
         listPrice: '50.00',
         salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
       });

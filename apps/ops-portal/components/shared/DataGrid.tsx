@@ -159,15 +159,10 @@ export default function DataGrid<T>({
 
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
   // into a single initialState — read once on mount
+  // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
+  // into a single initialState — read once on mount
   const savedInitialState = useMemo(() => {
     const gridState = gridKey ? loadGridState(gridKey) : null;
-    const fromUrl = searchParams?.get(limitParam);
-    if (gridState && fromUrl !== '99999') {
-      // If we are not restoring a custom view explicitly from the URL (e.g. Back button),
-      // ignore saved sort/filter so we don't accidentally load a custom view when clicking from sidebar
-      delete gridState.sort;
-      delete gridState.filter;
-    }
     
     const scroll = gridKey ? loadScrollState(gridKey) : null;
     if (!gridState && !scroll && !defaultSortModel) return undefined;
@@ -183,7 +178,7 @@ export default function DataGrid<T>({
     }
 
     return state;
-  }, [gridKey, searchParams, limitParam, defaultSortModel]);
+  }, [gridKey, defaultSortModel]);
 
   const [data, setData] = useState<T[] | undefined>(undefined);
   const [sortedData, setSortedData] = useState<T[]>([]);
@@ -204,9 +199,33 @@ export default function DataGrid<T>({
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false
   );
 
-  // Initialize state from URL params if available, falling back to defaults
-  const [search, setSearch] = useState(() => searchParams?.get(qParam) ?? initialSearch ?? "");
-  const [includeArchived, setIncludeArchived] = useState(() => searchParams?.get(archivedParam) === 'true');
+  // Initialize state from URL params if available, falling back to sessionStorage, then defaults
+  const [search, setSearch] = useState(() => {
+    const urlVal = searchParams?.get(qParam);
+    if (urlVal != null) return urlVal;
+    if (typeof window !== 'undefined' && gridKey) {
+      try {
+        const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-search`);
+        if (saved != null) return saved;
+      } catch {
+        /* ignore */
+      }
+    }
+    return initialSearch ?? "";
+  });
+  const [includeArchived, setIncludeArchived] = useState(() => {
+    const urlVal = searchParams?.get(archivedParam);
+    if (urlVal != null) return urlVal === 'true';
+    if (typeof window !== 'undefined' && gridKey) {
+      try {
+        const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-archived`);
+        if (saved != null) return saved === 'true';
+      } catch {
+        /* ignore */
+      }
+    }
+    return false;
+  });
   const [cursor, setCursor] = useState<string | null>(() => searchParams?.get(cursorParam) ?? null);
   const [direction, setDirection] = useState<'next' | 'prev'>(() => (searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
   const [limit, setLimit] = useState<number>(() => {
@@ -238,14 +257,6 @@ export default function DataGrid<T>({
   const isGridFilteredRef = useRef(false);
   const lastActionRef = useRef<string | null>(null);
 
-  // If there's an initial search param, we want to ensure custom view is active on load
-  useEffect(() => {
-    if (search && search.trim() !== '') {
-      setIsCustomView(true);
-    } else if (!isGridFilteredRef.current) {
-      setIsCustomView(false);
-    }
-  }, [search]);
 
   useEffect(() => {
     if (gridKey && typeof window !== 'undefined') {
@@ -253,11 +264,21 @@ export default function DataGrid<T>({
         if (limit !== 99999) {
           localStorage.setItem(`${STORAGE_PREFIX}${gridKey}-limit`, String(limit));
         }
+        if (search) {
+          sessionStorage.setItem(`${STORAGE_PREFIX}${gridKey}-search`, search);
+        } else {
+          sessionStorage.removeItem(`${STORAGE_PREFIX}${gridKey}-search`);
+        }
+        if (includeArchived) {
+          sessionStorage.setItem(`${STORAGE_PREFIX}${gridKey}-archived`, 'true');
+        } else {
+          sessionStorage.removeItem(`${STORAGE_PREFIX}${gridKey}-archived`);
+        }
       } catch (e) {
         /* ignore */
       }
     }
-  }, [limit, gridKey]);
+  }, [limit, search, includeArchived, gridKey]);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
@@ -267,8 +288,33 @@ export default function DataGrid<T>({
 
   // Sync state FROM URL to local state (e.g., when user hits Back button)
   useEffect(() => {
-    setSearch(searchParams?.get(qParam) ?? initialSearch ?? "");
-    setIncludeArchived(searchParams?.get(archivedParam) === 'true');
+    const qFromUrl = searchParams?.get(qParam);
+    if (qFromUrl != null) {
+      setSearch(qFromUrl);
+    } else if (gridKey && typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-search`);
+        setSearch(saved ?? initialSearch ?? "");
+      } catch {
+        setSearch(initialSearch ?? "");
+      }
+    } else {
+      setSearch(initialSearch ?? "");
+    }
+
+    const archivedFromUrl = searchParams?.get(archivedParam);
+    if (archivedFromUrl != null) {
+      setIncludeArchived(archivedFromUrl === 'true');
+    } else if (gridKey && typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-archived`);
+        setIncludeArchived(saved === 'true');
+      } catch {
+        setIncludeArchived(false);
+      }
+    } else {
+      setIncludeArchived(false);
+    }
     setCursor(searchParams?.get(cursorParam) ?? null);
     setDirection((searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
     const fromUrl = searchParams?.get(limitParam);
@@ -296,7 +342,7 @@ export default function DataGrid<T>({
         setLimit(initialIsMobile ? 25 : 200);
       }
     }
-  }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch, limitParam]);
+  }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch, limitParam, gridKey]);
 
   // Sync local state TO URL (e.g., when user types or clicks next page)
   const firstRender = useRef(true);
@@ -1189,34 +1235,23 @@ export default function DataGrid<T>({
               
               const wasSortedOrFiltered = isGridFilteredRef.current;
               isGridFilteredRef.current = isSortedOrFiltered;
-              const hasSearch = typeof search === 'string' && search.trim() !== '';
               
-              // Only automatically toggle limits if this was initiated by a user interacting with the UI
-              // (API calls like "Clear Custom View" handle their own limit transitions)
-              const isUserAction = lastActionRef.current === 'uiColumnSorted' || lastActionRef.current === 'uiColumnFilter';
-              
-              if (isUserAction) {
-                if (isSortedOrFiltered && !wasSortedOrFiltered) {
-                  if (limit !== 99999) {
-                    setPreviousLimit(limit);
-                    setLimit(99999);
-                  }
-                } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
-                  if (limit === 99999) {
-                    if (previousLimit !== null) {
-                      setLimit(previousLimit);
-                    } else if (!fetchAll || isMobile) {
-                      setLimit(isMobile ? 25 : 200);
-                    }
+              if (isSortedOrFiltered && !wasSortedOrFiltered) {
+                if (limit !== 99999) {
+                  setPreviousLimit(limit);
+                  setLimit(99999);
+                }
+              } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
+                if (limit === 99999) {
+                  if (previousLimit !== null) {
+                    setLimit(previousLimit);
+                  } else if (!fetchAll || isMobile) {
+                    setLimit(isMobile ? 25 : 200);
                   }
                 }
               }
               
-              if (isSortedOrFiltered) {
-                setIsCustomView(true);
-              } else {
-                setIsCustomView(hasSearch);
-              }
+              setIsCustomView(isSortedOrFiltered || (limit === 99999 && !fetchAll));
               
               lastActionRef.current = null;
             }}

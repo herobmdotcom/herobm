@@ -13957,6 +13957,402 @@
         ]
       }
     },
+    "/manufacturing/work-orders": {
+      "get": {
+        "description": "Get all work orders with optional filtering by days.",
+        "operationId": "WorkOrdersController_findAll",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkOrderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Work Orders",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      },
+      "post": {
+        "description": "Manually create a new Work Order.",
+        "operationId": "WorkOrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}": {
+      "get": {
+        "description": "Get work order details including component line items.",
+        "operationId": "WorkOrdersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Work Order by ID",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      },
+      "patch": {
+        "description": "Update a draft Work Order.",
+        "operationId": "WorkOrdersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/components/{componentId}": {
+      "patch": {
+        "description": "Update a component on a draft Work Order.",
+        "operationId": "WorkOrdersController_updateComponent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "componentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkOrderComponentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Work Order Component",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/release": {
+      "post": {
+        "description": "Transition Work Order from DRAFT to IN_PROGRESS and generate component picks.",
+        "operationId": "WorkOrdersController_release",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Release Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/complete": {
+      "post": {
+        "description": "Transition Work Order from IN_PROGRESS to COMPLETED and record output stock.",
+        "operationId": "WorkOrdersController_completeBuild",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Complete Work Order Production",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/putaway": {
+      "post": {
+        "description": "Transfer finished goods to warehouse storage bin and fulfill linked backorders.",
+        "operationId": "WorkOrdersController_putawayFinishedGoods",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Putaway Finished Goods",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/cancel": {
+      "post": {
+        "description": "Cancel a Work Order and release component picks.",
+        "operationId": "WorkOrdersController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
     "/data-sources": {
       "get": {
         "description": "Retrieves a list of all available data sources registered in the system.",
@@ -14312,6 +14708,42 @@
           }
         },
         "summary": "Delete Zone",
+        "tags": [
+          "Warehouse"
+        ]
+      }
+    },
+    "/inventory/bins/bulk": {
+      "post": {
+        "description": "Create multiple storage bins at once.",
+        "operationId": "LocationsController_createBinsBulk",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBinBulkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BinResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Bins in Bulk",
         "tags": [
           "Warehouse"
         ]
@@ -26581,6 +27013,204 @@
           "lines"
         ]
       },
+      "WorkOrderComponentResponseDto": {
+        "type": "object",
+        "properties": {
+          "workOrderComponentId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "expectedQuantity": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "workOrderComponentId",
+          "productId",
+          "productName",
+          "productNumber",
+          "expectedQuantity"
+        ]
+      },
+      "WorkOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "workOrderId": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "targetQuantity": {
+            "type": "string"
+          },
+          "completedQuantity": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "wipBinId": {
+            "type": "string",
+            "nullable": true
+          },
+          "wipBinName": {
+            "type": "string",
+            "nullable": true
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "totalCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "object"
+          },
+          "modifiedOn": {
+            "type": "object"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderComponentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "workOrderId",
+          "orderNumber",
+          "productId",
+          "productName",
+          "productNumber",
+          "targetQuantity",
+          "completedQuantity",
+          "locationId",
+          "locationName",
+          "stateCode"
+        ]
+      },
+      "CreateWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product ID of the component item"
+          },
+          "expectedQuantity": {
+            "type": "string",
+            "description": "Expected component quantity for this work order"
+          },
+          "unitCost": {
+            "type": "string",
+            "description": "Optional unit cost"
+          }
+        },
+        "required": [
+          "productId",
+          "expectedQuantity"
+        ]
+      },
+      "CreateWorkOrderDto": {
+        "type": "object",
+        "properties": {
+          "orderNumber": {
+            "type": "string",
+            "description": "Optional custom order number (WO-YYYYMMDD-XXXX generated if empty)"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product ID of the output product to produce"
+          },
+          "targetQuantity": {
+            "type": "string",
+            "description": "Target quantity to produce"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fulfillment location ID"
+          },
+          "wipBinId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "WIP Bin ID (optional)"
+          },
+          "components": {
+            "description": "Component lines snapshot (if empty, auto-populated from product BOM)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateWorkOrderComponentDto"
+            }
+          }
+        },
+        "required": [
+          "productId",
+          "targetQuantity",
+          "locationId"
+        ]
+      },
+      "UpdateWorkOrderDto": {
+        "type": "object",
+        "properties": {
+          "targetQuantity": {
+            "type": "string",
+            "description": "Target quantity to produce"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fulfillment location ID"
+          },
+          "wipBinId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "WIP Bin ID (optional)"
+          }
+        }
+      },
+      "UpdateWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "unitCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Overridden unit cost"
+          }
+        }
+      },
       "DataSourceItemDto": {
         "type": "object",
         "properties": {
@@ -26929,6 +27559,20 @@
           "binNumber",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CreateBinBulkDto": {
+        "type": "object",
+        "properties": {
+          "bins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBinDto"
+            }
+          }
+        },
+        "required": [
+          "bins"
         ]
       },
       "UpdateBinDto": {

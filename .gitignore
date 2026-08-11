@@ -106,6 +106,3 @@ tools/license-keys.js
 
 # Generated
 apps/ops-portal/lib/generated/
-
-# Rust Experiment
-apps/api-rs/

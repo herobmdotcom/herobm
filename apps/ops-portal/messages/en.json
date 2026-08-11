@@ -1281,10 +1281,12 @@
       "active": "Active",
       "archived": "Archived",
       "cancelled": "Cancelled",
+      "completed": "Completed",
       "confirmed": "Confirmed",
       "discontinued": "Discontinued",
       "dispatched": "Dispatched",
       "draft": "Draft",
+      "in_progress": "In Progress",
       "inactive": "Inactive",
       "invoiced": "Invoiced",
       "legacy": "Legacy",
@@ -1298,6 +1300,7 @@
       "processed": "Processed",
       "quoted": "Quoted",
       "received": "Received",
+      "released": "Released",
       "shipped": "Shipped",
       "submitted": "Submitted"
     },
@@ -3761,5 +3764,52 @@
     "subtitleFlow": "From {source} to {destination}",
     "title": "Transfer Orders",
     "transferTitle": "Transfer {number}"
+  },
+  "workOrders": {
+    "backToOrders": "← Back to Work Orders",
+    "buttons": {
+      "cancel": "Cancel",
+      "createWorkOrder": "+ Create Work Order",
+      "customLine": "+ Custom Line",
+      "saving": "Saving..."
+    },
+    "columns": {
+      "completedQty": "Completed Qty",
+      "expectedQty": "Expected Qty",
+      "lineNumber": "#",
+      "location": "Location",
+      "orderNumber": "Order Number",
+      "product": "Product",
+      "status": "Status",
+      "targetQty": "Target Qty",
+      "unitCost": "Unit Cost",
+      "wipBin": "WIP Bin"
+    },
+    "createTitle": "Create Work Order",
+    "detailsHeading": "Work Order Details",
+    "errors": {
+      "failedToCreate": "Failed to create work order",
+      "noComponents": "Please select a valid product or add component lines",
+      "pleaseSelectLocation": "Please select a location",
+      "pleaseSelectProduct": "Please select a product to produce",
+      "targetQtyPositive": "Target quantity must be greater than 0"
+    },
+    "labels": {
+      "location": "Location",
+      "orderNumber": "Order Number",
+      "product": "Product to Produce",
+      "targetQuantity": "Target Quantity",
+      "wipBin": "WIP Bin"
+    },
+    "lineItems": "Component Lines (Bill of Materials)",
+    "noLineItems": "No component line items added.",
+    "placeholders": {
+      "customDescription": "Custom component description",
+      "orderNumber": "e.g. WO-20260811-001 (auto-generated if empty)",
+      "searchOrders": "Search Work Orders...",
+      "searchProduct": "Search product to produce...",
+      "selectWipBin": "Select WIP Bin (optional)"
+    },
+    "title": "Work Orders"
   }
 }

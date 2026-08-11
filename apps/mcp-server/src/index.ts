@@ -21,7 +21,7 @@ const envPaths = [
   path.resolve(process.cwd(), '.env'),
   path.resolve(__dirname, '.env'),
   path.resolve(__dirname, '../../../.env'),
-  'c:/Users/Marcel/volz/modbm/modbm/.env'
+  ...(process.env.ENV_FILE ? [process.env.ENV_FILE] : []),
 ];
 
 for (const p of envPaths) {

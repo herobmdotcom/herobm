@@ -293,6 +293,17 @@ export default function TopographyView() {
                           </Button>
                         </div>
                       )}
+                      <Button variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(loc.locationId);
+                          toast.success('Copied to clipboard');
+                        }}
+                        className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors mr-1"
+                        title={`UUID: ${loc.locationId}`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">info</span>
+                      </Button>
                       <span
                         className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
                         style={{
@@ -397,6 +408,17 @@ export default function TopographyView() {
                                     </Button>
                                   </div>
                                 )}
+                                <Button variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(zone.zoneId);
+                                    toast.success('Copied to clipboard');
+                                  }}
+                                  className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors mr-1"
+                                  title={`UUID: ${zone.zoneId}`}
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">info</span>
+                                </Button>
                                 <span
                                   className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
                                   style={{
@@ -437,7 +459,11 @@ export default function TopographyView() {
                                         >
                                           {tLoc('fields.flags')}
                                         </th>
-                                        {canEdit && <th className="w-10 px-4 py-2"></th>}
+                                        <th
+                                          className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider"
+                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
+                                        >
+                                        </th>
                                         </tr>
                                       </thead>
                                     <tbody>
@@ -488,43 +514,54 @@ export default function TopographyView() {
                                               )}
                                             </div>
                                           </td>
-                                          {canEdit && (
-                                            <td className="px-2 py-2">
-                                              <div className="flex items-center gap-1">
-                                                <Button variant="ghost"
-                                                  onClick={() => {
-                                                    setEditingBin({ bin, zoneId: zone.zoneId });
-                                                    setIsBinModalOpen(true);
-                                                  }}
-                                                  className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
-                                                >
-                                                  
-                                                  { }
-                                                  <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                </Button>
-                                                <Button variant="ghost"
-                                                  onClick={() => {
-                                                    if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
-                                                    if (confirm(tCommon('confirmDelete'))) {
-                                                      api.locationsControllerDeleteBin(bin.binId)
-                                                        .then(() => {
-                                                          toast.success(tCommon('deleted'));
-                                                          fetchLocations();
-                                                        })
-                                                        .catch((err) => toast.error(getErrorMessage(err)));
-                                                    }
-                                                  }}
-                                                  disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
-                                                  title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
-                                                  className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
-                                                >
-                                                  
-                                                  { }
-                                                  <span className="material-symbols-outlined text-[16px]">delete</span>
-                                                </Button>
-                                              </div>
-                                            </td>
-                                          )}
+                                          <td className="px-2 py-2">
+                                            <div className="flex items-center justify-end gap-1">
+                                              {canEdit && (
+                                                <>
+                                                  <Button variant="ghost"
+                                                    onClick={() => {
+                                                      setEditingBin({ bin, zoneId: zone.zoneId });
+                                                      setIsBinModalOpen(true);
+                                                    }}
+                                                    className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                                  >
+                                                    { }
+                                                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                  </Button>
+                                                  <Button variant="ghost"
+                                                    onClick={() => {
+                                                      if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
+                                                      if (confirm(tCommon('confirmDelete'))) {
+                                                        api.locationsControllerDeleteBin(bin.binId)
+                                                          .then(() => {
+                                                            toast.success(tCommon('deleted'));
+                                                            fetchLocations();
+                                                          })
+                                                          .catch((err) => toast.error(getErrorMessage(err)));
+                                                      }
+                                                    }}
+                                                    disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
+                                                    title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
+                                                    className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
+                                                  >
+                                                    { }
+                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                  </Button>
+                                                </>
+                                              )}
+                                              <Button variant="ghost"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  navigator.clipboard.writeText(bin.binId);
+                                                  toast.success(tCommon('copiedToClipboard'));
+                                                }}
+                                                className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                                title={`UUID: ${bin.binId}`}
+                                              >
+                                                <span className="material-symbols-outlined text-[16px]">info</span>
+                                              </Button>
+                                            </div>
+                                          </td>
                                         </tr>
                                       ))}
                                     </tbody>
@@ -783,10 +820,25 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
   const tCommon = useTranslations('common');
   const tLoc = useTranslations('inventory.locations');
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<'single' | 'batch'>('single');
+
+  // Single form
   const [formData, setFormData] = useState({ binNumber: '', binType: '', isConsignment: false, isBonded: false, isUnavailable: false });
+
+  // Bulk form
+  const [bulkData, setBulkData] = useState({
+    aisleStart: 'A',
+    aisleEnd: 'L',
+    rackStart: 1,
+    rackEnd: 9,
+    shelfStart: 1,
+    shelfEnd: 14,
+    separator: '.',
+  });
 
   useEffect(() => {
     if (initialData?.bin) {
+      setMode('single');
       setFormData({ 
         binNumber: initialData.bin.binNumber, 
         binType: initialData.bin.binType || '',
@@ -795,29 +847,75 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
         isUnavailable: initialData.bin.isUnavailable
       });
     } else {
+      setMode('single');
       setFormData({ binNumber: '', binType: BIN_TYPE.STORAGE, isConsignment: false, isBonded: false, isUnavailable: false });
+      setBulkData({
+        aisleStart: 'A',
+        aisleEnd: 'L',
+        rackStart: 1,
+        rackEnd: 9,
+        shelfStart: 1,
+        shelfEnd: 14,
+        separator: '.',
+      });
     }
   }, [initialData, isOpen]);
+
+  // Bulk generated bin numbers
+  const generatedBinNumbers = useMemo(() => {
+    if (mode !== 'batch') return [];
+    const binsArr: string[] = [];
+    const startChar = (bulkData.aisleStart || 'A').toUpperCase().charCodeAt(0);
+    const endChar = (bulkData.aisleEnd || bulkData.aisleStart || 'A').toUpperCase().charCodeAt(0);
+    const rStart = Math.min(bulkData.rackStart || 1, bulkData.rackEnd || 1);
+    const rEnd = Math.max(bulkData.rackStart || 1, bulkData.rackEnd || 1);
+    const sStart = Math.min(bulkData.shelfStart || 1, bulkData.shelfEnd || 1);
+    const sEnd = Math.max(bulkData.shelfStart || 1, bulkData.shelfEnd || 1);
+    const sep = bulkData.separator;
+
+    for (let c = startChar; c <= endChar; c++) {
+      const aisle = String.fromCharCode(c);
+      for (let r = rStart; r <= rEnd; r++) {
+        for (let s = sStart; s <= sEnd; s++) {
+          binsArr.push(`${aisle}${sep}${r}${sep}${s}`);
+        }
+      }
+    }
+    return binsArr;
+  }, [mode, bulkData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!initialData) return;
     setLoading(true);
-    
-    const payload: Record<string, unknown> = {
-      ...formData,
-    };
-    if (formData.binType) {
-      payload.binType = formData.binType;
-    }
 
     try {
       if (initialData.bin) {
+        // Edit single bin
+        const payload: Record<string, unknown> = { ...formData };
+        if (formData.binType) payload.binType = formData.binType;
         await api.locationsControllerUpdateBin(initialData.bin.binId, payload);
-      } else {
+        toast.success('Updated');
+      } else if (mode === 'single') {
+        // Create single bin
+        const payload: Record<string, unknown> = { ...formData };
+        if (formData.binType) payload.binType = formData.binType;
         await api.locationsControllerCreateBin({ ...payload, zoneId: initialData.zoneId } as unknown as api.CreateBinDto);
+        toast.success('Created');
+      } else {
+        // Create bulk bins
+        const binsPayload = generatedBinNumbers.map((binNumber) => ({
+          binNumber,
+          zoneId: initialData.zoneId,
+          binType: formData.binType || BIN_TYPE.STORAGE,
+          isConsignment: formData.isConsignment,
+          isBonded: formData.isBonded,
+          isUnavailable: formData.isUnavailable,
+        }));
+
+        await api.locationsControllerCreateBinsBulk({ bins: binsPayload as api.CreateBinDto[] });
+        toast.success('Created');
       }
-      toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -834,16 +932,144 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
       title={initialData?.bin ? tLoc('editBin') : tLoc('addBin')}
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binNumber')}</label>
-          <input 
-            className="input" 
-            required 
-            value={formData.binNumber} 
-            onChange={e => setFormData({...formData, binNumber: e.target.value.toUpperCase()})}
-            placeholder={tLoc('placeholders.binNumber')}
-          />
-        </div>
+        {!initialData?.bin && (
+          <div className="flex bg-[#f2f4f6] p-1 rounded-lg">
+            <Button
+              type="button"
+              variant={mode === 'single' ? 'secondary' : 'ghost'}
+              onClick={() => setMode('single')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                mode === 'single' ? 'bg-white shadow text-[#041627]' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Single Bin
+            </Button>
+            <Button
+              type="button"
+              variant={mode === 'batch' ? 'secondary' : 'ghost'}
+              onClick={() => setMode('batch')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                mode === 'batch' ? 'bg-white shadow text-[#041627]' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Bulk Multi-Create
+            </Button>
+          </div>
+        )}
+
+        {mode === 'single' ? (
+          <div className="flex flex-col gap-1.5">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binNumber')}</label>
+            <input 
+              className="input" 
+              required 
+              value={formData.binNumber} 
+              onChange={e => setFormData({...formData, binNumber: e.target.value.toUpperCase()})}
+              placeholder={tLoc('placeholders.binNumber')}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">Pattern Range Setup</h4>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Aisle Start (Letter)</label>
+                <input
+                  className="input text-center uppercase"
+                  maxLength={2}
+                  required
+                  value={bulkData.aisleStart}
+                  onChange={(e) => setBulkData({ ...bulkData, aisleStart: e.target.value.toUpperCase() })}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Aisle End (Letter)</label>
+                <input
+                  className="input text-center uppercase"
+                  maxLength={2}
+                  required
+                  value={bulkData.aisleEnd}
+                  onChange={(e) => setBulkData({ ...bulkData, aisleEnd: e.target.value.toUpperCase() })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Rack Start</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="input text-center"
+                  required
+                  value={bulkData.rackStart}
+                  onChange={(e) => setBulkData({ ...bulkData, rackStart: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Rack End</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="input text-center"
+                  required
+                  value={bulkData.rackEnd}
+                  onChange={(e) => setBulkData({ ...bulkData, rackEnd: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Shelf Start</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="input text-center"
+                  required
+                  value={bulkData.shelfStart}
+                  onChange={(e) => setBulkData({ ...bulkData, shelfStart: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1">Shelf End</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="input text-center"
+                  required
+                  value={bulkData.shelfEnd}
+                  onChange={(e) => setBulkData({ ...bulkData, shelfEnd: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Separator</label>
+              <input
+                className="input text-center"
+                maxLength={3}
+                value={bulkData.separator}
+                onChange={(e) => setBulkData({ ...bulkData, separator: e.target.value })}
+                placeholder="."
+              />
+            </div>
+
+            <div className="p-3 bg-white rounded border border-gray-200">
+              <div className="text-xs font-semibold text-gray-700 flex justify-between mb-1">
+                <span>Total Bins to Create:</span>
+                <span className="text-emerald-700 font-bold">{generatedBinNumbers.length.toLocaleString()}</span>
+              </div>
+              {generatedBinNumbers.length > 0 && (
+                <div className="text-[11px] text-gray-500 truncate">
+                  Preview: {generatedBinNumbers.slice(0, 3).join(', ')} ... {generatedBinNumbers.slice(-2).join(', ')}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binType')}</label>
           <select
@@ -859,6 +1085,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
             <option value="quarantine">{tLoc('binTypes.quarantine')}</option>
           </select>
         </div>
+
         <div className="flex flex-col gap-3 pt-2">
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
@@ -888,12 +1115,19 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
             <span className="text-sm font-medium">{tLoc('fields.unavailable')}</span>
           </label>
         </div>
+
         <div className="flex justify-end gap-3 mt-4">
           <Button type="button" onClick={onClose} variant="secondary">
             {tCommon('cancel')}
           </Button>
-          <Button type="submit" disabled={loading} variant="primary">
-            {loading ? tCommon('loading') : initialData?.bin ? tCommon('save') : tCommon('create')}
+          <Button type="submit" disabled={loading || (mode === 'batch' && generatedBinNumbers.length === 0)} variant="primary">
+            {loading
+              ? tCommon('loading')
+              : initialData?.bin
+              ? tCommon('save')
+              : mode === 'batch'
+              ? `Create ${generatedBinNumbers.length.toLocaleString()} Bins`
+              : tCommon('create')}
           </Button>
         </div>
       </form>

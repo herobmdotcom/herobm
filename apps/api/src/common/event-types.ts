@@ -32,6 +32,8 @@ export const EntityType = {
   EMAIL: 'email',
   BUSINESS_REPORT: 'business_report',
   INTEGRATION: 'integration',
+  WORK_ORDER: 'work_order',
+  WORK_ORDER_PICK: 'work_order_pick',
 
   // ── Auxiliary / Configuration Entities ─────────────────────────────
   USER: 'user',
@@ -163,6 +165,12 @@ export const EventType = {
   PAYMENT_SUBMITTED: 'payment_submitted',
   PAYMENT_ALLOCATED: 'payment_allocated',
   PAYMENT_CANCELLED: 'payment_cancelled',
+
+  // ── Manufacturing domain ────────────────────────────────────────────
+  RELEASED: 'released',
+  COMPLETED: 'completed',
+  PUTAWAY: 'putaway',
+  CANCELLED: 'cancelled',
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
@@ -336,6 +344,12 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'webhook.created',
   'webhook.deleted',
   'webhook.updated',
+  'work_order.created',
+  'work_order.putaway_completed',
+  'work_order.status_changed',
+  'work_order.updated',
+  'work_order_pick.created',
+  'work_order_pick.status_changed',
   'zone.created',
   'zone.deleted',
   'zone.updated',

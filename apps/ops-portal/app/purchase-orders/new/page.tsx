@@ -253,6 +253,7 @@ export default function NewPurchaseOrderPage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title={t('purchaseOrders.createTitle')}

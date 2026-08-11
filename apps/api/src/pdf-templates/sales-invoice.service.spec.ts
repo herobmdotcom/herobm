@@ -78,4 +78,12 @@ describe('SalesInvoiceService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  it('should pass customPdfText option to output data', async () => {
+    const data = await service.assembleData('order-1', 'app', undefined, {
+      customPdfText: 'Payment due upon receipt.',
+    });
+
+    expect(data.customPdfText).toBe('Payment due upon receipt.');
+  });
 });

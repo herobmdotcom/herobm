@@ -19,7 +19,13 @@
     "typescript": "^5.0.0"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./server": "./dist/server/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./dist/server/index.js"
+    }
   }
 }

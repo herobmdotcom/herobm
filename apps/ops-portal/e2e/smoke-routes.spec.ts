@@ -8,6 +8,8 @@ const ROUTES = [
   '/customers',
   '/general-ledger',
   '/inventory',
+  '/manufacturing/work-orders',
+  '/manufacturing/work-orders/new',
   '/payments',
   '/products',
   '/purchase-orders',

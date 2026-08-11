@@ -143,6 +143,34 @@ export const SALES_ORDER_PICK_TRANSITIONS: Record<string, string[]> = {
   [SALES_ORDER_PICK_STATE.CANCELLED]: [],
 };
 
+export const WORK_ORDER_STATE = {
+  DRAFT: 'draft',
+  PLANNED: 'planned',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const WORK_ORDER_TRANSITIONS: Record<string, string[]> = {
+  [WORK_ORDER_STATE.DRAFT]: [WORK_ORDER_STATE.PLANNED, WORK_ORDER_STATE.IN_PROGRESS, WORK_ORDER_STATE.CANCELLED],
+  [WORK_ORDER_STATE.PLANNED]: [WORK_ORDER_STATE.IN_PROGRESS, WORK_ORDER_STATE.CANCELLED, WORK_ORDER_STATE.DRAFT],
+  [WORK_ORDER_STATE.IN_PROGRESS]: [WORK_ORDER_STATE.COMPLETED, WORK_ORDER_STATE.CANCELLED],
+  [WORK_ORDER_STATE.COMPLETED]: [],
+  [WORK_ORDER_STATE.CANCELLED]: [WORK_ORDER_STATE.DRAFT],
+};
+
+export const WORK_ORDER_PICK_STATE = {
+  PENDING: 'pending',
+  PICKED: 'picked',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const WORK_ORDER_PICK_TRANSITIONS: Record<string, string[]> = {
+  [WORK_ORDER_PICK_STATE.PENDING]: [WORK_ORDER_PICK_STATE.PICKED, WORK_ORDER_PICK_STATE.CANCELLED],
+  [WORK_ORDER_PICK_STATE.PICKED]: [WORK_ORDER_PICK_STATE.CANCELLED],
+  [WORK_ORDER_PICK_STATE.CANCELLED]: [],
+};
+
 export const PUTAWAY_STATUS = {
   AWAITING_MATCHING: 'awaiting_matching',
   PENDING_PUTAWAY: 'pending_putaway',
@@ -406,6 +434,8 @@ export type ProjectState = typeof PROJECT_STATE[keyof typeof PROJECT_STATE];
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
 export type PurchaseReturnShipmentState = typeof PURCHASE_RETURN_SHIPMENT_STATE[keyof typeof PURCHASE_RETURN_SHIPMENT_STATE];
 export type PurchaseDebitNoteState = typeof PURCHASE_DEBIT_NOTE_STATE[keyof typeof PURCHASE_DEBIT_NOTE_STATE];
+export type WorkOrderState = typeof WORK_ORDER_STATE[keyof typeof WORK_ORDER_STATE];
+export type WorkOrderPickState = typeof WORK_ORDER_PICK_STATE[keyof typeof WORK_ORDER_PICK_STATE];
 
 // ============================================================================
 // Lifecycle ordinals  (higher = further along the happy path)

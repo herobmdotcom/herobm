@@ -114,8 +114,8 @@ export function calculateInventoryGaps(
   for (const line of lines) {
     const isPhysical = isPhysicalProductLine(line);
     
-    // Exclude Kit parent items from gaps (components are calculated separately)
-    const isKitParent = line.structureType === 'kit';
+    // Exclude non-stock Kit parent items from gaps (components are calculated separately)
+    const isKitParent = line.structureType === 'kit' && line.productType === 'non-stock';
     
     if (!isPhysical || isKitParent || !line.productId) continue;
 

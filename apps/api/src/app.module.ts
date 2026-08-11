@@ -19,6 +19,7 @@ import { MetricsInterceptor } from './common/metrics.interceptor';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
 import { PurchaseDebitNotesModule } from './purchase-debit-notes/purchase-debit-notes.module';
+import { ManufacturingModule } from './manufacturing/manufacturing.module';
 
 import { PdfTemplatesModule } from './pdf-templates/pdf-templates.module';
 import { DataSourcesModule } from './data-sources/data-sources.module';
@@ -85,6 +86,7 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     SuppliersModule,
     PurchaseOrdersModule,
     PurchaseDebitNotesModule,
+    ManufacturingModule,
 
     DataSourcesModule,
     PdfTemplatesModule,

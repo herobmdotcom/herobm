@@ -494,7 +494,6 @@ h2 {
 
 /* ── Utility: hide elements in print ─────────────────────────────────── */
 .print-hidden {
-  display: none !important;
   /* no-op on screen; hidden by @media print below */
 }
 

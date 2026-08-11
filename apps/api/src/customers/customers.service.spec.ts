@@ -297,6 +297,53 @@ describe('CustomersService', () => {
       expect(result.name).toBe('Legacy Customer');
     });
 
+    it('should return customerGroupTaxPositionId when customer belongs to a group with a tax position', async () => {
+      const [tp] = await pg.db
+        .insert(taxPositions)
+        .values({
+          code: 'GST-POS',
+          title: 'GST Tax Position',
+        })
+        .returning();
+
+      const [ag] = await pg.db
+        .insert(customerGroups)
+        .values({
+          name: 'Group with Tax Position',
+          groupCode: 'GRP-TP',
+          taxPositionId: tp.taxPositionId,
+          isOnCreditHold: false,
+          stateCode: CUSTOMER_STATE.ACTIVE,
+        })
+        .returning();
+
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Group Customer',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: true,
+        })
+        .returning();
+
+      const [acc] = await pg.db
+        .insert(customers)
+        .values({
+          actorId: act.actorId,
+          customerNumber: 'GRP-CUST-1',
+          currencyCode: 'AUD',
+          customerGroupId: ag.customerGroupId,
+          taxPositionId: null,
+          stateCode: CUSTOMER_STATE.ACTIVE,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
+      const result = await service.findOne(acc.customerId);
+      expect(result.customerGroupTaxPositionId).toBe(tp.taxPositionId);
+    });
+
     it('should throw NotFoundException if not found', async () => {
       await expect(service.findOne('non-existent')).rejects.toThrow(
         NotFoundException,

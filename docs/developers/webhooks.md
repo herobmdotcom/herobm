@@ -109,6 +109,8 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `csv_mapping_profile` | `created`, `deleted`, `updated` |
 | `integration` | `updated` |
 | `macro` | `created`, `deleted`, `updated` |
+| `work_order` | `created`, `putaway_completed`, `status_changed`, `updated` |
+| `work_order_pick` | `created`, `status_changed` |
 
 ### State Changes Reference
 

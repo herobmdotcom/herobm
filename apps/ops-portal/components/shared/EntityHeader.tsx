@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import PrintButton from './PrintButton';
 
 export interface EntityHeaderProps {
   title: string | React.ReactNode;
@@ -23,7 +22,6 @@ export default function EntityHeader({
   isSaving,
   actions,
   nav,
-  showPrint = true,
 }: EntityHeaderProps) {
   const t = useTranslations('common');
   return (
@@ -37,7 +35,6 @@ export default function EntityHeader({
 
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
-              {showPrint && <PrintButton />}
               {actions}
             </div>
           </div>

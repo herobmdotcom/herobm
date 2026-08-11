@@ -184,7 +184,10 @@ export class OrderLinesService {
           dto.productId,
           tx,
         );
-        if (prodInfo.structureType === 'kit') {
+        if (
+          prodInfo.structureType === 'kit' &&
+          prodInfo.productType === 'non-stock'
+        ) {
           isKit = true;
         }
       }
@@ -419,7 +422,10 @@ export class OrderLinesService {
           dto.productId,
           tx,
         );
-        if (prodInfo.structureType === 'kit') {
+        if (
+          prodInfo.structureType === 'kit' &&
+          prodInfo.productType === 'non-stock'
+        ) {
           isKit = true;
         }
       }

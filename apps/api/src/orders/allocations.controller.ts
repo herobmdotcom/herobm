@@ -42,6 +42,7 @@ import {
   inventoryLevels,
   purchaseOrders,
   transferOrders,
+  workOrders,
 } from '@herobm/db-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
@@ -85,6 +86,9 @@ export class AllocationsController {
         transferOrderId: backorders.transferOrderId,
         transferOrderNumber: transferOrders.orderNumber,
         transferOrderState: transferOrders.stateCode,
+        workOrderId: backorders.workOrderId,
+        workOrderNumber: workOrders.orderNumber,
+        workOrderState: workOrders.stateCode,
       })
       .from(backorders)
       .leftJoin(
@@ -117,6 +121,7 @@ export class AllocationsController {
         transferOrders,
         eq(backorders.transferOrderId, transferOrders.transferOrderId),
       )
+      .leftJoin(workOrders, eq(backorders.workOrderId, workOrders.workOrderId))
       .where(
         inArray(backorders.stateCode, [
           BACKORDER_STATE.PENDING_SUPPLY,

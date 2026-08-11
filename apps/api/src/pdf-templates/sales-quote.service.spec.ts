@@ -89,4 +89,22 @@ describe('SalesQuoteService', () => {
     expect(data.summary.totalTax).toBe(4);
     expect(data.summary.totalAmount).toBe(24);
   });
+
+  it('should pass customPdfText option to output data', async () => {
+    const data = await service.assembleData('order-1', 'app', {
+      customPdfText: 'Custom quote note',
+    });
+
+    expect(data.customPdfText).toBe('Custom quote note');
+    expect(data.quoteIntroText).toBe('Custom quote note');
+  });
+
+  it('should fallback quoteIntroText option to customPdfText and quoteIntroText output data', async () => {
+    const data = await service.assembleData('order-1', 'app', {
+      quoteIntroText: 'Intro quote note',
+    });
+
+    expect(data.customPdfText).toBe('Intro quote note');
+    expect(data.quoteIntroText).toBe('Intro quote note');
+  });
 });

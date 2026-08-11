@@ -8,6 +8,7 @@ import {
   getTableColumns,
   asc,
   desc,
+  inArray,
 } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -21,6 +22,7 @@ import {
   bins,
   inventoryLedger,
   productComponents,
+  inventoryLevels,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -139,6 +141,81 @@ export class ProductsService {
         productId: row.productId,
       }),
     });
+
+    // Post-process kit product quantities based on components
+    const kitProducts = data.filter((p) => p.structureType === 'kit');
+    if (kitProducts.length > 0) {
+      const kitIds = kitProducts.map((p) => p.productId);
+      const components = await this.db
+        .select()
+        .from(productComponents)
+        .where(inArray(productComponents.parentProductId, kitIds));
+
+      if (components.length > 0) {
+        const childIds = Array.from(
+          new Set(components.map((c) => c.childProductId).filter(Boolean)),
+        );
+
+        if (childIds.length > 0) {
+          const compLevels = await this.db
+            .select({
+              productId: inventoryLevels.productId,
+              totalOnHand:
+                sql<number>`COALESCE(SUM(${inventoryLevels.quantityOnHand}), 0)`.mapWith(
+                  Number,
+                ),
+              totalCommitted:
+                sql<number>`COALESCE(SUM(${inventoryLevels.quantityCommitted}), 0)`.mapWith(
+                  Number,
+                ),
+            })
+            .from(inventoryLevels)
+            .where(inArray(inventoryLevels.productId, childIds))
+            .groupBy(inventoryLevels.productId);
+
+          const availableMap = new Map<string, number>();
+          for (const lvl of compLevels) {
+            if (lvl.productId) {
+              const avail = Math.max(0, lvl.totalOnHand - lvl.totalCommitted);
+              availableMap.set(lvl.productId, avail);
+            }
+          }
+
+          const componentsByParent = new Map<string, typeof components>();
+          for (const c of components) {
+            const list = componentsByParent.get(c.parentProductId) || [];
+            list.push(c);
+            componentsByParent.set(c.parentProductId, list);
+          }
+
+          for (const row of data) {
+            if (row.structureType === 'kit') {
+              const comps = componentsByParent.get(row.productId);
+              if (comps && comps.length > 0) {
+                let maxBuildable = Number.MAX_SAFE_INTEGER;
+                for (const c of comps) {
+                  if (!c.childProductId) continue;
+                  const avail = availableMap.get(c.childProductId) || 0;
+                  const req = Number(c.quantity) || 1;
+                  const buildable = Math.floor(avail / req);
+                  if (buildable < maxBuildable) {
+                    maxBuildable = buildable;
+                  }
+                }
+                if (maxBuildable === Number.MAX_SAFE_INTEGER) maxBuildable = 0;
+
+                const physicalOnHand = Number(row.quantityOnHand) || 0;
+                if (row.productType === 'non-stock') {
+                  row.quantityOnHand = maxBuildable;
+                } else {
+                  row.quantityOnHand = physicalOnHand + maxBuildable;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 
     // Count query for total (optional, could be removed later if too slow)
     let countQb = this.db

@@ -40,6 +40,7 @@ import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
+import DeliveryCard from './DeliveryCard';
 import OverrideCreditHoldModal from './OverrideCreditHoldModal';
 
 import type { TaxCategory, OrderLine } from './types';
@@ -262,7 +263,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         try {
             const response = await api.pdfTemplatesControllerRunHook(
                 'sales-order-quote', 
-                { quoteIntroText: text }, 
+                { customPdfText: text, quoteIntroText: text }, 
                 { id, context: 'sales-order' }
             );
             const blob = response.data ;
@@ -417,40 +418,14 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     setEditName={setEditName}
                     editPO={editPO}
                     setEditPO={setEditPO}
-                    editFulfillmentLocationId={editFulfillmentLocationId}
-                    setEditFulfillmentLocationId={setEditFulfillmentLocationId}
                     editNotes={editNotes}
                     setEditNotes={setEditNotes}
                     editAnalysisCode={editAnalysisCode}
                     setEditAnalysisCode={setEditAnalysisCode}
                     saveHeader={saveHeader}
-                    locations={locations}
                     onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
                     reportError={reportError}
                     setError={setError}
-                    customerDeliveryAddresses={customerDeliveryAddresses}
-                    customerCountry={customerCountry}
-                    editShippingNotes={editShippingNotes}
-                    setEditShippingNotes={setEditShippingNotes}
-                    editDeliveryCompanyName={editDeliveryCompanyName}
-                    setEditDeliveryCompanyName={setEditDeliveryCompanyName}
-                    editDeliveryName={editDeliveryName}
-                    setEditDeliveryName={setEditDeliveryName}
-                    editDeliveryPhone={editDeliveryPhone}
-                    setEditDeliveryPhone={setEditDeliveryPhone}
-                    editDeliveryAddressLine1={editDeliveryAddressLine1}
-                    setEditDeliveryAddressLine1={setEditDeliveryAddressLine1}
-                    editDeliveryAddressLine2={editDeliveryAddressLine2}
-                    setEditDeliveryAddressLine2={setEditDeliveryAddressLine2}
-                    editDeliveryCity={editDeliveryCity}
-                    setEditDeliveryCity={setEditDeliveryCity}
-                    editDeliveryState={editDeliveryState}
-                    setEditDeliveryState={setEditDeliveryState}
-                    editDeliveryPostalCode={editDeliveryPostalCode}
-                    setEditDeliveryPostalCode={setEditDeliveryPostalCode}
-                    editDeliveryCountry={editDeliveryCountry}
-                    setEditDeliveryCountry={setEditDeliveryCountry}
-                    onAddAddress={() => setIsAddressSlideOverOpen(true)}
                 />
 
                 <OrderLinesTab
@@ -479,6 +454,37 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     totalTax={totalTax}
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
+                />
+
+                <DeliveryCard
+                    isOrderDetailsEditable={isOrderDetailsEditable}
+                    locations={locations}
+                    customerDeliveryAddresses={customerDeliveryAddresses}
+                    customerCountry={customerCountry}
+                    editFulfillmentLocationId={editFulfillmentLocationId}
+                    setEditFulfillmentLocationId={setEditFulfillmentLocationId}
+                    editShippingNotes={editShippingNotes}
+                    setEditShippingNotes={setEditShippingNotes}
+                    editDeliveryCompanyName={editDeliveryCompanyName}
+                    setEditDeliveryCompanyName={setEditDeliveryCompanyName}
+                    editDeliveryName={editDeliveryName}
+                    setEditDeliveryName={setEditDeliveryName}
+                    editDeliveryPhone={editDeliveryPhone}
+                    setEditDeliveryPhone={setEditDeliveryPhone}
+                    editDeliveryAddressLine1={editDeliveryAddressLine1}
+                    setEditDeliveryAddressLine1={setEditDeliveryAddressLine1}
+                    editDeliveryAddressLine2={editDeliveryAddressLine2}
+                    setEditDeliveryAddressLine2={setEditDeliveryAddressLine2}
+                    editDeliveryCity={editDeliveryCity}
+                    setEditDeliveryCity={setEditDeliveryCity}
+                    editDeliveryState={editDeliveryState}
+                    setEditDeliveryState={setEditDeliveryState}
+                    editDeliveryPostalCode={editDeliveryPostalCode}
+                    setEditDeliveryPostalCode={setEditDeliveryPostalCode}
+                    editDeliveryCountry={editDeliveryCountry}
+                    setEditDeliveryCountry={setEditDeliveryCountry}
+                    onAddAddress={() => setIsAddressSlideOverOpen(true)}
+                    saveHeader={saveHeader}
                 />
 
                 {PICKING_INVOICE_STATES.includes(order.stateCode) && (

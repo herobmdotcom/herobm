@@ -9,7 +9,7 @@ podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v
 Write-Host "Building isolated test images..." -ForegroundColor Cyan
 podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .
 podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .
-podman build -t localhost/herobm_worker-test:latest -f apps/worker/Dockerfile .
+podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .
 podman build --no-cache --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .
 
 Write-Host "Ensuring network exists..." -ForegroundColor Cyan

@@ -66,4 +66,22 @@ describe('Inventory Logic (Shared)', () => {
     const gaps = calculateInventoryGaps(lines, levels, loc1);
     expect(gaps).toHaveLength(0);
   });
+
+  it('should calculate gaps for stock kits but ignore non-stock kits', () => {
+    const lines: OrderLineMinimal[] = [
+      // Stock kit: should have gap calculated
+      { salesOrderLineId: 'l1', productId: 'stock-kit', productDescription: 'p1', quantity: 10, productType: 'inventory', structureType: 'kit' },
+      // Non-stock kit: should be ignored (no gap for parent)
+      { salesOrderLineId: 'l2', productId: 'non-stock-kit', productDescription: 'p2', quantity: 10, productType: 'non-stock', structureType: 'kit' }
+    ];
+    const levels: InventoryLevelMinimal[] = [
+      { productId: 'stock-kit', locationId: loc1, quantityAvailable: 2 },
+      { productId: 'non-stock-kit', locationId: loc1, quantityAvailable: 0 }
+    ];
+
+    const gaps = calculateInventoryGaps(lines, levels, loc1);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].productId).toBe('stock-kit');
+    expect(gaps[0].shortage).toBe(8);
+  });
 });

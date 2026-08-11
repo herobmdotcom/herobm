@@ -185,7 +185,10 @@ export class ShipmentsWriteService {
             salesOrderId,
           );
           const [product] = await innerTx
-            .select({ productType: coreProducts.productType })
+            .select({
+              productType: coreProducts.productType,
+              structureType: coreProducts.structureType,
+            })
             .from(coreProducts)
             .where(eq(coreProducts.productId, orderLine.productId!));
 

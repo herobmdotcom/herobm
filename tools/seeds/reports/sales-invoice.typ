@@ -73,6 +73,11 @@
 
 #v(1cm)
 
+#if "customPdfText" in data and data.customPdfText != "" [
+  #text(9pt)[#data.customPdfText]
+  #v(1cm)
+]
+
 // ── Table: Order Lines ──────────────────────────────────────────────────────
 #table(
   columns: (auto, 1fr, auto, auto, auto, auto, auto),

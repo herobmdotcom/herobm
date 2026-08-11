@@ -39,11 +39,6 @@ export class ProductsWriteService {
   private readonly logger = new Logger(ProductsWriteService.name);
 
   async create(dto: CreateProductDto, actor: string) {
-    if (dto.structureType === 'kit' && dto.productType !== 'non-stock') {
-      throw new BadRequestException(
-        'Kits must be stored as non-stock products.',
-      );
-    }
     console.log('[DEBUG] ProductsWriteService.create starting transaction');
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       console.log(
@@ -57,7 +52,7 @@ export class ProductsWriteService {
           stateCode: (dto.stateCode as ProductState) ?? PRODUCT_STATE.ACTIVE,
           createdBy: actor,
           source: 'app',
-          structureType: 'standard',
+          structureType: dto.structureType ?? 'standard',
         })
         .returning();
 
@@ -97,11 +92,6 @@ export class ProductsWriteService {
 
     const finalStructureType = dto.structureType ?? existing[0].structureType;
     const finalProductType = dto.productType ?? existing[0].productType;
-    if (finalStructureType === 'kit' && finalProductType !== 'non-stock') {
-      throw new BadRequestException(
-        'Kits must be stored as non-stock products.',
-      );
-    }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);

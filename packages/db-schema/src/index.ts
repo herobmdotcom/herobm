@@ -9,3 +9,4 @@ export * from './sales.schema';
 export * from './purchasing.schema';
 export * from './gl.schema';
 export * from './system.schema';
+export * from './manufacturing.schema';

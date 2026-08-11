@@ -27,7 +27,7 @@ describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
             if (argText.startsWith('SystemResource.')) {
               const key = argText.split('.')[1] as keyof typeof SystemResource;
               classResourceName = SystemResource[key];
-            } else {
+            } else if (!argText.startsWith('(')) {
               classResourceName = argText.replace(/['"]/g, '');
             }
           }
@@ -49,7 +49,7 @@ describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
                   '.',
                 )[1] as keyof typeof SystemResource;
                 methodResourceName = SystemResource[key];
-              } else {
+              } else if (!argText.startsWith('(')) {
                 methodResourceName = argText.replace(/['"]/g, '');
               }
             }

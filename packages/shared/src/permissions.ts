@@ -26,6 +26,7 @@ export enum SystemResource {
   DATA_EXPORT = 'data-export',
   CREDIT_CONTROL = 'credit-control',
   CRM = 'crm',
+  WORK_ORDERS = 'work-orders',
 }
 
 export interface Permission {

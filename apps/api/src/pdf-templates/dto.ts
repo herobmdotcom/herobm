@@ -77,3 +77,18 @@ export class UpdateHookAssignmentDto {
 export class RunHookBodyDto {
   [key: string]: unknown;
 }
+
+export class RunHookOptionsDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  customPdfText?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Deprecated legacy alias for customPdfText',
+  })
+  @IsString()
+  @IsOptional()
+  quoteIntroText?: string;
+}

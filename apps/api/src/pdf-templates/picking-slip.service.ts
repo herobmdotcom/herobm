@@ -68,11 +68,14 @@ interface RawLine {
   productId: string | null;
   productNumber: string | null;
   productDescription: string | null;
+  productType?: string | null;
+  structureType?: string | null;
   quantity: string;
 }
 
 interface RawPick {
   lineId: string;
+  productId?: string | null;
   quantity: string;
 }
 
@@ -148,12 +151,14 @@ export class PickingSlipService {
       customerOrderNumber: orderRows[0].customerOrderNumber ?? '',
     };
 
-    const lines = await this.db
+    const rawLines = await this.db
       .select({
         lineId: salesOrderLineItems.salesOrderLineId,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
         productDescription: salesOrderLineItems.productDescription,
+        productType: coreProducts.productType,
+        structureType: coreProducts.structureType,
         quantity: salesOrderLineItems.quantity,
       })
       .from(salesOrderLineItems)
@@ -164,9 +169,12 @@ export class PickingSlipService {
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
 
+    const lines = rawLines;
+
     const picks = await this.db
       .select({
         lineId: salesOrderPicks.salesOrderLineId,
+        productId: salesOrderPicks.productId,
         quantity: salesOrderPicks.quantity,
       })
       .from(salesOrderPicks)
@@ -220,6 +228,8 @@ export class PickingSlipService {
         productId: transferOrderLines.productId,
         productNumber: coreProducts.productNumber,
         productDescription: coreProducts.name,
+        productType: coreProducts.productType,
+        structureType: coreProducts.structureType,
         quantity: transferOrderLines.quantity,
       })
       .from(transferOrderLines)
@@ -232,6 +242,7 @@ export class PickingSlipService {
     const picks = await this.db
       .select({
         lineId: transferOrderPicks.transferOrderLineId,
+        productId: transferOrderPicks.productId,
         quantity: transferOrderPicks.quantity,
       })
       .from(transferOrderPicks)
@@ -288,10 +299,8 @@ export class PickingSlipService {
     // 2. Resolve Picked Quantities
     const pickedMap = new Map<string, number>();
     for (const p of picks) {
-      pickedMap.set(
-        p.lineId,
-        (pickedMap.get(p.lineId) || 0) + parseFloat(p.quantity),
-      );
+      const key = `${p.lineId}_${p.productId ?? ''}`;
+      pickedMap.set(key, (pickedMap.get(key) || 0) + parseFloat(p.quantity));
     }
 
     // 3. Resolve On-Hand Stock (for backorder logic)
@@ -318,7 +327,9 @@ export class PickingSlipService {
 
     for (const line of lines) {
       const ordered = parseFloat(line.quantity);
-      const picked = pickedMap.get(line.lineId) ?? 0;
+      const key = `${line.lineId}_${line.productId ?? ''}`;
+      const picked =
+        pickedMap.get(key) ?? pickedMap.get(`${line.lineId}_`) ?? 0; // Fallback for picks missing productId in old code
       const toPick = ordered - picked;
       const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
       const isCustomLine = line.productId === CUSTOM_LINE_ID;

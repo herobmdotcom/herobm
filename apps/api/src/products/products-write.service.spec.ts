@@ -58,6 +58,21 @@ describe('ProductsWriteService', () => {
       expect(events).toHaveLength(1);
       expect(events[0].eventType).toBe(EventType.CREATED);
     });
+
+    it('should allow creation of a stock kit (productType inventory, structureType kit)', async () => {
+      const dto = {
+        productNumber: 'PROD-STOCK-KIT-' + Math.random(),
+        name: 'Stock Kit Product',
+        productType: 'inventory' as const,
+        structureType: 'kit' as const,
+        baseUom: 'EA',
+      };
+      const result = await service.create(dto, 'admin');
+
+      expect(result).toBeDefined();
+      expect(result.productType).toBe('inventory');
+      expect(result.structureType).toBe('kit');
+    });
   });
 
   describe('update', () => {

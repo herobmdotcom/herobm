@@ -287,6 +287,7 @@ export class CustomersService {
         ...getTableColumns(customers),
         name: actors.name,
         gstCategoryName: taxPositions.code,
+        customerGroupTaxPositionId: customerGroups.taxPositionId,
         businessNumber: actors.businessNumber,
         isTaxRegistered: actors.isTaxRegistered,
         billingAddressLine1: actors.headquartersAddressLine1,
@@ -300,6 +301,10 @@ export class CustomersService {
         emailAddress1: actors.email,
       })
       .from(customers)
+      .leftJoin(
+        customerGroups,
+        eq(customers.customerGroupId, customerGroups.customerGroupId),
+      )
       .leftJoin(
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),

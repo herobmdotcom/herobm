@@ -181,6 +181,7 @@ export default function NewPurchaseInvoicePage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title="Enter Supplier Invoice"

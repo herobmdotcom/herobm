@@ -312,7 +312,26 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .where(and(eq(zones.locationId, locationId), eq(bins.binType, 'storage')))
       .limit(1);
 
-    binId = storageBin.binId as string;
+    let testBinId = storageBin?.binId as string | undefined;
+    if (!testBinId) {
+      const zoneId = crypto.randomUUID();
+      await db.insert(zones).values({
+        zoneId,
+        locationId,
+        code: 'Z-E2E',
+        name: 'E2E Zone',
+        source: 'e2e',
+      });
+      testBinId = crypto.randomUUID();
+      await db.insert(bins).values({
+        binId: testBinId,
+        zoneId,
+        binNumber: 'B-E2E',
+        binType: 'storage',
+        source: 'e2e',
+      });
+    }
+    binId = testBinId;
 
     // Process Putaway
     await request(app.getHttpServer())

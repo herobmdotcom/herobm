@@ -12,7 +12,8 @@ import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { PURCHASE_ORDER_STATE, TRANSFER_ORDER_STATE } from '@herobm/shared';
+import { PURCHASE_ORDER_STATE, WORK_ORDER_STATE } from '@herobm/shared';
+import { allocationsControllerResolveOpenDemands } from '@herobm/sdk';
 
 export interface AvailableElsewhereEntry {
   locationId: string;
@@ -35,12 +36,6 @@ export interface DemandRow {
   currencyCode?: string;
   locationId: string;
   locationName: string;
-  /**
-   * Inventory available at other locations for this demand's product,
-   * excluding the demand's own destination location. Locations with zero
-   * available qty are omitted server-side. Sorted ascending by API; the
-   * cell renderer sorts by qty descending for display.
-   */
   availableElsewhere: AvailableElsewhereEntry[];
   purchaseOrderId?: string;
   purchaseOrderNumber?: string;
@@ -48,12 +43,16 @@ export interface DemandRow {
   transferOrderId?: string;
   transferOrderNumber?: string;
   transferOrderState?: string;
+  workOrderId?: string;
+  workOrderNumber?: string;
+  workOrderState?: string;
 }
 
 export default function DemandsContent() {
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
   const [loading, setLoading] = useState(false);
+  const [runningMrp, setRunningMrp] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedRows, setSelectedRows] = useState<DemandRow[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -85,6 +84,9 @@ export default function DemandsContent() {
       headerName: 'Status',
       width: 140,
       valueFormatter: (params: ValueFormatterParams<DemandRow>) => {
+        if (params.data?.workOrderId) {
+          return params.data.workOrderState === WORK_ORDER_STATE.DRAFT ? 'Work Order (Draft)' : 'Work Order';
+        }
         if (params.data?.transferOrderId) {
           // eslint-disable-next-line no-restricted-syntax -- legacy
           return params.data.transferOrderState === 'draft' ? tPurchase('demandsContent.draft') : 'Transfer';
@@ -102,6 +104,13 @@ export default function DemandsContent() {
       headerName: 'Document',
       width: 160,
       cellRenderer: (params: ICellRendererParams<DemandRow>) => {
+        if (params.data?.workOrderId) {
+          return (
+            <Link href={`/manufacturing/work-orders/${params.data.workOrderId}`} className="text-[#006b5c] hover:underline font-medium">
+              {params.data.workOrderNumber}
+            </Link>
+          );
+        }
         if (params.data?.transferOrderId) {
           return (
             <Link href={`/transfers/${params.data.transferOrderId}`} className="text-[#006b5c] hover:underline">
@@ -128,7 +137,6 @@ export default function DemandsContent() {
     {
       headerName: 'Stock Elsewhere',
       width: 200,
-      // Disable sort/filter on this synthetic column (derived array — no comparable scalar)
       sortable: false,
       filter: false,
       cellRenderer: (params: ICellRendererParams<DemandRow>) => (
@@ -138,26 +146,24 @@ export default function DemandsContent() {
         />
       ),
     },
-    {
-      field: 'vendorName',
-      headerName: 'Preferred Supplier',
-      width: 180,
-      valueFormatter: (params: { value: unknown }) => params.value ? String(params.value) : '—'
-    },
-    {
-      field: 'createdOn',
-      headerName: 'Date Requested',
-      width: 140,
-      valueFormatter: (params: { value: unknown }) => {
-        if (!params.value) return '—';
-        return new Date(params.value as string).toLocaleDateString();
-      },
-    },
-  ], []);
+  ], [tPurchase]);
 
   const handleDraftPOs = () => {
     if (selectedRows.length === 0) return;
     setIsModalOpen(true);
+  };
+
+  const handleRunMrp = async () => {
+    try {
+      setRunningMrp(true);
+      await allocationsControllerResolveOpenDemands({});
+      toast.success('MRP Engine executed successfully');
+      setRefreshKey((k) => k + 1);
+    } catch (err: unknown) {
+      toast.error('Failed to run MRP Engine');
+    } finally {
+      setRunningMrp(false);
+    }
   };
 
   const handleModalSuccess = () => {
@@ -169,67 +175,80 @@ export default function DemandsContent() {
     setRefreshKey((k) => k + 1);
   };
 
+  const mrpButtonLabel = runningMrp ? 'Running Engine...' : 'Run MRP Engine';
+
   return (
     <div className="h-full flex flex-col">
       <DataGrid<DemandRow>
-            refreshTrigger={refreshKey}
-            endpoint={`/api/allocations/open`}
-            columns={columns}
-            gridKey="open-demands"
-            searchPlaceholder="Search demands..."
-            exportFileName="open-demands"
-            fetchAll
-            rowIdField="id"
-            rowSelection="multiple"
-            isRowSelectable={(rowNode) => !rowNode.data?.purchaseOrderId && !rowNode.data?.transferOrderId}
-            onSelectionChanged={setSelectedRows}
-            pageTitle={tPurchase('demandTitle')}
-            headerActions={
-              <div className="flex flex-wrap items-center justify-start lg:justify-end gap-3 w-full lg:w-auto">
-                  {/* Group 1: PO Allocation */}
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="primary"
-                      onClick={() => setIsLinkSlideOverOpen(true)}
-                      disabled={selectedRows.length === 0}
-                      className="whitespace-nowrap"
-                    >
-                      {tPurchase('demandsContent.allocateToPo')}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleDraftPOs}
-                      disabled={selectedRows.length === 0}
-                      className="whitespace-nowrap"
-                    >
-                      {tPurchase('demandsContent.draftPos')}
-                    </Button>
-                  </div>
+        refreshTrigger={refreshKey}
+        endpoint={`/api/allocations/open`}
+        columns={columns}
+        gridKey="open-demands"
+        searchPlaceholder="Search demands..."
+        exportFileName="open-demands"
+        fetchAll
+        rowIdField="id"
+        rowSelection="multiple"
+        isRowSelectable={(rowNode) => !rowNode.data?.purchaseOrderId && !rowNode.data?.transferOrderId && !rowNode.data?.workOrderId}
+        onSelectionChanged={setSelectedRows}
+        pageTitle={tPurchase('demandTitle')}
+        headerActions={
+          <div className="flex flex-wrap items-center justify-start lg:justify-end gap-3 w-full lg:w-auto">
+            <Button
+              variant="secondary"
+              onClick={handleRunMrp}
+              disabled={runningMrp}
+              className="whitespace-nowrap"
+            >
+              {mrpButtonLabel}
+            </Button>
 
-                  <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+            <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
 
-                  {/* Group 2: Location Management */}
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="primary"
-                      onClick={() => setIsReallocateModalOpen(true)}
-                      disabled={selectedRows.length === 0}
-                      className="whitespace-nowrap"
-                    >
-                      {tPurchase('demandsContent.changeLocation')}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={() => setIsInternalTransferModalOpen(true)}
-                      disabled={selectedRows.length === 0}
-                      className="whitespace-nowrap"
-                    >
-                      {tPurchase('demandsContent.internalTransfer')}
-                    </Button>
-                  </div>
-              </div>
-            }
-          />
+            {/* Group 1: PO Allocation */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
+                onClick={() => setIsLinkSlideOverOpen(true)}
+                disabled={selectedRows.length === 0}
+                className="whitespace-nowrap"
+              >
+                {tPurchase('demandsContent.allocateToPo')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDraftPOs}
+                disabled={selectedRows.length === 0}
+                className="whitespace-nowrap"
+              >
+                {tPurchase('demandsContent.draftPos')}
+              </Button>
+            </div>
+
+            <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+
+            {/* Group 2: Location Management */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
+                onClick={() => setIsReallocateModalOpen(true)}
+                disabled={selectedRows.length === 0}
+                className="whitespace-nowrap"
+              >
+                {tPurchase('demandsContent.changeLocation')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => setIsInternalTransferModalOpen(true)}
+                disabled={selectedRows.length === 0}
+                className="whitespace-nowrap"
+              >
+                {tPurchase('demandsContent.internalTransfer')}
+              </Button>
+            </div>
+          </div>
+        }
+      />
       <DraftPOsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

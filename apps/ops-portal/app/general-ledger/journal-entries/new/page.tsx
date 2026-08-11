@@ -151,6 +151,7 @@ export default function NewJournalEntryPage() {
 
   return (
     <DetailsLayout
+      showPrint={false}
       header={
         <EntityHeader
           title={t('newManualEntry')}

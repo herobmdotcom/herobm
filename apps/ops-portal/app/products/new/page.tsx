@@ -106,6 +106,7 @@ export default function NewProductPage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title={t('products.buttons.addProduct')}

@@ -54,6 +54,8 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.SHIPMENT]: warehouseEvents,
   [EntityType.TRANSFER_ORDER]: warehouseEvents,
   [EntityType.WAREHOUSE]: warehouseEvents,
+  [EntityType.WORK_ORDER]: warehouseEvents,
+  [EntityType.WORK_ORDER_PICK]: warehouseEvents,
   [EntityType.PAYMENT]: financialEvents,
   [EntityType.SYSTEM]: systemEvents, // or financialEvents if GL_POSTED, see domain mapping
   [EntityType.INVENTORY_LEDGER]: inventoryEvents,

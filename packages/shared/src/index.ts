@@ -20,6 +20,8 @@ export {
   CUSTOMER_TRANSITIONS,
   SUPPLIER_TRANSITIONS,
   PRODUCT_TRANSITIONS,
+  WORK_ORDER_TRANSITIONS,
+  WORK_ORDER_PICK_TRANSITIONS,
 
   PUTAWAY_STATUS,
   MATCH_STATUS,
@@ -49,6 +51,8 @@ export {
   PROJECT_STATE,
   ACTOR_STATE,
   CONTACT_STATE,
+  WORK_ORDER_STATE,
+  WORK_ORDER_PICK_STATE,
 
   PAYMENT_TYPE,
   // Lifecycle ordinals (for UI forward/backward styling)
@@ -102,6 +106,8 @@ export type {
   ContactState,
   ProjectState,
   ReconciliationState,
+  WorkOrderState,
+  WorkOrderPickState,
 } from './state-machines';
 
 export {

@@ -16,5 +16,7 @@ export type ValidState =
   | 'dispatched'
   | 'processed'
   | 'legacy'
-  | 'active'
-  | 'archived';
+  | 'released'
+  | 'in_progress'
+  | 'completed';
+

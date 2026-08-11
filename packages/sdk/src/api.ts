@@ -78,6 +78,7 @@ import type {
   CreateAdjustmentResponseDto,
   CreateApiKeyDto,
   CreateBankStatementLineDto,
+  CreateBinBulkDto,
   CreateBinDto,
   CreateBusinessReportDto,
   CreateContactDto,
@@ -127,6 +128,7 @@ import type {
   CreateUomDto,
   CreateUserDto,
   CreateWebhookDto,
+  CreateWorkOrderDto,
   CreateZoneDto,
   CreditAssessmentResponseDto,
   CrmMapControllerGetMapParams,
@@ -456,6 +458,8 @@ import type {
   UpdateUserDto,
   UpdateUserSettingsDto,
   UpdateWebhookDto,
+  UpdateWorkOrderComponentDto,
+  UpdateWorkOrderDto,
   UpdateZoneDto,
   UserResponseDto,
   UserSettingsResponseDto,
@@ -463,6 +467,8 @@ import type {
   UsersControllerFindOneParams,
   WebhookResponseDto,
   WebhooksControllerRemove200,
+  WorkOrderResponseDto,
+  WorkOrdersControllerFindAllParams,
   ZoneResponseDto
 } from './model';
 
@@ -13550,6 +13556,381 @@ export const purchaseDebitNotesControllerPostDebitNote = async (id: string,
 
 
 /**
+ * Get all work orders with optional filtering by days.
+ * @summary List Work Orders
+ */
+export type workOrdersControllerFindAllResponse200 = {
+  data: WorkOrderResponseDto[]
+  status: 200
+}
+    
+export type workOrdersControllerFindAllResponseSuccess = (workOrdersControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerFindAllResponse = (workOrdersControllerFindAllResponseSuccess)
+
+export const getWorkOrdersControllerFindAllUrl = (params?: WorkOrdersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/manufacturing/work-orders?${stringifiedParams}` : `/manufacturing/work-orders`
+}
+
+export const workOrdersControllerFindAll = async (params?: WorkOrdersControllerFindAllParams, options?: RequestInit): Promise<workOrdersControllerFindAllResponse> => {
+  
+  return customFetch<workOrdersControllerFindAllResponse>(getWorkOrdersControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Manually create a new Work Order.
+ * @summary Create Work Order
+ */
+export type workOrdersControllerCreateResponse201 = {
+  data: WorkOrderResponseDto
+  status: 201
+}
+    
+export type workOrdersControllerCreateResponseSuccess = (workOrdersControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerCreateResponse = (workOrdersControllerCreateResponseSuccess)
+
+export const getWorkOrdersControllerCreateUrl = () => {
+
+
+  
+
+  return `/manufacturing/work-orders`
+}
+
+export const workOrdersControllerCreate = async (createWorkOrderDto: CreateWorkOrderDto, options?: RequestInit): Promise<workOrdersControllerCreateResponse> => {
+  
+  return customFetch<workOrdersControllerCreateResponse>(getWorkOrdersControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createWorkOrderDto,)
+  }
+);}
+
+
+
+/**
+ * Get work order details including component line items.
+ * @summary Get Work Order by ID
+ */
+export type workOrdersControllerFindOneResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+    
+export type workOrdersControllerFindOneResponseSuccess = (workOrdersControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerFindOneResponse = (workOrdersControllerFindOneResponseSuccess)
+
+export const getWorkOrdersControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}`
+}
+
+export const workOrdersControllerFindOne = async (id: string, options?: RequestInit): Promise<workOrdersControllerFindOneResponse> => {
+  
+  return customFetch<workOrdersControllerFindOneResponse>(getWorkOrdersControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Update a draft Work Order.
+ * @summary Update Work Order
+ */
+export type workOrdersControllerUpdateResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+    
+export type workOrdersControllerUpdateResponseSuccess = (workOrdersControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerUpdateResponse = (workOrdersControllerUpdateResponseSuccess)
+
+export const getWorkOrdersControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}`
+}
+
+export const workOrdersControllerUpdate = async (id: string,
+    updateWorkOrderDto: UpdateWorkOrderDto, options?: RequestInit): Promise<workOrdersControllerUpdateResponse> => {
+  
+  return customFetch<workOrdersControllerUpdateResponse>(getWorkOrdersControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateWorkOrderDto,)
+  }
+);}
+
+
+
+/**
+ * Update a component on a draft Work Order.
+ * @summary Update Work Order Component
+ */
+export type workOrdersControllerUpdateComponentResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+    
+export type workOrdersControllerUpdateComponentResponseSuccess = (workOrdersControllerUpdateComponentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerUpdateComponentResponse = (workOrdersControllerUpdateComponentResponseSuccess)
+
+export const getWorkOrdersControllerUpdateComponentUrl = (id: string,
+    componentId: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/components/${componentId}`
+}
+
+export const workOrdersControllerUpdateComponent = async (id: string,
+    componentId: string,
+    updateWorkOrderComponentDto: UpdateWorkOrderComponentDto, options?: RequestInit): Promise<workOrdersControllerUpdateComponentResponse> => {
+  
+  return customFetch<workOrdersControllerUpdateComponentResponse>(getWorkOrdersControllerUpdateComponentUrl(id,componentId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateWorkOrderComponentDto,)
+  }
+);}
+
+
+
+/**
+ * Transition Work Order from DRAFT to IN_PROGRESS and generate component picks.
+ * @summary Release Work Order
+ */
+export type workOrdersControllerReleaseResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+
+export type workOrdersControllerReleaseResponse201 = {
+  data: WorkOrderResponseDto
+  status: 201
+}
+    
+export type workOrdersControllerReleaseResponseSuccess = (workOrdersControllerReleaseResponse200 | workOrdersControllerReleaseResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerReleaseResponse = (workOrdersControllerReleaseResponseSuccess)
+
+export const getWorkOrdersControllerReleaseUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/release`
+}
+
+export const workOrdersControllerRelease = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerReleaseResponse> => {
+  
+  return customFetch<workOrdersControllerReleaseResponse>(getWorkOrdersControllerReleaseUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Transition Work Order from IN_PROGRESS to COMPLETED and record output stock.
+ * @summary Complete Work Order Production
+ */
+export type workOrdersControllerCompleteBuildResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+
+export type workOrdersControllerCompleteBuildResponse201 = {
+  data: WorkOrderResponseDto
+  status: 201
+}
+    
+export type workOrdersControllerCompleteBuildResponseSuccess = (workOrdersControllerCompleteBuildResponse200 | workOrdersControllerCompleteBuildResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerCompleteBuildResponse = (workOrdersControllerCompleteBuildResponseSuccess)
+
+export const getWorkOrdersControllerCompleteBuildUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/complete`
+}
+
+export const workOrdersControllerCompleteBuild = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerCompleteBuildResponse> => {
+  
+  return customFetch<workOrdersControllerCompleteBuildResponse>(getWorkOrdersControllerCompleteBuildUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Transfer finished goods to warehouse storage bin and fulfill linked backorders.
+ * @summary Putaway Finished Goods
+ */
+export type workOrdersControllerPutawayFinishedGoodsResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+
+export type workOrdersControllerPutawayFinishedGoodsResponse201 = {
+  data: WorkOrderResponseDto
+  status: 201
+}
+    
+export type workOrdersControllerPutawayFinishedGoodsResponseSuccess = (workOrdersControllerPutawayFinishedGoodsResponse200 | workOrdersControllerPutawayFinishedGoodsResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerPutawayFinishedGoodsResponse = (workOrdersControllerPutawayFinishedGoodsResponseSuccess)
+
+export const getWorkOrdersControllerPutawayFinishedGoodsUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/putaway`
+}
+
+export const workOrdersControllerPutawayFinishedGoods = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerPutawayFinishedGoodsResponse> => {
+  
+  return customFetch<workOrdersControllerPutawayFinishedGoodsResponse>(getWorkOrdersControllerPutawayFinishedGoodsUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Cancel a Work Order and release component picks.
+ * @summary Cancel Work Order
+ */
+export type workOrdersControllerCancelResponse200 = {
+  data: WorkOrderResponseDto
+  status: 200
+}
+
+export type workOrdersControllerCancelResponse201 = {
+  data: WorkOrderResponseDto
+  status: 201
+}
+    
+export type workOrdersControllerCancelResponseSuccess = (workOrdersControllerCancelResponse200 | workOrdersControllerCancelResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerCancelResponse = (workOrdersControllerCancelResponseSuccess)
+
+export const getWorkOrdersControllerCancelUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/cancel`
+}
+
+export const workOrdersControllerCancel = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerCancelResponse> => {
+  
+  return customFetch<workOrdersControllerCancelResponse>(getWorkOrdersControllerCancelUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Retrieves a list of all available data sources registered in the system.
  * @summary List all registered data sources
  */
@@ -13963,6 +14344,44 @@ export const locationsControllerDeleteZone = async (id: string, options?: Reques
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * Create multiple storage bins at once.
+ * @summary Create Bins in Bulk
+ */
+export type locationsControllerCreateBinsBulkResponse201 = {
+  data: BinResponseDto[]
+  status: 201
+}
+    
+export type locationsControllerCreateBinsBulkResponseSuccess = (locationsControllerCreateBinsBulkResponse201) & {
+  headers: Headers;
+};
+;
+
+export type locationsControllerCreateBinsBulkResponse = (locationsControllerCreateBinsBulkResponseSuccess)
+
+export const getLocationsControllerCreateBinsBulkUrl = () => {
+
+
+  
+
+  return `/inventory/bins/bulk`
+}
+
+export const locationsControllerCreateBinsBulk = async (createBinBulkDto: CreateBinBulkDto, options?: RequestInit): Promise<locationsControllerCreateBinsBulkResponse> => {
+  
+  return customFetch<locationsControllerCreateBinsBulkResponse>(getLocationsControllerCreateBinsBulkUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createBinBulkDto,)
   }
 );}
 

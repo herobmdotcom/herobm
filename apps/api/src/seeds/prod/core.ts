@@ -156,6 +156,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     {
       ptype: 'p',
       v0: 'viewer',
+      v1: SystemResource.WORK_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
       v1: SystemResource.PURCHASE_RETURNS,
       v2: 'read',
       v3: 'allow',
@@ -447,6 +454,35 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v0: 'admin',
       v1: SystemResource.PURCHASE_ORDERS,
       v2: 'invoice',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WORK_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WORK_ORDERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WORK_ORDERS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WORK_ORDERS,
+      v2: 'handle',
       v3: 'allow',
     },
 

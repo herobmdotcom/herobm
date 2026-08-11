@@ -14,6 +14,7 @@ export interface Product {
   baseUom?: string | null;
   productUoms?: unknown[];
   productGroupId?: string | null;
+  salesTaxCategoryId?: string | null;
 }
 
 interface ProductSearchInputProps {

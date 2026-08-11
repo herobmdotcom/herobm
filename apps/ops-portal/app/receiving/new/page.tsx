@@ -309,6 +309,7 @@ function ReceivingFlow() {
   // ── Main flow ───────────────────────────────────────────────────────
   return (
     <DetailsLayout
+      showPrint={false}
       header={
         <EntityHeader
           title={t('flow.title')}

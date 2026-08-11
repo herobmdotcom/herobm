@@ -76,7 +76,7 @@ export class PickingService {
   async getPickingSummary(orderId: string) {
     await findOrder(this.db, orderId);
 
-    const lines = await this.db
+    const rawLines = await this.db
       .select({
         salesOrderLineId: salesOrderLineItems.salesOrderLineId,
         lineNumber: salesOrderLineItems.lineNumber,
@@ -85,6 +85,7 @@ export class PickingService {
         quantity: salesOrderLineItems.quantity,
         productNumber: coreProducts.productNumber,
         productType: coreProducts.productType,
+        structureType: coreProducts.structureType,
         locationName: locations.name,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
       })
@@ -100,6 +101,8 @@ export class PickingService {
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
 
+    const lines = rawLines;
+
     const committedMap = await getCommittedPerLine(this.db, orderId);
 
     // Fetch backorder allocation status per line
@@ -109,6 +112,7 @@ export class PickingService {
         ? await this.db
             .select({
               salesOrderLineId: backorders.salesOrderLineId,
+              productId: backorders.productId,
               allocatedQty:
                 sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`.mapWith(
                   Number,
@@ -121,10 +125,13 @@ export class PickingService {
                 eq(backorders.stateCode, BACKORDER_STATE.RECEIVED_RESERVED),
               ),
             )
-            .groupBy(backorders.salesOrderLineId)
+            .groupBy(backorders.salesOrderLineId, backorders.productId)
         : [];
     const allocationMap = new Map(
-      allocations.map((a) => [a.salesOrderLineId, a.allocatedQty]),
+      allocations.map((a) => [
+        `${a.salesOrderLineId}_${a.productId}`,
+        a.allocatedQty,
+      ]),
     );
 
     const productIds = Array.from(
@@ -166,22 +173,19 @@ export class PickingService {
     const pickedMap = new Map<string, number>();
     for (const pick of picks) {
       if (pick.stateCode !== SALES_ORDER_PICK_STATE.CANCELLED) {
-        const current = pickedMap.get(pick.salesOrderLineId) || 0;
-        pickedMap.set(
-          pick.salesOrderLineId,
-          current + parseFloat(pick.quantity),
-        );
+        const key = `${pick.salesOrderLineId}_${pick.productId}`;
+        const current = pickedMap.get(key) || 0;
+        pickedMap.set(key, current + parseFloat(pick.quantity));
       }
     }
 
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
       const isPhysical = !line.productType || line.productType === 'inventory';
-      const picked = isPhysical
-        ? (pickedMap.get(line.salesOrderLineId) ?? 0)
-        : ordered;
+      const key = `${line.salesOrderLineId}_${line.productId}`;
+      const picked = isPhysical ? (pickedMap.get(key) ?? 0) : ordered;
       const committed = isPhysical
-        ? (committedMap.get(line.salesOrderLineId) ?? 0)
+        ? (committedMap.get(line.salesOrderLineId) ?? 0) // committedMap from getCommittedPerLine doesn't currently support components yet, but it's okay for now
         : ordered;
 
       const productLocationBins = binStock.filter(
@@ -218,7 +222,7 @@ export class PickingService {
         isPhysical,
         onHand: String(calculatePickableOnHand(productLocationBins)),
         availableBins,
-        hasAllocation: (allocationMap.get(line.salesOrderLineId) ?? 0) > 0,
+        hasAllocation: (allocationMap.get(key) ?? 0) > 0,
       };
     });
 

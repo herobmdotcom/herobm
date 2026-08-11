@@ -18,7 +18,12 @@ import {
   inventoryLedger,
   appSettings,
 } from '@herobm/db-schema';
-import { CreateLocationDto, CreateZoneDto, CreateBinDto } from './dto';
+import {
+  CreateLocationDto,
+  CreateZoneDto,
+  CreateBinDto,
+  CreateBinBulkDto,
+} from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -342,6 +347,44 @@ export class LocationsService {
       });
 
       return row;
+    });
+  }
+
+  async createBinsBulk(dto: CreateBinBulkDto, userId?: string) {
+    if (!dto.bins || dto.bins.length === 0) {
+      return [];
+    }
+
+    return await this.db.transaction(async (tx) => {
+      const insertedRows: (typeof bins.$inferSelect)[] = [];
+      const chunkSize = 500;
+
+      for (let i = 0; i < dto.bins.length; i += chunkSize) {
+        const chunk = dto.bins.slice(i, i + chunkSize);
+        const valuesToInsert = chunk.map((b) => ({
+          ...b,
+          source: 'app',
+          createdBy: userId,
+        }));
+
+        const rows = await tx.insert(bins).values(valuesToInsert).returning();
+        insertedRows.push(...rows);
+
+        for (let j = 0; j < rows.length; j++) {
+          const row = rows[j];
+          const binDto = chunk[j];
+          await emitEvent(tx, {
+            entityType: EntityType.BIN,
+            entityId: row.binId,
+            eventType: EventType.CREATED,
+            entityDisplayName: row.binNumber,
+            payload: binDto,
+            actor: userId,
+          });
+        }
+      }
+
+      return insertedRows;
     });
   }
 

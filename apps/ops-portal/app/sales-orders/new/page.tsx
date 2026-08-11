@@ -42,6 +42,11 @@ interface Customer {
   customerDiscount?: string | null;
   currencyCode?: string | null;
   taxPosition?: string | null;
+  taxPositionId?: string | null;
+  customerGroupTaxPositionId?: string | null;
+  gstCategoryName?: string | null;
+  deliveryAddresses?: api.DeliveryAddressResponseDto[] | null;
+  billingAddressCountry?: string | null;
 }
 
 interface Location {
@@ -57,6 +62,13 @@ interface TaxCategory {
   type: string;
   rate: string;
   isDefault: boolean;
+}
+
+interface TaxPositionMapping {
+  mappingId: string;
+  taxPositionId: string;
+  sourceTaxCategoryId: string;
+  destinationTaxCategoryId: string;
 }
 
 function getTaxLabel(category: TaxCategory) {
@@ -79,6 +91,7 @@ interface LineItem {
   baseUom?: string | null;
   productUoms?: { uomCode: string; ratio?: string | number }[];
   productGroupId?: string | null;
+  salesTaxCategoryId?: string | null;
 }
 
 let lineKey = 0;
@@ -121,6 +134,9 @@ export default function NewOrderPage() {
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [currencyCode, setCurrencyCode] = useState('');
   const [customerTaxPosition, setCustomerTaxPosition] = useState<string | null>(null);
+  const [customerTaxPositionId, setCustomerTaxPositionId] = useState<string | null>(null);
+  const [customerGroupTaxPositionId, setCustomerGroupTaxPositionId] = useState<string | null>(null);
+  const [taxPositionMappings, setTaxPositionMappings] = useState<TaxPositionMapping[]>([]);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
   const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
@@ -140,11 +156,43 @@ export default function NewOrderPage() {
   const [deliveryCountry, setDeliveryCountry] = useState('');
 
   const [taxCategories, settaxCategories] = useState<TaxCategory[]>([]);
-  const defaulttaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
+  const defaulttaxCategoryId =
+    taxCategories.find((c) => c.type === 'tax_applies')?.taxCategoryId ||
+    taxCategories.find((c) => parseFloat(c.rate || '0') > 0)?.taxCategoryId ||
+    taxCategories[0]?.taxCategoryId ||
+    '';
   const exempttaxCategoryId = taxCategories.find((c) => c.type === 'exempt')?.taxCategoryId || '';
   const isCustomerExempt = customerTaxPosition?.toLowerCase() === 'exempt';
-  // Exempt customers always get the exempt GST category
-  const effectivetaxCategoryId = isCustomerExempt ? exempttaxCategoryId : defaulttaxCategoryId;
+
+  const resolveTaxCategoryIdForLine = useCallback(
+    (productSalesTaxCategoryId?: string | null) => {
+      if (isCustomerExempt && exempttaxCategoryId) {
+        return exempttaxCategoryId;
+      }
+      const effectiveTaxPositionId = customerTaxPositionId || customerGroupTaxPositionId;
+      const baseTaxId = productSalesTaxCategoryId || defaulttaxCategoryId;
+
+      if (effectiveTaxPositionId && baseTaxId) {
+        const mapping = taxPositionMappings.find(
+          (m) =>
+            m.taxPositionId === effectiveTaxPositionId &&
+            m.sourceTaxCategoryId === baseTaxId,
+        );
+        if (mapping) {
+          return mapping.destinationTaxCategoryId;
+        }
+      }
+      return baseTaxId;
+    },
+    [
+      isCustomerExempt,
+      exempttaxCategoryId,
+      customerTaxPositionId,
+      customerGroupTaxPositionId,
+      defaulttaxCategoryId,
+      taxPositionMappings,
+    ],
+  );
 
   const [lines, setLines] = useState<LineItem[]>([]);
 
@@ -176,13 +224,24 @@ export default function NewOrderPage() {
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
 
+  // Load tax position mappings on mount
+  useEffect(() => {
+    api.taxPositionMappingsControllerFindAll()
+      .then((res) => {
+        setTaxPositionMappings((res.data || []) as unknown as TaxPositionMapping[]);
+      })
+      .catch((err) => reportError(err, 'NewOrderPage_TaxMappings'));
+  }, []);
+
   // When GST categories load or customer changes, backfill effective GST onto lines missing one
   useEffect(() => {
-    if (!effectivetaxCategoryId) return;
+    if (!defaulttaxCategoryId) return;
     setLines((prev) =>
-      prev.map((l) => (l.taxCategoryId ? l : { ...l, taxCategoryId: effectivetaxCategoryId })),
+      prev.map((l) =>
+        l.taxCategoryId ? l : { ...l, taxCategoryId: resolveTaxCategoryIdForLine(l.salesTaxCategoryId) },
+      ),
     );
-  }, [effectivetaxCategoryId]);
+  }, [defaulttaxCategoryId, resolveTaxCategoryIdForLine]);
 
   // Select customer logic
   const selectCustomer = async (a: Customer) => {
@@ -205,15 +264,20 @@ export default function NewOrderPage() {
     
     const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
-    setCustomerTaxPosition(a.taxPosition ?? null);
+    setCustomerTaxPosition(a.taxPosition ?? a.gstCategoryName ?? null);
+    setCustomerTaxPositionId(a.taxPositionId || null);
+    setCustomerGroupTaxPositionId(a.customerGroupTaxPositionId || null);
 
     api.customersControllerFindOne(a.customerId)
       .then((res) => {
-        const customer = res.data;
+        const customer = res.data as unknown as Customer;
         setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
         setCustomerCountry(customer.billingAddressCountry || undefined);
+        if (customer.taxPositionId) setCustomerTaxPositionId(customer.taxPositionId);
+        if (customer.customerGroupTaxPositionId) setCustomerGroupTaxPositionId(customer.customerGroupTaxPositionId);
       })
-      .catch(() => {
+      .catch((err) => {
+        reportError(err, 'NewOrderPage_CustomerDetails');
         setCustomerDeliveryAddresses([]);
         setCustomerCountry(undefined);
       });
@@ -230,16 +294,12 @@ export default function NewOrderPage() {
     setDeliveryCountry('');
     setSelectedAddressId('');
 
-    // Resolve the GST category: exempt customers force all lines to exempt
-    const custExempt = a.taxPosition?.toLowerCase() === 'exempt';
-    const lineTaxId = custExempt ? exempttaxCategoryId : defaulttaxCategoryId;
-
     // Update discount + GST on all existing lines
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
         discountPercentage: resolveEffectiveDiscount(rules, l.productGroupId || null),
-        taxCategoryId: custExempt ? lineTaxId : l.taxCategoryId,
+        taxCategoryId: resolveTaxCategoryIdForLine(l.salesTaxCategoryId),
       })),
     );
   };
@@ -250,6 +310,7 @@ export default function NewOrderPage() {
       return;
     }
     setError('');
+    const lineTaxCategoryId = resolveTaxCategoryIdForLine(p.salesTaxCategoryId);
     setLines((prev) => [
       ...prev,
       {
@@ -260,12 +321,13 @@ export default function NewOrderPage() {
         quantity: '1',
         pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
         discountPercentage: resolveEffectiveDiscount(discountRules, p.productGroupId || null),
-        taxCategoryId: effectivetaxCategoryId,
+        taxCategoryId: lineTaxCategoryId,
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
         productUoms: p.productUoms as LineItem['productUoms'],
         productGroupId: p.productGroupId || null,
+        salesTaxCategoryId: p.salesTaxCategoryId || null,
       },
     ]);
   };
@@ -281,7 +343,8 @@ export default function NewOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine(customerDiscount, effectivetaxCategoryId, fulfillmentLocationId)]);
+    const customLineTaxId = resolveTaxCategoryIdForLine(null);
+    setLines((prev) => [...prev, emptyLine(customerDiscount, customLineTaxId, fulfillmentLocationId)]);
   };
 
   const computeAmount = (line: LineItem) => {
@@ -372,6 +435,7 @@ export default function NewOrderPage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title={tSales('salesOrders.createTitle')}

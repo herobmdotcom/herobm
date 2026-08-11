@@ -177,7 +177,11 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SALES_INVOICE, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
-      resolveData: async (id: string, user: Record<string, unknown>) => {
+      resolveData: async (
+        id: string,
+        user: Record<string, unknown>,
+        options?: Record<string, unknown>,
+      ) => {
         // Find corresponding orderId for the specified invoiceId
         const [inv] = await this.db
           .select({ orderId: salesInvoices.salesOrderId })
@@ -189,6 +193,7 @@ export class OrdersModule implements OnModuleInit {
           inv.orderId,
           'app',
           id,
+          options,
         )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {

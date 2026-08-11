@@ -14,6 +14,7 @@ import {
 } from '@herobm/db-schema';
 import { SALES_INVOICE_STATE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
+import { RunHookOptionsDto } from './dto';
 
 @Injectable()
 export class SalesInvoiceService {
@@ -30,6 +31,7 @@ export class SalesInvoiceService {
     orderId: string,
     source?: string,
     invoiceId?: string,
+    options?: RunHookOptionsDto & Record<string, unknown>,
   ): Promise<SalesQuoteData> {
     const orderDetail = await resolveOrderDetail(
       this.ordersQueryService,
@@ -38,8 +40,18 @@ export class SalesInvoiceService {
       source,
     );
 
+    const customText = options?.customPdfText || options?.quoteIntroText;
+
     if (!invoiceId) {
-      return assembleOrderData(orderDetail, this.appConfig.homeCurrency());
+      const data = assembleOrderData(
+        orderDetail,
+        this.appConfig.homeCurrency(),
+      );
+      if (customText) {
+        data.customPdfText = customText;
+        data.quoteIntroText = customText;
+      }
+      return data;
     }
 
     // Fetch the specific invoice and its lines
@@ -100,6 +112,11 @@ export class SalesInvoiceService {
       },
       this.appConfig.homeCurrency(),
     );
+
+    if (customText) {
+      invoiceData.customPdfText = customText;
+      invoiceData.quoteIntroText = customText;
+    }
 
     // Compute the full (unfiltered) order total for comparison
     const fullOrderData = assembleOrderData(

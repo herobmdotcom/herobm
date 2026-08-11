@@ -12,6 +12,8 @@ export interface Customer {
   customerGroupId?: string | null;
   customerDiscount?: string | null;
   taxPosition?: string | null;
+  taxPositionId?: string | null;
+  customerGroupTaxPositionId?: string | null;
 }
 
 interface AccountSelectProps {

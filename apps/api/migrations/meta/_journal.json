@@ -743,6 +743,13 @@
       "when": 1786370670240,
       "tag": "0105_add_mobile_to_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1786479881722,
+      "tag": "0106_add_manufacturing",
+      "breakpoints": true
     }
   ]
 }

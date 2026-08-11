@@ -158,6 +158,7 @@ export default function NewAccountPage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title={t('buttons.createCustomer')}

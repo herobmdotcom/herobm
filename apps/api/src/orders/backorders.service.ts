@@ -22,6 +22,9 @@ import {
   locations,
   appSettings,
   actors,
+  productComponents,
+  workOrders,
+  workOrderComponents,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -32,6 +35,7 @@ import {
   TRANSFER_ORDER_STATE,
   OPEN_PURCHASE_ORDER_STATES,
   BACKORDER_TRANSITIONS,
+  WORK_ORDER_STATE,
 } from '@herobm/shared';
 import { calculateInventoryGaps } from '@herobm/shared';
 import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
@@ -82,6 +86,7 @@ export class BackordersService {
       .limit(1);
 
     const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
+
     const validLines = lines.filter(
       (l) =>
         l.productId != null &&
@@ -115,6 +120,19 @@ export class BackordersService {
   private async generatePurchaseOrderNumber(tx: DrizzleDB): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `PO-${today}-`;
+
+    const uniqueSuffix =
+      Date.now().toString().slice(-6) +
+      Math.floor(Math.random() * 100).toString();
+    return `${prefix}${uniqueSuffix}`;
+  }
+
+  /**
+   * Helper to generate a unique Work Order number inside a transaction.
+   */
+  private async generateWorkOrderNumber(tx: DrizzleDB): Promise<string> {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const prefix = `WO-${today}-`;
 
     const uniqueSuffix =
       Date.now().toString().slice(-6) +
@@ -220,15 +238,22 @@ export class BackordersService {
           salesOrderId: backorders.salesOrderId,
           stateCode: backorders.stateCode,
           orderNumber: salesOrders.orderNumber,
+          fulfillmentLocationId: salesOrders.fulfillmentLocationId,
+          structureType: coreProducts.structureType,
         })
         .from(backorders)
         .innerJoin(
           salesOrders,
           eq(backorders.salesOrderId, salesOrders.salesOrderId),
         )
+        .innerJoin(
+          coreProducts,
+          eq(backorders.productId, coreProducts.productId),
+        )
         .where(
           and(
             sql`${backorders.purchaseOrderId} IS NULL`,
+            sql`${backorders.workOrderId} IS NULL`,
             eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
           ),
         );
@@ -334,7 +359,12 @@ export class BackordersService {
               .returning();
 
             currentDemandId = newDemand.backorderId;
-            demand = { ...newDemand, orderNumber: demand.orderNumber }; // For next iteration if there are more lines
+            demand = {
+              ...newDemand,
+              orderNumber: demand.orderNumber,
+              fulfillmentLocationId: demand.fulfillmentLocationId,
+              structureType: demand.structureType,
+            }; // For next iteration if there are more lines
           } else {
             // Fully allocated
             await this.changeBackorderState(
@@ -382,15 +412,74 @@ export class BackordersService {
         }
       }
 
-      if (unfulfilledDemands.length === 0) {
-        this.logger.log('All demands resolved by existing POs.');
+      const poUnfulfilledDemands = unfulfilledDemands.filter(
+        (d) => d.structureType !== 'kit',
+      );
+      const kitDemands = unfulfilledDemands.filter(
+        (d) => d.structureType === 'kit',
+      );
+
+      // 4. Generate Work Orders for unfulfilled stock kit demands
+      for (const demand of kitDemands) {
+        const orderNumber = await this.generateWorkOrderNumber(tx);
+        const [wo] = await tx
+          .insert(workOrders)
+          .values({
+            orderNumber,
+            productId: demand.productId,
+            targetQuantity: demand.quantity,
+            completedQuantity: '0',
+            locationId: demand.fulfillmentLocationId,
+            stateCode: WORK_ORDER_STATE.DRAFT,
+            createdBy: actor,
+          })
+          .returning();
+
+        // Snapshot the BOM components
+        const components = await tx
+          .select({
+            productId: productComponents.childProductId,
+            quantity: productComponents.quantity,
+          })
+          .from(productComponents)
+          .where(eq(productComponents.parentProductId, demand.productId));
+
+        for (const comp of components) {
+          const expectedQty = Number(comp.quantity) * Number(demand.quantity);
+          await tx.insert(workOrderComponents).values({
+            workOrderId: wo.workOrderId,
+            productId: comp.productId,
+            expectedQuantity: expectedQty.toString(),
+          });
+        }
+
+        // Link the backorder to the Work Order
+        await this.changeBackorderState(
+          demand.backorderId,
+          BACKORDER_STATE.AWAITING_RECEIPT,
+          actor,
+          tx,
+          {
+            workOrderId: wo.workOrderId,
+          },
+        );
+
+        this.logger.log(
+          `Created Draft Work Order ${wo.orderNumber} for Sales Order ${demand.orderNumber}`,
+        );
+      }
+
+      if (poUnfulfilledDemands.length === 0) {
+        this.logger.log(
+          'All demands resolved by existing POs or new Work Orders.',
+        );
         return;
       }
 
       // [USER REQUEST]: Stop auto-creating draft POs. We will leave them as 'pending_supply'
       // in the backorders table, and they can be linked manually or via future consolidated workflows.
       this.logger.log(
-        `Leaving ${unfulfilledDemands.length} demands as open Requisitions (no auto-PO creation).`,
+        `Leaving ${poUnfulfilledDemands.length} demands as open Requisitions (no auto-PO creation).`,
       );
       return;
     });

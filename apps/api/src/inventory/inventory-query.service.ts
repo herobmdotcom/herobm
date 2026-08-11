@@ -47,6 +47,7 @@ import {
   transferOrderReceipts,
   transferOrderReceiptLines,
   actors,
+  productComponents,
 } from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -275,61 +276,82 @@ export class InventoryQueryService {
   async findByProductIds(productIds: string[], locationId?: string) {
     if (productIds.length === 0) return { data: [] };
 
-    const filters = [inArray(inventoryLevels.productId, productIds)];
-    if (locationId) {
-      filters.push(eq(inventoryLevels.locationId, locationId));
-    }
-
-    let rows;
-    try {
-      rows = await this.db
-        .select({
-          inventoryLevelId: inventoryLevels.inventoryLevelId,
-          productId: inventoryLevels.productId,
-          productNumber: products.productNumber,
-          productName: products.name,
-          locationId: inventoryLevels.locationId,
-          locationNo: locations.code,
-          locationName: locations.name,
-          quantityOnHand: inventoryLevels.quantityOnHand,
-          quantityCommitted: inventoryLevels.quantityCommitted,
-          quantityReserved: inventoryLevels.quantityReserved,
-          quantityOnOrder: inventoryLevels.quantityOnOrder,
-        })
-        .from(inventoryLevels)
-        .leftJoin(products, eq(inventoryLevels.productId, products.productId))
-        .leftJoin(
-          locations,
-          eq(inventoryLevels.locationId, locations.locationId),
-        )
-        .where(and(...filters))
-        .orderBy(products.name, locations.code);
-    } catch (err) {
-      console.error('>>> CAUGHT ERROR IN findByProductIds <<<');
-      console.error(err);
-      console.error('>>> INNER CAUSE <<<');
-      console.error(err.cause);
-      throw err;
-    }
-
-    const ledgerBalances = await this.db
+    const productsData = await this.db
       .select({
-        productId: inventoryLedger.productId,
-        locationId: inventoryLedger.locationId,
-        binId: inventoryLedger.binId,
-        binNumber: bins.binNumber,
-        quantityOnHand: sql<string>`SUM(${inventoryLedger.quantity})`,
+        productId: products.productId,
+        productNumber: products.productNumber,
+        name: products.name,
+        structureType: products.structureType,
+        productType: products.productType,
       })
-      .from(inventoryLedger)
-      .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
-      .where(inArray(inventoryLedger.productId, productIds))
-      .groupBy(
-        inventoryLedger.productId,
-        inventoryLedger.locationId,
-        inventoryLedger.binId,
-        bins.binNumber,
-      )
-      .having(sql`SUM(${inventoryLedger.quantity}) > 0`);
+      .from(products)
+      .where(inArray(products.productId, productIds));
+
+    const allKits = productsData.filter((p) => p.structureType === 'kit');
+    const standardProducts = productsData.filter(
+      (p) => p.structureType !== 'kit' || p.productType === 'inventory',
+    );
+    const standardProductIds = standardProducts.map((p) => p.productId);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle results need untyped mapping
+    let rows: any[] = [];
+    if (standardProductIds.length > 0) {
+      const filters = [inArray(inventoryLevels.productId, standardProductIds)];
+      if (locationId) {
+        filters.push(eq(inventoryLevels.locationId, locationId));
+      }
+      try {
+        rows = await this.db
+          .select({
+            inventoryLevelId: inventoryLevels.inventoryLevelId,
+            productId: inventoryLevels.productId,
+            productNumber: products.productNumber,
+            productName: products.name,
+            locationId: inventoryLevels.locationId,
+            locationNo: locations.code,
+            locationName: locations.name,
+            quantityOnHand: inventoryLevels.quantityOnHand,
+            quantityCommitted: inventoryLevels.quantityCommitted,
+            quantityReserved: inventoryLevels.quantityReserved,
+            quantityOnOrder: inventoryLevels.quantityOnOrder,
+          })
+          .from(inventoryLevels)
+          .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+          .leftJoin(
+            locations,
+            eq(inventoryLevels.locationId, locations.locationId),
+          )
+          .where(and(...filters))
+          .orderBy(products.name, locations.code);
+      } catch (err) {
+        console.error('>>> CAUGHT ERROR IN findByProductIds <<<');
+        console.error(err);
+        throw err;
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle results need untyped mapping
+    let ledgerBalances: any[] = [];
+    if (standardProductIds.length > 0) {
+      ledgerBalances = await this.db
+        .select({
+          productId: inventoryLedger.productId,
+          locationId: inventoryLedger.locationId,
+          binId: inventoryLedger.binId,
+          binNumber: bins.binNumber,
+          quantityOnHand: sql<string>`SUM(${inventoryLedger.quantity})`,
+        })
+        .from(inventoryLedger)
+        .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
+        .where(inArray(inventoryLedger.productId, standardProductIds))
+        .groupBy(
+          inventoryLedger.productId,
+          inventoryLedger.locationId,
+          inventoryLedger.binId,
+          bins.binNumber,
+        )
+        .having(sql`SUM(${inventoryLedger.quantity}) > 0`);
+    }
 
     // Provide default backward-compatible fields
     const mappedRows = rows.map((r) => {
@@ -354,6 +376,99 @@ export class InventoryQueryService {
         defaultBinNumber: null,
       };
     });
+
+    // Handle kit component availability for all kits (stock and non-stock)
+    for (const kit of allKits) {
+      const components = await this.db
+        .select()
+        .from(productComponents)
+        .where(eq(productComponents.parentProductId, kit.productId));
+
+      if (components.length === 0) continue;
+
+      const compIds = components.map((c) => c.childProductId).filter(Boolean);
+      if (compIds.length === 0) continue;
+
+      const compsInventory = await this.findByProductIds(compIds, locationId);
+
+      const inventoryByLocation: Record<
+        string,
+        {
+          locationId: string;
+          locationNo: string | null;
+          locationName: string | null;
+          compAvailable: Record<string, number>;
+        }
+      > = {};
+
+      for (const inv of compsInventory.data) {
+        if (!inv.locationId) continue;
+        if (!inventoryByLocation[inv.locationId]) {
+          inventoryByLocation[inv.locationId] = {
+            locationId: inv.locationId,
+            locationNo: inv.locationNo || null,
+            locationName: inv.locationName || null,
+            compAvailable: {},
+          };
+        }
+        inventoryByLocation[inv.locationId].compAvailable[inv.productId] =
+          (inventoryByLocation[inv.locationId].compAvailable[inv.productId] ||
+            0) + (Number(inv.quantityAvailable) || 0);
+      }
+
+      for (const locId in inventoryByLocation) {
+        const locInv = inventoryByLocation[locId];
+        let totalBuildable = Number.MAX_SAFE_INTEGER;
+
+        for (const c of components) {
+          if (!c.childProductId) continue;
+          const available = Math.max(
+            0,
+            locInv.compAvailable[c.childProductId] || 0,
+          );
+          const reqQty = Number(c.parentQuantity) || 1;
+          const buildable = Math.floor(available / reqQty);
+          if (buildable < totalBuildable) {
+            totalBuildable = buildable;
+          }
+        }
+
+        if (totalBuildable === Number.MAX_SAFE_INTEGER) totalBuildable = 0;
+
+        const existingIndex = mappedRows.findIndex(
+          (r) => r.productId === kit.productId && r.locationId === locId,
+        );
+
+        if (existingIndex >= 0) {
+          const current = mappedRows[existingIndex];
+          const currOnHand = Number(current.quantityOnHand) || 0;
+          const currAvail = Number(current.quantityAvailable) || 0;
+          mappedRows[existingIndex] = {
+            ...current,
+            quantityOnHand: String(currOnHand + totalBuildable),
+            quantityAvailable: currAvail + totalBuildable,
+          };
+        } else {
+          mappedRows.push({
+            inventoryLevelId: 'synthetic-' + kit.productId + '-' + locId,
+            productId: kit.productId,
+            productNumber: kit.productNumber,
+            productName: kit.name,
+            locationId: locInv.locationId,
+            locationNo: locInv.locationNo,
+            locationName: locInv.locationName,
+            quantityOnHand: String(totalBuildable),
+            quantityCommitted: '0',
+            quantityReserved: '0',
+            quantityOnOrder: '0',
+            quantityAvailable: totalBuildable,
+            binBalances: [],
+            alternateProductNumber: null,
+            defaultBinNumber: null,
+          });
+        }
+      }
+    }
 
     return { data: mappedRows };
   }

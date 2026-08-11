@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BackordersService } from './backorders.service';
 import type { InventoryGap } from '@herobm/shared';
-import { SALES_ORDER_STATE, PRODUCT_STATE } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  PRODUCT_STATE,
+  BACKORDER_STATE,
+} from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -210,6 +214,68 @@ describe('BackordersService', () => {
         .where(eq(backorders.salesOrderLineId, LINE_ID));
       expect(res).toHaveLength(1);
       expect(res[0].quantity).toBe('10');
+    });
+  });
+
+  describe('resolveOpenDemands', () => {
+    it('should generate Draft Work Orders for stock kit demands', async () => {
+      await pg.db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'KIT1',
+        name: 'KIT1',
+        baseUom: 'EA',
+        productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'kit',
+        createdBy: 'system',
+      });
+      await seedBasicOrder();
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderLineId: LINE_ID,
+        salesOrderId: ORDER_ID,
+        lineNumber: 1,
+        productId: PROD_ID,
+        quantity: '10',
+        pricePerUnit: '50',
+        fulfillmentLocationId: LOCATION_ID,
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      // Insert open demand
+      await pg.db.insert(backorders).values({
+        backorderId: '00000000-0000-4000-8000-000000000022',
+        salesOrderId: ORDER_ID,
+        salesOrderLineId: LINE_ID,
+        productId: PROD_ID,
+        quantity: '10',
+        stateCode: BACKORDER_STATE.PENDING_SUPPLY,
+      });
+
+      await service.resolveOpenDemands('test-user');
+
+      // Verify work order created
+      const { workOrders, backorders: backordersTable } =
+        await import('@herobm/db-schema');
+      const wos = await pg.db
+        .select()
+        .from(workOrders)
+        .where(eq(workOrders.productId, PROD_ID));
+      expect(wos).toHaveLength(1);
+      expect(wos[0].targetQuantity).toBe('10');
+      expect(wos[0].createdBy).toBe('test-user');
+
+      const res = await pg.db
+        .select()
+        .from(backordersTable)
+        .where(eq(backordersTable.salesOrderLineId, LINE_ID));
+      expect(res[0].workOrderId).toBe(wos[0].workOrderId);
+      expect(res[0].stateCode).toBe(BACKORDER_STATE.AWAITING_RECEIPT);
     });
   });
 });

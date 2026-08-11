@@ -76,6 +76,12 @@ export default function Sidebar() {
       ],
     },
     {
+      label: 'Manufacturing',
+      items: [
+        { href: '/manufacturing/work-orders', label: 'Work Orders', icon: 'build' },
+      ],
+    },
+    {
       label: 'CRM',
       items: [
         { href: '/crm/actors', label: 'Actors', icon: 'business' },

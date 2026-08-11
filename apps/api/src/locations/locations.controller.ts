@@ -23,6 +23,7 @@ import {
   CreateLocationDto,
   CreateZoneDto,
   CreateBinDto,
+  CreateBinBulkDto,
   UpdateLocationDto,
   UpdateZoneDto,
   UpdateBinDto,
@@ -143,6 +144,18 @@ export class LocationsController {
   @ApiCreatedResponse({ type: BinResponseDto })
   createBin(@Body() dto: CreateBinDto, @AuthUser() user: JwtUser) {
     return this.locationsService.createBin(dto, user?.userId);
+  }
+
+  @Post('bins/bulk')
+  @ApiBody({ type: CreateBinBulkDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Bins in Bulk',
+    description: 'Create multiple storage bins at once.',
+  })
+  @ApiCreatedResponse({ type: [BinResponseDto] })
+  createBinsBulk(@Body() dto: CreateBinBulkDto, @AuthUser() user: JwtUser) {
+    return this.locationsService.createBinsBulk(dto, user?.userId);
   }
 
   @Patch('bins/:id')

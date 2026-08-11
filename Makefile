@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal rebuild-pipeline rebuild-worker dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local test-pipeline
+.PHONY: help check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint verify-i18n clean-build cli-help cli-install-prereqs cli-init-env cli-setup-python cli-install-npm cli-up-db cli-init-db cli-migrate cli-bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -31,9 +31,9 @@ Cleanup & Rebuild:
   make clean-build    - Full deep clean, reinstall, and build all workspaces
 
 Verification & Testing:
-  make verify-fast    - Run linting, typechecks, structural tests, unit tests
+  make verify-fast    - Run linting, typechecks, unit tests
   make test-all       - Run all tests (unit, e2e, data, structural, heavy)
-  make test-heavy     - Run heavy/long-running tests
+  make test-heavy     - Run structural tests and heavy/long-running tests
   make test-structural- Run structural architecture and safety checks
   make test-single TEST=name - Run a single test file
   make test-api-e2e   - Run end-to-end API tests against real Postgres
@@ -61,6 +61,8 @@ ifeq ($(OS),Windows_NT)
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
   PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
   CLEAN_BUILD_CMD = powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+  TEST_PIPELINE_CMD = powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
+  TEST_HEAVY_CMD = powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
 else
@@ -73,6 +75,8 @@ else
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   CLEAN_BUILD_CMD = bash scripts/clean-build.sh
+  TEST_PIPELINE_CMD = bash scripts/test-pipeline.sh
+  TEST_HEAVY_CMD = bash scripts/run-heavy.sh $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif
@@ -554,10 +558,10 @@ verify-db: migrate-status
 verify-all: build-all check-all verify-db test-all
 
 # Supports skipping phases using environment variables, e.g. make verify-fast SKIP_CHECK=1 SKIP_UNIT=1
-verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
+verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_E2E),,test-api-e2e)
 
 test-pipeline:
-	@powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
+	@$(TEST_PIPELINE_CMD)
 
 check-all: check-types check-lint
 
@@ -580,8 +584,8 @@ query-drizzle:
 query-postgres:
 	cd apps/api && npx tsx tools/query_pg.ts ../../tmp/query.sql
 
-test-heavy:
-	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
+test-heavy: $(if $(SKIP_STRUCTURAL),,test-structural)
+	@$(TEST_HEAVY_CMD)
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py

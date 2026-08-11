@@ -30,6 +30,7 @@ import { herobmCore, validCurrencyCheck } from './core.schema';
 import { products } from './products.schema';
 import { locations, bins } from './inventory.schema';
 import { taxCategories } from './tax.schema';
+import { workOrders } from './manufacturing.schema';
 import {
   customers,
   bins as coreBins,
@@ -472,6 +473,9 @@ export const backorders = herobmCore.table(
     ),
     transferOrderLineId: uuid('transfer_order_line_id').references(
       () => transferOrderLines.transferOrderLineId,
+    ),
+    workOrderId: uuid('work_order_id').references(
+      () => workOrders.workOrderId,
     ),
     quantity: numeric('quantity').notNull(),
     stateCode: text('state_code').notNull(),

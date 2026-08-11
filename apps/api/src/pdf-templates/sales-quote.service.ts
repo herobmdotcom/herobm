@@ -7,6 +7,7 @@ import { EntityType, EventType } from '../common/event-types';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
+import { RunHookOptionsDto } from './dto';
 
 export interface SalesQuoteData {
   header: {
@@ -36,7 +37,15 @@ export interface SalesQuoteData {
     totalAmount: number;
   };
   generatedAt: string;
+  customPdfText?: string;
   quoteIntroText?: string;
+  invoiceMeta?: {
+    invoiceNumber?: string;
+    dueDate?: string | null;
+    sequenceNumber?: number;
+    totalInvoices?: number;
+    orderTotal?: number;
+  };
 }
 
 @Injectable()
@@ -53,7 +62,7 @@ export class SalesQuoteService {
   async assembleData(
     orderId: string,
     source?: string,
-    options?: Record<string, unknown>,
+    options?: RunHookOptionsDto & Record<string, unknown>,
   ): Promise<SalesQuoteData> {
     const orderDetail = await resolveOrderDetail(
       this.ordersQueryService,
@@ -66,10 +75,11 @@ export class SalesQuoteService {
     this.logger.log(
       'SalesQuoteService options received: ' + JSON.stringify(options),
     );
-    const quoteIntroText = options?.quoteIntroText as string | undefined;
-    if (quoteIntroText) {
-      this.logger.log('Macro text received: ' + quoteIntroText);
-      data.quoteIntroText = quoteIntroText;
+    const customText = options?.customPdfText || options?.quoteIntroText;
+    if (customText) {
+      this.logger.log('Macro text received: ' + customText);
+      data.customPdfText = customText;
+      data.quoteIntroText = customText;
     }
 
     return data;

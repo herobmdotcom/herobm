@@ -159,6 +159,7 @@ export default function NewSupplierPage() {
   return (
     <>
       <DetailsLayout
+        showPrint={false}
         header={
           <EntityHeader
             title={t('buttons.createSupplier')}

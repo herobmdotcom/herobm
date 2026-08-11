@@ -5,7 +5,10 @@ import {
   IsUUID,
   IsBoolean,
   IsIn,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { binTypeEnum } from '@herobm/db-schema';
 import { PartialType } from '@nestjs/swagger';
 
@@ -79,6 +82,13 @@ export class CreateBinDto {
   @IsOptional()
   @IsBoolean()
   isUnavailable?: boolean;
+}
+
+export class CreateBinBulkDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateBinDto)
+  bins!: CreateBinDto[];
 }
 
 export class UpdateLocationDto extends PartialType(CreateLocationDto) {}

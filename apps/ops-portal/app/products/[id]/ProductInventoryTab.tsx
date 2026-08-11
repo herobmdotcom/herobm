@@ -21,6 +21,13 @@ interface ProductInventoryTabProps {
   onRefresh: () => Promise<void>;
 }
 
+interface KitComponentItem {
+  childProductId: string;
+  parentQuantity?: number;
+  productNumber?: string;
+  name?: string;
+}
+
 export function ProductInventoryTab({
   productId,
   product,
@@ -39,18 +46,21 @@ export function ProductInventoryTab({
   const [saving, setSaving] = useState(false);
   const [inventoryLevels, setInventoryLevels] = useState<api.InventoryResponseDto[]>([]);
   const [buildableQuantity, setBuildableQuantity] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [kitComponents, setKitComponents] = useState<KitComponentItem[]>([]);
 
   useEffect(() => {
     const fetchInventoryData = async () => {
       try {
         let productIdsToFetch: string[] = [productId];
-        let kitComponents: { childProductId: string; parentQuantity?: number }[] = [];
+        let kitComponentsList: KitComponentItem[] = [];
         
         if (product?.structureType === 'kit') {
           const componentsData = await api.productsControllerGetComponents(productId);
-          const comps = (componentsData.data && 'data' in (componentsData.data as object) ? (componentsData.data as { data: unknown }).data : componentsData.data) as { childProductId: string; parentQuantity?: number }[];
+          const comps = (componentsData.data && 'data' in (componentsData.data as object) ? (componentsData.data as { data: unknown }).data : componentsData.data) as KitComponentItem[];
           if (comps?.length) {
-            kitComponents = comps;
+            kitComponentsList = comps;
+            setKitComponents(comps);
             productIdsToFetch = [productId, ...comps.map((c) => c.childProductId).filter(Boolean)];
           }
         }
@@ -59,7 +69,7 @@ export function ProductInventoryTab({
         const invLevels = invDataRes?.data || [];
         setInventoryLevels(invLevels);
         
-        if (product?.structureType === 'kit' && kitComponents.length && invLevels.length) {
+        if (product?.structureType === 'kit' && kitComponentsList.length && invLevels.length) {
           // Group inventory by location to ensure we only count kits that can be physically built at a single site
           const inventoryByLocation: Record<string, Record<string, number>> = {};
           invLevels.forEach(lvl => {
@@ -73,7 +83,7 @@ export function ProductInventoryTab({
           let totalBuildable = 0;
           for (const locId in inventoryByLocation) {
             const locInv = inventoryByLocation[locId];
-            const maxBuildableAtLoc = kitComponents.map(c => {
+            const maxBuildableAtLoc = kitComponentsList.map(c => {
               // Ensure we don't calculate negative buildable quantities if stock is negative
               const available = Math.max(0, locInv[c.childProductId] || 0);
               return Math.floor(available / (c.parentQuantity || 1));
@@ -112,6 +122,32 @@ export function ProductInventoryTab({
       })
       .catch(console.error);
   }, [newBinLink.locationId]);
+
+  
+  const filteredBuildableQuantity = useMemo(() => {
+    if (product?.structureType !== 'kit' || !kitComponents.length || !inventoryLevels.length) return null;
+    
+    const inventoryByLocation: Record<string, Record<string, number>> = {};
+    inventoryLevels.forEach(lvl => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing
+      const locationId = (lvl as any).locationId;
+      if (!locationId) return;
+      if (!inventoryByLocation[locationId]) inventoryByLocation[locationId] = {};
+      inventoryByLocation[locationId][lvl.productId] = (inventoryByLocation[locationId][lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
+    });
+
+    let totalBuildable = 0;
+    for (const locId in inventoryByLocation) {
+      if (selectedLocation && selectedLocation !== locId) continue;
+      const locInv = inventoryByLocation[locId];
+      const maxBuildableAtLoc = kitComponents.map(c => {
+        const available = Math.max(0, locInv[c.childProductId] || 0);
+        return Math.floor(available / (c.parentQuantity || 1));
+      });
+      totalBuildable += Math.min(...maxBuildableAtLoc);
+    }
+    return totalBuildable;
+  }, [product?.structureType, kitComponents, inventoryLevels, selectedLocation]);
 
   const unifiedInventory = useMemo(() => {
     if (!product || !inventoryLevels) return [];
@@ -188,20 +224,20 @@ export function ProductInventoryTab({
   }, [inventoryLevels, product]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-      <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+    <div className="w-full pb-6">
+      <div className="z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
               {t('products.inventoryLevels')}
-              {buildableQuantity !== null && (
+              {filteredBuildableQuantity !== null && (
                 <span className="ml-3 badge badge-success text-[13px] font-bold">
-                  {t('products.availableToAssemble', { quantity: buildableQuantity })}
+                  {t('products.availableToAssemble', { quantity: filteredBuildableQuantity })}
                 </span>
               )}
             </h2>
           </div>
-          {!addingBinLink && isEditable && product?.structureType !== 'non-stock' && (
+          {!addingBinLink && isEditable && product?.productType !== 'non-stock' && (
             <Button
               size="sm"
               variant="primary"
@@ -323,8 +359,56 @@ export function ProductInventoryTab({
           </div>
         )}
 
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+        <div className="overflow-x-auto">
+          {product?.structureType === 'kit' && product?.productType === 'non-stock' ? (
+            <>
+              <div className="flex justify-end px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
+                <select 
+                  className="input input-sm w-64" 
+                  value={selectedLocation} 
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                >
+                  <option value="">{t('common.filters.allLocations')}</option>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
+                  {locations.map((loc: any) => (
+                    <option key={loc.locationId} value={loc.locationId}>{formatLocationDisplay(loc)}</option>
+                  ))}
+                </select>
+              </div>
+              <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead className="bg-[#f9fafb] sticky top-0 z-10">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
+                  <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
+                  <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-b-0">
+                {kitComponents.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-[#64748b] text-sm">{t('common.noMatchingResults')}</td>
+                  </tr>
+                ) : (
+                  kitComponents.map(comp => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
+                    const compInv = inventoryLevels.filter(l => l.productId === comp.childProductId && (!selectedLocation || (l as any).locationId === selectedLocation));
+                    const totalAvail = compInv.reduce((sum, l) => sum + (parseFloat(l.quantityAvailable as string) || 0), 0);
+                    return (
+                      <tr key={comp.childProductId} className="bg-white border-b border-[#e2e8f0]">
+                        <td className="py-3 px-6">
+                          <div className="text-[#0f172a]">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-[#475569]">{formatInt(comp.parentQuantity || 1)}</td>
+                        <td className="py-3 px-4 text-right font-bold text-[#006b5c]">{formatInt(totalAvail)}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            </>
+          ) : (
+            <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
             <thead className="bg-[#f9fafb] sticky top-0 z-10">
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
@@ -338,7 +422,7 @@ export function ProductInventoryTab({
                 <th style={{ width: 90 }}></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="[&_tr:last-child]:border-b-0">
               {unifiedInventory.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-[#64748b] text-sm">{t('common.noMatchingResults')}</td>
@@ -500,6 +584,7 @@ export function ProductInventoryTab({
               )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </div>
