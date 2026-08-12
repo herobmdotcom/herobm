@@ -30,11 +30,7 @@ export interface TaxCategory {
     isDefault: boolean;
 }
 
-export function getTaxLabel(category: TaxCategory) {
-    const pct = parseFloat(category.rate || '0');
-    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-    return `${category.title} (${formattedPct}%)`;
-}
+export { getTaxLabel } from '@herobm/shared';
 
 export interface OrderEvent {
     eventId: string;

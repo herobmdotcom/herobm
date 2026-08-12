@@ -299,12 +299,12 @@ export default function NewWorkOrderPage() {
       const workOrderId = res?.data?.workOrderId;
       if (workOrderId) {
         router.push(`/manufacturing/work-orders/${workOrderId}`);
+        return;
       }
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : t('errors.failedToCreate'),
       );
-    } finally {
       setSubmitting(false);
     }
   };
@@ -315,6 +315,7 @@ export default function NewWorkOrderPage() {
       header={
         <EntityHeader
           title={t('createTitle')}
+          isSaving={submitting}
           actions={
             <>
               <Button
@@ -331,7 +332,14 @@ export default function NewWorkOrderPage() {
                 onClick={handleSubmit}
                 disabled={submitting}
               >
-                {submitting ? t('buttons.saving') : t('buttons.createWorkOrder')}
+                {submitting ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs mr-1.5" />
+                    {t('buttons.saving')}
+                  </>
+                ) : (
+                  t('buttons.createWorkOrder')
+                )}
               </Button>
             </>
           }

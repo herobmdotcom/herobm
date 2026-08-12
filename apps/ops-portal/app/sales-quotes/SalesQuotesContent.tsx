@@ -97,7 +97,7 @@ export default function SalesQuotesContent() {
       rowIdField="id"
       rowHref={(order) => `/sales-orders/${order.id}`}
       pageTitle={tSidebar('items.salesQuotes')}
-      defaultSortModel={[{ colId: 'orderNumber', sort: 'desc' }]}
+      defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
       headerFilters={
         <select
           value={days}

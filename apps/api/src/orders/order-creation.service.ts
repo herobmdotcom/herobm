@@ -7,6 +7,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   getErrorMessage,
+  normalizeUomCode,
 } from '@herobm/shared';
 import {
   Injectable,
@@ -308,7 +309,7 @@ export class OrderCreationService {
             amount: parentComputed.amount,
             tax: providedTax,
             totalAmount: providedTotalAmount,
-            unitOfMeasure: line.unitOfMeasure,
+            unitOfMeasure: normalizeUomCode(line.unitOfMeasure),
             fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
             parentLineId: null,
           });
@@ -368,7 +369,7 @@ export class OrderCreationService {
               amount: childComputed.amount,
               tax: finalChildTax,
               totalAmount: finalChildTotal,
-              unitOfMeasure: comp.baseUom || 'EA',
+              unitOfMeasure: normalizeUomCode(comp.baseUom),
               fulfillmentLocationId:
                 line.fulfillmentLocationId || fallbackLocId,
               parentLineId: parentLineId,
@@ -405,7 +406,7 @@ export class OrderCreationService {
             amount: computed.amount,
             tax: providedTax,
             totalAmount: providedTotalAmount,
-            unitOfMeasure: line.unitOfMeasure,
+            unitOfMeasure: normalizeUomCode(line.unitOfMeasure),
             fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
             parentLineId: null,
           });

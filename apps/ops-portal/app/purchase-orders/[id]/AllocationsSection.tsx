@@ -60,12 +60,24 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
           keyExtractor={(alloc) => alloc.id}
           columns={[
             {
-              header: t('allocationsSection.salesOrder'),
-              render: (alloc) => (
-                <Link href={`/sales-orders/${alloc.salesOrderId}`} className="text-[var(--accent)] font-medium hover:underline">
-                  {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
-                </Link>
-              )
+              header: 'Order',
+              render: (alloc) => {
+                if (alloc.demandWorkOrderId) {
+                  return (
+                    <Link href={`/manufacturing/work-orders/${alloc.demandWorkOrderId}`} className="text-[var(--accent)] font-medium hover:underline">
+                      {alloc.orderNumber || alloc.demandWorkOrderId.substring(0, 8)}
+                    </Link>
+                  );
+                }
+                if (alloc.salesOrderId) {
+                  return (
+                    <Link href={`/sales-orders/${alloc.salesOrderId}`} className="text-[var(--accent)] font-medium hover:underline">
+                      {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
+                    </Link>
+                  );
+                }
+                return <span className="font-medium text-[var(--accent)]">{alloc.orderNumber || '-'}</span>;
+              }
             },
             {
               header: t('allocationsSection.product'),
@@ -99,9 +111,17 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
              return (
                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                   <div className="font-semibold text-sm text-[var(--accent)] mb-1">
-                    <Link href={`/sales-orders/${alloc.salesOrderId}`} className="hover:underline">
-                      {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
-                    </Link>
+                    {alloc.demandWorkOrderId ? (
+                      <Link href={`/manufacturing/work-orders/${alloc.demandWorkOrderId}`} className="hover:underline">
+                        {alloc.orderNumber || alloc.demandWorkOrderId.substring(0, 8)}
+                      </Link>
+                    ) : alloc.salesOrderId ? (
+                      <Link href={`/sales-orders/${alloc.salesOrderId}`} className="hover:underline">
+                        {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
+                      </Link>
+                    ) : (
+                      <span>{alloc.orderNumber || '-'}</span>
+                    )}
                   </div>
                   <div className="text-sm text-slate-600 font-medium mb-3">
                     {alloc.productName || tCommon('unknownProduct')}

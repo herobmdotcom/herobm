@@ -150,26 +150,6 @@ export class WorkOrdersController {
     );
   }
 
-  @Post(':id/putaway')
-  @CasbinAction('write')
-  @ApiOperation({
-    summary: 'Putaway Finished Goods',
-    description:
-      'Transfer finished goods to warehouse storage bin and fulfill linked backorders.',
-  })
-  @ApiBody({ type: EmptyBodyDto })
-  @ApiOkResponse({ type: WorkOrderResponseDto })
-  async putawayFinishedGoods(
-    @Param('id') id: string,
-    @AuthUser() user: JwtUser,
-  ): Promise<WorkOrderResponseDto> {
-    return await this.workOrdersService.putawayFinishedGoods(
-      id,
-      undefined,
-      user?.username,
-    );
-  }
-
   @Post(':id/cancel')
   @CasbinAction('write')
   @ApiOperation({

@@ -14,7 +14,6 @@ describe('WorkOrdersController', () => {
     create: jest.fn(),
     release: jest.fn(),
     completeBuild: jest.fn(),
-    putawayFinishedGoods: jest.fn(),
     cancel: jest.fn(),
   };
 
@@ -118,27 +117,6 @@ describe('WorkOrdersController', () => {
       const result = await controller.completeBuild('wo-1', mockUser as any);
 
       expect(service.completeBuild).toHaveBeenCalledWith(
-        'wo-1',
-        undefined,
-        'testuser',
-      );
-      expect(result).toBe(mockResult);
-    });
-  });
-
-  describe('putawayFinishedGoods', () => {
-    it('should call service.putawayFinishedGoods with id and username', async () => {
-      const mockUser = { username: 'testuser' };
-      const mockResult = { workOrderId: 'wo-1', stateCode: 'completed' };
-      mockWorkOrdersService.putawayFinishedGoods.mockResolvedValue(mockResult);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing decorator parameter passing
-      const result = await controller.putawayFinishedGoods(
-        'wo-1',
-        mockUser as any,
-      );
-
-      expect(service.putawayFinishedGoods).toHaveBeenCalledWith(
         'wo-1',
         undefined,
         'testuser',

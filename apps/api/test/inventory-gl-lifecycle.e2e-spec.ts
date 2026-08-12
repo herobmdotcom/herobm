@@ -26,6 +26,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
   let locationId: string;
   let baseCurrency: string;
   let bankAccountId: string;
+  let taxCategoryId: string;
 
   // GL Accounts needed for verification
   let accounts: Record<string, string> = {};
@@ -99,6 +100,14 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       bankLeaves.find((a) => a.accountType === 'Bank') ||
       bankLeaves[0];
     bankAccountId = bankAccount.glAccountId;
+
+    const taxCatRes = await request(app.getHttpServer())
+      .get('/api/tax-categories')
+      .set('Authorization', `Bearer ${adminToken}`);
+    const gstCat =
+      (taxCatRes.body || []).find((c: any) => parseFloat(c.rate) === 0.1) ||
+      taxCatRes.body[0];
+    taxCategoryId = gstCat?.taxCategoryId;
 
     console.log('Setup: Getting GL Settings...');
     // Fetch GL Settings to get default accounts
@@ -504,7 +513,9 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
         deliveryCity: 'E2E City',
         deliveryCountry: 'US',
         name: 'SO E2E Lifecycle',
-        lines: [{ productId, quantity: '5', pricePerUnit: '25.00' }],
+        lines: [
+          { productId, quantity: '5', pricePerUnit: '25.00', taxCategoryId },
+        ],
       });
 
     if (soRes.status !== 201)

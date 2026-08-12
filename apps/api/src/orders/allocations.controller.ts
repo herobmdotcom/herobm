@@ -44,7 +44,9 @@ import {
   transferOrders,
   workOrders,
 } from '@herobm/db-schema';
-import { sql, eq, and, inArray } from 'drizzle-orm';
+import { sql, eq, and, inArray, aliasedTable } from 'drizzle-orm';
+
+const demandWorkOrders = aliasedTable(workOrders, 'demand_work_orders');
 
 @ApiTags('Warehouse')
 @Controller('allocations')
@@ -61,14 +63,16 @@ export class AllocationsController {
   @ApiOperation({
     summary: 'Get Open Demands',
     description:
-      'Retrieve pending or awaiting-receipt backorders across all sales orders.',
+      'Retrieve pending or awaiting-receipt backorders across all sales orders and work orders.',
   })
   async getOpenDemands() {
     const openDemands = await this.db
       .select({
         id: backorders.backorderId,
         salesOrderId: backorders.salesOrderId,
-        orderNumber: salesOrders.orderNumber,
+        demandWorkOrderId: backorders.demandWorkOrderId,
+        workOrderComponentId: backorders.workOrderComponentId,
+        orderNumber: sql<string>`COALESCE(${salesOrders.orderNumber}, ${demandWorkOrders.orderNumber})`,
         productId: backorders.productId,
         productName: products.productNumber,
         productDescription: products.name, // The product's actual name/description
@@ -78,7 +82,7 @@ export class AllocationsController {
         vendorName: actors.name,
         costPrice: sql<number>`CAST(${productSuppliers.costPrice} AS float)`,
         currencyCode: suppliers.currencyCode,
-        locationId: salesOrderLineItems.fulfillmentLocationId,
+        locationId: sql<string>`COALESCE(${salesOrderLineItems.fulfillmentLocationId}, ${demandWorkOrders.locationId})`,
         locationName: locations.name,
         purchaseOrderId: backorders.purchaseOrderId,
         purchaseOrderNumber: purchaseOrders.orderNumber,
@@ -89,6 +93,7 @@ export class AllocationsController {
         workOrderId: backorders.workOrderId,
         workOrderNumber: workOrders.orderNumber,
         workOrderState: workOrders.stateCode,
+        demandType: sql<string>`CASE WHEN ${backorders.demandWorkOrderId} IS NOT NULL THEN 'work_order' ELSE 'sales_order' END`,
       })
       .from(backorders)
       .leftJoin(
@@ -100,8 +105,15 @@ export class AllocationsController {
         eq(backorders.salesOrderLineId, salesOrderLineItems.salesOrderLineId),
       )
       .leftJoin(
+        demandWorkOrders,
+        eq(backorders.demandWorkOrderId, demandWorkOrders.workOrderId),
+      )
+      .leftJoin(
         locations,
-        eq(salesOrderLineItems.fulfillmentLocationId, locations.locationId),
+        eq(
+          locations.locationId,
+          sql`COALESCE(${salesOrderLineItems.fulfillmentLocationId}, ${demandWorkOrders.locationId})`,
+        ),
       )
       .leftJoin(products, eq(backorders.productId, products.productId))
       .leftJoin(
@@ -227,18 +239,25 @@ export class AllocationsController {
       .select({
         id: backorders.backorderId,
         salesOrderId: backorders.salesOrderId,
-        orderNumber: salesOrders.orderNumber,
+        demandWorkOrderId: backorders.demandWorkOrderId,
+        workOrderComponentId: backorders.workOrderComponentId,
+        orderNumber: sql<string>`COALESCE(${salesOrders.orderNumber}, ${demandWorkOrders.orderNumber})`,
         productId: backorders.productId,
         productName: products.productNumber,
         quantity: sql<number>`CAST(${backorders.quantity} AS float)`,
         createdOn: backorders.createdOn,
         purchaseOrderLineId: backorders.purchaseOrderLineId,
         stateCode: backorders.stateCode,
+        demandType: sql<string>`CASE WHEN ${backorders.demandWorkOrderId} IS NOT NULL THEN 'work_order' ELSE 'sales_order' END`,
       })
       .from(backorders)
       .leftJoin(
         salesOrders,
         eq(backorders.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        demandWorkOrders,
+        eq(backorders.demandWorkOrderId, demandWorkOrders.workOrderId),
       )
       .leftJoin(products, eq(backorders.productId, products.productId))
       .where(eq(backorders.purchaseOrderId, poId));

@@ -771,6 +771,67 @@ describe('ReturnsWriteService', () => {
         expect.anything(),
       );
     });
+
+    it('should update quantityReceived on return lines and transition state to PARTIALLY_RECEIVED then RECEIVED', async () => {
+      const { retId, retLineId } = await setupGlTransitionTest(
+        RETURN_STATE.CONFIRMED,
+      );
+
+      // 1. Partial receipt (3 out of 5)
+      const partialRes = await service.receiveReturnLines(
+        retId,
+        {
+          locationId: '10000000-0000-4000-8000-000000000001',
+          lines: [{ returnLineId: retLineId, quantityReceived: '3' }],
+        },
+        'admin',
+      );
+
+      expect(partialRes.stateCode).toBe(RETURN_STATE.PARTIALLY_RECEIVED);
+
+      // Verify directly from database
+      const [dbLinePartial] = await pg.db
+        .select()
+        .from(salesOrderReturnLines)
+        .where(eq(salesOrderReturnLines.returnLineId, retLineId));
+      expect(parseFloat(dbLinePartial.quantityReceived || '0')).toBe(3);
+
+      // 2. Complete remaining receipt (2 out of 5)
+      const fullRes = await service.receiveReturnLines(
+        retId,
+        {
+          locationId: '10000000-0000-4000-8000-000000000001',
+          lines: [{ returnLineId: retLineId, quantityReceived: '2' }],
+        },
+        'admin',
+      );
+
+      expect(fullRes.stateCode).toBe(RETURN_STATE.RECEIVED);
+
+      // Verify directly from database
+      const [dbLineFull] = await pg.db
+        .select()
+        .from(salesOrderReturnLines)
+        .where(eq(salesOrderReturnLines.returnLineId, retLineId));
+      expect(parseFloat(dbLineFull.quantityReceived || '0')).toBe(5);
+    });
+
+    it('should reject receiving more than total expected return quantity', async () => {
+      const { retId, retLineId } = await setupGlTransitionTest(
+        RETURN_STATE.CONFIRMED,
+      );
+
+      await expect(
+        service.receiveReturnLines(
+          retId,
+          {
+            locationId: '10000000-0000-4000-8000-000000000001',
+            lines: [{ returnLineId: retLineId, quantityReceived: '6' }],
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   // =========================================================================

@@ -24,6 +24,8 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   ShippingContextDto,
   PickingQueueOrderDto,
+  PickingQueueQueryDto,
+  PickingQueueResponseDto,
   PickingSummaryDto,
   ShippingQueueOrderDto,
   PickOrderLineDto,
@@ -37,16 +39,15 @@ export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}
 
   @Get('picking-queue')
-  @ApiOkResponse({ type: [PickingQueueOrderDto] })
+  @ApiOkResponse({ type: PickingQueueResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Picking Queue',
     description:
-      'Retrieve the queue of orders ready to be picked at a specific location.',
+      'Retrieve the paginated queue of orders ready to be picked at a specific location.',
   })
-  @ApiQuery({ name: 'locationId', required: false })
-  getPickingQueue(@Query('locationId') locationId?: string) {
-    return this.pickingService.getPickingQueue(locationId);
+  getPickingQueue(@Query() query: PickingQueueQueryDto) {
+    return this.pickingService.getPickingQueue(query);
   }
 
   @Get(':id/picking')

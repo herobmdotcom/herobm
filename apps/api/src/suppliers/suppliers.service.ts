@@ -196,6 +196,7 @@ export class SuppliersService {
       .select({
         ...getTableColumns(coreSuppliers),
         name: actors.name,
+        supplierGroupTaxPositionId: supplierGroups.taxPositionId,
         address1Line1: actors.headquartersAddressLine1,
         address1Line2: actors.headquartersAddressLine2,
         address1City: actors.headquartersCity,
@@ -209,6 +210,10 @@ export class SuppliersService {
         emailAddress1: sql<string>`TRIM(${actors.email})`,
       })
       .from(coreSuppliers)
+      .leftJoin(
+        supplierGroups,
+        eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
+      )
       .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);

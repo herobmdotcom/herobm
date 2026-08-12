@@ -980,19 +980,21 @@ export class GoodsReceivedWriteService {
         ? PURCHASE_ORDER_STATE.RECEIVED
         : PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
 
-      await this.purchaseOrdersService.changePurchaseOrderState(
-        poLine.poId,
-        newState as
-          | 'cancelled'
-          | 'invoiced'
-          | 'received'
-          | 'closed_short'
-          | 'draft'
-          | 'ordered'
-          | 'partially_received',
-        userId,
-        tx,
-      );
+      if (poLine.stateCode !== newState) {
+        await this.purchaseOrdersService.changePurchaseOrderState(
+          poLine.poId,
+          newState as
+            | 'cancelled'
+            | 'invoiced'
+            | 'received'
+            | 'closed_short'
+            | 'draft'
+            | 'ordered'
+            | 'partially_received',
+          userId,
+          tx,
+        );
+      }
 
       const [receipt] = await tx
         .select({ receiptNumber: goodsReceived.receiptNumber })

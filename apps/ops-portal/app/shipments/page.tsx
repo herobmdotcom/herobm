@@ -82,7 +82,7 @@ export default function ShipmentsPage() {
       rowIdField="shipmentId"
       rowHref={(data: Record<string, unknown>) => `/shipments/${data.shipmentId}`}
       pageTitle={t('title')}
-      defaultSortModel={[{ colId: 'shipmentNumber', sort: 'desc' }]}
+      defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
       headerFilters={
         <select
             value={days}

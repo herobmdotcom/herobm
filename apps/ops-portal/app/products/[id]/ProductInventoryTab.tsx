@@ -69,7 +69,7 @@ export function ProductInventoryTab({
         const invLevels = invDataRes?.data || [];
         setInventoryLevels(invLevels);
         
-        if (product?.structureType === 'kit' && kitComponentsList.length && invLevels.length) {
+        if (product?.structureType === 'kit' && product?.productType === 'non-stock' && kitComponentsList.length && invLevels.length) {
           // Group inventory by location to ensure we only count kits that can be physically built at a single site
           const inventoryByLocation: Record<string, Record<string, number>> = {};
           invLevels.forEach(lvl => {
@@ -230,7 +230,7 @@ export function ProductInventoryTab({
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
               {t('products.inventoryLevels')}
-              {filteredBuildableQuantity !== null && (
+              {product?.productType === 'non-stock' && filteredBuildableQuantity !== null && (
                 <span className="ml-3 badge badge-success text-[13px] font-bold">
                   {t('products.availableToAssemble', { quantity: filteredBuildableQuantity })}
                 </span>

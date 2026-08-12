@@ -157,6 +157,7 @@ export default function JournalEntriesPage() {
         initialSearch={entryParam}
         onRowClicked={(row) => setSelectedEntry(row)}
         pageTitle={t('title')}
+        defaultSortModel={[{ colId: 'entryDate', sort: 'desc' }]}
         secondaryHeader={
           <div className="flex flex-wrap items-center justify-start gap-4">
             <select

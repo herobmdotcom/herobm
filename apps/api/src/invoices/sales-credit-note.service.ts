@@ -5,7 +5,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, getTableColumns } from 'drizzle-orm';
+import { eq, sql, desc, asc, and, or, ilike, inArray, getTableColumns } from 'drizzle-orm';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -676,12 +681,31 @@ export class SalesCreditNoteService {
   /**
    * List all credit notes, optionally filtered.
    */
-  async findAll(customerId?: string, balanceStatus?: string) {
-    let q = this.db.select().from(salesCreditNotes).$dynamic();
+  async findAll(query?: PaginationQuery | string, balanceStatus?: string, overrideLimit?: number) {
+    let queryObj: PaginationQuery;
+    if (typeof query === 'string' || query === undefined) {
+      queryObj = {
+        customerId: query,
+        limit: overrideLimit,
+      };
+    } else {
+      queryObj = query;
+    }
+
+    const {
+      limit,
+      cursor,
+      direction,
+      searchTerm,
+      customerId,
+    } = parsePagination(queryObj);
+
+    let qb = this.db.select().from(salesCreditNotes).$dynamic();
 
     const conditions = [];
-    if (customerId) {
-      conditions.push(eq(salesCreditNotes.customerId, customerId));
+    const targetCustomer = queryObj.customerId || customerId;
+    if (targetCustomer) {
+      conditions.push(eq(salesCreditNotes.customerId, targetCustomer));
     }
 
     if (balanceStatus === 'unpaid') {
@@ -690,22 +714,73 @@ export class SalesCreditNoteService {
       );
     }
 
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(salesCreditNotes.creditNoteNumber, searchTerm),
+          ilike(salesCreditNotes.notes, searchTerm),
+        ),
+      );
+    }
+
     if (conditions.length > 0) {
-      q = q.where(and(...conditions));
+      qb = qb.where(and(...conditions));
     }
 
-    const notes = await q.orderBy(desc(salesCreditNotes.createdOn));
+    const { data: notes, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor as { createdOn: string; creditNoteId: string } | null,
+      direction,
+      applyWhere: (q, c, dir) => {
+        const dateOp = dir === 'next' ? sql`<` : sql`>`;
+        const idOp = dir === 'next' ? sql`<` : sql`>`;
+        return q.where(
+          or(
+            sql`${salesCreditNotes.createdOn} ${dateOp} ${c.createdOn}`,
+            and(
+              sql`${salesCreditNotes.createdOn} = ${c.createdOn}`,
+              sql`${salesCreditNotes.creditNoteId} ${idOp} ${c.creditNoteId}`,
+            ),
+          ),
+        );
+      },
+      applyOrderBy: (q, dir) => {
+        const order = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          order(salesCreditNotes.createdOn),
+          order(salesCreditNotes.creditNoteId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn,
+        creditNoteId: row.creditNoteId,
+      }),
+    });
 
-    const result = [];
-    for (const cn of notes) {
-      const lines = await this.db
-        .select()
-        .from(salesCreditNoteLines)
-        .where(eq(salesCreditNoteLines.creditNoteId, cn.creditNoteId));
-      result.push({ ...cn, lines });
+    if (notes.length === 0) {
+      return { data: [], limit, nextCursor, prevCursor };
     }
 
-    return result;
+    const noteIds = notes.map((n) => n.creditNoteId);
+    const allLines = await this.db
+      .select()
+      .from(salesCreditNoteLines)
+      .where(inArray(salesCreditNoteLines.creditNoteId, noteIds));
+
+    const linesByNoteId = new Map<string, typeof allLines>();
+    for (const line of allLines) {
+      const existing = linesByNoteId.get(line.creditNoteId) || [];
+      existing.push(line);
+      linesByNoteId.set(line.creditNoteId, existing);
+    }
+
+    const mappedData = notes.map((cn) => ({
+      ...cn,
+      lines: linesByNoteId.get(cn.creditNoteId) || [],
+    }));
+
+    return { data: mappedData, limit, nextCursor, prevCursor };
   }
 
   /**

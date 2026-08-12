@@ -5478,7 +5478,7 @@
     },
     "/sales-orders/picking-queue": {
       "get": {
-        "description": "Retrieve the queue of orders ready to be picked at a specific location.",
+        "description": "Retrieve the paginated queue of orders ready to be picked at a specific location.",
         "operationId": "OrderPickingController_getPickingQueue",
         "parameters": [
           {
@@ -5488,6 +5488,41 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ready",
+                "partial",
+                "blocked",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
           }
         ],
         "responses": {
@@ -5496,10 +5531,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PickingQueueOrderDto"
-                  }
+                  "$ref": "#/components/schemas/PickingQueueResponseDto"
                 }
               }
             }
@@ -7398,7 +7430,7 @@
     },
     "/allocations/open": {
       "get": {
-        "description": "Retrieve pending or awaiting-receipt backorders across all sales orders.",
+        "description": "Retrieve pending or awaiting-receipt backorders across all sales orders and work orders.",
         "operationId": "AllocationsController_getOpenDemands",
         "parameters": [],
         "responses": {
@@ -22721,6 +22753,59 @@
           "hasAllocation"
         ]
       },
+      "PickingQueueMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "readyCount": {
+            "type": "number"
+          },
+          "partialCount": {
+            "type": "number"
+          },
+          "blockedCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages",
+          "readyCount",
+          "partialCount",
+          "blockedCount"
+        ]
+      },
+      "PickingQueueResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PickingQueueOrderDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PickingQueueMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
       "PickingSummaryAvailableBinDto": {
         "type": "object",
         "properties": {
@@ -23876,7 +23961,20 @@
             "type": "string"
           },
           "salesOrderId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "demandWorkOrderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "workOrderComponentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "demandType": {
+            "type": "string",
+            "nullable": true
           },
           "orderNumber": {
             "type": "string"
@@ -23954,7 +24052,6 @@
         },
         "required": [
           "id",
-          "salesOrderId",
           "orderNumber",
           "productId",
           "productName",
@@ -23970,7 +24067,20 @@
             "type": "string"
           },
           "salesOrderId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "demandWorkOrderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "workOrderComponentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "demandType": {
+            "type": "string",
+            "nullable": true
           },
           "orderNumber": {
             "type": "string"
@@ -23997,7 +24107,6 @@
         },
         "required": [
           "id",
-          "salesOrderId",
           "orderNumber",
           "productId",
           "productName",
@@ -27159,6 +27268,18 @@
             "type": "string"
           },
           "unitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "stagedQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "wipBinQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentQuantity": {
             "type": "string",
             "nullable": true
           }

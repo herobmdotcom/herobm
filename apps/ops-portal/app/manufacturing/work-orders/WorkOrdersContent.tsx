@@ -100,7 +100,7 @@ export default function WorkOrdersContent() {
       rowIdField="workOrderId"
       rowHref={(row) => `/manufacturing/work-orders/${row.workOrderId}`}
       pageTitle={tWork('title')}
-      defaultSortModel={[{ colId: 'orderNumber', sort: 'desc' }]}
+      defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
       headerFilters={
         <select
           value={days}

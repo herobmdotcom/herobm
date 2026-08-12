@@ -613,11 +613,12 @@ export class ReturnsWriteService {
               }
             }
 
+            const updatedQty = (previouslyReceived + newlyReceived).toString();
             // Update quantity_received on the return line
             await innerTx
               .update(salesOrderReturnLines)
               .set({
-                quantityReceived: sql`${salesOrderReturnLines.quantityReceived} + ${newlyReceived}`,
+                quantityReceived: updatedQty,
                 putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
               })
               .where(eq(salesOrderReturnLines.returnLineId, rl.returnLineId));

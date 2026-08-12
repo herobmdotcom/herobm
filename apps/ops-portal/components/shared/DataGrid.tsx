@@ -461,9 +461,13 @@ export default function DataGrid<T>({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
         saveGridState(gridKey, event.state);
-        if (event.state.scroll) {
+      if (event.state.scroll) {
+        if (event.state.scroll.top === 0) {
+          clearScrollState(gridKey);
+        } else {
           saveScrollState(gridKey, event.state.scroll);
         }
+      }
       }, 500);
     },
     [gridKey],
@@ -1210,6 +1214,11 @@ export default function DataGrid<T>({
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onStateUpdated={onStateUpdated}
+            onBodyScroll={(e) => {
+              if (gridKey && e.top === 0) {
+                clearScrollState(gridKey);
+              }
+            }}
             onSortChanged={(e) => { lastActionRef.current = e.source ?? null; }}
             onFilterChanged={(e) => { lastActionRef.current = e.source ?? null; }}
             onModelUpdated={(e) => {

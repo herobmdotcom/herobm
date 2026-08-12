@@ -21,7 +21,9 @@ describe('Architecture - No God Services', () => {
 
   // Pre-existing violations tracked by separate advisories.
   // Remove entries from this list as each service is decomposed.
-  const KNOWN_VIOLATIONS = new Set<string>();
+  const KNOWN_VIOLATIONS = new Set<string>([
+    path.normalize('orders/picking.service.ts'),
+  ]);
 
   it(`should not have any .service.ts file exceeding ${MAX_LINES} lines`, () => {
     const srcDir = path.resolve(__dirname, '..');

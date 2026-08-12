@@ -36,6 +36,7 @@ interface WorkOrderComponent {
   productName: string;
   productNumber: string;
   expectedQuantity: string;
+  currentQuantity?: string | null;
   unitCost?: string | null;
 }
 
@@ -265,7 +266,8 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
     try {
       setActionLoading(true);
       await workOrdersControllerCompleteBuild(workOrderId, {});
-      toast.success('Production build completed. Output credited to Production/QA Bin.');
+      const binName = data?.outputBinName || data?.wipBinName || 'Unassigned';
+      toast.success(`Production credited to bin ${binName}`);
       await fetchWorkOrder(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to complete production');
@@ -355,6 +357,30 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         },
       },
       {
+        id: 'currentQty',
+        header: 'Current Qty',
+        width: 130,
+        align: 'right',
+        render: (comp) => {
+          const current = parseFloat(comp.currentQuantity || '0');
+          const expected = parseFloat(comp.expectedQuantity || '0');
+          const isComplete = current >= expected && expected > 0;
+          return (
+            <span
+              className={`font-semibold tabular-nums ${
+                isComplete
+                  ? 'text-emerald-600'
+                  : current > 0
+                  ? 'text-amber-600'
+                  : 'text-slate-500'
+              }`}
+            >
+              {comp.currentQuantity || '0'}
+            </span>
+          );
+        },
+      },
+      {
         id: 'unitCost',
         header: 'Unit Cost',
         width: 130,
@@ -427,7 +453,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       header={
         <EntityHeader
           title={data.orderNumber}
-          subtitle={`Output: ${data.productName} (${data.productNumber}) · Target Qty: ${data.targetQuantity}`}
+          subtitle={`Output: ${data.productNumber} (${data.productName}) · Target Qty: ${data.targetQuantity}`}
           badges={<StateBadge state={data.stateCode as ValidState} />}
           actions={
             <div className="flex items-center gap-2">
@@ -438,38 +464,11 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               )}
 
               {isInProgress && (
-                <div className="flex items-center gap-2">
-                  <Link href="/inventory/picking">
-                    <Button variant="secondary" size="sm">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
-                      <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>inventory</span>
-                      Go to Picking Queue
-                    </Button>
-                  </Link>
-                  <Button variant="primary" size="sm" onClick={handleComplete} disabled={actionLoading}>
-                    Complete Production
-                  </Button>
-                </div>
+                <Button variant="primary" size="sm" onClick={handleComplete} disabled={actionLoading}>
+                  Complete Production
+                </Button>
               )}
 
-              {isCompleted && (
-                <div className="flex items-center gap-2">
-                  {data?.putawayStatus === PUTAWAY_STATUS.PENDING_PUTAWAY && (
-                    <Link href="/inventory/putaway">
-                      <Button variant="primary" size="sm">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
-                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>pallet</span>
-                        Go to Putaway Queue
-                      </Button>
-                    </Link>
-                  )}
-                  {data?.putawayStatus !== PUTAWAY_STATUS.COMPLETED && (
-                    <Button variant="secondary" size="sm" onClick={handlePutaway} disabled={actionLoading}>
-                      Direct Putaway
-                    </Button>
-                  )}
-                </div>
-              )}
 
               {!isCompleted && !isCancelled && (
                 <Button variant="danger" size="sm" onClick={handleCancel} disabled={actionLoading}>
@@ -501,7 +500,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               </label>
               <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
                 <Link href={`/products/${data.productId}`} className="hover:underline" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                  {data.productName} ({data.productNumber})
+                  {data.productNumber} ({data.productName})
                 </Link>
               </p>
             </div>

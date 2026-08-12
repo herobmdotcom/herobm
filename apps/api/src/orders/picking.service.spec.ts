@@ -1,6 +1,9 @@
 import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PickingService } from './picking.service';
+import { PickingQueryService } from './picking-query.service';
+import { PickingShippingQueryService } from './picking-shipping-query.service';
+import { PickingActionService } from './picking-action.service';
 
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -143,6 +146,9 @@ describe('PickingService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PickingService,
+        PickingQueryService,
+        PickingShippingQueryService,
+        PickingActionService,
         {
           provide: AppConfigService,
           useValue: { defaultFulfillmentLocationId: () => LOCATION_ID },
@@ -339,6 +345,21 @@ describe('PickingService', () => {
       await expect(service.assertFullyPicked(ORDER_ID)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('getPickingQueue', () => {
+    it('should return paginated picking queue results with meta', async () => {
+      await seedOrder(SALES_ORDER_STATE.CONFIRMED);
+      const res = (await service.getPickingQueue({
+        page: 1,
+        limit: 10,
+      })) as any;
+      expect(res).toHaveProperty('data');
+      expect(res).toHaveProperty('meta');
+      expect(res.meta.page).toBe(1);
+      expect(res.meta.limit).toBe(10);
+      expect(Array.isArray(res.data)).toBe(true);
     });
   });
 });

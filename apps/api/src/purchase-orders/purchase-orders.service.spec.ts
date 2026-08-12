@@ -30,6 +30,10 @@ import {
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
 
+import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { PurchaseOrdersStateService } from './purchase-orders-state.service';
+import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
+
 jest.setTimeout(120000);
 
 describe('PurchaseOrdersService', () => {
@@ -122,6 +126,9 @@ describe('PurchaseOrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseOrdersService,
+        PurchaseOrdersQueryService,
+        PurchaseOrdersStateService,
+        PurchaseOrdersWriteService,
         { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryQueryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },

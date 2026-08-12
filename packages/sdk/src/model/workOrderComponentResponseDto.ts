@@ -14,4 +14,10 @@ export interface WorkOrderComponentResponseDto {
   expectedQuantity: string;
   /** @nullable */
   unitCost?: string | null;
+  /** @nullable */
+  stagedQuantity?: string | null;
+  /** @nullable */
+  wipBinQuantity?: string | null;
+  /** @nullable */
+  currentQuantity?: string | null;
 }

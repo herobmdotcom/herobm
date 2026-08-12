@@ -14,6 +14,8 @@ import {
   binContents,
   uomDictionary,
   taxCategories,
+  workOrders,
+  workOrderComponents,
 } from '@herobm/db-schema';
 import {
   BACKORDER_STATE,
@@ -270,5 +272,45 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
     // No bin_contents inserted at all
     const data = await controller.getOpenDemands();
     expect(data[0].availableElsewhere).toEqual([]);
+  });
+
+  it('returns Work Order component demands alongside Sales Order demands', async () => {
+    const WO_ID = '00000000-0000-4000-8000-000000000099';
+    const WOC_ID = '00000000-0000-4000-8000-000000000098';
+
+    await pg.db.insert(workOrders).values({
+      workOrderId: WO_ID,
+      orderNumber: 'WO-20260812-99',
+      productId: PROD_ID,
+      targetQuantity: '10',
+      completedQuantity: '0',
+      locationId: LOC_MAIN,
+      stateCode: 'in_progress',
+      createdBy: 'system',
+    });
+
+    await pg.db.insert(workOrderComponents).values({
+      workOrderComponentId: WOC_ID,
+      workOrderId: WO_ID,
+      productId: PROD_ID,
+      expectedQuantity: '10',
+    });
+
+    await pg.db.insert(backorders).values({
+      demandWorkOrderId: WO_ID,
+      workOrderComponentId: WOC_ID,
+      productId: PROD_ID,
+      quantity: '10',
+      stateCode: BACKORDER_STATE.PENDING_SUPPLY,
+    });
+
+    const demands = await controller.getOpenDemands();
+    const woDemand = demands.find(
+      (d: { demandWorkOrderId?: string | null }) =>
+        d.demandWorkOrderId === WO_ID,
+    );
+    expect(woDemand).toBeDefined();
+    expect(woDemand?.orderNumber).toBe('WO-20260812-99');
+    expect(woDemand?.demandType).toBe('work_order');
   });
 });

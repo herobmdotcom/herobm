@@ -287,7 +287,7 @@ import type {
   PickLineDto,
   PickOrderLineDto,
   PickWorkOrderComponentDto,
-  PickingQueueOrderDto,
+  PickingQueueResponseDto,
   PickingSummaryDto,
   PickingSummaryPickDto,
   PoAllocationDto,
@@ -5961,11 +5961,11 @@ export const businessReportsControllerDeleteReport = async (id: string, options?
 
 
 /**
- * Retrieve the queue of orders ready to be picked at a specific location.
+ * Retrieve the paginated queue of orders ready to be picked at a specific location.
  * @summary Get Picking Queue
  */
 export type orderPickingControllerGetPickingQueueResponse200 = {
-  data: PickingQueueOrderDto[]
+  data: PickingQueueResponseDto
   status: 200
 }
     
@@ -7659,7 +7659,7 @@ export const globalReturnsControllerFindOne = async (id: string, options?: Reque
 
 
 /**
- * Retrieve pending or awaiting-receipt backorders across all sales orders.
+ * Retrieve pending or awaiting-receipt backorders across all sales orders and work orders.
  * @summary Get Open Demands
  */
 export type allocationsControllerGetOpenDemandsResponse200 = {

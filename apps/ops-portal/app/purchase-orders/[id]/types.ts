@@ -21,7 +21,10 @@ export interface OrderLine {
 
 export interface Allocation {
   id: string;
-  salesOrderId: string;
+  salesOrderId?: string | null;
+  demandWorkOrderId?: string | null;
+  workOrderComponentId?: string | null;
+  demandType?: string | null;
   orderNumber: string | null;
   productId: string;
   productName: string | null;
@@ -105,10 +108,4 @@ export interface OrderReturn {
 
 
 
-export function getTaxLabel(category: TaxCategory) {
-  if (category.type === 'exempt') return 'Exempt';
-  if (category.type === 'zero_rated') return 'Zero Rated';
-  const pct = parseFloat(category.rate || '0');
-  const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-  return `${formattedPct}% GST`;
-}
+export { getTaxLabel } from '@herobm/shared';

@@ -1010,10 +1010,13 @@ export class TransfersStateService {
             uomCode: uomMap.get(line.productId) || 'EA',
           });
 
+          const updatedReceivedQty = (
+            previouslyReceived + qtyToReceive
+          ).toString();
           await tx
             .update(transferOrderLines)
             .set({
-              quantityReceived: sql`${transferOrderLines.quantityReceived} + ${qtyToReceive.toString()}`,
+              quantityReceived: updatedReceivedQty,
             })
             .where(
               eq(

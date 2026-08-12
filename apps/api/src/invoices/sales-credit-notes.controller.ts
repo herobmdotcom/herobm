@@ -20,6 +20,7 @@ import { SalesCreditNoteService } from './sales-credit-note.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { PaginationQuery } from '../common/pagination';
 import {
   CreateSalesCreditNoteDto,
   SalesCreditNoteResponseDto,
@@ -40,12 +41,15 @@ export class SalesCreditNotesController {
   })
   @ApiQuery({ name: 'customerId', required: false })
   @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'direction', required: false })
   @ApiOkResponse({ type: [SalesCreditNoteResponseDto] })
   findAll(
-    @Query('customerId') customerId?: string,
+    @Query() query: PaginationQuery,
     @Query('balanceStatus') balanceStatus?: string,
   ) {
-    return this.creditNoteService.findAll(customerId, balanceStatus);
+    return this.creditNoteService.findAll(query, balanceStatus);
   }
 
   @Get(':id')

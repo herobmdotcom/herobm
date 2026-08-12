@@ -78,7 +78,7 @@ export default function TransfersContent() {
               rowIdField="id"
               rowHref={(order) => (order.id || order.transferOrderId) ? `/inventory/transfers/${order.id || order.transferOrderId}` : ''}
               pageTitle={tTransfers('title')}
-              defaultSortModel={[{ colId: 'orderNumber', sort: 'desc' }]}
+              defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
               headerActions={
                 <Button 
                   variant="primary"

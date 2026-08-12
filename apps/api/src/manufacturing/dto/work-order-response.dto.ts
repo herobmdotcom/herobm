@@ -1,12 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class EmptyBodyDto {}
 
 export class PickWorkOrderComponentDto {
   @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   binId!: string;
 
   @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   quantity!: string;
 }
 
@@ -28,6 +33,15 @@ export class WorkOrderComponentResponseDto {
 
   @ApiPropertyOptional()
   unitCost?: string | null;
+
+  @ApiPropertyOptional()
+  stagedQuantity?: string | null;
+
+  @ApiPropertyOptional()
+  wipBinQuantity?: string | null;
+
+  @ApiPropertyOptional()
+  currentQuantity?: string | null;
 }
 
 export class WorkOrderResponseDto {

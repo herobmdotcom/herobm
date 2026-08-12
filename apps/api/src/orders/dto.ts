@@ -9,6 +9,9 @@ import {
   IsEmail,
   IsBoolean,
   IsIn,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -733,6 +736,51 @@ export class PickingQueueOrderDto extends OrderQueueBaseDto {
   @ApiProperty() hasAllocation!: boolean;
 }
 
+export class PickingQueueQueryDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  locationId?: string;
+
+  @ApiPropertyOptional({ enum: ['ready', 'partial', 'blocked', 'all'] })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class PickingQueueMetaDto {
+  @ApiProperty() total!: number;
+  @ApiProperty() page!: number;
+  @ApiProperty() limit!: number;
+  @ApiProperty() totalPages!: number;
+  @ApiProperty() readyCount!: number;
+  @ApiProperty() partialCount!: number;
+  @ApiProperty() blockedCount!: number;
+}
+
+export class PickingQueueResponseDto {
+  @ApiProperty({ type: () => [PickingQueueOrderDto] })
+  data!: PickingQueueOrderDto[];
+
+  @ApiProperty({ type: () => PickingQueueMetaDto })
+  meta!: PickingQueueMetaDto;
+}
+
 export class ShippingQueueOrderDto extends OrderQueueBaseDto {
   @ApiProperty() shippabilityStatus!: string;
   @ApiProperty() totalShippableLines!: number;
@@ -765,7 +813,10 @@ export class OpenDemandLocationAvailabilityDto {
 
 export class OpenDemandDto {
   @ApiProperty() id!: string;
-  @ApiProperty() salesOrderId!: string;
+  @ApiPropertyOptional() salesOrderId?: string | null;
+  @ApiPropertyOptional() demandWorkOrderId?: string | null;
+  @ApiPropertyOptional() workOrderComponentId?: string | null;
+  @ApiPropertyOptional() demandType?: string | null;
   @ApiProperty() orderNumber!: string;
   @ApiProperty() productId!: string;
   @ApiProperty() productName!: string;
@@ -795,7 +846,10 @@ export class OpenDemandsListResponseDto {
 
 export class PoAllocationDto {
   @ApiProperty() id!: string;
-  @ApiProperty() salesOrderId!: string;
+  @ApiPropertyOptional() salesOrderId?: string | null;
+  @ApiPropertyOptional() demandWorkOrderId?: string | null;
+  @ApiPropertyOptional() workOrderComponentId?: string | null;
+  @ApiPropertyOptional() demandType?: string | null;
   @ApiProperty() orderNumber!: string;
   @ApiProperty() productId!: string;
   @ApiProperty() productName!: string;

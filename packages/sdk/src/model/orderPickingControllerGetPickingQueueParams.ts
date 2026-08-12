@@ -5,7 +5,18 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { OrderPickingControllerGetPickingQueueStatus } from './orderPickingControllerGetPickingQueueStatus';
 
 export type OrderPickingControllerGetPickingQueueParams = {
 locationId?: string;
+status?: OrderPickingControllerGetPickingQueueStatus;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };

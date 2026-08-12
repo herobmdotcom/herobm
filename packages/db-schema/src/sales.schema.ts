@@ -30,7 +30,7 @@ import { herobmCore, validCurrencyCheck } from './core.schema';
 import { products } from './products.schema';
 import { locations, bins } from './inventory.schema';
 import { taxCategories } from './tax.schema';
-import { workOrders } from './manufacturing.schema';
+import { workOrders, workOrderComponents } from './manufacturing.schema';
 import {
   customers,
   bins as coreBins,
@@ -453,12 +453,18 @@ export const backorders = herobmCore.table(
   'backorders',
   {
     backorderId: uuid('backorder_id').primaryKey().defaultRandom(),
-    salesOrderId: uuid('sales_order_id')
-      .notNull()
-      .references(() => salesOrders.salesOrderId),
-    salesOrderLineId: uuid('sales_order_line_id')
-      .notNull()
-      .references(() => salesOrderLineItems.salesOrderLineId),
+    salesOrderId: uuid('sales_order_id').references(
+      () => salesOrders.salesOrderId,
+    ),
+    salesOrderLineId: uuid('sales_order_line_id').references(
+      () => salesOrderLineItems.salesOrderLineId,
+    ),
+    demandWorkOrderId: uuid('demand_work_order_id').references(
+      () => workOrders.workOrderId,
+    ),
+    workOrderComponentId: uuid('work_order_component_id').references(
+      () => workOrderComponents.workOrderComponentId,
+    ),
     productId: uuid('product_id')
       .notNull()
       .references(() => products.productId),
@@ -485,6 +491,10 @@ export const backorders = herobmCore.table(
   (t) => ({
     solStateIdx: index('idx_backorders_sol_state').on(
       t.salesOrderLineId,
+      t.stateCode,
+    ),
+    wocStateIdx: index('idx_backorders_woc_state').on(
+      t.workOrderComponentId,
       t.stateCode,
     ),
     productIdx: index('idx_backorders_product').on(t.productId),

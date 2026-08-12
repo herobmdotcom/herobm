@@ -23,6 +23,7 @@ import {
   PRODUCT_TRANSITIONS,
   PRODUCT_STATE,
   ProductState,
+  normalizeUomCode,
 } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
@@ -48,6 +49,7 @@ export class ProductsWriteService {
         .insert(coreProducts)
         .values({
           ...dto,
+          baseUom: normalizeUomCode(dto.baseUom),
           productType: dto.productType ?? 'inventory',
           stateCode: (dto.stateCode as ProductState) ?? PRODUCT_STATE.ACTIVE,
           createdBy: actor,

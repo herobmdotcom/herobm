@@ -8,22 +8,7 @@ import toast from 'react-hot-toast';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { Button } from '@/components/shared/Button';
 
-interface DemandRow {
-  id: string;
-  salesOrderId: string;
-  orderNumber: string;
-  productId: string;
-  productName: string;
-  productDescription?: string;
-  quantity: number;
-  createdOn: string;
-  vendorId?: string;
-  vendorName?: string;
-  costPrice?: number;
-  currencyCode?: string;
-  locationId: string;
-  locationName: string;
-}
+import type { DemandRow } from './DemandsContent';
 
 interface DraftPOsModalProps {
   isOpen: boolean;

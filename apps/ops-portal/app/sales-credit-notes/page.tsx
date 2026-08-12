@@ -87,7 +87,7 @@ export default function ReturnsQueuePage() {
                 rowIdField="returnId"
                 onRowClicked={handleReturnClick}
                 pageTitle="Credit Notes Queue"
-                defaultSortModel={[{ colId: 'returnNumber', sort: 'desc' }]}
+                defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
                 headerActions={
                     <Button 
                         className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap" 

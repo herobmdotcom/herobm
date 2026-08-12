@@ -29,7 +29,7 @@ import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
-import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@herobm/shared';
+import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount, getTaxLabel } from '@herobm/shared';
 import type { DiscountRule } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useSettings } from '@/components/SettingsProvider';
@@ -69,12 +69,6 @@ interface TaxPositionMapping {
   taxPositionId: string;
   sourceTaxCategoryId: string;
   destinationTaxCategoryId: string;
-}
-
-function getTaxLabel(category: TaxCategory) {
-    const pct = parseFloat(category.rate || '0');
-    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-    return `${category.title} (${formattedPct}%)`;
 }
 
 interface LineItem {
@@ -416,9 +410,9 @@ export default function NewOrderPage() {
       });
       const order = orderRes.data;
       router.push(`/sales-orders/${order.salesOrderId}`);
+      return;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tSales('common.errors.failedToCreateOrder'));
-    } finally {
       setSubmitting(false);
     }
   };
@@ -439,6 +433,7 @@ export default function NewOrderPage() {
         header={
           <EntityHeader
             title={tSales('salesOrders.createTitle')}
+            isSaving={submitting}
             actions={
               <>
                 <Button
@@ -455,7 +450,14 @@ export default function NewOrderPage() {
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? tSales('common.saving') : tSales('salesOrders.buttons.createOrder')}
+                  {submitting ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs mr-1.5" />
+                      {tSales('common.saving')}
+                    </>
+                  ) : (
+                    tSales('salesOrders.buttons.createOrder')
+                  )}
                 </Button>
               </>
             }

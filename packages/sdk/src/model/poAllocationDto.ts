@@ -8,7 +8,14 @@
 
 export interface PoAllocationDto {
   id: string;
-  salesOrderId: string;
+  /** @nullable */
+  salesOrderId?: string | null;
+  /** @nullable */
+  demandWorkOrderId?: string | null;
+  /** @nullable */
+  workOrderComponentId?: string | null;
+  /** @nullable */
+  demandType?: string | null;
   orderNumber: string;
   productId: string;
   productName: string;

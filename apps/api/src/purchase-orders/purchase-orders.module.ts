@@ -1,6 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PurchaseOrdersController } from './purchase-orders.controller';
 import { PurchaseOrdersService } from './purchase-orders.service';
+import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { PurchaseOrdersStateService } from './purchase-orders-state.service';
+import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
 import { PurchaseReturnsController } from './purchase-returns.controller';
 import { PurchaseReturnsService } from './purchase-returns.service';
 import { GlobalPurchaseReturnsController } from './global-purchase-returns.controller';
@@ -26,9 +29,18 @@ import { OrdersModule } from '../orders/orders.module';
   ],
   providers: [
     PurchaseOrdersService,
+    PurchaseOrdersQueryService,
+    PurchaseOrdersStateService,
+    PurchaseOrdersWriteService,
     PurchaseReturnsService,
     PurchasingReportsService,
   ],
-  exports: [PurchaseOrdersService, PurchaseReturnsService],
+  exports: [
+    PurchaseOrdersService,
+    PurchaseOrdersQueryService,
+    PurchaseOrdersStateService,
+    PurchaseOrdersWriteService,
+    PurchaseReturnsService,
+  ],
 })
 export class PurchaseOrdersModule {}

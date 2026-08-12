@@ -64,10 +64,10 @@ export default function CreditNotesHistoryPage() {
             endpoint={gridEndpoint} 
             columns={gridColumns} 
             gridKey="credit-notes-history"
-            fetchAll
             rowIdField="creditNoteId"
             onRowClicked={handleRowClicked}
             pageTitle="Credit Notes History"
+            defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
         />
     );
 }

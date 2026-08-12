@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WorkOrdersService } from './work-orders.service';
+import { WorkOrdersQueryService } from './work-orders-query.service';
+import { WorkOrdersWriteService } from './work-orders-write.service';
+import { WorkOrdersExecutionService } from './work-orders-execution.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -17,11 +20,13 @@ import {
   workOrderPicks,
   uomDictionary,
   inventoryLedger,
+  backorders,
 } from '@herobm/db-schema';
 import {
   PRODUCT_STATE,
   WORK_ORDER_STATE,
   PUTAWAY_STATUS,
+  BACKORDER_STATE,
 } from '@herobm/shared';
 import { eq, and } from 'drizzle-orm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -171,6 +176,9 @@ describe('WorkOrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkOrdersService,
+        WorkOrdersQueryService,
+        WorkOrdersWriteService,
+        WorkOrdersExecutionService,
         InventoryMovementService,
         UomService,
         {
@@ -645,26 +653,6 @@ describe('WorkOrdersService', () => {
       );
       expect(outputProductLedger).toBeDefined();
       expect(parseFloat(outputProductLedger!.quantity)).toBe(10);
-
-      // 6. Putaway Finished Goods -> Transfers Finished Product from Output Bin to Target Warehouse Storage Bin
-      const putaway = await service.putawayFinishedGoods(
-        wo.workOrderId,
-        targetWarehouseBin.binId,
-        'user1',
-      );
-      expect(putaway.putawayStatus).toBe(PUTAWAY_STATUS.COMPLETED);
-
-      const finalTargetLedger = await pg.db
-        .select()
-        .from(inventoryLedger)
-        .where(
-          and(
-            eq(inventoryLedger.productId, testProductId),
-            eq(inventoryLedger.binId, targetWarehouseBin.binId),
-          ),
-        );
-      expect(finalTargetLedger).toHaveLength(1);
-      expect(parseFloat(finalTargetLedger[0].quantity)).toBe(10);
     });
 
     it('should handle order cancellation after partial component pick by reversing picked stock from WIP bin back to storage bin', async () => {
@@ -807,6 +795,51 @@ describe('WorkOrdersService', () => {
 
       const cancelled = await service.cancel(wo.workOrderId, 'user1');
       expect(cancelled.stateCode).toBe(WORK_ORDER_STATE.CANCELLED);
+    });
+
+    it('should create backorders demand entries for component shortfalls upon release and cancel them on WO cancel', async () => {
+      // Create WO for 10 units (requires 20 of comp1 and 10 of comp2)
+      // Available stock in warehouse is 0 for both components
+      const wo = await service.create(
+        {
+          productId: testProductId,
+          targetQuantity: '10',
+          locationId: testLocationId,
+          wipBinId: testWipBinId,
+          outputBinId: testOutputBinId,
+        },
+        'user1',
+      );
+
+      // Release Work Order into production
+      const released = await service.release(wo.workOrderId, 'user1');
+      expect(released.stateCode).toBe(WORK_ORDER_STATE.IN_PROGRESS);
+
+      // Verify backorders entries were created for component shortfalls
+      const demandEntries = await pg.db
+        .select()
+        .from(backorders)
+        .where(eq(backorders.demandWorkOrderId, wo.workOrderId));
+
+      expect(demandEntries).toHaveLength(2);
+      expect(demandEntries.map((d) => d.stateCode)).toEqual([
+        BACKORDER_STATE.PENDING_SUPPLY,
+        BACKORDER_STATE.PENDING_SUPPLY,
+      ]);
+
+      // Cancel Work Order
+      await service.cancel(wo.workOrderId, 'user1');
+
+      // Verify backorders were updated to CANCELLED
+      const cancelledDemands = await pg.db
+        .select()
+        .from(backorders)
+        .where(eq(backorders.demandWorkOrderId, wo.workOrderId));
+
+      expect(cancelledDemands.map((d) => d.stateCode)).toEqual([
+        BACKORDER_STATE.CANCELLED,
+        BACKORDER_STATE.CANCELLED,
+      ]);
     });
   });
 });

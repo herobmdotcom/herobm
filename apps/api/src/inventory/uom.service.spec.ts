@@ -77,6 +77,7 @@ describe('UomService', () => {
         { uomCode: 'BOX', quantity: 2 }, // 20
         { uomCode: 'VPE025', quantity: 5 }, // 125
         { uomCode: 'EA', quantity: 7 }, // 7
+        { uomCode: 'Each', quantity: 3 }, // 3 (matches base UOM 'EA' via alias)
         { quantity: 1 }, // 1 (defaults to base uom 'EA')
       ];
 
@@ -85,7 +86,7 @@ describe('UomService', () => {
         lines,
       );
 
-      expect(result).toBe(20 + 125 + 7 + 1); // 153
+      expect(result).toBe(20 + 125 + 7 + 3 + 1); // 156
     });
 
     it('throws exact Error message for unmapped UOMs', async () => {

@@ -2,6 +2,7 @@ import {
   computeLinePrice,
   computeOrderTotals,
   computeReturnCreditSummary,
+  getTaxLabel,
 } from './pricing';
 
 // ---------------------------------------------------------------------------
@@ -215,3 +216,22 @@ describe('computeReturnCreditSummary', () => {
     expect(result.netCredit).toBe(96.57);
   });
 });
+
+describe('getTaxLabel', () => {
+  it('formats integer tax rate', () => {
+    expect(getTaxLabel({ title: 'GST Standard', rate: '10' })).toBe('GST Standard (10%)');
+  });
+
+  it('formats fractional tax rate', () => {
+    expect(getTaxLabel({ title: 'Reduced Rate', rate: '5.5' })).toBe('Reduced Rate (5.5%)');
+  });
+
+  it('falls back to code if title is missing', () => {
+    expect(getTaxLabel({ code: 'GST_EXEMPT', rate: 0 })).toBe('GST_EXEMPT (0%)');
+  });
+
+  it('handles null/undefined category', () => {
+    expect(getTaxLabel(null)).toBe('—');
+  });
+});
+

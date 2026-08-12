@@ -243,3 +243,27 @@ export function resolveEffectiveDiscount(
   // Priority 5: no discount
   return '0';
 }
+
+// ---------------------------------------------------------------------------
+// Tax Category Label Formatting
+// ---------------------------------------------------------------------------
+
+export interface TaxCategoryLabelInput {
+  title?: string | null;
+  code?: string | null;
+  rate?: string | number | null;
+}
+
+/**
+ * Standardised tax category label formatter for dropdowns and detail displays.
+ * Format: `Title (Rate%)` e.g. "GST Standard (10%)" or "Zero Rated (0%)"
+ */
+export function getTaxLabel(category?: TaxCategoryLabelInput | null): string {
+  if (!category) return '—';
+  const rateNum = typeof category.rate === 'number' ? category.rate : parseFloat(category.rate || '0');
+  const pct = isNaN(rateNum) ? 0 : rateNum;
+  const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+  const title = category.title || category.code || 'Tax Category';
+  return `${title} (${formattedPct}%)`;
+}
+

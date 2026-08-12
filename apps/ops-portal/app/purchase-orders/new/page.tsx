@@ -235,9 +235,9 @@ export default function NewPurchaseOrderPage() {
           })),
       });
       router.push(`/purchase-orders/${res.data.purchaseOrderId}`);
+      return;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToCreatePO'));
-    } finally {
       setSubmitting(false);
     }
   };
@@ -257,6 +257,7 @@ export default function NewPurchaseOrderPage() {
         header={
           <EntityHeader
             title={t('purchaseOrders.createTitle')}
+            isSaving={submitting}
             actions={
               <>
                 <Button
@@ -271,7 +272,14 @@ export default function NewPurchaseOrderPage() {
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? t('common.saving') : t('purchaseOrders.buttons.createPO')}
+                  {submitting ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs mr-1.5" />
+                      {t('common.saving')}
+                    </>
+                  ) : (
+                    t('purchaseOrders.buttons.createPO')
+                  )}
                 </Button>
               </>
             }

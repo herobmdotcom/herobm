@@ -68,3 +68,16 @@ export function calculateUomPriceAdjustment(
   // New Base Price = (Price / Old Ratio) * New Ratio
   return (price / oldRatio) * newRatio;
 }
+
+const EACH_ALIASES = new Set(['EA', 'EACH', 'EACHES', 'PC', 'PCS', 'PIECE', 'PIECES']);
+
+/**
+ * Normalizes input UOM strings to standard canonical codes.
+ * E.g., 'Each', 'ea', 'pcs' -> 'EA', 'box', 'Box' -> 'BOX'
+ */
+export function normalizeUomCode(uom?: string | null): string {
+  if (!uom || !uom.trim()) return 'EA';
+  const clean = uom.trim().toUpperCase();
+  if (EACH_ALIASES.has(clean)) return 'EA';
+  return clean;
+}

@@ -92,7 +92,7 @@ export default function PutawayPage() {
         api.inventoryControllerGetPendingPutaway({ locationId: selectedLocationId })
             .then(response => {
                 const lines = response.data || [];
-                setPendingLines(lines.map(l => ({ ...l, id: l.putawayId })) as unknown as PutawayLine[]);
+                setPendingLines(lines.map(l => ({ ...l, id: (l as unknown as Record<string, unknown>).id as string || (l as unknown as Record<string, unknown>).putawayId as string })) as unknown as PutawayLine[]);
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));

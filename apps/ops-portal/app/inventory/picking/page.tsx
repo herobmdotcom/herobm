@@ -83,6 +83,17 @@ export default function PickingPage() {
     const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [activeTab, setActiveTab] = useState<'ready' | 'partial' | 'blocked'>('ready');
+    const [page, setPage] = useState(1);
+    const [limit] = useState(20);
+    const [paginationMeta, setPaginationMeta] = useState({
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+        readyCount: 0,
+        partialCount: 0,
+        blockedCount: 0,
+    });
     
     // Picking Context
     const [pickingSummary, setPickingSummary] = useState<PickingSummary | null>(null);
@@ -122,30 +133,65 @@ export default function PickingPage() {
         if (!locReady) return;
         setLoadingOrders(true);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
-        const params: any = {};
+        const params: any = {
+            status: activeTab,
+            page,
+            limit,
+        };
         if (selectedLocationId && selectedLocationId !== 'UNSET') params.locationId = selectedLocationId;
 
         api.orderPickingControllerGetPickingQueue(params)
-            .then(data => {
-                setPendingOrders(data.data as unknown as UnifiedOrder[]);
+            .then(res => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
+                const raw = res.data as any;
+                if (raw && Array.isArray(raw.data)) {
+                    setPendingOrders(raw.data as unknown as UnifiedOrder[]);
+                    if (raw.meta) {
+                        setPaginationMeta(raw.meta);
+                    }
+                } else if (Array.isArray(raw)) {
+                    const allOrders = raw as unknown as UnifiedOrder[];
+                    const readyCount = allOrders.filter(o => o.pickabilityStatus === 'ready').length;
+                    const partialCount = allOrders.filter(o => o.pickabilityStatus === 'partial').length;
+                    const blockedCount = allOrders.filter(o => o.pickabilityStatus === 'blocked').length;
+                    const tabFiltered = allOrders.filter(o => o.pickabilityStatus === activeTab);
+                    const total = tabFiltered.length;
+                    const totalPages = Math.ceil(total / limit) || 1;
+                    const startIndex = (page - 1) * limit;
+                    
+                    setPendingOrders(tabFiltered.slice(startIndex, startIndex + limit));
+                    setPaginationMeta({
+                        total,
+                        page,
+                        limit,
+                        totalPages,
+                        readyCount,
+                        partialCount,
+                        blockedCount,
+                    });
+                }
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
-    }, [selectedLocationId, locReady]);
+    }, [selectedLocationId, locReady, activeTab, page, limit]);
 
     useEffect(() => {
         loadOrders();
     }, [loadOrders]);
 
+    const handleTabChange = (tab: 'ready' | 'partial' | 'blocked') => {
+        setActiveTab(tab);
+        setPage(1);
+    };
+
     const filteredOrders = useMemo(() => {
-        const filtered = pendingOrders.filter(o => o.pickabilityStatus === activeTab);
-        // Allocated orders sort first
-        filtered.sort((a, b) => {
+        const list = [...pendingOrders];
+        list.sort((a, b) => {
             if (a.hasAllocation !== b.hasAllocation) return a.hasAllocation ? -1 : 1;
             return 0;
         });
-        return filtered;
-    }, [pendingOrders, activeTab]);
+        return list;
+    }, [pendingOrders]);
 
     // Fetch Summary for Selected Order
     const loadSummary = useCallback(() => {
@@ -308,22 +354,22 @@ export default function PickingPage() {
                 <>
                     <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
                         <Button variant="ghost" 
-                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => setActiveTab('ready')}
+                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'ready' ? 'border-emerald-500 text-emerald-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => handleTabChange('ready')}
                         >
-                            {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'ready').length})</span>
+                            {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.readyCount})</span>
                         </Button>
                         <Button variant="ghost" 
-                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => setActiveTab('partial')}
+                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'partial' ? 'border-amber-500 text-amber-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => handleTabChange('partial')}
                         >
-                            {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'partial').length})</span>
+                            {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.partialCount})</span>
                         </Button>
                         <Button variant="ghost" 
-                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'blocked' ? 'border-[var(--danger)] text-[var(--danger)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => setActiveTab('blocked')}
+                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'blocked' ? 'border-rose-500 text-rose-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => handleTabChange('blocked')}
                         >
-                            {t('tabs.blocked')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'blocked').length})</span>
+                            {t('tabs.blocked')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.blockedCount})</span>
                         </Button>
                     </div>
                     
@@ -334,7 +380,7 @@ export default function PickingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                { }
+                                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('noOrders', { tab: activeTab })}
                             </div>
@@ -344,23 +390,18 @@ export default function PickingPage() {
                                     <div 
                                         key={order.id}
                                         onClick={() => setSelectedOrder(order)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedOrder?.id === order.id ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                                        className={`p-3.5 rounded-lg border cursor-pointer transition-colors active:scale-[0.99] touch-manipulation min-h-[56px] ${selectedOrder?.id === order.id ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)] shadow-sm' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
                                                 {order.hasAllocation ? (
                                                     /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
-                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                 ) : (
-                                                     
-                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
+                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
-                                                {order.type === 'work_order' && (
-                                                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                                                        WORK ORDER
-                                                    </span>
-                                                )}
                                                 {order.type === 'transfer_order' && (
                                                     <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
                                                         TRANSFER
@@ -375,6 +416,42 @@ export default function PickingPage() {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    {/* Tablet-optimized Bottom Pagination Bar */}
+                    <div className="p-3 border-t border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between gap-2 shrink-0 select-none text-xs">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={page <= 1 || loadingOrders}
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            className="min-h-[44px] min-w-[44px] px-3 font-semibold flex items-center gap-1 active:scale-95 touch-manipulation"
+                        >
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            <span className="material-symbols-outlined text-lg">chevron_left</span>
+                            <span className="hidden sm:inline">{t('pagination.previous')}</span>
+                        </Button>
+
+                        <div className="text-center font-semibold text-[var(--text-secondary)]">
+                            <span className="text-[var(--text-primary)] font-bold">
+                                {t('pagination.pageOf', { page: paginationMeta.page || page, totalPages: paginationMeta.totalPages || 1 })}
+                            </span>
+                            <span className="text-[11px] text-[var(--text-muted)] font-normal block sm:inline sm:ml-1.5">
+                                {t('pagination.totalOrders', { total: paginationMeta.total || filteredOrders.length })}
+                            </span>
+                        </div>
+
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={page >= (paginationMeta.totalPages || 1) || loadingOrders}
+                            onClick={() => setPage(p => p + 1)}
+                            className="min-h-[44px] min-w-[44px] px-3 font-semibold flex items-center gap-1 active:scale-95 touch-manipulation"
+                        >
+                            <span className="hidden sm:inline">{t('pagination.next')}</span>
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            <span className="material-symbols-outlined text-lg">chevron_right</span>
+                        </Button>
                     </div>
                 </>
             }

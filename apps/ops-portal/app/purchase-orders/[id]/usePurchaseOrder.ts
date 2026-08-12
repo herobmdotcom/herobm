@@ -206,8 +206,11 @@ export function usePurchaseOrder(id: string) {
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
-  // Load returns and invoices based on order state
+  // Load allocations, returns and invoices based on order state
   useEffect(() => {
+    if (order?.stateCode) {
+      loadAllocations();
+    }
     if ([
       PURCHASE_ORDER_STATE.ORDERED, 
       PURCHASE_ORDER_STATE.RECEIVED, 
@@ -216,7 +219,6 @@ export function usePurchaseOrder(id: string) {
       PURCHASE_ORDER_STATE.ARCHIVED
     ].some(s => s === order?.stateCode)) {
       loadInvoices();
-      loadAllocations();
     }
     if ([PURCHASE_ORDER_STATE.INVOICED].some(s => s === order?.stateCode)) {
       loadReturns();

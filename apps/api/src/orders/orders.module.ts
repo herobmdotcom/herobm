@@ -11,10 +11,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq, sql } from 'drizzle-orm';
 import {
   salesOrders,
-  salesOrderLineItems,
   salesInvoices,
   salesOrderShipments,
-  customers as coreAccounts,
   transferOrders,
 } from '@herobm/db-schema';
 import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
@@ -34,6 +32,9 @@ import { OrdersQueryService } from './orders-query.service';
 import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
+import { PickingQueryService } from './picking-query.service';
+import { PickingShippingQueryService } from './picking-shipping-query.service';
+import { PickingActionService } from './picking-action.service';
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { ShipmentsWriteService } from './shipments/shipments-write.service';
 import { ShipmentsStateService } from './shipments/shipments-state.service';
@@ -94,6 +95,9 @@ import { EmailModule } from '../email/email.module';
     BackordersService,
     ReturnsWriteService,
     PickingService,
+    PickingQueryService,
+    PickingShippingQueryService,
+    PickingActionService,
     ShipmentsCoreService,
     ShipmentsWriteService,
     ShipmentsStateService,
@@ -114,6 +118,10 @@ import { EmailModule } from '../email/email.module';
     OrderStateService,
     OrdersQueryService,
     BackordersService,
+    PickingService,
+    PickingQueryService,
+    PickingShippingQueryService,
+    PickingActionService,
   ],
 })
 export class OrdersModule implements OnModuleInit {
@@ -158,7 +166,6 @@ export class OrdersModule implements OnModuleInit {
         )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
-        // Prefer sales orders, but fallback to transfer orders if none found
         const rows = await this.db
           .select({ id: salesOrders.salesOrderId })
           .from(salesOrders)
@@ -182,7 +189,6 @@ export class OrdersModule implements OnModuleInit {
         user: Record<string, unknown>,
         options?: Record<string, unknown>,
       ) => {
-        // Find corresponding orderId for the specified invoiceId
         const [inv] = await this.db
           .select({ orderId: salesInvoices.salesOrderId })
           .from(salesInvoices)
@@ -215,7 +221,7 @@ export class OrdersModule implements OnModuleInit {
         )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
-        return undefined; // Usually we don't need random resolving for returns
+        return undefined;
       },
     });
 

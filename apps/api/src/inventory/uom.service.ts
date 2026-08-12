@@ -9,6 +9,25 @@ export interface UomInputLine {
   quantity: number;
 }
 
+export function isSameUom(uom1?: string | null, uom2?: string | null): boolean {
+  if (!uom1 && !uom2) return true;
+  if (!uom1 || !uom2) return false;
+  const norm1 = uom1.trim().toUpperCase();
+  const norm2 = uom2.trim().toUpperCase();
+  if (norm1 === norm2) return true;
+  const eachAliases = new Set([
+    'EA',
+    'EACH',
+    'EACHES',
+    'PC',
+    'PCS',
+    'PIECE',
+    'PIECES',
+  ]);
+  if (eachAliases.has(norm1) && eachAliases.has(norm2)) return true;
+  return false;
+}
+
 @Injectable()
 export class UomService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
@@ -48,8 +67,8 @@ export class UomService {
     // Identify which defined UOMs we actually need to look up
     const requestedUoms = new Set<string>();
     for (const line of lines) {
-      if (line.uomCode && line.uomCode !== product.baseUom) {
-        requestedUoms.add(line.uomCode);
+      if (line.uomCode && !isSameUom(line.uomCode, product.baseUom)) {
+        requestedUoms.add(line.uomCode.toUpperCase());
       }
     }
 
@@ -65,7 +84,7 @@ export class UomService {
         .where(eq(productUoms.productId, productId));
 
       for (const row of uomRows) {
-        ratioMap.set(row.uomCode, parseFloat(row.ratio));
+        ratioMap.set(row.uomCode.toUpperCase(), parseFloat(row.ratio));
       }
     }
 
@@ -75,10 +94,10 @@ export class UomService {
     for (const line of lines) {
       const uom = line.uomCode || product.baseUom;
 
-      if (uom === product.baseUom) {
+      if (isSameUom(uom, product.baseUom)) {
         absoluteTotal += line.quantity;
       } else {
-        const ratio = ratioMap.get(uom);
+        const ratio = ratioMap.get(uom.toUpperCase());
         if (ratio === undefined) {
           throw new Error(
             `UOM '${uom}' is not configured for product ${productId}.`,

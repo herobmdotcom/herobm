@@ -1244,7 +1244,7 @@
         "standard": "Standard"
       },
       "tabs": {
-        "kitComponents": "Kit Components"
+        "kitComponents": "Components"
       },
       "types": {
         "freight": "Freight"
@@ -2321,6 +2321,12 @@
     "noPhysicalLines": "No physical lines",
     "noShipmentsYet": "No products have shipped yet.",
     "outOfStock": "Out of Stock",
+    "pagination": {
+      "next": "Next",
+      "pageOf": "Page {page} of {totalPages}",
+      "previous": "Prev",
+      "totalOrders": "({total} orders)"
+    },
     "pickAllCreateShipment": "Pick All & Create Shipment",
     "picked": "Picked",
     "pickingSlipPdf": "Picking Slip PDF",
@@ -2542,7 +2548,7 @@
       "title": "Link Supplier"
     },
     "tabs": {
-      "kitComponents": "Kit Components"
+      "kitComponents": "Components"
     },
     "title": "Products",
     "toast": {

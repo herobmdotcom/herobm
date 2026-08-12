@@ -23,7 +23,10 @@ export interface AvailableElsewhereEntry {
 
 export interface DemandRow {
   id: string;
-  salesOrderId: string;
+  salesOrderId?: string;
+  demandWorkOrderId?: string;
+  workOrderComponentId?: string;
+  demandType?: string;
   orderNumber: string;
   productId: string;
   productName: string;
@@ -63,18 +66,28 @@ export default function DemandsContent() {
   const columns = useMemo<ColDef<DemandRow>[]>(() => [
     {
       field: 'orderNumber',
-      headerName: 'Sales Order',
-      width: 160,
+      headerName: 'Order',
+      width: 175,
       pinned: 'left',
       checkboxSelection: true,
       headerCheckboxSelection: true,
       cellRenderer: (params: ICellRendererParams<DemandRow>) => {
-        if (!params.data?.salesOrderId) return params.value;
-        return (
-          <Link href={`/sales-orders/${params.data.salesOrderId}`} className="text-[#006b5c] hover:underline">
-            {params.value}
-          </Link>
-        );
+        if (!params.data) return null;
+        if (params.data.demandWorkOrderId) {
+          return (
+            <Link href={`/manufacturing/work-orders/${params.data.demandWorkOrderId}`} className="text-[#006b5c] hover:underline">
+              {params.data.orderNumber}
+            </Link>
+          );
+        }
+        if (params.data.salesOrderId) {
+          return (
+            <Link href={`/sales-orders/${params.data.salesOrderId}`} className="text-[#006b5c] hover:underline">
+              {params.value}
+            </Link>
+          );
+        }
+        return params.value;
       }
     },
     { field: 'productName', headerName: 'Product', flex: 1, minWidth: 150 },

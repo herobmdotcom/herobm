@@ -117,12 +117,9 @@ export {
   computeOrderTotals,
   computeReturnCreditSummary,
   resolveEffectiveDiscount,
+  getTaxLabel,
 } from './pricing';
 
-export {
-  formatCompositeQuantity,
-  calculateUomPriceAdjustment,
-} from './uom';
 
 export {
   COUNTRIES,
@@ -159,8 +156,9 @@ export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLe
 
 export type { ReportDefinition } from './reports';
 
+export { formatCompositeQuantity, calculateUomPriceAdjustment, normalizeUomCode } from './uom';
 export type { ProductUom } from './uom';
-export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRule } from './pricing';
+export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRule, TaxCategoryLabelInput } from './pricing';
 export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from './currency';
 
 

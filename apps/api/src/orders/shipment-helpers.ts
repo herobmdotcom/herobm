@@ -32,33 +32,31 @@ export async function getCommittedPerLine(
   db: DrizzleDB,
   salesOrderId: string,
 ): Promise<Map<string, number>> {
-  const shipments = await db
-    .select()
-    .from(salesOrderShipments)
+  const rows = await db
+    .select({
+      salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
+      quantityShipped:
+        sql<number>`COALESCE(SUM(${salesOrderShipmentLines.quantityShipped}), 0)`.mapWith(
+          Number,
+        ),
+    })
+    .from(salesOrderShipmentLines)
+    .innerJoin(
+      salesOrderShipments,
+      eq(salesOrderShipmentLines.shipmentId, salesOrderShipments.shipmentId),
+    )
     .where(
       and(
         eq(salesOrderShipments.salesOrderId, salesOrderId),
         sql`${salesOrderShipments.stateCode} != ${SHIPMENT_STATE.CANCELLED}`,
       ),
-    );
+    )
+    .groupBy(salesOrderShipmentLines.salesOrderLineId);
 
   const shippedMap = new Map<string, number>();
-
-  for (const shipment of shipments) {
-    const lines = await db
-      .select()
-      .from(salesOrderShipmentLines)
-      .where(eq(salesOrderShipmentLines.shipmentId, shipment.shipmentId));
-
-    for (const line of lines) {
-      const current = shippedMap.get(line.salesOrderLineId) ?? 0;
-      shippedMap.set(
-        line.salesOrderLineId,
-        current + parseFloat(line.quantityShipped),
-      );
-    }
+  for (const row of rows) {
+    shippedMap.set(row.salesOrderLineId, row.quantityShipped);
   }
-
   return shippedMap;
 }
 

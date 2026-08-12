@@ -236,15 +236,21 @@ export class BackordersService {
           quantity: backorders.quantity,
           salesOrderLineId: backorders.salesOrderLineId,
           salesOrderId: backorders.salesOrderId,
+          demandWorkOrderId: backorders.demandWorkOrderId,
+          workOrderComponentId: backorders.workOrderComponentId,
           stateCode: backorders.stateCode,
-          orderNumber: salesOrders.orderNumber,
-          fulfillmentLocationId: salesOrders.fulfillmentLocationId,
+          orderNumber: sql<string>`COALESCE(${salesOrders.orderNumber}, ${workOrders.orderNumber})`,
+          fulfillmentLocationId: sql<string>`COALESCE(${salesOrders.fulfillmentLocationId}, ${workOrders.locationId})`,
           structureType: coreProducts.structureType,
         })
         .from(backorders)
-        .innerJoin(
+        .leftJoin(
           salesOrders,
           eq(backorders.salesOrderId, salesOrders.salesOrderId),
+        )
+        .leftJoin(
+          workOrders,
+          eq(backorders.demandWorkOrderId, workOrders.workOrderId),
         )
         .innerJoin(
           coreProducts,
@@ -381,17 +387,31 @@ export class BackordersService {
           }
 
           // Emit DEMAND_ALLOCATED on both sides!
-          await emitEvent(tx, {
-            entityType: EntityType.SALES_ORDER,
-            entityId: demand.salesOrderId,
-            eventType: EventType.DEMAND_ALLOCATED,
-            entityDisplayName: demand.orderNumber,
-            actor,
-            payload: {
-              allocatedQty: allocQty,
-              purchaseOrderId: line.purchaseOrderId,
-            },
-          });
+          if (demand.salesOrderId) {
+            await emitEvent(tx, {
+              entityType: EntityType.SALES_ORDER,
+              entityId: demand.salesOrderId,
+              eventType: EventType.DEMAND_ALLOCATED,
+              entityDisplayName: demand.orderNumber,
+              actor,
+              payload: {
+                allocatedQty: allocQty,
+                purchaseOrderId: line.purchaseOrderId,
+              },
+            });
+          } else if (demand.demandWorkOrderId) {
+            await emitEvent(tx, {
+              entityType: EntityType.WORK_ORDER,
+              entityId: demand.demandWorkOrderId,
+              eventType: EventType.DEMAND_ALLOCATED,
+              entityDisplayName: demand.orderNumber,
+              actor,
+              payload: {
+                allocatedQty: allocQty,
+                purchaseOrderId: line.purchaseOrderId,
+              },
+            });
+          }
           await emitEvent(tx, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: line.purchaseOrderId,
@@ -877,6 +897,14 @@ export class BackordersService {
       if (!demand) {
         throw new HttpException('Demand not found', HttpStatus.NOT_FOUND);
       }
+      if (!demand.salesOrderLineId || !demand.salesOrderId) {
+        throw new BadRequestException(
+          'Work Order component demands cannot be reallocated to a different location',
+        );
+      }
+
+      const salesOrderLineId = demand.salesOrderLineId;
+      const salesOrderId = demand.salesOrderId;
 
       // 2. Find ALL demands for this line
       const lineDemands = await tx
@@ -885,7 +913,7 @@ export class BackordersService {
           purchaseOrderId: backorders.purchaseOrderId,
         })
         .from(backorders)
-        .where(eq(backorders.salesOrderLineId, demand.salesOrderLineId));
+        .where(eq(backorders.salesOrderLineId, salesOrderLineId));
 
       // 3. Unlink any linked demands
       for (const ld of lineDemands) {
@@ -922,28 +950,26 @@ export class BackordersService {
       await tx
         .update(salesOrderLineItems)
         .set({ fulfillmentLocationId: newLocationId })
-        .where(
-          eq(salesOrderLineItems.salesOrderLineId, demand.salesOrderLineId),
-        );
+        .where(eq(salesOrderLineItems.salesOrderLineId, salesOrderLineId));
 
       // 5. Delete all backorders for this line to recalculate cleanly
       await tx
         .delete(backorders)
-        .where(eq(backorders.salesOrderLineId, demand.salesOrderLineId));
+        .where(eq(backorders.salesOrderLineId, salesOrderLineId));
 
       // 6. Run gap evaluation for the order
-      const gaps = await this.evaluateGaps(demand.salesOrderId, tx);
+      const gaps = await this.evaluateGaps(salesOrderId, tx);
 
       // Filter the gaps to only the line we just touched
       const lineGaps = gaps.filter(
-        (g) => g.salesOrderLineId === demand.salesOrderLineId,
+        (g) => g.salesOrderLineId === salesOrderLineId,
       );
 
       // 7. Regenerate demand for this line if there is still a shortage
       if (lineGaps.length > 0) {
         // We need to implement generateDemand logic inline or pass tx
         // generateDemand accepts tx as a parameter
-        await this.generateDemand(demand.salesOrderId, lineGaps, actor, tx);
+        await this.generateDemand(salesOrderId, lineGaps, actor, tx);
       }
 
       const [loc] = await tx
@@ -954,12 +980,12 @@ export class BackordersService {
       // 8. Emit an event indicating reallocation
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
-        entityId: demand.salesOrderId,
+        entityId: salesOrderId,
         eventType: EventType.DEMAND_REALLOCATED,
         entityDisplayName: demand.orderNumber,
         actor,
         payload: {
-          lineId: demand.salesOrderLineId,
+          lineId: salesOrderLineId,
           fulfillmentLocation: loc?.name || newLocationId,
           stillHasShortage: lineGaps.length > 0,
         },
@@ -1006,24 +1032,45 @@ export class BackordersService {
       .where(eq(backorders.backorderId, backorderId))
       .returning();
 
-    const [order] = await db
-      .select({ orderNumber: salesOrders.orderNumber })
-      .from(salesOrders)
-      .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
+    if (existing.salesOrderId) {
+      const [order] = await db
+        .select({ orderNumber: salesOrders.orderNumber })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
 
-    await emitEvent(db, {
-      entityType: EntityType.SALES_ORDER,
-      entityId: existing.salesOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      entityDisplayName: order.orderNumber,
-      actor,
-      payload: {
-        entity: 'backorder',
-        entityId: backorderId,
-        from: existing.stateCode,
-        to: newState,
-      },
-    });
+      await emitEvent(db, {
+        entityType: EntityType.SALES_ORDER,
+        entityId: existing.salesOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: order?.orderNumber || 'Sales Order',
+        actor,
+        payload: {
+          entity: 'backorder',
+          entityId: backorderId,
+          from: existing.stateCode,
+          to: newState,
+        },
+      });
+    } else if (existing.demandWorkOrderId) {
+      const [wo] = await db
+        .select({ orderNumber: workOrders.orderNumber })
+        .from(workOrders)
+        .where(eq(workOrders.workOrderId, existing.demandWorkOrderId));
+
+      await emitEvent(db, {
+        entityType: EntityType.WORK_ORDER,
+        entityId: existing.demandWorkOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: wo?.orderNumber || 'Work Order',
+        actor,
+        payload: {
+          entity: 'backorder',
+          entityId: backorderId,
+          from: existing.stateCode,
+          to: newState,
+        },
+      });
+    }
 
     return updated;
   }

@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-08-10 17:04 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-08-12 14:28 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`
@@ -14,7 +14,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`_pipeline_jobs`](#_pipeline_jobs) | 0 | `job_id` | |
 | [`activities`](#activities) | 0 | `activity_id` | |
 | [`actor_actor_links`](#actor_actor_links) | 0 | `link_id` | |
-| [`actor_contact_links`](#actor_contact_links) | 2,135 | `link_id` | |
+| [`actor_contact_links`](#actor_contact_links) | 0 | `link_id` | |
 | [`actor_notes`](#actor_notes) | 0 | `note_id` | |
 | [`actors`](#actors) | 0 | `actor_id` | |
 | [`api_keys`](#api_keys) | 0 | `api_key_id` | |
@@ -688,7 +688,7 @@ graph LR
 | 4 | `link_type` | `text` |  |  |  |
 | 5 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.actor_contact_links` (2,135 rows)
+### `herobm_core.actor_contact_links` (0 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|

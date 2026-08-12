@@ -3,7 +3,12 @@ import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, actors } from '@herobm/db-schema';
+import {
+  suppliers,
+  actors,
+  supplierGroups,
+  taxPositions,
+} from '@herobm/db-schema';
 import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
@@ -176,6 +181,54 @@ describe('SuppliersService', () => {
       expect(result.emailAddress1).toBe('accounts@padded.co');
       expect(result.telephone1).toBe('+1234567');
       expect(result.fax).toBe('+7654321');
+    });
+
+    it('should return supplierGroupTaxPositionId when supplier belongs to a group with a tax position', async () => {
+      const [tp] = await pg.db
+        .insert(taxPositions)
+        .values({
+          code: 'GST-POS',
+          title: 'GST Tax Position',
+        })
+        .returning();
+
+      const [sg] = await pg.db
+        .insert(supplierGroups)
+        .values({
+          name: 'Group with Tax Position',
+          groupCode: 'GRP-TP',
+          taxPositionId: tp.taxPositionId,
+          isPurchasingBlocked: false,
+          isPaymentBlocked: false,
+        })
+        .returning();
+
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Group Supplier',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: true,
+        })
+        .returning();
+
+      const [s] = await pg.db
+        .insert(suppliers)
+        .values({
+          actorId: act.actorId,
+          vendorNumber: 'GRP-SUP-1',
+          currencyCode: 'AUD',
+          supplierGroupId: sg.supplierGroupId,
+          taxPositionId: null,
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          isPurchasingBlocked: false,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
+      const result = await service.findOne(s.vendorId);
+      expect(result.supplierGroupTaxPositionId).toBe(tp.taxPositionId);
     });
 
     it('should throw NotFoundException if not found', async () => {

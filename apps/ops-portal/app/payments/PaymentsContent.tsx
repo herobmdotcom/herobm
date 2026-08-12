@@ -249,7 +249,7 @@ export default function PaymentsContent() {
       onRowClicked={handleRowClicked}
       pageTitle={t('title')}
       hideSecondaryHeaderOnMobile={true}
-      defaultSortModel={[{ colId: 'paymentNumber', sort: 'desc' }]}
+      defaultSortModel={[{ colId: 'paymentDate', sort: 'desc' }]}
       headerFilters={
         <>
           <select
