@@ -33,6 +33,10 @@
 .badge-legacy { background: rgba(100, 116, 139, 0.1); color: #64748b; }
 .badge-abm { background: rgba(100, 116, 139, 0.1); color: #64748b; }
 .badge-app { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-planned { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-released { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-in_progress { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-completed { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
 .badge-active { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
 .badge-inactive { background: rgba(100, 116, 139, 0.1); color: #64748b; }
 

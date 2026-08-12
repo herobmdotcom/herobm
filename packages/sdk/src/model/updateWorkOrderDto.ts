@@ -16,4 +16,9 @@ export interface UpdateWorkOrderDto {
    * @nullable
    */
   wipBinId?: string | null;
+  /**
+   * Finished Goods Output Bin ID (optional)
+   * @nullable
+   */
+  outputBinId?: string | null;
 }

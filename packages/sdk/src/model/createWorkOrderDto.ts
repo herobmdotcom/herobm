@@ -18,6 +18,8 @@ export interface CreateWorkOrderDto {
   locationId: string;
   /** WIP Bin ID (optional) */
   wipBinId?: string;
+  /** Finished Goods Output Bin ID (optional) */
+  outputBinId?: string;
   /** Component lines snapshot (if empty, auto-populated from product BOM) */
   components?: CreateWorkOrderComponentDto[];
 }

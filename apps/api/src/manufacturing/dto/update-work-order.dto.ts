@@ -16,6 +16,13 @@ export class UpdateWorkOrderDto {
   @IsOptional()
   @IsUUID()
   wipBinId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Finished Goods Output Bin ID (optional)',
+  })
+  @IsOptional()
+  @IsUUID()
+  outputBinId?: string | null;
 }
 
 export class UpdateWorkOrderComponentDto {

@@ -29,7 +29,11 @@ try {
 
   const output = (result.stdout || '') + (result.stderr || '');
 
-  if (output.includes('Interactive prompts require a TTY terminal') || result.status !== 0 || !output.includes('No schema changes')) {
+  if (result.status !== 0) {
+    console.error("❌ drizzle-kit generate failed during schema drift check:");
+    console.error(output);
+    hasDrift = true;
+  } else if (output.includes('Interactive prompts require a TTY terminal') || !output.includes('No schema changes')) {
     hasDrift = true;
   }
 

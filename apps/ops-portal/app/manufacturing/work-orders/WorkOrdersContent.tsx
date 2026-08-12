@@ -7,7 +7,6 @@ import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
-import { WORK_ORDER_STATE } from '@herobm/shared';
 
 interface WorkOrderRow {
   workOrderId: string;
@@ -73,21 +72,9 @@ export default function WorkOrdersContent() {
         field: 'stateCode',
         headerName: tWork('columns.status'),
         width: 140,
-        cellRenderer: (params: { value: string }) => {
-          if (!params.value) return null;
-          const formatted = params.value.replace(/_/g, ' ').toUpperCase();
-          let badgeClass = 'bg-gray-100 text-gray-800';
-
-          if (params.value === WORK_ORDER_STATE.DRAFT) badgeClass = 'bg-yellow-100 text-yellow-800';
-          else if (params.value === WORK_ORDER_STATE.IN_PROGRESS) badgeClass = 'bg-blue-100 text-blue-800';
-          else if (params.value === WORK_ORDER_STATE.COMPLETED) badgeClass = 'bg-green-100 text-green-800';
-          else if (params.value === WORK_ORDER_STATE.CANCELLED) badgeClass = 'bg-red-100 text-red-800';
-
-          return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}>
-              {formatted}
-            </span>
-          );
+        valueFormatter: (params) => {
+          if (!params.value) return '—';
+          return (params.value as string).replace(/_/g, ' ').toUpperCase();
         },
       },
       {

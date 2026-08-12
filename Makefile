@@ -419,7 +419,7 @@ dev-portal:
 migrate: check-schema-drift
 	$(PYTHON_CMD) tools/migrate.py
 
-check-schema-drift:
+check-schema-drift: build-shared
 	npx tsx tools/check_schema_drift.ts
 
 migrate-status:

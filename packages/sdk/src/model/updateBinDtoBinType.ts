@@ -17,4 +17,5 @@ export const UpdateBinDtoBinType = {
   staging: 'staging',
   quarantine: 'quarantine',
   in_transit: 'in_transit',
+  wip: 'wip',
 } as const;

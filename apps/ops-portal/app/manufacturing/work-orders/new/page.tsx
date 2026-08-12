@@ -54,6 +54,7 @@ export default function NewWorkOrderPage() {
   const [locationId, setLocationId] = useState<string | null>(null);
   const [selectedZone, setSelectedZone] = useState('all');
   const [wipBinId, setWipBinId] = useState('');
+  const [outputBinId, setOutputBinId] = useState('');
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
 
@@ -70,6 +71,7 @@ export default function NewWorkOrderPage() {
     if (!locationId) {
       setAvailableBins([]);
       setWipBinId('');
+      setOutputBinId('');
       return;
     }
     setLoadingBins(true);
@@ -86,6 +88,8 @@ export default function NewWorkOrderPage() {
         setAvailableBins(binList);
         const wipBin = binList.find((b) => b.binType === 'wip') || binList[0];
         setWipBinId(wipBin ? wipBin.binId : '');
+        const outputBin = binList.find((b) => b.binType === 'storage' || b.binType === 'pick') || wipBin;
+        setOutputBinId(outputBin ? outputBin.binId : '');
       })
       .catch((err) => {
         reportError(err, 'NewWorkOrderPage_Bins');
@@ -249,6 +253,7 @@ export default function NewWorkOrderPage() {
         targetQuantity: String(targetQuantity),
         locationId,
         wipBinId: wipBinId || undefined,
+        outputBinId: outputBinId || undefined,
         components:
           validLines.length > 0
             ? validLines.map((l) => ({
@@ -438,6 +443,33 @@ export default function NewWorkOrderPage() {
                 disabled={!locationId || loadingBins}
               >
                 <option value="">{t('placeholders.selectWipBin')}</option>
+                {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                  <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                    {binGroup.map((bin) => (
+                      <option key={bin.binId} value={bin.binId}>
+                        {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            {/* Output Bin Select */}
+            <div>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Output Bin
+              </label>
+              <select
+                className="input w-full"
+                value={outputBinId}
+                onChange={(e) => setOutputBinId(e.target.value)}
+                disabled={!locationId || loadingBins}
+              >
+                <option value="">Select Output Bin</option>
                 {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
                   <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                     {binGroup.map((bin) => (

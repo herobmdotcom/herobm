@@ -27167,6 +27167,11 @@
             "format": "uuid",
             "description": "WIP Bin ID (optional)"
           },
+          "outputBinId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Finished Goods Output Bin ID (optional)"
+          },
           "components": {
             "description": "Component lines snapshot (if empty, auto-populated from product BOM)",
             "type": "array",
@@ -27198,6 +27203,12 @@
             "nullable": true,
             "format": "uuid",
             "description": "WIP Bin ID (optional)"
+          },
+          "outputBinId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Finished Goods Output Bin ID (optional)"
           }
         }
       },
@@ -27501,7 +27512,8 @@
               "bulk",
               "staging",
               "quarantine",
-              "in_transit"
+              "in_transit",
+              "wip"
             ]
           },
           "isConsignment": {
@@ -27593,7 +27605,8 @@
               "bulk",
               "staging",
               "quarantine",
-              "in_transit"
+              "in_transit",
+              "wip"
             ]
           },
           "isConsignment": {

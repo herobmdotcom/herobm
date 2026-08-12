@@ -35,6 +35,7 @@ export const workOrders = herobmCore.table(
       .notNull()
       .references(() => locations.locationId),
     wipBinId: uuid('wip_bin_id').references(() => bins.binId),
+    outputBinId: uuid('output_bin_id').references(() => bins.binId),
     stateCode: text('state_code').$type<WorkOrderState>().notNull(),
     totalCost: numeric('total_cost'),
     createdBy: text('created_by'),

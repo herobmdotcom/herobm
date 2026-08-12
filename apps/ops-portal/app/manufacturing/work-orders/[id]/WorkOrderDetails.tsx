@@ -49,6 +49,8 @@ interface WorkOrderDetail {
   locationName: string;
   wipBinId?: string | null;
   wipBinName?: string | null;
+  outputBinId?: string | null;
+  outputBinName?: string | null;
   stateCode: string;
   totalCost?: string | null;
   createdBy?: string | null;
@@ -109,6 +111,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         targetQuantity: data.targetQuantity,
         locationId: data.locationId,
         wipBinId: data.wipBinId || '',
+        outputBinId: data.outputBinId || '',
       });
     }
   }, [data]);
@@ -167,10 +170,12 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       setActionLoading(true);
       const payload: Record<string, unknown> = { [field]: value === '' || value === null ? null : value };
       
-      // If changing location, clear out the wip bin if it's no longer valid
+      // If changing location, clear out the wip bin & output bin if no longer valid
       if (field === 'locationId') {
         payload.wipBinId = null;
+        payload.outputBinId = null;
         updateField('wipBinId', '');
+        updateField('outputBinId', '');
       }
       
       await workOrdersControllerUpdate(workOrderId, payload);
@@ -349,6 +354,11 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
   const isEditable = data.stateCode === WORK_ORDER_STATE.DRAFT;
   const wipBinValue = data.wipBinName ? data.wipBinName : 'Unassigned';
+  const outputBinValue = data.outputBinName
+    ? data.outputBinName
+    : data.wipBinName
+    ? `${data.wipBinName} (Same as WIP)`
+    : 'Unassigned';
 
   const isDraftOrPlanned =
     data.stateCode === WORK_ORDER_STATE.DRAFT || data.stateCode === WORK_ORDER_STATE.PLANNED;
@@ -522,6 +532,38 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               ) : (
                 <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
                   {wipBinValue}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Output Bin
+              </label>
+              {isEditable ? (
+                <select
+                  className="input w-full"
+                  value={dto.outputBinId || ''}
+                  onChange={(e) => {
+                    updateField('outputBinId', e.target.value);
+                    saveField('outputBinId', e.target.value);
+                  }}
+                  disabled={!dto.locationId || loadingBins || actionLoading}
+                >
+                  <option value="">Default (Same as WIP Bin)</option>
+                  {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                    <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                      {binGroup.map((bin) => (
+                        <option key={bin.binId} value={bin.binId}>
+                          {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                  {outputBinValue}
                 </p>
               )}
             </div>

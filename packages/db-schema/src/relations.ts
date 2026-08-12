@@ -518,6 +518,10 @@ export const workOrdersRelations = relations(workOrders, ({ many, one }) => ({
     fields: [workOrders.wipBinId],
     references: [bins.binId],
   }),
+  outputBin: one(bins, {
+    fields: [workOrders.outputBinId],
+    references: [bins.binId],
+  }),
 }));
 
 export const workOrderComponentsRelations = relations(

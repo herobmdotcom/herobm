@@ -757,6 +757,13 @@
       "when": 1786520468855,
       "tag": "0107_add_wip_bin_type",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1786521737433,
+      "tag": "0108_drift_check_temp",
+      "breakpoints": true
     }
   ]
 }

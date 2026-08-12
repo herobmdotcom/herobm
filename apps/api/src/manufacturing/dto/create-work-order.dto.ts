@@ -58,6 +58,13 @@ export class CreateWorkOrderDto {
   wipBinId?: string;
 
   @ApiPropertyOptional({
+    description: 'Finished Goods Output Bin ID (optional)',
+  })
+  @IsOptional()
+  @IsUUID()
+  outputBinId?: string;
+
+  @ApiPropertyOptional({
     type: [CreateWorkOrderComponentDto],
     description:
       'Component lines snapshot (if empty, auto-populated from product BOM)',

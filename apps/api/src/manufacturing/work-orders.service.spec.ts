@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WorkOrdersService } from './work-orders.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { UomService } from '../inventory/uom.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { GlService } from '../gl/gl.service';
 import {
   products,
   locations,
@@ -146,6 +150,23 @@ describe('WorkOrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkOrdersService,
+        InventoryMovementService,
+        UomService,
+        {
+          provide: AppConfigService,
+          useValue: {
+            defaultFulfillmentLocationId: jest
+              .fn()
+              .mockReturnValue(testLocationId),
+          },
+        },
+        {
+          provide: GlService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue(null),
+            postJournalEntry: jest.fn(),
+          },
+        },
         {
           provide: DRIZZLE,
           useValue: pg.db,

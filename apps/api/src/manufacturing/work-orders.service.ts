@@ -19,7 +19,7 @@ import {
   backorders,
   warehouseEvents,
 } from '@herobm/db-schema';
-import { eq, desc, gte, and } from 'drizzle-orm';
+import { eq, desc, gte, and, aliasedTable } from 'drizzle-orm';
 import {
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
@@ -29,11 +29,14 @@ import {
 } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto';
 import {
   UpdateWorkOrderDto,
   UpdateWorkOrderComponentDto,
 } from './dto/update-work-order.dto';
+
+const outputBins = aliasedTable(bins, 'output_bins');
 
 export interface WorkOrderRow {
   workOrderId: string;
@@ -47,18 +50,24 @@ export interface WorkOrderRow {
   locationName: string;
   wipBinId?: string | null;
   wipBinName?: string | null;
+  outputBinId?: string | null;
+  outputBinName?: string | null;
   stateCode: string;
   totalCost?: string | null;
   createdBy?: string | null;
   createdOn?: string | Date | null;
   modifiedOn?: string | Date | null;
+  baseUom?: string | null;
 }
 
 @Injectable()
 export class WorkOrdersService {
   private readonly logger = new Logger(WorkOrdersService.name);
 
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly inventoryMovementService: InventoryMovementService,
+  ) {}
 
   private generateWorkOrderNumber(): string {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -125,6 +134,8 @@ export class WorkOrdersService {
         locationName: locations.name,
         wipBinId: workOrders.wipBinId,
         wipBinName: bins.binNumber,
+        outputBinId: workOrders.outputBinId,
+        outputBinName: outputBins.binNumber,
         stateCode: workOrders.stateCode,
         totalCost: workOrders.totalCost,
         createdBy: workOrders.createdBy,
@@ -135,6 +146,7 @@ export class WorkOrdersService {
       .innerJoin(products, eq(workOrders.productId, products.productId))
       .innerJoin(locations, eq(workOrders.locationId, locations.locationId))
       .leftJoin(bins, eq(workOrders.wipBinId, bins.binId))
+      .leftJoin(outputBins, eq(workOrders.outputBinId, outputBins.binId))
       .orderBy(desc(workOrders.createdOn));
 
     if (days && !isNaN(days)) {
@@ -161,16 +173,20 @@ export class WorkOrdersService {
         locationName: locations.name,
         wipBinId: workOrders.wipBinId,
         wipBinName: bins.binNumber,
+        outputBinId: workOrders.outputBinId,
+        outputBinName: outputBins.binNumber,
         stateCode: workOrders.stateCode,
         totalCost: workOrders.totalCost,
         createdBy: workOrders.createdBy,
         createdOn: workOrders.createdOn,
         modifiedOn: workOrders.modifiedOn,
+        baseUom: products.baseUom,
       })
       .from(workOrders)
       .innerJoin(products, eq(workOrders.productId, products.productId))
       .innerJoin(locations, eq(workOrders.locationId, locations.locationId))
       .leftJoin(bins, eq(workOrders.wipBinId, bins.binId))
+      .leftJoin(outputBins, eq(workOrders.outputBinId, outputBins.binId))
       .where(eq(workOrders.workOrderId, id));
 
     if (!wo) {
@@ -185,6 +201,7 @@ export class WorkOrdersService {
         productNumber: products.productNumber,
         expectedQuantity: workOrderComponents.expectedQuantity,
         unitCost: workOrderComponents.unitCost,
+        baseUom: products.baseUom,
       })
       .from(workOrderComponents)
       .innerJoin(
@@ -283,6 +300,45 @@ export class WorkOrdersService {
       }
     }
 
+    // Validate Output Bin if specified
+    if (dto.outputBinId) {
+      const [bin] = await db
+        .select({
+          binId: bins.binId,
+          binType: bins.binType,
+          isUnavailable: bins.isUnavailable,
+          locationId: zones.locationId,
+        })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(eq(bins.binId, dto.outputBinId))
+        .limit(1);
+
+      if (!bin) {
+        throw new NotFoundException(
+          `Output Bin with ID ${dto.outputBinId} not found`,
+        );
+      }
+
+      if (bin.locationId !== dto.locationId) {
+        throw new BadRequestException(
+          `Selected Output bin does not belong to location ${dto.locationId}`,
+        );
+      }
+
+      if (bin.isUnavailable) {
+        throw new BadRequestException(
+          `Selected Output bin is currently unavailable`,
+        );
+      }
+
+      if (bin.binType === 'quarantine') {
+        throw new BadRequestException(
+          `Quarantine bins cannot be used as Output bins`,
+        );
+      }
+    }
+
     const orderNumber =
       dto.orderNumber?.trim() || this.generateWorkOrderNumber();
 
@@ -296,6 +352,7 @@ export class WorkOrdersService {
           completedQuantity: '0',
           locationId: dto.locationId,
           wipBinId: dto.wipBinId || null,
+          outputBinId: dto.outputBinId || null,
           stateCode: WORK_ORDER_STATE.DRAFT,
           totalCost: '0',
           createdBy: username || null,
@@ -453,6 +510,45 @@ export class WorkOrdersService {
       }
     }
 
+    if (dto.outputBinId) {
+      const targetLocationId = dto.locationId || wo.locationId;
+      const [bin] = await db
+        .select({
+          binId: bins.binId,
+          binType: bins.binType,
+          isUnavailable: bins.isUnavailable,
+          locationId: zones.locationId,
+        })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(eq(bins.binId, dto.outputBinId))
+        .limit(1);
+
+      if (!bin) {
+        throw new NotFoundException(
+          `Output Bin with ID ${dto.outputBinId} not found`,
+        );
+      }
+
+      if (bin.locationId !== targetLocationId) {
+        throw new BadRequestException(
+          `Selected Output bin does not belong to work order location ${targetLocationId}`,
+        );
+      }
+
+      if (bin.isUnavailable) {
+        throw new BadRequestException(
+          `Selected Output bin is currently unavailable`,
+        );
+      }
+
+      if (bin.binType === 'quarantine') {
+        throw new BadRequestException(
+          `Quarantine bins cannot be used as Output bins`,
+        );
+      }
+    }
+
     const executeUpdate = async (innerTx: DrizzleDB) => {
       // Scale components if target quantity changes
       if (dto.targetQuantity && dto.targetQuantity !== wo.targetQuantity) {
@@ -481,6 +577,8 @@ export class WorkOrdersService {
         updateData.targetQuantity = dto.targetQuantity.toString();
       if (dto.locationId !== undefined) updateData.locationId = dto.locationId;
       if (dto.wipBinId !== undefined) updateData.wipBinId = dto.wipBinId;
+      if (dto.outputBinId !== undefined)
+        updateData.outputBinId = dto.outputBinId;
 
       await innerTx
         .update(workOrders)
@@ -688,6 +786,63 @@ export class WorkOrdersService {
         },
       });
 
+      // Record physical inventory movements (Output Credit & Component Consumption)
+      let buildOutputBinId = outputBinId || wo.outputBinId || wo.wipBinId;
+      if (!buildOutputBinId) {
+        const [defaultBin] = await innerTx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(zones.locationId, wo.locationId))
+          .limit(1);
+        buildOutputBinId = defaultBin?.binId;
+      }
+
+      if (!buildOutputBinId) {
+        throw new BadRequestException(
+          `No active storage bin available at location ${wo.locationId} for completed product output`,
+        );
+      }
+
+      const movementLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [
+        {
+          productId: wo.productId,
+          binId: buildOutputBinId,
+          quantity: parseFloat(wo.targetQuantity || '0'),
+          uomCode: wo.baseUom || 'EA',
+        },
+      ];
+
+      if (wo.wipBinId) {
+        for (const comp of wo.components) {
+          const compQty = parseFloat(comp.expectedQuantity || '0');
+          if (compQty > 0) {
+            movementLines.push({
+              productId: comp.productId,
+              binId: wo.wipBinId,
+              quantity: -compQty,
+              uomCode: comp.baseUom || 'EA',
+            });
+          }
+        }
+      }
+
+      if (movementLines.length > 0) {
+        await this.inventoryMovementService.recordInventoryMovement(innerTx, {
+          entryNumber: `WO-BLD-${wo.orderNumber}`,
+          sourceType: 'WORK_ORDER',
+          sourceId: id,
+          memo: `Completed Work Order build for ${wo.orderNumber}`,
+          userId: username || 'system',
+          lines: movementLines,
+        });
+      }
+
       await emitEvent(innerTx, {
         entityType: EntityType.WORK_ORDER,
         entityId: id,
@@ -743,6 +898,70 @@ export class WorkOrdersService {
             modifiedOn: new Date(),
           })
           .where(eq(backorders.backorderId, bo.backorderId));
+      }
+
+      let sourceBinId = wo.outputBinId || wo.wipBinId;
+      if (!sourceBinId) {
+        const [defaultBin] = await innerTx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(zones.locationId, wo.locationId))
+          .limit(1);
+        sourceBinId = defaultBin?.binId;
+      }
+
+      let finalBinId = targetBinId;
+      if (!finalBinId) {
+        const [defaultBin] = await innerTx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(zones.locationId, wo.locationId))
+          .limit(1);
+        finalBinId = defaultBin?.binId;
+      }
+
+      if (!sourceBinId || !finalBinId) {
+        throw new BadRequestException(
+          `Source and target bins must exist for finished goods putaway at location ${wo.locationId}`,
+        );
+      }
+
+      const putawayLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [];
+
+      if (sourceBinId !== finalBinId) {
+        const putawayQty = parseFloat(wo.targetQuantity || '0');
+        putawayLines.push(
+          {
+            productId: wo.productId,
+            binId: sourceBinId,
+            quantity: -putawayQty,
+            uomCode: wo.baseUom || 'EA',
+          },
+          {
+            productId: wo.productId,
+            binId: finalBinId,
+            quantity: putawayQty,
+            uomCode: wo.baseUom || 'EA',
+          },
+        );
+      }
+
+      if (putawayLines.length > 0) {
+        await this.inventoryMovementService.recordInventoryMovement(innerTx, {
+          entryNumber: `WO-PUT-${wo.orderNumber}`,
+          sourceType: 'WORK_ORDER',
+          sourceId: id,
+          memo: `Finished goods putaway into warehouse bin for ${wo.orderNumber}`,
+          userId: username || 'system',
+          lines: putawayLines,
+        });
       }
 
       await emitEvent(innerTx, {
