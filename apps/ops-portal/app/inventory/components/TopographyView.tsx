@@ -6,7 +6,7 @@ import * as api from '@herobm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
-import { getErrorMessage, BIN_TYPE, SystemResource, hasPermission } from '@herobm/shared';
+import { getErrorMessage, BIN_TYPE, SystemResource, hasPermission, compareBinNumbers } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 interface Bin {
@@ -467,7 +467,7 @@ export default function TopographyView() {
                                         </tr>
                                       </thead>
                                     <tbody>
-                                      {(zone?.bins || []).map((bin, idx) => (
+                                      {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin, idx) => (
                                         <tr
                                           key={bin.binId}
                                           style={{

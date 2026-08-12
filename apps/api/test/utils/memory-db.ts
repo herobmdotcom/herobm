@@ -55,6 +55,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     ALTER TABLE "herobm_core"."supplier_groups" ADD COLUMN IF NOT EXISTS "early_payment_discount_days" integer;
     ALTER TABLE "herobm_core"."suppliers" ADD COLUMN IF NOT EXISTS "early_payment_discount_days" integer;
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "output_bin_id" uuid;
+    ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "putaway_status" text;
   `);
 
   // Run extensions (Views, triggers, etc)

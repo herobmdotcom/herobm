@@ -20327,7 +20327,8 @@
             "enum": [
               "goods_receipt",
               "sales_return",
-              "transfer_receipt"
+              "transfer_receipt",
+              "work_order"
             ]
           },
           "destinationBinId": {

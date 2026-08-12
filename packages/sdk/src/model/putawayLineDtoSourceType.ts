@@ -14,4 +14,5 @@ export const PutawayLineDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',
   transfer_receipt: 'transfer_receipt',
+  work_order: 'work_order',
 } as const;

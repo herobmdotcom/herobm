@@ -47,6 +47,8 @@ import {
   transferOrderReceipts,
   transferOrderReceiptLines,
   actors,
+  workOrders,
+  backorders,
 } from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -61,6 +63,7 @@ import {
   MATCH_STATUS,
   PUTAWAY_STATUS,
   RETURN_STATE,
+  BACKORDER_STATE,
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
@@ -412,6 +415,45 @@ export class InventoryMovementService {
               ? 'QUARANTINE'
               : 'RECEIVING';
           uomCode = toLine.baseUom || 'EA';
+        } else if (lineDto.sourceType === 'work_order') {
+          const [woLine] = await tx
+            .select({
+              wo: workOrders,
+              productName: products.name,
+              productNumber: products.productNumber,
+              baseUom: products.baseUom,
+              outputBinNumber: bins.binNumber,
+            })
+            .from(workOrders)
+            .innerJoin(products, eq(workOrders.productId, products.productId))
+            .leftJoin(
+              bins,
+              eq(
+                sql`COALESCE(${workOrders.outputBinId}, ${workOrders.wipBinId})`,
+                bins.binId,
+              ),
+            )
+            .where(eq(workOrders.workOrderId, lineDto.lineId))
+            .limit(1);
+
+          if (!woLine)
+            throw new NotFoundException(
+              `Work Order ${lineDto.lineId} not found`,
+            );
+
+          locationId = woLine.wo.locationId;
+          productId = woLine.wo.productId;
+          putawayStatus =
+            woLine.wo.putawayStatus || PUTAWAY_STATUS.PENDING_PUTAWAY;
+          referenceNumber = woLine.wo.orderNumber;
+          recordSourceType = 'WORK_ORDER';
+          recordSourceId = woLine.wo.workOrderId;
+          linePrefix = woLine.wo.workOrderId.substring(0, 4);
+          sourceBinCode =
+            putawayStatus === PUTAWAY_STATUS.QUARANTINED
+              ? 'QUARANTINE'
+              : woLine.outputBinNumber || 'WIP';
+          uomCode = woLine.baseUom || 'EA';
         } else {
           // sales_return
           const [retLine] = await tx
@@ -571,6 +613,30 @@ export class InventoryMovementService {
             .update(transferOrderReceiptLines)
             .set({ putawayStatus: newStatus })
             .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
+        } else if (lineDto.sourceType === 'work_order') {
+          await tx
+            .update(workOrders)
+            .set({
+              putawayStatus: newStatus,
+              modifiedOn: new Date(),
+            })
+            .where(eq(workOrders.workOrderId, lineDto.lineId));
+
+          const linkedBackorders = await tx
+            .select({ backorderId: backorders.backorderId })
+            .from(backorders)
+            .where(eq(backorders.workOrderId, lineDto.lineId));
+
+          for (const bo of linkedBackorders) {
+            await tx
+              .update(backorders)
+              .set({
+                // eslint-disable-next-line no-restricted-syntax -- Fulfill backorder
+                stateCode: BACKORDER_STATE.FULFILLED,
+                modifiedOn: new Date(),
+              })
+              .where(eq(backorders.backorderId, bo.backorderId));
+          }
         } else {
           await tx
             .update(salesOrderReturnLines)

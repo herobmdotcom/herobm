@@ -14,17 +14,21 @@ import {
   products,
   locations,
   bins,
+  binContents,
+  productDefaultBins,
   zones,
   productComponents,
   backorders,
   warehouseEvents,
 } from '@herobm/db-schema';
-import { eq, desc, gte, and, aliasedTable } from 'drizzle-orm';
+import { eq, desc, gte, and, aliasedTable, sql } from 'drizzle-orm';
 import {
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
   WORK_ORDER_PICK_STATE,
   BACKORDER_STATE,
+  PUTAWAY_STATUS,
+  BIN_TYPE,
   type WorkOrderState,
 } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
@@ -53,6 +57,7 @@ export interface WorkOrderRow {
   outputBinId?: string | null;
   outputBinName?: string | null;
   stateCode: string;
+  putawayStatus?: string | null;
   totalCost?: string | null;
   createdBy?: string | null;
   createdOn?: string | Date | null;
@@ -137,6 +142,7 @@ export class WorkOrdersService {
         outputBinId: workOrders.outputBinId,
         outputBinName: outputBins.binNumber,
         stateCode: workOrders.stateCode,
+        putawayStatus: workOrders.putawayStatus,
         totalCost: workOrders.totalCost,
         createdBy: workOrders.createdBy,
         createdOn: workOrders.createdOn,
@@ -176,6 +182,7 @@ export class WorkOrdersService {
         outputBinId: workOrders.outputBinId,
         outputBinName: outputBins.binNumber,
         stateCode: workOrders.stateCode,
+        putawayStatus: workOrders.putawayStatus,
         totalCost: workOrders.totalCost,
         createdBy: workOrders.createdBy,
         createdOn: workOrders.createdOn,
@@ -764,6 +771,7 @@ export class WorkOrdersService {
         .set({
           completedQuantity: wo.targetQuantity,
           totalCost: totalCostNum.toFixed(2),
+          putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
         })
         .where(eq(workOrders.workOrderId, id));
 
@@ -963,6 +971,14 @@ export class WorkOrdersService {
           lines: putawayLines,
         });
       }
+
+      await innerTx
+        .update(workOrders)
+        .set({
+          putawayStatus: PUTAWAY_STATUS.COMPLETED,
+          modifiedOn: new Date(),
+        })
+        .where(eq(workOrders.workOrderId, id));
 
       await emitEvent(innerTx, {
         entityType: EntityType.WORK_ORDER,

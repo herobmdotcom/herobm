@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
+import { compareBinNumbers } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
@@ -67,8 +68,8 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
               if (b.zoneCode === 'HANDLING') return;
               availableBins.push({ ...b });
             });
-            // Sort by bin number
-            availableBins.sort((a, b) => a.binNumber.localeCompare(b.binNumber));
+            // Sort by bin number using natural alphanumeric comparison
+            availableBins.sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
             setBins(availableBins);
             if (availableBins.length > 0) {
               setTargetBinId(availableBins[0].binId);

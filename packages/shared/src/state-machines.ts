@@ -178,6 +178,8 @@ export const PUTAWAY_STATUS = {
   COMPLETED: 'completed',
 } as const;
 
+export type PutawayStatus = (typeof PUTAWAY_STATUS)[keyof typeof PUTAWAY_STATUS];
+
 export const MATCH_STATUS = {
   MATCHED: 'matched',
   UNMATCHED: 'unmatched',

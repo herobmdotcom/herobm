@@ -48,6 +48,7 @@ import {
   transferOrderReceiptLines,
   actors,
   productComponents,
+  workOrders,
 } from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -59,9 +60,11 @@ import {
 } from '../common/pagination';
 import {
   calculateAvailableQuantity,
+  compareBinNumbers,
   MATCH_STATUS,
   PUTAWAY_STATUS,
   RETURN_STATE,
+  WORK_ORDER_STATE,
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
@@ -746,7 +749,7 @@ export class InventoryQueryService {
       conditions.push(eq(zones.code, zoneCode));
     }
 
-    return this.db
+    const binList = await this.db
       .select({
         binId: bins.binId,
         zoneId: bins.zoneId,
@@ -760,8 +763,9 @@ export class InventoryQueryService {
       })
       .from(bins)
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-      .where(and(...conditions))
-      .orderBy(bins.binNumber);
+      .where(and(...conditions));
+
+    return binList.sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
   }
 
   /**
@@ -1150,13 +1154,57 @@ export class InventoryQueryService {
       )
       .where(and(...toConditions));
 
-    const [grLines, retLines, toLines] = await Promise.all([grQb, retQb, toQb]);
+    // 4. Work Orders
+    const woConditions = [
+      inArray(workOrders.putawayStatus, [
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+      ]),
+      eq(workOrders.stateCode, WORK_ORDER_STATE.COMPLETED),
+    ];
+    if (locationId) {
+      woConditions.push(eq(workOrders.locationId, locationId));
+    }
 
-    const combined = [...grLines, ...retLines, ...toLines].sort((a, b) => {
-      const dateA = a.createdOn ? new Date(a.createdOn).getTime() : 0;
-      const dateB = b.createdOn ? new Date(b.createdOn).getTime() : 0;
-      return dateB - dateA; // descending
-    });
+    const woQb = this.db
+      .select({
+        id: workOrders.workOrderId,
+        sourceType: sql<'work_order'>`'work_order'`,
+        referenceNumber: workOrders.orderNumber,
+        productId: workOrders.productId,
+        productName: products.name,
+        productNumber: products.productNumber,
+        quantity: workOrders.targetQuantity,
+        putawayStatus: workOrders.putawayStatus,
+        locationId: workOrders.locationId,
+        createdOn: workOrders.modifiedOn,
+        sourceBinCode: sql`COALESCE(${bins.binNumber}, CASE WHEN ${workOrders.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'WIP' END)`,
+      })
+      .from(workOrders)
+      .innerJoin(products, eq(workOrders.productId, products.productId))
+      .leftJoin(
+        bins,
+        eq(
+          sql`COALESCE(${workOrders.outputBinId}, ${workOrders.wipBinId})`,
+          bins.binId,
+        ),
+      )
+      .where(and(...woConditions));
+
+    const [grLines, retLines, toLines, woLines] = await Promise.all([
+      grQb,
+      retQb,
+      toQb,
+      woQb,
+    ]);
+
+    const combined = [...grLines, ...retLines, ...toLines, ...woLines].sort(
+      (a, b) => {
+        const dateA = a.createdOn ? new Date(a.createdOn).getTime() : 0;
+        const dateB = b.createdOn ? new Date(b.createdOn).getTime() : 0;
+        return dateB - dateA; // descending
+      },
+    );
 
     return combined;
   }

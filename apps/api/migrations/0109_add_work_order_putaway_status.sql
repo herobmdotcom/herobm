@@ -1,0 +1,1 @@
+-- Superseded by 0109_add_wo_output_bin_and_putaway_status.sql

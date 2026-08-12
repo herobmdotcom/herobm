@@ -16,8 +16,11 @@ import {
   workOrdersControllerCreate,
   productsControllerGetComponents,
   inventoryControllerFindBinsByLocation,
+  inventoryControllerFindByProductIdsBulk,
 } from '@herobm/sdk';
 import type { CreateWorkOrderDto } from '@herobm/sdk';
+import { compareBinNumbers } from '@herobm/shared';
+import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,8 +61,11 @@ export default function NewWorkOrderPage() {
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
 
-  // Component line items
+  // Component line items & availability state
   const [lines, setLines] = useState<ComponentLine[]>([]);
+  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+  const [inventoryLevels, setInventoryLevels] = useState<InventoryItem[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
 
   // State flags
   const [submitting, setSubmitting] = useState(false);
@@ -107,10 +113,12 @@ export default function NewWorkOrderPage() {
     return Array.from(zonesSet).sort();
   }, [availableBins]);
 
-  // Filter bins based on selected zone
+  // Filter and naturally sort bins based on selected zone
   const filteredBins = useMemo(() => {
-    if (selectedZone === 'all') return availableBins;
-    return availableBins.filter((b) => b.zoneCode === selectedZone);
+    const list = selectedZone === 'all'
+      ? [...availableBins]
+      : availableBins.filter((b) => b.zoneCode === selectedZone);
+    return list.sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
   }, [availableBins, selectedZone]);
 
   // Group filtered bins by zone for optgroups
@@ -123,6 +131,29 @@ export default function NewWorkOrderPage() {
     });
     return map;
   }, [filteredBins]);
+
+  // Fetch stock availability for component line items
+  useEffect(() => {
+    const productIds = lines
+      .map((l) => l.productId)
+      .filter((id) => id && id !== '00000000-0000-0000-0000-000000000000');
+
+    if (productIds.length === 0) {
+      setInventoryLevels([]);
+      return;
+    }
+
+    setInventoryLoading(true);
+    inventoryControllerFindByProductIdsBulk({ productIds, locationId: locationId || undefined })
+      .then((res) => {
+        setInventoryLevels((res?.data || []) as unknown as InventoryItem[]);
+      })
+      .catch((err) => {
+        reportError(err, 'NewWorkOrderPage_fetchInventory');
+        setInventoryLevels([]);
+      })
+      .finally(() => setInventoryLoading(false));
+  }, [lines, locationId]);
 
   // When output product changes, fetch its BOM components
   const handleProductSelect = async (p: Product) => {
@@ -502,210 +533,283 @@ export default function NewWorkOrderPage() {
 
         {/* Component Line Items (BOM) */}
         <div className="card">
+          <h3 className="section-heading mb-4">
+            <span className="material-symbols-outlined">inventory_2</span>
+            {t('lineItems')}
+          </h3>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <h3 className="section-heading !mb-0 shrink-0">
-              <span className="material-symbols-outlined">inventory_2</span>
-              {t('lineItems')}
-            </h3>
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-              <div className="flex-1 min-w-[200px] max-w-sm">
-                <ProductSearchInput
-                  onSelect={addLineFromProduct}
-                  placeholder={t('placeholders.searchComponent')}
-                  style={{ width: '100%' }}
-                />
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="whitespace-nowrap"
-                onClick={addCustomLine}
-              >
-                {t('buttons.customLine')}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile view */}
-          <div className="lg:hidden flex flex-col gap-3 w-full mt-4">
-            {lines.length === 0 ? (
-              <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
-                {t('noLineItems')}
-              </div>
-            ) : (
-              lines.map((line, idx) => (
-                <div
-                  key={line.key}
-                  className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col"
+            <div className="flex overflow-x-auto shrink-0">
+              <div className="flex gap-0 min-w-max">
+                <Button
+                  className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
+                  style={{
+                    color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
+                    background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setActiveTab('lines')}
                 >
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <div className="font-semibold text-sm text-[var(--accent)]">
-                      {line.productNumber}
-                    </div>
-                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
-                      #{idx + 1}
-                    </div>
-                  </div>
-                  <div className="text-sm text-slate-600 font-medium mb-3">
-                    {line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                      line.productDescription || '—'
-                    ) : (
-                      <input
-                        className="input w-full text-sm h-8 !py-1"
-                        value={line.productDescription}
-                        onChange={(e) =>
-                          updateLine(idx, 'productDescription', e.target.value)
-                        }
-                        placeholder={t('placeholders.customDescription')}
-                      />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                    <MobileCardField
-                      label={t('columns.expectedQty')}
-                      value={
-                        <input
-                          className="input text-right w-24 h-8 text-sm !py-1"
-                          type="number"
-                          min="0.01"
-                          step="any"
-                          value={line.expectedQuantity}
-                          onChange={(e) =>
-                            updateLine(idx, 'expectedQuantity', e.target.value)
-                          }
-                        />
-                      }
-                    />
-                    <MobileCardField
-                      label={t('columns.unitCost')}
-                      value={
-                        <input
-                          className="input text-right w-24 h-8 text-sm !py-1"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={line.unitCost}
-                          onChange={(e) =>
-                            updateLine(idx, 'unitCost', e.target.value)
-                          }
-                        />
-                      }
-                    />
-                    <div className="flex justify-end mt-2">
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => removeLine(idx)}
-                      >
-                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />{' '}
-                        {tCommon('buttons.remove')}
-                      </Button>
-                    </div>
-                  </div>
+                  Component Lines
+                </Button>
+                <Button
+                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
+                  style={{
+                    color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
+                    background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                    borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setActiveTab('availability')}
+                >
+                  Stock Availability
+                </Button>
+              </div>
+            </div>
+            {activeTab === 'lines' && (
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+                <div className="flex-1 min-w-[200px] max-w-sm">
+                  <ProductSearchInput
+                    onSelect={addLineFromProduct}
+                    placeholder={t('placeholders.searchComponent')}
+                    style={{ width: '100%' }}
+                  />
                 </div>
-              ))
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  onClick={addCustomLine}
+                >
+                  {t('buttons.customLine')}
+                </Button>
+              </div>
             )}
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden lg:block overflow-x-auto w-full">
-            <table className="table-lines w-full">
-              <thead>
-                <tr>
-                  <th style={{ width: 40 }}>{t('columns.lineNumber')}</th>
-                  <th>{t('columns.product')}</th>
-                  <th>{tCommon('columns.description')}</th>
-                  <th style={{ width: 120, textAlign: 'right' }}>
-                    {t('columns.expectedQty')}
-                  </th>
-                  <th style={{ width: 120, textAlign: 'right' }}>
-                    {t('columns.unitCost')}
-                  </th>
-                  <th style={{ width: 50 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((line, idx) => (
-                  <tr key={line.key}>
-                    <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                    <td
-                      style={{
-                        color: 'var(--accent)',
-                        fontWeight: 600,
-                        fontSize: 12,
-                      }}
-                    >
-                      {line.productNumber}
-                    </td>
-                    <td>
-                      {line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        line.productDescription || '—'
-                      ) : (
-                        <input
-                          className="input"
-                          style={{ width: '100%', fontSize: 13 }}
-                          value={line.productDescription}
-                          onChange={(e) =>
-                            updateLine(idx, 'productDescription', e.target.value)
-                          }
-                          placeholder={t('placeholders.customDescription')}
-                        />
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0.01"
-                        step="any"
-                        style={{ width: '100%', textAlign: 'right' }}
-                        value={line.expectedQuantity}
-                        onChange={(e) =>
-                          updateLine(idx, 'expectedQuantity', e.target.value)
-                        }
-                      />
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        style={{ width: '100%', textAlign: 'right' }}
-                        value={line.unitCost}
-                        onChange={(e) =>
-                          updateLine(idx, 'unitCost', e.target.value)
-                        }
-                      />
-                    </td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => removeLine(idx)}
+          {activeTab === 'lines' ? (
+            <>
+              {/* Mobile view */}
+              <div className="lg:hidden flex flex-col gap-3 w-full mt-4">
+                {lines.length === 0 ? (
+                  <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                    {t('noLineItems')}
+                  </div>
+                ) : (
+                  lines.map((line, idx) => {
+                    const stockWarn = getComponentStockWarning(line.productId, locationId, line.expectedQuantity, inventoryLevels);
+                    return (
+                      <div
+                        key={line.key}
+                        className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col"
                       >
-                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {lines.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      style={{
-                        textAlign: 'center',
-                        color: 'var(--text-muted)',
-                        padding: '20px 0',
-                      }}
-                    >
-                      {t('noLineItems')}
-                    </td>
-                  </tr>
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <div className="font-semibold text-sm text-[var(--accent)]">
+                            {line.productNumber}
+                          </div>
+                          <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                            #{idx + 1}
+                          </div>
+                        </div>
+                        <div className="text-sm text-slate-600 font-medium mb-3">
+                          {line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                            line.productDescription || '—'
+                          ) : (
+                            <input
+                              className="input w-full text-sm h-8 !py-1"
+                              value={line.productDescription}
+                              onChange={(e) =>
+                                updateLine(idx, 'productDescription', e.target.value)
+                              }
+                              placeholder={t('placeholders.customDescription')}
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                          <MobileCardField
+                            label={t('columns.expectedQty')}
+                            value={
+                              <div className="flex items-center gap-1 justify-end">
+                                {stockWarn && (
+                                  <span
+                                    className="material-symbols-outlined cursor-help"
+                                    style={{ fontSize: 15, color: stockWarn.color }}
+                                    title={stockWarn.title}
+                                  >
+                                    {stockWarn.icon}
+                                  </span>
+                                )}
+                                <input
+                                  className="input text-right w-24 h-8 text-sm !py-1"
+                                  type="number"
+                                  min="0.01"
+                                  step="any"
+                                  style={{ borderColor: stockWarn ? stockWarn.color : undefined }}
+                                  value={line.expectedQuantity}
+                                  onChange={(e) =>
+                                    updateLine(idx, 'expectedQuantity', e.target.value)
+                                  }
+                                />
+                              </div>
+                            }
+                          />
+                          <MobileCardField
+                            label={t('columns.unitCost')}
+                            value={
+                              <input
+                                className="input text-right w-24 h-8 text-sm !py-1"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={line.unitCost}
+                                onChange={(e) =>
+                                  updateLine(idx, 'unitCost', e.target.value)
+                                }
+                              />
+                            }
+                          />
+                          <div className="flex justify-end mt-2">
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => removeLine(idx)}
+                            >
+                              <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />{' '}
+                              {tCommon('buttons.remove')}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden lg:block overflow-x-auto w-full">
+                <table className="table-lines w-full">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 40 }}>{t('columns.lineNumber')}</th>
+                      <th>{t('columns.product')}</th>
+                      <th>{tCommon('columns.description')}</th>
+                      <th style={{ width: 140, textAlign: 'right' }}>
+                        {t('columns.expectedQty')}
+                      </th>
+                      <th style={{ width: 120, textAlign: 'right' }}>
+                        {t('columns.unitCost')}
+                      </th>
+                      <th style={{ width: 50 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lines.map((line, idx) => {
+                      const stockWarn = getComponentStockWarning(line.productId, locationId, line.expectedQuantity, inventoryLevels);
+                      return (
+                        <tr key={line.key}>
+                          <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
+                          <td
+                            style={{
+                              color: 'var(--accent)',
+                              fontWeight: 600,
+                              fontSize: 12,
+                            }}
+                          >
+                            {line.productNumber}
+                          </td>
+                          <td>
+                            {line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                              line.productDescription || '—'
+                            ) : (
+                              <input
+                                className="input"
+                                style={{ width: '100%', fontSize: 13 }}
+                                value={line.productDescription}
+                                onChange={(e) =>
+                                  updateLine(idx, 'productDescription', e.target.value)
+                                }
+                                placeholder={t('placeholders.customDescription')}
+                              />
+                            )}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="flex items-center justify-end gap-1">
+                              {stockWarn && (
+                                <span
+                                  className="material-symbols-outlined cursor-help"
+                                  style={{ fontSize: 15, color: stockWarn.color }}
+                                  title={stockWarn.title}
+                                >
+                                  {stockWarn.icon}
+                                </span>
+                              )}
+                              <input
+                                className="input"
+                                type="number"
+                                min="0.01"
+                                step="any"
+                                style={{ width: '100%', textAlign: 'right', borderColor: stockWarn ? stockWarn.color : undefined }}
+                                value={line.expectedQuantity}
+                                onChange={(e) =>
+                                  updateLine(idx, 'expectedQuantity', e.target.value)
+                                }
+                              />
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <input
+                              className="input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              style={{ width: '100%', textAlign: 'right' }}
+                              value={line.unitCost}
+                              onChange={(e) =>
+                                updateLine(idx, 'unitCost', e.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => removeLine(idx)}
+                            >
+                              <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {lines.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          style={{
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            padding: '20px 0',
+                          }}
+                        >
+                          {t('noLineItems')}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <WorkOrderAvailabilityTab
+              locationId={locationId}
+              components={lines}
+              inventoryData={inventoryLevels}
+              loading={inventoryLoading}
+            />
+          )}
         </div>
       </div>
     </DetailsLayout>

@@ -12,6 +12,7 @@ import {
   WORK_ORDER_PICK_TRANSITIONS,
   WorkOrderState,
   WorkOrderPickState,
+  PutawayStatus,
   getValidStates,
 } from '@herobm/shared';
 import { herobmCore } from './core.schema';
@@ -37,6 +38,7 @@ export const workOrders = herobmCore.table(
     wipBinId: uuid('wip_bin_id').references(() => bins.binId),
     outputBinId: uuid('output_bin_id').references(() => bins.binId),
     stateCode: text('state_code').$type<WorkOrderState>().notNull(),
+    putawayStatus: text('putaway_status').$type<PutawayStatus>(),
     totalCost: numeric('total_cost'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),

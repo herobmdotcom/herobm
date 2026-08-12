@@ -13,7 +13,7 @@ import EntityBanner from '@/components/shared/EntityBanner';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { ValidState } from '@/types/states';
-import { WORK_ORDER_STATE } from '@herobm/shared';
+import { WORK_ORDER_STATE, PUTAWAY_STATUS, compareBinNumbers } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import {
   workOrdersControllerFindOne,
@@ -23,8 +23,10 @@ import {
   workOrdersControllerCancel,
   workOrdersControllerUpdate,
   workOrdersControllerUpdateComponent,
-  inventoryControllerFindBinsByLocation
+  inventoryControllerFindBinsByLocation,
+  inventoryControllerFindByProductIdsBulk,
 } from '@herobm/sdk';
+import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
 
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 
@@ -52,6 +54,7 @@ interface WorkOrderDetail {
   outputBinId?: string | null;
   outputBinName?: string | null;
   stateCode: string;
+  putawayStatus?: string | null;
   totalCost?: string | null;
   createdBy?: string | null;
   createdOn?: string | Date | null;
@@ -69,6 +72,7 @@ interface InventoryBin {
 
 export default function WorkOrderDetails({ workOrderId }: { workOrderId: string }) {
   const tCommon = useTranslations('common');
+  const tWork = useTranslations('workOrders');
   const [data, setData] = useState<WorkOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -79,6 +83,11 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   const [selectedZone, setSelectedZone] = useState('all');
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
+
+  // Availability state
+  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+  const [inventoryLevels, setInventoryLevels] = useState<InventoryItem[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
 
   useDocumentTitle(data ? `${data.orderNumber} - Work Order` : null);
 
@@ -143,10 +152,12 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
     return Array.from(zonesSet).sort();
   }, [availableBins]);
 
-  // Filter bins based on selected zone
+  // Filter and naturally sort bins based on selected zone
   const filteredBins = useMemo(() => {
-    if (selectedZone === 'all') return availableBins;
-    return availableBins.filter((b) => b.zoneCode === selectedZone);
+    const list = selectedZone === 'all'
+      ? [...availableBins]
+      : availableBins.filter((b) => b.zoneCode === selectedZone);
+    return list.sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
   }, [availableBins, selectedZone]);
 
   // Group filtered bins by zone for optgroups
@@ -159,6 +170,33 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
     });
     return map;
   }, [filteredBins]);
+
+  // Fetch stock availability for Work Order component lines
+  useEffect(() => {
+    if (!data?.components || data.components.length === 0) {
+      setInventoryLevels([]);
+      return;
+    }
+    const productIds = data.components
+      .map((c) => c.productId)
+      .filter((id) => id && id !== '00000000-0000-0000-0000-000000000000');
+
+    if (productIds.length === 0) {
+      setInventoryLevels([]);
+      return;
+    }
+
+    setInventoryLoading(true);
+    inventoryControllerFindByProductIdsBulk({ productIds, locationId: data.locationId || undefined })
+      .then((res) => {
+        setInventoryLevels((res?.data || []) as unknown as InventoryItem[]);
+      })
+      .catch((err) => {
+        reportError(err, 'WorkOrderDetails_fetchInventory');
+        setInventoryLevels([]);
+      })
+      .finally(() => setInventoryLoading(false));
+  }, [data?.components, data?.locationId]);
 
   const updateField = (field: keyof WorkOrderDetail, value: string | null) => {
     setDto((prev) => ({ ...prev, [field]: value }));
@@ -292,11 +330,25 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         header: 'Expected Qty',
         width: 130,
         align: 'right',
-        render: (comp) => (
-          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-            {comp.expectedQuantity}
-          </span>
-        ),
+        render: (comp) => {
+          const stockWarn = getComponentStockWarning(comp.productId, data?.locationId, comp.expectedQuantity, inventoryLevels);
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {stockWarn && (
+                <span
+                  className="material-symbols-outlined cursor-help"
+                  style={{ fontSize: 15, color: stockWarn.color }}
+                  title={stockWarn.title}
+                >
+                  {stockWarn.icon}
+                </span>
+              )}
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: stockWarn ? stockWarn.color : undefined }}>
+                {comp.expectedQuantity}
+              </span>
+            </div>
+          );
+        },
       },
       {
         id: 'unitCost',
@@ -327,7 +379,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         },
       },
     ],
-    [data?.stateCode, actionLoading, saveComponentField]
+    [data?.stateCode, data?.locationId, inventoryLevels, actionLoading, saveComponentField]
   );
 
   if (loading) {
@@ -388,9 +440,22 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               )}
 
               {isCompleted && (
-                <Button variant="primary" size="sm" onClick={handlePutaway} disabled={actionLoading}>
-                  Inspect & Putaway to Warehouse
-                </Button>
+                <div className="flex items-center gap-2">
+                  {data?.putawayStatus === PUTAWAY_STATUS.PENDING_PUTAWAY && (
+                    <Link href="/inventory/putaway">
+                      <Button variant="primary" size="sm">
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
+                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>pallet</span>
+                        Go to Putaway Queue
+                      </Button>
+                    </Link>
+                  )}
+                  {data?.putawayStatus !== PUTAWAY_STATUS.COMPLETED && (
+                    <Button variant="secondary" size="sm" onClick={handlePutaway} disabled={actionLoading}>
+                      Direct Putaway
+                    </Button>
+                  )}
+                </div>
               )}
 
               {!isCompleted && !isCancelled && (
@@ -458,6 +523,25 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                 {data.completedQuantity}
               </p>
             </div>
+
+            {data.putawayStatus && (
+              <div className="min-w-0">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Putaway Status
+                </label>
+                <div style={{ paddingTop: 4 }}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${
+                    data.putawayStatus === PUTAWAY_STATUS.COMPLETED
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : data.putawayStatus === PUTAWAY_STATUS.QUARANTINED
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-sky-100 text-sky-800'
+                  }`}>
+                    {data.putawayStatus.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="min-w-0">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -594,16 +678,64 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
         {/* Bill of Materials / Components Section */}
         <div className="card">
-          <h3 className="section-heading">
+          <h3 className="section-heading mb-4">
             <span className="material-symbols-outlined">inventory_2</span>
-            Bill of Materials
+            {tWork('lineItems')}
           </h3>
-          <DataTable
-            columns={componentColumns}
-            data={data.components || []}
-            keyExtractor={(comp) => comp.workOrderComponentId}
-            emptyMessage="No components listed for this Work Order."
-          />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <div className="flex overflow-x-auto shrink-0">
+              <div className="flex gap-0 min-w-max">
+                <Button
+                  className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
+                  style={{
+                    color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
+                    background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setActiveTab('lines')}
+                >
+                  Component Lines
+                </Button>
+                <Button
+                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
+                  style={{
+                    color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
+                    background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                    borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setActiveTab('availability')}
+                >
+                  Stock Availability
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {activeTab === 'lines' ? (
+            <DataTable
+              columns={componentColumns}
+              data={data.components || []}
+              keyExtractor={(comp) => comp.workOrderComponentId}
+              emptyMessage="No components listed for this Work Order."
+            />
+          ) : (
+            <WorkOrderAvailabilityTab
+              locationId={data.locationId}
+              components={(data.components || []).map((c) => ({
+                productId: c.productId,
+                productNumber: c.productNumber,
+                productDescription: c.productName,
+                expectedQuantity: c.expectedQuantity,
+              }))}
+              inventoryData={inventoryLevels}
+              loading={inventoryLoading}
+            />
+          )}
         </div>
 
         {/* Activity / Event Audit Timeline */}

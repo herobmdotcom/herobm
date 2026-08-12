@@ -146,3 +146,14 @@ export function calculateInventoryGaps(
 
   return gaps;
 }
+
+/**
+ * Natural alphanumeric comparator for bin numbers and code strings.
+ * Ensures 'A-1-1' < 'A-1-2' < 'A-1-10' rather than lexicographical ordering.
+ */
+export function compareBinNumbers(a?: string | null, b?: string | null): number {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}

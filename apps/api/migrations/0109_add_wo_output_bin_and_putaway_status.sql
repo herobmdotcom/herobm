@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."work_orders" ADD COLUMN "putaway_status" text;

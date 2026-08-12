@@ -764,6 +764,13 @@
       "when": 1786521737433,
       "tag": "0108_drift_check_temp",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1786524330128,
+      "tag": "0109_add_wo_output_bin_and_putaway_status",
+      "breakpoints": true
     }
   ]
 }

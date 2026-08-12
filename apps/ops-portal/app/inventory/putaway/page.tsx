@@ -18,7 +18,7 @@ import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 interface PutawayLine {
     id: string;
-    sourceType: 'goods_receipt' | 'sales_return';
+    sourceType: 'goods_receipt' | 'sales_return' | 'transfer_receipt' | 'work_order';
     referenceNumber: string;
     productId: string;
     productName: string;
@@ -437,6 +437,8 @@ export default function PutawayPage() {
                                         <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--text-secondary)]">
                                             {line.sourceType === 'sales_return' ? (
                                                 <span className="font-bold text-[var(--warning)] uppercase">{t('putaway.return')}</span>
+                                            ) : line.sourceType === 'work_order' ? (
+                                                <span className="font-bold text-sky-500 uppercase">WORK ORDER</span>
                                             ) : (
                                                 <span className="font-bold text-[var(--success)] uppercase">{t('putaway.receipt')}</span>
                                             )}

@@ -24,6 +24,7 @@ export {
   WORK_ORDER_PICK_TRANSITIONS,
 
   PUTAWAY_STATUS,
+  type PutawayStatus,
   MATCH_STATUS,
   
   // State constants
@@ -150,6 +151,7 @@ export {
 export {
   calculateInventoryGaps,
   calculateAvailableQuantity,
+  compareBinNumbers,
   BIN_TYPE,
   isPhysicalProductLine,
 } from './inventory';

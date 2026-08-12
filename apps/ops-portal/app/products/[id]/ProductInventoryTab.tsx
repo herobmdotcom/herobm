@@ -3,7 +3,7 @@ import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
-import { getErrorMessage } from '@herobm/shared';
+import { getErrorMessage, compareBinNumbers } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import { formatLocationDisplay } from '@/lib/formatters';
 
@@ -117,7 +117,7 @@ export function ProductInventoryTab({
       .then(res => {
         const bins = res.data || [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-        bins.sort((a: any, b: any) => (a.binNumber || '').localeCompare(b.binNumber || ''));
+        bins.sort((a: any, b: any) => compareBinNumbers(a.binNumber, b.binNumber));
         setAvailableBins(bins);
       })
       .catch(console.error);
