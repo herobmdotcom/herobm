@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -83,8 +84,7 @@ export default function SuppliersContent() {
       width: 110,
       hide: true,
       valueFormatter: (params: { value: unknown }) => {
-        if (!params.value) return '—';
-        return new Date(params.value as string).toLocaleDateString();
+        return formatLocalDate(params.value as string);
       },
     },
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },

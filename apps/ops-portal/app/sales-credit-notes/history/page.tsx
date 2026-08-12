@@ -4,6 +4,7 @@ import React, { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
 import type { ColDef, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
@@ -33,7 +34,7 @@ export default function CreditNotesHistoryPage() {
     const gridColumns: ColDef<CreditNoteHistoryRow>[] = [
         { field: 'creditNoteId', headerName: 'ID', hide: true },
         { field: 'creditNoteNumber', headerName: 'CN Number', width: 180 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: ValueFormatterParams<CreditNoteHistoryRow>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: ValueFormatterParams<CreditNoteHistoryRow>) => formatLocalDate(p.value as string | number, undefined, '') },
         { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
         { field: 'totalAmount', headerName: 'Total Credit', type: 'numericColumn', width: 150,
             valueGetter: (params: ValueGetterParams<CreditNoteHistoryRow>) => {

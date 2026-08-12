@@ -9,6 +9,7 @@ import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
+import { formatLocalDate } from '@/lib/date';
 import { getErrorMessage } from '@herobm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -287,7 +288,7 @@ export default function UsersPage() {
       <td>
         {!isEdit && (
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {new Date(data.createdAt).toLocaleDateString()}
+            {formatLocalDate(data.createdAt)}
           </span>
         )}
       </td>

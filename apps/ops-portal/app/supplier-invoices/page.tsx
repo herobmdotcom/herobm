@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
 import { Button } from '@/components/shared/Button';
@@ -33,7 +34,7 @@ export default function GlobalPurchaseInvoicesPage() {
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'supplierInvoiceNumber', headerName: t('columns.supplierInvoiceNumber'), width: 220 },
         { field: 'vendorName', headerName: t('columns.vendor'), width: 250 },
-        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         { 
             field: 'totalAmount', 
             headerName: t('columns.amount'), 

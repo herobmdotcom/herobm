@@ -1,5 +1,6 @@
 'use client';
 
+import { formatLocalDate, toInputDateFormat, parseLocalDate } from '@/lib/date';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
@@ -60,12 +61,12 @@ export default function ExchangeRateHistoryModal({
                     <input 
                       type="date" 
                       className="input w-full"
-                      value={new Date(row.effectiveDate).toISOString().split('T')[0]} 
-                      onChange={e => onChange?.(new Date(e.target.value).toISOString())} 
+                      value={toInputDateFormat(row.effectiveDate)} 
+                      onChange={e => onChange?.(parseLocalDate(e.target.value)?.toISOString() || '')} 
                     />
                   );
                 }
-                return <span>{new Date(row.effectiveDate).toLocaleDateString()}</span>;
+                return <span>{formatLocalDate(row.effectiveDate)}</span>;
               }
             },
             {

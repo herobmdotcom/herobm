@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
 import * as api from '@herobm/sdk';
@@ -152,8 +153,7 @@ export default function PaymentsContent() {
       headerName: 'Date',
       width: 110,
       valueFormatter: (params: { value: unknown }) => {
-        if (!params.value) return '—';
-        return new Date(params.value as string).toLocaleDateString();
+        return formatLocalDate(params.value as string);
       },
     },
     { field: 'createdBy', headerName: 'Created By', width: 120 },

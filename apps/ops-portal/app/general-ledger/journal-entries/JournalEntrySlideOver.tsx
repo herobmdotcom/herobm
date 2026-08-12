@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import SlideOver from '@/components/shared/SlideOver';
+import { formatLocalDate } from '@/lib/date';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -83,7 +84,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
       isOpen={!!entry}
       onClose={onClose}
       title={entry ? entry.entryNumber : t('title')}
-      subtitle={entry ? `${new Date(entry.entryDate).toLocaleDateString()} · ${sourceLabel(entry.sourceType)}` : undefined}
+      subtitle={entry ? `${formatLocalDate(entry.entryDate)} · ${sourceLabel(entry.sourceType)}` : undefined}
       width="max-w-3xl"
     >
       {entry && (

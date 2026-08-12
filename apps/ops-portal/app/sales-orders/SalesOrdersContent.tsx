@@ -11,6 +11,7 @@ import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
+import { formatLocalDate } from '@/lib/date';
 import { useSettings } from '@/components/SettingsProvider';
 
 interface UnifiedOrder {
@@ -80,8 +81,7 @@ export default function SalesOrdersContent() {
       headerName: tCommon('columns.date'),
       width: 110,
       valueFormatter: (params: { value: unknown }) => {
-        if (!params.value) return '—';
-        return new Date(params.value as string).toLocaleDateString();
+        return formatLocalDate(params.value as string);
       },
     },
     { field: 'createdBy', headerName: tCommon('columns.createdBy'), width: 120 },

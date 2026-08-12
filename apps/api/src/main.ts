@@ -67,6 +67,10 @@ async function bootstrap() {
       .addTag('Purchase Returns', 'Return to vendor (RTV)')
       .addTag('Purchase Invoices', 'Accounts Payable invoices')
       .addTag('Transfer Orders', 'Multi-location inventory transfers')
+      .addTag(
+        'Manufacturing / Work Orders',
+        'Manufacturing work orders and assembly',
+      )
       .addTag('Warehouse', 'Inventory, receiving, and fulfillment')
       .addTag('Payments', 'Payment processing and reconciliation')
       .addTag('General Ledger', 'Accounting, charts, and journals')

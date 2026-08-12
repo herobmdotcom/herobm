@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -63,7 +64,7 @@ export default function ProductsContent() {
       headerName: tCommon('columns.created'),
       width: 110,
       hide: true,
-      valueFormatter: (p: ValueFormatterParams) => p.value ? new Date(p.value as string).toLocaleDateString() : '—',
+      valueFormatter: (p: ValueFormatterParams) => formatLocalDate(p.value as string),
     },
   ], [tCommon, tProducts]);
 

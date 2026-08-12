@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -23,14 +24,14 @@ export default function ReportingPage() {
       field: 'lastModifiedOn',
       headerName: t('grid.columns.lastModified'),
       width: 150,
-      valueFormatter: (p: { value?: string | null }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | null }) => formatLocalDate(p.value),
     },
     {
       field: 'createdOn',
       headerName: t('grid.columns.createdOn'),
       width: 150,
       hide: true,
-      valueFormatter: (p: { value?: string | null }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | null }) => formatLocalDate(p.value),
     },
   ], []);
 

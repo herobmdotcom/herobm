@@ -2,6 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class EmptyBodyDto {}
 
+export class PickWorkOrderComponentDto {
+  @ApiProperty()
+  binId!: string;
+
+  @ApiProperty()
+  quantity!: string;
+}
+
 export class WorkOrderComponentResponseDto {
   @ApiProperty()
   workOrderComponentId!: string;
@@ -73,4 +81,105 @@ export class WorkOrderResponseDto {
 
   @ApiPropertyOptional({ type: [WorkOrderComponentResponseDto] })
   components?: WorkOrderComponentResponseDto[];
+}
+
+export class WorkOrderAvailableBinDto {
+  @ApiProperty()
+  binId!: string;
+
+  @ApiProperty()
+  binName!: string;
+
+  @ApiProperty()
+  onHand!: string;
+}
+
+export class WorkOrderPickingLineDto {
+  @ApiProperty()
+  salesOrderLineId!: string;
+
+  @ApiProperty()
+  lineNumber!: number;
+
+  @ApiProperty()
+  productId!: string;
+
+  @ApiProperty()
+  productNumber!: string;
+
+  @ApiProperty()
+  productType!: string;
+
+  @ApiProperty()
+  productDescription!: string;
+
+  @ApiProperty()
+  locationName!: string;
+
+  @ApiProperty()
+  quantity!: string;
+
+  @ApiProperty()
+  quantityPicked!: string;
+
+  @ApiProperty()
+  quantityShipped!: string;
+
+  @ApiProperty()
+  remaining!: string;
+
+  @ApiProperty()
+  isFullyPicked!: boolean;
+
+  @ApiProperty()
+  isPhysical!: boolean;
+
+  @ApiProperty()
+  onHand!: string;
+
+  @ApiProperty({ type: [WorkOrderAvailableBinDto] })
+  availableBins!: WorkOrderAvailableBinDto[];
+}
+
+export class WorkOrderPickDetailDto {
+  @ApiProperty()
+  pickId!: string;
+
+  @ApiProperty()
+  salesOrderId!: string;
+
+  @ApiProperty()
+  salesOrderLineId!: string;
+
+  @ApiProperty()
+  productId!: string;
+
+  @ApiPropertyOptional()
+  binId?: string | null;
+
+  @ApiProperty()
+  quantity!: string;
+
+  @ApiProperty()
+  stateCode!: string;
+
+  @ApiPropertyOptional()
+  binName?: string | null;
+}
+
+export class WorkOrderPickingSummaryDto {
+  @ApiProperty()
+  totalLines!: number;
+
+  @ApiProperty()
+  fullyPickedLines!: number;
+
+  @ApiProperty()
+  isFullyPicked!: boolean;
+
+  @ApiProperty({ type: [WorkOrderPickingLineDto] })
+  lines!: WorkOrderPickingLineDto[];
+
+  @ApiProperty({ type: [WorkOrderPickDetailDto] })
+  picks!: WorkOrderPickDetailDto[];
 }

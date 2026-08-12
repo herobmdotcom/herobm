@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
+import { formatLocalDate } from '@/lib/date';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
@@ -256,7 +257,7 @@ export function PaymentRunGeneratorSlideOver({
                     <td className="text-gray-900">{inv.invoiceNumber}</td>
                     <td className="text-gray-600 truncate max-w-[150px]" title={inv.supplierName}>{inv.supplierName}</td>
                     <td className="text-gray-600">
-                      {new Date(inv.dueDate as unknown as string).toLocaleDateString()}
+                      {formatLocalDate(inv.dueDate as unknown as string)}
                     </td>
                     <td className="text-right text-gray-600">
                       ${Number(inv.outstandingAmount).toFixed(2)}

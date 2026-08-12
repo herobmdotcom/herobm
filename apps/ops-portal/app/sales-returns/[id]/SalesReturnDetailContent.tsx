@@ -7,6 +7,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { ValidState } from '@/types/states';
 import Link from 'next/link';
@@ -370,7 +371,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                 {t('returns.date')}
               </label>
               <div className="text-sm">
-                {new Date(ret.createdOn).toLocaleDateString()}
+                {formatLocalDate(ret.createdOn)}
               </div>
             </div>
             <div>

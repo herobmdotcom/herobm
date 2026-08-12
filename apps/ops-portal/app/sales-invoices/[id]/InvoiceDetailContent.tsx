@@ -7,6 +7,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { ValidState } from '@/types/states';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -147,7 +148,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       width: 150,
       render: (alloc) => (
         <span style={{ color: 'var(--text-secondary)' }}>
-          {new Date(alloc.paymentDate).toLocaleDateString()}
+          {formatLocalDate(alloc.paymentDate)}
         </span>
       ),
     },
@@ -302,7 +303,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {t('date')}
               </label>
-              <div className="text-sm">{new Date(invoice.invoiceDate || invoice.createdOn).toLocaleDateString()}</div>
+              <div className="text-sm">{formatLocalDate(invoice.invoiceDate || invoice.createdOn)}</div>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -324,7 +325,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                       earlyPaymentDiscount: invoice.earlyPaymentDiscount,
                       earlyPaymentDiscountDays: invoice.earlyPaymentDiscountDays,
                     });
-                    const dateLimit = result.eligibleUntil ? result.eligibleUntil.toLocaleDateString() : '';
+                    const dateLimit = result.eligibleUntil ? formatLocalDate(result.eligibleUntil, undefined, '') : '';
                     
                     if (result.isEligible) {
                       return `${invoice.earlyPaymentDiscount}% (${formatAmount(result.discountAmount, invoice.currencyCode)}) in ${invoice.earlyPaymentDiscountDays} days (${dateLimit})`;
@@ -387,7 +388,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Due Date</label>
               <div className={`text-lg font-semibold ${isOverdue ? 'text-red-600' : 'text-[var(--text-primary)]'}`}>
-                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+                {formatLocalDate(invoice.dueDate)}
               </div>
             </div>
           </div>
@@ -496,7 +497,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     {alloc.paymentNumber}
                   </span>
                 }
-                subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
+                subtitle={formatLocalDate(alloc.paymentDate)}
                 details={[
                   {
                     label: t('columns.allocatedAmount'),

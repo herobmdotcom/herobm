@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSettings } from '@/components/SettingsProvider';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import {
@@ -340,7 +341,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       field: 'date', 
       headerName: t('manager.columns.date'), 
       width: 140,
-      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString() : ''
+      valueFormatter: (p) => formatLocalDate(p.value, undefined, '')
     },
     { field: 'invoiceNumber', headerName: t('manager.columns.invoiceNo'), flex: 1 },
     { 
@@ -598,7 +599,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         const transKey = 'manager.options.' + data.paymentType.replace(/_([a-z])/g, g => g[1].toUpperCase());
         const translated = t(transKey as Parameters<typeof t>[0]);
         const fallback = data.paymentType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-        return `${new Date(data.paymentDate).toLocaleDateString()} · ${translated === transKey ? fallback : translated}`;
+        return `${formatLocalDate(data.paymentDate)} · ${translated === transKey ? fallback : translated}`;
       })() : undefined}
       actions={paymentId ? actionsContent : undefined}
       width="w-[90vw] max-w-5xl xl:w-2/3"

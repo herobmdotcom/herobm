@@ -29,6 +29,9 @@ import {
   transferOrderShipments,
   transferOrderShipmentLines,
   actors,
+  workOrders,
+  workOrderComponents,
+  workOrderPicks,
 } from '@herobm/db-schema';
 import {
   findOrder,
@@ -51,6 +54,8 @@ import {
   TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
   BACKORDER_STATE,
+  WORK_ORDER_STATE,
+  WORK_ORDER_PICK_STATE,
   getValidStates,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -584,9 +589,57 @@ export class PickingService {
         ),
       );
 
+    const rawWorkOrderLines = await this.db
+      .select({
+        id: workOrders.workOrderId,
+        orderNumber: workOrders.orderNumber,
+        name: coreProducts.name,
+        customerName: locations.name,
+        customerOrderNumber: sql<string>`'N/A'`,
+        stateCode: workOrders.stateCode,
+        createdOn: workOrders.createdOn,
+        createdBy: workOrders.createdBy,
+        currencyCode: sql<string>`'N/A'`,
+        isCreditBlocked: sql<boolean>`false`,
+        lineId: workOrderComponents.workOrderComponentId,
+        lineQuantity: workOrderComponents.expectedQuantity,
+        isPhysical: sql<boolean>`true`,
+        onHand: sql<number>`COALESCE((
+          SELECT sum(bc.actual_quantity)
+          FROM herobm_core.bin_contents bc
+          JOIN herobm_core.bins b ON b.bin_id = bc.bin_id
+          JOIN herobm_core.zones z ON z.zone_id = b.zone_id
+          WHERE bc.product_id = ${workOrderComponents.productId}
+            AND z.location_id = ${workOrders.locationId}
+            AND ${isPickableBinSqlCondition('b')}
+        ), 0)`,
+        pickedQty: sql<number>`COALESCE((
+          SELECT SUM(quantity)
+          FROM herobm_core.work_order_picks
+          WHERE work_order_component_id = ${workOrderComponents.workOrderComponentId}
+            AND state_code != ${WORK_ORDER_PICK_STATE.CANCELLED}
+        ), 0)`,
+        hasAllocation: sql<boolean>`false`,
+        type: sql<string>`'work_order'`,
+      })
+      .from(workOrders)
+      .innerJoin(
+        workOrderComponents,
+        eq(workOrders.workOrderId, workOrderComponents.workOrderId),
+      )
+      .leftJoin(locations, eq(workOrders.locationId, locations.locationId))
+      .leftJoin(coreProducts, eq(workOrders.productId, coreProducts.productId))
+      .where(
+        and(
+          eq(workOrders.stateCode, WORK_ORDER_STATE.IN_PROGRESS),
+          locationId ? eq(workOrders.locationId, locationId) : undefined,
+        ),
+      );
+
     const allLines = [
       ...rawLines.map((r) => ({ ...r, type: 'sales_order' })),
       ...rawTransferLines,
+      ...rawWorkOrderLines,
     ];
 
     const orderMap = new Map<

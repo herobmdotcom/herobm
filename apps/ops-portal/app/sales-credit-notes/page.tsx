@@ -5,6 +5,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { RETURN_STATE } from '@herobm/shared';
 import AdHocCreditNoteSlideOver from './AdHocCreditNoteSlideOver';
 import ReturnCreditNoteSlideOver from './ReturnCreditNoteSlideOver';
@@ -37,7 +38,7 @@ export default function ReturnsQueuePage() {
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         {
             field: 'stateCode',
             headerName: tCommon('columns.status'),

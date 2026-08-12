@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/shared/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
 
@@ -18,7 +19,7 @@ export default function ProjectsContent() {
       field: 'createdOn',
       headerName: 'Created',
       width: 150,
-      valueFormatter: (p: { value?: string | number | Date }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | number | Date }) => formatLocalDate(p.value),
     }
   ], []);
 

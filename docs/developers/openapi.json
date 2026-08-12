@@ -14353,6 +14353,128 @@
         ]
       }
     },
+    "/manufacturing/work-orders/{id}/picking": {
+      "get": {
+        "description": "Retrieve component picking summary for a Work Order.",
+        "operationId": "WorkOrdersController_getPickingSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Work Order Picking Summary",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/picking/lines/{lineId}": {
+      "post": {
+        "description": "Record picked component quantity into WIP bin.",
+        "operationId": "WorkOrdersController_pickLine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickWorkOrderComponentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pick Work Order Component",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/picking/picks/{pickId}": {
+      "delete": {
+        "description": "Cancel a recorded component pick and reverse stock to storage.",
+        "operationId": "WorkOrdersController_cancelPick",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pickId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Component Pick",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
     "/data-sources": {
       "get": {
         "description": "Retrieves a list of all available data sources registered in the system.",
@@ -18608,6 +18730,10 @@
     {
       "name": "Transfer Orders",
       "description": "Multi-location inventory transfers"
+    },
+    {
+      "name": "Manufacturing / Work Orders",
+      "description": "Manufacturing work orders and assembly"
     },
     {
       "name": "Warehouse",
@@ -27222,6 +27348,182 @@
             "description": "Overridden unit cost"
           }
         }
+      },
+      "WorkOrderAvailableBinDto": {
+        "type": "object",
+        "properties": {
+          "binId": {
+            "type": "string"
+          },
+          "binName": {
+            "type": "string"
+          },
+          "onHand": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "binId",
+          "binName",
+          "onHand"
+        ]
+      },
+      "WorkOrderPickingLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "lineNumber": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string"
+          },
+          "productDescription": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "quantityPicked": {
+            "type": "string"
+          },
+          "quantityShipped": {
+            "type": "string"
+          },
+          "remaining": {
+            "type": "string"
+          },
+          "isFullyPicked": {
+            "type": "boolean"
+          },
+          "isPhysical": {
+            "type": "boolean"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "availableBins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderAvailableBinDto"
+            }
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "lineNumber",
+          "productId",
+          "productNumber",
+          "productType",
+          "productDescription",
+          "locationName",
+          "quantity",
+          "quantityPicked",
+          "quantityShipped",
+          "remaining",
+          "isFullyPicked",
+          "isPhysical",
+          "onHand",
+          "availableBins"
+        ]
+      },
+      "WorkOrderPickDetailDto": {
+        "type": "object",
+        "properties": {
+          "pickId": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "binId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "binName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "pickId",
+          "salesOrderId",
+          "salesOrderLineId",
+          "productId",
+          "quantity",
+          "stateCode"
+        ]
+      },
+      "WorkOrderPickingSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalLines": {
+            "type": "number"
+          },
+          "fullyPickedLines": {
+            "type": "number"
+          },
+          "isFullyPicked": {
+            "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderPickingLineDto"
+            }
+          },
+          "picks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderPickDetailDto"
+            }
+          }
+        },
+        "required": [
+          "totalLines",
+          "fullyPickedLines",
+          "isFullyPicked",
+          "lines",
+          "picks"
+        ]
+      },
+      "PickWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "binId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "binId",
+          "quantity"
+        ]
       },
       "DataSourceItemDto": {
         "type": "object",

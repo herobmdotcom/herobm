@@ -66,7 +66,7 @@ export function parsePagination(query?: PaginationQuery) {
   const purchaseOrderId = query?.purchaseOrderId;
   const productId = query?.productId;
   const states = query?.state
-    ? query.state.split(',').map((s) => s.trim())
+    ? query.state.split(',').map((s) => s.trim().toLowerCase())
     : null;
 
   return {

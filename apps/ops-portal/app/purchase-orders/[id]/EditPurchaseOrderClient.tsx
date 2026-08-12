@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { formatLocalDate } from '@/lib/date';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
 
@@ -435,7 +436,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     />
                   ) : (
                     <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                      {order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : '—'}
+                      {formatLocalDate(order.expectedDate)}
                     </p>
                   )}
                 </div>

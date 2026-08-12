@@ -492,7 +492,7 @@ export default function NewWorkOrderPage() {
                 className="block text-xs font-medium mb-1.5"
                 style={{ color: 'var(--text-muted)' }}
               >
-                Output Bin
+                {t('labels.outputBin')}
               </label>
               <select
                 className="input w-full"
@@ -500,7 +500,7 @@ export default function NewWorkOrderPage() {
                 onChange={(e) => setOutputBinId(e.target.value)}
                 disabled={!locationId || loadingBins}
               >
-                <option value="">Select Output Bin</option>
+                <option value="">{t('placeholders.selectOutputBin')}</option>
                 {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
                   <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                     {binGroup.map((bin) => (

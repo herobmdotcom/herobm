@@ -5,6 +5,8 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage, CURRENCIES } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
+import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { getCurrency } from '@/lib/currency';
 import ExchangeRateHistoryModal from '../ExchangeRateHistoryModal';
 
@@ -173,7 +175,7 @@ export function ExchangeRatesSection({ glSettings, updateGlSetting }: ExchangeRa
                   );
                 }
                 if (row.isSystemBase) return <span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span>;
-                return <span>{new Date(row.effectiveDate as string).toLocaleDateString()}</span>;
+                return <span>{formatLocalDate(row.effectiveDate as string)}</span>;
               }
             },
             {

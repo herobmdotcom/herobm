@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import DataGrid from '@/components/shared/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
 import { ContactSlideOver } from '@/components/shared/ContactSlideOver';
@@ -23,7 +24,7 @@ export default function ContactsContent() {
       field: 'createdOn',
       headerName: 'Created',
       width: 150,
-      valueFormatter: (p: { value?: string | number | Date }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | number | Date }) => formatLocalDate(p.value),
     }
   ], []);
 

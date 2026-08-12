@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import DataGrid from '@/components/DataGrid';
+import DetailTabGrid from '@/components/shared/DetailTabGrid';
+import { formatLocalDate } from '@/lib/date';
 
 interface ProductPurchaseOrdersTabProps {
   productId: string;
@@ -45,7 +46,7 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
       headerName: tCommon('columns.created'), 
       width: 140,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid params lack strict type
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
+      valueFormatter: (p: any) => formatLocalDate(p.value, undefined, '')
     },
     { 
       field: 'stateCode', 
@@ -68,43 +69,16 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
   ], [tCommon, t, tStates]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-      <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-        <DataGrid 
-          endpoint={`/api/purchase-orders?productId=${encodeURIComponent(productId)}`}
-          columns={columns}
-          gridKey="product-purchase-orders-grid"
-          urlPrefix="purchase-orders"
-          fetchAll={false}
-          rowIdField="id"
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid row lacks strict type
-          rowHref={(row: any) => `/purchase-orders/${row.id}`}
-          renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-            <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-4 flex-1">
-                <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  {t('purchaseOrders.title')}
-                </h2>
-                <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                  <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                    {tCommon('grid.rowCountLabel')}
-                  </span>
-                  <span className="text-[11px] font-bold text-[#006b5c]">
-                    {loading ? '...' : rowCount.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex-1 ml-4 max-w-md">
-                  {searchInput}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 ml-4">
-                {optionsButton}
-              </div>
-            </div>
-          )}
-        />
-      </div>
-    </div>
+    <DetailTabGrid 
+      title={t('purchaseOrders.title')}
+      endpoint={`/api/purchase-orders?productId=${encodeURIComponent(productId)}`}
+      columns={columns}
+      gridKey="product-purchase-orders-grid"
+      urlPrefix="purchase-orders"
+      fetchAll={false}
+      rowIdField="id"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DataGrid row lacks strict type
+      rowHref={(row: any) => `/purchase-orders/${row.id}`}
+    />
   );
 }

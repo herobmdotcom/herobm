@@ -8,6 +8,7 @@ import { Button } from '@/components/shared/Button';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { computeLinePrice, computeReturnCreditSummary, isPhysicalProductLine } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
@@ -564,7 +565,7 @@ export default function ReturnsSection({
                                             {ret.returnNumber}
                                         </div>
                                         <div className="text-xs text-[var(--text-muted)]">
-                                            {ret.createdOn ? new Date(ret.createdOn as string).toLocaleDateString() : '—'} {' \u00B7 '} {ret.lines?.length || 0}
+                                            {formatLocalDate(ret.createdOn)} {' \u00B7 '} {ret.lines?.length || 0}
                                             <span> {tCommon('tabs.lines').toLowerCase()} </span>
                                             {ret.createdBy && <span> {' \u00B7 '} {tCommon('timeline.by', { actor: ret.createdBy })}</span>}
                                         </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -64,7 +65,7 @@ export default function CustomersContent() {
       headerName: tCommon('columns.created'),
       width: 110,
       hide: true,
-      valueFormatter: (p: { value?: string | number | Date }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | number | Date }) => formatLocalDate(p.value),
     },
     { field: 'deliveryAddressCount', headerName: tCommon('columns.deliveryAddrs'), width: 120, type: 'numericColumn', hide: true },
     { field: 'priceScale', headerName: tCommon('columns.priceScale'), width: 100, type: 'numericColumn', hide: true },

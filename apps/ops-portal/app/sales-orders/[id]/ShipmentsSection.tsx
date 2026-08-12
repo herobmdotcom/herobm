@@ -7,6 +7,7 @@ import { ValidState } from '@/types/states';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import Link from 'next/link';
+import { formatLocalDate } from '@/lib/date';
 
 interface ShipmentLine {
     shipmentLineId: string;
@@ -76,7 +77,7 @@ export default function ShipmentsSection({ orderId }: Props) {
                                 <div>
                                     <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
                                     <div className="text-xs text-[var(--text-muted)]">
-                                        {new Date(shipment.createdOn).toLocaleDateString()} · {tShipping('shipmentLines', { count: shipment.lines.length })}
+                                        {formatLocalDate(shipment.createdOn)} · {tShipping('shipmentLines', { count: shipment.lines.length })}
                                         {shipment.trackingNumber && (
                                             <span> · {shipment.trackingNumber}</span>
                                         )}

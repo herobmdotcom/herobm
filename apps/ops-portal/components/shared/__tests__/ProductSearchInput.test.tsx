@@ -37,7 +37,7 @@ describe('ProductSearchInput', () => {
     }, { timeout: 1000 });
     
     // Assert exactly what URL the component requested
-    expect(api.productsControllerFindAll).toHaveBeenCalledWith({ q: 'wire', limit: 10 });
+    expect(api.productsControllerFindAll).toHaveBeenCalledWith({ q: 'wire', limit: 20 });
   });
 
 });

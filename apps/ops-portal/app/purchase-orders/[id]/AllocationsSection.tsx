@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatLocalDate } from '@/lib/date';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import * as api from '@herobm/sdk';
@@ -77,7 +78,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
             },
             {
               header: t('allocationsSection.dateRequested'),
-              render: (alloc) => <span className="text-[13px] text-[var(--text-secondary)]">{new Date(alloc.createdOn).toLocaleDateString()}</span>
+              render: (alloc) => <span className="text-[13px] text-[var(--text-secondary)]">{formatLocalDate(alloc.createdOn)}</span>
             },
             {
               header: t('allocationsSection.action'),
@@ -113,7 +114,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-xs font-medium text-slate-500">{t('allocationsSection.dateRequested')}</span>
-                      <span className="text-sm text-slate-600">{new Date(alloc.createdOn).toLocaleDateString()}</span>
+                      <span className="text-sm text-slate-600">{formatLocalDate(alloc.createdOn)}</span>
                     </div>
                   </div>
                   <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">

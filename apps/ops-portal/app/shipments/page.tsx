@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef } from 'ag-grid-community';
 
 
@@ -31,7 +32,7 @@ export default function ShipmentsPage() {
       field: 'createdOn',
       headerName: t('columns.date'),
       width: 110,
-      valueFormatter: (params) => params.value ? new Date(params.value).toLocaleDateString() : '—',
+      valueFormatter: (params) => formatLocalDate(params.value),
     },
     {
       field: 'customerName',

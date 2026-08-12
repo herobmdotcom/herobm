@@ -49,7 +49,13 @@ export class BaseSupplierDto {
   @IsString()
   fax?: string;
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === ''
+      ? null
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   @IsEmail()
   emailAddress1?: string;
   @IsOptional()

@@ -245,6 +245,10 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   }, [workOrderId, fetchWorkOrder]);
 
   const handleRelease = async () => {
+    if (!data?.wipBinId || !data?.outputBinId) {
+      toast.error(tWork('errors.binsRequired'));
+      return;
+    }
     try {
       setActionLoading(true);
       await workOrdersControllerRelease(workOrderId, {});
@@ -434,9 +438,18 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               )}
 
               {isInProgress && (
-                <Button variant="primary" size="sm" onClick={handleComplete} disabled={actionLoading}>
-                  Complete Production
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link href="/inventory/picking">
+                    <Button variant="secondary" size="sm">
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
+                      <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>inventory</span>
+                      Go to Picking Queue
+                    </Button>
+                  </Link>
+                  <Button variant="primary" size="sm" onClick={handleComplete} disabled={actionLoading}>
+                    Complete Production
+                  </Button>
+                </div>
               )}
 
               {isCompleted && (
@@ -602,7 +615,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   }}
                   disabled={!dto.locationId || loadingBins || actionLoading}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{tWork('placeholders.unassigned')}</option>
                   {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
                     <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                       {binGroup.map((bin) => (
@@ -622,7 +635,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
             <div className="min-w-0">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Output Bin
+                {tWork('labels.outputBin')}
               </label>
               {isEditable ? (
                 <select
@@ -634,7 +647,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   }}
                   disabled={!dto.locationId || loadingBins || actionLoading}
                 >
-                  <option value="">Default (Same as WIP Bin)</option>
+                  <option value="">{tWork('placeholders.unassigned')}</option>
                   {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
                     <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                       {binGroup.map((bin) => (

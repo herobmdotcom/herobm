@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/shared/DataGrid';
 import { Button } from '@/components/shared/Button';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef } from 'ag-grid-community';
 
 export default function ActorsContent() {
@@ -30,7 +31,7 @@ export default function ActorsContent() {
       headerName: 'Created',
       width: 110,
       hide: true,
-      valueFormatter: (p: { value?: string | number | Date }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | number | Date }) => formatLocalDate(p.value),
     }
   ], []);
 

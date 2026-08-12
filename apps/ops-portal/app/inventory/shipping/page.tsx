@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { formatLocalDate } from '@/lib/date';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
@@ -527,7 +528,7 @@ export default function ShippingPage() {
                                                                 {shipment.shipmentNumber}
                                                             </Link>
                                                             <div className="text-xs text-[var(--text-muted)] mt-1">
-                                                                {new Date(shipment.createdOn).toLocaleDateString()} · {t('shipmentLines', { count: shipment.lineCount })}
+                                                                {formatLocalDate(shipment.createdOn)} · {t('shipmentLines', { count: shipment.lineCount })}
                                                                 {shipment.trackingNumber && (
                                                                     <span> · {shipment.trackingNumber}</span>
                                                                 )}

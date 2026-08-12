@@ -18,13 +18,15 @@ import { useInheritance, useGroup } from '@/hooks/useInheritance';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { CURRENCIES, formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import PageNav from '@/components/shared/PageNav';
 import { Button } from '@/components/shared/Button';
-import DataGrid from '@/components/DataGrid';
+import DetailTabGrid from '@/components/shared/DetailTabGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
+import { SupplierContactsTab } from './components/SupplierContactsTab';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useSettings } from '@/components/SettingsProvider';
@@ -47,7 +49,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.SUPPLIERS, 'archive');
   const initialTab = (searchParams.get('tab') as 'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments') || 'details';
-  const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'details' | 'products' | 'contacts' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments'>(initialTab);
   const {
     supplier,
     dto,
@@ -159,7 +161,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   const orderColumns: Record<string, unknown>[] = useMemo(() => [
     { field: "orderNumber", headerName: "Order No.", width: 150 },
-    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => formatLocalDate(p.value, undefined, "") },
     { field: "totalPrice", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
     { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
   ], [tStates, baseCurrency]);
@@ -167,7 +169,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const invoiceColumns: Record<string, unknown>[] = useMemo(() => [
     { field: "invoiceNumber", headerName: "Invoice No.", width: 150 },
     { field: "orderNumber", headerName: "PO Number", width: 150 },
-    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => formatLocalDate(p.value, undefined, "") },
     { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
     { field: "outstandingAmount", headerName: "Outstanding", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
     { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
@@ -175,7 +177,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   const paymentColumns: Record<string, unknown>[] = useMemo(() => [
     { field: "paymentNumber", headerName: "Payment No.", width: 150 },
-    { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => formatLocalDate(p.value, undefined, "") },
     { field: "modeOfPayment", headerName: "Mode", width: 150 },
     { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
     { field: "unallocatedAmount", headerName: "Unallocated", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
@@ -231,6 +233,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       isSubPage: true,
       isActive: activeTab === 'products',
       onClick: () => setActiveTab('products')
+    },
+    {
+      id: 'tab-contacts',
+      label: t('tabs.contact'),
+      isSubPage: true,
+      isActive: activeTab === 'contacts',
+      onClick: () => setActiveTab('contacts')
     },
     {
       id: 'tab-orders',
@@ -305,153 +314,48 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       )}
 
       {activeTab === 'products' && (
-        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid 
-                endpoint={`/api/suppliers/${encodeURIComponent(params.id)}/products`}
-                columns={productColumns}
-                gridKey="supplier-products"
-                fetchAll
-                rowHref={(row: { productId?: string }) => `/products/${row.productId}`}
-                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {t('products.title')}
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          {tCommon('grid.rowCountLabel')}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? '...' : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">
-                        {searchInput}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-            />
-          </div>
-        </div>
+        <DetailTabGrid 
+          title={t('products.title')}
+          endpoint={`/api/suppliers/${encodeURIComponent(params.id)}/products`}
+          columns={productColumns}
+          gridKey="supplier-products"
+          fetchAll
+          rowHref={(row: { productId?: string }) => `/products/${row.productId}`}
+        />
+      )}
+      {activeTab === 'contacts' && (
+        <SupplierContactsTab supplier={supplier} loadSupplier={loadSupplier} />
       )}
       {activeTab === 'purchaseOrders' && (
-        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid 
-                endpoint={`/api/purchase-orders?vendorId=${encodeURIComponent(params.id)}`}
-                columns={orderColumns}
-                gridKey="supplier-orders"
-                fetchAll
-                rowHref={(row: { id?: string }) => `/purchase-orders/${row.id}`}
-                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Orders
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          {tCommon('grid.rowCountLabel')}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? '...' : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">
-                        {searchInput}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-            />
-          </div>
-        </div>
+        <DetailTabGrid 
+          title="Orders"
+          endpoint={`/api/purchase-orders?vendorId=${encodeURIComponent(params.id)}`}
+          columns={orderColumns}
+          gridKey="supplier-orders"
+          fetchAll
+          rowHref={(row: { id?: string }) => `/purchase-orders/${row.id}`}
+        />
       )}
 
       {activeTab === 'invoices' && (
-        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid 
-                endpoint={`/api/purchase-invoices?vendorId=${encodeURIComponent(params.id)}`}
-                columns={invoiceColumns}
-                gridKey="supplier-invoices"
-                fetchAll
-                rowHref={(row: { invoiceId?: string }) => `/supplier-invoices/${row.invoiceId}`}
-                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Invoices
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          {tCommon('grid.rowCountLabel')}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? '...' : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">
-                        {searchInput}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-            />
-          </div>
-        </div>
+        <DetailTabGrid 
+          title="Invoices"
+          endpoint={`/api/purchase-invoices?vendorId=${encodeURIComponent(params.id)}`}
+          columns={invoiceColumns}
+          gridKey="supplier-invoices"
+          fetchAll
+          rowHref={(row: { invoiceId?: string }) => `/supplier-invoices/${row.invoiceId}`}
+        />
       )}
 
       {activeTab === 'payments' && (
-        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid 
-                endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
-                columns={paymentColumns}
-                gridKey="supplier-payments"
-                fetchAll
-                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Payments
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          {tCommon('grid.rowCountLabel')}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? '...' : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">
-                        {searchInput}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-            />
-          </div>
-        </div>
+        <DetailTabGrid 
+          title="Payments"
+          endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
+          columns={paymentColumns}
+          gridKey="supplier-payments"
+          fetchAll
+        />
       )}
 
 

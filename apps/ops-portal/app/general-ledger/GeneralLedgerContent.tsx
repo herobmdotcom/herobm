@@ -8,6 +8,7 @@ import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEn
 import CodesModal from './CodesModal';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
+import { formatLocalDate } from '@/lib/date';
 import type { ColDef, ValueFormatterParams, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
 
 interface AccountOption {
@@ -109,7 +110,7 @@ export default function GeneralLedgerContent() {
       field: 'entryDate', 
       headerName: t('columns.date'), 
       width: 120,
-      valueFormatter: (p: ValueFormatterParams<GlEntry>) => p.value ? new Date(p.value as string).toLocaleDateString() : ''
+      valueFormatter: (p: ValueFormatterParams<GlEntry>) => formatLocalDate(p.value as string, undefined, '')
     },
     { 
       field: 'entryNumber', 

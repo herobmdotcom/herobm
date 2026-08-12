@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { formatLocalDate } from '@/lib/date';
 import type { ProjectResponseDto } from '@herobm/sdk';
 
 interface ProjectCardProps {
@@ -25,9 +26,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <span className="text-gray-300">&bull;</span>
           <span className="capitalize">Status: {project.status.replace('_', ' ')}</span>
           <span className="text-gray-300">&bull;</span>
-          <span>Created: {new Date(project.createdOn).toLocaleDateString()}</span>
+          <span>Created: {formatLocalDate(project.createdOn)}</span>
           <span className="text-gray-300">&bull;</span>
-          <span>Modified: {new Date(project.modifiedOn).toLocaleDateString()}</span>
+          <span>Modified: {formatLocalDate(project.modifiedOn)}</span>
         </div>
       </div>
     </Link>

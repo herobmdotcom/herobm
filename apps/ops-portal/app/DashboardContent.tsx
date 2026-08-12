@@ -133,6 +133,31 @@ export default function DashboardContent() {
                     style={{ background: 'rgba(0, 107, 92, 0.08)' }}
                   >
                     { }
+                    <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>request_quote</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors" style={{ color: 'var(--text-primary)' }}>
+                      {t('quickActions.createQuote')}
+                    </div>
+                    <div className="text-[13px] opacity-60 mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                      {t('quickActions.createQuoteDesc')}
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/sales-orders/new"
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
+                  style={{
+                    background: 'var(--bg-card)',
+                    borderColor: 'var(--border)',
+                  }}
+                >
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
+                    style={{ background: 'rgba(0, 107, 92, 0.08)' }}
+                  >
+                    { }
                     <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>receipt_long</span>
                   </div>
                   <div className="flex-1 min-w-0">

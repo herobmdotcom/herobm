@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import DataGrid from '@/components/DataGrid';
+import DetailTabGrid from '@/components/shared/DetailTabGrid';
 import { KitComponentSlideOver } from './KitComponentSlideOver';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
@@ -43,11 +43,9 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       cellRenderer: (params: any) => params.data ? (
         <div className="flex gap-1 items-center h-full">
           <Button size="sm" variant="ghost" className="min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
-            { }
             <span className="material-symbols-outlined text-[18px]">edit</span>
           </Button>
           <Button size="sm" variant="ghost" className="text-red-500 hover:bg-red-50 min-h-0 h-8 px-2" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
-            { }
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </Button>
         </div>
@@ -76,49 +74,28 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
     }
   };
 
-  // Render actions now handled inside the columns definition
-
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-      <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-        <DataGrid
-          endpoint={`/api/products/${productId}/components?r=${refreshKey}`}
-          columns={columns}
-          gridKey="kit-components-grid"
-          urlPrefix="components"
-          fetchAll
-          rowIdField="componentId"
-          renderHeader={({ rowCount, loading }: { rowCount: number, loading: boolean }) => (
-            <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-4 flex-1">
-                <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  {t('tabs.kitComponents')}
-                </h2>
-                <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                  <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                    {tCommon('grid.rowCountLabel')}
-                  </span>
-                  <span className="text-[11px] font-bold text-[#006b5c]">
-                    {loading ? '...' : rowCount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 ml-4">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
-                  onClick={() => setSlideOverState({ isOpen: true })}
-                  disabled={!isEditable}
-                >
-                  {t('addComponent')}
-                </Button>
-              </div>
-            </div>
-          )}
-        />
-      </div>
+    <>
+      <DetailTabGrid
+        title={t('tabs.kitComponents')}
+        headerActions={
+          <Button
+            size="sm"
+            variant="primary"
+            className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
+            onClick={() => setSlideOverState({ isOpen: true })}
+            disabled={!isEditable}
+          >
+            {t('addComponent')}
+          </Button>
+        }
+        endpoint={`/api/products/${productId}/components?r=${refreshKey}`}
+        columns={columns}
+        gridKey="kit-components-grid"
+        urlPrefix="components"
+        fetchAll
+        rowIdField="componentId"
+      />
 
       <KitComponentSlideOver
         isOpen={slideOverState.isOpen}
@@ -131,6 +108,6 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
           setRefreshKey(k => k + 1);
         }}
       />
-    </div>
+    </>
   );
 };

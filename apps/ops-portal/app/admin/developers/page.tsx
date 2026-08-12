@@ -12,6 +12,7 @@ import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
+import { formatLocalDate } from '@/lib/date';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -240,7 +241,7 @@ export default function DevelopersPage() {
                 title: tCommon('created'),
                 type: 'custom',
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
-                render: (row: any) => <span>{new Date(row.createdOn).toLocaleDateString()}</span>
+                render: (row: any) => <span>{formatLocalDate(row.createdOn)}</span>
               }
             ]}
           />

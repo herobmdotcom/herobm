@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
+import { formatLocalDate } from '@/lib/date';
 import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
@@ -34,10 +35,7 @@ export default function AutoMatchPreviewModal({
   const t = useTranslations('admin.reconciliations');
 
   const formatCurrency = (val: number | string) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(val));
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString();
-  };
+  const formatDate = (dateStr: string) => formatLocalDate(dateStr, undefined, '');
 
   useEffect(() => {
     if (isOpen && previewData) {

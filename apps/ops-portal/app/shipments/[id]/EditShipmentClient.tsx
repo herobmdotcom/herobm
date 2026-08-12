@@ -10,6 +10,7 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { formatLocalDate } from '@/lib/date';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -124,7 +125,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
       header={
         <EntityHeader
           title={shipment.shipmentNumber}
-          subtitle={`${t('shipmentDetails')} • ${new Date(shipment.createdOn).toLocaleDateString()}`}
+          subtitle={`${t('shipmentDetails')} • ${formatLocalDate(shipment.createdOn)}`}
           badges={<StateBadge state={shipment.stateCode as ValidState} />}
           actions={
             shipment.stateCode === SHIPMENT_STATE.DISPATCHED && (

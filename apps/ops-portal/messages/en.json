@@ -1451,6 +1451,8 @@
     "quickActions": {
       "createPurchaseDesc": "Restock inventory from supplier",
       "createPurchaseOrder": "Create Purchase Order",
+      "createQuote": "Create Quote",
+      "createQuoteDesc": "Draft a new quote for a customer",
       "createSalesDesc": "New customer quote or order",
       "createSalesOrder": "Create Sales Order",
       "title": "Quick Actions"
@@ -3108,6 +3110,7 @@
       "searchCustomers": "Search customers...",
       "searchOrders": "Search by order number, customer, or PO...",
       "searchProduct": "Add product... (search)",
+      "searchQuotes": "Search by quote number, customer, or PO...",
       "selectMacro": "Select a macro to insert...",
       "zero": "0"
     },
@@ -3548,6 +3551,7 @@
       "receiving": "Receiving",
       "salesInvoices": "Sales Invoices",
       "salesOrders": "Sales Orders",
+      "salesQuotes": "Sales Quotes",
       "settings": "Settings",
       "shipments": "Shipments",
       "shipping": "Shipping",
@@ -3789,6 +3793,7 @@
     "createTitle": "Create Work Order",
     "detailsHeading": "Work Order Details",
     "errors": {
+      "binsRequired": "WIP Bin and Output Bin must be set.",
       "failedToCreate": "Failed to create work order",
       "noComponents": "Please select a valid product or add component lines",
       "pleaseSelectLocation": "Please select a location",
@@ -3798,6 +3803,7 @@
     "labels": {
       "location": "Location",
       "orderNumber": "Order Number",
+      "outputBin": "Output Bin",
       "product": "Product to Produce",
       "targetQuantity": "Target Quantity",
       "wipBin": "WIP Bin",
@@ -3812,7 +3818,9 @@
       "searchComponent": "Add component...",
       "searchOrders": "Search Work Orders...",
       "searchProduct": "Search product to produce...",
-      "selectWipBin": "Select WIP Bin (optional)"
+      "selectOutputBin": "Select Output Bin",
+      "selectWipBin": "Select WIP Bin",
+      "unassigned": "Unassigned"
     },
     "title": "Work Orders"
   }

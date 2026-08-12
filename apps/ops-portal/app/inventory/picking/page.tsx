@@ -29,7 +29,7 @@ interface UnifiedOrder {
     currencyCode: string | null;
     pickabilityStatus: 'ready' | 'partial' | 'blocked';
     hasAllocation?: boolean;
-    type?: 'sales_order' | 'transfer_order';
+    type?: 'sales_order' | 'transfer_order' | 'work_order';
 }
 
 interface PickAllocation {
@@ -157,12 +157,17 @@ export default function PickingPage() {
         setLoadingSummary(true);
         setError(null);
         
-        const summaryPromise = selectedOrder.type === 'transfer_order' 
-            ? api.transfersControllerGetPickingSummary(selectedOrder.id) 
-            : api.orderPickingControllerGetPickingSummary(selectedOrder.id);
+        let summaryPromise;
+        if (selectedOrder.type === 'transfer_order') {
+            summaryPromise = api.transfersControllerGetPickingSummary(selectedOrder.id);
+        } else if (selectedOrder.type === 'work_order') {
+            summaryPromise = api.workOrdersControllerGetPickingSummary(selectedOrder.id);
+        } else {
+            summaryPromise = api.orderPickingControllerGetPickingSummary(selectedOrder.id);
+        }
             
         summaryPromise
-            .then((res) => {
+            .then((res: { data: unknown }) => {
                 const data = res.data;
                 setPickingSummary(data as unknown as PickingSummary);
                 
@@ -187,7 +192,7 @@ export default function PickingPage() {
                 });
                 setPickInputs(defaultInputs);
             })
-            .catch(err => setError(getErrorMessage(err)))
+            .catch((err: unknown) => setError(getErrorMessage(err)))
             .finally(() => setLoadingSummary(false));
     }, [selectedOrder]);
 
@@ -207,6 +212,8 @@ export default function PickingPage() {
         try {
             if (selectedOrder.type === 'transfer_order') {
                 await api.transfersControllerPickLine(selectedOrder.id, lineId, { quantity: input.quantity, binId: input.binId });
+            } else if (selectedOrder.type === 'work_order') {
+                await api.workOrdersControllerPickLine(selectedOrder.id, lineId, { binId: input.binId, quantity: input.quantity });
             } else {
                 await api.orderPickingControllerPickLine(selectedOrder.id, lineId, { quantity: input.quantity, binId: input.binId });
             }
@@ -225,6 +232,8 @@ export default function PickingPage() {
         try {
             if (selectedOrder.type === 'transfer_order') {
                 await api.transfersControllerCancelPick(selectedOrder.id, pickId);
+            } else if (selectedOrder.type === 'work_order') {
+                await api.workOrdersControllerCancelPick(selectedOrder.id, pickId);
             } else {
                 await api.orderPickingControllerCancelPick(selectedOrder.id, pickId);
             }
@@ -347,6 +356,16 @@ export default function PickingPage() {
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
+                                                {order.type === 'work_order' && (
+                                                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                                        WORK ORDER
+                                                    </span>
+                                                )}
+                                                {order.type === 'transfer_order' && (
+                                                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                                        TRANSFER
+                                                    </span>
+                                                )}
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />
                                         </div>

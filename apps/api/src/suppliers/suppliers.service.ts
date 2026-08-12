@@ -8,6 +8,8 @@ import {
   supplierGroups,
   supplierExpiries,
   actors,
+  contacts,
+  actorContactLinks,
 } from '@herobm/db-schema';
 import { EntityType } from '../common/event-types';
 import {
@@ -99,6 +101,9 @@ export class SuppliersService {
         address1StateOrProvince: actors.headquartersStateOrProvince,
         address1PostalCode: actors.headquartersPostalCode,
         address1Country: actors.headquartersCountry,
+        telephone1: sql<string>`TRIM(${actors.telephone})`,
+        fax: sql<string>`TRIM(${actors.fax})`,
+        emailAddress1: sql<string>`TRIM(${actors.email})`,
       })
       .from(coreSuppliers)
       .leftJoin(
@@ -199,9 +204,9 @@ export class SuppliersService {
         address1Country: actors.headquartersCountry,
         businessNumber: actors.businessNumber,
         isTaxRegistered: actors.isTaxRegistered,
-        telephone1: actors.telephone,
-        fax: actors.fax,
-        emailAddress1: actors.email,
+        telephone1: sql<string>`TRIM(${actors.telephone})`,
+        fax: sql<string>`TRIM(${actors.fax})`,
+        emailAddress1: sql<string>`TRIM(${actors.email})`,
       })
       .from(coreSuppliers)
       .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
@@ -231,11 +236,37 @@ export class SuppliersService {
         )
         .limit(1);
 
+      const contactsResult = rows[0].actorId
+        ? await db
+            .select({
+              id: contacts.contactId,
+              contactId: contacts.contactId,
+              supplierId: sql<string>`${rows[0].vendorId}`,
+              firstName: contacts.firstName,
+              lastName: contacts.lastName,
+              fullName: sql<string>`${contacts.firstName} || ' ' || ${contacts.lastName}`,
+              email: contacts.email,
+              phone: contacts.phone,
+              mobile: contacts.mobile,
+              jobTitle: contacts.jobTitle,
+              primaryFor: actorContactLinks.primaryFor,
+              createdOn: contacts.createdOn,
+              modifiedOn: contacts.modifiedOn,
+            })
+            .from(contacts)
+            .innerJoin(
+              actorContactLinks,
+              eq(contacts.contactId, actorContactLinks.contactId),
+            )
+            .where(eq(actorContactLinks.actorId, rows[0].actorId))
+            .catch(() => [])
+        : [];
+
       // Note: Supplier compliance is now verified asynchronously by a daily worker (BullMQ)
       // and just-in-time when critical actions are taken (like PO creation).
       // We no longer mutate the supplier's state silently during a read operation.
 
-      return { ...rows[0], events };
+      return { ...rows[0], events, contacts: contactsResult };
     }
 
     throw new NotFoundException(`Supplier '${id}' not found`);

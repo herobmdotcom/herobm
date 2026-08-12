@@ -172,7 +172,8 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
               const cust = await api.customersControllerFindOne(entityId);
               actorId = cust.data.actorId;
             } else if (entityType === 'supplier') {
-              // Add supplier fetch here if needed later
+              const supp = await api.suppliersControllerFindOne(entityId);
+              actorId = supp.data.actorId;
             }
             
             if (actorId) {

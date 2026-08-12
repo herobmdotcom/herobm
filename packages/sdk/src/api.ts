@@ -286,6 +286,7 @@ import type {
   PendingPutawayResponseDto,
   PickLineDto,
   PickOrderLineDto,
+  PickWorkOrderComponentDto,
   PickingQueueOrderDto,
   PickingSummaryDto,
   PickingSummaryPickDto,
@@ -467,6 +468,7 @@ import type {
   UsersControllerFindOneParams,
   WebhookResponseDto,
   WebhooksControllerRemove200,
+  WorkOrderPickingSummaryDto,
   WorkOrderResponseDto,
   WorkOrdersControllerFindAllParams,
   ZoneResponseDto
@@ -13925,6 +13927,123 @@ export const workOrdersControllerCancel = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve component picking summary for a Work Order.
+ * @summary Get Work Order Picking Summary
+ */
+export type workOrdersControllerGetPickingSummaryResponse200 = {
+  data: WorkOrderPickingSummaryDto
+  status: 200
+}
+    
+export type workOrdersControllerGetPickingSummaryResponseSuccess = (workOrdersControllerGetPickingSummaryResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerGetPickingSummaryResponse = (workOrdersControllerGetPickingSummaryResponseSuccess)
+
+export const getWorkOrdersControllerGetPickingSummaryUrl = (id: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/picking`
+}
+
+export const workOrdersControllerGetPickingSummary = async (id: string, options?: RequestInit): Promise<workOrdersControllerGetPickingSummaryResponse> => {
+  
+  return customFetch<workOrdersControllerGetPickingSummaryResponse>(getWorkOrdersControllerGetPickingSummaryUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Record picked component quantity into WIP bin.
+ * @summary Pick Work Order Component
+ */
+export type workOrdersControllerPickLineResponse201 = {
+  data: WorkOrderPickingSummaryDto
+  status: 201
+}
+    
+export type workOrdersControllerPickLineResponseSuccess = (workOrdersControllerPickLineResponse201) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerPickLineResponse = (workOrdersControllerPickLineResponseSuccess)
+
+export const getWorkOrdersControllerPickLineUrl = (id: string,
+    lineId: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/picking/lines/${lineId}`
+}
+
+export const workOrdersControllerPickLine = async (id: string,
+    lineId: string,
+    pickWorkOrderComponentDto: PickWorkOrderComponentDto, options?: RequestInit): Promise<workOrdersControllerPickLineResponse> => {
+  
+  return customFetch<workOrdersControllerPickLineResponse>(getWorkOrdersControllerPickLineUrl(id,lineId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pickWorkOrderComponentDto,)
+  }
+);}
+
+
+
+/**
+ * Cancel a recorded component pick and reverse stock to storage.
+ * @summary Cancel Component Pick
+ */
+export type workOrdersControllerCancelPickResponse200 = {
+  data: WorkOrderPickingSummaryDto
+  status: 200
+}
+    
+export type workOrdersControllerCancelPickResponseSuccess = (workOrdersControllerCancelPickResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerCancelPickResponse = (workOrdersControllerCancelPickResponseSuccess)
+
+export const getWorkOrdersControllerCancelPickUrl = (id: string,
+    pickId: string,) => {
+
+
+  
+
+  return `/manufacturing/work-orders/${id}/picking/picks/${pickId}`
+}
+
+export const workOrdersControllerCancelPick = async (id: string,
+    pickId: string, options?: RequestInit): Promise<workOrdersControllerCancelPickResponse> => {
+  
+  return customFetch<workOrdersControllerCancelPickResponse>(getWorkOrdersControllerCancelPickUrl(id,pickId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 

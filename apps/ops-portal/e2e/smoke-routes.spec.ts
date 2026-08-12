@@ -18,6 +18,7 @@ const ROUTES = [
   '/reporting',
   '/sales-credit-notes',
   '/sales-invoices',
+  '/sales-quotes',
   '/sales-orders',
   '/shipments',
   '/supplier-invoices',

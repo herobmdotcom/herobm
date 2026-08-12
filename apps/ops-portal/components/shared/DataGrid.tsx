@@ -1391,7 +1391,7 @@ export default function DataGrid<T>({
   }
 
   return (
-    <div className={`flex flex-col lg:bg-white relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full'}`}>
+    <div className={`flex flex-col lg:bg-white relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full flex-1 min-h-0'}`}>
       {renderHeader ? (
         renderHeader!({ searchInput: searchInputNode, optionsButton: null, rowCount: displayedRowCount, loading })
       ) : (

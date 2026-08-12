@@ -11,6 +11,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
 import AllocationSlideOver, { GoodsReceivedLine } from './AllocationSlideOver';
@@ -246,7 +247,7 @@ export default function GoodsReceivedListPage() {
             }
         },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, 
-            valueFormatter: (p: ValueFormatterParams<ReceivingGridRow>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+            valueFormatter: (p: ValueFormatterParams<ReceivingGridRow>) => formatLocalDate(p.value as string | number, undefined, '') },
         { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
         { field: 'locationName', headerName: tCommon('columns.location'), width: 140 },
         { 

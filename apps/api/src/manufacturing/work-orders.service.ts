@@ -21,7 +21,17 @@ import {
   backorders,
   warehouseEvents,
 } from '@herobm/db-schema';
-import { eq, desc, gte, and, aliasedTable, sql } from 'drizzle-orm';
+import {
+  eq,
+  desc,
+  gte,
+  and,
+  aliasedTable,
+  sql,
+  inArray,
+  gt,
+} from 'drizzle-orm';
+import { PICKABLE_BIN_TYPES } from '../inventory/inventory-math.utils';
 import {
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
@@ -78,6 +88,46 @@ export class WorkOrdersService {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `WO-${today}-${rand}`;
+  }
+
+  private async validateBinSelection(
+    db: DrizzleDB,
+    binId: string,
+    locationId: string,
+    binRoleName: string,
+  ) {
+    const [bin] = await db
+      .select({
+        binId: bins.binId,
+        binType: bins.binType,
+        isUnavailable: bins.isUnavailable,
+        locationId: zones.locationId,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(eq(bins.binId, binId))
+      .limit(1);
+
+    if (!bin) {
+      throw new NotFoundException(
+        `${binRoleName} Bin with ID ${binId} not found`,
+      );
+    }
+    if (bin.locationId !== locationId) {
+      throw new BadRequestException(
+        `Selected ${binRoleName} bin does not belong to location ${locationId}`,
+      );
+    }
+    if (bin.isUnavailable) {
+      throw new BadRequestException(
+        `Selected ${binRoleName} bin is currently unavailable`,
+      );
+    }
+    if (bin.binType === 'quarantine') {
+      throw new BadRequestException(
+        `Quarantine bins cannot be used as ${binRoleName} bins`,
+      );
+    }
   }
 
   async changeWorkOrderState(
@@ -270,80 +320,17 @@ export class WorkOrdersService {
 
     // Validate WIP Bin if specified
     if (dto.wipBinId) {
-      const [bin] = await db
-        .select({
-          binId: bins.binId,
-          binType: bins.binType,
-          isUnavailable: bins.isUnavailable,
-          locationId: zones.locationId,
-        })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(eq(bins.binId, dto.wipBinId))
-        .limit(1);
-
-      if (!bin) {
-        throw new NotFoundException(
-          `WIP Bin with ID ${dto.wipBinId} not found`,
-        );
-      }
-
-      if (bin.locationId !== dto.locationId) {
-        throw new BadRequestException(
-          `Selected WIP bin does not belong to location ${dto.locationId}`,
-        );
-      }
-
-      if (bin.isUnavailable) {
-        throw new BadRequestException(
-          `Selected WIP bin is currently unavailable`,
-        );
-      }
-
-      if (bin.binType === 'quarantine') {
-        throw new BadRequestException(
-          `Quarantine bins cannot be used as WIP staging bins`,
-        );
-      }
+      await this.validateBinSelection(db, dto.wipBinId, dto.locationId, 'WIP');
     }
 
     // Validate Output Bin if specified
     if (dto.outputBinId) {
-      const [bin] = await db
-        .select({
-          binId: bins.binId,
-          binType: bins.binType,
-          isUnavailable: bins.isUnavailable,
-          locationId: zones.locationId,
-        })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(eq(bins.binId, dto.outputBinId))
-        .limit(1);
-
-      if (!bin) {
-        throw new NotFoundException(
-          `Output Bin with ID ${dto.outputBinId} not found`,
-        );
-      }
-
-      if (bin.locationId !== dto.locationId) {
-        throw new BadRequestException(
-          `Selected Output bin does not belong to location ${dto.locationId}`,
-        );
-      }
-
-      if (bin.isUnavailable) {
-        throw new BadRequestException(
-          `Selected Output bin is currently unavailable`,
-        );
-      }
-
-      if (bin.binType === 'quarantine') {
-        throw new BadRequestException(
-          `Quarantine bins cannot be used as Output bins`,
-        );
-      }
+      await this.validateBinSelection(
+        db,
+        dto.outputBinId,
+        dto.locationId,
+        'Output',
+      );
     }
 
     const orderNumber =
@@ -480,80 +467,22 @@ export class WorkOrdersService {
 
     if (dto.wipBinId) {
       const targetLocationId = dto.locationId || wo.locationId;
-      const [bin] = await db
-        .select({
-          binId: bins.binId,
-          binType: bins.binType,
-          isUnavailable: bins.isUnavailable,
-          locationId: zones.locationId,
-        })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(eq(bins.binId, dto.wipBinId))
-        .limit(1);
-
-      if (!bin) {
-        throw new NotFoundException(
-          `WIP Bin with ID ${dto.wipBinId} not found`,
-        );
-      }
-
-      if (bin.locationId !== targetLocationId) {
-        throw new BadRequestException(
-          `Selected WIP bin does not belong to work order location ${targetLocationId}`,
-        );
-      }
-
-      if (bin.isUnavailable) {
-        throw new BadRequestException(
-          `Selected WIP bin is currently unavailable`,
-        );
-      }
-
-      if (bin.binType === 'quarantine') {
-        throw new BadRequestException(
-          `Quarantine bins cannot be used as WIP staging bins`,
-        );
-      }
+      await this.validateBinSelection(
+        db,
+        dto.wipBinId,
+        targetLocationId,
+        'WIP',
+      );
     }
 
     if (dto.outputBinId) {
       const targetLocationId = dto.locationId || wo.locationId;
-      const [bin] = await db
-        .select({
-          binId: bins.binId,
-          binType: bins.binType,
-          isUnavailable: bins.isUnavailable,
-          locationId: zones.locationId,
-        })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(eq(bins.binId, dto.outputBinId))
-        .limit(1);
-
-      if (!bin) {
-        throw new NotFoundException(
-          `Output Bin with ID ${dto.outputBinId} not found`,
-        );
-      }
-
-      if (bin.locationId !== targetLocationId) {
-        throw new BadRequestException(
-          `Selected Output bin does not belong to work order location ${targetLocationId}`,
-        );
-      }
-
-      if (bin.isUnavailable) {
-        throw new BadRequestException(
-          `Selected Output bin is currently unavailable`,
-        );
-      }
-
-      if (bin.binType === 'quarantine') {
-        throw new BadRequestException(
-          `Quarantine bins cannot be used as Output bins`,
-        );
-      }
+      await this.validateBinSelection(
+        db,
+        dto.outputBinId,
+        targetLocationId,
+        'Output',
+      );
     }
 
     const executeUpdate = async (innerTx: DrizzleDB) => {
@@ -681,6 +610,10 @@ export class WorkOrdersService {
     const db = tx || this.db;
     const wo = await this.findOne(id, db);
 
+    if (!wo.wipBinId || !wo.outputBinId) {
+      throw new BadRequestException('WIP Bin and Output Bin must be set.');
+    }
+
     const executeRelease = async (innerTx: DrizzleDB) => {
       await this.changeWorkOrderState(
         id,
@@ -688,6 +621,15 @@ export class WorkOrdersService {
         username,
         innerTx,
       );
+
+      const wipBinId = wo.wipBinId;
+
+      const stagingLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [];
 
       for (const comp of wo.components) {
         const [pick] = await innerTx
@@ -1010,6 +952,81 @@ export class WorkOrdersService {
     const wo = await this.findOne(id, db);
 
     const executeCancel = async (innerTx: DrizzleDB) => {
+      if (wo.stateCode === WORK_ORDER_STATE.IN_PROGRESS) {
+        let wipBinId = wo.wipBinId;
+        if (!wipBinId) {
+          const [wipBin] = await innerTx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, wo.locationId),
+                eq(bins.binType, BIN_TYPE.WIP),
+              ),
+            )
+            .limit(1);
+          wipBinId = wipBin?.binId;
+        }
+
+        const reversalLines: {
+          productId: string;
+          binId: string;
+          quantity: number;
+          uomCode: string;
+        }[] = [];
+
+        const picks = await innerTx
+          .select()
+          .from(workOrderPicks)
+          .where(
+            and(
+              eq(workOrderPicks.workOrderId, id),
+              eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
+            ),
+          );
+
+        for (const pick of picks) {
+          const comp = wo.components.find(
+            (c) => c.workOrderComponentId === pick.workOrderComponentId,
+          );
+          const pickQty = parseFloat(pick.quantity || '0');
+          if (
+            pickQty > 0 &&
+            pick.binId &&
+            wo.wipBinId &&
+            pick.binId !== wo.wipBinId &&
+            comp
+          ) {
+            reversalLines.push(
+              {
+                productId: comp.productId,
+                binId: wo.wipBinId,
+                quantity: -pickQty,
+                uomCode: comp.baseUom || 'EA',
+              },
+              {
+                productId: comp.productId,
+                binId: pick.binId,
+                quantity: pickQty,
+                uomCode: comp.baseUom || 'EA',
+              },
+            );
+          }
+        }
+
+        if (reversalLines.length > 0) {
+          await this.inventoryMovementService.recordInventoryMovement(innerTx, {
+            entryNumber: `WO-RVT-${wo.orderNumber}`,
+            sourceType: 'WORK_ORDER',
+            sourceId: id,
+            memo: `Staged component reversal on Work Order cancellation for ${wo.orderNumber}`,
+            userId: username || 'system',
+            lines: reversalLines,
+          });
+        }
+      }
+
       await this.changeWorkOrderState(
         id,
         WORK_ORDER_STATE.CANCELLED,
@@ -1057,5 +1074,337 @@ export class WorkOrdersService {
     }
 
     return await this.findOne(id, tx);
+  }
+
+  async getPickingSummary(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const wo = await this.findOne(id, db);
+
+    const pickableBinCondition = inArray(bins.binType, [...PICKABLE_BIN_TYPES]);
+
+    const lines = await Promise.all(
+      wo.components.map(async (comp, idx) => {
+        const requiredQty = parseFloat(comp.expectedQuantity || '0');
+
+        const [pickedSum] = await db
+          .select({
+            sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number),
+          })
+          .from(workOrderPicks)
+          .where(
+            and(
+              eq(
+                workOrderPicks.workOrderComponentId,
+                comp.workOrderComponentId,
+              ),
+              eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
+            ),
+          );
+
+        const qtyPicked = pickedSum?.sum || 0;
+        const remaining = Math.max(0, requiredQty - qtyPicked);
+
+        const availableBins = await db
+          .select({
+            binId: bins.binId,
+            binName: bins.binNumber,
+            onHand: binContents.actualQuantity,
+          })
+          .from(binContents)
+          .innerJoin(bins, eq(binContents.binId, bins.binId))
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(zones.locationId, wo.locationId),
+              eq(binContents.productId, comp.productId),
+              eq(bins.isUnavailable, false),
+              pickableBinCondition,
+              gt(binContents.actualQuantity, '0'),
+            ),
+          )
+          .orderBy(desc(binContents.actualQuantity));
+
+        const totalOnHand = availableBins.reduce(
+          (acc, b) => acc + parseFloat(b.onHand || '0'),
+          0,
+        );
+
+        return {
+          salesOrderLineId: comp.workOrderComponentId,
+          lineNumber: idx + 1,
+          productId: comp.productId,
+          productNumber: comp.productNumber,
+          productType: 'inventory',
+          productDescription: comp.productName,
+          locationName: wo.locationName,
+          quantity: comp.expectedQuantity,
+          quantityPicked: qtyPicked.toString(),
+          quantityShipped: '0',
+          remaining: remaining.toString(),
+          isFullyPicked: remaining <= 0,
+          isPhysical: true,
+          onHand: totalOnHand.toString(),
+          availableBins,
+        };
+      }),
+    );
+
+    const picks = await db
+      .select({
+        pickId: workOrderPicks.pickId,
+        salesOrderId: workOrderPicks.workOrderId,
+        salesOrderLineId: workOrderPicks.workOrderComponentId,
+        productId: workOrderComponents.productId,
+        binId: workOrderPicks.binId,
+        quantity: workOrderPicks.quantity,
+        stateCode: workOrderPicks.stateCode,
+        binName: bins.binNumber,
+      })
+      .from(workOrderPicks)
+      .innerJoin(
+        workOrderComponents,
+        eq(
+          workOrderPicks.workOrderComponentId,
+          workOrderComponents.workOrderComponentId,
+        ),
+      )
+      .leftJoin(bins, eq(workOrderPicks.binId, bins.binId))
+      .where(eq(workOrderPicks.workOrderId, id));
+
+    const totalLines = lines.length;
+    const fullyPickedLines = lines.filter((l) => l.isFullyPicked).length;
+    const isFullyPicked = totalLines > 0 && fullyPickedLines === totalLines;
+
+    return {
+      totalLines,
+      fullyPickedLines,
+      isFullyPicked,
+      lines,
+      picks,
+    };
+  }
+
+  async pickComponent(
+    id: string,
+    componentId: string,
+    binId: string,
+    quantity: string,
+    username?: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const wo = await this.findOne(id, db);
+
+    if (wo.stateCode !== WORK_ORDER_STATE.IN_PROGRESS) {
+      throw new BadRequestException(
+        `Work order must be IN_PROGRESS to pick components. Current state: ${wo.stateCode}`,
+      );
+    }
+
+    const comp = wo.components.find(
+      (c) => c.workOrderComponentId === componentId,
+    );
+    if (!comp) {
+      throw new NotFoundException(
+        `Work Order Component ${componentId} not found on Work Order ${id}`,
+      );
+    }
+
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty <= 0) {
+      throw new BadRequestException('Picked quantity must be greater than 0');
+    }
+
+    if (!wo.wipBinId) {
+      throw new BadRequestException(
+        'WIP Bin must be assigned to pick components',
+      );
+    }
+
+    if (binId === wo.wipBinId) {
+      throw new BadRequestException('Cannot pick from the WIP bin itself.');
+    }
+
+    const executePick = async (innerTx: DrizzleDB) => {
+      await this.inventoryMovementService.recordInventoryMovement(innerTx, {
+        entryNumber: `WO-STG-${wo.orderNumber}-${comp.workOrderComponentId.slice(0, 6)}-${Date.now().toString().slice(-4)}`,
+        sourceType: 'WORK_ORDER',
+        sourceId: id,
+        memo: `Component staging pick into WIP bin for ${wo.orderNumber}`,
+        userId: username || 'system',
+        lines: [
+          {
+            productId: comp.productId,
+            binId,
+            quantity: -qty,
+            uomCode: comp.baseUom || 'EA',
+          },
+          {
+            productId: comp.productId,
+            binId: wo.wipBinId!,
+            quantity: qty,
+            uomCode: comp.baseUom || 'EA',
+          },
+        ],
+      });
+
+      const [pickBin] = await innerTx
+        .select({ binNumber: bins.binNumber })
+        .from(bins)
+        .where(eq(bins.binId, binId))
+        .limit(1);
+
+      const [pick] = await innerTx
+        .insert(workOrderPicks)
+        .values({
+          workOrderId: id,
+          workOrderComponentId: comp.workOrderComponentId,
+          binId,
+          quantity: quantity,
+          stateCode: WORK_ORDER_PICK_STATE.PICKED,
+          createdBy: username || null,
+        })
+        .returning();
+
+      await emitEvent(innerTx, {
+        entityType: EntityType.WORK_ORDER_PICK,
+        entityId: pick.pickId,
+        eventType: EventType.STATUS_CHANGED,
+        actor: username || 'system',
+        entityDisplayName: wo.orderNumber,
+        payload: {
+          workOrderId: id,
+          orderNumber: wo.orderNumber,
+          productId: comp.productId,
+          productName: comp.productName,
+          binId,
+          binName: pickBin?.binNumber,
+          binNumber: pickBin?.binNumber,
+          quantity: quantity,
+          stateCode: WORK_ORDER_PICK_STATE.PICKED,
+        },
+      });
+
+      return pick;
+    };
+
+    if (tx) {
+      await executePick(tx);
+    } else {
+      await this.db.transaction(executePick);
+    }
+
+    return await this.getPickingSummary(id, tx);
+  }
+
+  async cancelComponentPick(
+    id: string,
+    pickId: string,
+    username?: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const wo = await this.findOne(id, db);
+
+    const executeCancel = async (innerTx: DrizzleDB) => {
+      const [pick] = await innerTx
+        .select()
+        .from(workOrderPicks)
+        .where(
+          and(
+            eq(workOrderPicks.pickId, pickId),
+            eq(workOrderPicks.workOrderId, id),
+          ),
+        )
+        .limit(1);
+
+      if (!pick) {
+        throw new NotFoundException(
+          `Pick ${pickId} not found on Work Order ${id}`,
+        );
+      }
+
+      if (pick.stateCode === WORK_ORDER_PICK_STATE.CANCELLED) {
+        return;
+      }
+
+      const comp = wo.components.find(
+        (c) => c.workOrderComponentId === pick.workOrderComponentId,
+      );
+
+      const pickQty = parseFloat(pick.quantity || '0');
+
+      const reversalLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [];
+
+      if (
+        pickQty > 0 &&
+        pick.binId &&
+        wo.wipBinId &&
+        pick.binId !== wo.wipBinId &&
+        comp
+      ) {
+        reversalLines.push(
+          {
+            productId: comp.productId,
+            binId: wo.wipBinId,
+            quantity: -pickQty,
+            uomCode: comp.baseUom || 'EA',
+          },
+          {
+            productId: comp.productId,
+            binId: pick.binId,
+            quantity: pickQty,
+            uomCode: comp.baseUom || 'EA',
+          },
+        );
+      }
+
+      if (reversalLines.length > 0) {
+        await this.inventoryMovementService.recordInventoryMovement(innerTx, {
+          entryNumber: `WO-RVT-${wo.orderNumber}-${pickId.slice(0, 6)}-${Date.now().toString().slice(-4)}`,
+          sourceType: 'WORK_ORDER',
+          sourceId: id,
+          memo: `Component pick cancellation reversal for ${wo.orderNumber}`,
+          userId: username || 'system',
+          lines: reversalLines,
+        });
+      }
+
+      await innerTx
+        .update(workOrderPicks)
+        .set({
+          // eslint-disable-next-line no-restricted-syntax -- Pick item status update
+          stateCode: WORK_ORDER_PICK_STATE.CANCELLED,
+          modifiedOn: new Date(),
+        })
+        .where(eq(workOrderPicks.pickId, pickId));
+
+      await emitEvent(innerTx, {
+        entityType: EntityType.WORK_ORDER_PICK,
+        entityId: pickId,
+        eventType: EventType.PICK_CANCELLED,
+        actor: username || 'system',
+        entityDisplayName: wo.orderNumber,
+        payload: {
+          workOrderId: id,
+          orderNumber: wo.orderNumber,
+          pickId,
+          stateCode: WORK_ORDER_PICK_STATE.CANCELLED,
+        },
+      });
+    };
+
+    if (tx) {
+      await executeCancel(tx);
+    } else {
+      await this.db.transaction(executeCancel);
+    }
+
+    return await this.getPickingSummary(id, tx);
   }
 }

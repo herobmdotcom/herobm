@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
 
@@ -36,7 +37,7 @@ export default function GlobalInvoicesPage() {
         { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
         { field: 'customerName', headerName: t('columns.customer'), width: 250 },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => formatLocalDate(p.value, undefined, '') },
         { field: 'totalAmount', headerName: t('columns.amount'), type: 'numericColumn', width: 150,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {

@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { ValidState } from '@/types/states';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
@@ -139,7 +140,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
       header: t('columns.date'),
       render: (alloc) => (
         <span style={{ color: 'var(--text-secondary)' }}>
-          {new Date(alloc.paymentDate).toLocaleDateString()}
+          {formatLocalDate(alloc.paymentDate)}
         </span>
       )
     },
@@ -277,7 +278,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                 {tCommon('columns.date')}
               </label>
               <div className="text-sm">
-                {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : '—'}
+                {formatLocalDate(invoice.invoiceDate)}
               </div>
             </div>
             <div>
@@ -285,7 +286,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                 {tCommon('columns.dueDate')}
               </label>
               <div className="text-sm">
-                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+                {formatLocalDate(invoice.dueDate)}
               </div>
             </div>
             {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
@@ -301,7 +302,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                       earlyPaymentDiscount: invoice.earlyPaymentDiscount,
                       earlyPaymentDiscountDays: invoice.earlyPaymentDiscountDays,
                     });
-                    const dateLimit = result.eligibleUntil ? result.eligibleUntil.toLocaleDateString() : '';
+                    const dateLimit = result.eligibleUntil ? formatLocalDate(result.eligibleUntil, undefined, '') : '';
                     
                     if (result.isEligible) {
                       return `${invoice.earlyPaymentDiscount}% (${formatAmount(result.discountAmount, invoice.currencyCode)}) in ${invoice.earlyPaymentDiscountDays} days (${dateLimit})`;
@@ -400,7 +401,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                         <span className="font-semibold">{alloc.paymentNumber}</span>
                       )
                     }
-                    subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
+                    subtitle={formatLocalDate(alloc.paymentDate)}
                     details={[
                       {
                         label: t('columns.allocatedAmount'),

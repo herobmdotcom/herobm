@@ -7,6 +7,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useLicense } from '@/components/LicenseProvider';
 import { licenseControllerApplyLicense, LicenseStatusDtoState, LicenseStatusDtoType } from '@herobm/sdk';
 import toast from 'react-hot-toast';
+import { formatLocalDate } from '@/lib/date';
 import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { Button } from '@/components/shared/Button';
 import PageNav from '@/components/shared/PageNav';
@@ -127,7 +128,7 @@ export default function LicensePage() {
                     {status.type === LicenseStatusDtoType.none ? tPortal('gracePeriodEnds') : tPortal('expiresAt')}
                   </label>
                   <div className="flex items-center h-10 text-sm">
-                    {new Date(status.expiresAt).toLocaleDateString()}
+                    {formatLocalDate(status.expiresAt)}
                   </div>
                 </div>
               )}

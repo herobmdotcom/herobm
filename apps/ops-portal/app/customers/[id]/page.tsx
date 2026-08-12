@@ -12,9 +12,10 @@ import { FrontendEnrichmentDecorator } from "@/components/shared/FrontendEnrichm
 import * as api from "@herobm/sdk";
 import DetailsLayout from "@/components/shared/DetailsLayout";
 import { formatAmount } from "@/lib/currency";
+import { formatLocalDate, toInputDateFormat, parseLocalDate } from "@/lib/date";
 import ActivityTimeline, { TimelineEvent } from "@/components/shared/ActivityTimeline";
 import { StateName } from "@/components/StateBadge";
-import DataGrid from "@/components/DataGrid";
+import DetailTabGrid from "@/components/shared/DetailTabGrid";
 import { ValidState } from "@/types/states";
 import PageNav from "@/components/shared/PageNav";
 import GroupSelect from "@/components/shared/GroupSelect";
@@ -150,7 +151,7 @@ export default function AccountDetailPage({
         headerName: tCommon("columns.date"),
         width: 110,
         valueFormatter: (p: { value?: string | number | Date }) =>
-          p.value ? new Date(p.value).toLocaleDateString() : "—",
+          formatLocalDate(p.value),
       },
     ],
     [tCommon],
@@ -174,7 +175,7 @@ export default function AccountDetailPage({
         headerName: tSales("columns.date"),
         width: 200,
         valueFormatter: (p: { value?: string | number | Date }) =>
-          p.value ? new Date(p.value).toLocaleDateString() : "",
+          formatLocalDate(p.value, undefined, ""),
       },
       {
         field: "totalAmount",
@@ -207,7 +208,7 @@ export default function AccountDetailPage({
   const paymentColumns = useMemo<Record<string, unknown>[]>(
     () => [
       { field: "paymentNumber", headerName: "Payment No.", width: 150 },
-      { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+      { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => formatLocalDate(p.value, undefined, "") },
       { field: "modeOfPayment", headerName: "Mode", width: 150 },
       { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
       { field: "unallocatedAmount", headerName: "Unallocated", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
@@ -506,11 +507,11 @@ export default function AccountDetailPage({
                     <input
                       type="date"
                       className="input text-sm w-full md:w-auto bg-white"
-                      value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
-                      min={new Date().toISOString().split('T')[0]}
+                      value={toInputDateFormat(dto.overrideCreditHoldUntil)}
+                      min={toInputDateFormat(new Date())}
                       disabled={!isEditable || saving}
                       onChange={(e) => {
-                        const date = e.target.value ? new Date(e.target.value) : null;
+                        const date = e.target.value ? parseLocalDate(e.target.value) : null;
                         updateField("overrideCreditHoldUntil", date);
                         saveField("overrideCreditHoldUntil", date);
                       }}
@@ -523,155 +524,49 @@ export default function AccountDetailPage({
         )}
 
         {activeTab === "salesOrders" && (
-          <div className="flex-1 min-h-[600px] flex flex-col w-full h-full p-4 lg:p-6">
-            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-              <DataGrid
-                endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
-                columns={orderColumns}
-                gridKey="customer-orders"
-                urlPrefix="orders"
-                searchPlaceholder={tSales("placeholders.searchOrders")}
-                exportFileName={`orders-${customer.customerNumber}`}
-                fetchAll
-                rowIdField="id"
-                rowHref={(order: { id: string }) => `/sales-orders/${order.id}`}
-                renderHeader={({
-                  searchInput,
-                  optionsButton,
-                  rowCount,
-                  loading,
-                }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2
-                        className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0"
-                        style={{ fontFamily: "Manrope, sans-serif" }}
-                      >
-                        {tSales("title")}
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span
-                          className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                          style={{ fontFamily: "Manrope, sans-serif" }}
-                        >
-                          {tCommon("grid.rowCountLabel")}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? "..." : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">{searchInput}</div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                      <Link
-                        href={`/sales-orders/new?customerId=${params.id}`}
-                        className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110"
-                      >
-                        {tSales("buttons.createOrder")}
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              />
-            </div>
-          </div>
+          <DetailTabGrid
+            title={tSales("title")}
+            headerActions={
+              <Link
+                href={`/sales-orders/new?customerId=${params.id}`}
+                className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110"
+              >
+                {tSales("buttons.createOrder")}
+              </Link>
+            }
+            endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
+            columns={orderColumns}
+            gridKey="customer-orders"
+            urlPrefix="orders"
+            searchPlaceholder={tSales("placeholders.searchOrders")}
+            exportFileName={`orders-${customer.customerNumber}`}
+            fetchAll
+            rowIdField="id"
+            rowHref={(order: { id: string }) => `/sales-orders/${order.id}`}
+          />
         )}
 
         {activeTab === "invoices" && (
-          <div className="flex-1 min-h-[600px] flex flex-col w-full h-full p-4 lg:p-6">
-            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-              <DataGrid
-                endpoint={`/api/sales-invoices?customerId=${encodeURIComponent(params.id)}&days=0&limit=50`}
-                columns={invoiceColumns}
-                gridKey="customer-invoices"
-                urlPrefix="invoices"
-                fetchAll
-                rowIdField="invoiceId"
-                rowHref={(row: { invoiceId: string; salesOrderId?: string }) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
-                renderHeader={({
-                  searchInput,
-                  optionsButton,
-                  rowCount,
-                  loading,
-                }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2
-                        className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0"
-                        style={{ fontFamily: "Manrope, sans-serif" }}
-                      >
-                        {tSales("invoicesCardHeading")}
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span
-                          className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                          style={{ fontFamily: "Manrope, sans-serif" }}
-                        >
-                          {tCommon("grid.rowCountLabel")}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? "..." : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">{searchInput}</div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-              />
-            </div>
-          </div>
+          <DetailTabGrid
+            title={tSales("invoicesCardHeading")}
+            endpoint={`/api/sales-invoices?customerId=${encodeURIComponent(params.id)}&days=0&limit=50`}
+            columns={invoiceColumns}
+            gridKey="customer-invoices"
+            urlPrefix="invoices"
+            fetchAll
+            rowIdField="invoiceId"
+            rowHref={(row: { invoiceId: string; salesOrderId?: string }) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
+          />
         )}
 
         {activeTab === "payments" && (
-          <div className="flex-1 min-h-[600px] flex flex-col z-10 w-full h-full pb-6">
-            <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-              <DataGrid
-                endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
-                columns={paymentColumns}
-                gridKey="customer-payments"
-                fetchAll
-                renderHeader={({
-                  searchInput,
-                  optionsButton,
-                  rowCount,
-                  loading,
-                }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2
-                        className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0"
-                        style={{ fontFamily: "Manrope, sans-serif" }}
-                      >
-                        Payments
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span
-                          className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                          style={{ fontFamily: "Manrope, sans-serif" }}
-                        >
-                          {tCommon("grid.rowCountLabel")}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? "..." : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">{searchInput}</div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-              />
-            </div>
-          </div>
+          <DetailTabGrid
+            title="Payments"
+            endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
+            columns={paymentColumns}
+            gridKey="customer-payments"
+            fetchAll
+          />
         )}
 
         {activeTab === "contacts" && (

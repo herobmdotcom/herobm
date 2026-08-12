@@ -25,7 +25,7 @@ export default function DetailsLayout({
         </div>
       </div>
       <div className="flex-1 overflow-y-auto bg-white detail-content flex flex-col min-h-0">
-        <div className="w-full px-4 lg:px-6 pt-4 flex flex-col flex-1 h-full min-h-[500px] relative">
+        <div className="w-full px-4 lg:px-6 pt-4 flex flex-col flex-1 min-h-full min-h-[500px] relative">
           {children}
           {(footerActions || showPrint) && (
             <div className="flex items-center justify-between mt-6 mb-4 pt-4 border-t border-[rgba(196,198,205,0.2)]">

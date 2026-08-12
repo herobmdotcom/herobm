@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import Link from 'next/link';
 import ShipReturnSlideOver, { ShipReturnSlideOverProps } from './ShipReturnSlideOver';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
@@ -36,7 +37,7 @@ export default function ShipmentsReturnsPage() {
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'PO No', width: 140 },
         { field: 'vendorName', headerName: 'Supplier', flex: 1 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         { 
             field: 'stateCode', 
             headerName: 'Status', 

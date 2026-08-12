@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import Link from 'next/link';
@@ -260,8 +261,8 @@ export default function InvoicesSection({
 
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
                             {inv.createdBy
-                                ? `Created ${new Date(inv.createdOn).toLocaleDateString()} by ${inv.createdBy}`
-                                : `Created ${new Date(inv.createdOn).toLocaleDateString()}`}
+                                ? `Created ${formatLocalDate(inv.createdOn)} by ${inv.createdBy}`
+                                : `Created ${formatLocalDate(inv.createdOn)}`}
                         </div>
                     </div>
                 ))}

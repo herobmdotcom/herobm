@@ -28,6 +28,8 @@ describe('SuppliersService', () => {
         .values([
           {
             name: 'Vendor 1',
+            email: 'vendor1@example.com',
+            telephone: '+61400000000',
             headquartersAddressLine1: 'AU',
             stateCode: ACTOR_STATE.ACTIVE,
             isTaxRegistered: false,
@@ -65,6 +67,8 @@ describe('SuppliersService', () => {
       const result = await service.findAll({});
       expect(result.data).toHaveLength(2);
       expect(result.total).toBe(2);
+      expect(result.data[0].emailAddress1).toBe('vendor1@example.com');
+      expect(result.data[0].telephone1).toBe('+61400000000');
     });
 
     it('should apply search filter', async () => {
@@ -140,6 +144,38 @@ describe('SuppliersService', () => {
 
       const result = await service.findOne(s.vendorId);
       expect(result.name).toBe('Existing Vendor');
+    });
+
+    it('should trim trailing spaces on email, phone, and fax from actor record', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Padded Vendor',
+          email: '  accounts@padded.co   ',
+          telephone: '  +1234567   ',
+          fax: '  +7654321   ',
+          stateCode: ACTOR_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [s] = await pg.db
+        .insert(suppliers)
+        .values({
+          actorId: act.actorId,
+          vendorNumber: 'V-PAD',
+          currencyCode: 'EUR',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
+        })
+        .returning();
+
+      const result = await service.findOne(s.vendorId);
+      expect(result.emailAddress1).toBe('accounts@padded.co');
+      expect(result.telephone1).toBe('+1234567');
+      expect(result.fax).toBe('+7654321');
     });
 
     it('should throw NotFoundException if not found', async () => {

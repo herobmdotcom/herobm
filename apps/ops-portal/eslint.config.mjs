@@ -116,13 +116,19 @@ export default tseslint.config(
         {
           selector: "CallExpression[callee.name=/^t[A-Z]*/] ObjectExpression Property[key.name='defaultValue']",
           message: "ADV-072: Do not use 'defaultValue' in translation calls. Systematically add all strings to en.json."
+        },
+        {
+          // ADV-090: Centralized Browser Locale Date Formatting
+          selector: "CallExpression[callee.property.name='toLocaleDateString']",
+          message: "ADV-090: Do not call .toLocaleDateString() directly in UI components as it is vulnerable to UTC timezone day-shifts. Use formatLocalDate() from '@/lib/date'."
         }
       ]
     },
   },
   {
-    files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**'],
+    files: ['lib/date.ts', '**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**'],
     rules: {
+      'no-restricted-syntax': 'off',
       'i18next/no-literal-string': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },

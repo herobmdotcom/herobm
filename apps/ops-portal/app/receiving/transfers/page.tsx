@@ -8,6 +8,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import ReceiveTransferSlideOver from './ReceiveTransferSlideOver';
 import { TRANSFER_ORDER_STATE } from '@herobm/shared';
 
@@ -83,7 +84,7 @@ export default function ReceivingTransfersPage() {
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
         { field: 'sourceLocationName', headerName: 'Source', width: 180 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         { field: 'createdBy', headerName: 'Created By', width: 140 },
         { field: 'notes', headerName: tCommon('columns.notes'), flex: 1, minWidth: 200 }
     ], [tCommon]);

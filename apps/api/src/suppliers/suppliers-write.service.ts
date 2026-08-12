@@ -175,6 +175,9 @@ export class SuppliersWriteService {
         'address1StateOrProvince',
         'address1PostalCode',
         'address1Country',
+        'telephone1',
+        'fax',
+        'emailAddress1',
       ];
       const actorUpdate: Record<string, unknown> = {};
 
@@ -185,6 +188,21 @@ export class SuppliersWriteService {
             actorUpdate.businessNumber = coreChanges.businessNumber;
           if (k === 'isTaxRegistered')
             actorUpdate.isTaxRegistered = coreChanges.isTaxRegistered;
+          if (k === 'telephone1')
+            actorUpdate.telephone =
+              typeof coreChanges.telephone1 === 'string'
+                ? coreChanges.telephone1.trim()
+                : coreChanges.telephone1;
+          if (k === 'fax')
+            actorUpdate.fax =
+              typeof coreChanges.fax === 'string'
+                ? coreChanges.fax.trim()
+                : coreChanges.fax;
+          if (k === 'emailAddress1')
+            actorUpdate.email =
+              typeof coreChanges.emailAddress1 === 'string'
+                ? coreChanges.emailAddress1.trim()
+                : coreChanges.emailAddress1;
           delete coreChanges[k];
         }
       }

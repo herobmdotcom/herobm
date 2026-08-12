@@ -12,6 +12,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -23,6 +24,8 @@ import {
   UpdateWorkOrderDto,
   UpdateWorkOrderComponentDto,
   EmptyBodyDto,
+  PickWorkOrderComponentDto,
+  WorkOrderPickingSummaryDto,
 } from './dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -180,5 +183,59 @@ export class WorkOrdersController {
     @AuthUser() user: JwtUser,
   ): Promise<WorkOrderResponseDto> {
     return await this.workOrdersService.cancel(id, user?.username);
+  }
+
+  @Get(':id/picking')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Work Order Picking Summary',
+    description: 'Retrieve component picking summary for a Work Order.',
+  })
+  @ApiOkResponse({ type: WorkOrderPickingSummaryDto })
+  async getPickingSummary(@Param('id') id: string) {
+    return await this.workOrdersService.getPickingSummary(id);
+  }
+
+  @Post(':id/picking/lines/:lineId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Pick Work Order Component',
+    description: 'Record picked component quantity into WIP bin.',
+  })
+  @ApiBody({ type: PickWorkOrderComponentDto })
+  @ApiCreatedResponse({ type: WorkOrderPickingSummaryDto })
+  async pickLine(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @Body() dto: PickWorkOrderComponentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return await this.workOrdersService.pickComponent(
+      id,
+      lineId,
+      dto.binId,
+      dto.quantity,
+      user?.username,
+    );
+  }
+
+  @Delete(':id/picking/picks/:pickId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Cancel Component Pick',
+    description:
+      'Cancel a recorded component pick and reverse stock to storage.',
+  })
+  @ApiOkResponse({ type: WorkOrderPickingSummaryDto })
+  async cancelPick(
+    @Param('id') id: string,
+    @Param('pickId') pickId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return await this.workOrdersService.cancelComponentPick(
+      id,
+      pickId,
+      user?.username,
+    );
   }
 }

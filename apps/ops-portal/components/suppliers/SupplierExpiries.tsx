@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
+import { formatLocalDate } from '@/lib/date';
 
 interface Expiry {
   expiryId: string;
@@ -105,7 +106,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
         const isExpired = new Date(row.expiryDate) < new Date();
         return (
           <div className={`text-sm ${isExpired ? 'text-red-700 font-bold' : ''}`}>
-            {new Date(row.expiryDate).toLocaleDateString()}
+            {formatLocalDate(row.expiryDate)}
           </div>
         );
       }

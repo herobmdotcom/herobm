@@ -8,6 +8,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import DataGrid from '@/components/DataGrid';
+import { formatLocalDate } from '@/lib/date';
 import Link from 'next/link';
 import ReceiveReturnSlideOver from './ReceiveReturnSlideOver';
 import { RETURN_STATE } from '@herobm/shared';
@@ -81,7 +82,7 @@ export default function ReceivingReturnsPage() {
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         { 
             field: 'lines', 
             headerName: 'Lines', 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
+import { formatLocalDate } from '@/lib/date';
 import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
@@ -272,7 +273,7 @@ export default function InvoicesSection({
                                     {inv.invoiceNumber}
                                 </div>
                                 <div className="text-xs text-[var(--text-muted)]">
-                                    {inv.invoiceDate || inv.createdOn ? new Date((inv.invoiceDate || inv.createdOn) as string).toLocaleDateString() : '—'} &middot; {inv.lines?.length || 0}
+                                    {formatLocalDate(inv.invoiceDate || inv.createdOn)} &middot; {inv.lines?.length || 0}
                                     {/* eslint-disable-next-line i18next/no-literal-string -- UI technical layout */}
                                     <span> lines </span> &middot; <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}</span>
                                 </div>

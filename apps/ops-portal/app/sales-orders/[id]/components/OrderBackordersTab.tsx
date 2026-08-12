@@ -3,6 +3,7 @@
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { formatLocalDate } from '@/lib/date';
 import StateBadge from '@/components/StateBadge';
 import type { OrderDetail } from '../types';
 
@@ -71,7 +72,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                     <span className="text-gray-400">—</span>
                                 )}
                             </td>
-                            <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
+                            <td>{formatLocalDate(bo.createdOn)}</td>
                         </tr>
                     );
                 }}
@@ -105,7 +106,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                     )
                                 } />
                                 <MobileCardField label={tSales('columns.demandDate')} value={
-                                    new Date(bo.createdOn).toLocaleDateString()
+                                    formatLocalDate(bo.createdOn)
                                 } />
                                 <MobileCardField label={tSales('demandedQty', { qty: bo.quantity || '0' })} value={
                                     isAllocated ? (
