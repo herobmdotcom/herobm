@@ -271,6 +271,95 @@ describe('WorkOrdersService', () => {
       expect(comp1?.expectedQuantity).toBe('12');
       expect(comp2?.expectedQuantity).toBe('6');
     });
+
+    it('should throw BadRequestException if WIP bin belongs to a different location', async () => {
+      const [otherLoc] = await pg.db
+        .insert(locations)
+        .values({
+          code: 'LOC-OTHER',
+          name: 'Other Location',
+          source: 'manual',
+        })
+        .returning();
+
+      const [otherZone] = await pg.db
+        .insert(zones)
+        .values({
+          locationId: otherLoc.locationId,
+          code: 'Z-OTHER',
+          name: 'Other Zone',
+          source: 'manual',
+        })
+        .returning();
+
+      const [otherBin] = await pg.db
+        .insert(bins)
+        .values({
+          zoneId: otherZone.zoneId,
+          binNumber: 'BIN-OTHER-01',
+          binType: 'staging',
+          source: 'manual',
+        })
+        .returning();
+
+      const dto = {
+        productId: testProductId,
+        targetQuantity: '1',
+        locationId: testLocationId,
+        wipBinId: otherBin.binId,
+      };
+
+      await expect(service.create(dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if WIP bin is unavailable', async () => {
+      const [unavailBin] = await pg.db
+        .insert(bins)
+        .values({
+          zoneId: testZoneId,
+          binNumber: 'BIN-UNAVAIL-01',
+          binType: 'staging',
+          isUnavailable: true,
+          source: 'manual',
+        })
+        .returning();
+
+      const dto = {
+        productId: testProductId,
+        targetQuantity: '1',
+        locationId: testLocationId,
+        wipBinId: unavailBin.binId,
+      };
+
+      await expect(service.create(dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if WIP bin is a quarantine bin', async () => {
+      const [quarantineBin] = await pg.db
+        .insert(bins)
+        .values({
+          zoneId: testZoneId,
+          binNumber: 'BIN-QUARANTINE-01',
+          binType: 'quarantine',
+          source: 'manual',
+        })
+        .returning();
+
+      const dto = {
+        productId: testProductId,
+        targetQuantity: '1',
+        locationId: testLocationId,
+        wipBinId: quarantineBin.binId,
+      };
+
+      await expect(service.create(dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 
   describe('state transitions (release, completeBuild, putawayFinishedGoods, cancel)', () => {

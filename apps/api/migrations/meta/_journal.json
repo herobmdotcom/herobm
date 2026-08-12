@@ -750,6 +750,13 @@
       "when": 1786479881722,
       "tag": "0106_add_manufacturing",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1786520468855,
+      "tag": "0107_add_wip_bin_type",
+      "breakpoints": true
     }
   ]
 }

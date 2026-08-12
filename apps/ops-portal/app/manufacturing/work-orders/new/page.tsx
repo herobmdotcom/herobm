@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -35,6 +35,8 @@ interface InventoryBin {
   binId: string;
   binNumber: string;
   binType: string;
+  zoneId?: string;
+  zoneCode?: string;
 }
 
 let lineKeySequence = 0;
@@ -50,6 +52,7 @@ export default function NewWorkOrderPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [targetQuantity, setTargetQuantity] = useState('1');
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [selectedZone, setSelectedZone] = useState('all');
   const [wipBinId, setWipBinId] = useState('');
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
@@ -63,6 +66,7 @@ export default function NewWorkOrderPage() {
 
   // Fetch bins when location changes
   useEffect(() => {
+    setSelectedZone('all');
     if (!locationId) {
       setAvailableBins([]);
       setWipBinId('');
@@ -71,7 +75,14 @@ export default function NewWorkOrderPage() {
     setLoadingBins(true);
     inventoryControllerFindBinsByLocation(locationId)
       .then((res) => {
-        const binList = (res?.data || []) as unknown as InventoryBin[];
+        const rawBins = res?.data as unknown;
+        const binList = (
+          Array.isArray(rawBins)
+            ? rawBins
+            : Array.isArray((rawBins as { data?: unknown[] })?.data)
+            ? (rawBins as { data: unknown[] }).data
+            : []
+        ) as InventoryBin[];
         setAvailableBins(binList);
         const wipBin = binList.find((b) => b.binType === 'wip') || binList[0];
         setWipBinId(wipBin ? wipBin.binId : '');
@@ -83,6 +94,32 @@ export default function NewWorkOrderPage() {
       .finally(() => setLoadingBins(false));
   }, [locationId]);
 
+  // Extract unique zones for the selected location
+  const availableZones = useMemo(() => {
+    const zonesSet = new Set<string>();
+    availableBins.forEach((b) => {
+      if (b.zoneCode) zonesSet.add(b.zoneCode);
+    });
+    return Array.from(zonesSet).sort();
+  }, [availableBins]);
+
+  // Filter bins based on selected zone
+  const filteredBins = useMemo(() => {
+    if (selectedZone === 'all') return availableBins;
+    return availableBins.filter((b) => b.zoneCode === selectedZone);
+  }, [availableBins, selectedZone]);
+
+  // Group filtered bins by zone for optgroups
+  const binsByZone = useMemo(() => {
+    const map = new Map<string, InventoryBin[]>();
+    filteredBins.forEach((bin) => {
+      const zCode = bin.zoneCode || 'General';
+      if (!map.has(zCode)) map.set(zCode, []);
+      map.get(zCode)!.push(bin);
+    });
+    return map;
+  }, [filteredBins]);
+
   // When output product changes, fetch its BOM components
   const handleProductSelect = async (p: Product) => {
     setSelectedProduct(p);
@@ -90,7 +127,14 @@ export default function NewWorkOrderPage() {
 
     try {
       const res = await productsControllerGetComponents(p.productId);
-      const bomList = (res?.data || []) as unknown as {
+      const rawBomData = res?.data as unknown;
+      const bomList = (
+        Array.isArray(rawBomData)
+          ? rawBomData
+          : Array.isArray((rawBomData as { data?: unknown[] })?.data)
+          ? (rawBomData as { data: unknown[] }).data
+          : []
+      ) as {
         childProductId: string;
         productNumber: string;
         name: string;
@@ -311,6 +355,7 @@ export default function NewWorkOrderPage() {
                 </div>
               ) : (
                 <ProductSearchInput
+                  structureType="kit"
                   onSelect={handleProductSelect}
                   placeholder={t('placeholders.searchProduct')}
                   style={{ width: '100%' }}
@@ -352,6 +397,32 @@ export default function NewWorkOrderPage() {
               />
             </div>
 
+            {/* Storage Zone Filter */}
+            <div>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {t('labels.zone')}
+              </label>
+              <select
+                className="input w-full"
+                value={selectedZone}
+                onChange={(e) => {
+                  setSelectedZone(e.target.value);
+                  setWipBinId('');
+                }}
+                disabled={!locationId || loadingBins || availableZones.length === 0}
+              >
+                <option value="all">{t('placeholders.allZones')}</option>
+                {availableZones.map((zCode) => (
+                  <option key={zCode} value={zCode}>
+                    Zone: {zCode}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* WIP Bin Select */}
             <div>
               <label
@@ -367,10 +438,14 @@ export default function NewWorkOrderPage() {
                 disabled={!locationId || loadingBins}
               >
                 <option value="">{t('placeholders.selectWipBin')}</option>
-                {availableBins.map((bin) => (
-                  <option key={bin.binId} value={bin.binId}>
-                    {bin.binNumber} {bin.binType ? `(${bin.binType.toUpperCase()})` : ''}
-                  </option>
+                {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                  <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                    {binGroup.map((bin) => (
+                      <option key={bin.binId} value={bin.binId}>
+                        {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
@@ -404,7 +479,7 @@ export default function NewWorkOrderPage() {
               <div className="flex-1 min-w-[200px] max-w-sm">
                 <ProductSearchInput
                   onSelect={addLineFromProduct}
-                  placeholder={t('placeholders.searchProduct')}
+                  placeholder={t('placeholders.searchComponent')}
                   style={{ width: '100%' }}
                 />
               </div>

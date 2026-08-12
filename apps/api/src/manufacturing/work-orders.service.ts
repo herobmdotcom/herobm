@@ -14,6 +14,7 @@ import {
   products,
   locations,
   bins,
+  zones,
   productComponents,
   backorders,
   warehouseEvents,
@@ -246,14 +247,38 @@ export class WorkOrdersService {
     // Validate WIP Bin if specified
     if (dto.wipBinId) {
       const [bin] = await db
-        .select({ binId: bins.binId })
+        .select({
+          binId: bins.binId,
+          binType: bins.binType,
+          isUnavailable: bins.isUnavailable,
+          locationId: zones.locationId,
+        })
         .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
         .where(eq(bins.binId, dto.wipBinId))
         .limit(1);
 
       if (!bin) {
         throw new NotFoundException(
           `WIP Bin with ID ${dto.wipBinId} not found`,
+        );
+      }
+
+      if (bin.locationId !== dto.locationId) {
+        throw new BadRequestException(
+          `Selected WIP bin does not belong to location ${dto.locationId}`,
+        );
+      }
+
+      if (bin.isUnavailable) {
+        throw new BadRequestException(
+          `Selected WIP bin is currently unavailable`,
+        );
+      }
+
+      if (bin.binType === 'quarantine') {
+        throw new BadRequestException(
+          `Quarantine bins cannot be used as WIP staging bins`,
         );
       }
     }
@@ -390,15 +415,40 @@ export class WorkOrdersService {
     }
 
     if (dto.wipBinId) {
+      const targetLocationId = dto.locationId || wo.locationId;
       const [bin] = await db
-        .select({ binId: bins.binId })
+        .select({
+          binId: bins.binId,
+          binType: bins.binType,
+          isUnavailable: bins.isUnavailable,
+          locationId: zones.locationId,
+        })
         .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
         .where(eq(bins.binId, dto.wipBinId))
         .limit(1);
 
       if (!bin) {
         throw new NotFoundException(
           `WIP Bin with ID ${dto.wipBinId} not found`,
+        );
+      }
+
+      if (bin.locationId !== targetLocationId) {
+        throw new BadRequestException(
+          `Selected WIP bin does not belong to work order location ${targetLocationId}`,
+        );
+      }
+
+      if (bin.isUnavailable) {
+        throw new BadRequestException(
+          `Selected WIP bin is currently unavailable`,
+        );
+      }
+
+      if (bin.binType === 'quarantine') {
+        throw new BadRequestException(
+          `Quarantine bins cannot be used as WIP staging bins`,
         );
       }
     }

@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { RATE_LIMITS } from '../common/config/throttler.config';
 
@@ -35,6 +36,7 @@ import { ClientErrorDto, EmptyBodyDto } from './dto';
  * stack via structured stdout logging.
  *
  * Security posture:
+ * - @Public() — bypasses JwtAuthGuard so error telemetry works even when unauthenticated.
  * - @SkipCasbin() — telemetry must work even when the user's session has expired
  *   or the auth token is missing (those are common error scenarios themselves).
  * - @Throttle() — rate-limited to 10 requests per 60 seconds per IP to prevent abuse.
@@ -44,6 +46,7 @@ import { ClientErrorDto, EmptyBodyDto } from './dto';
  */
 @ApiTags('System')
 @Controller('telemetry')
+@Public()
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
 @Throttle({ default: RATE_LIMITS.TELEMETRY })

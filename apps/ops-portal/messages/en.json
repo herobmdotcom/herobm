@@ -2070,7 +2070,8 @@
         "quarantine": "Quarantine",
         "receiving": "Receiving",
         "staging": "Staging",
-        "storage": "Storage"
+        "storage": "Storage",
+        "wip": "Work in Progress"
       },
       "bins": "Bins",
       "binsCount": "{count, plural, =1 {# bin} other {# bins}}",
@@ -3799,13 +3800,16 @@
       "orderNumber": "Order Number",
       "product": "Product to Produce",
       "targetQuantity": "Target Quantity",
-      "wipBin": "WIP Bin"
+      "wipBin": "WIP Bin",
+      "zone": "Storage Zone"
     },
     "lineItems": "Component Lines (Bill of Materials)",
     "noLineItems": "No component line items added.",
     "placeholders": {
+      "allZones": "All Zones",
       "customDescription": "Custom component description",
       "orderNumber": "e.g. WO-20260811-001 (auto-generated if empty)",
+      "searchComponent": "Add component...",
       "searchOrders": "Search Work Orders...",
       "searchProduct": "Search product to produce...",
       "selectWipBin": "Select WIP Bin (optional)"

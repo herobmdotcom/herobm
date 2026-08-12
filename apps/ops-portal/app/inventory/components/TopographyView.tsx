@@ -1080,8 +1080,8 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
             <option value="storage">{tLoc('binTypes.storage')}</option>
             <option value="pick">{tLoc('binTypes.pick')}</option>
             <option value="bulk">{tLoc('binTypes.bulk')}</option>
-            <option value="receiving">{tLoc('binTypes.receiving')}</option>
             <option value="staging">{tLoc('binTypes.staging')}</option>
+            <option value="wip">{tLoc('binTypes.wip')}</option>
             <option value="quarantine">{tLoc('binTypes.quarantine')}</option>
           </select>
         </div>

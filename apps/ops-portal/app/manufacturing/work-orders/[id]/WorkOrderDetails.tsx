@@ -61,6 +61,8 @@ interface InventoryBin {
   binId: string;
   binNumber: string;
   binType: string;
+  zoneId?: string;
+  zoneCode?: string;
 }
 
 export default function WorkOrderDetails({ workOrderId }: { workOrderId: string }) {
@@ -72,6 +74,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
   // Edit State
   const [dto, setDto] = useState<Partial<WorkOrderDetail>>({});
+  const [selectedZone, setSelectedZone] = useState('all');
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
 
@@ -111,6 +114,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   }, [data]);
 
   useEffect(() => {
+    setSelectedZone('all');
     if (!dto.locationId) {
       setAvailableBins([]);
       return;
@@ -126,6 +130,32 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       })
       .finally(() => setLoadingBins(false));
   }, [dto.locationId]);
+
+  // Extract unique zones for the selected location
+  const availableZones = useMemo(() => {
+    const zonesSet = new Set<string>();
+    availableBins.forEach((b) => {
+      if (b.zoneCode) zonesSet.add(b.zoneCode);
+    });
+    return Array.from(zonesSet).sort();
+  }, [availableBins]);
+
+  // Filter bins based on selected zone
+  const filteredBins = useMemo(() => {
+    if (selectedZone === 'all') return availableBins;
+    return availableBins.filter((b) => b.zoneCode === selectedZone);
+  }, [availableBins, selectedZone]);
+
+  // Group filtered bins by zone for optgroups
+  const binsByZone = useMemo(() => {
+    const map = new Map<string, InventoryBin[]>();
+    filteredBins.forEach((bin) => {
+      const zCode = bin.zoneCode || 'General';
+      if (!map.has(zCode)) map.set(zCode, []);
+      map.get(zCode)!.push(bin);
+    });
+    return map;
+  }, [filteredBins]);
 
   const updateField = (field: keyof WorkOrderDetail, value: string | null) => {
     setDto((prev) => ({ ...prev, [field]: value }));
@@ -441,6 +471,29 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               )}
             </div>
 
+            {isEditable && (
+              <div className="min-w-0">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Storage Zone
+                </label>
+                <select
+                  className="input w-full"
+                  value={selectedZone}
+                  onChange={(e) => {
+                    setSelectedZone(e.target.value);
+                  }}
+                  disabled={!dto.locationId || loadingBins || actionLoading || availableZones.length === 0}
+                >
+                  <option value="all">All Zones</option>
+                  {availableZones.map((zCode) => (
+                    <option key={zCode} value={zCode}>
+                      Zone: {zCode}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="min-w-0">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 WIP Bin
@@ -456,10 +509,14 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   disabled={!dto.locationId || loadingBins || actionLoading}
                 >
                   <option value="">Unassigned</option>
-                  {availableBins.map((bin) => (
-                    <option key={bin.binId} value={bin.binId}>
-                      {bin.binNumber} {bin.binType ? `(${bin.binType.toUpperCase()})` : ''}
-                    </option>
+                  {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                    <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                      {binGroup.map((bin) => (
+                        <option key={bin.binId} value={bin.binId}>
+                          {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               ) : (

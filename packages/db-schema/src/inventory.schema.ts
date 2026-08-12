@@ -68,6 +68,7 @@ export const binTypeEnum = herobmCore.enum('bin_type_enum', [
   'staging', // Temporary holding areas (e.g. shipping docks, temporary transit)
   'quarantine', // Restricted bins for quality inspection, damaged goods, or blocked inventory
   'in_transit', // Virtual bins representing inventory currently moving between physical locations
+  'wip', // Work in progress bin for manufacturing component staging and build output
 ]);
 
 export const bins = herobmCore.table(

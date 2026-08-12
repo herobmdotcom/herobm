@@ -1,0 +1,1 @@
+ALTER TYPE "herobm_core"."bin_type_enum" ADD VALUE IF NOT EXISTS 'wip';

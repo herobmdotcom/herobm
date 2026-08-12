@@ -12,6 +12,8 @@ export enum BIN_TYPE {
   QUARANTINE = 'quarantine',
   /** Virtual bins representing inventory currently moving between physical locations */
   IN_TRANSIT = 'in_transit',
+  /** Work in progress bin for manufacturing component staging and build output */
+  WIP = 'wip',
 }
 export interface InventoryLevelData {
   inventoryLevelId: string;
