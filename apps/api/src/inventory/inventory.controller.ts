@@ -114,15 +114,20 @@ export class InventoryController {
   @ApiPaginatedResponse(InventoryBinResponseDto)
   @ApiQuery({ name: 'locationNo', required: false })
   @ApiQuery({ name: 'binType', required: false })
+  @ApiQuery({ name: 'hasStock', required: false, type: Boolean })
   findBins(
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
     @Query('binType') binType?: string,
+    @Query('hasStock') hasStock?: string | boolean,
   ) {
     return this.inventoryQueryService.findBins({
       ...query,
-      locationNo,
-      binType,
+      ...(locationNo ? { locationNo } : {}),
+      ...(binType ? { binType } : {}),
+      ...(hasStock !== undefined
+        ? { hasStock: hasStock === 'true' || hasStock === true }
+        : {}),
     });
   }
 

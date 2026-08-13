@@ -25,6 +25,7 @@ interface PutawayLine {
     productNumber: string;
     quantity: string;
     createdOn: string;
+    returnReason?: string;
 }
 
 interface BinInfo {
@@ -184,6 +185,13 @@ export default function PutawayPage() {
                     {error && (
                         <div className="mb-4">
                             <InlineAlert type="error" message={error} />
+                        </div>
+                    )}
+
+                    {selectedLine?.returnReason && (
+                        <div className="mb-4 text-sm">
+                            <span className="font-medium text-[var(--text-muted)]">Return Reason: </span>
+                            <span className="text-[var(--text-primary)]">{selectedLine.returnReason}</span>
                         </div>
                     )}
 
@@ -447,6 +455,11 @@ export default function PutawayPage() {
                                             <span className="text-[var(--text-muted)]">•</span>
                                             <span>{t('putaway.ref', { ref: line.referenceNumber })}</span>
                                         </div>
+                                        {line.returnReason && (
+                                            <div className="mt-1 text-[11px] text-[var(--text-secondary)] truncate">
+                                                Reason: {line.returnReason}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

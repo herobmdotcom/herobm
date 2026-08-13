@@ -105,12 +105,14 @@ describe('InventoryController', () => {
 
     it('should pass all query parameters for bins', async () => {
       const query = { q: 'bolt', page: 1, limit: 10 };
-      await controller.findBins(query, 'LOC01');
+      await controller.findBins(query, 'LOC01', 'quarantine', 'true');
       expect(mockService.findBins).toHaveBeenCalledWith({
         q: 'bolt',
         page: 1,
         limit: 10,
         locationNo: 'LOC01',
+        binType: 'quarantine',
+        hasStock: true,
       });
     });
   });

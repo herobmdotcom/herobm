@@ -5,7 +5,17 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, asc, and, or, ilike, inArray, getTableColumns } from 'drizzle-orm';
+import {
+  eq,
+  sql,
+  desc,
+  asc,
+  and,
+  or,
+  ilike,
+  inArray,
+  getTableColumns,
+} from 'drizzle-orm';
 import {
   PaginationQuery,
   parsePagination,
@@ -210,16 +220,11 @@ export class SalesCreditNoteService {
         }
       }
 
-      // 4. Fetch return lines (ONLY refunds) + join to order lines for pricing + tax
+      // 4. Fetch return lines + join to order lines for pricing + tax
       const returnLines = await innerTx
         .select()
         .from(salesOrderReturnLines)
-        .where(
-          and(
-            eq(salesOrderReturnLines.returnId, returnId),
-            eq(salesOrderReturnLines.resolution, 'refund'),
-          ),
-        );
+        .where(eq(salesOrderReturnLines.returnId, returnId));
 
       const transitionReturnToProcessed = async () => {
         await innerTx
@@ -247,7 +252,7 @@ export class SalesCreditNoteService {
 
       if (returnLines.length === 0) {
         this.logger.log(
-          'No refund lines found on return — skipping credit note generation, marking return as PROCESSED',
+          'No lines found on return — skipping credit note generation, marking return as PROCESSED',
         );
         await transitionReturnToProcessed();
         return null;
@@ -299,8 +304,11 @@ export class SalesCreditNoteService {
         quantity: number;
         tax: number;
         productType?: string;
-        productNumber?: string;
+        productNumber?: string | null;
+        productName?: string | null;
         productDescription?: string;
+        description?: string | null;
+        accountId?: string | null;
       }> = [];
       const creditLineInputs: Array<{
         quantity: number;
@@ -308,6 +316,7 @@ export class SalesCreditNoteService {
         discountPercentage: number;
         taxRate: number;
         returnFee: number;
+        resolution?: string;
       }> = [];
 
       for (const rl of returnLines) {
@@ -317,6 +326,7 @@ export class SalesCreditNoteService {
             externalTaxCode: coreProducts.externalTaxCode,
             productType: coreProducts.productType,
             productNumber: coreProducts.productNumber,
+            productName: coreProducts.name,
           })
           .from(salesOrderLineItems)
           .leftJoin(
@@ -330,8 +340,18 @@ export class SalesCreditNoteService {
 
         if (!orderLine) continue;
 
-        const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
-        const disc = parseFloat(orderLine.discountPercentage || '0');
+        const prodNumber = rl.productNumber || orderLine.productNumber || null;
+        const prodName =
+          rl.productName ||
+          orderLine.productName ||
+          orderLine.productDescription ||
+          null;
+
+        const unitPriceStr = rl.pricePerUnit || orderLine.pricePerUnit || '0';
+        const unitPrice = parseFloat(unitPriceStr);
+        const discStr =
+          rl.discountPercentage || orderLine.discountPercentage || '0';
+        const disc = parseFloat(discStr);
         const refundedQty = parseFloat(rl.quantityReturned || '0');
         const fee = parseFloat(rl.returnFee || '0');
 
@@ -339,14 +359,17 @@ export class SalesCreditNoteService {
         const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
         const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
 
-        const creditableQty = getAvailableToCredit(
-          shipped,
-          invoiced,
-          refundedQty,
-          previouslyCredited,
-        );
+        const isRefund = rl.resolution === 'refund';
+        const creditableQty = isRefund
+          ? getAvailableToCredit(
+              shipped,
+              invoiced,
+              refundedQty,
+              previouslyCredited,
+            )
+          : 0;
 
-        if (creditableQty <= 0) continue;
+        if (creditableQty <= 0 && fee <= 0) continue;
 
         const qty = creditableQty;
 
@@ -371,20 +394,26 @@ export class SalesCreditNoteService {
           taxRate,
         });
 
+        const resolvedDescription =
+          prodName || (prodNumber ? `Product ${prodNumber}` : null);
+
         cnLineValues.push({
           salesOrderLineId: rl.salesOrderLineId,
           quantityCredited: String(qty),
-          pricePerUnit: orderLine.pricePerUnit || '0',
+          pricePerUnit: unitPriceStr,
           amount: pricing.amount.toFixed(2),
           taxAmount: pricing.tax.toFixed(2),
-          taxCategoryId: orderLine.taxCategoryId,
+          taxCategoryId: orderLine.taxCategoryId || rl.taxCategoryId || null,
           externalTaxCode: orderLine.externalTaxCode,
-          discountPercentage: orderLine.discountPercentage || '0',
+          discountPercentage: discStr,
           quantity: qty,
           tax: pricing.tax,
           productType: orderLine.productType,
-          productNumber: orderLine.productNumber,
+          productNumber: prodNumber,
+          productName: prodName,
           productDescription: orderLine.productDescription,
+          description: resolvedDescription,
+          accountId: settings.defaultRevenueAccountId,
         });
 
         creditLineInputs.push({
@@ -393,6 +422,7 @@ export class SalesCreditNoteService {
           discountPercentage: disc,
           taxRate,
           returnFee: fee,
+          resolution: rl.resolution,
         });
       }
 
@@ -402,9 +432,9 @@ export class SalesCreditNoteService {
       totalTaxAmount = creditSummary.totalTax;
       totalFees = creditSummary.totalFees;
 
-      if (totalCreditAmount <= 0) {
+      if (totalCreditAmount <= 0 && totalFees <= 0) {
         this.logger.warn(
-          'No credit amount to post — skipping credit note, marking return as PROCESSED',
+          'No credit amount or fee to post — skipping credit note, marking return as PROCESSED',
         );
         await transitionReturnToProcessed();
         return null;
@@ -451,7 +481,17 @@ export class SalesCreditNoteService {
         await innerTx.insert(salesCreditNoteLines).values(
           cnLineValues.map((line) => ({
             creditNoteId: creditNote.creditNoteId,
-            ...line,
+            salesOrderLineId: line.salesOrderLineId,
+            quantityCredited: line.quantityCredited,
+            pricePerUnit: line.pricePerUnit,
+            amount: line.amount,
+            taxAmount: line.taxAmount,
+            taxCategoryId: line.taxCategoryId,
+            discountPercentage: line.discountPercentage,
+            description: line.description,
+            productNumber: line.productNumber,
+            productName: line.productName,
+            accountId: line.accountId,
           })),
         );
       }
@@ -681,7 +721,11 @@ export class SalesCreditNoteService {
   /**
    * List all credit notes, optionally filtered.
    */
-  async findAll(query?: PaginationQuery | string, balanceStatus?: string, overrideLimit?: number) {
+  async findAll(
+    query?: PaginationQuery | string,
+    balanceStatus?: string,
+    overrideLimit?: number,
+  ) {
     let queryObj: PaginationQuery;
     if (typeof query === 'string' || query === undefined) {
       queryObj = {
@@ -692,15 +736,22 @@ export class SalesCreditNoteService {
       queryObj = query;
     }
 
-    const {
-      limit,
-      cursor,
-      direction,
-      searchTerm,
-      customerId,
-    } = parsePagination(queryObj);
+    const { limit, cursor, direction, searchTerm, customerId } =
+      parsePagination(queryObj);
 
-    let qb = this.db.select().from(salesCreditNotes).$dynamic();
+    let qb = this.db
+      .select({
+        ...getTableColumns(salesCreditNotes),
+        customerNumber: coreAccounts.customerNumber,
+        customerName: actors.name,
+      })
+      .from(salesCreditNotes)
+      .leftJoin(
+        coreAccounts,
+        eq(salesCreditNotes.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .$dynamic();
 
     const conditions = [];
     const targetCustomer = queryObj.customerId || customerId;
@@ -719,6 +770,8 @@ export class SalesCreditNoteService {
         or(
           ilike(salesCreditNotes.creditNoteNumber, searchTerm),
           ilike(salesCreditNotes.notes, searchTerm),
+          ilike(coreAccounts.customerNumber, searchTerm),
+          ilike(actors.name, searchTerm),
         ),
       );
     }
@@ -727,7 +780,11 @@ export class SalesCreditNoteService {
       qb = qb.where(and(...conditions));
     }
 
-    const { data: notes, nextCursor, prevCursor } = await withCursorPagination({
+    const {
+      data: notes,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
       qb,
       limit,
       cursorObj: cursor as { createdOn: string; creditNoteId: string } | null,
@@ -803,14 +860,10 @@ export class SalesCreditNoteService {
         salesOrderLineId: salesOrderReturnLines.salesOrderLineId,
         quantityReturned: salesOrderReturnLines.quantityReturned,
         returnFee: salesOrderReturnLines.returnFee,
+        resolution: salesOrderReturnLines.resolution,
       })
       .from(salesOrderReturnLines)
-      .where(
-        and(
-          eq(salesOrderReturnLines.returnId, returnId),
-          eq(salesOrderReturnLines.resolution, 'refund'),
-        ),
-      );
+      .where(eq(salesOrderReturnLines.returnId, returnId));
 
     if (returnLines.length === 0) return 0;
 
@@ -844,6 +897,7 @@ export class SalesCreditNoteService {
       discountPercentage: number;
       taxRate: number;
       returnFee: number;
+      resolution?: string;
     }> = [];
 
     for (const rl of returnLines) {
@@ -870,14 +924,17 @@ export class SalesCreditNoteService {
       const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
       const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
 
-      const creditableQty = getAvailableToCredit(
-        shipped,
-        invoiced,
-        refundedQty,
-        previouslyCredited,
-      );
+      const isRefund = rl.resolution === 'refund';
+      const creditableQty = isRefund
+        ? getAvailableToCredit(
+            shipped,
+            invoiced,
+            refundedQty,
+            previouslyCredited,
+          )
+        : 0;
 
-      if (creditableQty <= 0) continue;
+      if (creditableQty <= 0 && fee <= 0) continue;
 
       let taxRate = 0;
       if (orderLine.taxCategoryId) {
@@ -1056,20 +1113,65 @@ export class SalesCreditNoteService {
    */
   async findOne(creditNoteId: string, tx?: DrizzleDB) {
     const db = tx || this.db;
-    const [cn] = await db
-      .select()
+    const rows = await db
+      .select({
+        ...getTableColumns(salesCreditNotes),
+        customerNumber: coreAccounts.customerNumber,
+        customerName: actors.name,
+        orderNumber: salesOrders.orderNumber,
+        returnNumber: salesOrderReturns.returnNumber,
+      })
       .from(salesCreditNotes)
+      .leftJoin(
+        coreAccounts,
+        eq(salesCreditNotes.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        salesOrders,
+        eq(salesCreditNotes.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        salesOrderReturns,
+        eq(salesCreditNotes.returnId, salesOrderReturns.returnId),
+      )
       .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
       .limit(1);
 
-    if (!cn) {
+    if (rows.length === 0) {
       throw new NotFoundException(`Credit note '${creditNoteId}' not found`);
     }
+    const cn = rows[0];
 
-    const lines = await db
-      .select()
+    const rawLines = await db
+      .select({
+        ...getTableColumns(salesCreditNoteLines),
+        returnFee: salesOrderReturnLines.returnFee,
+        returnReason: salesOrderReturnLines.reason,
+      })
       .from(salesCreditNoteLines)
+      .leftJoin(
+        salesOrderReturnLines,
+        and(
+          eq(
+            salesCreditNoteLines.salesOrderLineId,
+            salesOrderReturnLines.salesOrderLineId,
+          ),
+          cn.returnId
+            ? eq(salesOrderReturnLines.returnId, cn.returnId)
+            : undefined,
+        ),
+      )
       .where(eq(salesCreditNoteLines.creditNoteId, creditNoteId));
+
+    const lines = rawLines.map((l) => ({
+      ...l,
+      description:
+        l.productName ||
+        l.description ||
+        (l.productNumber ? `Product ${l.productNumber}` : null),
+      returnFee: l.returnFee || '0',
+    }));
 
     return { ...cn, lines };
   }

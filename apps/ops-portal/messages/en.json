@@ -1351,6 +1351,7 @@
   "custom": "Custom",
   "customItem": "Custom Item",
   "customers": {
+    "balancesSearchPlaceholder": "Search account no. or name...",
     "billing": "Billing",
     "buttons": {
       "createCustomer": "+ Create Customer"
@@ -3574,6 +3575,7 @@
     "title": "herobm"
   },
   "suppliers": {
+    "balancesSearchPlaceholder": "Search supplier no. or name...",
     "buttons": {
       "createSupplier": "+ Create Supplier",
       "editSupplier": "Edit Supplier",

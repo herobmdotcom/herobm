@@ -13,6 +13,7 @@ import {
   sql,
   and,
   isNull,
+  isNotNull,
   desc,
   asc,
   lte,
@@ -477,7 +478,11 @@ export class InventoryQueryService {
   }
 
   async findBins(
-    query?: PaginationQuery & { locationNo?: string; binType?: string },
+    query?: PaginationQuery & {
+      locationNo?: string;
+      binType?: string;
+      hasStock?: boolean;
+    },
   ) {
     const { page, limit, cursor, direction, searchTerm } =
       parsePagination(query);
@@ -501,24 +506,35 @@ export class InventoryQueryService {
 
     let qb = this.db
       .select({
-        binContentId: binContents.binContentId,
-        binId: binContents.binId,
+        binContentId: sql<string>`COALESCE(${binContents.binContentId}, ${bins.binId})`,
+        binId: bins.binId,
         binNumber: bins.binNumber,
         locationNo: locations.code,
         locationName: locations.name,
         productId: binContents.productId,
-        productNumber: products.productNumber,
-        productName: products.name,
-        actualQuantity: binContents.actualQuantity,
-        baseUom: products.baseUom,
+        productNumber: sql<string>`COALESCE(${products.productNumber}, '')`,
+        productName: sql<string>`COALESCE(${products.name}, '')`,
+        actualQuantity: sql<string>`COALESCE(${binContents.actualQuantity}, '0')`,
+        baseUom: sql<string>`COALESCE(${products.baseUom}, 'EA')`,
+        baseQuantity: sql<number>`COALESCE(${binContents.actualQuantity}, '0')::float`,
         zoneCode: zones.code,
+        isConsignment: bins.isConsignment,
+        isBonded: bins.isBonded,
+        isUnavailable: bins.isUnavailable,
+        binType: bins.binType,
         score: scoreSql,
       })
-      .from(binContents)
-      .innerJoin(bins, eq(binContents.binId, bins.binId))
+      .from(bins)
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
       .innerJoin(locations, eq(zones.locationId, locations.locationId))
-      .innerJoin(products, eq(binContents.productId, products.productId))
+      .leftJoin(
+        binContents,
+        and(
+          eq(bins.binId, binContents.binId),
+          sql`CAST(${binContents.actualQuantity} AS numeric) > 0`,
+        ),
+      )
+      .leftJoin(products, eq(binContents.productId, products.productId))
       .$dynamic();
 
     const filters = [];
@@ -544,7 +560,9 @@ export class InventoryQueryService {
       filters.push(eq(bins.binType, query.binType as any));
     }
 
-    filters.push(sql`${binContents.actualQuantity}::numeric > 0`);
+    if (query?.hasStock) {
+      filters.push(isNotNull(binContents.productId));
+    }
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
     if (whereClause) {
@@ -574,13 +592,13 @@ export class InventoryQueryService {
           and(
             eq(scoreSql, c.score),
             eq(bins.binNumber, c.bin),
-            sql`${products.name} ${strOp} ${c.name}`,
+            sql`COALESCE(${products.name}, '') ${strOp} ${c.name}`,
           ),
           and(
             eq(scoreSql, c.score),
             eq(bins.binNumber, c.bin),
-            eq(products.name, c.name),
-            sql`${binContents.binContentId} ${strOp} ${c.id}`,
+            sql`COALESCE(${products.name}, '') = ${c.name}`,
+            sql`COALESCE(${binContents.binContentId}, ${bins.binId}) ${strOp} ${c.id}`,
           ),
         );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
@@ -591,19 +609,23 @@ export class InventoryQueryService {
         return q.orderBy(
           scoreOp(scoreSql),
           orderFn(bins.binNumber),
-          orderFn(products.name),
-          orderFn(binContents.binContentId),
+          orderFn(sql`COALESCE(${products.name}, '')`),
+          orderFn(bins.binId),
         );
       },
       encodeRow: (row) => ({
         score: Number(row.score) || 0,
         bin: row.binNumber,
-        name: row.productName,
-        id: row.binContentId,
+        name: row.productName || '',
+        id: row.binContentId || row.binId,
       }),
     });
 
-    const productIds = Array.from(new Set(rows.map((r) => r.productId)));
+    const productIds = Array.from(
+      new Set(
+        rows.map((r) => r.productId).filter((id): id is string => Boolean(id)),
+      ),
+    );
 
     let allUoms: (typeof productUoms.$inferSelect)[] = [];
     if (productIds.length > 0) {
@@ -615,7 +637,9 @@ export class InventoryQueryService {
 
     const rowsWithUoms = rows.map((row) => ({
       ...row,
-      productUoms: allUoms.filter((u) => u.productId === row.productId),
+      productUoms: row.productId
+        ? allUoms.filter((u) => u.productId === row.productId)
+        : [],
     }));
 
     return { data: rowsWithUoms, page, limit, nextCursor, prevCursor };
@@ -1052,6 +1076,7 @@ export class InventoryQueryService {
         locationId: goodsReceived.locationId,
         createdOn: goodsReceived.createdOn,
         sourceBinCode: sql`CASE WHEN ${goodsReceivedLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
+        returnReason: sql<string | null>`NULL`,
       })
       .from(goodsReceivedLines)
       .innerJoin(
@@ -1085,6 +1110,9 @@ export class InventoryQueryService {
         locationId: salesOrders.fulfillmentLocationId,
         createdOn: salesOrderReturns.createdOn,
         sourceBinCode: sql`CASE WHEN ${salesOrderReturnLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'CUSTOMER_RETURNS' END`,
+        returnReason: sql<
+          string | null
+        >`COALESCE(NULLIF(TRIM(${salesOrderReturnLines.reason}), ''), ${salesOrderReturns.notes})`,
       })
       .from(salesOrderReturnLines)
       .innerJoin(
@@ -1132,6 +1160,7 @@ export class InventoryQueryService {
         locationId: transferOrders.destinationLocationId,
         createdOn: transferOrderReceipts.createdOn,
         sourceBinCode: sql`CASE WHEN ${transferOrderReceiptLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
+        returnReason: sql<string | null>`NULL`,
       })
       .from(transferOrderReceiptLines)
       .innerJoin(
@@ -1179,6 +1208,7 @@ export class InventoryQueryService {
         locationId: workOrders.locationId,
         createdOn: workOrders.modifiedOn,
         sourceBinCode: sql`COALESCE(${bins.binNumber}, CASE WHEN ${workOrders.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'WIP' END)`,
+        returnReason: sql<string | null>`NULL`,
       })
       .from(workOrders)
       .innerJoin(products, eq(workOrders.productId, products.productId))

@@ -251,31 +251,53 @@ describe('ReturnsSection — create return form', () => {
         });
     });
 
-    it('updates reason field in create form via onChange', async () => {
+    it('disables controls to the right of return qty while return qty is 0', () => {
+        render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
+
+        const reasonInputs = screen.getAllByPlaceholderText('placeholders.reason');
+        expect(reasonInputs[0]).toBeDisabled();
+
+        const selects = screen.getAllByRole('combobox');
+        expect(selects[1]).toBeDisabled(); // Resolution select
+        expect(selects[2]).toBeDisabled(); // Fee mode select
+
+        const inputs = screen.getAllByRole('spinbutton');
+        const feeInput = inputs[inputs.length - 1];
+        expect(feeInput).toBeDisabled();
+    });
+
+    it('updates reason field in create form via onChange when return qty > 0', async () => {
         const user = userEvent.setup();
         render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
 
-        // Find the reason input by its placeholder
+        const inputs = screen.getAllByRole('spinbutton');
+        await user.type(inputs[0], '1');
+
         const reasonInputs = screen.getAllByPlaceholderText('placeholders.reason');
+        expect(reasonInputs[0]).toBeEnabled();
         await user.type(reasonInputs[0], 'Broken item');
         expect((reasonInputs[0] as HTMLInputElement).value).toBe('Broken item');
     });
 
-    it('updates fee value in create form via onChange', async () => {
+    it('updates fee value in create form via onChange when return qty > 0', async () => {
         const user = userEvent.setup();
         render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
 
-        // Find the fee number input (second spinbutton)
         const inputs = screen.getAllByRole('spinbutton');
+        await user.type(inputs[0], '1');
+
         const feeInput = inputs[inputs.length - 1]; // last spinbutton is the fee
         await user.clear(feeInput);
         await user.type(feeInput, '15');
         expect((feeInput as HTMLInputElement).value).toBe('15');
     });
 
-    it('toggles fee mode from absolute to percentage via select', async () => {
+    it('toggles fee mode from absolute to percentage via select when return qty > 0', async () => {
         const user = userEvent.setup();
         render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
+
+        const inputs = screen.getAllByRole('spinbutton');
+        await user.type(inputs[0], '1');
 
         const selects = screen.getAllByRole('combobox');
         expect(selects.length).toBeGreaterThan(2);
@@ -286,7 +308,7 @@ describe('ReturnsSection — create return form', () => {
         expect((feeModeSelect as HTMLSelectElement).value).toBe('percentage');
     });
 
-    it('auto-converts fee from percentage to absolute on blur', async () => {
+    it('auto-converts fee from percentage to absolute on blur when return qty > 0', async () => {
         const user = userEvent.setup();
         render(
             <ReturnsSection
@@ -302,12 +324,14 @@ describe('ReturnsSection — create return form', () => {
             />,
         );
 
+        const inputs = screen.getAllByRole('spinbutton');
+        await user.type(inputs[0], '1');
+
         // Switch to percentage mode
         const selects = screen.getAllByRole('combobox');
         await user.selectOptions(selects[2], 'percentage');
 
         // Type a percentage value in the fee input
-        const inputs = screen.getAllByRole('spinbutton');
         const feeInput = inputs[inputs.length - 1];
         await user.clear(feeInput);
         await user.type(feeInput, '10');

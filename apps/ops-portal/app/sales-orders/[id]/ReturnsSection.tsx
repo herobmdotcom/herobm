@@ -213,6 +213,8 @@ export default function ReturnsSection({
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
+                            const isQtyZero = !parseFloat(rl.quantityReturned || '0');
+
                             return (
                                 <tr key={line.salesOrderLineId}>
                                     <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
@@ -249,6 +251,7 @@ export default function ReturnsSection({
                                             className="input"
                                             style={{ width: '100%' }}
                                             value={rl.reason}
+                                            disabled={isQtyZero}
                                             onChange={(e) => {
                                                 const updated = [...newReturnLines];
                                                 updated[idx] = { ...rl, reason: e.target.value };
@@ -261,6 +264,7 @@ export default function ReturnsSection({
                                         <select
                                             className="input text-sm"
                                             value={rl.resolution}
+                                            disabled={isQtyZero}
                                             onChange={(e) => {
                                                 const updated = [...newReturnLines];
                                                 updated[idx] = { ...rl, resolution: e.target.value as 'refund' | 'replace' };
@@ -277,6 +281,7 @@ export default function ReturnsSection({
                                                 className="input"
                                                 style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
                                                 value={rl.feeMode}
+                                                disabled={isQtyZero}
                                                 onChange={(e) => {
                                                     const updated = [...newReturnLines];
                                                     const mode = e.target.value as 'absolute' | 'percentage';
@@ -302,6 +307,7 @@ export default function ReturnsSection({
                                                 step="0.01"
                                                 style={{ width: 80, textAlign: 'right' }}
                                                 value={rl.returnFee}
+                                                disabled={isQtyZero}
                                                 onChange={(e) => {
                                                     const updated = [...newReturnLines];
                                                     updated[idx] = { ...rl, returnFee: e.target.value };
@@ -328,6 +334,8 @@ export default function ReturnsSection({
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
+                            const isQtyZero = !parseFloat(rl.quantityReturned || '0');
+
                             return (
                                 <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                     <div className="flex justify-between items-start gap-2 mb-2">
@@ -338,6 +346,7 @@ export default function ReturnsSection({
                                             <select
                                                 className="input text-sm"
                                                 value={rl.resolution}
+                                                disabled={isQtyZero}
                                                 onChange={(e) => {
                                                     const updated = [...newReturnLines];
                                                     updated[idx] = { ...rl, resolution: e.target.value as 'refund' | 'replace' };
@@ -388,6 +397,7 @@ export default function ReturnsSection({
                                                 className="input"
                                                 style={{ width: '100%' }}
                                                 value={rl.reason}
+                                                disabled={isQtyZero}
                                                 onChange={(e) => {
                                                     const updated = [...newReturnLines];
                                                     updated[idx] = { ...rl, reason: e.target.value };
@@ -404,6 +414,7 @@ export default function ReturnsSection({
                                                     className="input"
                                                     style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
                                                     value={rl.feeMode}
+                                                    disabled={isQtyZero}
                                                     onChange={(e) => {
                                                         const updated = [...newReturnLines];
                                                         const mode = e.target.value as 'absolute' | 'percentage';
@@ -429,6 +440,7 @@ export default function ReturnsSection({
                                                     step="0.01"
                                                     style={{ width: 80, textAlign: 'right' }}
                                                     value={rl.returnFee}
+                                                    disabled={isQtyZero}
                                                     onChange={(e) => {
                                                         const updated = [...newReturnLines];
                                                         updated[idx] = { ...rl, returnFee: e.target.value };

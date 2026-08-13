@@ -171,17 +171,18 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         const qty = parseFloat(line.quantityReturned || '0');
         const price = parseFloat(line.pricePerUnit || '0');
         const disc = parseFloat(line.discountPercentage || '0');
-        const grossLine = computeLinePrice({
-          quantity: qty,
-          pricePerUnit: price,
-          discountPercentage: disc,
-          taxRate: parseFloat(line.taxRate || '0')
-        }).amount;
-        const fee = parseFloat(line.returnFee || '0');
-        const netCredit = line.resolution === RETURN_RESOLUTION.REFUND ? Math.max(0, grossLine - fee) : 0;
+        const isRefund = line.resolution === RETURN_RESOLUTION.REFUND;
+        const lineAmount = isRefund
+          ? computeLinePrice({
+              quantity: qty,
+              pricePerUnit: price,
+              discountPercentage: disc,
+              taxRate: parseFloat(line.taxRate || '0'),
+            }).amount
+          : 0;
         return (
           <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-            {formatAmount(netCredit, ret.currencyCode)}
+            {formatAmount(lineAmount, ret.currencyCode)}
           </span>
         );
       },
@@ -233,6 +234,9 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         </td>
         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 14 }}>
           {formatAmount(creditSummary.netCredit, ret.currencyCode)}
+          {creditSummary.netCredit === 0 && ret.lines.some(l => l.resolution === RETURN_RESOLUTION.REPLACE) && (
+            <div className="text-[10px] font-normal text-[var(--text-muted)] mt-0.5">(Replacement)</div>
+          )}
         </td>
       </tr>
     </>

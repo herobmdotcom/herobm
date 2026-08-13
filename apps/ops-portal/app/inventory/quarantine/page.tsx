@@ -164,7 +164,7 @@ export default function QuarantineListPage() {
         setSelectedRows([]);
     }, [selectedRows, triggerRefresh]);
 
-    const gridEndpoint = `/api/inventory/bins?binType=quarantine&limit=0${selectedLocationNo ? `&locationNo=${selectedLocationNo}` : ''}`;
+    const gridEndpoint = `/api/inventory/bins?binType=quarantine&hasStock=true&limit=0${selectedLocationNo ? `&locationNo=${selectedLocationNo}` : ''}`;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const gridColumns: any[] = useMemo(() => [

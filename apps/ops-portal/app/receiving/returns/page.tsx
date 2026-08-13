@@ -82,6 +82,8 @@ export default function ReceivingReturnsPage() {
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
+        { field: 'customerNumber', headerName: 'Customer No', width: 140 },
+        { field: 'customerName', headerName: 'Customer Name', minWidth: 200, flex: 1 },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => formatLocalDate(p.value as string | number, undefined, '') },
         { 
             field: 'lines', 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
@@ -9,9 +9,13 @@ import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
 import type { ColDef, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
 
+import CreditNoteDetailSlideOver from '../CreditNoteDetailSlideOver';
+
 interface CreditNoteHistoryRow {
   creditNoteId: string;
   creditNoteNumber: string;
+  customerNumber?: string;
+  customerName?: string;
   createdOn: string;
   notes: string;
   totalAmount: number;
@@ -24,16 +28,19 @@ export default function CreditNotesHistoryPage() {
     const tCommon = useTranslations('common');
     const tStates = useTranslations('common.states');
     useDocumentTitle('Credit Notes Ledger');
+    const [selectedCreditNoteId, setSelectedCreditNoteId] = useState<string | null>(null);
 
     const handleRowClicked = useCallback((row: CreditNoteHistoryRow) => {
-        // Future feature: show credit note details
+        setSelectedCreditNoteId(row.creditNoteId);
     }, []);
 
     const gridEndpoint = `/api/sales-credit-notes`;
     
     const gridColumns: ColDef<CreditNoteHistoryRow>[] = [
         { field: 'creditNoteId', headerName: 'ID', hide: true },
-        { field: 'creditNoteNumber', headerName: 'CN Number', width: 180 },
+        { field: 'creditNoteNumber', headerName: 'CN Number', width: 160 },
+        { field: 'customerNumber', headerName: 'Customer No', width: 140 },
+        { field: 'customerName', headerName: 'Customer Name', minWidth: 200, flex: 1 },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: ValueFormatterParams<CreditNoteHistoryRow>) => formatLocalDate(p.value as string | number, undefined, '') },
         { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
         { field: 'totalAmount', headerName: 'Total Credit', type: 'numericColumn', width: 150,
@@ -60,14 +67,21 @@ export default function CreditNotesHistoryPage() {
     ];
 
     return (
-        <DataGrid 
-            endpoint={gridEndpoint} 
-            columns={gridColumns} 
-            gridKey="credit-notes-history"
-            rowIdField="creditNoteId"
-            onRowClicked={handleRowClicked}
-            pageTitle="Credit Notes History"
-            defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
-        />
+        <>
+            <DataGrid 
+                endpoint={gridEndpoint} 
+                columns={gridColumns} 
+                gridKey="credit-notes-history"
+                rowIdField="creditNoteId"
+                onRowClicked={handleRowClicked}
+                pageTitle="Credit Notes History"
+                defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
+            />
+            <CreditNoteDetailSlideOver
+                isOpen={!!selectedCreditNoteId}
+                onClose={() => setSelectedCreditNoteId(null)}
+                creditNoteId={selectedCreditNoteId}
+            />
+        </>
     );
 }

@@ -162,7 +162,7 @@ export default function ReturnCreditNoteSlideOver({
             id: 'reason',
             header: 'Return Reason',
             width: 150,
-            render: (line) => line.reason || '—',
+            render: (line) => line.reason || fullReturn?.notes || returnRecord?.notes || '—',
         },
         {
             id: 'resolution',
@@ -197,10 +197,10 @@ export default function ReturnCreditNoteSlideOver({
                     taxRate: parseFloat(line.taxRate || '0')
                 }).amount;
                 const fee = parseFloat(line.returnFee || '0');
-                const netCredit = line.resolution === RETURN_RESOLUTION.REFUND ? Math.max(0, grossLine - fee) : 0;
+                const lineAmount = Math.max(0, grossLine - fee);
                 return (
                     <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                        {formatAmount(netCredit, returnRecord?.currencyCode || 'USD')}
+                        {formatAmount(lineAmount, returnRecord?.currencyCode || 'USD')}
                     </span>
                 );
             },
@@ -261,6 +261,14 @@ export default function ReturnCreditNoteSlideOver({
                                 )}
                             </span>
                         </div>
+                        {(fullReturn?.notes || returnRecord.notes) && (
+                            <div className="col-span-2 p-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md">
+                                <span className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Return Reason / Notes</span>
+                                <span className="text-sm font-medium text-[var(--text-primary)]">
+                                    {fullReturn?.notes || returnRecord.notes}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

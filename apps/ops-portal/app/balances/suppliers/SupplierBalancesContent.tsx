@@ -9,8 +9,11 @@ import type { ColDef } from 'ag-grid-community';
 import { reportError } from '@/lib/api';
 import { calculateAgedTotals } from '@herobm/shared';
 
+import { useTranslations } from 'next-intl';
+
 export default function SupplierBalancesContent() {
   const router = useRouter();
+  const tSuppliers = useTranslations('suppliers');
   const [balances, setBalances] = useState<api.SupplierAgedBalanceResponseDto[]>([]);
   const [quickFilter, setQuickFilter] = useState<string>('all');
   const [agingBasis, setAgingBasis] = useState<'invoiceDate' | 'dueDate'>('dueDate');
@@ -143,7 +146,7 @@ export default function SupplierBalancesContent() {
       rowSelection="multiple"
       pageTitle="Supplier Balances"
       loading={isLoading}
-      hideSearch={true}
+      searchPlaceholder={tSuppliers('balancesSearchPlaceholder')}
       rowHref={(row) => `/suppliers/${row.supplierId}?tab=invoices`}
       headerActions={
         <div className="flex items-center gap-3">

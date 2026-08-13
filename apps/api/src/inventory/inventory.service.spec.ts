@@ -556,4 +556,28 @@ describe('InventoryService', () => {
       expect(bins).toHaveLength(1);
     });
   });
+
+  describe('findBins', () => {
+    it('should return all bins (including empty bins) by default for Bin Contents view', async () => {
+      const res = await queryService.findBins({});
+      expect(res.data.length).toBeGreaterThan(0);
+    });
+
+    it('should exclude empty bins when hasStock=true is specified', async () => {
+      const res = await queryService.findBins({ hasStock: true });
+      for (const row of res.data) {
+        expect(row.productId).toBeTruthy();
+        expect(row.productNumber).not.toBe('');
+        expect(Number(row.actualQuantity)).toBeGreaterThan(0);
+      }
+    });
+
+    it('should return empty list when filtering binType with hasStock=true when no active stock exists', async () => {
+      const res = await queryService.findBins({
+        binType: 'quarantine',
+        hasStock: true,
+      });
+      expect(res.data).toHaveLength(0);
+    });
+  });
 });

@@ -250,6 +250,8 @@ export class PendingPutawayResponseDto {
   createdOn!: Date;
   @ApiProperty()
   sourceBinCode!: string;
+  @ApiProperty({ required: false })
+  returnReason?: string;
 }
 
 export class InventorySuccessResponseDto {

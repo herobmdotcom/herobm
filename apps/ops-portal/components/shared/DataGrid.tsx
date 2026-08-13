@@ -410,7 +410,7 @@ export default function DataGrid<T>({
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const effectiveFetchAll = limit === 99999;
+  const effectiveFetchAll = Boolean(rowData) || fetchAll || limit === 99999;
 
   useEffect(() => {
     setMounted(true);
@@ -624,6 +624,17 @@ export default function DataGrid<T>({
                   : {}),
               },
             }
+            : {}),
+          // Default boolean values to simple text 'true' / 'false' to minimize rendering cost
+          ...(!col.valueFormatter && !col.cellRenderer
+            ? {
+                valueFormatter: (params: import('ag-grid-community').ValueFormatterParams<T>) => {
+                  if (typeof params.value === 'boolean') {
+                    return params.value ? 'true' : 'false';
+                  }
+                  return params.value;
+                },
+              }
             : {}),
         };
         if (!isNumeric || !col.field) return base;

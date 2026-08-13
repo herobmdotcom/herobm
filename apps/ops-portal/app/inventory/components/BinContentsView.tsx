@@ -78,8 +78,8 @@ export default function BinContentsView() {
     { field: 'binNumber', headerName: tBins('columns.bin'), width: 120, pinned: 'left' },
     { field: 'zoneCode', headerName: tBins('columns.zone'), width: 100 },
     { field: 'locationName', headerName: tBins('columns.locationName'), width: 150 },
-    { field: 'productNumber', headerName: tBins('columns.productNumber'), width: 130 },
-    { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
+    { field: 'productNumber', headerName: tBins('columns.productNumber'), width: 130, valueFormatter: (params) => params.value || '—' },
+    { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200, valueFormatter: (params) => params.value || '—' },
     { field: 'actualQuantity', headerName: tCommon('columns.qty'), width: 90, type: 'numericColumn' },
     { 
       headerName: 'Box Qty', 
@@ -95,9 +95,9 @@ export default function BinContentsView() {
       }
     },
     { field: 'baseQuantity', headerName: tBins('columns.baseQty'), width: 100, type: 'numericColumn' },
-    { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110 },
-    { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90 },
-    { field: 'isUnavailable', headerName: tBins('columns.unavailable'), width: 110 },
+    { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110, valueFormatter: (params) => params.value ? 'true' : 'false' },
+    { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90, valueFormatter: (params) => params.value ? 'true' : 'false' },
+    { field: 'isUnavailable', headerName: tBins('columns.unavailable'), width: 110, valueFormatter: (params) => params.value ? 'true' : 'false' },
     { field: 'binType', headerName: tBins('columns.binType'), width: 90 },
   ], [tCommon, tBins]);
 

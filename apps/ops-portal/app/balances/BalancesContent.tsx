@@ -160,7 +160,7 @@ export default function BalancesContent() {
       rowSelection="multiple"
       pageTitle="Balances"
       loading={isLoading}
-      hideSearch={true}
+      searchPlaceholder={tAccounts('balancesSearchPlaceholder')}
       defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
       rowHref={(row) => `/customers/${row.customerId}?tab=invoices`}
       headerActions={

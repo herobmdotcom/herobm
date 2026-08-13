@@ -213,15 +213,46 @@ export class ReturnsWriteService {
           .returning();
 
         // Insert return lines
-        const lineValues = dto.lines.map((line) => ({
-          returnId: ret.returnId,
-          salesOrderLineId: line.salesOrderLineId,
-          quantityReturned: line.quantityReturned,
-          reason: line.reason,
-          resolution: line.resolution || RETURN_RESOLUTION.REFUND,
-          returnFee: line.returnFee ?? '0',
-          putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
-        }));
+        const lineValues = await Promise.all(
+          dto.lines.map(async (line) => {
+            const [lineDetails] = await innerTx
+              .select({
+                productNumber: coreProducts.productNumber,
+                productName: coreProducts.name,
+                productDescription: salesOrderLineItems.productDescription,
+                pricePerUnit: salesOrderLineItems.pricePerUnit,
+                discountPercentage: salesOrderLineItems.discountPercentage,
+                taxCategoryId: salesOrderLineItems.taxCategoryId,
+              })
+              .from(salesOrderLineItems)
+              .leftJoin(
+                coreProducts,
+                eq(salesOrderLineItems.productId, coreProducts.productId),
+              )
+              .where(
+                eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId),
+              )
+              .limit(1);
+
+            return {
+              returnId: ret.returnId,
+              salesOrderLineId: line.salesOrderLineId,
+              quantityReturned: line.quantityReturned,
+              reason: line.reason,
+              resolution: line.resolution || RETURN_RESOLUTION.REFUND,
+              returnFee: line.returnFee ?? '0',
+              putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+              productNumber: lineDetails?.productNumber || null,
+              productName:
+                lineDetails?.productName ||
+                lineDetails?.productDescription ||
+                null,
+              pricePerUnit: lineDetails?.pricePerUnit || '0',
+              discountPercentage: lineDetails?.discountPercentage || '0',
+              taxCategoryId: lineDetails?.taxCategoryId || null,
+            };
+          }),
+        );
 
         if (lineValues.length > 0) {
           await innerTx.insert(salesOrderReturnLines).values(lineValues);
@@ -1090,6 +1121,9 @@ export class ReturnsWriteService {
           productId: coreProducts.productId,
           productNumber: coreProducts.productNumber,
           productDescription: salesOrderLineItems.productDescription,
+          pricePerUnit: salesOrderLineItems.pricePerUnit,
+          discountPercentage: salesOrderLineItems.discountPercentage,
+          taxRate: taxCategories.rate,
         })
         .from(salesOrderReturnLines)
         .leftJoin(
@@ -1103,6 +1137,10 @@ export class ReturnsWriteService {
           coreProducts,
           eq(salesOrderLineItems.productId, coreProducts.productId),
         )
+        .leftJoin(
+          taxCategories,
+          eq(salesOrderLineItems.taxCategoryId, taxCategories.taxCategoryId),
+        )
         .where(eq(salesOrderReturnLines.returnId, ret.returnId));
 
       const lines = linesQuery.map((l) => ({
@@ -1110,6 +1148,9 @@ export class ReturnsWriteService {
         productId: l.productId,
         productNumber: l.productNumber,
         productDescription: l.productDescription,
+        pricePerUnit: l.pricePerUnit,
+        discountPercentage: l.discountPercentage,
+        taxRate: l.taxRate,
       }));
 
       // Join with sales order to get location and order number

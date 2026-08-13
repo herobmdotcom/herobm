@@ -150,18 +150,19 @@ export function computeReturnCreditSummary(
 
   for (const line of lines) {
     const resolution = line.resolution ?? RETURN_RESOLUTION.REFUND;
-    if (resolution !== RETURN_RESOLUTION.REFUND) {
-      continue;
+    const isRefund = resolution === RETURN_RESOLUTION.REFUND;
+
+    if (isRefund) {
+      const pricing = computeLinePrice({
+        quantity: line.quantity,
+        pricePerUnit: line.pricePerUnit,
+        discountPercentage: line.discountPercentage,
+        taxRate: line.taxRate,
+      });
+      subtotalRaw += pricing.amount;
+      totalTaxRaw += pricing.tax;
     }
 
-    const pricing = computeLinePrice({
-      quantity: line.quantity,
-      pricePerUnit: line.pricePerUnit,
-      discountPercentage: line.discountPercentage,
-      taxRate: line.taxRate,
-    });
-    subtotalRaw += pricing.amount;
-    totalTaxRaw += pricing.tax;
     totalFeesRaw += line.returnFee ?? 0;
   }
 

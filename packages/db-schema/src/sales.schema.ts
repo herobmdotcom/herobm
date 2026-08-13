@@ -244,6 +244,13 @@ export const salesOrderReturnLines = herobmCore.table(
         PUTAWAY_STATUS.COMPLETED,
       ],
     }).notNull(),
+    productNumber: text('product_number'),
+    productName: text('product_name'),
+    pricePerUnit: numeric('price_per_unit'),
+    discountPercentage: numeric('discount_percentage'),
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
+    ),
   },
   (t) => ({
     soLineIdx: index('idx_sales_order_return_lines_so_line').on(
@@ -366,8 +373,11 @@ export const salesCreditNoteLines = herobmCore.table(
     ),
     quantityCredited: numeric('quantity_credited').notNull(),
     pricePerUnit: numeric('price_per_unit').notNull(),
+    discountPercentage: numeric('discount_percentage'),
     amount: numeric('amount').notNull(),
     taxAmount: numeric('tax_amount'),
+    productNumber: text('product_number'),
+    productName: text('product_name'),
   },
   (t) => ({
     soLineIdx: index('idx_sales_credit_note_lines_so_line').on(

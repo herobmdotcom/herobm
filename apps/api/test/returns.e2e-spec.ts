@@ -485,7 +485,9 @@ describe('API E2E — Sales Order Returns', () => {
         .get(`/api/sales-credit-notes`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
-      const ourCn = cns.body.find((cn: any) => cn.salesOrderId === orderId);
+      const ourCn = (cns.body.data || cns.body).find(
+        (cn: any) => cn.salesOrderId === orderId,
+      );
       expect(ourCn).toBeDefined();
 
       // Verify Replacement Order was NOT created
