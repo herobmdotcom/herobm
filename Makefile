@@ -439,7 +439,7 @@ migrate-status:
 migrate-dry:
 	$(PYTHON_CMD) tools/migrate.py --dry-run
 
-seed:
+seed: build-shared build-db-schema
 	npm run seed
 
 seed-demo:
