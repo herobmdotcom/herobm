@@ -1,4 +1,4 @@
-.PHONY: help check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint verify-i18n clean-build cli-help cli-install-prereqs cli-init-env cli-setup-python cli-install-npm cli-up-db cli-init-db cli-migrate cli-bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -13,6 +13,7 @@ Containers (Podman):
   make down           - Stop full stack
   make logs           - View container logs
   make clean          - Stop containers (volumes are preserved)
+  make clean-legacy-containers - Stop and remove legacy container instances
   make nuke           - Complete teardown (containers, volumes, images)
 
 Database & Migrations:
@@ -186,6 +187,11 @@ nuke:
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will stop all containers and PERMANENTLY DELETE all volumes and local images. Continue?" $(if $(FORCE),--force,)
 	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
 
+clean-legacy-containers:
+	@echo "Stopping and removing legacy container instances..."
+	-@podman stop ops-portal custom-api outbox-worker pipeline-runner api-gateway api-rs 2>/dev/null || true
+	-@podman rm -f ops-portal custom-api outbox-worker pipeline-runner api-gateway api-rs 2>/dev/null || true
+
 rebuild-db-keep-raw:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
@@ -341,37 +347,37 @@ dev-pipeline:
 
 rebuild-api:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	-$(COMPOSE_CMD) stop herobm-api custom-api
-	-$(COMPOSE_CMD) rm -f herobm-api custom-api
-	-podman stop herobm-api custom-api
-	-podman rm -f herobm-api custom-api
+	-$(COMPOSE_CMD) stop herobm-api
+	-$(COMPOSE_CMD) rm -f herobm-api
+	-podman stop herobm-api
+	-podman rm -f herobm-api
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api
 	$(COMPOSE_CMD) ps
 
 rebuild-portal:
 	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	-$(COMPOSE_CMD) stop herobm-ui ops-portal
-	-$(COMPOSE_CMD) rm -f herobm-ui ops-portal
-	-podman stop herobm-ui ops-portal
-	-podman rm -f herobm-ui ops-portal
+	-$(COMPOSE_CMD) stop herobm-ui
+	-$(COMPOSE_CMD) rm -f herobm-ui
+	-podman stop herobm-ui
+	-podman rm -f herobm-ui
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-ui
 	$(COMPOSE_CMD) ps
 
 rebuild-pipeline:
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
-	-$(COMPOSE_CMD) stop herobm-pipeline pipeline-runner
-	-$(COMPOSE_CMD) rm -f herobm-pipeline pipeline-runner
-	-podman stop herobm-pipeline pipeline-runner
-	-podman rm -f herobm-pipeline pipeline-runner
+	-$(COMPOSE_CMD) stop herobm-pipeline
+	-$(COMPOSE_CMD) rm -f herobm-pipeline
+	-podman stop herobm-pipeline
+	-podman rm -f herobm-pipeline
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-pipeline
 	$(COMPOSE_CMD) ps
 
 rebuild-worker:
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
-	-$(COMPOSE_CMD) stop herobm-outbox outbox-worker
-	-$(COMPOSE_CMD) rm -f herobm-outbox outbox-worker
-	-podman stop herobm-outbox outbox-worker
-	-podman rm -f herobm-outbox outbox-worker
+	-$(COMPOSE_CMD) stop herobm-outbox
+	-$(COMPOSE_CMD) rm -f herobm-outbox
+	-podman stop herobm-outbox
+	-podman rm -f herobm-outbox
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-outbox
 	$(COMPOSE_CMD) ps
 
@@ -382,10 +388,10 @@ build-images:
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 rebuild-apps: build-images
-	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
-	-$(COMPOSE_CMD) rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
-	-podman stop herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
-	-podman rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
+	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-pipeline herobm-outbox
+	-$(COMPOSE_CMD) rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox
+	-podman stop herobm-api herobm-ui herobm-pipeline herobm-outbox
+	-podman rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox
 	-podman system prune -f
 	$(MAKE) migrate
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api herobm-ui herobm-pipeline herobm-outbox
@@ -501,30 +507,28 @@ clean-build:
 	$(MAKE) build-sdk
 	$(MAKE) build-all
 
-# --- CLI Specific Workflow (Granular & Explicit) ---
+# --- Installation & Setup Sequence ---
 
-cli-help:
-	@echo "HeroBM CLI Installation Sequence:"
-	@echo "  1. make cli-install-prereqs  - Install OS-level tools"
-	@echo "  2. make cli-init-env         - Create .env and secrets"
-	@echo "  3. make cli-install-npm       - Install npm dependencies"
-	@echo "  4. make cli-up-db            - Start containers"
-	@echo "  5. make cli-init-db          - Initialize schemas (waits for PG)"
-	@echo "  6. make cli-migrate          - Apply SQL migrations"
-	@echo "  7. make cli-bootstrap        - Seed data & verify"
-	@echo "  8. make up                   - Start FE and API containers"
+help-install:
+	@echo "HeroBM Installation Sequence:"
+	@echo "  1. make install-prereqs  - Install OS-level tools"
+	@echo "  2. make init-env         - Create .env and secrets"
+	@echo "  3. make install-npm      - Install npm dependencies"
+	@echo "  4. make up-db            - Start database containers"
+	@echo "  5. make init-db          - Initialize database schema (waits for PG)"
+	@echo "  6. make migrate          - Apply SQL migrations"
+	@echo "  7. make bootstrap        - Seed base data & verify installation"
+	@echo "  8. make up               - Start application containers (UI + API)"
 
-cli-install-prereqs:
+install-prereqs:
 ifeq ($(OS),Windows_NT)
 	powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
 else
 	bash scripts/setup.sh --non-interactive
 endif
 
-cli-init-env: init-env
-
-cli-setup-python:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make cli-setup-python SOURCE=<source>))
+setup-python:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make setup-python SOURCE=<source>))
 ifeq ($(OS),Windows_NT)
 	if not exist .venv python -m venv .venv
 	.venv\Scripts\pip install -r pipelines\$(SOURCE)_extract\requirements.txt
@@ -533,27 +537,11 @@ else
 	.venv/bin/pip install -r pipelines/$(SOURCE)_extract/requirements.txt
 endif
 
-cli-install-npm:
+install-npm:
 	npm install
 	node scripts/install-native-deps.js
 
-cli-up-db: up-db
-
-cli-init-db:
-	@echo "Waiting for Postgres to be ready..."
-ifeq ($(OS),Windows_NT)
-	@powershell -Command "for ($$i=1; $$i -le 30; $$i++) { if (podman exec postgres-custom pg_isready -U $(POSTGRES_USER)) { break } else { Write-Host \"Postgres is not ready yet... ($$i/30)\"; Start-Sleep -s 2 } }"
-else
-	@for i in $$(seq 1 30); do \
-		podman exec postgres-custom pg_isready -U $(POSTGRES_USER) > /dev/null 2>&1 && break || \
-		(echo "Postgres is not ready yet... ($$i/30)" && sleep 2); \
-	done
-endif
-	$(MAKE) init-db
-
-cli-migrate: migrate
-
-cli-bootstrap:
+bootstrap:
 	$(MAKE) build-shared
 	$(MAKE) build-db-schema
 	$(MAKE) build-api
@@ -607,5 +595,4 @@ build-all:
 	npm run build -w apps/api -w apps/ops-portal -w packages/shared -w packages/db-schema -w packages/sdk --if-present
 	node scripts/run-on-enabled-extensions.mjs build
 
-clean-dev:
-	$(CLEAN_BUILD_CMD)
+clean-dev: clean-build

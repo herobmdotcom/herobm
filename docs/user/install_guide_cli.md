@@ -4,21 +4,21 @@ This guide provides the technical "Fast Path" for setting up the HeroBM Platform
 
 ## 1. Installation Sequence
 
-Run these commands in order from the root of the project. Each command provides clear feedback on success or failure.
+Run these commands in order from the root of the project (or view overview with `make help-install`). Each command provides clear feedback on success or failure.
 
 ### Phase 1: Environment & Dependencies
-1.  **`make cli-install-prereqs`**: Installs OS-level tools (Podman, Node, Python, Typst). On Linux, this includes a robust fallback to download the Typst binary if the package manager lacks it.
-2.  **`make cli-init-env`**: Generates your `.env` file and secure random secrets for all local services.
-3.  **`make cli-setup-python`**: Creates the Python virtual environment (`.venv`) and installs the required data pipeline dependencies.
-4.  **`make cli-install-npm`**: Installs the JavaScript dependencies for the API and Portals.
+1.  **`make install-prereqs`**: Installs OS-level tools (Podman, Node, Python, Typst). On Linux, this includes a robust fallback to download the Typst binary if the package manager lacks it.
+2.  **`make init-env`**: Generates your `.env` file and secure random secrets for all local services.
+3.  **`make setup-python`**: Creates the Python virtual environment (`.venv`) and installs the required data pipeline dependencies.
+4.  **`make install-npm`**: Installs the JavaScript dependencies for the API and Portals.
 
 ### Phase 2: Database Infrastructure
-5.  **`make cli-up-db`**: Starts the PostgreSQL and Redis containers.
-6.  **`make cli-init-db`**: Initializes the database schemas. **Note**: This target will automatically wait up to 60 seconds for the database container to become healthy before proceeding.
-7.  **`make cli-migrate`**: Applies all Drizzle SQL migrations to bring your schema to the latest version.
+5.  **`make up-db`**: Starts the PostgreSQL and Redis containers.
+6.  **`make init-db`**: Initializes the database schemas. **Note**: This target will automatically wait up to 60 seconds for the database container to become healthy before proceeding.
+7.  **`make migrate`**: Applies all Drizzle SQL migrations to bring your schema to the latest version.
 
 ### Phase 3: Application & Data
-8.  **`make cli-bootstrap`**: Executes the unified setup logic (COA loading, Organization config, and Base Seeding). It will **automatically run verification** at the end to confirm the `admin` user exists.
+8.  **`make bootstrap`**: Executes the unified setup logic (COA loading, Organization config, and Base Seeding). It will **automatically run verification** at the end to confirm the `admin` user exists.
 
 ---
 
@@ -47,10 +47,10 @@ For daily development or testing on a remote server, use **tmux** to keep your p
 ## 4. Troubleshooting
 
 ### "pg_isready: command not found"
-Ensure Podman is running and you have properly executed `make cli-install-prereqs`.
+Ensure Podman is running and you have properly executed `make install-prereqs`.
 
 ### "Cannot find native binding" (Linux)
-If you recently upgraded Node, re-run `make cli-install-npm` to re-compile native binaries for the new environment.
+If you recently upgraded Node, re-run `make install-npm` to re-compile native binaries for the new environment.
 
 ### Re-running Setup
-All `cli-` targets are designed to be idempotent. You can safely re-run them if a step fails or if you need to refresh your environment.
+All installation targets are designed to be idempotent. You can safely re-run them if a step fails or if you need to refresh your environment.

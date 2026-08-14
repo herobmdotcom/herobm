@@ -8,22 +8,22 @@ echo -e "\e[36mStarting Fast Install Sequence...\e[0m"
 bash scripts/setup.sh
 
 # 2. Create .env and secrets
-make cli-init-env
+make init-env
 
 # 3. Install npm dependencies
-make cli-install-npm
+make install-npm
 
 # 4. Start containers
-make cli-up-db
+make up-db
 
 # 5. Initialize schemas (waits for PG)
-make cli-init-db
+make init-db
 
 # 6. Apply SQL migrations
-make cli-migrate
+make migrate
 
 # 7. Seed data & verify
-make cli-bootstrap
+make bootstrap
 
 # 8. Start FE and API containers (or user's startup choice)
 if [ -f .startup_choice ]; then
