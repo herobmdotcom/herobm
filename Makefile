@@ -190,7 +190,7 @@ rebuild-db-keep-raw:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
 	@echo "Resetting herobm_core and dbt transformation schemas..."
-	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB:-herobm) -c "DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
+	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
 	$(MAKE) elt-no-extract SOURCE=$(SOURCE)
