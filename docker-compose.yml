@@ -1,21 +1,21 @@
 name: herobm
 services:
-  ops-portal:
+  herobm-ui:
     image: localhost/herobm_ops-portal:latest
     build:
       context: .
       dockerfile: Dockerfile.portal
-    container_name: ops-portal
+    container_name: herobm-ui
     restart: unless-stopped
     environment:
-      API_URL: http://custom-api:3001
+      API_URL: http://herobm-api:3001
     ports:
       - "${BIND_IP:-127.0.0.1}:${FE_PORT:-8000}:3000"
     depends_on:
-      custom-api:
+      herobm-api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -57,12 +57,12 @@ services:
         aliases:
           - postgres-custom
 
-  custom-api:
+  herobm-api:
     image: localhost/herobm_custom-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
-    container_name: custom-api
+    container_name: herobm-api
     restart: unless-stopped
     env_file: .env
     environment:
@@ -84,7 +84,7 @@ services:
       postgres-custom:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/metrics').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/metrics').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -121,12 +121,12 @@ services:
         max-size: "20m"
         max-file: "3"
 
-  outbox-worker:
+  herobm-outbox:
     image: localhost/outbox-worker:latest
     build:
       context: .
       dockerfile: Dockerfile.worker
-    container_name: outbox-worker
+    container_name: herobm-outbox
     restart: unless-stopped
     env_file: .env
     environment:
@@ -155,12 +155,12 @@ services:
         max-size: "20m"
         max-file: "3"
 
-  pipeline-runner:
+  herobm-pipeline:
     image: localhost/herobm_pipeline-runner:latest
     build:
       context: .
       dockerfile: Dockerfile.pipeline
-    container_name: pipeline-runner
+    container_name: herobm-pipeline
     restart: unless-stopped
     ports:
       - "${BIND_IP:-127.0.0.1}:8001:8001"
@@ -170,7 +170,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
-      WEBHOOK_URL: "http://custom-api:3001/internal/setup/webhook"
+      WEBHOOK_URL: "http://herobm-api:3001/internal/setup/webhook"
       VENV_PYTHON: "python3"
       DBT: "dbt"
     volumes:

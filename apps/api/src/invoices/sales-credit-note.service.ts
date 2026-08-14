@@ -170,9 +170,10 @@ export class SalesCreditNoteService {
       const taxCode = settings.defaultSalesTaxAccountId
         ? idToCode.get(settings.defaultSalesTaxAccountId)
         : null;
-      const feeCode = settings.defaultFeeRevenueAccountId
-        ? idToCode.get(settings.defaultFeeRevenueAccountId)
-        : null;
+      const feeCode =
+        (settings.defaultFeeRevenueAccountId
+          ? idToCode.get(settings.defaultFeeRevenueAccountId)
+          : null) || revCode;
 
       if (!arCode || !revCode) {
         this.logger.warn(
@@ -360,12 +361,16 @@ export class SalesCreditNoteService {
         const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
 
         const isRefund = rl.resolution === 'refund';
+        const totalRefunded = previouslyCredited + refundedQty;
         const creditableQty = isRefund
-          ? getAvailableToCredit(
-              shipped,
-              invoiced,
+          ? Math.min(
               refundedQty,
-              previouslyCredited,
+              getAvailableToCredit(
+                shipped,
+                invoiced,
+                totalRefunded,
+                previouslyCredited,
+              ),
             )
           : 0;
 

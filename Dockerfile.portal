@@ -64,7 +64,7 @@ RUN cd apps/ops-portal && npm run prebuild
 # Build the Next.js standalone bundle.
 # API_URL must be set at build time because next.config.ts rewrites are baked
 # into the standalone output (not resolved at runtime).
-ARG API_URL=http://custom-api:3001
+ARG API_URL=http://herobm-api:3001
 ENV API_URL=${API_URL}
 RUN cd apps/ops-portal && npm run build
 

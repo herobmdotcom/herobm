@@ -623,4 +623,167 @@ describe('API E2E — Sales Order Returns', () => {
         .expect(200);
     });
   });
+
+  // =========================================================================
+  // Complex Combinations (Refund vs Replace, Fees, Discounts, Multi-return)
+  // =========================================================================
+
+  describe('Complex Combinations (Refund vs Replace, Fees, Multi-return)', () => {
+    let orderId: string;
+    let lineIds: string[];
+    let return1Id: string;
+    let return2Id: string;
+
+    beforeAll(async () => {
+      const result = await createInvoicedOrder();
+      orderId = result.orderId;
+      lineIds = result.lineIds;
+    });
+
+    it('processes Return #1 with mixed REFUND and REPLACE lines plus return fees', async () => {
+      // Create Return #1
+      // Line 1 (Index 0): 3 units refunded with $15 fee
+      // Line 2 (Index 1): 2 units replaced with $10 fee
+      const createRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/returns`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          notes: 'Return 1: Mixed refund and replacement',
+          lines: [
+            {
+              salesOrderLineId: lineIds[0],
+              quantityReturned: '3',
+              reason: 'Defective item',
+              resolution: RETURN_RESOLUTION.REFUND,
+              returnFee: '15.00',
+            },
+            {
+              salesOrderLineId: lineIds[1],
+              quantityReturned: '2',
+              reason: 'Wrong size',
+              resolution: RETURN_RESOLUTION.REPLACE,
+              returnFee: '10.00',
+            },
+          ],
+        })
+        .expect(201);
+
+      return1Id = createRes.body.returnId;
+      expect(return1Id).toBeDefined();
+
+      // Transition Return #1 to CONFIRMED -> RECEIVED -> PROCESSED
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return1Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.CONFIRMED, generateBackorders: false })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return1Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.RECEIVED, locationId: mainLocationId })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return1Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.PROCESSED })
+        .expect(200);
+
+      // Verify Return #1 state
+      const retDoc = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/returns/${return1Id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(retDoc.body.stateCode).toBe(RETURN_STATE.PROCESSED);
+      expect(retDoc.body.creditNoteNumber).toBeDefined();
+
+      // Fetch credit note details
+      const cns = await request(app.getHttpServer())
+        .get(`/api/sales-credit-notes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const cn = (cns.body.data || cns.body).find(
+        (c: any) => c.returnId === return1Id,
+      );
+      expect(cn).toBeDefined();
+      // Line 1: 3 units × $25.00 = $75.00 subtotal, fees = $15 + $10 = $25, GST tax (10%) = $7.50
+      // Net AR = $75.00 + $7.50 - $25.00 = $57.50
+      expect(parseFloat(cn.totalAmount)).toBe(75);
+      expect(parseFloat(cn.feeAmount)).toBe(25);
+      expect(parseFloat(cn.outstandingAmount)).toBe(57.5);
+    });
+
+    it('processes Return #2 for remaining returnable quantity on Line 1', async () => {
+      // Return #2: 7 remaining units on Line 1 (10 shipped - 3 already returned)
+      const createRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/returns`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          notes: 'Return 2: Remaining line 1 units',
+          lines: [
+            {
+              salesOrderLineId: lineIds[0],
+              quantityReturned: '7',
+              reason: 'Customer request',
+              resolution: RETURN_RESOLUTION.REFUND,
+              returnFee: '0.00',
+            },
+          ],
+        })
+        .expect(201);
+
+      return2Id = createRes.body.returnId;
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return2Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.CONFIRMED, generateBackorders: false })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return2Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.RECEIVED, locationId: mainLocationId })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${return2Id}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.PROCESSED })
+        .expect(200);
+
+      const cns = await request(app.getHttpServer())
+        .get(`/api/sales-credit-notes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const cn2 = (cns.body.data || cns.body).find(
+        (c: any) => c.returnId === return2Id,
+      );
+      expect(cn2).toBeDefined();
+      // Line 1: 7 units × $25.00 = $175.00
+      expect(parseFloat(cn2.totalAmount)).toBe(175);
+    });
+
+    it('rejects Return #3 when Line 1 returnable quantity is exhausted (400)', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/returns`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          notes: 'Return 3: Over limit attempt',
+          lines: [
+            {
+              salesOrderLineId: lineIds[0],
+              quantityReturned: '1', // 10 already returned (3 + 7 = 10 out of 10)
+              reason: 'Over limit',
+              resolution: RETURN_RESOLUTION.REFUND,
+            },
+          ],
+        })
+        .expect(400);
+    });
+  });
 });

@@ -36,7 +36,11 @@ import {
   createTestShipment,
   createTestShipmentLine,
 } from '../../test/fixtures';
-import { SALES_ORDER_STATE, RETURN_STATE } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  RETURN_STATE,
+  RETURN_RESOLUTION,
+} from '@herobm/shared';
 import type { ReturnState, SalesOrderState } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
@@ -921,6 +925,21 @@ describe('ReturnsWriteService', () => {
       };
       const result = await service.addReturnLine(returnId, dto, 'admin');
       expect(result).toHaveProperty('returnLineId');
+    });
+
+    it('should add a line with REPLACE resolution and return fee to a draft return', async () => {
+      await setupForAddLine(RETURN_STATE.DRAFT);
+      const dto = {
+        salesOrderLineId: lineId,
+        quantityReturned: '3',
+        reason: 'Defective item',
+        resolution: RETURN_RESOLUTION.REPLACE,
+        returnFee: '12.50',
+      };
+      const result = await service.addReturnLine(returnId, dto, 'admin');
+      expect(result).toHaveProperty('returnLineId');
+      expect(result.resolution).toBe(RETURN_RESOLUTION.REPLACE);
+      expect(result.returnFee).toBe('12.50');
     });
 
     it('should reject negative return fee', async () => {

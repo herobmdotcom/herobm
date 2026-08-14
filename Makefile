@@ -1,4 +1,4 @@
-.PHONY: help check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint verify-i18n clean-build cli-help cli-install-prereqs cli-init-env cli-setup-python cli-install-npm cli-up-db cli-init-db cli-migrate cli-bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint verify-i18n clean-build cli-help cli-install-prereqs cli-init-env cli-setup-python cli-install-npm cli-up-db cli-init-db cli-migrate cli-bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -20,6 +20,7 @@ Database & Migrations:
   make migrate-status - Show migration status
   make seed           - Seed database with application data
   make init           - Full DB initialization (schema, migrate, seed, ELT)
+  make rebuild-db-keep-raw - Rebuild app DB from raw data without re-extracting
 
 Code Generation:
   make dev-generate-sdk - Regenerate OpenAPI spec and TypeScript SDK client
@@ -130,11 +131,11 @@ down-db:
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
+	$(COMPOSE_CMD) up -d $(ARGS) herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
 
 down-portal-api:
-	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
-	-podman rm -f custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
+	$(COMPOSE_CMD) stop herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
+	-podman rm -f herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
 
 
 
@@ -145,11 +146,11 @@ build-worker:
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 up-redis: build-worker check-postgres-logs
-	$(COMPOSE_CMD) --profile queue up -d outbox-worker
+	$(COMPOSE_CMD) --profile queue up -d herobm-outbox
 
 down-redis:
-	$(COMPOSE_CMD) stop outbox-worker
-	$(COMPOSE_CMD) rm -f outbox-worker
+	$(COMPOSE_CMD) stop herobm-outbox
+	$(COMPOSE_CMD) rm -f herobm-outbox
 
 up-maildev:
 	$(COMPOSE_CMD) --profile dev up -d maildev
@@ -182,10 +183,20 @@ clean:
 	$(COMPOSE_CMD) down
 
 nuke:
+	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will stop all containers and PERMANENTLY DELETE all volumes and local images. Continue?" $(if $(FORCE),--force,)
 	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
 
+rebuild-db-keep-raw:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))
+	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
+	@echo "Resetting herobm_core and dbt transformation schemas..."
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB:-herobm) -c "DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
+	$(MAKE) migrate
+	$(MAKE) seed
+	$(MAKE) elt-no-extract SOURCE=$(SOURCE)
+
 # Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
-# import ABM data via ELT, then seed application data (users, inventory).
+# import source data via ELT, then seed application data (users, inventory).
 # Prerequisites: 'make up' running, .env populated with all passwords.
 # (init target defined further down alongside init-no-extract)
 
@@ -205,28 +216,28 @@ init-env:
 # --- ELT Pipeline ---
 
 extract:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract SOURCE=<source>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py
 
 extract-dry:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-dry SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-dry SOURCE=<source>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --dry-run
 
-# Extract a single table: make extract-table SOURCE=abm TABLE=SGROUPS
+# Extract a single table: make extract-table SOURCE=<source> TABLE=<name>
 extract-table:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-table SOURCE=abm|odoo TABLE=name))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-table SOURCE=<source> TABLE=<name>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 
-# Extract and transform a single table: make sync-table SOURCE=abm TABLE=SGROUPS MODEL=import_abm_customer_groups
+# Extract and transform a single table: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>
 sync-table:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
-	$(if $(TABLE),,$(error Error: TABLE is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
-	$(if $(MODEL),,$(error Error: MODEL is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
+	$(if $(TABLE),,$(error Error: TABLE is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
+	$(if $(MODEL),,$(error Error: MODEL is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select +$(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=<source>))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -235,39 +246,39 @@ transform:
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-seed:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-seed SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-seed SOURCE=<source>))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 test-transform:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=<source>))
 	"$(DBT)" test $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-dry:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-dry SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-dry SOURCE=<source>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-select:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=abm|odoo MODEL=name))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-select-dry:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select-dry SOURCE=abm|odoo MODEL=name))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select-dry SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-refresh:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=abm|odoo MODEL=name))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 elt: extract transform import-legacy dev-docs-schema
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
 elt-no-extract: transform import-legacy dev-docs-schema
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
 import-legacy:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy SOURCE=<source>))
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -275,7 +286,7 @@ import-legacy:
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 import-legacy-shipments:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy-shipments SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy-shipments SOURCE=<source>))
 	"$(DBT)" run-operation sync_sales_order_shipments --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 # --- Schema Reference & Docs ---
@@ -303,11 +314,11 @@ generate-extensions:
 # --- ELT Pipeline (Container) ---
 
 extract-docker:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker SOURCE=<source>))
 	$(COMPOSE_CMD) --profile pipeline run --rm $(SOURCE)-extract
 
 extract-docker-dry:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker-dry SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker-dry SOURCE=<source>))
 	$(COMPOSE_CMD) --profile pipeline run --rm $(SOURCE)-extract --dry-run
 
 # --- Local Development ---
@@ -330,38 +341,38 @@ dev-pipeline:
 
 rebuild-api:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	-$(COMPOSE_CMD) stop custom-api
-	-$(COMPOSE_CMD) rm -f custom-api
-	-podman stop custom-api
-	-podman rm -f custom-api
-	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api
+	-$(COMPOSE_CMD) stop herobm-api custom-api
+	-$(COMPOSE_CMD) rm -f herobm-api custom-api
+	-podman stop herobm-api custom-api
+	-podman rm -f herobm-api custom-api
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api
 	$(COMPOSE_CMD) ps
 
 rebuild-portal:
 	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	-$(COMPOSE_CMD) stop ops-portal
-	-$(COMPOSE_CMD) rm -f ops-portal
-	-podman stop ops-portal
-	-podman rm -f ops-portal
-	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
+	-$(COMPOSE_CMD) stop herobm-ui ops-portal
+	-$(COMPOSE_CMD) rm -f herobm-ui ops-portal
+	-podman stop herobm-ui ops-portal
+	-podman rm -f herobm-ui ops-portal
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-ui
 	$(COMPOSE_CMD) ps
 
 rebuild-pipeline:
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
-	-$(COMPOSE_CMD) stop pipeline-runner
-	-$(COMPOSE_CMD) rm -f pipeline-runner
-	-podman stop pipeline-runner
-	-podman rm -f pipeline-runner
-	$(COMPOSE_CMD) up -d --no-build --no-deps pipeline-runner
+	-$(COMPOSE_CMD) stop herobm-pipeline pipeline-runner
+	-$(COMPOSE_CMD) rm -f herobm-pipeline pipeline-runner
+	-podman stop herobm-pipeline pipeline-runner
+	-podman rm -f herobm-pipeline pipeline-runner
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-pipeline
 	$(COMPOSE_CMD) ps
 
 rebuild-worker:
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
-	-$(COMPOSE_CMD) stop outbox-worker
-	-$(COMPOSE_CMD) rm -f outbox-worker
-	-podman stop outbox-worker
-	-podman rm -f outbox-worker
-	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
+	-$(COMPOSE_CMD) stop herobm-outbox outbox-worker
+	-$(COMPOSE_CMD) rm -f herobm-outbox outbox-worker
+	-podman stop herobm-outbox outbox-worker
+	-podman rm -f herobm-outbox outbox-worker
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-outbox
 	$(COMPOSE_CMD) ps
 
 build-images:
@@ -371,13 +382,13 @@ build-images:
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 rebuild-apps: build-images
-	-$(COMPOSE_CMD) stop custom-api ops-portal pipeline-runner outbox-worker
-	-$(COMPOSE_CMD) rm -f custom-api ops-portal pipeline-runner outbox-worker
-	-podman stop custom-api ops-portal pipeline-runner outbox-worker
-	-podman rm -f custom-api ops-portal pipeline-runner outbox-worker
+	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
+	-$(COMPOSE_CMD) rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
+	-podman stop herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
+	-podman rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox custom-api ops-portal pipeline-runner outbox-worker
 	-podman system prune -f
 	$(MAKE) migrate
-	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api ops-portal pipeline-runner outbox-worker
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api herobm-ui herobm-pipeline herobm-outbox
 	$(COMPOSE_CMD) ps
 
 pre-push: verify-all build-images
@@ -409,9 +420,9 @@ test-api-e2e:
 # Use when the production portal crashes with cryptic minified errors.
 dev-portal:
 	podman build -t localhost/herobm_ops-portal:dev -f Dockerfile.portal.dev .
-	-podman stop ops-portal
-	-podman rm ops-portal
-	podman run -d --name ops-portal --network herobm_default -p 127.0.0.1:4300:3000 --env-file .env localhost/herobm_ops-portal:dev
+	-podman stop herobm-ui ops-portal
+	-podman rm herobm-ui ops-portal
+	podman run -d --name herobm-ui --network herobm_default -p 127.0.0.1:4300:3000 --env-file .env localhost/herobm_ops-portal:dev
 	@echo "Portal running in DEV mode at http://localhost:4300 (unminified errors)"
 
 # --- Migrations (herobm_core) ---
@@ -513,7 +524,7 @@ endif
 cli-init-env: init-env
 
 cli-setup-python:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make cli-setup-python SOURCE=abm|odoo))
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make cli-setup-python SOURCE=<source>))
 ifeq ($(OS),Windows_NT)
 	if not exist .venv python -m venv .venv
 	.venv\Scripts\pip install -r pipelines\$(SOURCE)_extract\requirements.txt

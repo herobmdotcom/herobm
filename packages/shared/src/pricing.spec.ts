@@ -215,6 +215,87 @@ describe('computeReturnCreditSummary', () => {
     // After fix: netCredit = 96.88 + 9.69 - 10 = 96.57
     expect(result.netCredit).toBe(96.57);
   });
+
+  it('handles mixed refund and replacement lines correctly', () => {
+    // Line 1: Refund qty 2 @ $50 with 10% GST and $5 fee -> subtotal 100, tax 10, fee 5
+    // Line 2: Replacement qty 1 @ $100 with 10% GST and $10 fee -> subtotal 0 (replacement), tax 0, fee 10
+    const result = computeReturnCreditSummary([
+      {
+        quantity: 2,
+        pricePerUnit: 50,
+        taxRate: 10,
+        returnFee: 5,
+        resolution: 'refund',
+      },
+      {
+        quantity: 1,
+        pricePerUnit: 100,
+        taxRate: 10,
+        returnFee: 10,
+        resolution: 'replacement',
+      },
+    ]);
+
+    expect(result.subtotal).toBe(100);
+    expect(result.totalTax).toBe(10);
+    expect(result.totalFees).toBe(15);
+    expect(result.netCredit).toBe(95); // 100 + 10 - 15
+  });
+
+  it('handles all-replacement return with fees', () => {
+    // Replacement line with fee generates $0 subtotal/tax, but retains fee deduction
+    const result = computeReturnCreditSummary([
+      {
+        quantity: 5,
+        pricePerUnit: 40,
+        taxRate: 10,
+        returnFee: 12.5,
+        resolution: 'replacement',
+      },
+    ]);
+
+    expect(result.subtotal).toBe(0);
+    expect(result.totalTax).toBe(0);
+    expect(result.totalFees).toBe(12.5);
+    expect(result.netCredit).toBe(-12.5);
+  });
+
+  it('handles complex multi-line return with discounts, fees, and mixed resolutions', () => {
+    // Line 1: Refund qty 4 @ $100, 20% disc ($320 net), 10% tax ($32 tax), $15 fee
+    // Line 2: Replacement qty 2 @ $200, 10% disc, 10% tax, $20 fee
+    // Line 3: Refund qty 1 @ $50, 0% disc ($50 net), 5% tax ($2.50 tax), $0 fee
+    const result = computeReturnCreditSummary([
+      {
+        quantity: 4,
+        pricePerUnit: 100,
+        discountPercentage: 20,
+        taxRate: 10,
+        returnFee: 15,
+        resolution: 'refund',
+      },
+      {
+        quantity: 2,
+        pricePerUnit: 200,
+        discountPercentage: 10,
+        taxRate: 10,
+        returnFee: 20,
+        resolution: 'replacement',
+      },
+      {
+        quantity: 1,
+        pricePerUnit: 50,
+        discountPercentage: 0,
+        taxRate: 5,
+        returnFee: 0,
+        resolution: 'refund',
+      },
+    ]);
+
+    expect(result.subtotal).toBe(370); // 320 + 50
+    expect(result.totalTax).toBe(34.5); // 32 + 2.5
+    expect(result.totalFees).toBe(35); // 15 + 20
+    expect(result.netCredit).toBe(369.5); // 370 + 34.5 - 35
+  });
 });
 
 describe('getTaxLabel', () => {
