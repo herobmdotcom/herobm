@@ -214,7 +214,6 @@ rebuild-db-keep-raw:
 	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
-	$(MAKE) elt-no-extract SOURCE=$(SOURCE)
 
 # Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
 # import source data via ELT, then seed application data (users, inventory).
