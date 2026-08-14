@@ -55,8 +55,8 @@ help:
 ifeq ($(OS),Windows_NT)
   ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
   COMPOSE_OVERRIDE =
-  DBT ?= $(CURDIR)/.venv/Scripts/dbt
-  VENV_PYTHON ?= $(CURDIR)/.venv/Scripts/python
+  DBT ?= $(shell if exist "$(CURDIR)\.venv\Scripts\dbt.exe" (echo $(CURDIR)/.venv/Scripts/dbt) else (echo dbt))
+  VENV_PYTHON ?= $(shell if exist "$(CURDIR)\.venv\Scripts\python.exe" (echo $(CURDIR)/.venv/Scripts/python) else (echo python))
   PYTHON_CMD = python
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
@@ -69,8 +69,8 @@ ifeq ($(OS),Windows_NT)
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE =
-  DBT ?= $(CURDIR)/.venv/bin/dbt
-  VENV_PYTHON ?= $(CURDIR)/.venv/bin/python
+  DBT ?= $(shell if [ -x $(CURDIR)/.venv/bin/dbt ]; then echo "$(CURDIR)/.venv/bin/dbt"; else echo "dbt"; fi)
+  VENV_PYTHON ?= $(shell if [ -x $(CURDIR)/.venv/bin/python ]; then echo "$(CURDIR)/.venv/bin/python"; else echo "python3"; fi)
   PYTHON_CMD = python3
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
@@ -190,7 +190,7 @@ rebuild-db-keep-raw:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
 	@echo "Resetting herobm_core and dbt transformation schemas..."
-	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
+	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_$(SOURCE)_transform CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
 	$(MAKE) elt-no-extract SOURCE=$(SOURCE)
