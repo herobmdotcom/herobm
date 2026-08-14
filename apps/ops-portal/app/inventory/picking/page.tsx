@@ -130,7 +130,7 @@ export default function PickingPage() {
 
     // Fetch Pending Orders
     const loadOrders = useCallback(() => {
-        if (!locReady) return;
+        if (!locReady || selectedLocationId === 'UNSET') return;
         setLoadingOrders(true);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
         const params: any = {
@@ -395,9 +395,9 @@ export default function PickingPage() {
                                             <div className="flex items-center gap-2">
                                                 {order.hasAllocation ? (
                                                     /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
-                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 [font-variation-settings:'FILL'_1] ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} title={t('tooltips.allocated')}>bookmark</span>
                                                 ) : (
-                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 [font-variation-settings:'FILL'_1] ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
                                                 {order.type === 'transfer_order' && (
@@ -515,10 +515,10 @@ export default function PickingPage() {
                                                 <tr>
                                                     <th>{t('columns.product')}</th>
                                                     <th>{t('columns.binLocation')}</th>
-                                                    <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                                    <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
-                                                    <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
-                                                    <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                    <th className="text-right">{t('columns.ordered')}</th>
+                                                    <th className="text-right">{t('columns.remaining')}</th>
+                                                    <th className="text-right">{t('columns.onHand')}</th>
+                                                    <th className="text-right">{t('columns.pickQty')}</th>
                                                     <th>{t('columns.action')}</th>
                                                 </tr>
                                             </thead>
@@ -526,12 +526,12 @@ export default function PickingPage() {
                                                 {itemsToPick.map((line, idx) => (
                                                     <tr key={`${line.salesOrderLineId}-${idx}`}>
                                                         <td>
-                                                            <div className="flex items-center gap-1.5">
+                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="font-bold">{line.productNumber}</div>
                                                                 {line.hasAllocation && (
                                                                     <>
                                                                         {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                                                                        <span className="material-symbols-outlined indicator-icon text-[var(--accent)]" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>
+                                                                        <span className="material-symbols-outlined indicator-icon text-[var(--accent)] [font-variation-settings:'FILL'_1]" title={t('tooltips.stockSpecificallyOrdered')}>
                                                                             bookmark
                                                                         </span>
                                                                     </>
@@ -557,18 +557,18 @@ export default function PickingPage() {
                                                                 ))}
                                                             </select>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             <div>{parseFloat(line.quantity).toLocaleString()}</div>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             <div>{parseFloat(line.remaining).toLocaleString()}</div>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             <div>
                                                                 {parseFloat(line.onHand).toLocaleString()}
                                                             </div>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             <div className="flex justify-end">
                                                                 <input
                                                                     type="number"
@@ -583,8 +583,7 @@ export default function PickingPage() {
                                                                             quantity: e.target.value
                                                                         }
                                                                     }))}
-                                                                    className="input"
-                                                                    style={{ width: '80px', textAlign: 'right', padding: '2px 6px', fontSize: '13px' }}
+                                                                    className="input w-[80px] text-right py-0.5 px-1.5 text-[13px]"
                                                                 />
                                                             </div>
                                                         </td>
@@ -619,7 +618,7 @@ export default function PickingPage() {
                                                                 <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
                                                                 {line.hasAllocation && (
                                                                     /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
-                                                                    <span className="material-symbols-outlined indicator-icon text-[var(--accent)] text-sm shrink-0" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                                    <span className="material-symbols-outlined indicator-icon text-[var(--accent)] text-sm shrink-0 [font-variation-settings:'FILL'_1]" title={t('tooltips.stockSpecificallyOrdered')}>bookmark</span>
                                                                 )}
                                                             </div>
                                                             <div className="text-xs text-[var(--text-muted)] truncate">{line.productDescription}</div>
@@ -689,125 +688,127 @@ export default function PickingPage() {
 
                                     {/* Unavailable Table */}
                                     {unavailableItems.length > 0 && (
-                                        <div>
-                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('unavailable')}</h4>
-                                            <table className="table-lines opacity-70 hidden lg:table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{t('columns.product')}</th>
-                                                        <th>{t('columns.binLocation')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
-                                                        <th>{t('columns.action')}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {unavailableItems.map((line, idx) => (
-                                                        <tr key={`${line.salesOrderLineId}-${idx}`}>
-                                                            <td>
-                                                                <div className="font-bold">{line.productNumber}</div>
-                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
-                                                            </td>
-                                                            <td className="text-[var(--text-muted)]">-</td>
-                                                            <td style={{ textAlign: 'right' }}>
-                                                                <div>{parseFloat(line.quantity).toLocaleString()}</div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }}>
-                                                                <div className="text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }}>
-                                                                <div className="text-[var(--danger)]">
-                                                                    {parseFloat(line.onHand).toLocaleString()}
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">-</td>
-                                                            <td>
-                                                                <span className="text-xs italic text-[var(--text-muted)]">{t('outOfStock')}</span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                            <div className="flex flex-col gap-3 lg:hidden opacity-70">
-                                                {unavailableItems.map((line, idx) => (
-                                                    <div key={`mobile-unavail-${line.salesOrderLineId}-${idx}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="min-w-0 flex-1 pr-2">
-                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
-                                                                <div className="text-xs text-[var(--text-muted)] truncate">{line.productDescription}</div>
-                                                            </div>
-                                                            <span className="text-xs italic text-[var(--text-muted)] shrink-0">{t('outOfStock')}</span>
-                                                        </div>
-                                                        <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
-                                                            <div>
-                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.ordered')}</div>
-                                                                <div className="text-xs font-medium">{parseFloat(line.quantity).toLocaleString()}</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.remaining')}</div>
-                                                                <div className="text-xs font-medium text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.onHand')}</div>
-                                                                <div className="text-xs font-medium text-[var(--danger)]">{parseFloat(line.onHand).toLocaleString()}</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                         <div>
+                                             <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('unavailable')}</h4>
+                                             <table className="table-lines opacity-70 hidden lg:table">
+                                                 <thead>
+                                                     <tr>
+                                                         <th>{t('columns.product')}</th>
+                                                         <th>{t('columns.binLocation')}</th>
+                                                         <th className="text-right">{t('columns.ordered')}</th>
+                                                         <th className="text-right">{t('columns.remaining')}</th>
+                                                         <th className="text-right">{t('columns.onHand')}</th>
+                                                         <th className="text-right">{t('columns.pickQty')}</th>
+                                                         <th>{t('columns.action')}</th>
+                                                     </tr>
+                                                 </thead>
+                                                 <tbody>
+                                                     {unavailableItems.map((line, idx) => (
+                                                         <tr key={`${line.salesOrderLineId}-${idx}`}>
+                                                             <td>
+                                                                 <div className="font-bold">{line.productNumber}</div>
+                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
+                                                             </td>
+                                                             <td className="text-[var(--text-muted)]">-</td>
+                                                             <td className="text-right">
+                                                                 <div>{parseFloat(line.quantity).toLocaleString()}</div>
+                                                             </td>
+                                                             <td className="text-right">
+                                                                 <div className="text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
+                                                             </td>
+                                                             <td className="text-right">
+                                                                 <div className="text-[var(--danger)]">
+                                                                     {parseFloat(line.onHand).toLocaleString()}
+                                                                 </div>
+                                                             </td>
+                                                             <td className="text-right text-[var(--text-muted)]">-</td>
+                                                             <td>
+                                                                 <span className="text-xs italic text-[var(--text-muted)]">{t('outOfStock')}</span>
+                                                             </td>
+                                                         </tr>
+                                                     ))}
+                                                 </tbody>
+                                             </table>
+                                             <div className="flex flex-col gap-3 lg:hidden opacity-70">
+                                                 {unavailableItems.map((line, idx) => (
+                                                     <div key={`mobile-unavail-${line.salesOrderLineId}-${idx}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                         <div className="flex justify-between items-start mb-2">
+                                                             <div className="min-w-0 flex-1 pr-2">
+                                                                 <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
+                                                                 <div className="text-xs text-[var(--text-muted)] truncate">{line.productDescription}</div>
+                                                             </div>
+                                                             <div className="flex flex-col items-end gap-2 shrink-0">
+                                                                 <span className="text-xs italic text-[var(--text-muted)]">{t('outOfStock')}</span>
+                                                             </div>
+                                                         </div>
+                                                         <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
+                                                             <div>
+                                                                 <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.ordered')}</div>
+                                                                 <div className="text-xs font-medium">{parseFloat(line.quantity).toLocaleString()}</div>
+                                                             </div>
+                                                             <div>
+                                                                 <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.remaining')}</div>
+                                                                 <div className="text-xs font-medium text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
+                                                             </div>
+                                                             <div>
+                                                                 <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.onHand')}</div>
+                                                                 <div className="text-xs font-medium text-[var(--danger)]">{parseFloat(line.onHand).toLocaleString()}</div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 ))}
+                                             </div>
+                                         </div>
+                                     )}
 
                                     {/* Picked Table */}
                                     {pickedItems.length > 0 && (
-                                        <div>
-                                            <h4 className="section-heading !mb-4">{t('picked')}</h4>
-                                            <table className="table-lines hidden lg:table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{t('columns.product')}</th>
-                                                        <th>{t('columns.binLocation')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
-                                                        <th>{t('columns.action')}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {pickedItems.map(pick => (
-                                                        <tr key={pick.pickId}>
-                                                            <td>
-                                                                <div className="font-bold">{pick.line?.productNumber || tCommon('unknown')}</div>
-                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
-                                                            </td>
-                                                            <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
-                                                                <div>{pick.line ? parseFloat(pick.line.quantity).toLocaleString() : '-'}</div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
-                                                                <div>{pick.line ? parseFloat(pick.line.remaining).toLocaleString() : '-'}</div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
-                                                                <div>{pick.line ? parseFloat(pick.line.onHand).toLocaleString() : '-'}</div>
-                                                            </td>
-                                                            <td style={{ textAlign: 'right' }}>
-                                                                <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-                                                                    {pick.line && !pick.line.isFullyPicked && (
-                                                                        <>
-                                                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                                                                            <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>
-                                                                                warning
-                                                                            </span>
-                                                                        </>
-                                                                    )}
-                                                                    {parseFloat(pick.quantity).toLocaleString()}
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="flex justify-end">
+                                         <div>
+                                             <h4 className="section-heading !mb-4">{t('picked')}</h4>
+                                             <table className="table-lines hidden lg:table">
+                                                 <thead>
+                                                     <tr>
+                                                         <th>{t('columns.product')}</th>
+                                                         <th>{t('columns.binLocation')}</th>
+                                                         <th className="text-right">{t('columns.ordered')}</th>
+                                                         <th className="text-right">{t('columns.remaining')}</th>
+                                                         <th className="text-right">{t('columns.onHand')}</th>
+                                                         <th className="text-right">{t('columns.pickQty')}</th>
+                                                         <th>{t('columns.action')}</th>
+                                                     </tr>
+                                                 </thead>
+                                                 <tbody>
+                                                     {pickedItems.map(pick => (
+                                                         <tr key={pick.pickId}>
+                                                             <td>
+                                                                 <div className="font-bold">{pick.line?.productNumber || tCommon('unknown')}</div>
+                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
+                                                             </td>
+                                                             <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
+                                                             <td className="text-right text-[var(--text-muted)]">
+                                                                 <div>{pick.line ? parseFloat(pick.line.quantity).toLocaleString() : '-'}</div>
+                                                             </td>
+                                                             <td className="text-right text-[var(--text-muted)]">
+                                                                 <div>{pick.line ? parseFloat(pick.line.remaining).toLocaleString() : '-'}</div>
+                                                             </td>
+                                                             <td className="text-right text-[var(--text-muted)]">
+                                                                 <div>{pick.line ? parseFloat(pick.line.onHand).toLocaleString() : '-'}</div>
+                                                             </td>
+                                                             <td className="text-right">
+                                                                 <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                                                                     {pick.line && !pick.line.isFullyPicked && (
+                                                                         <>
+                                                                             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                                                             <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>
+                                                                                 warning
+                                                                             </span>
+                                                                         </>
+                                                                     )}
+                                                                     {parseFloat(pick.quantity).toLocaleString()}
+                                                                 </div>
+                                                             </td>
+                                                             <td>
+                                                                 <div className="flex justify-end">
                                                                     <Button
                                                                         type="button"
                                                                         onClick={() => handleCancelPick(pick.pickId)}
@@ -880,10 +881,10 @@ export default function PickingPage() {
                                                     <tr>
                                                         <th>{t('columns.product')}</th>
                                                         <th>{t('columns.binLocation')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                        <th className="text-right">{t('columns.ordered')}</th>
+                                                        <th className="text-right">{t('columns.remaining')}</th>
+                                                        <th className="text-right">{t('columns.onHand')}</th>
+                                                        <th className="text-right">{t('columns.pickQty')}</th>
                                                         <th>{t('columns.action')}</th>
                                                     </tr>
                                                 </thead>
@@ -895,16 +896,16 @@ export default function PickingPage() {
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
                                                             </td>
                                                             <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                            <td className="text-right text-[var(--text-muted)]">
                                                                 <div>{pick.line ? parseFloat(pick.line.quantity).toLocaleString() : '-'}</div>
                                                             </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                            <td className="text-right text-[var(--text-muted)]">
                                                                 <div>{pick.line ? parseFloat(pick.line.remaining).toLocaleString() : '-'}</div>
                                                             </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                            <td className="text-right text-[var(--text-muted)]">
                                                                 <div>{pick.line ? parseFloat(pick.line.onHand).toLocaleString() : '-'}</div>
                                                             </td>
-                                                            <td style={{ textAlign: 'right' }}>
+                                                            <td className="text-right">
                                                                 <div className="font-semibold">{parseFloat(pick.quantity).toLocaleString()}</div>
                                                             </td>
                                                             <td>
@@ -960,7 +961,7 @@ export default function PickingPage() {
                                                 <thead>
                                                     <tr>
                                                         <th>{t('columns.product')}</th>
-                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                        <th className="text-right">{t('columns.ordered')}</th>
                                                         <th>{t('columns.action')}</th>
                                                     </tr>
                                                 </thead>
@@ -974,7 +975,7 @@ export default function PickingPage() {
                                                                 </div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
                                                             </td>
-                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                            <td className="text-right text-[var(--text-muted)]">
                                                                 <div>{parseFloat(line.quantity).toLocaleString()}</div>
                                                             </td>
                                                             <td>

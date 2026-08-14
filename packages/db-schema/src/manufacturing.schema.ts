@@ -39,6 +39,8 @@ export const workOrders = herobmCore.table(
     outputBinId: uuid('output_bin_id').references(() => bins.binId),
     stateCode: text('state_code').$type<WorkOrderState>().notNull(),
     putawayStatus: text('putaway_status').$type<PutawayStatus>(),
+    assemblyCostPerUnit: numeric('assembly_cost_per_unit'),
+    additionalCost: numeric('additional_cost'),
     totalCost: numeric('total_cost'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),

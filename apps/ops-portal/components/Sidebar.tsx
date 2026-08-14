@@ -100,7 +100,7 @@ export default function Sidebar() {
       items: [
         { 
           href: '/sales-credit-notes', 
-          label: 'Credit Notes', 
+          label: 'Credit & Debit', 
           icon: 'receipt_long',
           subItems: [
             { href: '/sales-credit-notes', label: 'Returns Queue' },

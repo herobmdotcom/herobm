@@ -23,6 +23,18 @@ export class UpdateWorkOrderDto {
   @IsOptional()
   @IsUUID()
   outputBinId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Per-unit assembly cost' })
+  @IsOptional()
+  @IsString()
+  assemblyCostPerUnit?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Flat additional work order-level cost added to total',
+  })
+  @IsOptional()
+  @IsString()
+  additionalCost?: string | null;
 }
 
 export class UpdateWorkOrderComponentDto {

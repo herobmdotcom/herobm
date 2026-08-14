@@ -65,6 +65,20 @@ export class CreateWorkOrderDto {
   outputBinId?: string;
 
   @ApiPropertyOptional({
+    description: 'Per-unit assembly cost',
+  })
+  @IsOptional()
+  @IsString()
+  assemblyCostPerUnit?: string;
+
+  @ApiPropertyOptional({
+    description: 'Flat additional work order-level cost added to total',
+  })
+  @IsOptional()
+  @IsString()
+  additionalCost?: string;
+
+  @ApiPropertyOptional({
     type: [CreateWorkOrderComponentDto],
     description:
       'Component lines snapshot (if empty, auto-populated from product BOM)',

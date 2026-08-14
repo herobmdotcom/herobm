@@ -289,7 +289,7 @@ export default function SystemSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.companyName')}
                 </label>
                 <input
@@ -302,7 +302,7 @@ export default function SystemSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.email')}
                   </label>
                   <input
@@ -314,7 +314,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.phone')}
                   </label>
                   <input
@@ -327,7 +327,7 @@ export default function SystemSettingsPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.website')}
                 </label>
                 <input
@@ -340,7 +340,7 @@ export default function SystemSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.companyNumber')}
                   </label>
                   <input
@@ -352,7 +352,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.taxNumber')}
                   </label>
                   <input
@@ -365,7 +365,7 @@ export default function SystemSettingsPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.logoUrl')}
                 </label>
                 <input
@@ -380,7 +380,7 @@ export default function SystemSettingsPage() {
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.address1')}
                 </label>
                 <input
@@ -392,7 +392,7 @@ export default function SystemSettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.address2')}
                 </label>
                 <input
@@ -405,7 +405,7 @@ export default function SystemSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.city')}
                   </label>
                   <input
@@ -417,7 +417,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.state')}
                   </label>
                   <input
@@ -431,7 +431,7 @@ export default function SystemSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.postCode')}
                   </label>
                   <input
@@ -443,7 +443,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.country')}
                   </label>
                   <select
@@ -478,7 +478,7 @@ export default function SystemSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.bankName')}
                 </label>
                 <input
@@ -490,7 +490,7 @@ export default function SystemSettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.accountName')}
                 </label>
                 <input
@@ -505,7 +505,7 @@ export default function SystemSettingsPage() {
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('labels.customerNumber')}
                 </label>
                 <input
@@ -517,7 +517,7 @@ export default function SystemSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.iban')}
                   </label>
                   <input
@@ -528,7 +528,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tSettings('labels.swiftBic')}
                   </label>
                   <input
@@ -554,7 +554,7 @@ export default function SystemSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tSettings('fulfillmentHeading')}
                 </label>
                 <select

@@ -26,8 +26,8 @@ export default function EventPayloadSlideOver({ isOpen, onClose, event }: Props)
   return (
     <SlideOver isOpen={isOpen} onClose={onClose} title="Event Message Payload">
       <div className="flex flex-col gap-4 h-full">
-        <div style={{ padding: '12px 16px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-          <div className="text-xs mb-2 font-semibold tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>Metadata</div>
+        <div className="px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg">
+          <div className="text-xs mb-2 font-semibold tracking-wider uppercase text-[var(--text-muted)]">Metadata</div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div><span className="opacity-60">ID:</span> {event.outboxId}</div>
             <div><span className="opacity-60">Type:</span> {event.eventType}</div>
@@ -37,20 +37,9 @@ export default function EventPayloadSlideOver({ isOpen, onClose, event }: Props)
         </div>
 
         <div className="flex flex-col gap-2 flex-1 min-h-0">
-          <div className="text-xs font-semibold tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>Full Payload</div>
+          <div className="text-xs font-semibold tracking-wider uppercase text-[var(--text-muted)]">Full Payload</div>
           <pre 
-            style={{ 
-              background: 'var(--bg-secondary)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '8px', 
-              padding: '16px', 
-              fontSize: '12px', 
-              fontFamily: 'monospace', 
-              overflowY: 'auto',
-              color: 'var(--text-secondary)',
-              flex: 1,
-              margin: 0
-            }}
+            className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 text-xs font-mono overflow-y-auto text-[var(--text-secondary)] flex-1 m-0"
           >
             {JSON.stringify(event.payload || event, null, 2)}
           </pre>

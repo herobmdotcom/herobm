@@ -94,7 +94,7 @@ export default function SystemLogsPage() {
             {
               label: (
                 <div className="flex items-center gap-2 text-xs">
-                  <label style={{ color: 'var(--text-muted)' }}>{t('filters.service')}</label>
+                  <label className="text-[var(--text-muted)]">{t('filters.service')}</label>
                   <select 
                     className="input-field py-1 px-2 text-xs h-auto"
                     value={service} 
@@ -113,7 +113,7 @@ export default function SystemLogsPage() {
             {
               label: (
                 <div className="flex items-center gap-2 text-xs">
-                  <label style={{ color: 'var(--text-muted)' }}>{t('filters.limit')}</label>
+                  <label className="text-[var(--text-muted)]">{t('filters.limit')}</label>
                   <select 
                     className="input-field py-1 px-2 text-xs h-auto"
                     value={lineLimit} 
@@ -163,12 +163,7 @@ export default function SystemLogsPage() {
 
         {error && (
           <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm shrink-0"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
+            className="mb-4 px-4 py-3 rounded-lg text-sm shrink-0 bg-red-500/10 border border-red-500/30 text-red-400"
           >
             {error}
           </div>
@@ -176,16 +171,7 @@ export default function SystemLogsPage() {
 
         {/* Log Viewer Terminal */}
         <div 
-          className="flex-1 rounded-lg overflow-auto relative"
-          style={{ 
-            background: '#1e1e1e', // Dark terminal background
-            border: '1px solid var(--border)',
-            padding: '16px',
-            fontFamily: 'monospace, "Courier New", Courier',
-            fontSize: '12px',
-            lineHeight: '1.5',
-            color: '#d4d4d4', // Light gray text
-          }}
+          className="flex-1 rounded-lg overflow-auto relative bg-[#1e1e1e] border border-[var(--border)] p-4 font-mono text-xs leading-normal text-[#d4d4d4]"
         >
           {loading && lines.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -198,15 +184,14 @@ export default function SystemLogsPage() {
           ) : (
             <>
               {lines.map((line, idx) => {
-                // Basic coloration for log levels
-                let color = '#d4d4d4'; // default
-                if (line.includes('[WARN]')) color = '#f59e0b'; // warning (amber)
-                else if (line.includes('[ERROR]') || line.includes('Error:')) color = '#f87171'; // error (red)
-                else if (line.includes('[DEBUG]')) color = '#9ca3af'; // debug (gray)
-                else if (line.includes('[INFO]')) color = '#60a5fa'; // info (blue)
+                let colorClass = 'text-[#d4d4d4]';
+                if (line.includes('[WARN]')) colorClass = 'text-amber-500';
+                else if (line.includes('[ERROR]') || line.includes('Error:')) colorClass = 'text-red-400';
+                else if (line.includes('[DEBUG]')) colorClass = 'text-gray-400';
+                else if (line.includes('[INFO]')) colorClass = 'text-blue-400';
                 
                 return (
-                  <div key={idx} style={{ color, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                  <div key={idx} className={`whitespace-pre-wrap break-all ${colorClass}`}>
                     {line}
                   </div>
                 );

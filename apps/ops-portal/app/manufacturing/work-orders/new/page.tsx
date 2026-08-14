@@ -19,7 +19,7 @@ import {
   inventoryControllerFindByProductIdsBulk,
 } from '@herobm/sdk';
 import type { CreateWorkOrderDto } from '@herobm/sdk';
-import { compareBinNumbers } from '@herobm/shared';
+import { compareBinNumbers, BIN_TYPE } from '@herobm/shared';
 import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
 
 export const dynamic = 'force-dynamic';
@@ -58,6 +58,8 @@ export default function NewWorkOrderPage() {
   const [selectedZone, setSelectedZone] = useState('all');
   const [wipBinId, setWipBinId] = useState('');
   const [outputBinId, setOutputBinId] = useState('');
+  const [assemblyCostPerUnit, setAssemblyCostPerUnit] = useState('');
+  const [additionalCost, setAdditionalCost] = useState('');
   const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
   const [loadingBins, setLoadingBins] = useState(false);
 
@@ -92,9 +94,9 @@ export default function NewWorkOrderPage() {
             : []
         ) as InventoryBin[];
         setAvailableBins(binList);
-        const wipBin = binList.find((b) => b.binType === 'wip') || binList[0];
+        const wipBin = binList.find((b) => b.binType === BIN_TYPE.WIP) || binList[0];
         setWipBinId(wipBin ? wipBin.binId : '');
-        const outputBin = binList.find((b) => b.binType === 'storage' || b.binType === 'pick') || wipBin;
+        const outputBin = binList.find((b) => b.binType === BIN_TYPE.STORAGE || b.binType === BIN_TYPE.PICK) || wipBin;
         setOutputBinId(outputBin ? outputBin.binId : '');
       })
       .catch((err) => {
@@ -285,6 +287,8 @@ export default function NewWorkOrderPage() {
         locationId,
         wipBinId: wipBinId || undefined,
         outputBinId: outputBinId || undefined,
+        assemblyCostPerUnit: assemblyCostPerUnit ? String(assemblyCostPerUnit) : undefined,
+        additionalCost: additionalCost ? String(additionalCost) : undefined,
         components:
           validLines.length > 0
             ? validLines.map((l) => ({
@@ -409,10 +413,7 @@ export default function NewWorkOrderPage() {
 
             {/* Target Quantity */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.targetQuantity')} *
               </label>
               <input
@@ -427,10 +428,7 @@ export default function NewWorkOrderPage() {
 
             {/* Location Select */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.location')} *
               </label>
               <LocationSelect
@@ -443,10 +441,7 @@ export default function NewWorkOrderPage() {
 
             {/* Storage Zone Filter */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.zone')}
               </label>
               <select
@@ -469,10 +464,7 @@ export default function NewWorkOrderPage() {
 
             {/* WIP Bin Select */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.wipBin')}
               </label>
               <select
@@ -486,7 +478,7 @@ export default function NewWorkOrderPage() {
                   <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                     {binGroup.map((bin) => (
                       <option key={bin.binId} value={bin.binId}>
-                        {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        {bin.binNumber} {bin.binType ? `(${bin.binType === BIN_TYPE.WIP ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
                       </option>
                     ))}
                   </optgroup>
@@ -496,10 +488,7 @@ export default function NewWorkOrderPage() {
 
             {/* Output Bin Select */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.outputBin')}
               </label>
               <select
@@ -513,7 +502,7 @@ export default function NewWorkOrderPage() {
                   <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
                     {binGroup.map((bin) => (
                       <option key={bin.binId} value={bin.binId}>
-                        {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        {bin.binNumber} {bin.binType ? `(${bin.binType === BIN_TYPE.WIP ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
                       </option>
                     ))}
                   </optgroup>
@@ -521,12 +510,41 @@ export default function NewWorkOrderPage() {
               </select>
             </div>
 
+            {/* Unit Assembly Cost (Optional) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                {t('labels.assemblyCostPerUnit')}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="input w-full"
+                placeholder={t('placeholders.assemblyCostPerUnit')}
+                value={assemblyCostPerUnit}
+                onChange={(e) => setAssemblyCostPerUnit(e.target.value)}
+              />
+            </div>
+
+            {/* Additional Cost (Optional) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                {t('labels.additionalCost')}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="input w-full"
+                placeholder={t('placeholders.additionalCost')}
+                value={additionalCost}
+                onChange={(e) => setAdditionalCost(e.target.value)}
+              />
+            </div>
+
             {/* Order Number (Optional) */}
             <div className="md:col-span-2">
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 {t('labels.orderNumber')}
               </label>
               <input
@@ -549,28 +567,21 @@ export default function NewWorkOrderPage() {
             <div className="flex overflow-x-auto shrink-0">
               <div className="flex gap-0 min-w-max">
                 <Button
-                  className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
-                  style={{
-                    color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
-                    background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                    cursor: 'pointer',
-                  }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border ${
+                    activeTab === 'lines'
+                      ? 'text-primary bg-primary/10 border-primary/30'
+                      : 'text-muted-foreground bg-transparent border-slate-200'
+                  }`}
                   onClick={() => setActiveTab('lines')}
                 >
                   Component Lines
                 </Button>
                 <Button
-                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
-                  style={{
-                    color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
-                    background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                    borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                    cursor: 'pointer',
-                  }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border ${
+                    activeTab === 'availability'
+                      ? 'text-primary bg-primary/10 border-primary/30 border-l-primary/30'
+                      : 'text-muted-foreground bg-transparent border-slate-200 border-l-0'
+                  }`}
                   onClick={() => setActiveTab('availability')}
                 >
                   Stock Availability
@@ -583,7 +594,6 @@ export default function NewWorkOrderPage() {
                   <ProductSearchInput
                     onSelect={addLineFromProduct}
                     placeholder={t('placeholders.searchComponent')}
-                    style={{ width: '100%' }}
                   />
                 </div>
                 <Button

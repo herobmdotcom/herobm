@@ -8,4 +8,5 @@
 
 export type GlobalPurchaseReturnsControllerGetPurchaseReturnsParams = {
 stateCode?: string;
+requireDebitNote?: boolean;
 };

@@ -27,6 +27,7 @@ function EventIcon({ type }: { type: string }) {
   if (typeLower.includes('auto_status')) return <span>⚡</span>;
   if (typeLower.includes('price')) return <span>💰</span>;
   if (typeLower.includes('stock') || typeLower.includes('inventory')) return <span>🏢</span>;
+  if (typeLower.includes('credit') || typeLower.includes('debit')) return <span>💳</span>;
   if (typeLower.includes('invoice')) return <span>🧾</span>;
   if (typeLower.includes('payment')) return <span>💳</span>;
   if (typeLower.includes('import')) return <span>📥</span>;

@@ -87,14 +87,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       id: 'index',
       header: '#',
       width: 40,
-      render: (_, i) => <span style={{ color: 'var(--text-muted)' }}>{i + 1}</span>,
+      render: (_, i) => <span className="text-[var(--text-muted)]">{i + 1}</span>,
     },
     {
       id: 'product',
       header: t('columns.product'),
       width: 150,
       render: (line) => (
-        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
           {line.productNumber}
         </Link>
       )
@@ -109,14 +109,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       header: t('columns.qty'),
       width: 90,
       align: 'right',
-      render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(line.quantityInvoiced)}</span>,
+      render: (line) => <span className="tabular-nums">{parseFloat(line.quantityInvoiced)}</span>,
     },
     {
       id: 'price',
       header: t('columns.price'),
       width: 110,
       align: 'right',
-      render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}</span>,
+      render: (line) => <span className="tabular-nums">{formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}</span>,
     },
     {
       id: 'amount',
@@ -124,7 +124,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       width: 110,
       align: 'right',
       render: (line) => (
-        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="font-semibold tabular-nums">
           {formatAmount(parseFloat(line.amount), invoice.currencyCode)}
         </span>
       ),
@@ -137,7 +137,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       header: t('columns.paymentNo'),
       width: 250,
       render: (alloc) => (
-        <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
+        <span className="font-semibold cursor-pointer hover:underline text-[var(--accent)]" onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
           {alloc.paymentNumber}
         </span>
       ),
@@ -147,7 +147,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       header: t('columns.date'),
       width: 150,
       render: (alloc) => (
-        <span style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-[var(--text-secondary)]">
           {formatLocalDate(alloc.paymentDate)}
         </span>
       ),
@@ -157,7 +157,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       header: t('columns.allocatedAmount'),
       align: 'right',
       render: (alloc) => (
-        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="font-semibold tabular-nums">
           {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
         </span>
       ),
@@ -166,27 +166,27 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
 
   const linesFooter = (
     <>
-      <tr style={{ borderTop: '2px solid var(--border)' }}>
-        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+      <tr className="border-t-2 border-[var(--border)]">
+        <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
           {tCommon('subtotal')}
         </td>
-        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <td className="text-right font-semibold tabular-nums">
           {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
         </td>
       </tr>
       <tr>
-        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+        <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
           {tCommon('tax')}
         </td>
-        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <td className="text-right font-semibold tabular-nums">
           {formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)}
         </td>
       </tr>
-      <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+      <tr className="bg-blue-500/[0.02]">
+        <td colSpan={5} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
           {tCommon('total')}
         </td>
-        <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+        <td className="text-right font-extrabold text-[14px] text-[var(--accent)] tabular-nums">
           {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
         </td>
       </tr>
@@ -254,7 +254,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('customer')}
               </label>
               <div className="text-sm">
@@ -271,7 +271,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('orderNo')}
               </label>
               <div className="text-sm">
@@ -288,25 +288,25 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('customerPO')}
               </label>
               <div className="text-sm">{invoice.customerOrderNumber || '—'}</div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('columns.currency')}
               </label>
               <div className="text-sm">{invoice.currencyCode}</div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('date')}
               </label>
               <div className="text-sm">{formatLocalDate(invoice.invoiceDate || invoice.createdOn)}</div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 Trading Terms
               </label>
               <div className="text-sm">{invoice.termsDescription || '—'}</div>
@@ -314,7 +314,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
 
             {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                   Early Payment Terms
                 </label>
                 <div className="text-sm">
@@ -344,13 +344,13 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </div>
             )}
             <div className="col-span-2 mt-2">
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('notesCardHeading')}
               </label>
               {invoice.notes ? (
                 <div className="text-sm">{invoice.notes}</div>
               ) : (
-                <div className="text-sm" style={{ color: 'var(--text-muted)' }}>—</div>
+                <div className="text-sm text-[var(--text-muted)]">—</div>
               )}
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Status</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Status</label>
               {isOverdue ? (
                 <span className="badge badge-overdue">{tCommon('states.overdue')}</span>
               ) : (
@@ -374,19 +374,19 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Total Due</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Total Due</label>
               <div className="text-lg font-semibold text-[var(--text-primary)]">
                 {formatAmount(parseFloat(invoice.outstandingAmount), invoice.currencyCode)}
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Total Paid</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Total Paid</label>
               <div className="text-lg font-semibold text-[var(--text-primary)]">
                 {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.outstandingAmount), invoice.currencyCode)}
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Due Date</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Due Date</label>
               <div className={`text-lg font-semibold ${isOverdue ? 'text-red-600' : 'text-[var(--text-primary)]'}`}>
                 {formatLocalDate(invoice.dueDate)}
               </div>
@@ -493,7 +493,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             mobileCard={(alloc) => (
               <MobileLineItemCard
                 title={
-                  <span className="cursor-pointer hover:underline font-semibold" style={{ color: 'var(--accent)' }} onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
+                  <span className="cursor-pointer hover:underline font-semibold text-[var(--accent)]" onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
                     {alloc.paymentNumber}
                   </span>
                 }

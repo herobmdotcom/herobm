@@ -127,7 +127,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
       width: 250,
       render: (alloc) => (
         alloc.paymentId ? (
-          <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+          <span className="font-semibold cursor-pointer hover:underline text-[var(--accent)]" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
             {alloc.paymentNumber}
           </span>
         ) : (
@@ -139,7 +139,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
       id: 'date',
       header: t('columns.date'),
       render: (alloc) => (
-        <span style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-[var(--text-secondary)]">
           {formatLocalDate(alloc.paymentDate)}
         </span>
       )
@@ -149,7 +149,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
       header: t('columns.allocatedAmount'),
       align: 'right',
       render: (alloc) => (
-        <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <span className="font-semibold tabular-nums">
           {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
         </span>
       )
@@ -202,11 +202,11 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('labels.supplier')}
               </label>
               {isEditable ? (
-                <div style={{ height: 38 }}>
+                <div className="h-[38px]">
                   <SupplierSelect
                     value={editVendorId}
                     initialSearchTerm={invoice.vendorName || invoice.vendorId}
@@ -226,7 +226,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('columns.supplierInvoiceNumber')}
               </label>
               {isEditable ? (
@@ -242,7 +242,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('columns.currency')}
               </label>
               {isEditable ? (
@@ -258,7 +258,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('labels.receiptFilename')}
               </label>
               {isEditable ? (
@@ -274,7 +274,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('columns.date')}
               </label>
               <div className="text-sm">
@@ -282,7 +282,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('columns.dueDate')}
               </label>
               <div className="text-sm">
@@ -291,7 +291,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
             </div>
             {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                   Early Payment Terms
                 </label>
                 <div className="text-sm">
@@ -320,7 +320,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               </div>
             )}
             <div className="md:col-span-2 mt-2">
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {tCommon('notesCardHeading')}
               </label>
               {isEditable ? (
@@ -334,7 +334,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
               ) : invoice.notes ? (
                 <div className="text-sm bg-gray-50 p-3 rounded">{invoice.notes}</div>
               ) : (
-                <div className="text-sm" style={{ color: 'var(--text-muted)' }}>—</div>
+                <div className="text-sm text-[var(--text-muted)]">—</div>
               )}
             </div>
           </div>
@@ -394,7 +394,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                   <MobileLineItemCard
                     title={
                       alloc.paymentId ? (
-                        <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                        <span className="font-semibold cursor-pointer hover:underline text-[var(--accent)]" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
                           {alloc.paymentNumber}
                         </span>
                       ) : (

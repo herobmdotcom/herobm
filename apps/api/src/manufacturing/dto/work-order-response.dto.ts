@@ -78,8 +78,20 @@ export class WorkOrderResponseDto {
   @ApiPropertyOptional()
   wipBinName?: string | null;
 
+  @ApiPropertyOptional()
+  outputBinId?: string | null;
+
+  @ApiPropertyOptional()
+  outputBinName?: string | null;
+
   @ApiProperty()
   stateCode!: string;
+
+  @ApiPropertyOptional()
+  assemblyCostPerUnit?: string | null;
+
+  @ApiPropertyOptional()
+  additionalCost?: string | null;
 
   @ApiPropertyOptional()
   totalCost?: string | null;

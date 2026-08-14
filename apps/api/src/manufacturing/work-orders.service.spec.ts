@@ -481,6 +481,58 @@ describe('WorkOrdersService', () => {
       expect(completed.totalCost).toBe('50.00'); // 8*5 + 4*2.5 = 50.00
     });
 
+    it('should complete production build and calculate total cost including assembly cost per unit and additional cost', async () => {
+      const dto = {
+        productId: testProductId,
+        targetQuantity: '4',
+        locationId: testLocationId,
+        wipBinId: testWipBinId,
+        outputBinId: testOutputBinId,
+        assemblyCostPerUnit: '12.50',
+        additionalCost: '30.00',
+        components: [
+          {
+            productId: testCompProductId1,
+            expectedQuantity: '8',
+            unitCost: '5.00',
+          },
+          {
+            productId: testCompProductId2,
+            expectedQuantity: '4',
+            unitCost: '2.50',
+          },
+        ],
+      };
+      // Component cost: 8*5 + 4*2.5 = 50.00
+      // Assembly cost: 4 * 12.50 = 50.00
+      // Additional cost: 30.00
+      // Total cost: 50.00 + 50.00 + 30.00 = 130.00
+      const wo = await service.create(dto, 'user1');
+      expect(wo.assemblyCostPerUnit).toBe('12.50');
+      expect(wo.additionalCost).toBe('30.00');
+      expect(wo.totalCost).toBe('130.00');
+
+      // Update additional cost while draft
+      const updated = await service.update(
+        wo.workOrderId,
+        { additionalCost: '45.00' },
+        'user1',
+      );
+      // New total: 50 + 50 + 45 = 145.00
+      expect(updated.additionalCost).toBe('45.00');
+      expect(updated.totalCost).toBe('145.00');
+
+      await service.release(wo.workOrderId, 'user1');
+      const completed = await service.completeBuild(
+        wo.workOrderId,
+        undefined,
+        'user1',
+      );
+      expect(completed.stateCode).toBe(WORK_ORDER_STATE.COMPLETED);
+      expect(completed.completedQuantity).toBe('4');
+      expect(completed.totalCost).toBe('145.00');
+    });
+
     it('should track full Picking Queue inventory flow: create -> release (creates pick tasks) -> pickComponent (moves stock from storage bin to WIP bin) -> completeBuild (consumes WIP & credits output) -> putaway', async () => {
       // 1. Setup Bins: Storage Bin, WIP Bin, Output Bin
       const [storageZone] = await pg.db

@@ -97,10 +97,10 @@ export function ActivitiesSection({ glSettings, updateGlSetting }: ActivitiesSec
   };
 
   const renderActivityRow = (isEdit: boolean, data: Activity, key: string) => (
-    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+    <tr key={key} className={isEdit ? 'bg-[var(--bg-secondary)]' : undefined}>
       <td>
         {isEdit && activityCreating
-          ? <input className="input" value={activityForm.code} onChange={e => setActivityForm({ ...activityForm, code: e.target.value.toUpperCase() })} placeholder={tSettings('placeholders.activityCode')} style={{ width: 100 }} />
+          ? <input className="input w-[100px]" value={activityForm.code} onChange={e => setActivityForm({ ...activityForm, code: e.target.value.toUpperCase() })} placeholder={tSettings('placeholders.activityCode')} />
           : <span className="font-mono text-xs">{data.code}</span>}
       </td>
       <td>
@@ -108,19 +108,19 @@ export function ActivitiesSection({ glSettings, updateGlSetting }: ActivitiesSec
           ? <input className="input" value={activityForm.name} onChange={e => setActivityForm({ ...activityForm, name: e.target.value })} placeholder={tSettings('placeholders.activityName')} />
           : <span className="font-medium">{data.name}</span>}
       </td>
-      <td style={{ textAlign: 'center' }}>
+      <td className="text-center">
         {isEdit ? (
           <label className="switch" title={activityForm.isActive ? tSettings('labels.active') : tSettings('labels.inactive')}>
             <input type="checkbox" checked={activityForm.isActive} onChange={e => setActivityForm({...activityForm, isActive: e.target.checked})} />
             <span className="switch-slider"></span>
           </label>
         ) : (
-          <span style={{ color: data.isActive ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+          <span className={`font-bold text-xs ${data.isActive ? 'text-[var(--success,#22c55e)]' : 'text-[var(--danger,#ef4444)]'}`}>
             {data.isActive ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
           </span>
         )}
       </td>
-      <td style={{ textAlign: 'right' }}>
+      <td className="text-right">
         {isEdit ? (
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="xs" onClick={activityCancel}>{tSettings('actions.cancel')}</Button>
@@ -132,11 +132,11 @@ export function ActivitiesSection({ glSettings, updateGlSetting }: ActivitiesSec
               <>
                 <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => activityEdit(data)}>
                   { }
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                  <span className="material-symbols-outlined text-base">edit</span>
                 </Button>
-                <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tSettings('actions.delete')} onClick={() => activityDelete(data.activityId)}>
+                <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50 text-red-500 border-red-500" title={tSettings('actions.delete')} onClick={() => activityDelete(data.activityId)}>
                   { }
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                  <span className="material-symbols-outlined text-base">delete</span>
                 </Button>
               </>
             )}
@@ -164,7 +164,7 @@ export function ActivitiesSection({ glSettings, updateGlSetting }: ActivitiesSec
       </div>
 
       <div className="mb-6 flex flex-col gap-1 max-w-sm">
-        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           Default Activity
         </label>
         <select 
@@ -182,16 +182,16 @@ export function ActivitiesSection({ glSettings, updateGlSetting }: ActivitiesSec
       <table className="table-lines w-full">
         <thead>
           <tr>
-            <th style={{ width: 120 }}>{tSettings('labels.code')}</th>
+            <th className="w-[120px]">{tSettings('labels.code')}</th>
             <th>{tSettings('labels.name')}</th>
-            <th style={{ width: 120, textAlign: 'center' }}>{tSettings('labels.status')}</th>
-            <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
+            <th className="w-[120px] text-center">{tSettings('labels.status')}</th>
+            <th className="w-[150px] text-right">{tSettings('actions.actions')}</th>
           </tr>
         </thead>
         <tbody>
           {activityCreating && renderActivityRow(true, activityForm as Activity, 'new-activity')}
           {!activityLoading && activitiesData.length === 0 && !activityCreating && (
-            <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('activities.empty')}</td></tr>
+            <tr><td colSpan={4} className="text-center py-7 text-[var(--text-muted)]">{tSettings('activities.empty')}</td></tr>
           )}
 
           {activitiesData.map((a, idx) =>

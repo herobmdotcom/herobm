@@ -23,7 +23,15 @@ export interface WorkOrderResponseDto {
   wipBinId?: string | null;
   /** @nullable */
   wipBinName?: string | null;
+  /** @nullable */
+  outputBinId?: string | null;
+  /** @nullable */
+  outputBinName?: string | null;
   stateCode: string;
+  /** @nullable */
+  assemblyCostPerUnit?: string | null;
+  /** @nullable */
+  additionalCost?: string | null;
   /** @nullable */
   totalCost?: string | null;
   /** @nullable */

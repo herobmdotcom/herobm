@@ -21,4 +21,14 @@ export interface UpdateWorkOrderDto {
    * @nullable
    */
   outputBinId?: string | null;
+  /**
+   * Per-unit assembly cost
+   * @nullable
+   */
+  assemblyCostPerUnit?: string | null;
+  /**
+   * Flat additional work order-level cost added to total
+   * @nullable
+   */
+  additionalCost?: string | null;
 }

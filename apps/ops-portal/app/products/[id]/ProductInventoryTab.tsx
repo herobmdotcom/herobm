@@ -69,7 +69,7 @@ export function ProductInventoryTab({
         const invLevels = invDataRes?.data || [];
         setInventoryLevels(invLevels);
         
-        if (product?.structureType === 'kit' && product?.productType === 'non-stock' && kitComponentsList.length && invLevels.length) {
+        if (product?.structureType === 'kit' && kitComponentsList.length && invLevels.length) {
           // Group inventory by location to ensure we only count kits that can be physically built at a single site
           const inventoryByLocation: Record<string, Record<string, number>> = {};
           invLevels.forEach(lvl => {
@@ -228,7 +228,7 @@ export function ProductInventoryTab({
       <div className="z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0 font-['Manrope',sans-serif]">
               {t('products.inventoryLevels')}
               {product?.productType === 'non-stock' && filteredBuildableQuantity !== null && (
                 <span className="ml-3 badge badge-success text-[13px] font-bold">
@@ -241,8 +241,7 @@ export function ProductInventoryTab({
             <Button
               size="sm"
               variant="primary"
-              className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
-              style={{ fontSize: 13 }}
+              className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5 text-[13px]"
               onClick={() => setAddingBinLink(true)}
               disabled={saving}
             >
@@ -253,8 +252,8 @@ export function ProductInventoryTab({
 
         {addingBinLink && (
           <div className="flex flex-wrap items-end gap-3 p-5 border-b border-gray-100 bg-white">
-            <div style={{ flex: '1 1 200px' }}>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.location')}</label>
+            <div className="flex-[1_1_200px]">
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.location')}</label>
               <select
                 className="input w-full"
                 value={newBinLink.locationId}
@@ -269,8 +268,8 @@ export function ProductInventoryTab({
                 ))}
               </select>
             </div>
-            <div style={{ flex: '1 1 150px' }}>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.bin')}</label>
+            <div className="flex-[1_1_150px]">
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.bin')}</label>
               <select
                 className="input w-full"
                 disabled={!newBinLink.locationId}
@@ -286,30 +285,28 @@ export function ProductInventoryTab({
                 ))}
               </select>
             </div>
-            <div style={{ width: 90 }}>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.minQty')}</label>
+            <div className="w-[90px]">
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.minQty')}</label>
               <input
-                className="input"
+                className="input text-right"
                 type="number"
                 min="0"
                 value={newBinLink.minQty}
                 onChange={(e) => setNewBinLink({ ...newBinLink, minQty: e.target.value })}
-                style={{ textAlign: 'right' }}
               />
             </div>
-            <div style={{ width: 90 }}>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.maxQty')}</label>
+            <div className="w-[90px]">
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.maxQty')}</label>
               <input
-                className="input"
+                className="input text-right"
                 type="number"
                 min="0"
                 value={newBinLink.maxQty}
                 onChange={(e) => setNewBinLink({ ...newBinLink, maxQty: e.target.value })}
-                style={{ textAlign: 'right' }}
               />
             </div>
-            <div style={{ width: 80 }}>
-              <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.primary')}</label>
+            <div className="w-[80px]">
+              <label className="block text-xs font-medium mb-2 text-[var(--text-muted)]">{t('products.storage.columns.primary')}</label>
               <label className="switch mt-1">
                 <input 
                   type="checkbox" 
@@ -375,9 +372,9 @@ export function ProductInventoryTab({
                   ))}
                 </select>
               </div>
-              <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+              <table className="w-full text-left border-collapse text-[13px]">
               <thead className="bg-[#f9fafb] sticky top-0 z-10">
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr className="border-b border-[var(--border)]">
                   <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
                   <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
                   <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
@@ -408,9 +405,9 @@ export function ProductInventoryTab({
             </table>
             </>
           ) : (
-            <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="w-full text-left border-collapse text-[13px]">
             <thead className="bg-[#f9fafb] sticky top-0 z-10">
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+              <tr className="border-b border-[var(--border)]">
                 <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
                 <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
                 <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
@@ -419,7 +416,7 @@ export function ProductInventoryTab({
                 <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
                 <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
                 <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
-                <th style={{ width: 90 }}></th>
+                <th className="w-[90px]"></th>
               </tr>
             </thead>
             <tbody className="[&_tr:last-child]:border-b-0">

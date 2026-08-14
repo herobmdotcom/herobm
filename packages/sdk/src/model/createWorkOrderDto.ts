@@ -20,6 +20,10 @@ export interface CreateWorkOrderDto {
   wipBinId?: string;
   /** Finished Goods Output Bin ID (optional) */
   outputBinId?: string;
+  /** Per-unit assembly cost */
+  assemblyCostPerUnit?: string;
+  /** Flat additional work order-level cost added to total */
+  additionalCost?: string;
   /** Component lines snapshot (if empty, auto-populated from product BOM) */
   components?: CreateWorkOrderComponentDto[];
 }

@@ -26,8 +26,7 @@
         "apps/api/run-migrations.ts",
         "apps/api/scratch.ts",
         "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
-        "apps/api/src/goods-received/goods-received.service.ts",
-        "apps/api/src/orders/transfers/transfers.service.ts"
+        "apps/api/src/orders/picking-math.utils.ts"
       ],
       "ignoreDependencies": [
         "@asyncapi/specs",

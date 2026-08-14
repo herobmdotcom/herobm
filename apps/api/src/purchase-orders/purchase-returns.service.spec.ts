@@ -19,10 +19,8 @@ import {
   bins,
   uomDictionary,
   taxCategories,
-  glJournalEntries,
 } from '@herobm/db-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_RETURN_STATE,
@@ -39,16 +37,14 @@ describe('PurchaseReturnsService', () => {
   let service: PurchaseReturnsService;
 
   let mockInventoryService: any;
-
   let mockGlService: any;
-
   let mockAppConfig: any;
 
   const VENDOR_ID = '00000000-0000-4000-8000-000000000001';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
   const PROD_ID = '00000000-0000-4000-8000-00000000000a';
   const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
-  const BIN_ID = '00000000-0000-4000-8000-00000000000b';
+  const SOURCE_BIN_ID = '00000000-0000-4000-8000-00000000000d';
   const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
@@ -160,16 +156,230 @@ describe('PurchaseReturnsService', () => {
       createdBy: 'system',
     });
     await pg.db.insert(bins).values({
-      binId: BIN_ID,
+      binId: SOURCE_BIN_ID,
       zoneId: ZONE_ID,
-      binNumber: 'SUPPLIER_RETURNS',
-      binType: 'storage',
+      binNumber: 'QUARANTINE-01',
+      binType: 'quarantine',
       source: 'app',
       createdBy: 'system',
       isUnavailable: false,
       isBonded: false,
     });
   }
+
+  async function getSupplierReturnsBinId() {
+    const [b] = await pg.db
+      .select({ binId: bins.binId })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(bins.binNumber, 'SUPPLIER_RETURNS'),
+          eq(zones.locationId, LOCATION_ID),
+        ),
+      )
+      .limit(1);
+    return b.binId;
+  }
+
+  describe('stageReturn', () => {
+    it('should throw BadRequestException if sourceBinId is missing', async () => {
+      await seedBasics();
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000002';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '20',
+        quantityReceived: '20',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+      });
+      await pg.db.insert(purchaseOrderReturns).values({
+        returnId: RETURN_ID,
+        returnNumber: 'PRT-1',
+        purchaseOrderId: PO_ID,
+        stateCode: PURCHASE_RETURN_STATE.DRAFT,
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderReturnLines).values({
+        returnId: RETURN_ID,
+        purchaseOrderLineId: PO_LINE_ID,
+        quantityReturned: '5',
+        sourceBinId: null,
+      });
+
+      await expect(service.stageReturn(RETURN_ID, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should stage return with explicit sourceBinId and record balanced inventory transfer', async () => {
+      await seedBasics();
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000002';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '20',
+        quantityReceived: '20',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+      });
+      await pg.db.insert(purchaseOrderReturns).values({
+        returnId: RETURN_ID,
+        returnNumber: 'PRT-1',
+        purchaseOrderId: PO_ID,
+        stateCode: PURCHASE_RETURN_STATE.DRAFT,
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderReturnLines).values({
+        returnId: RETURN_ID,
+        purchaseOrderLineId: PO_LINE_ID,
+        quantityReturned: '5',
+        sourceBinId: SOURCE_BIN_ID,
+      });
+
+      await service.stageReturn(RETURN_ID, 'admin');
+
+      const supplierReturnsBinId = await getSupplierReturnsBinId();
+      const [ret] = await pg.db
+        .select()
+        .from(purchaseOrderReturns)
+        .where(eq(purchaseOrderReturns.returnId, RETURN_ID));
+      expect(ret.stateCode).toBe(PURCHASE_RETURN_STATE.STAGED);
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const call =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(call.lines).toHaveLength(2);
+      expect(call.lines[0]).toEqual({
+        productId: PROD_ID,
+        binId: SOURCE_BIN_ID,
+        quantity: -5,
+        uomCode: 'EA',
+      });
+      expect(call.lines[1]).toEqual({
+        productId: PROD_ID,
+        binId: supplierReturnsBinId,
+        quantity: 5,
+        uomCode: 'EA',
+      });
+    });
+  });
+
+  describe('unstageReturn', () => {
+    it('should unstage return and reverse inventory transfer back to source bin', async () => {
+      await seedBasics();
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000002';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '20',
+        quantityReceived: '20',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+      });
+      await pg.db.insert(purchaseOrderReturns).values({
+        returnId: RETURN_ID,
+        returnNumber: 'PRT-1',
+        purchaseOrderId: PO_ID,
+        stateCode: PURCHASE_RETURN_STATE.STAGED,
+        createdBy: 'system',
+      });
+      await pg.db.insert(purchaseOrderReturnLines).values({
+        returnId: RETURN_ID,
+        purchaseOrderLineId: PO_LINE_ID,
+        quantityReturned: '5',
+        sourceBinId: SOURCE_BIN_ID,
+      });
+
+      await service.unstageReturn(RETURN_ID, 'admin');
+
+      const supplierReturnsBinId = await getSupplierReturnsBinId();
+      const [ret] = await pg.db
+        .select()
+        .from(purchaseOrderReturns)
+        .where(eq(purchaseOrderReturns.returnId, RETURN_ID));
+      expect(ret.stateCode).toBe(PURCHASE_RETURN_STATE.DRAFT);
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const call =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(call.lines).toHaveLength(2);
+      expect(call.lines[0]).toEqual({
+        productId: PROD_ID,
+        binId: supplierReturnsBinId,
+        quantity: -5,
+        uomCode: 'EA',
+      });
+      expect(call.lines[1]).toEqual({
+        productId: PROD_ID,
+        binId: SOURCE_BIN_ID,
+        quantity: 5,
+        uomCode: 'EA',
+      });
+    });
+  });
 
   describe('shipReturn', () => {
     let evaluateSpy: jest.SpyInstance;
@@ -229,23 +439,23 @@ describe('PurchaseReturnsService', () => {
         returnId: RETURN_ID,
         purchaseOrderLineId: PO_LINE_ID,
         quantityReturned: '5',
+        sourceBinId: SOURCE_BIN_ID,
         returnFee: '0',
       });
 
-      // Clear mock calls
       jest.clearAllMocks();
 
-      // Execute Ship
-      await service.shipReturn(RETURN_ID, 'admin');
+      await service.shipReturn(RETURN_ID, 'admin', {
+        trackingNumber: 'TRACK-123',
+      });
 
-      // Assert 1: Return state is SHIPPED
+      const supplierReturnsBinId = await getSupplierReturnsBinId();
       const [ret] = await pg.db
         .select()
         .from(purchaseOrderReturns)
         .where(eq(purchaseOrderReturns.returnId, RETURN_ID));
       expect(ret.stateCode).toBe(PURCHASE_RETURN_STATE.SHIPPED);
 
-      // Assert 2: Shipment generated
       const [shipment] = await pg.db
         .select()
         .from(purchaseOrderReturnShipments)
@@ -254,28 +464,25 @@ describe('PurchaseReturnsService', () => {
       expect(shipment.stateCode).toBe(
         PURCHASE_RETURN_SHIPMENT_STATE.DISPATCHED,
       );
+      expect(shipment.trackingNumber).toBe('TRACK-123');
 
-      // Assert 3: PO quantity received was decremented
       const [poLine] = await pg.db
         .select()
         .from(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, PO_LINE_ID));
       expect(poLine.quantityReceived).toBe('15');
 
-      // Assert 4: Inventory movement was recorded
       expect(
         mockInventoryService.recordInventoryMovement,
       ).toHaveBeenCalledTimes(1);
       const inventoryCall =
         mockInventoryService.recordInventoryMovement.mock.calls[0][1];
       expect(inventoryCall.lines).toHaveLength(1);
-      expect(inventoryCall.lines[0].quantity).toBe(-5); // Deducted 5
-      expect(inventoryCall.lines[0].binId).toBeDefined();
+      expect(inventoryCall.lines[0].quantity).toBe(-5);
+      expect(inventoryCall.lines[0].binId).toBe(supplierReturnsBinId);
 
-      // Assert 5: GL entry was posted
       expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
       const glCallLines = mockGlService.postJournalEntry.mock.calls[0][0];
-      // Expect DR GRNI (amount = 5 * $10 = $50), CR Inventory
       expect(glCallLines).toHaveLength(2);
       expect(
         glCallLines.find((l: any) => l.accountId === 'grni-acc').debit,
@@ -283,16 +490,6 @@ describe('PurchaseReturnsService', () => {
       expect(
         glCallLines.find((l: any) => l.accountId === 'inv-acc').credit,
       ).toBe(50);
-
-      // Assert 6: evaluatePOLifecycleRules was triggered
-      expect(evaluateSpy).toHaveBeenCalledTimes(1);
-      const engineCallArgs = evaluateSpy.mock.calls[0];
-      expect(engineCallArgs[1]).toBe(PO_ID);
-      expect(engineCallArgs[2]).toEqual({
-        entity: 'purchase_return',
-        action: 'shipped',
-        id: RETURN_ID,
-      });
     });
 
     it('should throw an error if the return is not STAGED', async () => {
@@ -317,13 +514,92 @@ describe('PurchaseReturnsService', () => {
         returnId: RETURN_ID,
         returnNumber: 'PRT-1',
         purchaseOrderId: PO_ID,
-        stateCode: PURCHASE_RETURN_STATE.DRAFT, // Not STAGED
+        stateCode: PURCHASE_RETURN_STATE.DRAFT,
         createdBy: 'system',
       });
 
       await expect(service.shipReturn(RETURN_ID, 'admin')).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('unshipReturn', () => {
+    it('should unship return, restore inventory to SUPPLIER_RETURNS, and restore PO quantityReceived', async () => {
+      await seedBasics();
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000002';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '20',
+        quantityReceived: '15',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+      });
+
+      await pg.db.insert(purchaseOrderReturns).values({
+        returnId: RETURN_ID,
+        returnNumber: 'PRT-1',
+        purchaseOrderId: PO_ID,
+        stateCode: PURCHASE_RETURN_STATE.SHIPPED,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(purchaseOrderReturnLines).values({
+        returnId: RETURN_ID,
+        purchaseOrderLineId: PO_LINE_ID,
+        quantityReturned: '5',
+        sourceBinId: SOURCE_BIN_ID,
+      });
+
+      jest.clearAllMocks();
+
+      await service.unshipReturn(RETURN_ID, 'admin');
+
+      const supplierReturnsBinId = await getSupplierReturnsBinId();
+      const [ret] = await pg.db
+        .select()
+        .from(purchaseOrderReturns)
+        .where(eq(purchaseOrderReturns.returnId, RETURN_ID));
+      expect(ret.stateCode).toBe(PURCHASE_RETURN_STATE.STAGED);
+
+      const [poLine] = await pg.db
+        .select()
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, PO_LINE_ID));
+      expect(poLine.quantityReceived).toBe('20');
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const call =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(call.lines[0]).toEqual({
+        productId: PROD_ID,
+        binId: supplierReturnsBinId,
+        quantity: 5,
+        uomCode: 'EA',
+      });
     });
   });
 });

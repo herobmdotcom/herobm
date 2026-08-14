@@ -6,12 +6,18 @@
  * OpenAPI spec version: 1.0
  */
 import type { PurchaseReturnLineResponseDto } from './purchaseReturnLineResponseDto';
+import type { GlobalPurchaseReturnDtoShipmentsItem } from './globalPurchaseReturnDtoShipmentsItem';
+import type { GlobalPurchaseReturnDtoShipmentLinesItem } from './globalPurchaseReturnDtoShipmentLinesItem';
 
 export interface GlobalPurchaseReturnDto {
   orderNumber?: string;
   vendorName?: string;
   vendorId?: string;
   currencyCode?: string;
+  debitNoteId?: string;
+  debitNoteNumber?: string;
+  debitNoteState?: string;
+  debitNoteTotalAmount?: string;
   returnId: string;
   returnNumber: string;
   purchaseOrderId: string;
@@ -25,4 +31,6 @@ export interface GlobalPurchaseReturnDto {
   /** @nullable */
   modifiedOn?: string | null;
   lines?: PurchaseReturnLineResponseDto[];
+  shipments?: GlobalPurchaseReturnDtoShipmentsItem[];
+  shipmentLines?: GlobalPurchaseReturnDtoShipmentLinesItem[];
 }

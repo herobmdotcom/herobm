@@ -257,9 +257,9 @@ export default function GoodsReceivedListPage() {
             cellRenderer: (p: ICellRendererParams<ReceivingGridRow>) => {
                 if (!p.data) return null;
                 return (
-                    <div style={{ lineHeight: '1.2', padding: '4px 0' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{p.data.productNumber}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.data.productName}</div>
+                    <div className="leading-tight py-1">
+                        <div className="font-semibold text-[var(--accent)]">{p.data.productNumber}</div>
+                        <div className="text-[11px] text-[var(--text-muted)]">{p.data.productName}</div>
                     </div>
                 );
             }
@@ -295,7 +295,7 @@ export default function GoodsReceivedListPage() {
                 columns={gridColumns} 
                 gridKey="goods-received-lines-list"
                 defaultSortModel={[
-                    { colId: 'receiptNumber', sort: 'desc' }
+                    { colId: 'createdOn', sort: 'desc' }
                 ]}
                 rowIdField="goodsReceivedLineId"
                 rowSelection="multiple"

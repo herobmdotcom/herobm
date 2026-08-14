@@ -120,9 +120,9 @@ export default function ReceiveTransferSlideOver({
                 <table className="table-lines w-full">
                     <thead>
                         <tr>
-                            <th style={{ textAlign: 'left' }}>{tTransfers('columns.product')}</th>
-                            <th style={{ textAlign: 'right' }}>{tTransfers('columns.shipped')}</th>
-                            <th style={{ textAlign: 'right' }}>{t('columns.return.receiveNow')}</th>
+                            <th className="text-left">{tTransfers('columns.product')}</th>
+                            <th className="text-right">{tTransfers('columns.shipped')}</th>
+                            <th className="text-right">{t('columns.return.receiveNow')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -136,10 +136,10 @@ export default function ReceiveTransferSlideOver({
                                         {line.productNumber || '—'}
                                         {line.productDescription && <div className="text-xs text-[var(--text-muted)] font-normal">{line.productDescription}</div>}
                                     </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    <td className="text-right tabular-nums">
                                         {line.quantityShipped || '0'}
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td className="text-right">
                                         <input
                                             className="input text-right w-24"
                                             type="number"

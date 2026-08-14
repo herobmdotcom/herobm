@@ -12,9 +12,7 @@ import { Button } from '@/components/shared/Button';
 import { useAuth } from '@/components/AuthGate';
 
 import { SalesInvoice, TaxCategory, OrderDetail, OrderReturn } from './types';
-import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE, getErrorMessage } from '@herobm/shared';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+import { SALES_INVOICE_STATE } from '@herobm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -22,26 +20,24 @@ import { useSettings } from '@/components/SettingsProvider';
 interface InvoicesSectionProps {
     orderId: string;
     order: OrderDetail;
-
     invoices: SalesInvoice[];
     returns?: OrderReturn[];
     taxCategories: TaxCategory[];
     onEmailDocumentClick?: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  pickingSummary: Record<string, any> | null;
+    pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
+    loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({
-    orderId, order, invoices, returns, taxCategories,
+    orderId, order, invoices, returns,
     pickingSummary, setError, loadInvoices, loadOrder, onEmailDocumentClick
 }: InvoicesSectionProps) {
     const { baseCurrency } = useSettings();
     const { permissions } = useAuth();
-    const canManageImport = permissions.some(p => p.resource === 'import' && p.action === 'write');
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
     const tConfirm = useTranslations('confirm');
@@ -82,7 +78,7 @@ export default function InvoicesSection({
             await api.salesInvoiceControllerCreateSalesInvoice(orderId, {
                 notes: newInvoiceNotes || undefined,
                 lines: lines.length > 0 ? lines : undefined,
-            } );
+            });
             toast.success(tToast('invoiceGenerated'));
             handleCancel();
             await loadInvoices();
@@ -98,7 +94,6 @@ export default function InvoicesSection({
         <div id="invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
-                    { }
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
@@ -118,13 +113,13 @@ export default function InvoicesSection({
             </div>
 
             {showCreateInvoice && (
-                <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div className="mb-4 p-4 rounded-lg border border-[var(--border)]">
                     <div className="mb-3">
-                        <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center' }}>
+                        <strong className="text-[13px] flex items-center">
                             New Invoice
                         </strong>
                     </div>
-                    <div style={{ marginBottom: 12 }}>
+                    <div className="mb-3">
                         <input className="input w-full" placeholder="Invoice Notes (optional)" value={newInvoiceNotes} onChange={e => setNewInvoiceNotes(e.target.value)} />
                     </div>
                     <DataTable
@@ -154,23 +149,22 @@ export default function InvoicesSection({
 
                             return (
                                 <tr key={nl.salesOrderLineId}>
-                                    <td style={{ color: 'var(--text-muted)' }}>{origLine?.lineNumber}</td>
-                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                    <td className="text-[var(--text-muted)]">{origLine?.lineNumber}</td>
+                                    <td className="font-semibold text-xs">
                                         {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
                                     </td>
                                     <td>{origLine?.productDescription || '—'}</td>
-                                    <td style={{ textAlign: 'right' }}>{origLine?.quantity}</td>
-                                    <td style={{ textAlign: 'right' }}>{pickedQty}</td>
-                                    <td style={{ textAlign: 'right' }}>{shippedQty}</td>
-                                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{invoicedQty}</td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td className="text-right">{origLine?.quantity}</td>
+                                    <td className="text-right">{pickedQty}</td>
+                                    <td className="text-right">{shippedQty}</td>
+                                    <td className="text-right text-[var(--text-muted)]">{invoicedQty}</td>
+                                    <td className="text-right">
                                         <input
-                                            type="number" className="input" min="0" max={nl.maxQuantity} step="1"
-                                            style={{
-                                                width: 70, padding: '2px 6px', borderRadius: 4,
-                                                border: '1px solid var(--border)', background: 'var(--surface)',
-                                                color: 'var(--text)', fontSize: 13, textAlign: 'right',
-                                            }}
+                                            type="number"
+                                            className="input w-[70px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-[13px] text-right"
+                                            min="0"
+                                            max={nl.maxQuantity}
+                                            step="1"
                                             value={nl.quantityToInvoice}
                                             onChange={e => {
                                                 const updated = [...newInvoiceLines];
@@ -225,12 +219,11 @@ export default function InvoicesSection({
                                         <div className="flex justify-between items-center py-2">
                                             <span className="text-xs font-medium text-slate-500">{tSales('columns.qtyToInvoice')}</span>
                                             <input
-                                                type="number" className="input" min="0" max={nl.maxQuantity} step="1"
-                                                style={{
-                                                    width: 70, padding: '2px 6px', borderRadius: 4,
-                                                    border: '1px solid var(--border)', background: 'var(--surface)',
-                                                    color: 'var(--text)', fontSize: 13, textAlign: 'right',
-                                                }}
+                                                type="number"
+                                                className="input w-[70px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-[13px] text-right"
+                                                min="0"
+                                                max={nl.maxQuantity}
+                                                step="1"
                                                 value={nl.quantityToInvoice}
                                                 onChange={e => {
                                                     const updated = [...newInvoiceLines];
@@ -258,39 +251,41 @@ export default function InvoicesSection({
                     </div>
                 </div>
             )}
-            <div className="flex flex-col gap-2">
-                {invoices.map(inv => (
+            <div className="flex flex-col gap-3">
+                {invoices.map((inv) => (
                     <Link
                         key={inv.invoiceId}
                         href={`/sales-invoices/${inv.invoiceId}`}
-                        className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors group"
+                        className="p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--bg-card)] cursor-pointer no-underline text-inherit group"
                     >
-                        <div className="flex items-center gap-3">
-                            { }
-                            <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">request_quote</span>
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 rounded-lg bg-[rgba(var(--primary-rgb),0.05)] text-[var(--accent)] group-hover:scale-105 transition-transform flex items-center justify-center">
+                                <span className="material-symbols-outlined text-[24px]">receipt_long</span>
+                            </div>
                             <div>
-                                <div className="font-bold text-sm text-[var(--text-primary)]">
-                                    {inv.invoiceNumber}
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm text-[var(--accent)] group-hover:underline">
+                                        {inv.invoiceNumber}
+                                    </span>
                                 </div>
-                                <div className="text-xs text-[var(--text-muted)]">
-                                    {formatLocalDate(inv.invoiceDate || inv.createdOn)} &middot; {inv.lines?.length || 0}
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- UI technical layout */}
-                                    <span> lines </span> &middot; <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}</span>
+                                <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                                    {formatLocalDate(inv.createdOn)}
+                                    {inv.createdBy && ` · ${tCommon('timeline.by', { actor: inv.createdBy })}`}
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {inv.stateCode && (() => {
-                                const isOverdue = inv.dueDate && new Date(inv.dueDate) < new Date() && Number(inv.outstandingAmount || 0) > 0 && inv.stateCode !== SALES_INVOICE_STATE.CANCELLED;
-                                if (isOverdue) {
-                                    return <span className="badge badge-overdue">{tCommon('states.overdue')}</span>;
-                                }
-                                return <StateBadge state={inv.stateCode as ValidState} />;
-                            })()}
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <div className="font-bold text-sm text-[var(--text-primary)] tabular-nums">
+                                    {formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}
+                                </div>
+                                <div className="text-xs text-[var(--text-muted)] tabular-nums">
+                                    {tCommon('tax')}: {formatAmount(parseFloat(inv.taxAmount || '0'), order.currencyCode || baseCurrency)}
+                                </div>
+                            </div>
                             <Button
-                                variant="secondary"
-                                className="flex items-center justify-center p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
-                                title={tSales('buttons.emailInvoice')}
+                                variant="ghost"
+                                size="sm"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     if (onEmailDocumentClick) {
@@ -305,7 +300,7 @@ export default function InvoicesSection({
                     </Link>
                 ))}
                 {invoices.length === 0 && (
-                    <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                         {(() => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;

@@ -157,12 +157,12 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                 <table className="table-lines">
                   <thead>
                     <tr>
-                      <th style={{ width: 120 }}>{t('demands.salesOrder')}</th>
-                      <th style={{ width: 140 }}>{t('demands.product')}</th>
+                      <th className="w-[120px]">{t('demands.salesOrder')}</th>
+                      <th className="w-[140px]">{t('demands.product')}</th>
                       <th>{t('demands.description')}</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>{t('demands.reqQty')}</th>
-                      <th style={{ width: 110, textAlign: 'right' }}>{t('demands.estCost')}</th>
-                      <th style={{ width: 220 }}>{t('demands.supplierAssignment')}</th>
+                      <th className="w-[90px] text-right">{t('demands.reqQty')}</th>
+                      <th className="w-[110px] text-right">{t('demands.estCost')}</th>
+                      <th className="w-[220px]">{t('demands.supplierAssignment')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -170,11 +170,11 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                       const assign = lineAssignments[demand.id];
                       return (
                         <tr key={demand.id}>
-                          <td style={{ fontWeight: 500 }}>{demand.orderNumber}</td>
-                          <td style={{ fontWeight: 600, fontSize: 12, color: 'var(--accent)' }}>{demand.productName}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{demand.productDescription || '—'}</td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{demand.quantity}</td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="font-medium">{demand.orderNumber}</td>
+                          <td className="font-semibold text-xs text-[var(--accent)]">{demand.productName}</td>
+                          <td className="text-[var(--text-secondary)]">{demand.productDescription || '—'}</td>
+                          <td className="text-right tabular-nums">{demand.quantity}</td>
+                          <td className="text-right tabular-nums">
                             {assign?.costPrice ? `${assign.costPrice.toFixed(2)} ${assign.currencyCode}` : '—'}
                           </td>
                           <td>

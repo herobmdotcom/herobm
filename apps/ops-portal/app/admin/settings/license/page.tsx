@@ -63,7 +63,7 @@ export default function LicensePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tPortal('systemId')}
                 </label>
                 <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function LicensePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPortal('status')}
                   </label>
                   <div className="flex items-center h-10 text-sm gap-2">
@@ -113,7 +113,7 @@ export default function LicensePage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPortal('licenseType')}
                   </label>
                   <div className="text-sm font-semibold mt-1 bg-[var(--bg-primary)] px-3 py-2 rounded-lg border border-[var(--border-color)]">
@@ -124,7 +124,7 @@ export default function LicensePage() {
 
               {status?.expiresAt && (
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {status.type === LicenseStatusDtoType.none ? tPortal('gracePeriodEnds') : tPortal('expiresAt')}
                   </label>
                   <div className="flex items-center h-10 text-sm">

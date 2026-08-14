@@ -199,17 +199,16 @@ export default function UsersPage() {
   const isSelf = (userId: string) => currentUserId === userId;
 
   const renderRow = (isEdit: boolean, data: User, key: string) => (
-    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+    <tr key={key} className={isEdit ? 'bg-[var(--bg-secondary)]' : undefined}>
       {/* Username */}
       <td>
         {isEdit && creating
           ? <input
-              className="input"
+              className="input w-[140px]"
               value={form.username}
               onChange={e => setForm({ ...form, username: e.target.value.toLowerCase() })}
               placeholder={t('placeholders.username')}
               autoFocus
-              style={{ width: 140 }}
             />
           : <span className="font-mono text-xs">{data.username}</span>}
       </td>
@@ -218,11 +217,10 @@ export default function UsersPage() {
       <td>
         {isEdit
           ? <input
-              className="input"
+              className="input w-[160px]"
               value={form.displayName ?? ''}
               onChange={e => setForm({ ...form, displayName: e.target.value })}
               placeholder={t('placeholders.displayName')}
-              style={{ width: 160 }}
             />
           : <span className="font-medium text-sm">{data.displayName || '—'}</span>}
       </td>
@@ -231,13 +229,12 @@ export default function UsersPage() {
       <td>
         {isEdit
           ? <input
-              className="input"
+              className="input w-[180px]"
               value={form.email ?? ''}
               onChange={e => setForm({ ...form, email: e.target.value.toLowerCase() })}
               placeholder={t('placeholders.email')}
-              style={{ width: 180 }}
             />
-          : <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{data.email || '—'}</span>}
+          : <span className="text-xs text-[var(--text-secondary)]">{data.email || '—'}</span>}
       </td>
 
       {/* Role */}
@@ -274,12 +271,11 @@ export default function UsersPage() {
       <td>
         {isEdit && (
           <input
-            className="input"
+            className="input w-[140px]"
             type="password"
             value={form.password}
             onChange={e => setForm({ ...form, password: e.target.value })}
             placeholder={creating ? t('placeholders.password') : t('placeholders.passwordUnchanged')}
-            style={{ width: 140 }}
           />
         )}
       </td>
@@ -287,14 +283,14 @@ export default function UsersPage() {
       {/* Created */}
       <td>
         {!isEdit && (
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-xs text-[var(--text-muted)]">
             {formatLocalDate(data.createdAt)}
           </span>
         )}
       </td>
 
       {/* Actions */}
-      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+      <td className="text-right whitespace-nowrap">
         {isEdit ? (
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="xs" onClick={cancel}>
@@ -312,7 +308,7 @@ export default function UsersPage() {
               onClick={() => toggleActive(data)}
               disabled={isSelf(data.userId)}
               title={isSelf(data.userId) ? t('cannotDisableSelfError') : undefined}
-              style={isSelf(data.userId) ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              className={isSelf(data.userId) ? 'opacity-40 cursor-not-allowed' : undefined}
             >
               {data.isActive ? t('disable') : t('enable')}
             </Button>
@@ -320,25 +316,19 @@ export default function UsersPage() {
             {/* Edit */}
             <Button variant="secondary" size="xs" className="flex items-center justify-center !p-1.5" title={tCommon('edit')} onClick={() => startEdit(data)}>
               { }
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+              <span className="material-symbols-outlined text-[18px]">edit</span>
             </Button>
 
             {/* Delete */}
             <Button
               variant="secondary" size="xs"
-              className={`flex items-center justify-center !p-1.5 ${isSelf(data.userId) ? '' : 'hover:!bg-red-50'}`}
-              style={{
-                color: isSelf(data.userId) ? undefined : '#ef4444',
-                borderColor: isSelf(data.userId) ? undefined : '#ef4444',
-                opacity: isSelf(data.userId) ? 0.4 : 1,
-                cursor: isSelf(data.userId) ? 'not-allowed' : undefined,
-              }}
+              className={`flex items-center justify-center !p-1.5 ${isSelf(data.userId) ? 'opacity-40 cursor-not-allowed' : 'text-red-500 border-red-500 hover:!bg-red-50'}`}
               onClick={() => deleteUser(data)}
               disabled={isSelf(data.userId)}
               title={isSelf(data.userId) ? t('cannotDeleteSelfError') : tCommon('delete')}
             >
               { }
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+              <span className="material-symbols-outlined text-[18px]">delete</span>
             </Button>
           </div>
         )}
@@ -361,7 +351,7 @@ export default function UsersPage() {
               { }
               <span className="material-symbols-outlined">group</span>
               {t('title')}
-              <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+              <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">
                 ({users.length})
               </span>
             </h3>
@@ -371,21 +361,21 @@ export default function UsersPage() {
           </div>
 
           {loading ? (
-            <div className="p-6 text-center" style={{ color: 'var(--text-muted)' }}>
+            <div className="p-6 text-center text-[var(--text-muted)]">
               {t('loading')}
             </div>
           ) : (
             <table className="table-lines w-full">
               <thead>
                 <tr>
-                  <th style={{ width: 120 }}>{t('columns.username')}</th>
+                  <th className="w-[120px]">{t('columns.username')}</th>
                   <th>{t('columns.displayName')}</th>
                   <th>{t('columns.email')}</th>
-                  <th style={{ width: 130 }}>{t('columns.role')}</th>
-                  <th style={{ width: 90 }}>{t('columns.status')}</th>
-                  <th style={{ width: 140 }}>{t('labels.password')}</th>
-                  <th style={{ width: 100 }}>{t('columns.createdAt')}</th>
-                  <th style={{ textAlign: 'right', width: 180 }}>{tCommon('actions')}</th>
+                  <th className="w-[130px]">{t('columns.role')}</th>
+                  <th className="w-[90px]">{t('columns.status')}</th>
+                  <th className="w-[140px]">{t('labels.password')}</th>
+                  <th className="w-[100px]">{t('columns.createdAt')}</th>
+                  <th className="w-[180px] text-right">{tCommon('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -397,7 +387,7 @@ export default function UsersPage() {
                 )}
                 {users.length === 0 && !creating && (
                   <tr>
-                    <td colSpan={8} className="text-center p-6" style={{ color: 'var(--text-muted)' }}>
+                    <td colSpan={8} className="text-center p-6 text-[var(--text-muted)]">
                       {t('noneFound')}
                     </td>
                   </tr>

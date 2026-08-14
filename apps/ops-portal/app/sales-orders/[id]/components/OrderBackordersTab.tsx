@@ -44,7 +44,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                             </td>
                             <td>
                                 {bo.productNumber || '—'}
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tSales('demandedQty', { qty: bo.quantity || '0' })}</div>
+                                <div className="text-[11px] text-[var(--text-muted)]">{tSales('demandedQty', { qty: bo.quantity || '0' })}</div>
                             </td>
                             <td>
                                 {isAllocated ? (

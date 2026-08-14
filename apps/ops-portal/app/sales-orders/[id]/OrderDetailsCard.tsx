@@ -83,33 +83,23 @@ export default function OrderDetailsCard({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="min-w-0">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tSales('labels.customer')}
                         {order.currencyCode && (
                             <span
-                                style={{
-                                    marginLeft: 8,
-                                    padding: '1px 6px',
-                                    borderRadius: 4,
-                                    background: 'rgba(59,130,246,0.15)',
-                                    color: 'var(--accent)',
-                                    fontWeight: 600,
-                                    fontSize: 10,
-                                    letterSpacing: '0.04em',
-                                }}
+                                className="ml-2 px-1.5 py-[1px] rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wide"
                             >
                                 {order.currencyCode}
                             </span>
                         )}
                     </label>
-                    <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    <p className="text-sm truncate font-medium pt-1.5">
                         {order.customerName || order.customerId ? (
                             <Link 
                                 href={`/customers/${order.customerId}`} 
-                                style={{ color: 'var(--accent)', textDecoration: 'none' }}
-                                className="hover:underline"
+                                className="text-[var(--accent)] no-underline hover:underline"
                             >
-                                {order.customerName || <span style={{ fontStyle: 'italic' }}>{tSales('unnamedCustomer')}</span>}
+                                {order.customerName || <span className="italic">{tSales('unnamedCustomer')}</span>}
                             </Link>
                         ) : (
                             '—'
@@ -117,15 +107,15 @@ export default function OrderDetailsCard({
                     </p>
                 </div>
                 <div className="min-w-0">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tSales('labels.created')}
                     </label>
-                    <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    <p className="text-sm truncate font-medium pt-1.5">
                         {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy || '—'}
                     </p>
                 </div>
                 <div className="min-w-0">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tSales('labels.orderName')}
                     </label>
                     <input
@@ -138,7 +128,7 @@ export default function OrderDetailsCard({
                     />
                 </div>
                 <div className="min-w-0">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tSales('labels.customerPO')}
                     </label>
                     <input
@@ -151,7 +141,7 @@ export default function OrderDetailsCard({
                     />
                 </div>
                 <div className="min-w-0">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         Analysis Code
                     </label>
                     <input
@@ -165,7 +155,7 @@ export default function OrderDetailsCard({
                 </div>
 
                 <div className="min-w-0 col-span-1 md:col-span-2">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tCommon('notesCardHeading')}
                     </label>
                     <input

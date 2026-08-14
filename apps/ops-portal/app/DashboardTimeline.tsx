@@ -22,12 +22,20 @@ interface Props {
 const EVENT_ICONS: Record<string, { icon: string, color: string, bg: string, path: string }> = {
   'sales_order.created': { icon: 'add_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
   'sales_order.status_changed': { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  'sales_order.credit_note_posted': { icon: 'credit_card', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-credit-notes' },
   'sales_invoice.created': { icon: 'receipt_long', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-invoices' },
   'sales_invoice.status_changed': { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-invoices' },
+  'sales_invoice.credit_note_posted': { icon: 'credit_card', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-credit-notes' },
+  'sales_return.created': { icon: 'assignment_return', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  'sales_return.status_changed': { icon: 'published_with_changes', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
   
   'purchase_order.created': { icon: 'add_shopping_cart', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
   'purchase_order.status_changed': { icon: 'inventory_2', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_order.debit_note_created': { icon: 'request_quote', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_order.debit_note_posted': { icon: 'price_check', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
   'purchase_invoice.created': { icon: 'receipt', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/supplier-invoices' },
+  'purchase_return.created': { icon: 'assignment_return', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_return.status_changed': { icon: 'published_with_changes', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
   
   'customer.created': { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },
   'customer.updated': { icon: 'manage_accounts', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },

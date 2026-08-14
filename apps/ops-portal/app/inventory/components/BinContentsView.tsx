@@ -197,8 +197,7 @@ export default function BinContentsView() {
             id="bin-contents-location-filter"
             value={selectedLocationCode ?? ''}
             onChange={(e) => setSelectedLocationCode(e.target.value || null)}
-            className="input"
-            style={{ width: '200px' }}
+            className="input w-[200px]"
           >
             { }
             <option value="">All Locations</option>

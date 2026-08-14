@@ -136,7 +136,7 @@ export default function AddSupplierModal({
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0 rounded-t-xl">
-          <h3 className="font-bold text-xl text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h3 className="font-bold text-xl text-[#041627] font-['Manrope',sans-serif]">
             {t('title')}
           </h3>
           <Button 
@@ -172,8 +172,7 @@ export default function AddSupplierModal({
                <span autoFocus className="material-symbols-outlined absolute left-3.5 top-[11px] text-gray-400 text-[20px] pointer-events-none z-10">search</span>
                <input 
                  type="text" 
-                 style={{ paddingLeft: '42px' }}
-                 className={`input input-bordered w-full h-11 text-[15px] transition-colors focus:bg-white ${vendorId ? 'bg-[#e2f9f5] border-[#006b5c]/40 font-semibold text-[#006b5c]' : 'bg-white text-gray-900 border-gray-300'}`}
+                 className={`input input-bordered w-full h-11 text-[15px] pl-[42px] transition-colors focus:bg-white ${vendorId ? 'bg-[#e2f9f5] border-[#006b5c]/40 font-semibold text-[#006b5c]' : 'bg-white text-gray-900 border-gray-300'}`}
                  placeholder={t('inputs.searchPlaceholder')}
                  value={search}
                  onChange={(e) => handleSearchChange(e.target.value)}

@@ -98,14 +98,14 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       id: 'index',
       header: '#',
       width: 40,
-      render: (_, i) => <span style={{ color: 'var(--text-muted)' }}>{i + 1}</span>,
+      render: (_, i) => <span className="text-[var(--text-muted)]">{i + 1}</span>,
     },
     {
       id: 'product',
       header: t('columns.product'),
       width: 150,
       render: (line) => (
-        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
           {line.productNumber}
         </Link>
       )
@@ -120,7 +120,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       header: t('columns.returnQty'),
       width: 90,
       align: 'right',
-      render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(line.quantityReturned)}</span>,
+      render: (line) => <span className="tabular-nums">{parseFloat(line.quantityReturned)}</span>,
     },
     {
       id: 'reason',
@@ -157,7 +157,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       width: 110,
       align: 'right',
       render: (line) => (
-        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="font-semibold tabular-nums">
           {parseFloat(line.returnFee || '0') > 0 ? formatAmount(parseFloat(line.returnFee || '0'), ret.currencyCode) : '—'}
         </span>
       ),
@@ -181,7 +181,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
             }).amount
           : 0;
         return (
-          <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          <span className="font-semibold tabular-nums">
             {formatAmount(lineAmount, ret.currencyCode)}
           </span>
         );
@@ -202,37 +202,37 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
 
   const linesFooter = (
     <>
-      <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-          {t('returns.totalCredit')}
+      <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
+        <td colSpan={8} className="text-right font-semibold text-xs text-[var(--text-muted)]">
+          {tCommon('subtotal')}
         </td>
-        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+        <td className="text-right tabular-nums font-semibold">
           {formatAmount(creditSummary.subtotal, ret.currencyCode)}
         </td>
       </tr>
       <tr className="hidden lg:table-row">
-        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+        <td colSpan={8} className="text-right font-semibold text-xs text-[var(--text-muted)]">
           Total Tax
         </td>
-        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+        <td className="text-right tabular-nums font-semibold">
           {formatAmount(creditSummary.totalTax, ret.currencyCode)}
         </td>
       </tr>
       {creditSummary.totalFees > 0 && (
         <tr className="hidden lg:table-row">
-          <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+          <td colSpan={8} className="text-right font-semibold text-xs text-[var(--text-muted)]">
             Total Fees
           </td>
-          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--text-danger)' }}>
+          <td className="text-right tabular-nums font-semibold text-[var(--text-danger)]">
             -{formatAmount(creditSummary.totalFees, ret.currencyCode)}
           </td>
         </tr>
       )}
       <tr className="hidden lg:table-row">
-        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+        <td colSpan={8} className="text-right font-semibold text-[13px] text-[var(--text-primary)]">
           {t('returns.netCredit')}
         </td>
-        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 14 }}>
+        <td className="text-right tabular-nums font-bold text-[14px]">
           {formatAmount(creditSummary.netCredit, ret.currencyCode)}
           {creditSummary.netCredit === 0 && ret.lines.some(l => l.resolution === RETURN_RESOLUTION.REPLACE) && (
             <div className="text-[10px] font-normal text-[var(--text-muted)] mt-0.5">(Replacement)</div>
@@ -280,7 +280,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                                 {s === RETURN_STATE.CANCELLED ? (
                                     <>
                                         {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                                        <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                                         {tCommon('cancel')}
                                     </>
                                 ) : back ? (
@@ -343,7 +343,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('returns.customer')}
               </label>
               <div className="text-sm">
@@ -357,7 +357,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('returns.orderNo')}
               </label>
               <div className="text-sm">
@@ -371,7 +371,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('returns.date')}
               </label>
               <div className="text-sm">
@@ -379,7 +379,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('returns.returnLocation')}
               </label>
               <div className="text-sm">
@@ -441,25 +441,6 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               )}
             </div>
           )}
-          {ret.creditNoteNumber && (
-            <div className="mt-4 flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEmailDialogConfig({
-                  isOpen: true,
-                  hookSlug: 'sales-return-credit',
-                  title: 'Email Credit Note',
-                  prefix: 'Credit Note',
-                  docName: 'Credit Note',
-                  targetId: ret.returnId,
-                  contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                })}
-              >
-                Email Credit Note
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Lines */}
@@ -477,6 +458,64 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
             footer={linesFooter}
           />
         </div>
+
+        {/* Linked Credit Notes Section */}
+        {((ret.creditNotes && ret.creditNotes.length > 0) || ret.creditNoteNumber) && (
+          <div id="credit-notes-section" className="card">
+            <h3 className="section-heading mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined shrink-0">receipt_long</span>
+              <span>Credit Notes</span>
+            </h3>
+            <div className="flex flex-col gap-2">
+              {(ret.creditNotes && ret.creditNotes.length > 0
+                ? ret.creditNotes
+                : [{ creditNoteNumber: ret.creditNoteNumber }]
+              ).map((cn, idx) => (
+                <div key={cn.creditNoteId || idx} className="p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--accent)] text-lg">receipt_long</span>
+                    <div>
+                      <div className="font-semibold text-sm text-[var(--text-primary)]">{cn.creditNoteNumber}</div>
+                      {cn.createdOn && (
+                        <div className="text-xs text-[var(--text-muted)]">{formatLocalDate(cn.createdOn)}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {(() => {
+                      const cnTotal =
+                        parseFloat(cn.totalAmount || '0') +
+                        parseFloat(cn.taxAmount || '0') -
+                        parseFloat(cn.feeAmount || '0');
+                      const displayAmount = cnTotal > 0 ? cnTotal : parseFloat(cn.totalAmount || '0');
+                      return displayAmount > 0 ? (
+                        <span className="font-semibold text-sm tabular-nums">
+                          {formatAmount(displayAmount, ret.currencyCode || 'USD')}
+                        </span>
+                      ) : null;
+                    })()}
+                    {cn.stateCode && <StateBadge state={cn.stateCode as ValidState} />}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setEmailDialogConfig({
+                        isOpen: true,
+                        hookSlug: 'sales-return-credit',
+                        title: 'Email Credit Note',
+                        prefix: 'Credit Note',
+                        docName: 'Credit Note',
+                        targetId: ret.returnId,
+                        contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                      })}
+                    >
+                      Email Credit Note
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Activity Timeline */}
         <div className="card mt-4">

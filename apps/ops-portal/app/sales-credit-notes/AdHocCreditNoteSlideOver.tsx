@@ -139,10 +139,10 @@ export default function AdHocCreditNoteSlideOver({
                     <table className="table-lines w-full">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'left' }}>{t('description')}</th>
-                                <th style={{ textAlign: 'left', width: '180px' }}>{t('glAccount')}</th>
-                                <th style={{ textAlign: 'right', width: '120px' }}>{t('amount')}</th>
-                                <th style={{ width: '40px' }}></th>
+                                <th className="text-left">{t('description')}</th>
+                                <th className="text-left w-[180px]">{t('glAccount')}</th>
+                                <th className="text-right w-[120px]">{t('amount')}</th>
+                                <th className="w-[40px]"></th>
                             </tr>
                         </thead>
                         <tbody>

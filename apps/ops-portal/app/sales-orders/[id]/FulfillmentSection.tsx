@@ -106,11 +106,11 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
             </div>
 
             {loading ? (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                     {tCommon('loading')}
                 </div>
             ) : !shippingCtx ? (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                     {t('noData')}
                 </div>
             ) : (
@@ -144,32 +144,32 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                     <td>
                                         <div className="font-bold text-sm">
                                             {line.productId ? (
-                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                                                     {line.productNumber}
                                                 </Link>
                                             ) : line.productNumber}
                                         </div>
                                         <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
                                     </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    <td className="text-right tabular-nums">
                                         {ordered.toLocaleString()}
                                     </td>
                                     {isPhysical ? (
                                         <>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <td className="text-right tabular-nums">
                                                 <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
                                                     {picked.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                                            <td className="text-right tabular-nums text-[var(--text-muted)]">
                                                 {onHand !== null ? onHand.toLocaleString() : '—'}
                                             </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <td className="text-right tabular-nums">
                                                 <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
                                                     {shipped.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <td className="text-right tabular-nums">
                                                 <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
                                                     {available.toLocaleString()}
                                                 </span>
@@ -177,12 +177,12 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                         </>
                                     ) : (
                                         <>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <td className="text-right tabular-nums">
                                                 <span className="text-[var(--text-muted)] text-xs">Not Required</span>
                                             </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
+                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
                                         </>
                                     )}
                                 </tr>
@@ -204,7 +204,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {line.productId ? (
-                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                                                     {line.productNumber}
                                                 </Link>
                                             ) : line.productNumber}

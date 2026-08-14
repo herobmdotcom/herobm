@@ -123,7 +123,7 @@ export default function ShippingPage() {
     // ── Queue ────────────────────────────────────────────────────
 
     const loadOrders = useCallback(() => {
-        if (!locReady) return;
+        if (!locReady || selectedLocationId === 'UNSET') return;
         setLoadingOrders(true);
         const params: { locationId?: string } = {};
         if (selectedLocationId && selectedLocationId !== 'UNSET') params.locationId = selectedLocationId;
@@ -293,7 +293,7 @@ export default function ShippingPage() {
                                         {(context.order.deliveryAddressLine1) && (
                                             <div className="flex-1">
                                                 { }
-                                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                                     {/* eslint-disable-next-line no-restricted-syntax -- legacy */}
                                                     {context.order.type === 'transfer_order' ? 'Destination Location' : 'Delivery Address'}
                                                 </label>
@@ -315,7 +315,7 @@ export default function ShippingPage() {
                                         {context.order.shippingNotes && (
                                             <div className="flex-1">
                                                 { }
-                                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                                     Shipping Instructions
                                                 </label>
                                                 <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] whitespace-pre-wrap">
@@ -329,7 +329,7 @@ export default function ShippingPage() {
                                 {/* Ship Form Header Fields */}
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <div className="flex-1">
-                                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                             {t('columns.trackingNumber')}
                                         </label>
                                         <input
@@ -341,7 +341,7 @@ export default function ShippingPage() {
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                             {t('columns.notes')}
                                         </label>
                                         <input
@@ -428,11 +428,11 @@ export default function ShippingPage() {
                                         <thead>
                                             <tr>
                                                 <th>{t('columns.product')}</th>
-                                                <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                                <th style={{ textAlign: 'right' }}>{t('columns.picked')}</th>
-                                                <th style={{ textAlign: 'right' }}>{t('columns.shipped')}</th>
-                                                <th style={{ textAlign: 'right' }}>{t('columns.available')}</th>
-                                                <th style={{ textAlign: 'right' }}>{t('columns.qtyToShip')}</th>
+                                                <th className="text-right">{t('columns.ordered')}</th>
+                                                <th className="text-right">{t('columns.picked')}</th>
+                                                <th className="text-right">{t('columns.shipped')}</th>
+                                                <th className="text-right">{t('columns.available')}</th>
+                                                <th className="text-right">{t('columns.qtyToShip')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -449,21 +449,21 @@ export default function ShippingPage() {
                                                             </div>
                                                             <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             {parseFloat(line.quantity).toLocaleString()}
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             {isPhysical ? parseFloat(line.quantityPicked).toLocaleString() : '-'}
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             {isPhysical ? parseFloat(line.quantityShipped).toLocaleString() : '-'}
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             <span className={hasStock ? 'font-semibold text-[var(--success)]' : 'text-[var(--text-muted)]'}>
                                                                 {isPhysical ? available.toLocaleString() : '-'}
                                                             </span>
                                                         </td>
-                                                        <td style={{ textAlign: 'right' }}>
+                                                        <td className="text-right">
                                                             {hasStock ? (
                                                                 <div className="flex justify-end">
                                                                     <input
@@ -476,8 +476,7 @@ export default function ShippingPage() {
                                                                             ...prev,
                                                                             [line.salesOrderLineId]: e.target.value
                                                                         }))}
-                                                                        className="input"
-                                                                        style={{ width: '80px', textAlign: 'right', padding: '2px 6px', fontSize: '13px' }}
+                                                                        className="input w-[80px] text-right py-0.5 px-1.5 text-[13px]"
                                                                     />
                                                                 </div>
                                                             ) : (
@@ -636,7 +635,7 @@ export default function ShippingPage() {
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
                                                 { }
-                                                <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.shippabilityStatus === 'ready' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
+                                                <span className={`material-symbols-outlined indicator-icon shrink-0 [font-variation-settings:'FILL'_1] ${order.shippabilityStatus === 'ready' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>fiber_manual_record</span>
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />

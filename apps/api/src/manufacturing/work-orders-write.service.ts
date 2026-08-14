@@ -18,7 +18,11 @@ import {
   productComponents,
 } from '@herobm/db-schema';
 import { eq, and } from 'drizzle-orm';
-import { WORK_ORDER_STATE, WORK_ORDER_PICK_STATE } from '@herobm/shared';
+import {
+  WORK_ORDER_STATE,
+  WORK_ORDER_PICK_STATE,
+  BIN_TYPE,
+} from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -78,14 +82,25 @@ export class WorkOrdersWriteService {
         `Selected ${binRoleName} bin is currently unavailable`,
       );
     }
-    if (bin.binType === 'quarantine') {
+    if (bin.binType === (BIN_TYPE.QUARANTINE as string)) {
       throw new BadRequestException(
         `Quarantine bins cannot be used as ${binRoleName} bins`,
       );
     }
   }
 
+  // @herobm-skip-audit
   async recalculateTotalCost(workOrderId: string, tx: DrizzleDB) {
+    const [wo] = await tx
+      .select({
+        targetQuantity: workOrders.targetQuantity,
+        assemblyCostPerUnit: workOrders.assemblyCostPerUnit,
+        additionalCost: workOrders.additionalCost,
+      })
+      .from(workOrders)
+      .where(eq(workOrders.workOrderId, workOrderId))
+      .limit(1);
+
     const componentsList = await tx
       .select({
         expectedQuantity: workOrderComponents.expectedQuantity,
@@ -94,12 +109,23 @@ export class WorkOrdersWriteService {
       .from(workOrderComponents)
       .where(eq(workOrderComponents.workOrderId, workOrderId));
 
-    let totalCostNum = 0;
+    let componentsCost = 0;
     for (const comp of componentsList) {
       const qty = parseFloat(comp.expectedQuantity || '0');
       const cost = comp.unitCost ? parseFloat(comp.unitCost) : 0;
-      totalCostNum += qty * cost;
+      componentsCost += qty * cost;
     }
+
+    const targetQty = parseFloat(wo?.targetQuantity || '0') || 0;
+    const unitAssemblyCost = wo?.assemblyCostPerUnit
+      ? parseFloat(wo.assemblyCostPerUnit)
+      : 0;
+    const assemblyTotal = unitAssemblyCost * targetQty;
+    const additionalCost = wo?.additionalCost
+      ? parseFloat(wo.additionalCost)
+      : 0;
+
+    const totalCostNum = componentsCost + assemblyTotal + additionalCost;
 
     await tx
       .update(workOrders)
@@ -160,6 +186,12 @@ export class WorkOrdersWriteService {
           wipBinId: dto.wipBinId || null,
           outputBinId: dto.outputBinId || null,
           stateCode: WORK_ORDER_STATE.DRAFT,
+          assemblyCostPerUnit: dto.assemblyCostPerUnit
+            ? dto.assemblyCostPerUnit.toString()
+            : null,
+          additionalCost: dto.additionalCost
+            ? dto.additionalCost.toString()
+            : null,
           totalCost: '0',
           createdBy: username || null,
         })
@@ -302,6 +334,14 @@ export class WorkOrdersWriteService {
       if (dto.wipBinId !== undefined) updateData.wipBinId = dto.wipBinId;
       if (dto.outputBinId !== undefined)
         updateData.outputBinId = dto.outputBinId;
+      if (dto.assemblyCostPerUnit !== undefined)
+        updateData.assemblyCostPerUnit = dto.assemblyCostPerUnit
+          ? dto.assemblyCostPerUnit.toString()
+          : null;
+      if (dto.additionalCost !== undefined)
+        updateData.additionalCost = dto.additionalCost
+          ? dto.additionalCost.toString()
+          : null;
 
       await innerTx
         .update(workOrders)

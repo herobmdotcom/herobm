@@ -289,12 +289,7 @@ export default function NewPurchaseOrderPage() {
       >
         {error && (
           <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
+            className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
           >
             {error}
           </div>
@@ -312,22 +307,12 @@ export default function NewPurchaseOrderPage() {
             {/* Supplier selector */}
             <div className="relative">
               <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
+                className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]"
               >
                 {t('purchaseOrders.labels.supplier')} *
                 {vendorId && (
                   <span
-                    style={{
-                      marginLeft: 8,
-                      padding: '1px 6px',
-                      borderRadius: 4,
-                      background: 'rgba(59,130,246,0.15)',
-                      color: 'var(--accent)',
-                      fontWeight: 600,
-                      fontSize: 10,
-                      letterSpacing: '0.04em',
-                    }}
+                    className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wide"
                   >
                     {currencyCode}
                   </span>
@@ -345,7 +330,7 @@ export default function NewPurchaseOrderPage() {
             </div>
 
              <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.referenceNumber')}
               </label>
               <input
@@ -358,7 +343,7 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.expectedDate')}
               </label>
               <input
@@ -371,7 +356,7 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.location')} *
               </label>
               <LocationSelect
@@ -382,7 +367,7 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.orderName')}
               </label>
               <input
@@ -395,7 +380,7 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('common.columns.currency')}
               </label>
               <input
@@ -408,13 +393,12 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div className="md:col-span-2 mt-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('common.notesCardHeading')}
               </label>
               <textarea
                 id="order-notes"
-                className="input w-full"
-                style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                className="input w-full min-h-[80px] pt-3 resize-y"
                 placeholder={t('common.notesCardPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -437,7 +421,6 @@ export default function NewPurchaseOrderPage() {
                 <ProductSearchInput
                   onSelect={addLineFromProduct}
                   placeholder={t('purchaseOrders.placeholders.searchProduct')}
-                  style={{ width: '100%' }}
                 />
               </div>
               <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
@@ -459,7 +442,7 @@ export default function NewPurchaseOrderPage() {
                       {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                         <span>{line.productNumber}</span>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        <span className="text-[var(--text-muted)]">—</span>
                       )}
                     </div>
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
@@ -577,29 +560,28 @@ export default function NewPurchaseOrderPage() {
             <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ width: 40 }}>{t('purchaseOrders.columns.lineNumber')}</th>
+                <th className="w-10">{t('purchaseOrders.columns.lineNumber')}</th>
                 <th>{t('purchaseOrders.columns.product')}</th>
                 <th>{t('purchaseOrders.columns.description')}</th>
-                <th style={{ width: 90, textAlign: 'right' }}>{t('purchaseOrders.columns.qty')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.uom')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.unitPrice')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.discountPct')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.taxCategory')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.amount')}</th>
-                <th style={{ width: 50 }}></th>
+                <th className="w-[90px] text-right">{t('purchaseOrders.columns.qty')}</th>
+                <th className="w-20 text-right">{t('purchaseOrders.columns.uom')}</th>
+                <th className="w-[110px] text-right">{t('purchaseOrders.columns.unitPrice')}</th>
+                <th className="w-20 text-right">{t('purchaseOrders.columns.discountPct')}</th>
+                <th className="w-[110px] text-right">{t('purchaseOrders.columns.taxCategory')}</th>
+                <th className="w-[110px] text-right">{t('purchaseOrders.columns.amount')}</th>
+                <th className="w-[50px]"></th>
               </tr>
             </thead>
             <tbody>
               {lines.map((line, idx) => (
                 <tr key={line.key}>
-                  <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                  <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
+                  <td className="text-[var(--text-muted)]">{idx + 1}</td>
+                  <td className="text-[var(--accent)] font-semibold text-xs">
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
                         <Button variant="ghost"
-                          className="text-xs cursor-pointer px-1 py-1 h-auto min-h-0"
-                          style={{ color: 'var(--text-muted)' }}
+                          className="text-xs cursor-pointer px-1 py-1 h-auto min-h-0 text-[var(--text-muted)]"
                           onClick={() => {
                             updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
                             updateLine(idx, 'productNumber', '');
@@ -610,7 +592,7 @@ export default function NewPurchaseOrderPage() {
                         </Button>
                       </div>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
+                      <span className="text-[var(--text-muted)] font-normal">—</span>
                     )}
                   </td>
                   <td>
@@ -618,40 +600,36 @@ export default function NewPurchaseOrderPage() {
                       line.productDescription || '—'
                     ) : (
                       <input
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder={t('salesOrders.placeholders.customDescription')}
                       />
                     )}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       step="1"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.quantity}
                       onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
-                      style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                      className="input w-full text-[13px] text-right"
                       value={line.unitOfMeasure}
                       onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       step="0.01"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.pricePerUnit}
                       onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
                       onBlur={(e) => {
@@ -660,22 +638,20 @@ export default function NewPurchaseOrderPage() {
                       }}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       max="100"
                       step="0.1"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.discountPercentage}
                       onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <select
-                      className="input"
-                      style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                      className="input w-full text-xs text-right"
                       value={line.taxCategoryId || ''}
                       onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
                     >
@@ -687,11 +663,7 @@ export default function NewPurchaseOrderPage() {
                     </select>
                   </td>
                   <td
-                    style={{
-                      textAlign: 'right',
-                      fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                    }}
+                    className="text-right font-semibold tabular-nums"
                   >
                     {formatAmount(computeAmount(line), currencyCode)}
                   </td>
@@ -711,7 +683,7 @@ export default function NewPurchaseOrderPage() {
                 <tr>
                   <td
                     colSpan={7}
-                    style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
+                    className="text-center text-[var(--text-muted)] py-5"
                   >
                     {t('purchaseOrders.noLineItems')}
                   </td>
@@ -721,29 +693,29 @@ export default function NewPurchaseOrderPage() {
                 const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                 return (
                   <>
-                    <tr style={{ borderTop: '2px solid var(--border)' }}>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    <tr className="border-t-2 border-[var(--border)]">
+                      <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                         {t('common.subtotal')}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-semibold tabular-nums">
                         {formatAmount(subtotal, currencyCode)}
                       </td>
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                         {t('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-semibold tabular-nums">
                         {formatAmount(totalTax, currencyCode)}
                       </td>
                       <td></td>
                     </tr>
-                    <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                    <tr className="bg-blue-500/[0.02]">
+                      <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                         {t('common.total')}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
                         {formatAmount(subtotal + totalTax, currencyCode)}
                       </td>
                       <td></td>

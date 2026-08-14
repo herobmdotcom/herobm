@@ -83,7 +83,7 @@ export function ExchangeRatesSection({ glSettings, updateGlSetting }: ExchangeRa
         </h3>
         
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+          <label className="text-sm font-medium text-[var(--text-muted)]">
             {tSettings('labels.baseCurrency')}
           </label>
           <select 

@@ -17,6 +17,16 @@ export interface SalesReturnDetails {
   locationName?: string;
   notes?: string;
   creditNoteNumber?: string;
+  creditNotes?: Array<{
+    creditNoteId?: string;
+    creditNoteNumber?: string;
+    stateCode?: string;
+    totalAmount?: string;
+    taxAmount?: string;
+    feeAmount?: string;
+    outstandingAmount?: string;
+    createdOn?: string;
+  }>;
   events?: { eventId: string; eventType: string; payload: Record<string, unknown>; actor: string; createdOn: string }[];
   lines: Array<{
     returnLineId: string;

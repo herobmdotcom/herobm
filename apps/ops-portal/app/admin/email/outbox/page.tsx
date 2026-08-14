@@ -73,7 +73,7 @@ export default function EmailOutboxDashboard() {
   if (loading && data.length === 0) {
     return (
       <div className="flex items-center justify-center flex-1">
-        <p style={{ color: 'var(--text-muted)' }}>{t('loading')}</p>
+        <p className="text-[var(--text-muted)]">{t('loading')}</p>
       </div>
     );
   }
@@ -116,26 +116,21 @@ export default function EmailOutboxDashboard() {
 
       {error && (
         <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
+          className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
         >
           {error}
         </div>
       )}
 
       {/* Email List */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
-        <div style={{ overflowX: 'auto' }}>
+      <div className="border border-[var(--border)] rounded-lg">
+        <div className="overflow-x-auto">
               <DataTable
                 columns={[
                   {
                     header: t('columns.date'),
                     render: (email) => (
-                      <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                      <span className="text-[11px] tabular-nums text-[var(--text-muted)]">
                         {new Date(email.createdAt).toLocaleString()}
                       </span>
                     ),
@@ -144,13 +139,13 @@ export default function EmailOutboxDashboard() {
                   {
                     header: t('columns.to'),
                     accessor: 'toAddress',
-                    render: (email) => <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{email.toAddress}</span>,
+                    render: (email) => <span className="text-xs text-[var(--text-secondary)]">{email.toAddress}</span>,
                     width: 250
                   },
                   {
                     header: t('columns.subject'),
                     accessor: 'subject',
-                    render: (email) => <span style={{ fontWeight: 500, fontSize: 13 }}>{email.subject}</span>
+                    render: (email) => <span className="font-medium text-[13px]">{email.subject}</span>
                   },
                   {
                     header: t('columns.entityType'),
@@ -158,7 +153,7 @@ export default function EmailOutboxDashboard() {
                     render: (email) => {
                       const entityType = email.entityType || 'system';
                       return (
-                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '2px 4px', borderRadius: 4 }}>
+                        <span className="text-[11px] font-mono text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-1 py-0.5 rounded">
                           {entityType}
                         </span>
                       );
@@ -170,20 +165,20 @@ export default function EmailOutboxDashboard() {
                     width: 100,
                     render: (email) => {
                       if (email.status === 'failed') {
-                        return <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11, textTransform: 'capitalize' }} title={email.lastError}>{t('status.failed')}</span>;
+                        return <span className="text-red-500 font-bold text-[11px] capitalize" title={email.lastError}>{t('status.failed')}</span>;
                       } else if (email.status === 'sent') {
-                        return <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11, textTransform: 'capitalize' }}>{t('status.sent')}</span>;
+                        return <span className="text-green-400 font-bold text-[11px] capitalize">{t('status.sent')}</span>;
                       } else if (email.status === 'dismissed') {
-                        return <span style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: 11, textTransform: 'capitalize' }}>{t('status.dismissed')}</span>;
+                        return <span className="text-[var(--text-muted)] font-bold text-[11px] capitalize">{t('status.dismissed')}</span>;
                       }
-                      return <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11, textTransform: 'capitalize' }}>{email.status}</span>;
+                      return <span className="text-amber-500 font-bold text-[11px] capitalize">{email.status}</span>;
                     }
                   },
                   {
                     header: t('columns.retries'),
                     align: 'right',
                     width: 80,
-                    render: (email) => <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>{email.retries}</span>
+                    render: (email) => <span className="tabular-nums text-xs">{email.retries}</span>
                   },
                   {
                     header: '',
@@ -195,7 +190,7 @@ export default function EmailOutboxDashboard() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            style={{ fontSize: 10, padding: '2px 6px' }}
+                            className="text-[10px] px-1.5 py-0.5"
                             disabled={actionInProgress === email.id}
                             onClick={() => handleRetry(email.id)}
                           >
@@ -205,13 +200,7 @@ export default function EmailOutboxDashboard() {
                         {['failed', 'pending'].includes(email.status) && (
                           <Button
                             size="sm"
-                            style={{
-                              fontSize: 10,
-                              padding: '2px 6px',
-                              background: 'rgba(239, 68, 68, 0.1)',
-                              color: '#f87171',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                            }}
+                            className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/30"
                             disabled={actionInProgress === email.id}
                             onClick={() => handleDismiss(email.id)}
                           >
@@ -227,17 +216,9 @@ export default function EmailOutboxDashboard() {
                 emptyMessage={t('noEmails')}
                 isRowExpanded={(row) => !!row.lastError}
                 renderExpandedRow={(email) => (
-                  <div style={{ padding: '8px 16px', background: 'var(--bg-primary)' }}>
+                  <div className="px-4 py-2 bg-[var(--bg-primary)]">
                     <pre
-                      style={{
-                        margin: 0,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                        overflowX: 'auto',
-                        color: 'var(--text-secondary)',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                      }}
+                      className="m-0 text-[11px] font-mono overflow-x-auto text-[var(--text-secondary)] whitespace-pre-wrap break-words"
                     >
                       {`[${(() => {
                         if (email.nextRetryAt && email.retries) {

@@ -162,6 +162,10 @@ export class CreatePurchaseReturnLineDto {
   @IsOptional()
   @IsNumberString()
   returnFee?: string;
+
+  @IsOptional()
+  @IsUUID()
+  sourceBinId?: string;
 }
 
 export class CreatePurchaseReturnDto {
@@ -173,6 +177,16 @@ export class CreatePurchaseReturnDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseReturnLineDto)
   lines!: CreatePurchaseReturnLineDto[];
+}
+
+export class ShipPurchaseReturnDto {
+  @IsOptional()
+  @IsString()
+  trackingNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class PurchaseOrderResponseDto {
@@ -242,4 +256,8 @@ export class PurchaseReturnResponseDto {
   createdOn?: Date | null;
   modifiedOn?: Date | null;
   lines?: PurchaseReturnLineResponseDto[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO expansion without typing
+  shipments?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO expansion without typing
+  shipmentLines?: any[];
 }

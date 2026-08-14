@@ -105,8 +105,7 @@ export default function SalesOrdersContent() {
         <select
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 120 }}
+            className="input text-sm min-w-[120px]"
         >
             <option value="30">{tCommon('filters.last30Days')}</option>
             <option value="90">{tCommon('filters.last90Days')}</option>

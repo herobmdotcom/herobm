@@ -108,10 +108,7 @@ export function CustomerDetailsTab({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.name")} *
               </label>
               <input
@@ -124,10 +121,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.columns.customerNumber")}
               </label>
               <input
@@ -138,10 +132,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.group")}
               </label>
               <GroupSelect
@@ -156,10 +147,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.parentCustomer")}
               </label>
               <CustomerSelect
@@ -180,10 +168,7 @@ export function CustomerDetailsTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.country")} *
               </label>
               <select
@@ -216,10 +201,7 @@ export function CustomerDetailsTab({
               </select>
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.notesCardHeading")}
               </label>
               <input
@@ -244,7 +226,7 @@ export function CustomerDetailsTab({
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t("salesOrders.creditHold.totalOutstanding")}
                 </label>
                 <p className="font-semibold text-lg">
@@ -252,7 +234,7 @@ export function CustomerDetailsTab({
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t("salesOrders.creditHold.overdue")}
                 </label>
                 <p className={`font-semibold text-lg ${creditAssessment && creditAssessment.overdueInvoiceBalance > 0 ? "text-red-600" : ""}`}>
@@ -260,7 +242,7 @@ export function CustomerDetailsTab({
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t("salesOrders.creditHold.glBalance")}
                 </label>
                 <p className="font-semibold text-lg">
@@ -268,7 +250,7 @@ export function CustomerDetailsTab({
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t("portal.creditLimit")}
                 </label>
                 <p className="font-semibold text-lg">
@@ -276,7 +258,7 @@ export function CustomerDetailsTab({
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t("salesOrders.creditHold.systemStatus")}
                 </label>
                 <p className="font-semibold text-lg flex items-center gap-1.5">
@@ -303,10 +285,7 @@ export function CustomerDetailsTab({
             {/* ── Row 1 ── */}
             {/* 1. Currency */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.currency")} *
               </label>
               <select
@@ -328,18 +307,11 @@ export function CustomerDetailsTab({
 
             {/* 2. State */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.state")}
               </label>
               <div
-                className="flex items-center gap-3"
-                style={{
-                  paddingTop: 6,
-                  cursor: !isEditable || saving ? "not-allowed" : "pointer",
-                }}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? "cursor-not-allowed" : "cursor-pointer"}`}
                 onClick={() => {
                   if (!isEditable || saving) return;
                   const newState =
@@ -351,37 +323,13 @@ export function CustomerDetailsTab({
                 }}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background:
-                      dto.stateCode === CUSTOMER_STATE.ACTIVE
-                        ? "var(--accent)"
-                        : "var(--border)",
-                    position: "relative",
-                    transition: "background 0.2s ease",
-                    opacity: !isEditable || saving ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.stateCode === CUSTOMER_STATE.ACTIVE ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable || saving ? "opacity-50" : "opacity-100"}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      background: "#fff",
-                      position: "absolute",
-                      top: 3,
-                      left:
-                        dto.stateCode === CUSTOMER_STATE.ACTIVE ? 21 : 3,
-                      transition: "left 0.2s ease",
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto.stateCode === CUSTOMER_STATE.ACTIVE ? "left-[21px]" : "left-[3px]"}`}
                   />
                 </div>
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <span className="text-sm text-[var(--text-secondary)]">
                   {dto.stateCode ? (
                     <StateName state={dto.stateCode as ValidState} />
                   ) : (
@@ -397,10 +345,7 @@ export function CustomerDetailsTab({
             {/* ── Row 2 ── */}
             {/* 4. Business Number */}
             <div>
-              <label
-                className="flex items-center text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)", minHeight: 16 }}
-              >
+              <label className="flex items-center text-xs font-medium mb-1.5 text-[var(--text-muted)] min-h-[16px]">
                 {t("customers.fields.businessNumber")}
                 <FrontendEnrichmentDecorator
                   field="customer.business_number"
@@ -441,18 +386,11 @@ export function CustomerDetailsTab({
 
             {/* 5. Tax Registered */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.taxRegistered")}
               </label>
               <div
-                className="flex items-center gap-3"
-                style={{
-                  paddingTop: 6,
-                  cursor: !isEditable || saving ? "not-allowed" : "pointer",
-                }}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? "cursor-not-allowed" : "cursor-pointer"}`}
                 onClick={() => {
                   if (!isEditable || saving) return;
                   updateField("isTaxRegistered", !dto.isTaxRegistered);
@@ -460,35 +398,13 @@ export function CustomerDetailsTab({
                 }}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: dto.isTaxRegistered
-                      ? "var(--accent)"
-                      : "var(--border)",
-                    position: "relative",
-                    transition: "background 0.2s ease",
-                    opacity: !isEditable || saving ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.isTaxRegistered ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable || saving ? "opacity-50" : "opacity-100"}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      background: "#fff",
-                      position: "absolute",
-                      top: 3,
-                      left: dto.isTaxRegistered ? 21 : 3,
-                      transition: "left 0.2s ease",
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto.isTaxRegistered ? "left-[21px]" : "left-[3px]"}`}
                   />
                 </div>
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <span className="text-sm text-[var(--text-secondary)]">
                   {dto.isTaxRegistered ? t("portal.yes") : t("portal.no")}
                 </span>
               </div>
@@ -496,10 +412,7 @@ export function CustomerDetailsTab({
 
             {/* 6. Tax Position */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.taxPosition")}
               </label>
               <InheritedSelect
@@ -522,10 +435,7 @@ export function CustomerDetailsTab({
             {/* ── Row 3 ── */}
             {/* 7. Trading Terms */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("portal.tradingTerms")}
               </label>
               <InheritedSelect
@@ -547,10 +457,7 @@ export function CustomerDetailsTab({
 
             {/* 8. Credit Limit */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("portal.creditLimit")}
               </label>
               <div className="flex items-center gap-3">
@@ -582,10 +489,7 @@ export function CustomerDetailsTab({
 
             {/* 9. Credit Hold */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("portal.creditHold")}
               </label>
               <InheritedSelect
@@ -607,10 +511,7 @@ export function CustomerDetailsTab({
             </div>
 
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.earlyPaymentDiscount")}
               </label>
               <div className="flex items-center gap-3">
@@ -633,7 +534,7 @@ export function CustomerDetailsTab({
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
                 {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
-                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-sm font-medium text-[var(--text-muted)]">
                   in
                 </span>
                 <div className="relative w-32">
@@ -668,10 +569,7 @@ export function CustomerDetailsTab({
 
             {/* 9. Discount Rules */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.discountRules")}
               </label>
               <Button
@@ -701,10 +599,7 @@ export function CustomerDetailsTab({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.billingEmail")}
               </label>
               <input
@@ -719,10 +614,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.phone")}
               </label>
               <input
@@ -735,10 +627,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div className="md:col-span-2">
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.billingAddress")}
               </label>
               <input
@@ -753,10 +642,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div className="md:col-span-2">
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("portal.addressLine2")}
               </label>
               <input
@@ -771,10 +657,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.city")}
               </label>
               <input
@@ -789,10 +672,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.state")}
               </label>
               <input
@@ -809,10 +689,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("common.columns.postalCode")}
               </label>
               <input
@@ -844,10 +721,7 @@ export function CustomerDetailsTab({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.bankAccountName")}
               </label>
               <input
@@ -863,10 +737,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 <span>BSB</span>
               </label>
               <input
@@ -880,10 +751,7 @@ export function CustomerDetailsTab({
               />
             </div>
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t("customers.fields.accountNumber")}
               </label>
               <input
@@ -915,10 +783,7 @@ export function CustomerDetailsTab({
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="mt-4">
-                <label
-                  className="block text-xs font-medium mb-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
+                <label className="block text-xs font-medium mb-2 text-[var(--text-muted)]">
                   {t("customers.fields.childAccounts", {
                     count: customer.childAccounts.length,
                   })}

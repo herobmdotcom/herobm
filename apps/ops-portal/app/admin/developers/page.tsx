@@ -159,7 +159,7 @@ export default function DevelopersPage() {
             {tDev('apiRateLimits')}
           </h3>
           <div className="flex flex-col gap-1 max-w-sm">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
               {tDev('maxRequestsPerMinute')}
             </label>
             <input

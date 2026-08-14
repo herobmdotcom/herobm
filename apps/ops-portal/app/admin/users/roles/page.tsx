@@ -181,8 +181,8 @@ export default function RolesPage() {
         <table className="table-lines w-full table-fixed text-sm">
           <thead>
             <tr>
-              <th className="w-[150px] text-left" style={{ textAlign: 'left' }}>{tCommon('resource')}</th>
-              {ACTIONS.map(a => <th key={a} className="text-center uppercase text-[var(--text-secondary)] text-xs tracking-wider" style={{ textAlign: 'center' }}>{a}</th>)}
+              <th className="w-[150px] text-left">{tCommon('resource')}</th>
+              {ACTIONS.map(a => <th key={a} className="text-center uppercase text-[var(--text-secondary)] text-xs tracking-wider">{a}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -338,11 +338,10 @@ export default function RolesPage() {
                     onClick={() => toggleRole(roleItem.role)}
                   >
                     <div className="flex items-center gap-4">
-                      { }
                       <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'rotate-90' : ''}`}>
                         chevron_right
                       </span>
-                      <div className="font-bold text-sm text-[#041627] capitalize" style={{ fontFamily: 'Manrope, sans-serif' }}>{roleItem.role}</div>
+                      <div className="font-bold text-sm text-[#041627] capitalize font-['Manrope',sans-serif]">{roleItem.role}</div>
                       {roleItem.inherits && roleItem.inherits.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                           {t('inheritsLabel')} <span className="font-medium">{roleItem.inherits.join(', ')}</span>
@@ -358,13 +357,11 @@ export default function RolesPage() {
                       ) : (
                         <>
                           <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5" title={tCommon('edit')} onClick={() => startEdit(roleItem)}>
-                            { }
-                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
                           </Button>
                           {roleItem.role !== 'admin' && roleItem.role !== 'viewer' && roleItem.role !== 'webhook' && roleItem.role !== 'agent' && (
-                            <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5 hover:bg-red-50 text-danger border-danger" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tCommon('delete')} onClick={() => deleteRole(roleItem.role)}>
-                              { }
-                              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                            <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5 hover:bg-red-50 text-[#ef4444] border-[#ef4444]" title={tCommon('delete')} onClick={() => deleteRole(roleItem.role)}>
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
                             </Button>
                           )}
                         </>

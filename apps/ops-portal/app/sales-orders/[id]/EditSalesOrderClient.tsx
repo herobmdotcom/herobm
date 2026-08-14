@@ -126,7 +126,7 @@ function EventIcon({ type }: { type: string }) {
         return_line_removed: '🗑️',
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    return <span className="mr-2" style={{ fontSize: '1.2rem', lineHeight: 1 }} title={t(type as any)}>{icons[type] || '📌'}</span>;
+    return <span className="mr-2 text-xl leading-none" title={t(type as any)}>{icons[type] || '📌'}</span>;
 }
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
@@ -196,7 +196,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         return (
             <>
                 <div className="flex items-center justify-center flex-1">
-                    <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+                    <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
                 </div>
             </>
         );
@@ -206,7 +206,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         return (
             <>
                 <div className="flex flex-col items-center justify-center flex-1">
-                    <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+                    <p className="text-lg mb-2 text-[var(--danger)]">
                         {o.error || tSales('orderNotFound')}
                     </p>
                     <Button variant="secondary" onClick={() => router.push('/sales-orders')}>
@@ -348,7 +348,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                                                 {state === SALES_ORDER_STATE.CANCELLED ? (
                                                     <>
                                                         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                                                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                                                        <span className="material-symbols-outlined mr-1 text-base">close</span>
                                                         {tCommon('cancel')}
                                                     </>
                                                 ) : back ? (
@@ -368,15 +368,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
 
 
             {order.stateCode === SALES_ORDER_STATE.ARCHIVED && (
-                <div
-                    className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3"
-                    style={{
-                        background: 'rgba(245, 158, 11, 0.1)',
-                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                        color: '#b45309',
-                    }}
-                >
-                    <span style={{ fontSize: '1.2rem' }}>📦</span>
+                <div className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700">
+                    <span className="text-xl">📦</span>
                     <div>
                         <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
                     </div>
@@ -588,7 +581,9 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         country: editDeliveryCountry,
                     }}
                     onSaved={(addr, saved) => {
-                        setEditDeliveryCompanyName(addr.companyName || '');
+                        if (addr.companyName && addr.companyName.trim()) {
+                            setEditDeliveryCompanyName(addr.companyName.trim());
+                        }
                         setEditDeliveryName(addr.recipientName || '');
                         setEditDeliveryPhone(addr.recipientPhone || '');
                         setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -601,7 +596,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                             customerDeliveryAddresses.push(addr as api.DeliveryAddressResponseDto);
                         }
                         saveHeader({
-                            deliveryCompanyName: addr.companyName || undefined,
+                            deliveryCompanyName: (addr.companyName && addr.companyName.trim()) ? addr.companyName.trim() : (editDeliveryCompanyName || undefined),
                             deliveryName: addr.recipientName || undefined,
                             deliveryPhone: addr.recipientPhone || undefined,
                             deliveryAddressLine1: addr.addressLine1 || undefined,

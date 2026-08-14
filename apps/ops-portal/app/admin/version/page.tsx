@@ -48,7 +48,7 @@ export default function VersionPage() {
         />
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171' }}>
+          <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-400">
             {error}
           </div>
         )}

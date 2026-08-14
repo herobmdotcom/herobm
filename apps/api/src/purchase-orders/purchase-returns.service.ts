@@ -17,6 +17,7 @@ import {
   purchaseOrderReturnShipmentLines,
   procurementEvents,
   bins,
+  binContents,
   zones,
   products as coreProducts,
   suppliers,
@@ -24,7 +25,7 @@ import {
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { CreatePurchaseReturnDto } from './dto';
+import { CreatePurchaseReturnDto, ShipPurchaseReturnDto } from './dto';
 import {
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_TRANSITIONS,
@@ -32,6 +33,7 @@ import {
   PURCHASE_ORDER_STATE,
   getValidStates,
   PurchaseReturnState,
+  PurchaseReturnShipmentState,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
@@ -138,6 +140,7 @@ export class PurchaseReturnsService {
         quantityReturned: line.quantityReturned,
         reason: line.reason,
         returnFee: line.returnFee ?? '0',
+        sourceBinId: line.sourceBinId || null,
       }));
 
       if (lineValues.length > 0) {
@@ -150,6 +153,18 @@ export class PurchaseReturnsService {
         eventType: EventType.RETURN_CREATED,
         entityDisplayName: order.orderNumber,
         payload: { returnId: ret.returnId, returnNumber },
+        actor,
+      });
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.PURCHASE_RETURN,
+        entityId: ret.returnId,
+        eventType: EventType.CREATED,
+        entityDisplayName: returnNumber,
+        payload: {
+          purchaseOrderId,
+          lineCount: lineValues.length,
+        },
         actor,
       });
 
@@ -215,7 +230,87 @@ export class PurchaseReturnsService {
       .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
       .limit(1);
 
+    const returnLines = await this.db
+      .select()
+      .from(purchaseOrderReturnLines)
+      .where(eq(purchaseOrderReturnLines.returnId, returnId));
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // Move inventory from warehouse storage bins INTO SUPPLIER_RETURNS bin
+      if (po.deliveryLocationId && returnLines.length > 0) {
+        const [supplierReturnsBin] = await tx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
+              eq(zones.locationId, po.deliveryLocationId),
+            ),
+          )
+          .limit(1);
+
+        if (!supplierReturnsBin) {
+          throw new BadRequestException(
+            'SUPPLIER_RETURNS bin not found for location',
+          );
+        }
+
+        for (const rl of returnLines) {
+          if (!rl.sourceBinId) {
+            throw new BadRequestException(
+              `Source bin (sourceBinId) is required for return line '${rl.returnLineId}' before it can be staged.`,
+            );
+          }
+
+          const [orderLine] = await tx
+            .select()
+            .from(purchaseOrderLineItems)
+            .where(
+              eq(
+                purchaseOrderLineItems.purchaseOrderLineId,
+                rl.purchaseOrderLineId,
+              ),
+            )
+            .limit(1);
+
+          if (!orderLine || !orderLine.productId) {
+            throw new BadRequestException(
+              `Purchase order line not found for return line ${rl.returnLineId}`,
+            );
+          }
+
+          const qty = parseFloat(rl.quantityReturned || '0');
+          if (qty <= 0) {
+            throw new BadRequestException(
+              `Invalid quantity returned for return line ${rl.returnLineId}`,
+            );
+          }
+
+          const movementNumber = `MOV-${Date.now()}`;
+          await this.inventoryMovementService.recordInventoryMovement(tx, {
+            entryNumber: movementNumber,
+            sourceType: 'PURCHASE_RETURN_STAGE',
+            sourceId: returnId,
+            userId: actor,
+            lines: [
+              {
+                productId: orderLine.productId,
+                binId: rl.sourceBinId,
+                quantity: -qty,
+                uomCode: orderLine.unitOfMeasure || 'EA',
+              },
+              {
+                productId: orderLine.productId,
+                binId: supplierReturnsBin.binId,
+                quantity: qty,
+                uomCode: orderLine.unitOfMeasure || 'EA',
+              },
+            ],
+          });
+        }
+      }
+
       const updated = await this.changePurchaseReturnState(
         returnId,
         PURCHASE_RETURN_STATE.STAGED,
@@ -223,8 +318,7 @@ export class PurchaseReturnsService {
         tx,
       );
 
-      // @herobm-skip-audit - DB write is performed by changePurchaseReturnState, emitting cross-entity event here
-
+      // @herobm-skip-audit
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
@@ -236,6 +330,135 @@ export class PurchaseReturnsService {
           returnNumber: ret.returnNumber,
           from: ret.stateCode,
           to: PURCHASE_RETURN_STATE.STAGED,
+        },
+        actor,
+      });
+
+      return updated;
+    });
+
+    return result;
+  }
+
+  async unstageReturn(returnId: string, actor: string) {
+    const [ret] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (!ret) throw new NotFoundException('Return not found');
+    if (ret.stateCode !== PURCHASE_RETURN_STATE.STAGED) {
+      throw new BadRequestException(
+        'Return must be in STAGED state to be unstaged',
+      );
+    }
+
+    const [po] = await this.db
+      .select()
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
+      .limit(1);
+
+    const returnLines = await this.db
+      .select()
+      .from(purchaseOrderReturnLines)
+      .where(eq(purchaseOrderReturnLines.returnId, returnId));
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      if (po.deliveryLocationId && returnLines.length > 0) {
+        const [supplierReturnsBin] = await tx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
+              eq(zones.locationId, po.deliveryLocationId),
+            ),
+          )
+          .limit(1);
+
+        if (!supplierReturnsBin) {
+          throw new BadRequestException(
+            'SUPPLIER_RETURNS bin not found for location',
+          );
+        }
+
+        for (const rl of returnLines) {
+          const [orderLine] = await tx
+            .select()
+            .from(purchaseOrderLineItems)
+            .where(
+              eq(
+                purchaseOrderLineItems.purchaseOrderLineId,
+                rl.purchaseOrderLineId,
+              ),
+            )
+            .limit(1);
+
+          if (!orderLine || !orderLine.productId) {
+            throw new BadRequestException(
+              `Purchase order line not found for return line ${rl.returnLineId}`,
+            );
+          }
+
+          if (!rl.sourceBinId) {
+            throw new BadRequestException(
+              `Source bin not found for return line ${rl.returnLineId}`,
+            );
+          }
+
+          const qty = parseFloat(rl.quantityReturned || '0');
+          if (qty <= 0) {
+            throw new BadRequestException(
+              `Invalid quantity returned for return line ${rl.returnLineId}`,
+            );
+          }
+
+          const movementNumber = `MOV-${Date.now()}`;
+          await this.inventoryMovementService.recordInventoryMovement(tx, {
+            entryNumber: movementNumber,
+            sourceType: 'PURCHASE_RETURN_UNSTAGE',
+            sourceId: returnId,
+            userId: actor,
+            lines: [
+              {
+                productId: orderLine.productId,
+                binId: supplierReturnsBin.binId,
+                quantity: -qty,
+                uomCode: orderLine.unitOfMeasure || 'EA',
+              },
+              {
+                productId: orderLine.productId,
+                binId: rl.sourceBinId,
+                quantity: qty,
+                uomCode: orderLine.unitOfMeasure || 'EA',
+              },
+            ],
+          });
+        }
+      }
+
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.DRAFT,
+        actor,
+        tx,
+      );
+
+      // @herobm-skip-audit
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: po.purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: po.orderNumber,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          returnNumber: ret.returnNumber,
+          from: ret.stateCode,
+          to: PURCHASE_RETURN_STATE.DRAFT,
         },
         actor,
       });
@@ -300,7 +523,11 @@ export class PurchaseReturnsService {
     return result;
   }
 
-  async shipReturn(returnId: string, actor: string) {
+  async shipReturn(
+    returnId: string,
+    actor: string,
+    dto?: ShipPurchaseReturnDto,
+  ) {
     const [ret] = await this.db
       .select()
       .from(purchaseOrderReturns)
@@ -338,6 +565,8 @@ export class PurchaseReturnsService {
           returnId,
           stateCode: PURCHASE_RETURN_SHIPMENT_STATE.DISPATCHED,
           fulfillmentLocationId: po.deliveryLocationId,
+          trackingNumber: dto?.trackingNumber || null,
+          notes: dto?.notes || null,
           createdBy: actor,
         })
         .returning();
@@ -523,6 +752,141 @@ export class PurchaseReturnsService {
     return result;
   }
 
+  async unshipReturn(returnId: string, actor: string) {
+    const [ret] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (!ret) throw new NotFoundException('Return not found');
+    if (ret.stateCode !== PURCHASE_RETURN_STATE.SHIPPED) {
+      throw new BadRequestException(
+        'Return must be in SHIPPED state to be unshipped',
+      );
+    }
+
+    const [po] = await this.db
+      .select()
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
+      .limit(1);
+
+    const returnLines = await this.db
+      .select()
+      .from(purchaseOrderReturnLines)
+      .where(eq(purchaseOrderReturnLines.returnId, returnId));
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // 1. Re-add stock back into SUPPLIER_RETURNS bin
+      if (po.deliveryLocationId && returnLines.length > 0) {
+        const [supplierReturnsBin] = await tx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
+              eq(zones.locationId, po.deliveryLocationId),
+            ),
+          )
+          .limit(1);
+
+        if (supplierReturnsBin) {
+          for (const rl of returnLines) {
+            const [orderLine] = await tx
+              .select()
+              .from(purchaseOrderLineItems)
+              .where(
+                eq(
+                  purchaseOrderLineItems.purchaseOrderLineId,
+                  rl.purchaseOrderLineId,
+                ),
+              )
+              .limit(1);
+
+            if (!orderLine || !orderLine.productId) {
+              throw new BadRequestException(
+                `Purchase order line not found for return line ${rl.returnLineId}`,
+              );
+            }
+            const qty = parseFloat(rl.quantityReturned || '0');
+            if (qty <= 0) {
+              throw new BadRequestException(
+                `Invalid quantity returned for return line ${rl.returnLineId}`,
+              );
+            }
+
+            const newQtyReceived = (
+              parseFloat(orderLine.quantityReceived || '0') + qty
+            ).toString();
+
+            await tx
+              .update(purchaseOrderLineItems)
+              .set({ quantityReceived: newQtyReceived })
+              .where(
+                eq(
+                  purchaseOrderLineItems.purchaseOrderLineId,
+                  rl.purchaseOrderLineId,
+                ),
+              );
+
+            const movementNumber = `MOV-${Date.now()}`;
+            await this.inventoryMovementService.recordInventoryMovement(tx, {
+              entryNumber: movementNumber,
+              sourceType: 'PURCHASE_RETURN_UNSHIP',
+              sourceId: returnId,
+              userId: actor,
+              lines: [
+                {
+                  productId: orderLine.productId,
+                  binId: supplierReturnsBin.binId,
+                  quantity: qty,
+                  uomCode: orderLine.unitOfMeasure || 'EA',
+                },
+              ],
+            });
+          }
+        }
+      }
+
+      // 2. Mark shipment record as cancelled
+      await this.changePurchaseReturnShipmentState(
+        returnId,
+        PURCHASE_RETURN_SHIPMENT_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+
+      // 3. Change state to STAGED
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.STAGED,
+        actor,
+        tx,
+      );
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: po.purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: po.orderNumber,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          returnNumber: ret.returnNumber,
+          from: ret.stateCode,
+          to: PURCHASE_RETURN_STATE.STAGED,
+        },
+        actor,
+      });
+
+      return updated;
+    });
+
+    return result;
+  }
+
   async changePurchaseReturnState(
     returnId: string,
     newState: PurchaseReturnState,
@@ -573,6 +937,22 @@ export class PurchaseReturnsService {
       });
     }
 
+    return updated;
+  }
+
+  // @herobm-skip-audit - Internal helper updating shipment record state within active return workflows
+  async changePurchaseReturnShipmentState(
+    returnId: string,
+    newState: PurchaseReturnShipmentState,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const [updated] = await db
+      .update(purchaseOrderReturnShipments)
+      .set({ stateCode: newState })
+      .where(eq(purchaseOrderReturnShipments.returnId, returnId))
+      .returning();
     return updated;
   }
 }

@@ -129,7 +129,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
       <div className="flex flex-col gap-4 w-full shrink-0">
         <div className="card p-6 flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center gap-3">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] font-['Manrope',sans-serif]">
               {isNew ? t('newTemplate') : formData.name}
             </h2>
           </div>
@@ -210,11 +210,10 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           <div className="flex flex-col flex-1 mt-4 min-h-[500px]">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.typstSource')}</label>
             <textarea 
-              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c]"
+              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c] min-h-[500px] resize-y"
               value={formData.template}
               onChange={e => setFormData(d => ({ ...d, template: e.target.value }))}
               spellCheck={false}
-              style={{ minHeight: '500px', resize: 'vertical' }}
             />
           </div>
 
@@ -239,7 +238,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
       <div className="flex flex-col w-full min-h-[800px] shrink-0">
         <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>{t('livePreview.title')}</h3>
+            <h3 className="text-lg font-bold text-[#041627] font-['Manrope',sans-serif]">{t('livePreview.title')}</h3>
             <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
           </div>
           <div className="flex gap-3 items-end bg-[#f8f9fa] p-4 rounded-lg border border-[rgba(196,198,205,0.4)]">
@@ -277,7 +276,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           
           <div className="flex-1 border border-[rgba(196,198,205,0.4)] rounded-lg bg-gray-200/50 overflow-hidden relative">
             {pdfBlobUrl ? (
-              <iframe src={`${pdfBlobUrl}#toolbar=0`} className="w-[100%] h-[100%] border-0 object-contain" style={{ backgroundColor: '#525659' }} />
+              <iframe src={`${pdfBlobUrl}#toolbar=0`} className="w-[100%] h-[100%] border-0 object-contain bg-[#525659]" />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-3">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>

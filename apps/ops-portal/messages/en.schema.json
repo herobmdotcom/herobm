@@ -1909,6 +1909,7 @@
   "salesOrders.returns",
   "salesOrders.returns.creditNote",
   "salesOrders.returns.netCredit",
+  "salesOrders.returns.subtotal",
   "salesOrders.returns.totalCredit",
   "salesOrders.returns.totalFees",
   "salesOrders.returnsHeading",

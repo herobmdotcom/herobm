@@ -14,8 +14,11 @@ import {
   purchaseOrderReturns,
   purchaseDebitNotes,
   purchaseDebitNoteLines,
+  purchaseDebitNoteShipments,
   suppliers,
   supplierGroups,
+  actors,
+  products,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -64,7 +67,35 @@ export class PurchaseDebitNotesService {
   }
 
   async findAll(vendorId?: string, balanceStatus?: string) {
-    let q = this.db.select().from(purchaseDebitNotes).$dynamic();
+    let q = this.db
+      .select({
+        debitNoteId: purchaseDebitNotes.debitNoteId,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        supplierReferenceNumber: purchaseDebitNotes.supplierReferenceNumber,
+        returnId: purchaseDebitNotes.returnId,
+        purchaseOrderId: purchaseDebitNotes.purchaseOrderId,
+        vendorId: purchaseDebitNotes.vendorId,
+        totalAmount: purchaseDebitNotes.totalAmount,
+        taxAmount: purchaseDebitNotes.taxAmount,
+        feeAmount: purchaseDebitNotes.feeAmount,
+        outstandingAmount: purchaseDebitNotes.outstandingAmount,
+        currencyCode: purchaseDebitNotes.currencyCode,
+        stateCode: purchaseDebitNotes.stateCode,
+        notes: purchaseDebitNotes.notes,
+        createdBy: purchaseDebitNotes.createdBy,
+        createdOn: purchaseDebitNotes.createdOn,
+        modifiedOn: purchaseDebitNotes.modifiedOn,
+        orderNumber: purchaseOrders.orderNumber,
+        vendorName: actors.name,
+      })
+      .from(purchaseDebitNotes)
+      .leftJoin(
+        purchaseOrders,
+        eq(purchaseDebitNotes.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .leftJoin(suppliers, eq(purchaseDebitNotes.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .$dynamic();
 
     const conditions = [];
     if (vendorId) {
@@ -89,10 +120,107 @@ export class PurchaseDebitNotesService {
         .select()
         .from(purchaseDebitNoteLines)
         .where(eq(purchaseDebitNoteLines.debitNoteId, dn.debitNoteId));
-      result.push({ ...dn, lines });
+
+      const linesWithAllocations = [];
+      for (const line of lines) {
+        const allocations = await this.db
+          .select()
+          .from(purchaseDebitNoteShipments)
+          .where(
+            eq(
+              purchaseDebitNoteShipments.debitNoteLineId,
+              line.debitNoteLineId,
+            ),
+          );
+        linesWithAllocations.push({
+          ...line,
+          shipmentAllocations: allocations,
+        });
+      }
+
+      result.push({ ...dn, lines: linesWithAllocations });
     }
 
     return result;
+  }
+
+  async findOne(id: string) {
+    const [dn] = await this.db
+      .select({
+        debitNoteId: purchaseDebitNotes.debitNoteId,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        supplierReferenceNumber: purchaseDebitNotes.supplierReferenceNumber,
+        returnId: purchaseDebitNotes.returnId,
+        purchaseOrderId: purchaseDebitNotes.purchaseOrderId,
+        vendorId: purchaseDebitNotes.vendorId,
+        totalAmount: purchaseDebitNotes.totalAmount,
+        taxAmount: purchaseDebitNotes.taxAmount,
+        feeAmount: purchaseDebitNotes.feeAmount,
+        outstandingAmount: purchaseDebitNotes.outstandingAmount,
+        currencyCode: purchaseDebitNotes.currencyCode,
+        stateCode: purchaseDebitNotes.stateCode,
+        notes: purchaseDebitNotes.notes,
+        createdBy: purchaseDebitNotes.createdBy,
+        createdOn: purchaseDebitNotes.createdOn,
+        modifiedOn: purchaseDebitNotes.modifiedOn,
+        orderNumber: purchaseOrders.orderNumber,
+        vendorName: actors.name,
+      })
+      .from(purchaseDebitNotes)
+      .leftJoin(
+        purchaseOrders,
+        eq(purchaseDebitNotes.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .leftJoin(suppliers, eq(purchaseDebitNotes.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .where(eq(purchaseDebitNotes.debitNoteId, id))
+      .limit(1);
+
+    if (!dn) {
+      throw new NotFoundException(`Debit Note '${id}' not found`);
+    }
+
+    const lines = await this.db
+      .select({
+        debitNoteLineId: purchaseDebitNoteLines.debitNoteLineId,
+        debitNoteId: purchaseDebitNoteLines.debitNoteId,
+        purchaseOrderLineId: purchaseDebitNoteLines.purchaseOrderLineId,
+        quantityInvoiced: purchaseDebitNoteLines.quantityInvoiced,
+        pricePerUnit: purchaseDebitNoteLines.pricePerUnit,
+        amount: purchaseDebitNoteLines.amount,
+        taxAmount: purchaseDebitNoteLines.taxAmount,
+        productDescription: purchaseOrderLineItems.productDescription,
+        productNumber: products.productNumber,
+      })
+      .from(purchaseDebitNoteLines)
+      .leftJoin(
+        purchaseOrderLineItems,
+        eq(
+          purchaseDebitNoteLines.purchaseOrderLineId,
+          purchaseOrderLineItems.purchaseOrderLineId,
+        ),
+      )
+      .leftJoin(
+        products,
+        eq(purchaseOrderLineItems.productId, products.productId),
+      )
+      .where(eq(purchaseDebitNoteLines.debitNoteId, id));
+
+    const linesWithAllocations = [];
+    for (const line of lines) {
+      const allocations = await this.db
+        .select()
+        .from(purchaseDebitNoteShipments)
+        .where(
+          eq(purchaseDebitNoteShipments.debitNoteLineId, line.debitNoteLineId),
+        );
+      linesWithAllocations.push({
+        ...line,
+        shipmentAllocations: allocations,
+      });
+    }
+
+    return { ...dn, lines: linesWithAllocations };
   }
 
   async createDebitNote(dto: CreateDebitNoteDto, actor: string) {
@@ -161,13 +289,38 @@ export class PurchaseDebitNotesService {
       }));
 
       if (lineValues.length > 0) {
-        await tx.insert(purchaseDebitNoteLines).values(lineValues);
+        const insertedLines = await tx
+          .insert(purchaseDebitNoteLines)
+          .values(lineValues)
+          .returning();
+
+        const allocationValues = [];
+        for (let i = 0; i < dto.lines.length; i++) {
+          const inputLine = dto.lines[i];
+          const insertedLine = insertedLines[i];
+          if (
+            inputLine.shipmentAllocations &&
+            inputLine.shipmentAllocations.length > 0
+          ) {
+            for (const alloc of inputLine.shipmentAllocations) {
+              allocationValues.push({
+                debitNoteLineId: insertedLine.debitNoteLineId,
+                shipmentLineId: alloc.shipmentLineId,
+                quantityCredited: alloc.quantityCredited,
+              });
+            }
+          }
+        }
+
+        if (allocationValues.length > 0) {
+          await tx.insert(purchaseDebitNoteShipments).values(allocationValues);
+        }
       }
 
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: ret.purchaseOrderId,
-        eventType: EventType.CREATED,
+        eventType: EventType.DEBIT_NOTE_CREATED,
         entityDisplayName: po.orderNumber,
         payload: {
           debitNoteId: dn.debitNoteId,
@@ -226,19 +379,23 @@ export class PurchaseDebitNotesService {
 
       let suppCostCenterId: string | undefined;
       let suppActivityId: string | undefined;
+      let supplierName: string | undefined;
       if (po.vendorId) {
         const [supp] = await tx
           .select({
+            name: actors.name,
             costCenterId: supplierGroups.defaultCostCenterId,
             activityId: supplierGroups.defaultActivityId,
           })
           .from(suppliers)
+          .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
           .leftJoin(
             supplierGroups,
             eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
           )
           .where(eq(suppliers.vendorId, po.vendorId));
         if (supp) {
+          supplierName = supp.name || undefined;
           suppCostCenterId = supp.costCenterId || undefined;
           suppActivityId = supp.activityId || undefined;
         }
@@ -297,6 +454,25 @@ export class PurchaseDebitNotesService {
           tx,
         );
       }
+
+      // @herobm-skip-audit
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: dn.purchaseOrderId,
+        eventType: EventType.DEBIT_NOTE_POSTED,
+        entityDisplayName: po.orderNumber,
+        payload: {
+          debitNoteId,
+          debitNoteNumber: dn.debitNoteNumber,
+          returnId: dn.returnId,
+          purchaseOrderId: dn.purchaseOrderId,
+          orderNumber: po.orderNumber,
+          supplierId: po.vendorId,
+          supplierName: supplierName || '—',
+          totalDebit: dn.totalAmount,
+        },
+        actor,
+      });
 
       return updated;
     });

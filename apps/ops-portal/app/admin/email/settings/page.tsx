@@ -70,7 +70,7 @@ export default function SmtpSettingsPage() {
           }
         ]}
       />
-      <div className="flex flex-col gap-6" style={{ maxWidth: 800 }}>
+      <div className="flex flex-col gap-6 max-w-[800px]">
         <div className="card">
           <h3 className="section-heading mb-4 flex items-center gap-2">
             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI icon */}
@@ -79,12 +79,12 @@ export default function SmtpSettingsPage() {
           </h3>
 
           {loading ? (
-            <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+            <p className="text-[var(--text-muted)]">Loading...</p>
           ) : (
             <div className="flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     SMTP Host
                   </label>
                   <input
@@ -96,7 +96,7 @@ export default function SmtpSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     SMTP Port
                   </label>
                   <input
@@ -112,7 +112,7 @@ export default function SmtpSettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     SMTP User
                   </label>
                   <input
@@ -124,7 +124,7 @@ export default function SmtpSettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     SMTP Password
                   </label>
                   <input
@@ -139,14 +139,14 @@ export default function SmtpSettingsPage() {
                     }}
                     placeholder="Leave blank to keep existing password"
                   />
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[10px] text-[var(--text-muted)]">
                     Password is encrypted in the database.
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1 md:w-1/2">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   From Address
                 </label>
                 <input

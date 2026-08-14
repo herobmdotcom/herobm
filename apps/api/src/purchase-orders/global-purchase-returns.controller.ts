@@ -20,11 +20,18 @@ import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import {
   purchaseOrderReturns,
   purchaseOrders,
+  purchaseOrderLineItems,
+  products,
   purchaseOrderReturnLines,
+  purchaseOrderReturnShipments,
+  purchaseOrderReturnShipmentLines,
+  purchaseDebitNotes,
+  procurementEvents,
   suppliers,
   actors,
+  bins,
 } from '@herobm/db-schema';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, inArray, or, sql, isNull, and } from 'drizzle-orm';
 import { PurchaseReturnResponseDto } from './dto';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
@@ -36,6 +43,14 @@ export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
   vendorId?: string;
   @ApiProperty({ required: false })
   currencyCode?: string;
+  @ApiProperty({ required: false })
+  debitNoteId?: string;
+  @ApiProperty({ required: false })
+  debitNoteNumber?: string;
+  @ApiProperty({ required: false })
+  debitNoteState?: string;
+  @ApiProperty({ required: false })
+  debitNoteTotalAmount?: string;
 }
 
 export class GlobalPurchaseReturnsListDto {
@@ -57,7 +72,11 @@ export class GlobalPurchaseReturnsController {
   })
   @ApiOkResponse({ type: [GlobalPurchaseReturnDto] })
   @ApiQuery({ name: 'stateCode', required: false })
-  async getPurchaseReturns(@Query('stateCode') stateCodeStr?: string) {
+  @ApiQuery({ name: 'requireDebitNote', required: false, type: Boolean })
+  async getPurchaseReturns(
+    @Query('stateCode') stateCodeStr?: string,
+    @Query('requireDebitNote') requireDebitNote?: boolean,
+  ) {
     let query = this.db
       .select({
         returnId: purchaseOrderReturns.returnId,
@@ -68,6 +87,10 @@ export class GlobalPurchaseReturnsController {
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         vendorName: actors.name,
+        debitNoteId: purchaseDebitNotes.debitNoteId,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        debitNoteState: purchaseDebitNotes.stateCode,
+        debitNoteTotalAmount: purchaseDebitNotes.totalAmount,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -79,11 +102,17 @@ export class GlobalPurchaseReturnsController {
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
       .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        purchaseDebitNotes,
+        eq(purchaseOrderReturns.returnId, purchaseDebitNotes.returnId),
+      )
       .$dynamic();
+
+    const conditions = [];
 
     if (stateCodeStr) {
       const states = stateCodeStr.split(',');
-      query = query.where(
+      conditions.push(
         inArray(
           purchaseOrderReturns.stateCode,
           states as PurchaseReturnState[],
@@ -91,11 +120,18 @@ export class GlobalPurchaseReturnsController {
       );
     }
 
+    if (requireDebitNote === true || String(requireDebitNote) === 'true') {
+      conditions.push(isNull(purchaseDebitNotes.debitNoteId));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
     query = query.orderBy(desc(purchaseOrderReturns.createdOn));
 
     const data = await query;
 
-    // Optional: Fetch line counts if needed, but for the grid this is enough for now.
     return data;
   }
 
@@ -119,6 +155,10 @@ export class GlobalPurchaseReturnsController {
         vendorName: actors.name,
         vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
+        debitNoteId: purchaseDebitNotes.debitNoteId,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        debitNoteState: purchaseDebitNotes.stateCode,
+        debitNoteTotalAmount: purchaseDebitNotes.totalAmount,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -130,16 +170,85 @@ export class GlobalPurchaseReturnsController {
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
       .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        purchaseDebitNotes,
+        eq(purchaseOrderReturns.returnId, purchaseDebitNotes.returnId),
+      )
       .where(eq(purchaseOrderReturns.returnId, id))
       .limit(1);
 
     if (!ret) throw new NotFoundException('Purchase Return not found');
 
     const lines = await this.db
-      .select()
+      .select({
+        returnLineId: purchaseOrderReturnLines.returnLineId,
+        returnId: purchaseOrderReturnLines.returnId,
+        purchaseOrderLineId: purchaseOrderReturnLines.purchaseOrderLineId,
+        quantityReturned: purchaseOrderReturnLines.quantityReturned,
+        reason: purchaseOrderReturnLines.reason,
+        returnFee: purchaseOrderReturnLines.returnFee,
+        sourceBinId: purchaseOrderReturnLines.sourceBinId,
+        sourceBinNumber: bins.binNumber,
+        productId: purchaseOrderLineItems.productId,
+        productNumber: products.productNumber,
+        productDescription: purchaseOrderLineItems.productDescription,
+        pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+        tax: purchaseOrderLineItems.tax,
+      })
       .from(purchaseOrderReturnLines)
+      .leftJoin(
+        purchaseOrderLineItems,
+        eq(
+          purchaseOrderReturnLines.purchaseOrderLineId,
+          purchaseOrderLineItems.purchaseOrderLineId,
+        ),
+      )
+      .leftJoin(
+        products,
+        eq(purchaseOrderLineItems.productId, products.productId),
+      )
+      .leftJoin(bins, eq(purchaseOrderReturnLines.sourceBinId, bins.binId))
       .where(eq(purchaseOrderReturnLines.returnId, id));
 
-    return { ...ret, lines };
+    const shipments = await this.db
+      .select()
+      .from(purchaseOrderReturnShipments)
+      .where(eq(purchaseOrderReturnShipments.returnId, id));
+
+    const shipmentIds = shipments.map((s) => s.shipmentId);
+    let shipmentLines: (typeof purchaseOrderReturnShipmentLines.$inferSelect)[] =
+      [];
+    if (shipmentIds.length > 0) {
+      shipmentLines = await this.db
+        .select()
+        .from(purchaseOrderReturnShipmentLines)
+        .where(
+          inArray(purchaseOrderReturnShipmentLines.shipmentId, shipmentIds),
+        );
+    }
+
+    const events = await this.db
+      .select()
+      .from(procurementEvents)
+      .where(
+        or(
+          eq(procurementEvents.entityId, id),
+          sql`${procurementEvents.payload}->>'returnId' = ${id}`,
+        ),
+      )
+      .orderBy(desc(procurementEvents.createdOn));
+
+    const debitNotes = await this.db
+      .select({
+        debitNoteId: purchaseDebitNotes.debitNoteId,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        stateCode: purchaseDebitNotes.stateCode,
+        createdOn: purchaseDebitNotes.createdOn,
+        totalAmount: purchaseDebitNotes.totalAmount,
+      })
+      .from(purchaseDebitNotes)
+      .where(eq(purchaseDebitNotes.returnId, id));
+
+    return { ...ret, lines, shipments, shipmentLines, events, debitNotes };
   }
 }

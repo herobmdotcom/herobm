@@ -162,17 +162,16 @@ export default function ReturnsSection({
 
             {/* Create return form */}
             {showCreateReturn && (
-                <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div className="mb-4 p-4 rounded-lg border border-[var(--border)]">
                     <div className="mb-3">
-                        <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <strong className="text-[13px] flex items-center gap-1.5">
                             {tSales('newReturn')}
                         </strong>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: 12 }}>
+                    <div className="flex gap-3 mb-3">
                         <select
-                            className="input"
-                            style={{ flex: 1 }}
+                            className="input flex-1"
                             value={newReturnLocationId}
                             onChange={(e) => setNewReturnLocationId(e.target.value)}
                         >
@@ -184,8 +183,7 @@ export default function ReturnsSection({
                             ))}
                         </select>
                         <input
-                            className="input w-full"
-                            style={{ flex: 2 }}
+                            className="input w-full flex-[2]"
                             value={newReturnNotes}
                             onChange={(e) => setNewReturnNotes(e.target.value)}
                             placeholder={tSales('placeholders.returnNotes')}
@@ -217,26 +215,21 @@ export default function ReturnsSection({
 
                             return (
                                 <tr key={line.salesOrderLineId}>
-                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                    <td className="text-[var(--text-muted)]">{line.lineNumber}</td>
+                                    <td className="font-semibold text-xs">
                                         {line.productNumber || line.productId?.substring(0, 8) || '—'}
                                     </td>
                                     <td>{line.productDescription || '—'}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    <td className="text-right tabular-nums">
                                         {shippedQty}
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td className="text-right">
                                         <input
-                                            className="input"
+                                            className="input w-[70px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-[13px] text-right"
                                             type="number"
                                             min="0"
                                             max={shippedQty || line.quantity}
                                             step="1"
-                                            style={{
-                                                width: 70, padding: '2px 6px', borderRadius: 4,
-                                                border: '1px solid var(--border)', background: 'var(--surface)',
-                                                color: 'var(--text)', fontSize: 13, textAlign: 'right',
-                                            }}
                                             value={rl.quantityReturned}
                                             onChange={(e) => {
                                                 const updated = [...newReturnLines];
@@ -248,8 +241,7 @@ export default function ReturnsSection({
                                     </td>
                                     <td>
                                         <input
-                                            className="input"
-                                            style={{ width: '100%' }}
+                                            className="input w-full"
                                             value={rl.reason}
                                             disabled={isQtyZero}
                                             onChange={(e) => {
@@ -275,11 +267,10 @@ export default function ReturnsSection({
                                             <option value="replace">Replace</option>
                                         </select>
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td className="text-right">
                                         <div className="flex items-center gap-1 justify-end">
                                             <select
-                                                className="input"
-                                                style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
+                                                className="input w-[50px] text-[11px] px-1.5 py-1"
                                                 value={rl.feeMode}
                                                 disabled={isQtyZero}
                                                 onChange={(e) => {
@@ -301,11 +292,10 @@ export default function ReturnsSection({
                                                 <option value="percentage">%</option>
                                             </select>
                                             <input
-                                                className="input"
+                                                className="input w-20 text-right"
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
-                                                style={{ width: 80, textAlign: 'right' }}
                                                 value={rl.returnFee}
                                                 disabled={isQtyZero}
                                                 onChange={(e) => {
@@ -371,16 +361,11 @@ export default function ReturnsSection({
                                         <div className="flex justify-between items-center py-2">
                                             <span className="text-xs font-medium text-slate-500">{tSales('columns.returnQty')}</span>
                                             <input
-                                                className="input"
+                                                className="input w-[70px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-[13px] text-right"
                                                 type="number"
                                                 min="0"
                                                 max={shippedQty || line.quantity}
                                                 step="1"
-                                                style={{
-                                                    width: 70, padding: '2px 6px', borderRadius: 4,
-                                                    border: '1px solid var(--border)', background: 'var(--surface)',
-                                                    color: 'var(--text)', fontSize: 13, textAlign: 'right',
-                                                }}
                                                 value={rl.quantityReturned}
                                                 onChange={(e) => {
                                                     const updated = [...newReturnLines];
@@ -394,8 +379,7 @@ export default function ReturnsSection({
                                         <div className="flex flex-col gap-1 py-2">
                                             <span className="text-xs font-medium text-slate-500">{tSales('columns.reason')}</span>
                                             <input
-                                                className="input"
-                                                style={{ width: '100%' }}
+                                                className="input w-full"
                                                 value={rl.reason}
                                                 disabled={isQtyZero}
                                                 onChange={(e) => {
@@ -411,8 +395,7 @@ export default function ReturnsSection({
                                             <span className="text-xs font-medium text-slate-500">{tSales('columns.fee')}</span>
                                             <div className="flex items-center gap-1 justify-end">
                                                 <select
-                                                    className="input"
-                                                    style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
+                                                    className="input w-[50px] text-[11px] px-1.5 py-1"
                                                     value={rl.feeMode}
                                                     disabled={isQtyZero}
                                                     onChange={(e) => {
@@ -434,11 +417,10 @@ export default function ReturnsSection({
                                                     <option value="percentage">%</option>
                                                 </select>
                                                 <input
-                                                    className="input"
+                                                    className="input w-20 text-right"
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
-                                                    style={{ width: 80, textAlign: 'right' }}
                                                     value={rl.returnFee}
                                                     disabled={isQtyZero}
                                                     onChange={(e) => {
@@ -481,45 +463,45 @@ export default function ReturnsSection({
                             const { subtotal, totalTax, totalFees, netCredit } = summary;
                             return (
                                 <>
-                                    <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                            {tSales('returns.totalCredit')}
+                                    <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
+                                        <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
+                                            {tCommon('subtotal')}
                                         </td>
                                         <td></td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                        <td className="text-right tabular-nums font-semibold">
                                             {formatAmount(subtotal, cc)}
                                         </td>
                                     </tr>
                                     <tr className="hidden lg:table-row">
-                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                        <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
                                             {tSales('columns.tax')}
                                         </td>
                                         <td></td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                        <td className="text-right tabular-nums font-semibold">
                                             {formatAmount(totalTax, cc)}
                                         </td>
                                     </tr>
                                     <tr className="hidden lg:table-row">
-                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                        <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
                                             {tSales('returns.totalFees')}
                                         </td>
                                         <td></td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                        <td className="text-right tabular-nums font-semibold">
                                             {totalFees > 0 ? `−${formatAmount(totalFees, cc)}` : formatAmount(0, cc)}
                                         </td>
                                     </tr>
                                     <tr className="hidden lg:table-row">
-                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
+                                        <td colSpan={6} className="text-right font-bold text-[13px]">
                                             {tSales('returns.netCredit')}
                                         </td>
                                         <td></td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>
+                                        <td className="text-right tabular-nums font-bold text-[13px]">
                                             {formatAmount(netCredit, cc)}
                                         </td>
                                     </tr>
                                     
                                     <tr className="lg:hidden">
-                                        <td colSpan={6} className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tSales('returns.totalCredit')}</td>
+                                        <td colSpan={6} className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
                                         <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, cc)}</td>
                                     </tr>
                                     <tr className="lg:hidden">
@@ -556,9 +538,9 @@ export default function ReturnsSection({
 
             {/* Existing returns list */}
             {returnsLoading ? (
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tSales('loadingReturns')}</p>
+                <p className="text-sm text-[var(--text-muted)]">{tSales('loadingReturns')}</p>
             ) : returns.length === 0 && !showCreateReturn ? (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                     {tSales('noReturns')}
                 </div>
             ) : (

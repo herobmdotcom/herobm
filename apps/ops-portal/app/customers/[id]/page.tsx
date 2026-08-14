@@ -404,7 +404,7 @@ export default function AccountDetailPage({
               <Button
                 variant="secondary"
                 size="sm"
-                style={{ color: "#ef4444", borderColor: "#ef4444" }}
+                className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-600"
                 onClick={archiveAccount}
                 disabled={saving}
               >
@@ -415,14 +415,7 @@ export default function AccountDetailPage({
         }
       >
         {customer.stateCode === CUSTOMER_STATE.ARCHIVED && (
-          <div
-            className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
-            style={{
-              background: "rgba(245, 158, 11, 0.1)",
-              border: "1px solid rgba(245, 158, 11, 0.3)",
-              color: "#b45309",
-            }}
-          >
+          <div className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700">
             <div>
               <strong className="font-semibold text-amber-800">
                 {t("salesOrders.archivedBannerTitle")}

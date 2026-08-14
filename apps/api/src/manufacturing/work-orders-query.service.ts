@@ -12,17 +12,8 @@ import {
   zones,
   warehouseEvents,
 } from '@herobm/db-schema';
-import {
-  eq,
-  desc,
-  gte,
-  and,
-  aliasedTable,
-  sql,
-  inArray,
-  gt,
-} from 'drizzle-orm';
-import { PICKABLE_BIN_TYPES } from '../inventory/inventory-math.utils';
+import { eq, desc, gte, and, aliasedTable, sql, gt } from 'drizzle-orm';
+import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import { WORK_ORDER_PICK_STATE } from '@herobm/shared';
 import { EntityType } from '../common/event-types';
 
@@ -38,17 +29,19 @@ export interface WorkOrderRow {
   completedQuantity: string;
   locationId: string;
   locationName: string;
+  stateCode: string;
+  putawayStatus?: string | null;
+  assemblyCostPerUnit?: string | null;
+  additionalCost?: string | null;
+  totalCost?: string | null;
+  createdBy?: string | null;
+  createdOn: string | null;
+  modifiedOn?: string | null;
+  baseUom?: string | null;
   wipBinId?: string | null;
   wipBinName?: string | null;
   outputBinId?: string | null;
   outputBinName?: string | null;
-  stateCode: string;
-  putawayStatus?: string | null;
-  totalCost?: string | null;
-  createdBy?: string | null;
-  createdOn?: string | Date | null;
-  modifiedOn?: string | Date | null;
-  baseUom?: string | null;
 }
 
 @Injectable()
@@ -57,7 +50,7 @@ export class WorkOrdersQueryService {
 
   async findAll(days?: number, tx?: DrizzleDB): Promise<WorkOrderRow[]> {
     const db = tx || this.db;
-    const query = db
+    let query = db
       .select({
         workOrderId: workOrders.workOrderId,
         orderNumber: workOrders.orderNumber,
@@ -68,28 +61,32 @@ export class WorkOrdersQueryService {
         completedQuantity: workOrders.completedQuantity,
         locationId: workOrders.locationId,
         locationName: locations.name,
+        stateCode: workOrders.stateCode,
+        putawayStatus: workOrders.putawayStatus,
+        assemblyCostPerUnit: workOrders.assemblyCostPerUnit,
+        additionalCost: workOrders.additionalCost,
+        totalCost: workOrders.totalCost,
+        createdBy: workOrders.createdBy,
+        createdOn: sql<string>`TO_CHAR(${workOrders.createdOn}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+        modifiedOn: sql<string>`TO_CHAR(${workOrders.modifiedOn}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+        baseUom: products.baseUom,
         wipBinId: workOrders.wipBinId,
         wipBinName: bins.binNumber,
         outputBinId: workOrders.outputBinId,
         outputBinName: outputBins.binNumber,
-        stateCode: workOrders.stateCode,
-        putawayStatus: workOrders.putawayStatus,
-        totalCost: workOrders.totalCost,
-        createdBy: workOrders.createdBy,
-        createdOn: workOrders.createdOn,
-        modifiedOn: workOrders.modifiedOn,
       })
       .from(workOrders)
       .innerJoin(products, eq(workOrders.productId, products.productId))
       .innerJoin(locations, eq(workOrders.locationId, locations.locationId))
       .leftJoin(bins, eq(workOrders.wipBinId, bins.binId))
       .leftJoin(outputBins, eq(workOrders.outputBinId, outputBins.binId))
-      .orderBy(desc(workOrders.createdOn));
+      .orderBy(desc(workOrders.createdOn))
+      .$dynamic();
 
-    if (days && !isNaN(days)) {
-      const dateLimit = new Date();
-      dateLimit.setDate(dateLimit.getDate() - days);
-      return await query.where(gte(workOrders.createdOn, dateLimit));
+    if (days !== undefined && days > 0) {
+      const sinceDate = new Date();
+      sinceDate.setDate(sinceDate.getDate() - days);
+      query = query.where(gte(workOrders.createdOn, sinceDate));
     }
 
     return await query;
@@ -114,6 +111,8 @@ export class WorkOrdersQueryService {
         outputBinName: outputBins.binNumber,
         stateCode: workOrders.stateCode,
         putawayStatus: workOrders.putawayStatus,
+        assemblyCostPerUnit: workOrders.assemblyCostPerUnit,
+        additionalCost: workOrders.additionalCost,
         totalCost: workOrders.totalCost,
         createdBy: workOrders.createdBy,
         createdOn: workOrders.createdOn,
@@ -186,13 +185,14 @@ export class WorkOrdersQueryService {
           wipStockOnHand = wipStock?.onHand || 0;
         }
 
-        const currentQtyNum = Math.max(pickedSum?.sum || 0, wipStockOnHand);
+        const pickedQuantity = pickedSum?.sum || 0;
+        const stagedQuantity = (pickedQuantity + wipStockOnHand).toString();
 
         return {
           ...comp,
-          currentQuantity: currentQtyNum.toString(),
-          stagedQuantity: (pickedSum?.sum || 0).toString(),
+          stagedQuantity,
           wipBinQuantity: wipStockOnHand.toString(),
+          currentQuantity: comp.expectedQuantity,
         };
       }),
     );
@@ -224,8 +224,6 @@ export class WorkOrdersQueryService {
   async getPickingSummary(id: string, tx?: DrizzleDB) {
     const db = tx || this.db;
     const wo = await this.findOne(id, db);
-
-    const pickableBinCondition = inArray(bins.binType, [...PICKABLE_BIN_TYPES]);
 
     const lines = await Promise.all(
       wo.components.map(async (comp, idx) => {
@@ -262,8 +260,7 @@ export class WorkOrdersQueryService {
             and(
               eq(zones.locationId, wo.locationId),
               eq(binContents.productId, comp.productId),
-              eq(bins.isUnavailable, false),
-              pickableBinCondition,
+              isPickableBinCondition(bins),
               gt(binContents.actualQuantity, '0'),
             ),
           )

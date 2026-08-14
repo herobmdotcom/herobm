@@ -91,7 +91,7 @@ export default function DeliveryCard({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <div className="flex flex-col gap-4">
                     <div className="mt-2">
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                             Delivery Address
                         </label>
                         <select
@@ -105,7 +105,9 @@ export default function DeliveryCard({
                                 } else {
                                     const addr = customerDeliveryAddresses.find(a => a.deliveryAddressId === val);
                                     if (addr) {
-                                        setEditDeliveryCompanyName(addr.companyName || '');
+                                        if (addr.companyName && addr.companyName.trim()) {
+                                            setEditDeliveryCompanyName(addr.companyName.trim());
+                                        }
                                         setEditDeliveryName(addr.recipientName || '');
                                         setEditDeliveryPhone(addr.recipientPhone || '');
                                         setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -115,7 +117,7 @@ export default function DeliveryCard({
                                         setEditDeliveryPostalCode(addr.postalCode || '');
                                         setEditDeliveryCountry(addr.country || '');
                                         saveHeader({
-                                            deliveryCompanyName: addr.companyName || undefined,
+                                            deliveryCompanyName: (addr.companyName && addr.companyName.trim()) ? addr.companyName.trim() : (editDeliveryCompanyName || undefined),
                                             deliveryName: addr.recipientName || undefined,
                                             deliveryPhone: addr.recipientPhone || undefined,
                                             deliveryAddressLine1: addr.addressLine1 || undefined,
@@ -166,14 +168,13 @@ export default function DeliveryCard({
                     </div>
 
                     <div className="mt-2">
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                             Shipping Instructions
                         </label>
                         <textarea
                             id="shipping-notes"
-                            className="input w-full"
+                            className="input w-full min-h-[80px] pt-3 resize-y"
                             disabled={!isOrderDetailsEditable}
-                            style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
                             placeholder="Add shipping instructions..."
                             value={editShippingNotes}
                             onChange={(e) => setEditShippingNotes(e.target.value)}
@@ -183,7 +184,7 @@ export default function DeliveryCard({
                 </div>
 
                 <div className="mt-2">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tSales('labels.fulfillmentLocation')}
                     </label>
                     <select

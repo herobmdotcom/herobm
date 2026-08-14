@@ -15,6 +15,9 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
+import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
+import { bins, zones } from '@herobm/db-schema';
+import { eq, and } from 'drizzle-orm';
 
 import request from 'supertest';
 
@@ -26,6 +29,7 @@ describe('API E2E — Purchase Order Returns', () => {
   let validVendorId: string;
   let appProductId: string;
   let validLocationId: string;
+  let sourceBinId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -93,6 +97,19 @@ describe('API E2E — Purchase Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body[0].locationId;
+
+    const db = moduleFixture.get<DrizzleDB>(DRIZZLE);
+    const [receivingBin] = await db
+      .select({ binId: bins.binId })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(zones.locationId, validLocationId),
+          eq(bins.binNumber, 'RECEIVING'),
+        ),
+      );
+    sourceBinId = receivingBin?.binId;
   }, 120_000);
 
   afterAll(async () => {
@@ -198,6 +215,7 @@ describe('API E2E — Purchase Order Returns', () => {
               purchaseOrderLineId: lineIds[0],
               quantityReturned: '3',
               returnFee: '15.00',
+              sourceBinId,
             },
           ],
         });
@@ -232,13 +250,15 @@ describe('API E2E — Purchase Order Returns', () => {
 
     it('POST /returns/:id/action — actions the return (deducts inventory)', async () => {
       // Stage the return first
-      await request(app.getHttpServer())
+      const stageRes = await request(app.getHttpServer())
         .post(
           `/api/purchase-orders/${purchaseOrderId}/returns/${returnId}/stage`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({})
-        .expect(200);
+        .send({});
+      if (stageRes.status !== 200)
+        console.error('STAGE ERROR:', stageRes.status, stageRes.body);
+      expect(stageRes.status).toBe(200);
 
       // Ship the return
       const res = await request(app.getHttpServer())
@@ -251,6 +271,67 @@ describe('API E2E — Purchase Order Returns', () => {
 
       expect(res.body.returnId).toBe(returnId);
       expect(res.body.stateCode).toBe(PURCHASE_RETURN_STATE.SHIPPED); // Returns flow immediately marks it as processed
+    });
+
+    it('GET /purchase-returns?requireDebitNote=true and creates/posts debit note', async () => {
+      // 1. Verify shipped return is present in pending debit notes queue
+      const pendingRes = await request(app.getHttpServer())
+        .get(`/api/purchase-returns?stateCode=shipped&requireDebitNote=true`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const foundPending = pendingRes.body.find(
+        (r: any) => r.returnId === returnId,
+      );
+      expect(foundPending).toBeDefined();
+
+      // 2. Create debit note against the shipped return
+      const dnCreateRes = await request(app.getHttpServer())
+        .post('/api/purchase-debit-notes')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          returnId,
+          supplierReferenceNumber: 'SUP-CR-E2E',
+          lines: [
+            {
+              purchaseOrderLineId: lineIds[0],
+              quantityInvoiced: '3',
+              pricePerUnit: '10.00',
+              amount: '30.00',
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(dnCreateRes.body).toHaveProperty('debitNoteId');
+      const debitNoteId = dnCreateRes.body.debitNoteId;
+
+      // 3. Retrieve debit note by ID
+      const dnGetRes = await request(app.getHttpServer())
+        .get(`/api/purchase-debit-notes/${debitNoteId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(dnGetRes.body.debitNoteId).toBe(debitNoteId);
+      expect(dnGetRes.body.supplierReferenceNumber).toBe('SUP-CR-E2E');
+
+      // 4. Post debit note
+      await request(app.getHttpServer())
+        .post(`/api/purchase-debit-notes/${debitNoteId}/post`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({})
+        .expect(200);
+
+      // 5. Verify the return is no longer in pending debit notes queue
+      const afterRes = await request(app.getHttpServer())
+        .get(`/api/purchase-returns?stateCode=shipped&requireDebitNote=true`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const stillPending = afterRes.body.find(
+        (r: any) => r.returnId === returnId,
+      );
+      expect(stillPending).toBeUndefined();
     });
   });
 

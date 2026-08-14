@@ -177,7 +177,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
             <ProductSearchInput
               onSelect={handleAddProduct}
               placeholder="Search product..."
-              style={{ width: 240 }}
+              className="w-[240px]"
               fulfillmentLocationId={sourceLocationId}
             />
           </div>

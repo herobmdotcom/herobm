@@ -412,7 +412,7 @@ export default function IntegrationsSettingsPage() {
                           chevron_right
                         </span>
                         <div>
-                          <div className="font-bold text-sm text-[#041627] capitalize" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          <div className="font-bold text-sm text-[#041627] capitalize font-['Manrope',sans-serif]">
                             {p.name.toUpperCase()}
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -432,7 +432,7 @@ export default function IntegrationsSettingsPage() {
                         
                         {/* Configuration Section */}
                         <div>
-                          <h4 className="text-sm font-bold text-[#041627] mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          <h4 className="text-sm font-bold text-[#041627] mb-3 font-['Manrope',sans-serif]">
                             {tInt('configuration')}
                           </h4>
                           {loadingConfig ? (
@@ -472,17 +472,16 @@ export default function IntegrationsSettingsPage() {
 
                         {/* Test Connection Section */}
                         <div>
-                          <h4 className="text-sm font-bold text-[#041627] mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          <h4 className="text-sm font-bold text-[#041627] mb-3 font-['Manrope',sans-serif]">
                             {tInt('testConnection')}
                           </h4>
                           <div className="bg-white p-5 border border-[var(--border)] rounded-lg flex flex-col gap-4">
                             <div>
-                              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                 {tInt('queryOrPayload')}
                               </label>
                               <textarea
-                                className="input w-full font-mono text-sm"
-                                style={{ minHeight: 100, resize: 'vertical' }}
+                                className="input w-full font-mono text-sm min-h-[100px] resize-y"
                                 placeholder='e.g. "ABN_NUMBER" or { "query": "..." }'
                                 value={testPayload}
                                 onChange={(e) => setTestPayload(e.target.value)}

@@ -200,7 +200,7 @@ export default function NewSupplierPage() {
           <div className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('columns.vendorNumber')} *
                 </label>
                 <input
@@ -214,7 +214,7 @@ export default function NewSupplierPage() {
               </div>
               {!selectedActor && (
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('columns.name')} *
                   </label>
                   <input
@@ -231,7 +231,7 @@ export default function NewSupplierPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(!selectedActor || !(selectedActor as unknown as { headquartersCountry?: string }).headquartersCountry) && (
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tCommon('columns.country')} *
                   </label>
                   <select
@@ -255,7 +255,7 @@ export default function NewSupplierPage() {
                 </div>
               )}
               <div className={selectedActor ? "md:col-span-2" : ""}>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tCommon('columns.currency')} *
                 </label>
                 <select

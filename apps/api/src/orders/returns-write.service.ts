@@ -1042,17 +1042,26 @@ export class ReturnsWriteService {
       .where(eq(salesEvents.entityId, returnId))
       .orderBy(desc(salesEvents.createdOn));
 
-    const [creditNote] = await this.db
-      .select({ creditNoteNumber: salesCreditNotes.creditNoteNumber })
+    const creditNotes = await this.db
+      .select({
+        creditNoteId: salesCreditNotes.creditNoteId,
+        creditNoteNumber: salesCreditNotes.creditNoteNumber,
+        stateCode: salesCreditNotes.stateCode,
+        createdOn: salesCreditNotes.createdOn,
+        totalAmount: salesCreditNotes.totalAmount,
+        taxAmount: salesCreditNotes.taxAmount,
+        feeAmount: salesCreditNotes.feeAmount,
+        outstandingAmount: salesCreditNotes.outstandingAmount,
+      })
       .from(salesCreditNotes)
-      .where(eq(salesCreditNotes.returnId, returnId))
-      .limit(1);
+      .where(eq(salesCreditNotes.returnId, returnId));
 
     return {
       ...ret,
       lines,
       events,
-      creditNoteNumber: creditNote?.creditNoteNumber ?? null,
+      creditNotes,
+      creditNoteNumber: creditNotes[0]?.creditNoteNumber ?? null,
     };
   }
 

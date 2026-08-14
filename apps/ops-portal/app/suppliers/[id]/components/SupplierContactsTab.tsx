@@ -10,8 +10,7 @@ import { ContactCard } from "@/components/shared/ContactCard";
 import { ContactSlideOver } from "@/components/shared/ContactSlideOver";
 
 interface SupplierContactsTabProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supplier DTO lacks strict contacts field in SDK types
-  supplier: any;
+  supplier: api.SupplierResponseDto & { contacts?: api.ContactResponseDto[] };
   loadSupplier: () => void;
 }
 
@@ -82,7 +81,7 @@ export function SupplierContactsTab({ supplier, loadSupplier }: SupplierContacts
       <ContactSlideOver
         isOpen={isContactSlideOverOpen}
         onClose={() => setIsContactSlideOverOpen(false)}
-        entityId={supplier.vendorId}
+        entityId={supplier.supplierId}
         entityType="supplier"
         contactId={editingContact?.contactId}
         existingData={editingContact || undefined}

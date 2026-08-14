@@ -252,8 +252,8 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                   <th>{t('columns.receiptNo')}</th>
                   <th>{t('columns.product')}</th>
                   <th>{t('columns.supplier')}</th>
-                  <th style={{ textAlign: 'right' }}>{t('columns.receivedQty')}</th>
-                  <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status')}</th>
+                  <th className="text-right">{t('columns.receivedQty')}</th>
+                  <th className="w-[90px] text-center">{t('columns.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,27 +425,26 @@ function POCandidatesList({
       {groups.map((group) => {
         const isExpanded = state.expandedPOs.has(group.purchaseOrderId);
         return (
-          <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
+          <div key={group.purchaseOrderId} className="rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
             {/* Card Header */}
             <Button variant="ghost"
               onClick={() => toggleExpand(grLine.goodsReceivedLineId, group.purchaseOrderId)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-              className="flex justify-between"
+              className="w-full flex items-center justify-between py-2.5 px-4 bg-transparent border-0 cursor-pointer text-left"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="flex items-center gap-2">
                 { }
-                <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
+                <span className={`material-symbols-outlined text-[18px] transition-transform duration-150 text-[var(--text-muted)] ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                   chevron_right
                 </span>
-                <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: 14 }}>
+                <span className="font-bold text-[var(--accent)] text-sm">
                   {group.orderNumber}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="flex items-center gap-3">
                 {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
                   <span className="badge badge-sm badge-warning">{t('allocation.locationMismatch')}</span>
                 )}
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                <div className="text-[13px] text-[var(--text-muted)]">
                   {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
                 </div>
               </div>
@@ -453,7 +452,7 @@ function POCandidatesList({
 
             {/* Expanded Lines */}
             {isExpanded && (
-              <div style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="border-t border-[var(--border)]">
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="table-lines w-full">
                     <thead>
@@ -461,7 +460,7 @@ function POCandidatesList({
                         <th>{t('columns.ordered')}</th>
                         <th>{t('columns.received')}</th>
                         <th>{t('columns.remaining')}</th>
-                        <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate')}</th>
+                        <th className="w-[160px] text-center">{t('columns.allocate')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -517,8 +516,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: PendingPOLine
             step="0.01"
             min="0.01"
             max={originalQuantity}
-            className="input text-right"
-            style={{ width: '70px', padding: '2px 4px', height: '26px', fontSize: '12px' }}
+            className="input text-right w-[70px] py-0.5 px-1 h-[26px] text-xs"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
@@ -530,7 +528,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: PendingPOLine
             }}
             disabled={isAllocating || !qty}
             variant="primary" size="sm"
-            style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
+            className="py-0.5 px-2 h-[26px] text-[11px]"
           >
             {isAllocating ? t('allocation.allocating') : t('allocation.match')}
           </Button>
@@ -567,8 +565,7 @@ function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: Pendin
             step="0.01"
             min="0.01"
             max={originalQuantity}
-            className="input text-right"
-            style={{ width: '80px', padding: '6px 8px', height: '32px', fontSize: '13px' }}
+            className="input text-right w-[80px] py-1.5 px-2 h-[32px] text-[13px]"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
@@ -580,7 +577,7 @@ function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: Pendin
             }}
             disabled={isAllocating || !qty}
             variant="primary"
-            style={{ padding: '6px 16px', height: '32px', fontSize: '13px' }}
+            className="py-1.5 px-4 h-[32px] text-[13px]"
           >
             {isAllocating ? t('allocation.allocating') : t('allocation.match')}
           </Button>

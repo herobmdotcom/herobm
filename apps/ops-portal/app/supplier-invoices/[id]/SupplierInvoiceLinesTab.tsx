@@ -79,7 +79,7 @@ export default function SupplierInvoiceLinesTab({
       return (
         <div className="flex items-center justify-between gap-2 h-full w-full">
           <div className="flex flex-col gap-1">
-            <Link href={`/purchase-orders/${line.purchaseOrderId}`} className="text-[var(--brand-blue)] hover:underline" style={{ fontWeight: 500, fontSize: 12 }}>
+            <Link href={`/purchase-orders/${line.purchaseOrderId}`} className="text-[var(--brand-blue)] hover:underline font-medium text-xs">
               {t('poNumberLabel', { number: line.purchaseOrderNumber || '' })}
             </Link>
           </div>
@@ -87,7 +87,7 @@ export default function SupplierInvoiceLinesTab({
             <Button
               variant="secondary" size="sm"
               onClick={() => handleUnresolve(line.lineId)}
-              style={{ padding: '0 6px', height: 22, fontSize: 11 }}
+              className="px-1.5 h-[22px] text-[11px]"
               title="Change Allocation"
             >
               {t('buttons.change')}
@@ -101,8 +101,7 @@ export default function SupplierInvoiceLinesTab({
       <div className="flex items-center justify-between gap-2 w-full h-full">
         {isEditable ? (
           <select
-            className="input"
-            style={{ width: '100%', fontSize: 12, padding: '2px 6px' }}
+            className="input w-full text-xs py-0.5 px-1.5"
             value={line.glAccountId || ''}
             onChange={(e) => updateLine(line.lineId, 'glAccountId', e.target.value)}
           >
@@ -126,10 +125,10 @@ export default function SupplierInvoiceLinesTab({
 
   return (
     <>
-      <div id="lines-section" style={{ display: 'flex', gap: 0, minHeight: 0 }}>
-        <div className="card" style={{ flex: 1, minWidth: 0 }}>
+      <div id="lines-section" className="flex gap-0 min-h-0">
+        <div className="card flex-1 min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading" style={{ marginBottom: 0 }}>
+            <h3 className="section-heading mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
               <span className="material-symbols-outlined">list</span>
               {t('lineItems')}
@@ -141,7 +140,7 @@ export default function SupplierInvoiceLinesTab({
                   onClick={() => setIsMatchingMode(!isMatchingMode)}
                   disabled={saving}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }}>
+                  <span className="material-symbols-outlined text-[16px] align-middle mr-1">
                     {matchIcon}
                   </span>
                   {isMatchingMode ? t('matching.panelTitle') : t('matching.panelTitle')}
@@ -168,18 +167,18 @@ export default function SupplierInvoiceLinesTab({
             )}
           </div>
           {/* Desktop Table */}
-          <table className="table-lines hidden lg:table" style={isMatchingMode ? { fontSize: 11 } : undefined}>
+          <table className={`table-lines hidden lg:table ${isMatchingMode ? 'text-[11px]' : ''}`}>
             <thead>
               <tr>
-                <th style={{ width: 40 }}>#</th>
-                <th style={{ width: 150 }}>{t('columns.product')}</th>
+                <th className="w-[40px]">#</th>
+                <th className="w-[150px]">{t('columns.product')}</th>
                 <th>{t('columns.description')}</th>
-                {!isMatchingMode && <th style={{ width: 280 }}>{t('columns.allocation')}</th>}
-                <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qtyToBill')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.unitPrice')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.amount')}</th>
-                {!isMatchingMode && isEditable && <th style={{ width: 50 }}></th>}
-                {isMatchingMode && <th style={{ width: 70, textAlign: 'center' }}>{t('columns.status')}</th>}
+                {!isMatchingMode && <th className="w-[280px]">{t('columns.allocation')}</th>}
+                <th className="w-[90px] text-right">{t('columns.qtyToBill')}</th>
+                <th className="w-[110px] text-right">{t('columns.unitPrice')}</th>
+                <th className="w-[110px] text-right">{t('columns.amount')}</th>
+                {!isMatchingMode && isEditable && <th className="w-[50px]"></th>}
+                {isMatchingMode && <th className="w-[70px] text-center">{t('columns.status')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -190,34 +189,28 @@ export default function SupplierInvoiceLinesTab({
                   <tr
                     key={line.lineId}
                     onClick={isMatchingMode && isUnmatched && isEditable ? () => setSelectedInvoiceLineId(line.lineId) : undefined}
-                    style={{
-                      cursor: isMatchingMode && isUnmatched && isEditable ? 'pointer' : undefined,
-                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
-                      background: isSelected ? 'rgba(0, 107, 92, 0.04)' : undefined,
-                      transition: 'background 0.15s, border-color 0.15s',
-                    }}
+                    className={`transition-colors duration-150 ${isMatchingMode && isUnmatched && isEditable ? 'cursor-pointer' : ''} ${isSelected ? 'border-l-[3px] border-l-[var(--accent)] bg-[#006b5c]/[0.04]' : 'border-l-[3px] border-l-transparent'}`}
                   >
-                    <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
+                    <td className="text-[var(--text-muted)]">{idx + 1}</td>
                     <td>
                       {canEditLines && (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') ? (
                         <ProductSearchInput
                           onSelect={(p) => handleProductSelect(line.lineId, p)}
                           placeholder="Search product…"
-                          style={{ minWidth: 120 }}
+                          className="min-w-[120px]"
                         />
                       ) : line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <div className="font-semibold" style={{ color: 'var(--accent)' }}>
+                        <div className="font-semibold text-[var(--accent)]">
                           {line.productNumber || line.productId.substring(0, 8)}
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        <span className="text-[var(--text-muted)]">—</span>
                       )}
                     </td>
                     <td>
                       {canEditLines ? (
                         <input
-                          className="input"
-                          style={{ width: '100%', fontSize: 13 }}
+                          className="input w-full text-[13px]"
                           defaultValue={line.description || ''}
                           key={`desc-${line.lineId}-${line.description}`}
                           onBlur={(e) => {
@@ -236,13 +229,12 @@ export default function SupplierInvoiceLinesTab({
                         <InvoiceAllocationCell line={line} />
                       </td>
                     )}
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right tabular-nums">
                       {canEditLines ? (
                         <input
-                          className="input"
+                          className="input w-full text-right"
                           type="number"
                           step="any"
-                          style={{ width: '100%', textAlign: 'right' }}
                           defaultValue={line.quantityInvoiced}
                           key={`qty-${line.lineId}-${line.quantityInvoiced}`}
                           onBlur={(e) => {
@@ -255,13 +247,12 @@ export default function SupplierInvoiceLinesTab({
                         parseFloat(line.quantityInvoiced)
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right tabular-nums">
                       {canEditLines ? (
                         <input
-                          className="input"
+                          className="input w-full text-right"
                           type="number"
                           step="0.01"
-                          style={{ width: '100%', textAlign: 'right' }}
                           defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
                           key={`price-${line.lineId}-${line.pricePerUnit}`}
                           onBlur={(e) => {
@@ -277,11 +268,11 @@ export default function SupplierInvoiceLinesTab({
                         formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right font-semibold tabular-nums">
                       {formatAmount(parseFloat(line.amount), invoice.currencyCode)}
                     </td>
                     {canEditLines && (
-                      <td style={{ textAlign: 'center' }}>
+                      <td className="text-center">
                         <Button
                           variant="ghost"
                           className="text-gray-400 hover:text-red-500"
@@ -293,11 +284,11 @@ export default function SupplierInvoiceLinesTab({
                       </td>
                     )}
                     {isMatchingMode && (
-                      <td style={{ textAlign: 'center' }}>
+                      <td className="text-center">
                         {line.matchStatus === MATCH_STATUS.MATCHED ? (
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--badge-shipped)' }}>{'✓'}</span>
+                          <span className="text-[10px] font-semibold text-[var(--badge-shipped)]">{'✓'}</span>
                         ) : (
-                          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">—</span>
                         )}
                       </td>
                     )}
@@ -306,32 +297,31 @@ export default function SupplierInvoiceLinesTab({
               })}
               {(!invoice.lines || invoice.lines.length === 0) && (
                 <tr>
-                  <td colSpan={isEditable ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                  <td colSpan={isEditable ? 8 : 7} className="text-center text-[var(--text-muted)] py-5">
                     {t('noItems')}
                   </td>
                 </tr>
               )}
-              <tr style={{ borderTop: '2px solid var(--border)' }}>
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+              <tr className="border-t-2 border-[var(--border)]">
+                <td colSpan={6} className="text-right font-semibold text-[var(--text-muted)]">
                   {tCommon('subtotal')}
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                <td className="text-right font-semibold tabular-nums">
                   {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
                 </td>
                 {isEditable && <td></td>}
               </tr>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                <td colSpan={6} className="text-right font-semibold text-[var(--text-muted)]">
                   {tCommon('tax')}
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                <td className="text-right font-semibold tabular-nums">
                   {isEditable ? (
                     <input
-                      className="input"
+                      className="input w-[100px] text-right py-0.5 px-2 h-[26px]"
                       type="number"
                       min="0"
                       step="0.01"
-                      style={{ width: 100, textAlign: 'right', padding: '2px 8px', height: 26 }}
                       value={editTaxAmount}
                       onFocus={(e) => {
                         if (parseFloat(e.target.value) === 0) {
@@ -352,11 +342,11 @@ export default function SupplierInvoiceLinesTab({
                 </td>
                 {isEditable && <td></td>}
               </tr>
-              <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+              <tr className="bg-blue-500/[0.02]">
+                <td colSpan={6} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                   {tCommon('total')}
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                <td className="text-right font-extrabold text-[14px] text-[var(--accent)] tabular-nums">
                   {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
                 </td>
                 {isEditable && <td></td>}
@@ -373,12 +363,7 @@ export default function SupplierInvoiceLinesTab({
                 <div
                   key={`mob-wrap-${line.lineId}`}
                   onClick={isMatchingMode && isUnmatched && isEditable ? () => setSelectedInvoiceLineId(line.lineId) : undefined}
-                  style={{
-                    cursor: isMatchingMode && isUnmatched && isEditable ? 'pointer' : undefined,
-                    borderLeft: isSelected ? '3px solid var(--accent)' : undefined,
-                    background: isSelected ? 'rgba(0, 107, 92, 0.04)' : undefined,
-                    transition: 'background 0.15s, border-color 0.15s',
-                  }}
+                  className={`transition-colors duration-150 ${isMatchingMode && isUnmatched && isEditable ? 'cursor-pointer' : ''} ${isSelected ? 'border-l-[3px] border-l-[var(--accent)] bg-[#006b5c]/[0.04]' : ''}`}
                 >
                   <MobileLineItemCard
                     key={`mob-${line.lineId}`}
@@ -391,7 +376,7 @@ export default function SupplierInvoiceLinesTab({
                             placeholder="Search product…"
                           />
                         ) : line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                          <span className="font-bold" style={{ color: 'var(--accent)' }}>
+                          <span className="font-bold text-[var(--accent)]">
                             {line.productNumber || line.productId.substring(0, 8)}
                           </span>
                         ) : (
@@ -425,7 +410,7 @@ export default function SupplierInvoiceLinesTab({
                       ...(isMatchingMode ? [{
                         label: 'Status',
                         value: line.matchStatus === MATCH_STATUS.MATCHED ? (
-                          <span style={{ fontWeight: 600, color: 'var(--badge-shipped)' }}>{t('matching.matched')}</span>
+                          <span className="font-semibold text-[var(--badge-shipped)]">{t('matching.matched')}</span>
                         ) : (
                           <span className="text-[var(--text-muted)]">{t('matching.unmatched')}</span>
                         )
@@ -434,10 +419,9 @@ export default function SupplierInvoiceLinesTab({
                         label: t('columns.qtyToBill'),
                         value: canEditLines ? (
                           <input
-                            className="input"
+                            className="input w-[80px] text-right"
                             type="number"
                             step="any"
-                            style={{ width: '80px', textAlign: 'right' }}
                             defaultValue={line.quantityInvoiced}
                             key={`qty-mob-${line.lineId}-${line.quantityInvoiced}`}
                             onBlur={(e) => {
@@ -454,10 +438,9 @@ export default function SupplierInvoiceLinesTab({
                         label: t('columns.unitPrice'),
                         value: canEditLines ? (
                           <input
-                            className="input"
+                            className="input w-[90px] text-right"
                             type="number"
                             step="0.01"
-                            style={{ width: '90px', textAlign: 'right' }}
                             defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
                             key={`price-mob-${line.lineId}-${line.pricePerUnit}`}
                             onBlur={(e) => {
@@ -513,11 +496,10 @@ export default function SupplierInvoiceLinesTab({
                     <td className="py-1 text-sm font-semibold text-right tabular-nums">
                       {isEditable ? (
                         <input
-                          className="input"
+                          className="input w-[100px] text-right py-0.5 px-2 h-[26px]"
                           type="number"
                           min="0"
                           step="0.01"
-                          style={{ width: 100, textAlign: 'right', padding: '2px 8px', height: 26 }}
                           value={editTaxAmount}
                           onFocus={(e) => {
                             if (parseFloat(e.target.value) === 0) {
@@ -525,7 +507,7 @@ export default function SupplierInvoiceLinesTab({
                             }
                           }}
                           onChange={(e) => setEditTaxAmount(e.target.value)}
-                          onBlur={() => {
+                          onBlur={(e) => {
                             if (editTaxAmount === '') {
                               setEditTaxAmount('0.00');
                             }

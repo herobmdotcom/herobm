@@ -107,7 +107,7 @@ export default function EventQueueDashboard() {
     return (
       <>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>{t('loading')}</p>
+          <p className="text-[var(--text-muted)]">{t('loading')}</p>
         </div>
       </>
     );
@@ -150,12 +150,7 @@ export default function EventQueueDashboard() {
 
         {error && (
           <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
+            className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
           >
             {error}
           </div>
@@ -166,56 +161,42 @@ export default function EventQueueDashboard() {
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div
-                style={{
-                  padding: '20px',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                  background: data.summary.pending > 0 ? 'rgba(245, 158, 11, 0.08)' : undefined,
-                  border: data.summary.pending > 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border)',
-                }}
+                className={`p-5 rounded-xl text-center border ${data.summary.pending > 0 ? 'bg-amber-500/[0.08] border-amber-500/30' : 'border-[var(--border)]'}`}
               >
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div className="text-xs font-semibold mb-2 text-[var(--text-muted)] uppercase tracking-wider">
                   {t('summary.pending')}
                 </div>
                 <div
-                  className="text-3xl font-bold"
-                  style={{ color: data.summary.pending > 0 ? '#f59e0b' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                  className={`text-3xl font-bold tabular-nums ${data.summary.pending > 0 ? 'text-amber-500' : 'text-[var(--text-primary)]'}`}
                 >
                   {data.summary.pending}
                 </div>
               </div>
-              <div style={{ padding: '20px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div className="p-5 rounded-xl text-center border border-[var(--border)]">
+                <div className="text-xs font-semibold mb-2 text-[var(--text-muted)] uppercase tracking-wider">
                   {t('summary.processed')}
                 </div>
-                <div className="text-3xl font-bold" style={{ color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
+                <div className="text-3xl font-bold text-green-400 tabular-nums">
                   {data.summary.processed}
                 </div>
               </div>
               <div
-                style={{
-                  padding: '20px',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                  background: data.summary.failed > 0 ? 'rgba(239, 68, 68, 0.08)' : undefined,
-                  border: data.summary.failed > 0 ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
-                }}
+                className={`p-5 rounded-xl text-center border ${data.summary.failed > 0 ? 'bg-red-500/[0.08] border-red-500/30' : 'border-[var(--border)]'}`}
               >
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div className="text-xs font-semibold mb-2 text-[var(--text-muted)] uppercase tracking-wider">
                   {t('summary.failed')}
                 </div>
                 <div
-                  className="text-3xl font-bold"
-                  style={{ color: data.summary.failed > 0 ? '#ef4444' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                  className={`text-3xl font-bold tabular-nums ${data.summary.failed > 0 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}
                 >
                   {data.summary.failed}
                 </div>
               </div>
-              <div style={{ padding: '20px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div className="p-5 rounded-xl text-center border border-[var(--border)]">
+                <div className="text-xs font-semibold mb-2 text-[var(--text-muted)] uppercase tracking-wider">
                   {t('summary.total')}
                 </div>
-                <div className="text-3xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <div className="text-3xl font-bold tabular-nums">
                   {data.summary.pending + data.summary.processed + data.summary.failed}
                 </div>
               </div>
@@ -223,10 +204,9 @@ export default function EventQueueDashboard() {
 
             {/* By-type breakdown */}
             {data.byType.length > 0 && (
-              <div className="mb-6" style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+              <div className="mb-6 border border-[var(--border)] rounded-xl p-5">
                 <h3
-                  className="text-sm font-semibold mb-4"
-                  style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  className="text-sm font-semibold mb-4 text-[var(--text-muted)] uppercase tracking-wider"
                 >
                   {t('eventTypes')}
                 </h3>
@@ -235,34 +215,34 @@ export default function EventQueueDashboard() {
                     {
                       header: t('columns.eventType'),
                       render: (row) => (
-                        <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, fontFamily: 'monospace', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)' }}>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold font-mono bg-blue-500/10 text-[var(--accent)]">
                           {row.eventType}
                         </span>
                       )
                     },
-                    { header: t('columns.total'), align: 'right', width: 80, render: (row) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.total}</span> },
-                    { header: t('columns.pending'), align: 'right', width: 80, render: (row) => <span style={{ fontVariantNumeric: 'tabular-nums', color: row.pending > 0 ? '#f59e0b' : undefined }}>{row.pending}</span> },
-                    { header: t('columns.failed'), align: 'right', width: 80, render: (row) => <span style={{ fontVariantNumeric: 'tabular-nums', color: row.failed > 0 ? '#ef4444' : undefined }}>{row.failed}</span> },
-                    { header: t('columns.processed'), align: 'right', width: 80, render: (row) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.processed}</span> },
+                    { header: t('columns.total'), align: 'right', width: 80, render: (row) => <span className="tabular-nums">{row.total}</span> },
+                    { header: t('columns.pending'), align: 'right', width: 80, render: (row) => <span className={`tabular-nums ${row.pending > 0 ? 'text-amber-500' : ''}`}>{row.pending}</span> },
+                    { header: t('columns.failed'), align: 'right', width: 80, render: (row) => <span className={`tabular-nums ${row.failed > 0 ? 'text-red-500' : ''}`}>{row.failed}</span> },
+                    { header: t('columns.processed'), align: 'right', width: 80, render: (row) => <span className="tabular-nums">{row.processed}</span> },
                     { 
                       header: t('columns.status'), width: 110, 
                       render: (row) => {
-                        if (row.failed > 0) return <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>❌ {t('status.errors', { count: row.failed })}</span>;
-                        if (row.pending === 0) return <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✅ {t('status.allSynced')}</span>;
-                        return <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳ {t('status.pending', { count: row.pending })}</span>;
+                        if (row.failed > 0) return <span className="text-red-500 font-bold text-[11px]">❌ {t('status.errors', { count: row.failed })}</span>;
+                        if (row.pending === 0) return <span className="text-green-400 font-bold text-[11px]">✅ {t('status.allSynced')}</span>;
+                        return <span className="text-amber-500 font-bold text-[11px]">⏳ {t('status.pending', { count: row.pending })}</span>;
                       } 
                     },
                     {
                       header: t('columns.actions'), align: 'right', width: 160,
                       render: (row) => (
                         <div className="flex gap-1 justify-end">
-                          <Button variant="secondary" size="sm" style={{ fontSize: 10 }} onClick={() => handleViewEvents(row.eventType)}>
+                          <Button variant="secondary" size="sm" className="text-[10px]" onClick={() => handleViewEvents(row.eventType)}>
                             {drawerType === row.eventType ? t('actions.hide') : t('actions.view')}
                           </Button>
                           {row.pending > 0 && (
                             <Button
                               size="sm"
-                              style={{ fontSize: 10, background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                              className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/30"
                               disabled={clearing === row.eventType}
                               onClick={() => handleClearEvents(row.eventType)}
                             >
@@ -277,20 +257,20 @@ export default function EventQueueDashboard() {
                   keyExtractor={(row) => row.eventType}
                   isRowExpanded={(row) => drawerType === row.eventType}
                   renderExpandedRow={() => (
-                    <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, margin: '4px 8px 8px', maxHeight: 400, overflowY: 'auto' }}>
+                    <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-md mx-2 my-1 max-h-[400px] overflow-y-auto">
                       {drawerLoading ? (
-                        <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>{t('drawer.loading')}</div>
+                        <div className="p-4 text-center text-[var(--text-muted)] text-xs">{t('drawer.loading')}</div>
                       ) : (
                         <DataTable
                           columns={[
-                            { header: t('columns.timestamp'), width: 170, render: (evt) => <span style={{ fontSize: 10, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{new Date(evt.createdOn).toLocaleString()}</span> },
-                            { header: t('columns.aggregate'), render: (evt) => <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{evt.entityType}:{(evt.entityId || '').substring(0, 12)}</span> },
+                            { header: t('columns.timestamp'), width: 170, render: (evt) => <span className="text-[10px] tabular-nums text-[var(--text-muted)]">{new Date(evt.createdOn).toLocaleString()}</span> },
+                            { header: t('columns.aggregate'), render: (evt) => <span className="text-[10px] font-mono text-[var(--text-secondary)]">{evt.entityType}:{(evt.entityId || '').substring(0, 12)}</span> },
                             {
                               header: t('columns.status'), width: 80,
                               render: (evt) => {
-                                if (evt.lastError) return <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 10 }} title={evt.lastError}>❌</span>;
-                                if (evt.processedAt) return <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 10 }}>✅</span>;
-                                return <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 10 }}>⏳</span>;
+                                if (evt.lastError) return <span className="text-red-500 font-bold text-[10px]" title={evt.lastError}>❌</span>;
+                                if (evt.processedAt) return <span className="text-green-400 font-bold text-[10px]">✅</span>;
+                                return <span className="text-amber-500 font-bold text-[10px]">⏳</span>;
                               }
                             },
                             {
@@ -299,7 +279,7 @@ export default function EventQueueDashboard() {
                                 <Button
                                   variant="secondary"
                                   size="sm"
-                                  style={{ fontSize: 9, padding: '1px 4px' }}
+                                  className="text-[9px] px-1 py-0.5"
                                   onClick={() => setSlideOverEvent(evt)}
                                 >
                                   📄
@@ -319,37 +299,36 @@ export default function EventQueueDashboard() {
             )}
 
             {/* Recent events log */}
-            <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+            <div className="border border-[var(--border)] rounded-xl p-5">
               <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                className="text-sm font-semibold mb-4 text-[var(--text-muted)] uppercase tracking-wider"
               >
                 {t('recentEvents', { count: data.recentEvents.length })}
               </h3>
-              <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+              <div className="max-h-[600px] overflow-y-auto">
                 <DataTable
                   columns={[
-                    { header: t('columns.timestamp'), width: 170, render: (evt) => <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{new Date(evt.createdOn).toLocaleString()}</span> },
-                    { header: t('columns.eventType'), width: 150, render: (evt) => <span style={{ padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, fontFamily: 'monospace', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)' }}>{evt.eventType}</span> },
+                    { header: t('columns.timestamp'), width: 170, render: (evt) => <span className="text-[11px] tabular-nums text-[var(--text-muted)]">{new Date(evt.createdOn).toLocaleString()}</span> },
+                    { header: t('columns.eventType'), width: 150, render: (evt) => <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold font-mono bg-blue-500/10 text-[var(--accent)]">{evt.eventType}</span> },
                     { header: t('columns.aggregate'), render: (evt) => {
                       const e = evt as unknown as Record<string, unknown>;
                       const aggType = e.aggregateType as string | undefined;
                       const aggId = e.aggregateId as string | undefined;
-                      return <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{aggType}:{aggId?.substring(0, 8)}</span>;
+                      return <span className="text-[11px] font-mono text-[var(--text-secondary)]">{aggType}:{aggId?.substring(0, 8)}</span>;
                     } },
-                    { header: t('columns.processedAt'), width: 170, render: (evt) => <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{evt.processedAt ? new Date(evt.processedAt).toLocaleString() : '—'}</span> },
+                    { header: t('columns.processedAt'), width: 170, render: (evt) => <span className="text-[11px] tabular-nums text-[var(--text-muted)]">{evt.processedAt ? new Date(evt.processedAt).toLocaleString() : '—'}</span> },
                     { 
                       header: t('columns.status'), width: 80, align: 'center',
                       render: (evt) => {
-                        if (evt.lastError) return <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }} title={evt.lastError}>❌</span>;
-                        if (evt.processedAt) return <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✅</span>;
-                        return <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳</span>;
+                        if (evt.lastError) return <span className="text-red-500 font-bold text-[11px]" title={evt.lastError}>❌</span>;
+                        if (evt.processedAt) return <span className="text-green-400 font-bold text-[11px]">✅</span>;
+                        return <span className="text-amber-500 font-bold text-[11px]">⏳</span>;
                       }
                     },
                     {
                       header: t('columns.payload'), width: 70,
                       render: (evt) => (
-                        <Button variant="secondary" size="sm" style={{ fontSize: 10 }} onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
+                        <Button variant="secondary" size="sm" className="text-[10px]" onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
                           📄
                         </Button>
                       )

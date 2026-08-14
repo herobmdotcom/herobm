@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
 import { formatLocalDate } from '@/lib/date';
+import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
 
@@ -79,11 +80,11 @@ export default function CreditNoteDetailSlideOver({
   }
 
   const currency = data?.currencyCode || baseCurrency || 'USD';
-  const totalAmount = data ? parseFloat(data.totalAmount?.toString() || '0') : 0;
+  const lines = data?.lines || [];
+  const subtotal = data ? parseFloat(data.totalAmount?.toString() || '0') : 0;
   const taxAmount = data ? parseFloat(data.taxAmount?.toString() || '0') : 0;
   const feeAmount = data ? parseFloat(data.feeAmount?.toString() || '0') : 0;
-  const netCredit = data ? parseFloat(data.outstandingAmount?.toString() || '0') : totalAmount + taxAmount - feeAmount;
-  const lines = data?.lines || [];
+  const totalCredit = subtotal + taxAmount - feeAmount;
 
   return (
     <SlideOver
@@ -230,10 +231,10 @@ export default function CreditNoteDetailSlideOver({
                     <>
                       <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
                         <td colSpan={6} className="px-5 py-2.5 text-right font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                          TOTAL CREDIT
+                          SUBTOTAL
                         </td>
                         <td className="px-5 py-2.5 text-right font-mono font-semibold text-gray-900 text-xs">
-                          {fmt(totalAmount)}
+                          {fmt(subtotal)}
                         </td>
                       </tr>
                       {taxAmount > 0 && (
@@ -261,7 +262,7 @@ export default function CreditNoteDetailSlideOver({
                           NET CREDIT
                         </td>
                         <td className="px-5 py-3 text-right font-mono font-bold text-sm text-[#041627]">
-                          {fmt(netCredit)}
+                          {fmt(totalCredit)}
                         </td>
                       </tr>
                     </>

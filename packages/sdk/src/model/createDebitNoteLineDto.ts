@@ -5,9 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { CreateDebitNoteShipmentAllocationDto } from './createDebitNoteShipmentAllocationDto';
 
 export interface CreateDebitNoteLineDto {
   purchaseOrderLineId: string;
+  shipmentAllocations?: CreateDebitNoteShipmentAllocationDto[];
   quantityInvoiced: string;
   pricePerUnit: string;
   amount: string;

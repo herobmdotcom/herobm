@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 import { PickingQueryService } from './picking-query.service';
 import { PickingShippingQueryService } from './picking-shipping-query.service';
 import { PickingActionService } from './picking-action.service';
+import { PickingQueueQueryDto } from './dto';
 
 @Injectable()
 export class PickingService {
+  private readonly logger = new Logger(PickingService.name);
+
   constructor(
     private readonly pickingQueryService: PickingQueryService,
     private readonly pickingShippingQueryService: PickingShippingQueryService,
@@ -41,7 +44,7 @@ export class PickingService {
     return this.pickingQueryService.assertFullyShipped(orderId);
   }
 
-  async getPickingQueue(query?: any) {
+  async getPickingQueue(query?: PickingQueueQueryDto | string) {
     return this.pickingQueryService.getPickingQueue(query);
   }
 

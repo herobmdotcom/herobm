@@ -22,4 +22,5 @@ purchaseOrderId?: string;
 productId?: string;
 locationNo?: string;
 binType?: string;
+hasStock?: boolean;
 };

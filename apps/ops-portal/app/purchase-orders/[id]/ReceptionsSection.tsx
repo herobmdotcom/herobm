@@ -77,11 +77,11 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
       </div>
       
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
+        <p className="text-sm text-[var(--text-muted)] py-5 text-center">
           {t('loading')}
         </p>
       ) : receptions.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
+        <p className="text-sm text-[var(--text-muted)] py-5 text-center">
           {t('noReceptions')}
         </p>
       ) : (

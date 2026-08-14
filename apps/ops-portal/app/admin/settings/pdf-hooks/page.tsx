@@ -128,7 +128,7 @@ export default function ReportingHooksPage() {
 
       <div className="card mb-6">
         <InlineSettingsTable
-          title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('table.title')}</span>}
+          title={<span className="text-[var(--text-muted)] uppercase tracking-wider text-sm font-semibold">{t('table.title')}</span>}
           columns={columns}
           data={assignments}
           rowKey={row => row.hookSlug}

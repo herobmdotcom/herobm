@@ -104,7 +104,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-1">
-        <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+        <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -140,7 +140,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 ) : (
                   <>
                     {/* eslint-disable-next-line i18next/no-literal-string -- Material icon text */}
-                    <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                    <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                     {tCommon('cancel')}
                   </>
                 )}
@@ -182,37 +182,37 @@ export default function EditShipmentClient({ id }: { id: string }) {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.customer')}
               </label>
-              <div className="text-sm" style={{ paddingTop: 6 }}>
+              <div className="text-sm pt-1.5">
                 {shipment.customerName || '—'}
               </div>
             </div>
             
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.tracking')}
               </label>
-              <p className="text-sm" style={{ paddingTop: 6 }}>
+              <p className="text-sm pt-1.5">
                 {shipment.trackingNumber || '—'}
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.date')}
               </label>
-              <p className="text-sm" style={{ paddingTop: 6 }}>
+              <p className="text-sm pt-1.5">
                 {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || tCommon('system')}
               </p>
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('notesCardHeading')}
               </label>
-              <p className="text-sm" style={{ paddingTop: 6 }}>
+              <p className="text-sm pt-1.5">
                 {shipment.notes || '—'}
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 {shipment.deliveryAddressLine1 && (
                     <div className="flex-1">
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                             Delivery Address
                         </label>
                         <div>
@@ -242,7 +242,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 )}
                 {shipment.shippingNotes && (
                     <div className="flex-1">
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                             Shipping Instructions
                         </label>
                         <div className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">
@@ -274,18 +274,18 @@ export default function EditShipmentClient({ id }: { id: string }) {
             emptyMessage={tCommon('orderReadView.noLineItems')}
             renderCustomRow={(line) => (
                 <tr key={line.shipmentLineId}>
-                    <td style={{ fontWeight: 500 }}>
-                        <Link href={line.orderNumber?.startsWith('TO-') ? `/inventory/transfers/${shipment.salesOrderId}` : `/sales-orders/${shipment.salesOrderId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                    <td className="font-medium">
+                        <Link href={line.orderNumber?.startsWith('TO-') ? `/inventory/transfers/${shipment.salesOrderId}` : `/sales-orders/${shipment.salesOrderId}`} className="text-[var(--accent)] no-underline">
                             {line.orderNumber}
                         </Link>
                     </td>
-                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                    <td className="font-semibold text-xs">
+                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                             {line.productNumber || '—'}
                         </Link>
                     </td>
                     <td>{line.productDescription || '—'}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right tabular-nums">
                         {line.quantityShipped}
                     </td>
                 </tr>

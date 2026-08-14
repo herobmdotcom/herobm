@@ -49,13 +49,13 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
             {/* Sales & Revenue */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultAr')}
               </label>
               {renderGlAccountSelect('defaultArAccountId', glSettings?.defaultArAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultRevenue')}
               </label>
               {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId as string | undefined)}
@@ -63,13 +63,13 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Purchasing & Expense */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultAp')}
               </label>
               {renderGlAccountSelect('defaultApAccountId', glSettings?.defaultApAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultExpense')}
               </label>
               {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId as string | undefined)}
@@ -77,13 +77,13 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Inventory & COGS */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultInventory')}
               </label>
               {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultCogs')}
               </label>
               {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId as string | undefined)}
@@ -91,13 +91,13 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Accruals & Shrinkage */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultGrni')}
               </label>
               {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultShrinkage')}
               </label>
               {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId as string | undefined)}
@@ -105,19 +105,19 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Misc */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultFeeRevenue')}
               </label>
               {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultDiscountsReceived')}
               </label>
               {renderGlAccountSelect('defaultDiscountsReceivedAccountId', glSettings?.defaultDiscountsReceivedAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultDiscountsGiven')}
               </label>
               {renderGlAccountSelect('defaultDiscountsGivenAccountId', glSettings?.defaultDiscountsGivenAccountId as string | undefined)}
@@ -125,25 +125,25 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Foreign Exchange */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.realisedFxGain')}
               </label>
               {renderGlAccountSelect('realisedFxGainAccountId', glSettings?.realisedFxGainAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.realisedFxLoss')}
               </label>
               {renderGlAccountSelect('realisedFxLossAccountId', glSettings?.realisedFxLossAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.unrealisedFxGain')}
               </label>
               {renderGlAccountSelect('unrealisedFxGainAccountId', glSettings?.unrealisedFxGainAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.unrealisedFxLoss')}
               </label>
               {renderGlAccountSelect('unrealisedFxLossAccountId', glSettings?.unrealisedFxLossAccountId as string | undefined)}
@@ -151,13 +151,13 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
 
             {/* Tax */}
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultSalesTax')}
               </label>
               {renderGlAccountSelect('defaultSalesTaxAccountId', glSettings?.defaultSalesTaxAccountId as string | undefined)}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.defaultPurchaseTax')}
               </label>
               {renderGlAccountSelect('defaultPurchaseTaxAccountId', glSettings?.defaultPurchaseTaxAccountId as string | undefined)}
@@ -167,7 +167,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.revenueRouting')}
                 <span className="material-symbols-outlined text-[14px] cursor-help" title="If customer and product both have a default GL account, this determines which to use">info</span>
               </label>
@@ -181,7 +181,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSettings('labels.expenseRouting')}
                 <span className="material-symbols-outlined text-[14px] cursor-help" title="If supplier and product both have a default GL account, this determines which to use">info</span>
               </label>

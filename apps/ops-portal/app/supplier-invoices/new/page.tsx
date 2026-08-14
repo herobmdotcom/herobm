@@ -208,14 +208,7 @@ export default function NewPurchaseInvoicePage() {
         }
       >
         {error && (
-          <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
-          >
+          <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400">
             {error}
           </div>
         )}
@@ -229,7 +222,7 @@ export default function NewPurchaseInvoicePage() {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('labels.supplier')} *
                 </label>
                 <SupplierSelect
@@ -245,7 +238,7 @@ export default function NewPurchaseInvoicePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('supplierInvoice.invoiceNumberLabel')}
                 </label>
                 <input
@@ -257,7 +250,7 @@ export default function NewPurchaseInvoicePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tCommon('columns.currency')}
                 </label>
                 <input
@@ -269,7 +262,7 @@ export default function NewPurchaseInvoicePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('supplierInvoice.receiptFilenameLabel')}
                 </label>
                 <input
@@ -281,12 +274,11 @@ export default function NewPurchaseInvoicePage() {
               </div>
 
               <div className="col-span-2 mt-2">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tCommon('notesCardHeading')}
                 </label>
                 <textarea
-                  className="input w-full"
-                  style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                  className="input w-full min-h-[80px] pt-3 resize-y"
                   placeholder={tCommon('notesCardPlaceholder')}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -313,22 +305,22 @@ export default function NewPurchaseInvoicePage() {
             <table className="table-lines hidden lg:table">
               <thead>
                 <tr>
-                  <th style={{ width: 40 }}>#</th>
-                  <th style={{ width: 160 }}>{t('columns.product')}</th>
+                  <th className="w-[40px]">#</th>
+                  <th className="w-[160px]">{t('columns.product')}</th>
                   <th>{t('columns.description')}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{t('columns.qtyToBill')}</th>
-                  <th style={{ width: 130, textAlign: 'right' }}>{t('columns.unitPrice')}</th>
-                  <th style={{ width: 130, textAlign: 'right' }}>{t('columns.amount')}</th>
-                  <th style={{ width: 50 }}></th>
+                  <th className="w-[110px] text-right">{t('columns.qtyToBill')}</th>
+                  <th className="w-[130px] text-right">{t('columns.unitPrice')}</th>
+                  <th className="w-[130px] text-right">{t('columns.amount')}</th>
+                  <th className="w-[50px]"></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((line, idx) => (
                   <tr key={line.key}>
-                    <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
+                    <td className="text-[var(--text-muted)]">{idx + 1}</td>
                     <td>
                       {line.productId ? (
-                        <div className="font-semibold" style={{ color: 'var(--accent)' }}>
+                        <div className="font-semibold text-[var(--accent)]">
                           {line.productNumber || line.productId.substring(0, 8)}
                         </div>
                       ) : (
@@ -343,37 +335,34 @@ export default function NewPurchaseInvoicePage() {
                             );
                           }}
                           placeholder="Search product…"
-                          style={{ minWidth: 120 }}
+                          className="min-w-[120px]"
                         />
                       )}
                     </td>
                     <td>
                       <input
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder="Description..."
                       />
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="text-right">
                       <input
-                        className="input"
+                        className="input w-full text-right"
                         type="number"
                         min="0"
                         step="1"
-                        style={{ width: '100%', textAlign: 'right' }}
                         value={line.quantityInvoiced}
                         onChange={(e) => updateLine(idx, 'quantityInvoiced', e.target.value)}
                       />
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="text-right">
                       <input
-                        className="input"
+                        className="input w-full text-right"
                         type="number"
                         min="0"
                         step="0.01"
-                        style={{ width: '100%', textAlign: 'right' }}
                         value={line.pricePerUnit}
                         onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
                         onBlur={(e) => {
@@ -382,7 +371,7 @@ export default function NewPurchaseInvoicePage() {
                         }}
                       />
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right font-semibold tabular-nums">
                       {formatAmount(computeAmount(line), currencyCode)}
                     </td>
                     <td>
@@ -396,31 +385,30 @@ export default function NewPurchaseInvoicePage() {
                 ))}
                 {lines.length === 0 && (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                    <td colSpan={7} className="text-center text-[var(--text-muted)] py-5">
                       {t('supplierInvoice.noItems')}
                     </td>
                   </tr>
                 )}
-                <tr style={{ borderTop: '2px solid var(--border)' }}>
-                  <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                <tr className="border-t-2 border-[var(--border)]">
+                  <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
                     {tCommon('subtotal')}
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-right font-semibold tabular-nums">
                     {formatAmount(subtotal, currencyCode)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
                     {t('supplierInvoice.taxTotalAmount', { tax: tCommon('tax') })}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right font-semibold tabular-nums py-1 px-2"
                       type="number"
                       min="0"
                       step="0.01"
-                      style={{ width: '100%', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums', padding: '4px 8px' }}
                       value={taxAmountInput}
                       onFocus={(e) => {
                         if (parseFloat(e.target.value) === 0) {
@@ -440,11 +428,11 @@ export default function NewPurchaseInvoicePage() {
                   </td>
                   <td></td>
                 </tr>
-                <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                  <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                <tr className="bg-blue-500/[0.02]">
+                  <td colSpan={5} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                     {tCommon('total')}
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-right font-extrabold text-[14px] text-[var(--accent)] tabular-nums">
                     {formatAmount(grandTotal, currencyCode)}
                   </td>
                   <td></td>
@@ -468,7 +456,7 @@ export default function NewPurchaseInvoicePage() {
                   <div>
                     <label className="text-xs text-slate-500 mb-1 block">{t('columns.product')}</label>
                     {line.productId ? (
-                      <div className="font-semibold" style={{ color: 'var(--accent)' }}>
+                      <div className="font-semibold text-[var(--accent)]">
                         {line.productNumber || line.productId.substring(0, 8)}
                       </div>
                     ) : (

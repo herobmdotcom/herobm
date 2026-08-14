@@ -18,4 +18,5 @@ export interface PendingPutawayResponseDto {
   locationId: string;
   createdOn?: string;
   sourceBinCode: string;
+  returnReason?: string;
 }

@@ -22,6 +22,7 @@ export interface Product {
 interface ProductSearchInputProps {
   onSelect: (product: Product) => void;
   placeholder?: string;
+  className?: string;
   style?: React.CSSProperties;
   fulfillmentLocationId?: string;
   structureType?: 'standard' | 'kit';
@@ -31,6 +32,7 @@ interface ProductSearchInputProps {
 export default function ProductSearchInput({
   onSelect,
   placeholder,
+  className,
   style,
   fulfillmentLocationId,
   structureType,
@@ -42,6 +44,7 @@ export default function ProductSearchInput({
     <AsyncSelect<Product>
       placeholder={placeholder || t('placeholder')}
       disabled={disabled}
+      className={className}
       style={style}
       clearOnSelect
       onSearch={async (term) => {

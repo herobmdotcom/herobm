@@ -467,12 +467,7 @@ export default function NewOrderPage() {
       >
         {error && (
           <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
+            className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
           >
             {error}
           </div>
@@ -490,54 +485,26 @@ export default function NewOrderPage() {
             {/* Customer selector */}
             <div className="relative">
               <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
+                className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]"
               >
                 {tSales('salesOrders.labels.customer')} *
                 {customerId && (
                   <span
-                    style={{
-                      marginLeft: 8,
-                      padding: '1px 6px',
-                      borderRadius: 4,
-                      background: 'rgba(59,130,246,0.15)',
-                      color: 'var(--accent)',
-                      fontWeight: 600,
-                      fontSize: 10,
-                      letterSpacing: '0.04em',
-                    }}
+                    className="ml-2 px-1.5 py-px rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wider"
                   >
                     {currencyCode}
                   </span>
                 )}
                 {isCustomerExempt && (
                     <span
-                      style={{
-                        marginLeft: 4,
-                        padding: '1px 6px',
-                        borderRadius: 4,
-                        background: 'rgba(245,158,11,0.15)',
-                        color: '#f59e0b',
-                        fontWeight: 600,
-                        fontSize: 10,
-                        letterSpacing: '0.04em',
-                      }}
+                      className="ml-1 px-1.5 py-px rounded bg-amber-500/15 text-amber-500 font-semibold text-[10px] tracking-wider"
                     >
                       {tSales('common.taxLabels.exempt')}
                     </span>
                 )}
                 {customerId && parseFloat(customerDiscount) > 0 && (
                     <span
-                      style={{
-                        marginLeft: 4,
-                        padding: '1px 6px',
-                        borderRadius: 4,
-                        background: 'rgba(74,222,128,0.15)',
-                        color: '#4ade80',
-                        fontWeight: 600,
-                        fontSize: 10,
-                        letterSpacing: '0.04em',
-                      }}
+                      className="ml-1 px-1.5 py-px rounded bg-green-500/15 text-green-400 font-semibold text-[10px] tracking-wider"
                     >
                       {tSales('salesOrders.discountPercent', { disc: parseFloat(customerDiscount) })}
                     </span>
@@ -559,7 +526,7 @@ export default function NewOrderPage() {
             </div>
 
              <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSales('salesOrders.labels.customerPO')}
               </label>
               <input
@@ -572,7 +539,7 @@ export default function NewOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSales('salesOrders.labels.orderName')}
               </label>
               <input
@@ -586,13 +553,12 @@ export default function NewOrderPage() {
 
 
             <div className="md:col-span-2 mt-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSales('common.notesCardHeading')}
               </label>
               <textarea
                 id="order-notes"
-                className="input w-full"
-                style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                className="input w-full min-h-[80px] pt-3 resize-y"
                 placeholder={tSales('common.notesCardPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -615,7 +581,6 @@ export default function NewOrderPage() {
                 <ProductSearchInput
                   onSelect={addLineFromProduct}
                   placeholder={tSales('salesOrders.placeholders.searchProduct')}
-                  style={{ width: '100%' }}
                   fulfillmentLocationId={fulfillmentLocationId}
                 />
               </div>
@@ -638,7 +603,7 @@ export default function NewOrderPage() {
                       {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                         <span>{line.productNumber}</span>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        <span className="text-[var(--text-muted)]">—</span>
                       )}
                     </div>
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
@@ -785,52 +750,50 @@ export default function NewOrderPage() {
             <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ width: 40 }}>{tSales('salesOrders.columns.lineNumber')}</th>
+                <th className="w-10">{tSales('salesOrders.columns.lineNumber')}</th>
                 <th>{tSales('salesOrders.columns.product')}</th>
                 <th>{tSales('salesOrders.columns.description')}</th>
-                <th style={{ width: 90, textAlign: 'right' }}>{tSales('salesOrders.columns.qty')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{tSales('salesOrders.columns.uom')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.unitPrice')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{tSales('salesOrders.columns.discountPct')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.tax')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.amount')}</th>
-                <th style={{ width: 50 }}></th>
+                <th className="w-[90px] text-right">{tSales('salesOrders.columns.qty')}</th>
+                <th className="w-20 text-right">{tSales('salesOrders.columns.uom')}</th>
+                <th className="w-[110px] text-right">{tSales('salesOrders.columns.unitPrice')}</th>
+                <th className="w-20 text-right">{tSales('salesOrders.columns.discountPct')}</th>
+                <th className="w-[110px] text-right">{tSales('salesOrders.columns.tax')}</th>
+                <th className="w-[110px] text-right">{tSales('salesOrders.columns.amount')}</th>
+                <th className="w-[50px]"></th>
               </tr>
             </thead>
             <tbody>
               {lines.map((line, idx) => (
                 <tr key={line.key}>
-                  <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                  <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
+                  <td className="text-[var(--text-muted)]">{idx + 1}</td>
+                  <td className="text-[var(--accent)] font-semibold text-xs">
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
                       </div>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
+                      <span className="text-[var(--text-muted)] font-normal">—</span>
                     )}
                   </td>
                   <td>
                       <input
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder={tSales('salesOrders.placeholders.customDescription')}
                       />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       step="1"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.quantity}
                       onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     {(() => {
                       const uoms = line.productUoms || [];
                       const defaultUom = line.baseUom || 'EA';
@@ -838,8 +801,7 @@ export default function NewOrderPage() {
                       
                       return (
                         <select
-                          className="input"
-                          style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                          className="input w-full text-[13px] text-right"
                           value={line.unitOfMeasure || defaultUom}
                           onChange={(e) => {
                             const newVal = e.target.value;
@@ -876,13 +838,12 @@ export default function NewOrderPage() {
                       );
                     })()}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       step="0.01"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.pricePerUnit}
                       onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
                       onBlur={(e) => {
@@ -891,22 +852,20 @@ export default function NewOrderPage() {
                       }}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <input
-                      className="input"
+                      className="input w-full text-right"
                       type="number"
                       min="0"
                       max="100"
                       step="0.1"
-                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.discountPercentage}
                       onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
                     />
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <select
-                      className="input"
-                      style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                      className="input w-full text-xs text-right"
                       value={line.taxCategoryId}
                       onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
                     >
@@ -918,11 +877,7 @@ export default function NewOrderPage() {
                     </select>
                   </td>
                   <td
-                    style={{
-                      textAlign: 'right',
-                      fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                    }}
+                    className="text-right font-semibold tabular-nums"
                   >
                     {formatAmount(computeAmount(line), currencyCode)}
                   </td>
@@ -941,7 +896,7 @@ export default function NewOrderPage() {
                 <tr>
                   <td
                     colSpan={10}
-                    style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
+                    className="text-center text-[var(--text-muted)] py-5"
                   >
                     {tSales('salesOrders.noLineItems')}
                   </td>
@@ -951,29 +906,29 @@ export default function NewOrderPage() {
                 const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                 return (
                   <>
-                    <tr style={{ borderTop: '2px solid var(--border)' }}>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    <tr className="border-t-2 border-[var(--border)]">
+                      <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                         {tSales('common.subtotal')}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-semibold tabular-nums">
                         {formatAmount(subtotal, currencyCode)}
                       </td>
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                         {tSales('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-semibold tabular-nums">
                         {formatAmount(totalTax, currencyCode)}
                       </td>
                       <td></td>
                     </tr>
-                    <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                    <tr className="bg-blue-500/[0.02]">
+                      <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                         {tSales('common.total')}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                      <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
                         {formatAmount(subtotal + totalTax, currencyCode)}
                       </td>
                       <td></td>
@@ -998,7 +953,7 @@ export default function NewOrderPage() {
             <div className="flex flex-col gap-4">
               <div className="mt-2">
                 { }
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Delivery Address
                 </label>
                 <select
@@ -1012,7 +967,9 @@ export default function NewOrderPage() {
                     } else {
                       const addr = customerDeliveryAddresses.find(a => a.deliveryAddressId === val);
                       if (addr) {
-                        setDeliveryCompanyName(addr.companyName || '');
+                        if (addr.companyName && addr.companyName.trim()) {
+                          setDeliveryCompanyName(addr.companyName.trim());
+                        }
                         setDeliveryName(addr.recipientName || '');
                         setDeliveryPhone(addr.recipientPhone || '');
                         setDeliveryAddressLine1(addr.addressLine1 || '');
@@ -1067,13 +1024,12 @@ export default function NewOrderPage() {
 
               <div className="mt-2">
                 { }
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Shipping Instructions
                 </label>
                 <textarea
                   id="shipping-notes"
-                  className="input w-full"
-                  style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                  className="input w-full min-h-[80px] pt-3 resize-y"
                   placeholder="Add shipping instructions..."
                   value={shippingNotes}
                   onChange={(e) => setShippingNotes(e.target.value)}
@@ -1082,7 +1038,7 @@ export default function NewOrderPage() {
             </div>
 
             <div className="mt-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tSales('salesOrders.labels.fulfillmentLocation')}
               </label>
               <select
@@ -1112,7 +1068,9 @@ export default function NewOrderPage() {
           allowUnsaved={true}
           defaultCountry={customerCountry}
           onSaved={(addr, saved) => {
-            setDeliveryCompanyName(addr.companyName || '');
+            if (addr.companyName && addr.companyName.trim()) {
+              setDeliveryCompanyName(addr.companyName.trim());
+            }
             setDeliveryName(addr.recipientName || '');
             setDeliveryPhone(addr.recipientPhone || '');
             setDeliveryAddressLine1(addr.addressLine1 || '');

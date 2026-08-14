@@ -785,6 +785,27 @@
       "when": 1786634295964,
       "tag": "0111_add_immutable_return_credit_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1786713161125,
+      "tag": "0112_add_purchase_debit_note_shipments",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1786715650821,
+      "tag": "0113_add_work_order_cost_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1786716989515,
+      "tag": "0114_add_purchase_return_source_bin",
+      "breakpoints": true
     }
   ]
 }

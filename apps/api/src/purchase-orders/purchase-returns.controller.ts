@@ -11,6 +11,7 @@ import { PurchaseReturnsService } from './purchase-returns.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreatePurchaseReturnDto,
+  ShipPurchaseReturnDto,
   PurchaseReturnResponseDto,
   EmptyBodyDto,
 } from './dto';
@@ -80,6 +81,23 @@ export class PurchaseReturnsController {
     return this.purchaseReturnsService.stageReturn(returnId, user.username);
   }
 
+  @Post(':returnId/unstage')
+  @CasbinAction('handle')
+  @ApiOperation({
+    summary: 'Unstage Purchase Return',
+    description: 'Revert a staged purchase return back to draft state.',
+  })
+  @ApiOkResponse({ type: PurchaseReturnResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  unstageReturn(
+    @Param('id') _id: string,
+    @Param('returnId') returnId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseReturnsService.unstageReturn(returnId, user.username);
+  }
+
   @Post(':returnId/ship')
   @CasbinAction('handle')
   @ApiOperation({
@@ -87,14 +105,36 @@ export class PurchaseReturnsController {
     description: 'Mark a staged purchase return as shipped.',
   })
   @ApiOkResponse({ type: PurchaseReturnResponseDto })
-  @ApiBody({ type: EmptyBodyDto })
+  @ApiBody({ type: ShipPurchaseReturnDto })
   @HttpCode(200)
   shipReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
+    @Body() body: ShipPurchaseReturnDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseReturnsService.shipReturn(returnId, user.username);
+    return this.purchaseReturnsService.shipReturn(
+      returnId,
+      user.username,
+      body,
+    );
+  }
+
+  @Post(':returnId/unship')
+  @CasbinAction('handle')
+  @ApiOperation({
+    summary: 'Unship Purchase Return',
+    description: 'Revert a shipped purchase return back to staged state.',
+  })
+  @ApiOkResponse({ type: PurchaseReturnResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  unshipReturn(
+    @Param('id') _id: string,
+    @Param('returnId') returnId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseReturnsService.unshipReturn(returnId, user.username);
   }
 
   @Post(':returnId/cancel')

@@ -8,10 +8,26 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class CreateDebitNoteShipmentAllocationDto {
+  @IsString()
+  @IsNotEmpty()
+  shipmentLineId!: string;
+
+  @IsNumberString()
+  @IsNotEmpty()
+  quantityCredited!: string;
+}
+
 export class CreateDebitNoteLineDto {
   @IsString()
   @IsNotEmpty()
-  purchaseOrderLineId: string;
+  purchaseOrderLineId!: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateDebitNoteShipmentAllocationDto)
+  shipmentAllocations?: CreateDebitNoteShipmentAllocationDto[];
 
   @IsNumberString()
   @IsNotEmpty()
@@ -59,6 +75,20 @@ export class CreateDebitNoteDto {
 
 export class EmptyBodyDto {}
 
+export class PurchaseDebitNoteLineResponseDto {
+  debitNoteLineId!: string;
+  debitNoteId!: string;
+  purchaseOrderLineId!: string;
+  quantityInvoiced!: string;
+  pricePerUnit!: string;
+  amount!: string;
+  taxAmount?: string | null;
+  shipmentAllocations?: {
+    shipmentLineId: string;
+    quantityCredited: string;
+  }[];
+}
+
 export class PurchaseDebitNoteResponseDto {
   debitNoteId!: string;
   debitNoteNumber!: string;
@@ -70,4 +100,5 @@ export class PurchaseDebitNoteResponseDto {
   feeAmount!: string;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
+  lines?: PurchaseDebitNoteLineResponseDto[];
 }

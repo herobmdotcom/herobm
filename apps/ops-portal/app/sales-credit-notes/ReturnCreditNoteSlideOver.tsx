@@ -97,37 +97,37 @@ export default function ReturnCreditNoteSlideOver({
 
     const linesFooter = (
         <>
-            <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                    Total Credit
+            <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
+                <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
+                    Subtotal
                 </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                <td className="text-right tabular-nums font-semibold">
                     {formatAmount(creditSummary.subtotal, returnRecord?.currencyCode || 'USD')}
                 </td>
             </tr>
             <tr className="hidden lg:table-row">
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
                     Total Tax
                 </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                <td className="text-right tabular-nums font-semibold">
                     {formatAmount(creditSummary.totalTax, returnRecord?.currencyCode || 'USD')}
                 </td>
             </tr>
             {creditSummary.totalFees > 0 && (
                 <tr className="hidden lg:table-row">
-                    <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                    <td colSpan={6} className="text-right font-semibold text-xs text-[var(--text-muted)]">
                         Total Fees
                     </td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--text-danger)' }}>
+                    <td className="text-right tabular-nums font-semibold text-[var(--text-danger)]">
                         -{formatAmount(creditSummary.totalFees, returnRecord?.currencyCode || 'USD')}
                     </td>
                 </tr>
             )}
             <tr className="hidden lg:table-row">
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+                <td colSpan={6} className="text-right font-semibold text-[13px] text-[var(--text-primary)]">
                     Net Credit
                 </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 14 }}>
+                <td className="text-right tabular-nums font-bold text-[14px]">
                     {formatAmount(creditSummary.netCredit, returnRecord?.currencyCode || 'USD')}
                 </td>
             </tr>
@@ -141,7 +141,7 @@ export default function ReturnCreditNoteSlideOver({
             header: 'Product',
             width: 150,
             render: (line) => (
-                <div className="font-semibold" style={{ color: 'var(--accent)' }}>
+                <div className="font-semibold text-[var(--accent)]">
                     {line.productNumber}
                 </div>
             )
@@ -156,7 +156,7 @@ export default function ReturnCreditNoteSlideOver({
             header: 'Return Qty',
             width: 90,
             align: 'right',
-            render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(line.quantityReturned)}</span>,
+            render: (line) => <span className="tabular-nums">{parseFloat(line.quantityReturned)}</span>,
         },
         {
             id: 'reason',
@@ -176,7 +176,7 @@ export default function ReturnCreditNoteSlideOver({
             width: 110,
             align: 'right',
             render: (line) => (
-                <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                <span className="font-semibold tabular-nums">
                     {parseFloat(line.returnFee || '0') > 0 ? formatAmount(parseFloat(line.returnFee || '0'), returnRecord?.currencyCode || 'USD') : '—'}
                 </span>
             ),
@@ -199,7 +199,7 @@ export default function ReturnCreditNoteSlideOver({
                 const fee = parseFloat(line.returnFee || '0');
                 const lineAmount = Math.max(0, grossLine - fee);
                 return (
-                    <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    <span className="font-semibold tabular-nums">
                         {formatAmount(lineAmount, returnRecord?.currencyCode || 'USD')}
                     </span>
                 );
@@ -262,9 +262,9 @@ export default function ReturnCreditNoteSlideOver({
                             </span>
                         </div>
                         {(fullReturn?.notes || returnRecord.notes) && (
-                            <div className="col-span-2 p-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md">
-                                <span className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Return Reason / Notes</span>
-                                <span className="text-sm font-medium text-[var(--text-primary)]">
+                            <div className="col-span-2">
+                                <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">Return Reason / Notes</span>
+                                <span className="text-[var(--text-primary)] font-medium">
                                     {fullReturn?.notes || returnRecord.notes}
                                 </span>
                             </div>

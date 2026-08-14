@@ -154,25 +154,14 @@ function ReceivingFlow() {
 
   // ── Match status badge ──────────────────────────────────────────────
   const MatchStatusBadge = ({ status }: { status: string }) => {
-    const styles: Record<string, { bg: string; color: string; label: string }> = {
-      matched: { bg: 'rgba(16,185,129,0.12)', color: '#059669', label: t('matchStatus.matched') },
-      unmatched: { bg: 'rgba(239,68,68,0.12)', color: '#dc2626', label: t('matchStatus.unmatched') },
-      ambiguous: { bg: 'rgba(245,158,11,0.12)', color: '#d97706', label: t('matchStatus.ambiguous') },
+    const styles: Record<string, { className: string; label: string }> = {
+      matched: { className: 'bg-emerald-500/15 text-emerald-600', label: t('matchStatus.matched') },
+      unmatched: { className: 'bg-red-500/15 text-red-600', label: t('matchStatus.unmatched') },
+      ambiguous: { className: 'bg-amber-500/15 text-amber-600', label: t('matchStatus.ambiguous') },
     };
     const s = styles[status] || styles.unmatched;
     return (
-      <span
-        style={{
-          display: 'inline-block',
-          padding: '2px 8px',
-          borderRadius: 6,
-          fontSize: 11,
-          fontWeight: 600,
-          background: s.bg,
-          color: s.color,
-          letterSpacing: '0.02em',
-        }}
-      >
+      <span className={`inline-block py-0.5 px-2 rounded-md text-[11px] font-semibold tracking-wide ${s.className}`}>
         {s.label}
       </span>
     );
@@ -216,7 +205,7 @@ function ReceivingFlow() {
               <div className="mb-4 flex gap-8 text-sm">
                 {packingSlipNumber && (
                   <div>
-                    <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                    <strong className="text-[var(--text-muted)] block mb-0.5">
                       {t('labels.packingSlip')}:
                     </strong>
                     {packingSlipNumber}
@@ -224,7 +213,7 @@ function ReceivingFlow() {
                 )}
                 {notes && (
                   <div>
-                    <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                    <strong className="text-[var(--text-muted)] block mb-0.5">
                       {tCommon('columns.notes')}:
                     </strong>
                     {notes}
@@ -239,17 +228,17 @@ function ReceivingFlow() {
                   <tr>
                     <th>{tCommon('columns.product')}</th>
                     <th>{tCommon('columns.description')}</th>
-                    <th style={{ width: 100, textAlign: 'right' }}>{tCommon('columns.received')}</th>
-                    <th style={{ width: 120 }}>{t('columns.matchStatus')}</th>
-                    <th style={{ width: 160 }}>{tCommon('columns.purchaseOrder')}</th>
+                    <th className="w-[100px] text-right">{tCommon('columns.received')}</th>
+                    <th className="w-[120px]">{t('columns.matchStatus')}</th>
+                    <th className="w-[160px]">{tCommon('columns.purchaseOrder')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {completedLines.map((line) => (
                     <tr key={line.goodsReceivedLineId}>
-                      <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber || '—'}</td>
-                      <td style={{ fontSize: 13 }}>{line.productName || '—'}</td>
-                      <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                      <td className="font-semibold text-xs">{line.productNumber || '—'}</td>
+                      <td className="text-[13px]">{line.productName || '—'}</td>
+                      <td className="text-right tabular-nums text-[13px]">
                         {line.quantityReceived}
                       </td>
                       <td>
@@ -257,15 +246,15 @@ function ReceivingFlow() {
                       </td>
                       <td>
                         {line.orderNumber && line.purchaseOrderId ? (
-                          <Link href={`/purchase-orders/${line.purchaseOrderId}`} style={{ fontWeight: 500, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+                          <Link href={`/purchase-orders/${line.purchaseOrderId}`} className="font-medium text-[13px] text-[var(--accent)] no-underline">
                             {line.orderNumber}
                           </Link>
                         ) : line.orderNumber ? (
-                          <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--accent)' }}>
+                          <span className="font-medium text-[13px] text-[var(--accent)]">
                             {line.orderNumber}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
+                          <span className="text-[var(--text-muted)] text-xs">—</span>
                         )}
                       </td>
                     </tr>
@@ -290,11 +279,11 @@ function ReceivingFlow() {
                     <MobileCardField label={tCommon('columns.received')} value={line.quantityReceived} />
                     <MobileCardField label={t('columns.matchStatus')} value={<MatchStatusBadge status={line.matchStatus} />} />
                     <MobileCardField label={tCommon('columns.purchaseOrder')} value={line.orderNumber && line.purchaseOrderId ? (
-                      <Link href={`/purchase-orders/${line.purchaseOrderId}`} style={{ fontWeight: 500, color: 'var(--accent)', textDecoration: 'none' }}>{line.orderNumber}</Link>
+                      <Link href={`/purchase-orders/${line.purchaseOrderId}`} className="font-medium text-[var(--accent)] no-underline">{line.orderNumber}</Link>
                     ) : line.orderNumber ? (
-                      <span style={{ fontWeight: 500, color: 'var(--accent)' }}>{line.orderNumber}</span>
+                      <span className="font-medium text-[var(--accent)]">{line.orderNumber}</span>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      <span className="text-[var(--text-muted)]">—</span>
                     )} />
                   </div>
                 </div>
@@ -330,10 +319,10 @@ function ReceivingFlow() {
     >
       <div className="flex flex-col gap-6">
         {/* Package Header */}
-        <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
+        <div className="card flex flex-col gap-4 h-fit">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block mb-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              <label className="block mb-1 text-xs font-semibold text-[var(--text-muted)]">
                 {t('labels.supplier')} *
               </label>
               <SupplierSelect
@@ -344,7 +333,7 @@ function ReceivingFlow() {
               />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              <label className="block mb-1 text-xs font-semibold text-[var(--text-muted)]">
                 {t('labels.location')} *
               </label>
               <LocationSelect
@@ -355,7 +344,7 @@ function ReceivingFlow() {
               />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              <label className="block mb-1 text-xs font-semibold text-[var(--text-muted)]">
                 {t('labels.packingSlip')}
               </label>
               <input
@@ -366,7 +355,7 @@ function ReceivingFlow() {
               />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              <label className="block mb-1 text-xs font-semibold text-[var(--text-muted)]">
                 {tCommon('columns.notes')}
               </label>
               <input
@@ -391,24 +380,15 @@ function ReceivingFlow() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col w-full">
-                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                <label className="block mb-1 text-xs font-medium text-[var(--text-muted)]">
                   {t('flow.selectedProduct')}
                 </label>
                 <div
-                  className="text-sm px-3 flex items-center w-full border rounded outline-none"
-                  style={{
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    borderColor: 'var(--border)',
-                    height: '38px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
+                  className="text-sm px-3 flex items-center w-full border rounded outline-none bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)] h-[38px] whitespace-nowrap overflow-hidden text-ellipsis"
                   title={`${selectedProduct.productNumber} — ${selectedProduct.name}`}
                 >
-                  <span style={{ fontWeight: 600, marginRight: 8, color: 'var(--accent)' }}>{selectedProduct.productNumber}</span>
-                  <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedProduct.name}</span>
+                  <span className="font-semibold mr-2 text-[var(--accent)]">{selectedProduct.productNumber}</span>
+                  <span className="text-[var(--text-muted)] overflow-hidden text-ellipsis">{selectedProduct.name}</span>
                 </div>
               </div>
             )}
@@ -416,7 +396,7 @@ function ReceivingFlow() {
             {selectedProduct && (
               <div className="flex items-end gap-3 w-full lg:w-auto">
                 <div className="flex-1 lg:w-[100px]">
-                  <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block mb-1 text-xs font-medium text-[var(--text-muted)]">
                     {tCommon('columns.qty')}
                   </label>
                   <input
@@ -453,11 +433,11 @@ function ReceivingFlow() {
         </div>
 
         {/* Draft Cart */}
-        <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
+        <div className="card flex flex-col gap-4 h-fit">
           <h3 className="section-heading">{t('flow.itemsReceived')}</h3>
 
           {draftLines.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{t('flow.noItems')}</p>
+            <p className="text-[var(--text-muted)] text-sm">{t('flow.noItems')}</p>
           ) : (
             <>
               <div className="hidden lg:block overflow-x-auto w-full">
@@ -466,28 +446,21 @@ function ReceivingFlow() {
                     <tr>
                       <th>{tCommon('columns.product')}</th>
                       <th>{tCommon('columns.description')}</th>
-                      <th style={{ width: 100, textAlign: 'right' }}>{tCommon('columns.qty')}</th>
-                      <th style={{ width: 80 }}></th>
+                      <th className="w-[100px] text-right">{tCommon('columns.qty')}</th>
+                      <th className="w-[80px]"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {draftLines.map((line) => (
                       <tr key={line.id}>
-                        <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber || '—'}</td>
-                        <td style={{ fontSize: 13 }}>{line.productName || '—'}</td>
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontVariantNumeric: 'tabular-nums',
-                            fontSize: 13,
-                          }}
-                        >
+                        <td className="font-semibold text-xs">{line.productNumber || '—'}</td>
+                        <td className="text-[13px]">{line.productName || '—'}</td>
+                        <td className="text-right tabular-nums text-[13px]">
                           {line.quantityReceived}
                         </td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td className="text-right">
                           <Button
-                            variant="secondary" size="sm"
-                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            variant="danger" size="sm"
                             onClick={() => removeDraftLine(line.id)}
                           >
                             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
@@ -516,8 +489,7 @@ function ReceivingFlow() {
                       <MobileCardField label={tCommon('columns.qty')} value={line.quantityReceived} />
                       <div className="flex justify-end pt-2 mt-1 border-t border-slate-50">
                         <Button
-                          variant="secondary" size="sm"
-                          style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                          variant="danger" size="sm"
                           onClick={() => removeDraftLine(line.id)}
                         >
                           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
@@ -563,7 +535,7 @@ function ReceivingFlow() {
 export default function ReceivingPage() {
   const tCommon = useTranslations('common');
   return (
-    <Suspense fallback={<p style={{ padding: 20 }}>{tCommon('loading')}</p>}>
+    <Suspense fallback={<p className="p-5">{tCommon('loading')}</p>}>
       <ReceivingFlow />
     </Suspense>
   );

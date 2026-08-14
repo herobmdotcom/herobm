@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { PurchaseReturnLineResponseDto } from './purchaseReturnLineResponseDto';
+import type { PurchaseReturnResponseDtoShipmentsItem } from './purchaseReturnResponseDtoShipmentsItem';
+import type { PurchaseReturnResponseDtoShipmentLinesItem } from './purchaseReturnResponseDtoShipmentLinesItem';
 
 export interface PurchaseReturnResponseDto {
   returnId: string;
@@ -21,4 +23,6 @@ export interface PurchaseReturnResponseDto {
   /** @nullable */
   modifiedOn?: string | null;
   lines?: PurchaseReturnLineResponseDto[];
+  shipments?: PurchaseReturnResponseDtoShipmentsItem[];
+  shipmentLines?: PurchaseReturnResponseDtoShipmentLinesItem[];
 }

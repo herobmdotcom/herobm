@@ -44,7 +44,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-1">
-        <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+        <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center flex-1">
-        <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+        <p className="text-lg mb-2 text-[var(--danger)]">
           {error || tTransfers('notFound')}
         </p>
         <Button variant="secondary" onClick={() => router.push('/inventory/transfers')}>
@@ -96,7 +96,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   disabled={saving}
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                  <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                  <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                   {tCommon('cancel')}
                 </Button>
               )}
@@ -107,14 +107,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     >
       <div className="flex flex-col gap-3">
         {error && (
-          <div
-            className="px-4 py-3 rounded-lg text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-            }}
-          >
+          <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400">
             {error}
             <Button variant="ghost" className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</Button>
           </div>
@@ -123,31 +116,31 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         <div className="card">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.sourceLocation')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm font-medium pt-1.5">
                 {order.sourceLocationName || order.sourceLocationId}
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.destinationLocation')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm font-medium pt-1.5">
                 {order.destinationLocationName || order.destinationLocationId}
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.createdOn')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm font-medium pt-1.5">
                 {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy}
               </p>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.notes')}
               </label>
               <input
@@ -159,7 +152,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.shippingNotes')}
               </label>
               <input
@@ -184,7 +177,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
               <ProductSearchInput
                 onSelect={(p: Product) => addLine(p.productId, 1)}
                 placeholder={tTransfers('placeholders.searchProduct')}
-                style={{ width: 240 }}
+                className="w-[240px]"
               />
             )}
           </div>
@@ -195,27 +188,26 @@ export default function TransferDetailsClient({ id }: { id: string }) {
               <tr>
                 <th>{tTransfers('columns.product')}</th>
                 <th>{tTransfers('columns.description')}</th>
-                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.ordered')}</th>
-                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.shipped')}</th>
-                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.received')}</th>
-                {isEditable && <th style={{ width: 50 }}></th>}
+                <th className="w-[120px] text-right">{tTransfers('columns.ordered')}</th>
+                <th className="w-[120px] text-right">{tTransfers('columns.shipped')}</th>
+                <th className="w-[120px] text-right">{tTransfers('columns.received')}</th>
+                {isEditable && <th className="w-[50px]"></th>}
               </tr>
             </thead>
             <tbody>
               {order.lines?.map((line: TransferLineResponseDto) => (
                 <tr key={line.transferOrderLineId}>
-                  <td style={{ fontWeight: 600, fontSize: 12 }}>
+                  <td className="font-semibold text-xs">
                     {line.productNumber || '—'}
                   </td>
                   <td>{line.productDescription || '—'}</td>
                   {isEditable ? (
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="text-right">
                       <input
-                        className="input"
+                        className="input w-full text-right"
                         type="number"
                         min="1"
                         step="1"
-                        style={{ width: '100%', textAlign: 'right' }}
                         defaultValue={line.quantity}
                         onBlur={(e) => {
                           const val = parseFloat(e.target.value);
@@ -226,14 +218,14 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                       />
                     </td>
                   ) : (
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="text-right tabular-nums">
                       {line.quantity}
                     </td>
                   )}
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-right tabular-nums">
                     {line.quantityShipped || 0}
                   </td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-right tabular-nums">
                     {line.quantityReceived || 0}
                   </td>
                   {isEditable && (
@@ -254,7 +246,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                 <tr>
                   <td
                     colSpan={isEditable ? 6 : 5}
-                    style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
+                    className="text-center text-[var(--text-muted)] py-5"
                   >
                     {tTransfers('noLineItems')}
                   </td>
@@ -279,11 +271,10 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   <MobileCardField label={tTransfers('columns.ordered')} value={
                     isEditable ? (
                       <input
-                        className="input"
+                        className="input w-[100px] text-right py-1 px-2 h-[32px]"
                         type="number"
                         min="1"
                         step="1"
-                        style={{ width: '100px', textAlign: 'right', padding: '4px 8px', height: '32px' }}
                         defaultValue={line.quantity}
                         onBlur={(e) => {
                           const val = parseFloat(e.target.value);

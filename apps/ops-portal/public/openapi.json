@@ -2072,6 +2072,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "hasStock",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -10596,7 +10604,95 @@
         "operationId": "SalesCreditNotesController_findAll",
         "parameters": [
           {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13706,10 +13802,10 @@
         ]
       }
     },
-    "/purchase-orders/{id}/returns/{returnId}/ship": {
+    "/purchase-orders/{id}/returns/{returnId}/unstage": {
       "post": {
-        "description": "Mark a staged purchase return as shipped.",
-        "operationId": "PurchaseReturnsController_shipReturn",
+        "description": "Revert a staged purchase return back to draft state.",
+        "operationId": "PurchaseReturnsController_unstageReturn",
         "parameters": [
           {
             "name": "id",
@@ -13750,7 +13846,107 @@
             }
           }
         },
+        "summary": "Unstage Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/ship": {
+      "post": {
+        "description": "Mark a staged purchase return as shipped.",
+        "operationId": "PurchaseReturnsController_shipReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShipPurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
         "summary": "Ship Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/unship": {
+      "post": {
+        "description": "Revert a shipped purchase return back to staged state.",
+        "operationId": "PurchaseReturnsController_unshipReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unship Purchase Return",
         "tags": [
           "Purchase Returns"
         ]
@@ -13817,6 +14013,14 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "requireDebitNote",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -13942,6 +14146,38 @@
           }
         },
         "summary": "Create Debit Note",
+        "tags": [
+          "Purchase Invoices"
+        ]
+      }
+    },
+    "/purchase-debit-notes/{id}": {
+      "get": {
+        "description": "Retrieve a purchase debit note by ID.",
+        "operationId": "PurchaseDebitNotesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseDebitNoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Debit Note",
         "tags": [
           "Purchase Invoices"
         ]
@@ -14276,58 +14512,6 @@
           }
         },
         "summary": "Complete Work Order Production",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/putaway": {
-      "post": {
-        "description": "Transfer finished goods to warehouse storage bin and fulfill linked backorders.",
-        "operationId": "WorkOrdersController_putawayFinishedGoods",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Putaway Finished Goods",
         "tags": [
           "Manufacturing / Work Orders"
         ]
@@ -20455,6 +20639,9 @@
             "type": "string"
           },
           "sourceBinCode": {
+            "type": "string"
+          },
+          "returnReason": {
             "type": "string"
           }
         },
@@ -26983,6 +27170,10 @@
           },
           "returnFee": {
             "type": "string"
+          },
+          "sourceBinId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -27076,6 +27267,18 @@
             "items": {
               "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
             }
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "shipmentLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -27084,6 +27287,17 @@
           "purchaseOrderId",
           "stateCode"
         ]
+      },
+      "ShipPurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "trackingNumber": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
       },
       "GlobalPurchaseReturnDto": {
         "type": "object",
@@ -27098,6 +27312,18 @@
             "type": "string"
           },
           "currencyCode": {
+            "type": "string"
+          },
+          "debitNoteId": {
+            "type": "string"
+          },
+          "debitNoteNumber": {
+            "type": "string"
+          },
+          "debitNoteState": {
+            "type": "string"
+          },
+          "debitNoteTotalAmount": {
             "type": "string"
           },
           "returnId": {
@@ -27135,6 +27361,18 @@
             "items": {
               "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
             }
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "shipmentLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -27142,6 +27380,59 @@
           "returnNumber",
           "purchaseOrderId",
           "stateCode"
+        ]
+      },
+      "PurchaseDebitNoteLineResponseDto": {
+        "type": "object",
+        "properties": {
+          "debitNoteLineId": {
+            "type": "string"
+          },
+          "debitNoteId": {
+            "type": "string"
+          },
+          "purchaseOrderLineId": {
+            "type": "string"
+          },
+          "quantityInvoiced": {
+            "type": "string"
+          },
+          "pricePerUnit": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "shipmentAllocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "shipmentLineId": {
+                  "type": "string"
+                },
+                "quantityCredited": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "shipmentLineId",
+                "quantityCredited"
+              ]
+            }
+          }
+        },
+        "required": [
+          "debitNoteLineId",
+          "debitNoteId",
+          "purchaseOrderLineId",
+          "quantityInvoiced",
+          "pricePerUnit",
+          "amount"
         ]
       },
       "PurchaseDebitNoteResponseDto": {
@@ -27180,6 +27471,12 @@
             "format": "date-time",
             "type": "string",
             "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseDebitNoteLineResponseDto"
+            }
           }
         },
         "required": [
@@ -27193,11 +27490,32 @@
           "feeAmount"
         ]
       },
+      "CreateDebitNoteShipmentAllocationDto": {
+        "type": "object",
+        "properties": {
+          "shipmentLineId": {
+            "type": "string"
+          },
+          "quantityCredited": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "shipmentLineId",
+          "quantityCredited"
+        ]
+      },
       "CreateDebitNoteLineDto": {
         "type": "object",
         "properties": {
           "purchaseOrderLineId": {
             "type": "string"
+          },
+          "shipmentAllocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDebitNoteShipmentAllocationDto"
+            }
           },
           "quantityInvoiced": {
             "type": "string"
@@ -27330,8 +27648,24 @@
             "type": "string",
             "nullable": true
           },
+          "outputBinId": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputBinName": {
+            "type": "string",
+            "nullable": true
+          },
           "stateCode": {
             "type": "string"
+          },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "additionalCost": {
+            "type": "string",
+            "nullable": true
           },
           "totalCost": {
             "type": "string",
@@ -27420,6 +27754,14 @@
             "format": "uuid",
             "description": "Finished Goods Output Bin ID (optional)"
           },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "description": "Per-unit assembly cost"
+          },
+          "additionalCost": {
+            "type": "string",
+            "description": "Flat additional work order-level cost added to total"
+          },
           "components": {
             "description": "Component lines snapshot (if empty, auto-populated from product BOM)",
             "type": "array",
@@ -27457,6 +27799,16 @@
             "nullable": true,
             "format": "uuid",
             "description": "Finished Goods Output Bin ID (optional)"
+          },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "nullable": true,
+            "description": "Per-unit assembly cost"
+          },
+          "additionalCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Flat additional work order-level cost added to total"
           }
         }
       },

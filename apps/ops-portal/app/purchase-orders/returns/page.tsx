@@ -229,22 +229,22 @@ function ReturnsFlow() {
     >
       <div className="flex flex-col gap-6">
         {/* Top Side: Scan & Entry */}
-        <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
+        <div className="card flex flex-col gap-4 h-fit">
           <h3 className="section-heading">{t('scanProduct')}</h3>
           
           <ProductSearchInput onSelect={handleProductSelect} placeholder={t('placeholder')} />
           
-          {loadingLines && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('loadingLines')}</p>}
+          {loadingLines && <p className="text-[var(--text-muted)] text-[13px]">{t('loadingLines')}</p>}
           
-          {error && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</p>}
+          {error && <p className="text-[var(--danger)] text-[13px]">{error}</p>}
 
           {returnableLines.length === 0 && selectedProduct && !loadingLines && !error && !quarantineMode && (
-            <div className="flex flex-col gap-4 mt-2 p-4 border rounded" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+            <div className="flex flex-col gap-4 mt-2 p-4 border rounded border-[var(--border)] bg-[var(--surface)]">
               <div>
-                <h4 style={{ fontWeight: 600, fontSize: 15 }}>{selectedProduct.name || t('unknownProduct')}</h4>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedProduct.productNumber || t('noPartNumber')}</p>
+                <h4 className="font-semibold text-[15px]">{selectedProduct.name || t('unknownProduct')}</h4>
+                <p className="text-[13px] text-[var(--text-muted)]">{selectedProduct.productNumber || t('noPartNumber')}</p>
               </div>
-              <div className="p-3 rounded text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>
+              <div className="p-3 rounded text-sm bg-red-500/10 text-[var(--danger)]">
                 {t('noActivePOs')}
               </div>
               <div className="flex gap-2">
@@ -258,18 +258,18 @@ function ReturnsFlow() {
             </div>
           )}
 
-          {returnableLines.length > 0 && !selectedLine && !quarantineMode && (
+           {returnableLines.length > 0 && !selectedLine && !quarantineMode && (
              <div className="flex flex-col gap-3">
-               <h4 style={{ fontSize: 14, fontWeight: 600 }}>{t('selectPOLine')}</h4>
+               <h4 className="text-sm font-semibold">{t('selectPOLine')}</h4>
                {returnableLines.map(line => {
                   const rem = Number(line.quantity) - Number(line.quantityReturned);
                   return (
-                      <div key={line.purchaseOrderLineId} className="border rounded-lg p-4 transition-all" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                      <div key={line.purchaseOrderLineId} className="border rounded-lg p-4 transition-all bg-[var(--surface)] border-[var(--border)]">
                         <div className="flex justify-between items-start mb-2">
                            <div>
                               <a href={`/purchase-orders/${line.purchaseOrderId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#006b5c] hover:underline flex items-center gap-1">
                                  {line.orderNumber}
-                                 <span style={{ fontSize: 13 }}>↗</span>
+                                 <span className="text-[13px]">↗</span>
                               </a>
                               <div className="text-xs font-medium text-[rgba(4,22,39,0.7)] mt-0.5">{line.purchaseOrderName || tCommon('orderReadView.untitledOrder')}</div>
                            </div>
@@ -287,27 +287,27 @@ function ReturnsFlow() {
                       </div>
                   );
                })}
-               <Button onClick={() => setQuarantineMode(true)} variant="secondary" className="mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
-                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>{t('quarantineBtnTitle')}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('quarantineBtnSub')}</div>
+               <Button onClick={() => setQuarantineMode(true)} variant="secondary" className="mt-2 text-left block px-3.5 py-2.5 border-dashed border-[var(--border)]">
+                  <div className="font-semibold text-[var(--text)]">{t('quarantineBtnTitle')}</div>
+                  <div className="text-[13px] text-[var(--text-muted)]">{t('quarantineBtnSub')}</div>
                </Button>
              </div>
-          )}
+           )}
 
           {selectedLine && !quarantineMode && (
-            <div className="flex items-center gap-6 mt-4 p-4 border rounded" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+            <div className="flex items-center gap-6 mt-4 p-4 border rounded border-[var(--border)] bg-[var(--surface)]">
               <div className="flex-1">
-                <h4 style={{ fontWeight: 600, fontSize: 15 }}>{selectedLine.orderNumber}</h4>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedLine.productDescription}</p>
-                <div style={{ fontSize: 12, marginTop: 4, display: 'flex', gap: 12 }}>
+                <h4 className="font-semibold text-[15px]">{selectedLine.orderNumber}</h4>
+                <p className="text-[13px] text-[var(--text-muted)]">{selectedLine.productDescription}</p>
+                <div className="text-xs mt-1 flex gap-3">
                     <span>{t('ordered')} <strong>{selectedLine.quantity}</strong></span>
                     <span>{t('received')} <strong>{selectedLine.quantityReturned}</strong></span>
                     <span>{t('poPrice')} <strong>{selectedLine.currencyCode ? formatAmount(Number(selectedLine.pricePerUnit), selectedLine.currencyCode) : selectedLine.pricePerUnit}</strong></span>
                 </div>
               </div>
               
-              <div style={{ width: 140 }}>
-                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('qtyReturned')}</label>
+              <div className="w-[140px]">
+                <label className="block mb-1 text-xs font-medium text-[var(--text-muted)]">{t('qtyReturned')}</label>
                 <input 
                   type="number" 
                   min="0"
@@ -318,21 +318,12 @@ function ReturnsFlow() {
                 />
               </div>
 
-              <div style={{ width: 220 }}>
-                <label className="block mb-1 text-xs font-medium flex items-center" style={{ color: 'var(--text-muted)' }}>
+              <div className="w-[220px]">
+                <label className="block mb-1 text-xs font-medium flex items-center text-[var(--text-muted)]">
                   {t('returnFee')}
                   {selectedLine.currencyCode && (
                     <span
-                      style={{
-                        marginLeft: 8,
-                        padding: '1px 6px',
-                        borderRadius: 4,
-                        background: 'rgba(59,130,246,0.15)',
-                        color: 'var(--accent)',
-                        fontWeight: 600,
-                        fontSize: 10,
-                        letterSpacing: '0.04em',
-                      }}
+                      className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wide"
                     >
                       {selectedLine.currencyCode}
                     </span>
@@ -355,14 +346,14 @@ function ReturnsFlow() {
           )}
 
           {quarantineMode && selectedProduct && (
-            <div className="flex items-center gap-6 mt-4 p-4 border rounded" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+            <div className="flex items-center gap-6 mt-4 p-4 border rounded border-[var(--border)] bg-[var(--surface)]">
               <div className="flex-1">
-                <h4 style={{ fontWeight: 600, fontSize: 15 }}>{t('exceptionQuarantine')}</h4>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedProduct.name} ({selectedProduct.productNumber})</p>
+                <h4 className="font-semibold text-[15px]">{t('exceptionQuarantine')}</h4>
+                <p className="text-[13px] text-[var(--text-muted)]">{selectedProduct.name} ({selectedProduct.productNumber})</p>
               </div>
               
-              <div style={{ width: 140 }}>
-                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('qtyToQuarantine')}</label>
+              <div className="w-[140px]">
+                <label className="block mb-1 text-xs font-medium text-[var(--text-muted)]">{t('qtyToQuarantine')}</label>
                 <input 
                   type="number" 
                   min="0"
@@ -373,21 +364,21 @@ function ReturnsFlow() {
                 />
               </div>
 
-              <div style={{ width: 220 }} />
+              <div className="w-[220px]" />
 
               <div className="flex gap-2 self-end pb-1">
                 <Button variant="secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); setSelectedProduct(null); }}>{t('cancel')}</Button>
-                <Button style={{ background: 'var(--text)', color: 'var(--bg)' }} onClick={addQuarantineToDraft}>{t('confirm')}</Button>
+                <Button className="bg-[var(--text)] text-[var(--bg)]" onClick={addQuarantineToDraft}>{t('confirm')}</Button>
               </div>
             </div>
           )}
         </div>
 
         {/* Bottom Side: Draft Cart & Review */}
-        <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
+        <div className="card flex flex-col gap-4 h-fit">
           <h3 className="section-heading">{t('returnsSummary')}</h3>
           {draftLines.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{t('noItemsScanned')}</p>
+            <p className="text-[var(--text-muted)] text-sm">{t('noItemsScanned')}</p>
           ) : (
             <div className="flex flex-col gap-3">
               {draftLines.map(line => {
@@ -396,48 +387,48 @@ function ReturnsFlow() {
                  const returnFeeDiscrepancy = line.returnFeePerUnit !== undefined && line.returnFeePerUnit !== line.expectedPrice;
                  
                  return (
-                   <div key={line.id} className="flex items-center gap-6 p-4 border rounded" style={{ borderColor: line.isQuarantine ? 'var(--danger)' : 'var(--border)', backgroundColor: line.isQuarantine ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}>
+                   <div key={line.id} className={`flex items-center gap-6 p-4 border rounded ${line.isQuarantine ? 'border-[var(--danger)] bg-red-500/5' : 'border-[var(--border)] bg-transparent'}`}>
                     <div className="flex-1">
-                       <h4 style={{ fontWeight: 600, fontSize: 15, color: line.isQuarantine ? 'var(--danger)' : undefined }}>
+                       <h4 className={`font-semibold text-[15px] ${line.isQuarantine ? 'text-[var(--danger)]' : ''}`}>
                          {line.isQuarantine ? t('exceptionQuarantineTag') : line.orderNumber}
                        </h4>
-                       <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{line.productDescription}</p>
+                       <p className="text-[13px] text-[var(--text-muted)]">{line.productDescription}</p>
                     </div>
                     
-                    <div style={{ width: 140 }}>
-                       <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>{t('qtyReturnedSummary')}</span>
-                       <span style={{ fontWeight: 600, fontSize: 15, color: line.isQuarantine ? 'var(--danger)' : 'var(--text)' }}>{line.quantityReturned}</span>
+                    <div className="w-[140px]">
+                       <span className="text-[13px] text-[var(--text-muted)] block mb-0.5">{t('qtyReturnedSummary')}</span>
+                       <span className={`font-semibold text-[15px] ${line.isQuarantine ? 'text-[var(--danger)]' : 'text-[var(--text)]'}`}>{line.quantityReturned}</span>
                     </div>
 
-                    <div style={{ width: 220 }}>
-                       <div style={{ marginBottom: returnFeeDiscrepancy ? 4 : 0 }}>
-                          <span style={{ color: 'var(--text)', fontSize: 13 }}>
+                    <div className="w-[220px]">
+                       <div className={returnFeeDiscrepancy ? 'mb-1' : 'mb-0'}>
+                          <span className="text-[var(--text)] text-[13px]">
                              {line.returnFeePerUnit !== undefined ? (
                                 line.currencyCode ? formatAmount(line.returnFeePerUnit, line.currencyCode) : Number(line.returnFeePerUnit).toFixed(2)
                              ) : (
-                                <span style={{ color: 'var(--text-muted)' }}>—</span>
+                                <span className="text-[var(--text-muted)]">—</span>
                              )}
                           </span>
                        </div>
                       {!line.isQuarantine && returnFeeDiscrepancy && (
-                         <span style={{ fontSize: 12, color: 'var(--warning)', display: 'block' }}>
+                         <span className="text-xs text-[var(--warning)] block">
                             {t('returnFeeDiscrepancy', { amount: line.currencyCode ? formatAmount(line.returnFeePerUnit || 0, line.currencyCode) : line.returnFeePerUnit || 0, expected: line.currencyCode ? formatAmount(line.expectedPrice, line.currencyCode) : line.expectedPrice })}
                          </span>
                       )}
                       {!line.isQuarantine && isOverReceive && (
-                         <span style={{ fontSize: 12, color: 'var(--warning)', marginTop: returnFeeDiscrepancy ? 4 : 0, display: 'block' }}>
+                         <span className={`text-xs text-[var(--warning)] block ${returnFeeDiscrepancy ? 'mt-1' : 'mt-0'}`}>
                             {t('exceptionQuarantine', { expected: remaining, receiving: line.quantityReturned })}
                          </span>
                       )}
                       {line.isQuarantine && (
-                         <span style={{ fontSize: 12, color: 'var(--danger)', display: 'block', fontWeight: 500 }}>
+                         <span className="text-xs text-[var(--danger)] block font-medium">
                             <span dangerouslySetInnerHTML={{ __html: t('moveToQuarantine') }} />
                          </span>
                       )}
                     </div>
 
                     <div className="flex gap-2">
-                       <Button variant="secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>{t('remove')}</Button>
+                       <Button variant="secondary" className="text-[var(--danger)] border-[var(--danger)]" onClick={() => removeDraftLine(line.id)}>{t('remove')}</Button>
                     </div>
                    </div>
                  )
@@ -452,7 +443,7 @@ function ReturnsFlow() {
 
 export default function ReturnsPage() {
   return (
-    <Suspense fallback={<p style={{ padding: 20 }}>Loading...</p>}>
+    <Suspense fallback={<p className="p-5">Loading...</p>}>
       <ReturnsFlow />
     </Suspense>
   );

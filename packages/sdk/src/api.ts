@@ -361,6 +361,7 @@ import type {
   SetupControllerExecuteCsvBody,
   SetupControllerStopJob200,
   SetupValidationDto,
+  ShipPurchaseReturnDto,
   ShipmentResponseDto,
   ShippingContextDto,
   ShippingQueueOrderDto,
@@ -13274,6 +13275,47 @@ export const purchaseReturnsControllerStageReturn = async (id: string,
 
 
 /**
+ * Revert a staged purchase return back to draft state.
+ * @summary Unstage Purchase Return
+ */
+export type purchaseReturnsControllerUnstageReturnResponse200 = {
+  data: PurchaseReturnResponseDto
+  status: 200
+}
+    
+export type purchaseReturnsControllerUnstageReturnResponseSuccess = (purchaseReturnsControllerUnstageReturnResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseReturnsControllerUnstageReturnResponse = (purchaseReturnsControllerUnstageReturnResponseSuccess)
+
+export const getPurchaseReturnsControllerUnstageReturnUrl = (id: string,
+    returnId: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}/returns/${returnId}/unstage`
+}
+
+export const purchaseReturnsControllerUnstageReturn = async (id: string,
+    returnId: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<purchaseReturnsControllerUnstageReturnResponse> => {
+  
+  return customFetch<purchaseReturnsControllerUnstageReturnResponse>(getPurchaseReturnsControllerUnstageReturnUrl(id,returnId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Mark a staged purchase return as shipped.
  * @summary Ship Purchase Return
  */
@@ -13300,9 +13342,50 @@ export const getPurchaseReturnsControllerShipReturnUrl = (id: string,
 
 export const purchaseReturnsControllerShipReturn = async (id: string,
     returnId: string,
-    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<purchaseReturnsControllerShipReturnResponse> => {
+    shipPurchaseReturnDto: ShipPurchaseReturnDto, options?: RequestInit): Promise<purchaseReturnsControllerShipReturnResponse> => {
   
   return customFetch<purchaseReturnsControllerShipReturnResponse>(getPurchaseReturnsControllerShipReturnUrl(id,returnId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      shipPurchaseReturnDto,)
+  }
+);}
+
+
+
+/**
+ * Revert a shipped purchase return back to staged state.
+ * @summary Unship Purchase Return
+ */
+export type purchaseReturnsControllerUnshipReturnResponse200 = {
+  data: PurchaseReturnResponseDto
+  status: 200
+}
+    
+export type purchaseReturnsControllerUnshipReturnResponseSuccess = (purchaseReturnsControllerUnshipReturnResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseReturnsControllerUnshipReturnResponse = (purchaseReturnsControllerUnshipReturnResponseSuccess)
+
+export const getPurchaseReturnsControllerUnshipReturnUrl = (id: string,
+    returnId: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}/returns/${returnId}/unship`
+}
+
+export const purchaseReturnsControllerUnshipReturn = async (id: string,
+    returnId: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<purchaseReturnsControllerUnshipReturnResponse> => {
+  
+  return customFetch<purchaseReturnsControllerUnshipReturnResponse>(getPurchaseReturnsControllerUnshipReturnUrl(id,returnId),
   {      
     ...options,
     method: 'POST',
@@ -13513,6 +13596,43 @@ export const purchaseDebitNotesControllerCreateDebitNote = async (createDebitNot
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createDebitNoteDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve a purchase debit note by ID.
+ * @summary Get Debit Note
+ */
+export type purchaseDebitNotesControllerFindOneResponse200 = {
+  data: PurchaseDebitNoteResponseDto
+  status: 200
+}
+    
+export type purchaseDebitNotesControllerFindOneResponseSuccess = (purchaseDebitNotesControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseDebitNotesControllerFindOneResponse = (purchaseDebitNotesControllerFindOneResponseSuccess)
+
+export const getPurchaseDebitNotesControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-debit-notes/${id}`
+}
+
+export const purchaseDebitNotesControllerFindOne = async (id: string, options?: RequestInit): Promise<purchaseDebitNotesControllerFindOneResponse> => {
+  
+  return customFetch<purchaseDebitNotesControllerFindOneResponse>(getPurchaseDebitNotesControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -13833,50 +13953,6 @@ export const workOrdersControllerCompleteBuild = async (id: string,
     emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerCompleteBuildResponse> => {
   
   return customFetch<workOrdersControllerCompleteBuildResponse>(getWorkOrdersControllerCompleteBuildUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      emptyBodyDto,)
-  }
-);}
-
-
-
-/**
- * Transfer finished goods to warehouse storage bin and fulfill linked backorders.
- * @summary Putaway Finished Goods
- */
-export type workOrdersControllerPutawayFinishedGoodsResponse200 = {
-  data: WorkOrderResponseDto
-  status: 200
-}
-
-export type workOrdersControllerPutawayFinishedGoodsResponse201 = {
-  data: WorkOrderResponseDto
-  status: 201
-}
-    
-export type workOrdersControllerPutawayFinishedGoodsResponseSuccess = (workOrdersControllerPutawayFinishedGoodsResponse200 | workOrdersControllerPutawayFinishedGoodsResponse201) & {
-  headers: Headers;
-};
-;
-
-export type workOrdersControllerPutawayFinishedGoodsResponse = (workOrdersControllerPutawayFinishedGoodsResponseSuccess)
-
-export const getWorkOrdersControllerPutawayFinishedGoodsUrl = (id: string,) => {
-
-
-  
-
-  return `/manufacturing/work-orders/${id}/putaway`
-}
-
-export const workOrdersControllerPutawayFinishedGoods = async (id: string,
-    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<workOrdersControllerPutawayFinishedGoodsResponse> => {
-  
-  return customFetch<workOrdersControllerPutawayFinishedGoodsResponse>(getWorkOrdersControllerPutawayFinishedGoodsUrl(id),
   {      
     ...options,
     method: 'POST',

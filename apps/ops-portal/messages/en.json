@@ -1518,6 +1518,8 @@
         },
         "purchase_order": {
           "created": "Purchase Order created",
+          "debit_note_created": "Debit Note created",
+          "debit_note_posted": "Debit Note posted",
           "deleted": "Purchase Order deleted",
           "status_changed": "Purchase Order status changed"
         },
@@ -1527,10 +1529,12 @@
         },
         "sales_invoice": {
           "created": "Sales Invoice created",
+          "credit_note_posted": "Credit Note posted",
           "status_changed": "Sales Invoice status changed"
         },
         "sales_order": {
           "created": "Sales Order created",
+          "credit_note_posted": "Credit Note posted",
           "deleted": "Sales Order deleted",
           "status_changed": "Sales Order status changed"
         },
@@ -2832,7 +2836,7 @@
       "lineTotal": "Line Total",
       "loadingLines": "Loading...",
       "markQuarantine": "Mark Quarantine",
-      "maxReturn": "Max Return",
+      "maxReturn": "{received} (Max {maxReturn})",
       "moveToQuarantine": "Move to Quarantine",
       "noActivePOs": "No returnable PO lines found for this product.",
       "noItemsScanned": "No items staged for return.",
@@ -3131,6 +3135,7 @@
       "orderNo": "Order No.",
       "returnDetails": "Return Details",
       "returnLocation": "Return Location",
+      "subtotal": "Subtotal",
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees"
     },
@@ -3787,6 +3792,8 @@
       "saving": "Saving..."
     },
     "columns": {
+      "additionalCost": "Additional Cost",
+      "assemblyCostPerUnit": "Assembly Cost/Unit",
       "completedQty": "Completed Qty",
       "expectedQty": "Expected Qty",
       "lineNumber": "#",
@@ -3795,6 +3802,7 @@
       "product": "Product",
       "status": "Status",
       "targetQty": "Target Qty",
+      "totalCost": "Total Cost",
       "unitCost": "Unit Cost",
       "wipBin": "WIP Bin"
     },
@@ -3809,18 +3817,23 @@
       "targetQtyPositive": "Target quantity must be greater than 0"
     },
     "labels": {
+      "additionalCost": "Additional Cost",
+      "assemblyCostPerUnit": "Unit Assembly Cost",
       "location": "Location",
       "orderNumber": "Order Number",
       "outputBin": "Output Bin",
       "product": "Product to Produce",
       "targetQuantity": "Target Quantity",
+      "totalCost": "Total Cost",
       "wipBin": "WIP Bin",
       "zone": "Storage Zone"
     },
     "lineItems": "Components",
     "noLineItems": "No component line items added.",
     "placeholders": {
+      "additionalCost": "0.00",
       "allZones": "All Zones",
+      "assemblyCostPerUnit": "0.00",
       "customDescription": "Custom component description",
       "orderNumber": "e.g. WO-20260811-001 (auto-generated if empty)",
       "searchComponent": "Add component...",

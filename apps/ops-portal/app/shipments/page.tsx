@@ -87,8 +87,7 @@ export default function ShipmentsPage() {
         <select
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            className="input text-sm min-w-[150px]"
         >
             <option value="30">{tCommon('filters.last30Days')}</option>
             <option value="90">{tCommon('filters.last90Days')}</option>

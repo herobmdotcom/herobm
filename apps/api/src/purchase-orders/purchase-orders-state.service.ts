@@ -149,19 +149,19 @@ export class PurchaseOrdersStateService {
       }
     }
 
-    return await db.transaction(async (txInner: DrizzleDB) => {
+    return await db.transaction(async (innerTx: DrizzleDB) => {
       const updated = await this.updateStateInternal(
         id,
         stateCode,
         actor,
-        txInner,
+        innerTx,
       );
 
       if (
         stateCode === PURCHASE_ORDER_STATE.CANCELLED ||
         stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT
       ) {
-        const affected = await txInner
+        const affected = await innerTx
           .select({ id: backorders.backorderId, soId: backorders.salesOrderId })
           .from(backorders)
           .where(eq(backorders.purchaseOrderId, id));
@@ -170,11 +170,11 @@ export class PurchaseOrdersStateService {
             b.id,
             BACKORDER_STATE.PENDING_SUPPLY,
             actor,
-            txInner,
+            innerTx,
           );
 
           if (b.soId) {
-            await emitEvent(txInner, {
+            await emitEvent(innerTx, {
               entityType: EntityType.SALES_ORDER,
               entityId: b.soId,
               eventType: EventType.DEMAND_UNALLOCATED,
@@ -185,7 +185,7 @@ export class PurchaseOrdersStateService {
           }
         }
 
-        await txInner
+        await innerTx
           .update(backorders)
           .set({
             purchaseOrderId: null,

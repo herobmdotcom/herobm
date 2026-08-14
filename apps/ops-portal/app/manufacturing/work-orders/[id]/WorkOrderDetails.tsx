@@ -19,7 +19,6 @@ import {
   workOrdersControllerFindOne,
   workOrdersControllerRelease,
   workOrdersControllerCompleteBuild,
-  workOrdersControllerPutawayFinishedGoods,
   workOrdersControllerCancel,
   workOrdersControllerUpdate,
   workOrdersControllerUpdateComponent,
@@ -56,6 +55,8 @@ interface WorkOrderDetail {
   outputBinName?: string | null;
   stateCode: string;
   putawayStatus?: string | null;
+  assemblyCostPerUnit?: string | null;
+  additionalCost?: string | null;
   totalCost?: string | null;
   createdBy?: string | null;
   createdOn?: string | Date | null;
@@ -122,6 +123,8 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         locationId: data.locationId,
         wipBinId: data.wipBinId || '',
         outputBinId: data.outputBinId || '',
+        assemblyCostPerUnit: data.assemblyCostPerUnit || '',
+        additionalCost: data.additionalCost || '',
       });
     }
   }, [data]);
@@ -271,19 +274,6 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       await fetchWorkOrder(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to complete production');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handlePutaway = async () => {
-    try {
-      setActionLoading(true);
-      await workOrdersControllerPutawayFinishedGoods(workOrderId, {});
-      toast.success('Finished goods putaway completed & linked backorders fulfilled!');
-      await fetchWorkOrder(false);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to putaway finished goods');
     } finally {
       setActionLoading(false);
     }
@@ -664,16 +654,60 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               )}
             </div>
 
-            {data.totalCost && (
-              <div className="min-w-0">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Total Cost
-                </label>
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tWork('labels.assemblyCostPerUnit')}
+              </label>
+              {isEditable ? (
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input w-full"
+                  disabled={actionLoading}
+                  placeholder={tWork('placeholders.assemblyCostPerUnit')}
+                  value={dto.assemblyCostPerUnit || ''}
+                  onChange={(e) => updateField('assemblyCostPerUnit', e.target.value)}
+                  onBlur={(e) => saveField('assemblyCostPerUnit', e.target.value)}
+                />
+              ) : (
                 <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
-                  ${parseFloat(data.totalCost).toFixed(2)}
+                  {data.assemblyCostPerUnit ? `$${parseFloat(data.assemblyCostPerUnit).toFixed(2)}` : '—'}
                 </p>
-              </div>
-            )}
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tWork('labels.additionalCost')}
+              </label>
+              {isEditable ? (
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input w-full"
+                  disabled={actionLoading}
+                  placeholder={tWork('placeholders.additionalCost')}
+                  value={dto.additionalCost || ''}
+                  onChange={(e) => updateField('additionalCost', e.target.value)}
+                  onBlur={(e) => saveField('additionalCost', e.target.value)}
+                />
+              ) : (
+                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                  {data.additionalCost ? `$${parseFloat(data.additionalCost).toFixed(2)}` : '—'}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tWork('labels.totalCost')}
+              </label>
+              <p className="text-sm truncate font-semibold" style={{ color: 'var(--accent)', paddingTop: 6 }}>
+                ${parseFloat(data.totalCost || '0').toFixed(2)}
+              </p>
+            </div>
             
             {data.createdOn && (
               <div className="min-w-0">

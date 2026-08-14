@@ -188,7 +188,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     return (
       <>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+          <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
         </div>
       </>
     );
@@ -198,7 +198,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     return (
       <>
         <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+          <p className="text-lg mb-2 text-[var(--danger)]">
             {tCommon('noMatchingResults')}
           </p>
           <Button variant="secondary" onClick={() => router.push('/suppliers')}>
@@ -292,7 +292,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             ) : (
               <Button
                 variant="secondary"
-                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-600"
                 onClick={archiveSupplier}
                 disabled={saving}
               >
@@ -303,10 +303,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         }
       >
       {supplier.stateCode === SUPPLIER_STATE.ARCHIVED && (
-        <div
-          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
-          style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
-        >
+        <div className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700">
           <div>
             <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
           </div>
@@ -373,7 +370,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('columns.name')} *
               </label>
               <input
@@ -386,7 +383,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.vendorNumber')}
               </label>
               <input
@@ -397,7 +394,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('supplierGroup')}
               </label>
               <GroupSelect
@@ -412,7 +409,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('country')} *
               </label>
               <select
@@ -444,7 +441,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('notesCardHeading')}
               </label>
               <input
@@ -471,7 +468,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 1 ── */}
             {/* 1. Currency */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('columns.currency')} *
               </label>
               <select
@@ -491,39 +488,21 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             {/* 2. State */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('columns.state')}
               </label>
               <div
-                className="flex items-center gap-3"
-                style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={toggleState}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'var(--accent)' : 'var(--border)',
-                    position: 'relative',
-                    transition: 'background 0.2s ease',
-                    opacity: !isEditable || saving ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable || saving ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      position: 'absolute',
-                      top: 3,
-                      left: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 21 : 3,
-                      transition: 'left 0.2s ease',
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <span className="text-sm text-[var(--text-secondary)]">
                   <StateName state={supplier.stateCode as ValidState} />
                 </span>
               </div>
@@ -531,7 +510,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             {/* 3. Early Payment Discount */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('earlyPaymentDiscount')}
               </label>
               <div className="flex items-center gap-3">
@@ -552,7 +531,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
                 {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
-                <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-sm font-medium shrink-0 text-[var(--text-muted)]">
                   in
                 </span>
                 <div className="relative w-32 shrink-0">
@@ -583,7 +562,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Credit Limit
               </label>
               <div className="flex items-center gap-3">
@@ -612,7 +591,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 2 ── */}
             {/* 4. Business Number */}
             <div>
-              <label className="flex items-center text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)', minHeight: 16 }}>
+              <label className="flex items-center text-xs font-medium mb-1.5 text-[var(--text-muted)] min-h-[16px]">
                 {t('fields.businessNumber')}
                 <FrontendEnrichmentDecorator
                   field="supplier.business_number"
@@ -647,12 +626,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             {/* 5. Tax Registered */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('fields.taxRegistered')}
               </label>
               <div
-                className="flex items-center gap-3"
-                style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={() => {
                   if (!isEditable || saving) return;
                   const newValue = !dto?.isTaxRegistered;
@@ -661,30 +639,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 }}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: dto?.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
-                    position: 'relative',
-                    transition: 'background 0.2s ease',
-                    opacity: !isEditable || saving ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto?.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable || saving ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      position: 'absolute',
-                      top: 3,
-                      left: dto?.isTaxRegistered ? 21 : 3,
-                      transition: 'left 0.2s ease',
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto?.isTaxRegistered ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <span className="text-sm text-[var(--text-secondary)]">
                   {dto?.isTaxRegistered ? tCommon('yes') : tCommon('no')}
                 </span>
               </div>
@@ -692,7 +653,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             {/* 6. Tax Position */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('columns.taxPosition')}
               </label>
               <InheritedSelect
@@ -715,7 +676,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 3 ── */}
             {/* 7. Trading Terms */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('tradingTerms')}
               </label>
               <InheritedSelect
@@ -746,7 +707,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('email')}
               </label>
               <input
@@ -759,7 +720,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('phone')}
               </label>
               <input
@@ -772,7 +733,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('columns.address')}
               </label>
               <input
@@ -785,7 +746,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('city')}
               </label>
               <input
@@ -809,7 +770,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('fields.bankAccountName')}
               </label>
               <input
@@ -823,7 +784,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 BSB
               </label>
               <input
@@ -837,7 +798,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('fields.accountNumber')}
               </label>
               <input
@@ -880,7 +841,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.purchasingBlock')}</label>
+                  <label className="block text-xs font-medium m-0 text-[var(--text-muted)]">{t('compliance.purchasingBlock')}</label>
                   <InheritedSelect
                     className="input"
                     disabled={!isEditable || saving}
@@ -900,7 +861,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {dto?.isPurchasingBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={dto?.purchasingBlockReason || ''}
@@ -926,7 +887,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.paymentBlock')}</label>
+                  <label className="block text-xs font-medium m-0 text-[var(--text-muted)]">{t('compliance.paymentBlock')}</label>
                   <InheritedSelect
                     className="input"
                     disabled={!isEditable || saving}
@@ -946,7 +907,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {dto?.isPaymentBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={dto?.paymentBlockReason || ''}
@@ -971,7 +932,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
 
             <div className="mt-4">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('compliance.blockNotes')}
               </label>
               <input

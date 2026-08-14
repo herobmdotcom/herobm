@@ -160,7 +160,7 @@ export default function ProductDetailPage() {
             <Button
               variant="secondary"
               size="sm"
-              style={{ color: '#ef4444', borderColor: '#ef4444' }}
+              className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-600"
               onClick={archiveProduct}
               disabled={saving}
             >
@@ -171,10 +171,7 @@ export default function ProductDetailPage() {
       }
     >
       {product.stateCode === PRODUCT_STATE.ARCHIVED && (
-        <div
-          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
-          style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
-        >
+        <div className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700">
           <div>
             <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
           </div>
@@ -227,7 +224,7 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('common.columns.number')}
                   </label>
                   <input
@@ -241,7 +238,7 @@ export default function ProductDetailPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('products.productName')}
                   </label>
                   <input
@@ -257,7 +254,7 @@ export default function ProductDetailPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('products.columns.barcode')}
                   </label>
                   <input
@@ -270,7 +267,7 @@ export default function ProductDetailPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('products.columns.alternateProductNumber')}
                   </label>
                   <input
@@ -295,7 +292,7 @@ export default function ProductDetailPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('common.columns.type')}
                 </label>
                 <select
@@ -314,7 +311,7 @@ export default function ProductDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.structureType')}
                 </label>
                 <select
@@ -336,7 +333,7 @@ export default function ProductDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('common.columns.status')}
                 </label>
                 <select
@@ -354,7 +351,7 @@ export default function ProductDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.productGroup')}
                 </label>
                 <GroupSelect
@@ -380,7 +377,7 @@ export default function ProductDetailPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.listPrice')}
                 </label>
                 <input
@@ -398,7 +395,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.tradePrice')}
                 </label>
                 <input
@@ -416,7 +413,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.priceLevel3')}
                 </label>
                 <input
@@ -434,7 +431,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.priceLevel4')}
                 </label>
                 <input
@@ -452,7 +449,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.stdCost')}
                 </label>
                 <input
@@ -481,7 +478,7 @@ export default function ProductDetailPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.purchaseTaxCategory')}
                 </label>
                 <InheritedSelect
@@ -507,7 +504,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.salesTaxCategory')}
                 </label>
                 <InheritedSelect
@@ -533,7 +530,7 @@ export default function ProductDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.externalTaxCode')}
                 </label>
                 <input
@@ -558,7 +555,7 @@ export default function ProductDetailPage() {
           {/* Default UoM selectors */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('products.baseUom')}
               </label>
               <select
@@ -582,7 +579,7 @@ export default function ProductDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('products.defaultSalesUom')}
               </label>
               <select
@@ -605,7 +602,7 @@ export default function ProductDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('products.defaultPurchaseUom')}
               </label>
               <select
@@ -694,7 +691,7 @@ export default function ProductDetailPage() {
 
           <div className="pt-4 mt-4 grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('products.columns.weight')}
               </label>
               <input
@@ -718,8 +715,7 @@ export default function ProductDetailPage() {
             {t('common.notesCardHeading')}
           </h3>
           <textarea
-            className="input w-full"
-            style={{ height: 110, paddingTop: 12 }}
+            className="input w-full h-[110px] pt-3"
             disabled={!isEditable || saving}
             value={dto.notes ?? ''}
             onChange={(e) => updateField('notes', e.target.value)}

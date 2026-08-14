@@ -9,8 +9,8 @@ import {
   zones,
   backorders,
 } from '@herobm/db-schema';
-import { eq, and, sql, inArray } from 'drizzle-orm';
-import { PICKABLE_BIN_TYPES } from '../inventory/inventory-math.utils';
+import { eq, and, sql } from 'drizzle-orm';
+import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import {
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
@@ -109,8 +109,7 @@ export class WorkOrdersExecutionService {
             and(
               eq(zones.locationId, wo.locationId),
               eq(binContents.productId, comp.productId),
-              eq(bins.isUnavailable, false),
-              inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
+              isPickableBinCondition(bins),
             ),
           );
 
@@ -188,12 +187,23 @@ export class WorkOrdersExecutionService {
     const db = tx || this.db;
     const wo = await this.queryService.findOne(id, db);
 
-    let totalCostNum = 0;
+    let componentsCost = 0;
     for (const comp of wo.components) {
       const qty = parseFloat(comp.expectedQuantity || '0');
       const cost = comp.unitCost ? parseFloat(comp.unitCost) : 0;
-      totalCostNum += qty * cost;
+      componentsCost += qty * cost;
     }
+
+    const targetQty = parseFloat(wo.targetQuantity || '0') || 0;
+    const unitAssemblyCost = wo.assemblyCostPerUnit
+      ? parseFloat(wo.assemblyCostPerUnit)
+      : 0;
+    const assemblyTotal = unitAssemblyCost * targetQty;
+    const additionalCost = wo.additionalCost
+      ? parseFloat(wo.additionalCost)
+      : 0;
+
+    const totalCostNum = componentsCost + assemblyTotal + additionalCost;
 
     const executeComplete = async (innerTx: DrizzleDB) => {
       await this.changeWorkOrderState(

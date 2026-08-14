@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { PaginationQuery } from '../common/pagination';
+import type { PaginationQuery } from '../common/pagination';
 import type { PurchaseOrderState } from '@herobm/shared';
 
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
@@ -11,6 +11,8 @@ export type { UnifiedPurchaseOrderRow } from './purchase-orders-query.service';
 
 @Injectable()
 export class PurchaseOrdersService {
+  private readonly logger = new Logger(PurchaseOrdersService.name);
+
   constructor(
     private readonly queryService: PurchaseOrdersQueryService,
     private readonly stateService: PurchaseOrdersStateService,

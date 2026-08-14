@@ -27,7 +27,7 @@ import {
 
 import { herobmCore, validCurrencyCheck } from './core.schema';
 import { suppliers, glAccounts } from './index';
-import { locations } from './inventory.schema';
+import { locations, bins } from './inventory.schema';
 import { products } from './products.schema';
 import { taxCategories } from './tax.schema';
 
@@ -155,6 +155,7 @@ export const purchaseOrderReturnLines = herobmCore.table(
     quantityReturned: numeric('quantity_returned').notNull(),
     reason: text('reason'),
     returnFee: numeric('return_fee'), // absolute fee in order currency
+    sourceBinId: uuid('source_bin_id').references(() => bins.binId),
   },
 );
 
@@ -272,6 +273,23 @@ export const purchaseDebitNoteLines = herobmCore.table(
     pricePerUnit: numeric('price_per_unit').notNull(),
     amount: numeric('amount').notNull(),
     taxAmount: numeric('tax_amount'),
+  },
+);
+
+// ---------------------------------------------------------------------------
+// purchase_debit_note_shipments  (N:N mapping for 3-way matching between debit note lines and return shipment lines)
+// ---------------------------------------------------------------------------
+export const purchaseDebitNoteShipments = herobmCore.table(
+  'purchase_debit_note_shipments',
+  {
+    debitNoteShipmentId: uuid('debit_note_shipment_id').primaryKey().defaultRandom(),
+    debitNoteLineId: uuid('debit_note_line_id')
+      .notNull()
+      .references(() => purchaseDebitNoteLines.debitNoteLineId),
+    shipmentLineId: uuid('shipment_line_id')
+      .notNull()
+      .references(() => purchaseOrderReturnShipmentLines.shipmentLineId),
+    quantityCredited: numeric('quantity_credited').notNull(),
   },
 );
 

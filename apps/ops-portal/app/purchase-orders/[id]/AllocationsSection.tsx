@@ -47,11 +47,11 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
       </div>
       
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
+        <p className="text-sm text-[var(--text-muted)] py-5 text-center">
           {t('allocationsSection.loading')}
         </p>
       ) : allocations.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
+        <p className="text-sm text-[var(--text-muted)] py-5 text-center">
           {t('allocationsSection.noAllocations')}
         </p>
       ) : (

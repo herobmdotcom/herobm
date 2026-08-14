@@ -78,7 +78,7 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
           beforeTable={
             <div className="flex gap-8 mb-6 mt-4">
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
-                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                <label className="text-xs font-medium text-[var(--text-muted)]">
                   Default Customer Tax Position
                 </label>
                 <select
@@ -94,7 +94,7 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
               </div>
               
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
-                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                <label className="text-xs font-medium text-[var(--text-muted)]">
                   Default Supplier Tax Position
                 </label>
                 <select

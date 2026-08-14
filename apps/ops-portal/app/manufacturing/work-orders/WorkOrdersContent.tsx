@@ -79,6 +79,20 @@ export default function WorkOrdersContent() {
         },
       },
       {
+        field: 'totalCost',
+        headerName: tWork('columns.totalCost'),
+        width: 120,
+        cellDataType: 'number',
+        valueGetter: (params) => {
+          if (!params.data?.totalCost) return 0;
+          return parseFloat(params.data.totalCost);
+        },
+        valueFormatter: (params) => {
+          if (params.value === undefined || params.value === null) return '—';
+          return `$${Number(params.value).toFixed(2)}`;
+        },
+      },
+      {
         field: 'createdOn',
         headerName: tCommon('columns.date'),
         width: 130,

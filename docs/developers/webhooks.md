@@ -65,7 +65,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `demand_unallocated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
 | `sales_invoice` | `created`, `status_changed`, `deleted`, `credit_note_posted` |
 | `sales_return` | `created`, `status_changed`, `processed`, `updated` |
-| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `return_created`, `updated` |
+| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `debit_note_created`, `debit_note_posted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `return_created`, `updated` |
 | `purchase_invoice` | `created`, `status_changed`, `deleted`, `order_linked`, `order_unlinked`, `updated` |
 | `purchase_return` | `created`, `status_changed`, `processed` |
 | `warehouse` | `receipt_created`, `receipt_status_changed`, `shipment_created`, `shipment_status_changed`, `shipment_dispatched`, `pick_created`, `pick_cancelled`, `putaway_completed`, `stock_moved` |
@@ -109,8 +109,8 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `csv_mapping_profile` | `created`, `deleted`, `updated` |
 | `integration` | `updated` |
 | `macro` | `created`, `deleted`, `updated` |
-| `work_order` | `created`, `putaway_completed`, `status_changed`, `updated` |
-| `work_order_pick` | `created`, `status_changed` |
+| `work_order` | `created`, `demand_allocated`, `status_changed`, `updated` |
+| `work_order_pick` | `created`, `pick_cancelled`, `status_changed` |
 
 ### State Changes Reference
 

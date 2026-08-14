@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { PurchaseDebitNoteLineResponseDto } from './purchaseDebitNoteLineResponseDto';
 
 export interface PurchaseDebitNoteResponseDto {
   debitNoteId: string;
@@ -19,4 +20,5 @@ export interface PurchaseDebitNoteResponseDto {
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;
+  lines?: PurchaseDebitNoteLineResponseDto[];
 }

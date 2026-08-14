@@ -126,11 +126,11 @@ export default function ReceiveReturnSlideOver({
             <table className="table-lines w-full">
                 <thead>
                     <tr>
-                        <th style={{ textAlign: 'left' }}>{t('columns.return.product')}</th>
-                        <th style={{ textAlign: 'left' }}>{t('columns.return.description')}</th>
-                        <th style={{ textAlign: 'right' }}>{t('columns.return.expectedQty')}</th>
-                        <th style={{ textAlign: 'right' }}>{t('columns.return.received')}</th>
-                        <th style={{ textAlign: 'right' }}>{t('columns.return.receiveNow')}</th>
+                        <th className="text-left">{t('columns.return.product')}</th>
+                        <th className="text-left">{t('columns.return.description')}</th>
+                        <th className="text-right">{t('columns.return.expectedQty')}</th>
+                        <th className="text-right">{t('columns.return.received')}</th>
+                        <th className="text-right">{t('columns.return.receiveNow')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,13 +154,13 @@ export default function ReceiveReturnSlideOver({
                                     </div>
                                 )}
                             </td>
-                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                            <td className="text-right tabular-nums text-[var(--text-muted)]">
                                 {line.quantityReturned}
                             </td>
-                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                            <td className="text-right tabular-nums text-[var(--text-muted)]">
                                 {line.quantityReceived || '0'}
                             </td>
-                            <td style={{ textAlign: 'right' }}>
+                            <td className="text-right">
                                 <input
                                     className="input text-right w-24"
                                     type="number"

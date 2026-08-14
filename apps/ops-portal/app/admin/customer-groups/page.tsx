@@ -80,34 +80,17 @@ export default function AccountGroupsAdmin() {
         return (
           <div className="flex items-center gap-2">
             <div
-              style={{ cursor: isEditing ? 'pointer' : 'default' }}
+              className={isEditing ? 'cursor-pointer' : 'cursor-default'}
               onClick={() => {
                 if (!isEditing || !onChange) return;
                 onChange(isActive ? CUSTOMER_STATE.INACTIVE : CUSTOMER_STATE.ACTIVE);
               }}
             >
               <div
-                style={{
-                  width: 40,
-                  height: 22,
-                  borderRadius: 11,
-                  background: isActive ? 'var(--success)' : 'var(--danger)',
-                  position: 'relative',
-                  transition: 'background 0.2s ease',
-                  opacity: isEditing ? 1 : 0.7,
-                }}
+                className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${isActive ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'} ${isEditing ? 'opacity-100' : 'opacity-70'}`}
               >
                 <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#fff',
-                    position: 'absolute',
-                    top: 3,
-                    left: isActive ? 21 : 3,
-                    transition: 'left 0.2s ease',
-                  }}
+                  className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${isActive ? 'left-[21px]' : 'left-[3px]'}`}
                 />
               </div>
             </div>
@@ -217,7 +200,7 @@ export default function AccountGroupsAdmin() {
 
       <div className="card mb-6">
         <InlineSettingsTable
-          title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
+          title={<span className="text-[var(--text-muted)] uppercase tracking-wider text-sm font-semibold">{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
           rowKey={row => row.customerGroupId}

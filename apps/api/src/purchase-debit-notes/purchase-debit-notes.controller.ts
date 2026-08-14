@@ -48,6 +48,17 @@ export class PurchaseDebitNotesController {
     return this.debitNotesService.findAll(vendorId, balanceStatus);
   }
 
+  @Get(':id')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Debit Note',
+    description: 'Retrieve a purchase debit note by ID.',
+  })
+  @ApiOkResponse({ type: PurchaseDebitNoteResponseDto })
+  findOne(@Param('id') id: string) {
+    return this.debitNotesService.findOne(id);
+  }
+
   @Post()
   @ApiBody({ type: CreateDebitNoteDto })
   @CasbinAction('write')

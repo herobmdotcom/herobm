@@ -74,7 +74,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
         render: (line) => (
             <div className="font-semibold text-sm">
                 {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                    <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
                         {line.productNumber || line.productId?.substring(0, 8)}
                     </Link>
                 ) : (
@@ -233,15 +233,15 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         if (c) {
                             const pct = parseFloat(c.rate || '0');
                             const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                            return <span title={`Tax Category: ${c.title}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                            return <span title={`Tax Category: ${c.title}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">{formattedPct}%</span>;
                         }
                         const amt = parseFloat(line.amount || '0');
                         const tax = parseFloat(line.tax || '0');
                         if (amt > 0 && tax > 0) {
                             const pct = (tax / amt) * 100;
-                            return <span title="Tax Category: Custom" style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
+                            return <span title="Tax Category: Custom" className="cursor-help border-b border-dotted border-[var(--text-muted)]">{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
                         }
-                        if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
+                        if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} className="cursor-help border-b border-dotted border-[var(--text-muted)]">0%</span>;
                         return '—';
                     })()}
                 </span>
@@ -288,7 +288,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     return (
       <>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+          <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
         </div>
       </>
     );
@@ -298,7 +298,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     return (
       <>
         <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+          <p className="text-lg mb-2 text-[var(--danger)]">
             {error || tPurchase('orderNotFound')}
           </p>
           <Button variant="secondary" onClick={() => router.push('/purchase-orders')}>
@@ -331,7 +331,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     {t.icon === 'close' ? (
                       <>
                         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                        <span className="material-symbols-outlined mr-1 !text-[16px]">close</span>
                       </>
                     ) : (
                       t.icon
@@ -348,12 +348,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
 
       {error && (
         <div
-          className="px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
+          className="px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
         >
           {error}
           <Button variant="ghost" className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</Button>
@@ -379,26 +374,15 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.supplier')}
                     {order.currencyCode && (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          padding: '1px 6px',
-                          borderRadius: 4,
-                          background: 'rgba(59,130,246,0.15)',
-                          color: 'var(--accent)',
-                          fontWeight: 600,
-                          fontSize: 10,
-                          letterSpacing: '0.04em',
-                        }}
-                      >
+                      <span className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-[0.04em]">
                         {order.currencyCode}
                       </span>
                     )}
                   </label>
-                  <div className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                  <div className="text-sm font-medium pt-1.5">
                     {order.vendorId ? (
                       <Link href={`/suppliers/${order.vendorId}`} className="text-[var(--accent)] hover:underline">
                         {order.vendorName || order.vendorId}
@@ -409,7 +393,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.referenceNumber')}
                   </label>
                   <input
@@ -422,7 +406,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.expectedDate')}
                   </label>
                   {isHeaderEditable ? (
@@ -435,13 +419,13 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                       disabled={!isHeaderEditable}
                     />
                   ) : (
-                    <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    <p className="text-sm font-medium pt-1.5">
                       {formatLocalDate(order.expectedDate)}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.orderName')}
                   </label>
                   <input
@@ -454,15 +438,15 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.created')}
                   </label>
-                  <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                  <p className="text-sm font-medium pt-1.5">
                     {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy || '—'}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tPurchase('labels.location')}
                   </label>
                   {isHeaderEditable && order.stateCode === PURCHASE_ORDER_STATE.DRAFT ? (
@@ -472,7 +456,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                       className="text-sm"
                     />
                   ) : (
-                    <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    <p className="text-sm font-medium pt-1.5">
                       {order.locationName || order.deliveryLocationId || '—'}
                     </p>
                   )}
@@ -481,7 +465,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                    {/* notes pushed to full width if needed, or matched next column */}
                 </div>
                 <div className="lg:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tCommon('notesCardHeading')}
                   </label>
                   <input
@@ -556,16 +540,15 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
 
       {/* Global Toast Notification for Auto-Transitions */}
       <div
-        className={`fixed bottom-6 right-6 rounded-lg p-4 max-w-[400px] z-[60] flex flex-col gap-1 pointer-events-none border border-[var(--border)] transition-all duration-300 ease-out ${latestAutoTransition ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
-        style={{ background: 'var(--bg-card)' }}
+        className={`fixed bottom-6 right-6 rounded-lg p-4 max-w-[400px] z-[60] flex flex-col gap-1 pointer-events-none border border-[var(--border)] bg-[var(--bg-card)] transition-all duration-300 ease-out ${latestAutoTransition ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16 }}>⚡</span>
-          <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[16px]">⚡</span>
+          <strong className="text-[13px] text-[var(--text-primary)]">
             {tToast('orderStateUpdated')}
           </strong>
         </div>
-        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+        <p className="text-xs text-[var(--text-secondary)] m-0 leading-[1.4]">
           {latestAutoTransition && (
             tToast('orderMovedToReason', {
               state: tCommon(`states.${latestAutoTransition.to}` as never),

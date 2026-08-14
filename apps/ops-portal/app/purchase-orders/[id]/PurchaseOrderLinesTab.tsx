@@ -89,7 +89,7 @@ export default function PurchaseOrderLinesTab({
         render: (line) => (
             <div className="font-semibold text-sm">
                 {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                    <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
                         {line.productNumber || line.productId?.substring(0, 8)}
                     </Link>
                 ) : (
@@ -144,7 +144,7 @@ export default function PurchaseOrderLinesTab({
     {
         header: tPurchase('columns.received'), width: 90, align: 'right',
         render: (line) => (
-            <span className="text-sm tabular-nums" style={{ color: parseFloat(line.quantityReceived || '0') > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: parseFloat(line.quantityReceived || '0') > 0 ? 600 : 400 }}>
+            <span className={`text-sm tabular-nums ${parseFloat(line.quantityReceived || '0') > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>
                 {parseFloat(line.quantityReceived || '0')}
             </span>
         ),
@@ -257,15 +257,15 @@ export default function PurchaseOrderLinesTab({
                         if (c) {
                             const pct = parseFloat(c.rate || '0');
                             const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                            return <span title={`Tax Category: ${c.title}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                            return <span title={`Tax Category: ${c.title}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">{formattedPct}%</span>;
                         }
                         const amt = parseFloat(line.amount || '0');
                         const tax = parseFloat(line.tax || '0');
                         if (amt > 0 && tax > 0) {
                             const pct = (tax / amt) * 100;
-                            return <span title="Tax Category: Custom" style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
+                            return <span title="Tax Category: Custom" className="cursor-help border-b border-dotted border-[var(--text-muted)]">{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
                         }
-                        if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
+                        if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} className="cursor-help border-b border-dotted border-[var(--text-muted)]">0%</span>;
                         return '—';
                     })()}
                 </span>
@@ -316,43 +316,32 @@ export default function PurchaseOrderLinesTab({
             <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
               <div className="flex gap-0 min-w-max">
                 <Button variant="ghost"
-                className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
-                style={{
-                  color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
-                  background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                  border: '1px solid',
-                  borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                  cursor: 'pointer',
-                }}
+                className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
+                  activeTab === 'lines'
+                    ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
+                    : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                }`}
                 onClick={() => setActiveTab('lines')}
               >
                 {tPurchase('lineItems')}
               </Button>
               <Button variant="ghost"
-                className={`text-xs font-medium px-3 py-1.5 ${order.stateCode !== PURCHASE_ORDER_STATE.DRAFT ? '' : 'rounded-r-lg'}`}
-                style={{
-                  color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
-                  background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                  border: '1px solid',
-                  borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                  borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                  cursor: 'pointer',
-                }}
+                className={`text-xs font-medium px-3 py-1.5 border cursor-pointer ${order.stateCode !== PURCHASE_ORDER_STATE.DRAFT ? '' : 'rounded-r-lg'} ${
+                  activeTab === 'availability'
+                    ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
+                    : 'text-[var(--text-muted)] bg-transparent border-[var(--border)] border-l-0'
+                }`}
                 onClick={() => setActiveTab('availability')}
               >
                 {tPurchase('availability')}
               </Button>
               {order.stateCode !== PURCHASE_ORDER_STATE.DRAFT && (
                 <Button variant="ghost"
-                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
-                  style={{
-                    color: activeTab === 'status' ? 'var(--accent)' : 'var(--text-muted)',
-                    background: activeTab === 'status' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeTab === 'status' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                    borderLeft: activeTab === 'status' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                    cursor: 'pointer',
-                  }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border cursor-pointer ${
+                    activeTab === 'status'
+                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
+                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)] border-l-0'
+                  }`}
                   onClick={() => setActiveTab('status')}
                 >
                   {tPurchase('statusTab')}
@@ -366,7 +355,6 @@ export default function PurchaseOrderLinesTab({
                   <ProductSearchInput
                     onSelect={addLineFromProduct}
                     placeholder="Add product… (search)"
-                    style={{ width: '100%' }}
                   />
                 </div>
                 <Button
@@ -429,29 +417,29 @@ export default function PurchaseOrderLinesTab({
                   const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                   return (
                     <>
-                      <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
+                        <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                           {tCommon('subtotal')}
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        <td className="text-right font-semibold tabular-nums">
                           {formatAmount(subtotal, order.currencyCode || 'EUR')}
                         </td>
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr className="hidden lg:table-row">
-                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        <td className="text-right font-semibold tabular-nums">
                           {formatAmount(totalTax, order.currencyCode || 'EUR')}
                         </td>
                         {isLinesEditable && <td></td>}
                       </tr>
-                      <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                      <tr className="hidden lg:table-row bg-blue-500/[0.02]">
+                        <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                           {tCommon('total')}
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                        <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
                           {formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                         </td>
                         {isLinesEditable && <td></td>}
@@ -478,7 +466,7 @@ export default function PurchaseOrderLinesTab({
           ) : activeTab === 'availability' ? (
             /* Availability tab */
             inventoryLoading ? (
-              <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tPurchase('loadingInventory')}</p>
+              <p className="text-sm text-[var(--text-muted)] py-5 text-center">{tPurchase('loadingInventory')}</p>
             ) : (
               <DataTable
                 data={order.lines}
@@ -510,10 +498,10 @@ export default function PurchaseOrderLinesTab({
                     if (lineInventory.length === 0) {
                       return (
                         <tr key={line.purchaseOrderLineId}>
-                          <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                          <td style={{ fontWeight: 600, fontSize: 12 }}>
+                          <td className="text-[var(--text-muted)]">{line.lineNumber}</td>
+                          <td className="font-semibold text-xs">
                             {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                              <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                              <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
                                 {line.productNumber || line.productId?.substring(0, 8)}
                               </Link>
                             ) : (
@@ -521,12 +509,12 @@ export default function PurchaseOrderLinesTab({
                             )}
                           </td>
                           <td>{line.productDescription || '—'}</td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                          <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+                          <td className="text-right tabular-nums">{line.quantity}</td>
+                          <td colSpan={6} className="text-center text-[var(--text-muted)] text-xs">
                             {tPurchase('noInventoryData')}
                           </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⚠</span>
+                          <td className="text-center">
+                            <span className="text-amber-500 font-bold text-[11px]">⚠</span>
                           </td>
                         </tr>
                       );
@@ -538,10 +526,10 @@ export default function PurchaseOrderLinesTab({
                         <tr key={`${line.purchaseOrderLineId}-${inv.inventoryLevelId}`}>
                           {idx === 0 && (
                             <>
-                              <td style={{ color: 'var(--text-muted)' }} rowSpan={lineInventory.length}>{line.lineNumber}</td>
-                              <td style={{ fontWeight: 600, fontSize: 12 }} rowSpan={lineInventory.length}>
+                              <td className="text-[var(--text-muted)]" rowSpan={lineInventory.length}>{line.lineNumber}</td>
+                              <td className="font-semibold text-xs" rowSpan={lineInventory.length}>
                                 {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                                  <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                  <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
                                     {line.productNumber || line.productId?.substring(0, 8)}
                                   </Link>
                                 ) : (
@@ -549,39 +537,30 @@ export default function PurchaseOrderLinesTab({
                                 )}
                               </td>
                               <td rowSpan={lineInventory.length}>{line.productDescription || '—'}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }} rowSpan={lineInventory.length}>
+                              <td className="text-right tabular-nums" rowSpan={lineInventory.length}>
                                 {line.quantity}
                               </td>
                             </>
                           )}
-                          <td style={{ textAlign: 'right', fontSize: 12 }}>{inv.locationName || inv.locationNo}</td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="text-right text-xs">{inv.locationName || inv.locationNo}</td>
+                          <td className="text-right tabular-nums">
                             {parseFloat(inv.quantityOnHand || '0')}
                           </td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="text-right tabular-nums">
                             {parseFloat(inv.quantityCommitted || '0')}
                           </td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="text-right tabular-nums">
                             {parseFloat(inv.quantityOnOrder || '0')}
                           </td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="text-right tabular-nums">
                             {parseFloat(inv.quantityReserved || '0')}
                           </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontVariantNumeric: 'tabular-nums',
-                            fontWeight: 600,
-                            color: avail > 0 ? '#4ade80' : '#ef4444',
-                          }}>
+                          <td className={`text-right tabular-nums font-semibold ${avail > 0 ? 'text-green-400' : 'text-red-500'}`}>
                             {avail}
                           </td>
                           {idx === 0 && (
-                            <td style={{ textAlign: 'center' }} rowSpan={lineInventory.length}>
-                              <span style={{
-                                color: canFulfil ? '#4ade80' : '#ef4444',
-                                fontWeight: 700,
-                                fontSize: 11,
-                              }}>
+                            <td className="text-center" rowSpan={lineInventory.length}>
+                              <span className={`font-bold text-[11px] ${canFulfil ? 'text-green-400' : 'text-red-500'}`}>
                                 {canFulfil ? '✓' : '✗'}
                               </span>
                             </td>
@@ -676,16 +655,16 @@ export default function PurchaseOrderLinesTab({
                       const remaining = Math.max(0, ordered - billed);
                       return (
                           <tr key={line.purchaseOrderLineId}>
-                              <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                              <td style={{ fontWeight: 600, fontSize: 12 }}>
+                              <td className="text-[var(--text-muted)]">{line.lineNumber}</td>
+                              <td className="font-semibold text-xs">
                                   {line.productNumber || line.productId?.substring(0, 8) || '—'}
                               </td>
                               <td>{line.productDescription || '—'}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: allocated > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: allocated > 0 ? 600 : 400 }}>{allocated}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: billed >= received && received > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: billed >= received && received > 0 ? 600 : 400 }}>{billed}</td>
-                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
+                              <td className="text-right tabular-nums">{ordered}</td>
+                              <td className={`text-right tabular-nums ${allocated > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{allocated}</td>
+                              <td className={`text-right tabular-nums ${received >= ordered && ordered > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{received}</td>
+                              <td className={`text-right tabular-nums ${billed >= received && received > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{billed}</td>
+                              <td className={`text-right tabular-nums ${remaining === 0 ? 'text-[var(--text-muted)]' : ''}`}>{remaining}</td>
                           </tr>
                       );
                   }}

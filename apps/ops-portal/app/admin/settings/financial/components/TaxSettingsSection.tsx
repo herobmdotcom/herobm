@@ -63,7 +63,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
 
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+            <label className="text-sm font-medium text-[var(--text-muted)]">
               Default Sales Tax
             </label>
             <select 
@@ -79,7 +79,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
           </div>
           
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+            <label className="text-sm font-medium text-[var(--text-muted)]">
               Default Purchase Tax
             </label>
             <select 

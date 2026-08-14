@@ -31,7 +31,7 @@ export function OrderAvailabilityTab({
     const tSales = useTranslations('salesOrders');
 
     if (inventoryLoading) {
-        return <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tSales('loadingInventory')}</p>;
+        return <p className="text-sm text-[var(--text-muted)] py-5 text-center">{tSales('loadingInventory')}</p>;
     }
 
     return (
@@ -64,19 +64,19 @@ export function OrderAvailabilityTab({
                     <Fragment key={line.salesOrderLineId || idx}>
                         {lineInventory.length === 0 ? (
                             <tr key={line.salesOrderLineId}>
-                                <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                <td className="text-[var(--text-muted)]">{line.lineNumber}</td>
+                                <td className="font-semibold text-xs">
                                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                                             {line.productNumber}
                                         </Link>
                                     ) : (
                                         line.productNumber || '—'
                                     )}
                                 </td>
-                                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.productDescription}</td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                                <td colSpan={3} style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 12, fontStyle: 'italic' }}>
+                                <td className="text-xs text-[var(--text-muted)]">{line.productDescription}</td>
+                                <td className="text-right tabular-nums">{line.quantity}</td>
+                                <td colSpan={3} className="text-center text-[var(--danger)] text-xs italic">
                                     {tSales('noInventoryFound')}
                                 </td>
                             </tr>
@@ -85,18 +85,18 @@ export function OrderAvailabilityTab({
                             <tr key={`${line.salesOrderLineId}-${inv.locationId}`}>
                                 {idx === 0 && (
                                     <>
-                                        <td rowSpan={lineInventory.length} style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                        <td rowSpan={lineInventory.length} style={{ fontWeight: 600, fontSize: 12 }}>
+                                        <td rowSpan={lineInventory.length} className="text-[var(--text-muted)]">{line.lineNumber}</td>
+                                        <td rowSpan={lineInventory.length} className="font-semibold text-xs">
                                             {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                                                     {line.productNumber}
                                                 </Link>
                                             ) : (
                                                 line.productNumber || '—'
                                             )}
                                         </td>
-                                        <td rowSpan={lineInventory.length} style={{ fontSize: 12 }}>{line.productDescription}</td>
-                                        <td rowSpan={lineInventory.length} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{line.quantity}</td>
+                                        <td rowSpan={lineInventory.length} className="text-xs">{line.productDescription}</td>
+                                        <td rowSpan={lineInventory.length} className="text-right tabular-nums font-semibold">{line.quantity}</td>
                                         <td rowSpan={lineInventory.length}>
                                             {(() => {
                                                 if (isShipped) {
@@ -135,12 +135,15 @@ export function OrderAvailabilityTab({
                                         </td>
                                     </>
                                 )}
-                                <td style={{ textAlign: 'right', fontSize: 12 }}>
-                                    <Link href={`/products/${line.productId}?tab=inventory`} style={{ color: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 600 : 400, textDecoration: 'none' }}>
+                                <td className="text-right text-xs">
+                                    <Link
+                                        href={`/products/${line.productId}?tab=inventory`}
+                                        className={`no-underline ${inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-muted)] font-normal'}`}
+                                    >
                                         {inv.locationName}
                                     </Link>
                                 </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: parseFloat(inv.quantityAvailable || '0') > 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
+                                <td className={`text-right tabular-nums font-semibold ${parseFloat(inv.quantityAvailable || '0') > 0 ? 'text-[var(--text-primary)]' : 'text-[var(--danger)]'}`}>
                                     {parseFloat(inv.quantityAvailable || '0')}
                                 </td>
                             </tr>

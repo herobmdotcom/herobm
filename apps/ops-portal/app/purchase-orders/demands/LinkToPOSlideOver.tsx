@@ -205,8 +205,8 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
               <tr>
                 <th>{t('demands.salesOrder')}</th>
                 <th>{t('demands.product')}</th>
-                <th style={{ textAlign: 'right' }}>{t('demands.reqQty')}</th>
-                <th style={{ width: 90, textAlign: 'center' }}>{t('demands.status')}</th>
+                <th className="text-right">{t('demands.reqQty')}</th>
+                <th className="w-[90px] text-center">{t('demands.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -299,27 +299,26 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                   {groups.map((group) => {
                     const isExpanded = state.expandedPOs.has(group.purchaseOrderId);
                     return (
-                      <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
+                      <div key={group.purchaseOrderId} className="rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                         {/* Card Header */}
                         <Button variant="ghost"
                           onClick={() => toggleExpand(demand.id, group.purchaseOrderId)}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          className="w-full flex items-center justify-between px-4 py-2.5 bg-transparent border-none cursor-pointer text-left"
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            { }
-                            <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
+                          <div className="flex items-center gap-2">
+                            <span className={`material-symbols-outlined text-[18px] transition-transform duration-150 text-[var(--text-muted)] ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                               chevron_right
                             </span>
-                            <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: 14 }}>
+                            <span className="font-bold text-[var(--accent)] text-sm">
                               {group.orderNumber}
                             </span>
                             <span className="badge badge-legacy">{group.stateCode}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div className="flex items-center gap-3">
                             {demand.locationName && group.locationName && demand.locationName !== group.locationName && (
                               <span className="badge badge-sm badge-warning">{t('demands.locationMismatch')}</span>
                             )}
-                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                            <div className="text-[13px] text-[var(--text-muted)]">
                               <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>
                               {' • '}
                               {t('demands.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('demands.unknown')}</span>
@@ -329,13 +328,13 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
                         {/* Expanded Lines */}
                         {isExpanded && (
-                          <div style={{ borderTop: '1px solid var(--border)' }}>
+                          <div className="border-t border-[var(--border)]">
                             <table className="table-lines">
                               <thead>
                                 <tr>
                                   <th>{t('demands.ordered')}</th>
                                   <th>{t('demands.availableCap')}</th>
-                                  <th style={{ width: 160, textAlign: 'center' }}>{t('demands.link')}</th>
+                                  <th className="w-[160px] text-center">{t('demands.link')}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -343,9 +342,10 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                                 {group.lines.map((poLine: any) => (
                                   <POLineRow
                                     key={poLine.purchaseOrderLineId}
-                                    line={poLine}
+                                    poLine={poLine}
                                     originalQuantity={originalQuantity}
-                                    onAllocate={(qty) => handleAllocate(demand, poLine, qty)}
+                                    onAllocate={(qty) => handleAllocate(demand.id, poLine.purchaseOrderLineId, qty)}
+                                    t={t}
                                   />
                                 ))}
                               </tbody>
@@ -360,20 +360,24 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
             </div>
           );
         })}
-
       </div>
     </SlideOver>
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
-  const t = useTranslations('purchaseOrders');
-  const ordered = parseFloat(line.quantity || '0');
-  const available = parseFloat(line.availableQty || '0');
+function POLineRow({ poLine, originalQuantity, onAllocate, t }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  poLine: any;
+  originalQuantity: number;
+  onAllocate: (qty: string) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl TFunction types mismatch with Record
+  t: any;
+}) {
+  const ordered = parseFloat(poLine.quantity || '0');
+  const allocated = parseFloat(poLine.allocatedQuantity || '0');
+  const available = Math.max(0, ordered - allocated);
 
-  const suggestedQty = Math.min(originalQuantity, available);
-  const [qty, setQty] = useState(suggestedQty > 0 ? suggestedQty.toString() : originalQuantity.toString());
+  const [qty, setQty] = useState(Math.min(originalQuantity, available).toString());
   const [isAllocating, setIsAllocating] = useState(false);
 
   return (
@@ -387,8 +391,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             step="0.01"
             min="0.01"
             max={originalQuantity}
-            className="input text-right"
-            style={{ width: '70px', padding: '2px 4px', height: '26px', fontSize: '12px' }}
+            className="input text-right w-[70px] px-1 py-0.5 h-[26px] text-xs"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
@@ -400,7 +403,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             }}
             disabled={isAllocating || !qty || parseFloat(qty) > available}
             variant="primary" size="sm"
-            style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
+            className="px-2 py-0.5 h-[26px] text-[11px]"
           >
             {isAllocating ? t('demands.allocating') : t('demands.allocate')}
           </Button>

@@ -75,15 +75,15 @@ export default function InvoicesSection({
 
             <div className="space-y-3">
                 {Invoices.map(inv => (
-                    <div key={inv.invoiceId} style={{ marginBottom: 12, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>
+                    <div key={inv.invoiceId} className="mb-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card)]">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
-                                <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
+                                <strong className="text-[13px]">{inv.invoiceNumber}</strong>
                                 {(inv as unknown as Record<string, string>).supplierInvoiceNumber && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as unknown as Record<string, string>).supplierInvoiceNumber}</span>
+                                    <span className="text-[11px] text-[var(--text-muted)]">{tPurchase('ref')} {(inv as unknown as Record<string, string>).supplierInvoiceNumber}</span>
                                 )}
                                 {(inv as unknown as Record<string, string>).receiptFilename && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as unknown as Record<string, string>).receiptFilename}</span>
+                                    <span className="text-[11px] text-[var(--text-muted)]">{tPurchase('file')} {(inv as unknown as Record<string, string>).receiptFilename}</span>
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function InvoicesSection({
                                     id: 'product',
                                     header: tPurchase('columns.product'),
                                     render: ({ il, orderLine }) => (
-                                        <span style={{ fontWeight: 600, fontSize: 12 }}>
+                                        <span className="font-semibold text-xs">
                                             {orderLine?.productNumber || il.productNumber || il.productId?.substring(0, 8) || '—'}
                                         </span>
                                     )
@@ -139,12 +139,12 @@ export default function InvoicesSection({
                                         <>
                                             <div>{il.description || '—'}</div>
                                             {!orderLine && il.purchaseOrderNumber && (
-                                                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                                                    {tPurchase('supplierInvoice.fromPo')}: <Link href={`/purchase-orders/${il.purchaseOrderId}`} style={{ color: 'var(--accent)', fontWeight: 500 }}>{il.purchaseOrderNumber}</Link>
+                                                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                                                    {tPurchase('supplierInvoice.fromPo')}: <Link href={`/purchase-orders/${il.purchaseOrderId}`} className="text-[var(--accent)] font-medium">{il.purchaseOrderNumber}</Link>
                                                 </div>
                                             )}
                                             {!orderLine && !il.purchaseOrderNumber && (
-                                                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                                                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
                                                     {tPurchase('supplierInvoice.standaloneItem')}
                                                 </div>
                                             )}
@@ -162,7 +162,7 @@ export default function InvoicesSection({
                                     header: tPurchase('columns.unitPrice'),
                                     align: 'right',
                                     render: ({ il, orderLine }) => (
-                                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                        <span className="tabular-nums">
                                             {formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}
                                         </span>
                                     )
@@ -172,7 +172,7 @@ export default function InvoicesSection({
                                     header: tPurchase('columns.discountPct'),
                                     align: 'right',
                                     render: ({ disc }) => (
-                                        <span style={{ color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                        <span className={disc > 0 ? 'text-inherit' : 'text-[var(--text-muted)]'}>
                                             {disc.toFixed(1)}%
                                         </span>
                                     )
@@ -182,7 +182,7 @@ export default function InvoicesSection({
                                     header: tPurchase('columns.tax'),
                                     align: 'right',
                                     render: ({ taxRate }) => (
-                                        <span style={{ color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                        <span className={taxRate > 0 ? 'text-inherit' : 'text-[var(--text-muted)]'}>
                                             {taxRate.toFixed(1)}%
                                         </span>
                                     )
@@ -191,7 +191,7 @@ export default function InvoicesSection({
                                     id: 'receipt',
                                     header: tPurchase('supplierInvoice.receipt'),
                                     render: ({ il }) => (
-                                        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                                        <span className="text-[10px] text-[var(--text-muted)]">
                                             {il.goodsReceivedLineId ? (
                                                 receiptLines.find(r => (r as unknown as Record<string, Record<string, string>>).line?.goodsReceivedLineId === il.goodsReceivedLineId) ? (receiptLines.find(r => (r as unknown as Record<string, Record<string, string>>).line?.goodsReceivedLineId === il.goodsReceivedLineId) as Record<string, string>).receiptNumber : 'Receipt'
                                             ) : '—'}
@@ -203,7 +203,7 @@ export default function InvoicesSection({
                                     header: tPurchase('columns.amount'),
                                     align: 'right',
                                     render: ({ pricing }) => (
-                                        <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                        <span className="tabular-nums font-semibold">
                                             {formatAmount(pricing.amount, cc)}
                                         </span>
                                     )
@@ -259,7 +259,7 @@ export default function InvoicesSection({
                             );
                         })()}
 
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                        <div className="text-[11px] text-[var(--text-muted)] mt-1.5">
                             {inv.createdBy
                                 ? `Created ${formatLocalDate(inv.createdOn)} by ${inv.createdBy}`
                                 : `Created ${formatLocalDate(inv.createdOn)}`}
@@ -267,7 +267,7 @@ export default function InvoicesSection({
                     </div>
                 ))}
                 {Invoices.length === 0 && (
-                    <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                         {tPurchase('noBillsGeneratedYet')}
                     </div>
                 )}

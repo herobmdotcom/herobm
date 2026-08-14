@@ -11,4 +11,5 @@ export interface CreatePurchaseReturnLineDto {
   quantityReturned: string;
   reason?: string;
   returnFee?: string;
+  sourceBinId?: string;
 }

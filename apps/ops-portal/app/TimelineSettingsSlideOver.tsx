@@ -68,6 +68,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="sales_order.created" />
           <OptionRow event="sales_order.status_changed" />
           <OptionRow event="sales_order.deleted" />
+          <OptionRow event="sales_order.credit_note_posted" />
           <OptionRow event="sales_invoice.created" />
           <OptionRow event="sales_invoice.status_changed" />
           <OptionRow event="sales_return.created" />
@@ -83,6 +84,8 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="purchase_order.created" />
           <OptionRow event="purchase_order.status_changed" />
           <OptionRow event="purchase_order.deleted" />
+          <OptionRow event="purchase_order.debit_note_created" />
+          <OptionRow event="purchase_order.debit_note_posted" />
           <OptionRow event="purchase_invoice.created" />
           <OptionRow event="purchase_invoice.status_changed" />
           <OptionRow event="purchase_return.created" />

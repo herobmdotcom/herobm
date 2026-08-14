@@ -97,7 +97,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
         </h3>
       </div>
       <div className="flex flex-col gap-1 mb-6">
-        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {''}
           {tSettings('financialSettings.creditLimitBehavior')}
         </label>
@@ -115,7 +115,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
 
       <div className="flex gap-8 mb-6">
         <div className="flex flex-col gap-1 flex-1 max-w-sm">
-          <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+          <label className="text-xs font-medium text-[var(--text-muted)]">
             Default Customer Terms
           </label>
           <select
@@ -132,7 +132,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
         </div>
         
         <div className="flex flex-col gap-1 flex-1 max-w-sm">
-          <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+          <label className="text-xs font-medium text-[var(--text-muted)]">
             Default Supplier Terms
           </label>
           <select

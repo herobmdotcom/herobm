@@ -109,10 +109,10 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
 
     return (
       <Fragment key={key}>
-        <tr style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+        <tr className={isEdit ? 'bg-[var(--bg-secondary)]' : undefined}>
           <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
             {isEdit && coaCreating
-              ? <input className="input" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" style={{ width: 100 }} />
+              ? <input className="input w-[100px]" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" />
               : <span className={`font-mono text-xs ${data.isGroup ? 'font-bold' : ''}`}>{data.accountCode}</span>}
           </td>
           <td>
@@ -153,37 +153,36 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
             </select>
           ) : data.accountType}
         </td>
-        <td style={{ textAlign: 'center' }}>
+        <td className="text-center">
           {isEdit && coaCreating ? (
             <input type="checkbox" checked={coaForm.isGroup} onChange={e => setCoaForm({ ...coaForm, isGroup: e.target.checked })} />
           ) : data.isGroup ? (
             <>
               { }
               {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>{'check'}</span>
+              <span className="material-symbols-outlined text-[16px] text-[var(--text-muted)]">{'check'}</span>
               { }
             </>
           ) : null}
         </td>
-        <td style={{ textAlign: 'center' }}>
+        <td className="text-center">
           {isEdit ? (
             <input type="checkbox" checked={coaForm.isBankAccount} onChange={e => setCoaForm({ ...coaForm, isBankAccount: e.target.checked })} />
           ) : data.isBankAccount ? (
             <>
               { }
               {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>{'check'}</span>
+              <span className="material-symbols-outlined text-[16px] text-[var(--text-muted)]">{'check'}</span>
               { }
             </>
           ) : null}
         </td>
-        <td style={{ textAlign: 'center' }}>
+        <td className="text-center">
           {isEdit ? (
             <select 
-              className="select" 
+              className="select w-[90px]" 
               value={coaForm.currencyCode || ''} 
               onChange={e => setCoaForm({ ...coaForm, currencyCode: e.target.value })}
-              style={{ width: 90 }}
             >
               <option value="">-</option>
               {CURRENCIES.map(c => (
@@ -194,19 +193,19 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
             <span className="font-mono text-xs text-muted">{data.currencyCode}</span>
           )}
         </td>
-        <td style={{ textAlign: 'center' }}>
+        <td className="text-center">
           {isEdit ? (
             <label className="switch" title={coaForm.isActive ? tSettings('labels.active') : tSettings('labels.inactive')}>
               <input type="checkbox" checked={coaForm.isActive} onChange={e => setCoaForm({ ...coaForm, isActive: e.target.checked })} />
               <span className="switch-slider"></span>
             </label>
           ) : (
-            <span style={{ color: data.isActive ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+            <span className={`font-bold text-xs ${data.isActive ? 'text-[var(--success,#22c55e)]' : 'text-[var(--danger,#ef4444)]'}`}>
               {data.isActive ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
             </span>
           )}
         </td>
-        <td style={{ textAlign: 'right' }}>
+        <td className="text-right">
           {isEdit ? (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
               <Button variant="secondary" size="xs" onClick={coaCancel}>{tSettings('actions.cancel')}</Button>
@@ -217,7 +216,7 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
               {data.isGroup && <Button variant="secondary" size="xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</Button>}
               <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => coaEdit(data)}>
                 { }
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                <span className="material-symbols-outlined text-base">edit</span>
               </Button>
               {Object.keys(data.metadata || {}).length > 0 && (
                 <Button variant="secondary" size="xs" onClick={() => setViewMetadataObj(data)}>
@@ -231,8 +230,8 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       </tr>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon */}
       {isEdit && (glSettings?.accountMetadataSchema as Record<string, any>)?.type === 'object' && (
-        <tr style={{ background: 'var(--bg-secondary)' }}>
-          <td colSpan={6} style={{ padding: '16px 24px', borderTop: 'none' }}>
+        <tr className="bg-[var(--bg-secondary)]">
+          <td colSpan={6} className="px-6 py-4 border-t-0">
             <div className="card bg-[var(--bg-primary)] p-4 border border-[var(--border)]">
               <DynamicForm 
                 schema={glSettings!.accountMetadataSchema as Record<string, unknown>} 
@@ -268,14 +267,14 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 180 }}>{tSettings('labels.code')}</th>
+              <th className="w-[180px]">{tSettings('labels.code')}</th>
               <th>{tSettings('labels.name')}</th>
-              <th style={{ width: 140 }}>{tSettings('labels.type')}</th>
-              <th style={{ width: 60, textAlign: 'center' }}>{tSettings('labels.group')}</th>
-              <th style={{ width: 60, textAlign: 'center' }}>{tSettings('labels.bank')}</th>
-              <th style={{ width: 90, textAlign: 'center' }}>{tSettings('labels.currency')}</th>
-              <th style={{ width: 100, textAlign: 'center' }}>{tSettings('labels.status')}</th>
-              <th style={{ width: 260, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
+              <th className="w-[140px]">{tSettings('labels.type')}</th>
+              <th className="w-[60px] text-center">{tSettings('labels.group')}</th>
+              <th className="w-[60px] text-center">{tSettings('labels.bank')}</th>
+              <th className="w-[90px] text-center">{tSettings('labels.currency')}</th>
+              <th className="w-[100px] text-center">{tSettings('labels.status')}</th>
+              <th className="w-[260px] text-right">{tSettings('actions.actions')}</th>
             </tr>
           </thead>
           <tbody>

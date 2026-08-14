@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 // Fix path resolution for dotenv to support being run from anywhere
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env.volzau') });
 
 const input = process.argv[2];
 

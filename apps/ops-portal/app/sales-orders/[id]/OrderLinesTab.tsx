@@ -74,42 +74,31 @@ export default function OrderLinesTab({
                     <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
                         <div className="flex gap-0 min-w-max">
                             <Button
-                                className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
-                                style={{
-                                    color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
-                                    background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                                    border: '1px solid',
-                                    borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                                    cursor: 'pointer',
-                                }}
+                                className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
+                                    activeTab === 'lines'
+                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
+                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                                }`}
                                 onClick={() => setActiveTab('lines')}
                             >
                                 {tSales('lineItems')}
                             </Button>
                             <Button
-                                className="text-xs font-medium px-3 py-1.5"
-                                style={{
-                                    color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
-                                    background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                                    border: '1px solid',
-                                    borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                                    borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                                    cursor: 'pointer',
-                                }}
+                                className={`text-xs font-medium px-3 py-1.5 border border-l-0 cursor-pointer ${
+                                    activeTab === 'availability'
+                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
+                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                                }`}
                                 onClick={() => setActiveTab('availability')}
                             >
                                 {tSales('availability')}
                             </Button>
                             <Button
-                                className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
-                                style={{
-                                    color: activeTab === 'backorders' ? 'var(--accent)' : 'var(--text-muted)',
-                                    background: activeTab === 'backorders' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                                    border: '1px solid',
-                                    borderColor: activeTab === 'backorders' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                                    borderLeft: activeTab === 'backorders' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                                    cursor: 'pointer',
-                                }}
+                                className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border border-l-0 cursor-pointer ${
+                                    activeTab === 'backorders'
+                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
+                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                                }`}
                                 onClick={() => setActiveTab('backorders')}
                             >
                                 {tSales('backordersTab')}
@@ -124,7 +113,7 @@ export default function OrderLinesTab({
                                     <ProductSearchInput
                                         onSelect={addLineFromProduct}
                                         placeholder={tSales('placeholders.searchProduct')}
-                                        style={{ width: '100%' }}
+                                        className="w-full"
                                         fulfillmentLocationId={editFulfillmentLocationId || order?.fulfillmentLocationId || undefined}
                                     />
                                 </div>

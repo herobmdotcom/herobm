@@ -57,7 +57,7 @@ export function OrderLinesTable({
             header: tSales('columns.lineNumber'),
             width: 40,
             render: (line: OrderLine) => (
-                <span style={{ color: 'var(--text-muted)', fontWeight: 400, position: 'relative' }}>
+                <span className="text-[var(--text-muted)] font-normal relative">
                     {line.lineNumber}
                 </span>
             )
@@ -66,9 +66,9 @@ export function OrderLinesTable({
             id: 'product',
             header: tSales('columns.product'),
             render: (line: OrderLine) => (
-                <span style={{ fontWeight: 600, fontSize: 12 }}>
+                <span className="font-semibold text-xs">
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
                             {line.productNumber || line.productId?.substring(0, 8)}
                         </Link>
                     ) : (
@@ -89,8 +89,7 @@ export function OrderLinesTable({
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return isEditable ? (
                     <input
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                         defaultValue={line.productDescription || ''}
                         key={`desc-${line.salesOrderLineId}-${line.productDescription}`}
                         onBlur={(e) => {
@@ -118,31 +117,26 @@ export function OrderLinesTable({
                 const hasWarning = hasGap || isBackordered;
                 
                 const warningTitle = hasGap ? tSales('availabilityStatus.shortage') : tSales('availabilityStatus.backordered');
-                const warningColor = hasGap ? 'var(--danger)' : 'var(--warning)';
                 const warningIconStr = hasGap ? 'warning' : 'schedule';
 
                 const warningIcon = hasWarning ? (
-                    <>
-                        <span 
-                            className="material-symbols-outlined" 
-                            style={{ fontSize: 14, color: warningColor, position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
-                            title={warningTitle}
-                        >
-                            {warningIconStr}
-                        </span>
-                    </>
+                    <span 
+                        className={`material-symbols-outlined text-sm ${isEditable ? 'absolute -left-4 top-1/2 -translate-y-1/2 z-[1]' : 'relative align-middle mr-1'} ${hasGap ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}
+                        title={warningTitle}
+                    >
+                        {warningIconStr}
+                    </span>
                 ) : null;
 
                 if (isEditable) {
                     return (
-                        <div style={{ position: 'relative' }}>
+                        <div className="relative">
                             {warningIcon}
                             <input
-                                className="input"
+                                className={`input w-full text-right ${hasWarning ? (hasGap ? 'border-[var(--danger)]' : 'border-[var(--warning)]') : ''}`}
                                 type="number"
                                 min="0"
                                 step="1"
-                                style={{ width: '100%', textAlign: 'right', borderColor: hasWarning ? warningColor : undefined }}
                                 defaultValue={line.quantity}
                                 key={`qty-${line.salesOrderLineId}-${line.quantity}`}
                                 onBlur={(e) => {
@@ -155,7 +149,7 @@ export function OrderLinesTable({
                     );
                 }
                 return (
-                    <span style={{ fontVariantNumeric: 'tabular-nums', color: hasGap ? 'var(--danger)' : undefined, fontWeight: hasGap ? 600 : undefined }}>
+                    <span className={`tabular-nums ${hasGap ? 'text-[var(--danger)] font-semibold' : ''}`}>
                         {warningIcon}
                         {line.quantity}
                     </span>
@@ -174,8 +168,7 @@ export function OrderLinesTable({
                     const selectOptions: ProductUom[] = (line.productUoms || []).length > 0 ? (line.productUoms as ProductUom[]) : [{ uomCode: defaultUom, ratio: 1 }];
                     return (
                         <select
-                            className="input"
-                            style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                            className="input w-full text-[13px] text-right"
                             value={line.unitOfMeasure || defaultUom}
                             onChange={(e) => {
                                 const newVal = e.target.value;
@@ -200,7 +193,7 @@ export function OrderLinesTable({
                     );
                 }
                 // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., UOM default).
-                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
+                return <span className="tabular-nums">{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
             }
         },
         {
@@ -213,11 +206,10 @@ export function OrderLinesTable({
                 if (isEditable) {
                     return (
                         <input
-                            className="input"
+                            className="input w-full text-right"
                             type="number"
                             min="0"
                             step="0.01"
-                            style={{ width: '100%', textAlign: 'right' }}
                             defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
                             key={`price-${line.salesOrderLineId}-${line.pricePerUnit}`}
                             onBlur={(e) => {
@@ -231,7 +223,7 @@ export function OrderLinesTable({
                         />
                     );
                 }
-                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}</span>;
+                return <span className="tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}</span>;
             }
         },
         {
@@ -244,11 +236,10 @@ export function OrderLinesTable({
                 if (isEditable) {
                     return (
                         <input
-                            className="input"
+                            className="input w-full text-right"
                             type="number"
                             min="0"
                             step="0.01"
-                            style={{ width: '100%', textAlign: 'right' }}
                             defaultValue={line.unitCost ? parseFloat(line.unitCost).toFixed(2) : ''}
                             key={`cost-${line.salesOrderLineId}-${line.unitCost}`}
                             placeholder="Auto"
@@ -270,7 +261,7 @@ export function OrderLinesTable({
                         />
                     );
                 }
-                return <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{line.unitCost ? formatAmount(parseFloat(line.unitCost), order.currencyCode || 'EUR') : tCommon('auto')}</span>;
+                return <span className="tabular-nums text-[var(--text-muted)]">{line.unitCost ? formatAmount(parseFloat(line.unitCost), order.currencyCode || 'EUR') : tCommon('auto')}</span>;
             }
         },
         {
@@ -283,12 +274,11 @@ export function OrderLinesTable({
                 if (isEditable) {
                     return (
                         <input
-                            className="input"
+                            className="input w-full text-right"
                             type="number"
                             min="0"
                             max="100"
                             step="0.1"
-                            style={{ width: '100%', textAlign: 'right' }}
                             defaultValue={line.discountPercentage || '0'}
                             key={`disc-${line.salesOrderLineId}-${line.discountPercentage}`}
                             onBlur={(e) => {
@@ -299,24 +289,24 @@ export function OrderLinesTable({
                         />
                     );
                 }
-                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>;
+                return <span className="tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>;
             }
         },
         {
             id: 'tax',
             header: (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                <div className="flex items-center justify-end gap-1">
                     {tSales('columns.tax')}
                     {isOrderDetailsEditable && (
                         <Button
                             type="button"
                             onClick={calculateTaxes}
                             disabled={saving}
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: saving ? 'default' : 'pointer', color: 'var(--accent)', display: 'flex' }}
+                            className={`bg-transparent border-0 p-0 text-[var(--accent)] flex ${saving ? 'cursor-default' : 'cursor-pointer'}`}
                             title={tSales('buttons.calculateTaxes')}
                         >
                             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon string constant. */}
-                            <span className={`material-symbols-outlined ${saving ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>sync</span>
+                            <span className={`material-symbols-outlined text-base ${saving ? 'animate-spin' : ''}`}>sync</span>
                         </Button>
                     )}
                 </div>
@@ -332,7 +322,7 @@ export function OrderLinesTable({
                     if (isStale) {
                         return <span className="badge badge-warning" title={tSales('taxNeedsToBeCalculated', { provider: order.taxProvider || '' })}>{tCommon('pending')}</span>;
                     }
-                    return <span title={`Calculated by ${order.taxProvider}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>
+                    return <span title={`Calculated by ${order.taxProvider}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">
                         {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
                     </span>;
                 }
@@ -340,8 +330,7 @@ export function OrderLinesTable({
                 if (isEditable) {
                     return (
                         <select
-                            className="input"
-                            style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                            className="input w-full text-xs text-right"
                             value={line.taxCategoryId || ''}
                             onChange={(e) => {
                                 updateLine(line.salesOrderLineId, 'taxCategoryId', e.target.value);
@@ -356,21 +345,21 @@ export function OrderLinesTable({
                     );
                 }
                 return (
-                    <span style={{ fontSize: 12 }}>
+                    <span className="text-xs">
                         {(() => {
                             const c = taxCategories.find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
                             if (c) {
                                 const pct = parseFloat(c.rate || '0');
                                 const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                                return <span title={`Tax Category: ${c.title}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                                return <span title={`Tax Category: ${c.title}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">{formattedPct}%</span>;
                             }
                             const amt = parseFloat(line.amount || '0');
                             const tax = parseFloat(line.tax || '0');
                             if (amt > 0 && tax > 0) {
                                 const pct = (tax / amt) * 100;
-                                return <span title="Tax Category: Custom" style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
+                                return <span title="Tax Category: Custom" className="cursor-help border-b border-dotted border-[var(--text-muted)]">{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
                             }
-                            if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
+                            if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} className="cursor-help border-b border-dotted border-[var(--text-muted)]">0%</span>;
                             return '—';
                         })()}
                     </span>
@@ -385,7 +374,7 @@ export function OrderLinesTable({
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return (
-                    <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: isEditable ? 'var(--text-primary)' : undefined }}>
+                    <span className={`font-semibold tabular-nums ${isEditable ? 'text-[var(--text-primary)]' : ''}`}>
                         {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
                     </span>
                 );
@@ -463,30 +452,30 @@ export function OrderLinesTable({
                     const taxPct = subtotal > 0 && !isStale ? (totalTax / subtotal) * 100 : 0;
                     return (
                         <>
-                            <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
+                                <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                                     {tCommon('subtotal')}
                                 </td>
-                                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                                <td className="text-right font-semibold tabular-nums">
                                     {formatAmount(subtotal, order.currencyCode || 'EUR')}
                                 </td>
                                 {hasActionColumn && <td></td>}
                             </tr>
                             <tr className="hidden lg:table-row">
-                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
                                     {tCommon('tax')}{taxPct > 0 && !isStale ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                                 </td>
-                                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
+                                <td className="text-right font-semibold tabular-nums">
+                                    {isStale ? <span className="badge badge-warning text-xs font-normal ml-auto">{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
                                 </td>
                                 {hasActionColumn && <td></td>}
                             </tr>
-                            <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                            <tr className="hidden lg:table-row bg-blue-500/[0.02]">
+                                <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                                     {tCommon('total')}
                                 </td>
-                                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
-                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
+                                <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
+                                    {isStale ? <span className="badge badge-warning text-xs font-normal ml-auto">{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                 </td>
                                 {hasActionColumn && <td></td>}
                             </tr>
@@ -496,11 +485,11 @@ export function OrderLinesTable({
                             </tr>
                             <tr className="lg:hidden">
                                 <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
-                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
+                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal inline-block">{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
                             </tr>
                             <tr className="lg:hidden">
                                 <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
-                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
+                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal inline-block">{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
                             </tr>
                         </>
                     );

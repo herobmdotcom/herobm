@@ -92,8 +92,7 @@ function LedgerViewContent() {
           <select
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            className="input text-sm min-w-[150px]"
           >
             <option value={1}>{tInventory('filters.last24Hours')}</option>
             <option value={7}>{tInventory('filters.last7Days')}</option>

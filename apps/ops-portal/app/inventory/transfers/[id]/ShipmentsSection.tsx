@@ -56,11 +56,11 @@ export default function ShipmentsSection({ orderId }: Props) {
             </div>
 
             {loading ? (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                     {tCommon('loading')}
                 </div>
             ) : shipments.length === 0 ? (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                     {tShipping('noShipmentsFound')}
                 </div>
             ) : (
