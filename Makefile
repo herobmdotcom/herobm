@@ -188,9 +188,24 @@ nuke:
 	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
 
 clean-legacy-containers:
-	@echo "Stopping and removing legacy container instances..."
-	-@podman stop ops-portal custom-api outbox-worker pipeline-runner api-gateway api-rs 2>/dev/null || true
-	-@podman rm -f ops-portal custom-api outbox-worker pipeline-runner api-gateway api-rs 2>/dev/null || true
+	@echo "Stopping and removing legacy container instances (ignoring errors for missing ones)..."
+ifeq ($(OS),Windows_NT)
+	-podman rm -f ops-portal
+	-podman rm -f custom-api
+	-podman rm -f outbox-worker
+	-podman rm -f pipeline-runner
+	-podman rm -f api-gateway
+	-podman rm -f api-rs
+else
+	-podman rm -f ops-portal >/dev/null 2>&1 || true
+	-podman rm -f custom-api >/dev/null 2>&1 || true
+	-podman rm -f outbox-worker >/dev/null 2>&1 || true
+	-podman rm -f pipeline-runner >/dev/null 2>&1 || true
+	-podman rm -f api-gateway >/dev/null 2>&1 || true
+	-podman rm -f api-rs >/dev/null 2>&1 || true
+endif
+	@echo "Pruning unused podman resources..."
+	-podman system prune -f
 
 rebuild-db-keep-raw:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))
