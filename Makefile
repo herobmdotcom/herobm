@@ -205,7 +205,7 @@ else
 	-podman rm -f api-rs >/dev/null 2>&1 || true
 endif
 	@echo "Pruning unused podman resources..."
-	-podman system prune -f
+	-podman system prune -a
 
 rebuild-db-keep-raw:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make rebuild-db-keep-raw SOURCE=<source>))

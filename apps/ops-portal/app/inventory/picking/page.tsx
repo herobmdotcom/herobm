@@ -380,7 +380,6 @@ export default function PickingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('noOrders', { tab: activeTab })}
                             </div>
@@ -398,7 +397,6 @@ export default function PickingPage() {
                                                     /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                 ) : (
-                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
@@ -427,7 +425,6 @@ export default function PickingPage() {
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             className="min-h-[44px] min-w-[44px] px-3 font-semibold flex items-center gap-1 active:scale-95 touch-manipulation"
                         >
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-lg">chevron_left</span>
                             <span className="hidden sm:inline">{t('pagination.previous')}</span>
                         </Button>
@@ -449,7 +446,6 @@ export default function PickingPage() {
                             className="min-h-[44px] min-w-[44px] px-3 font-semibold flex items-center gap-1 active:scale-95 touch-manipulation"
                         >
                             <span className="hidden sm:inline">{t('pagination.next')}</span>
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-lg">chevron_right</span>
                         </Button>
                     </div>
