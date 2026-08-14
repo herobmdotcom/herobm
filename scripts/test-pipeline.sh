@@ -2,7 +2,7 @@
 set -e
 
 echo "Booting up containerized API and Pipeline Runner for integration tests..."
-podman compose up -d --no-build custom-api pipeline-runner postgres-custom redis-broker
+podman compose up -d --no-build herobm-api herobm-pipeline postgres-custom redis-broker
 
 echo "Waiting 15 seconds for Postgres and API to initialize..."
 sleep 15
@@ -14,7 +14,7 @@ TEST_EXIT_CODE=$?
 set -e
 
 echo "Tearing down containers to preserve dev-local isolation..."
-podman compose stop custom-api pipeline-runner postgres-custom redis-broker
+podman compose stop herobm-api herobm-pipeline postgres-custom redis-broker
 
 if [ $TEST_EXIT_CODE -ne 0 ]; then
     echo "Pipeline tests FAILED!"
