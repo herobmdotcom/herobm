@@ -99,8 +99,6 @@ export default function MatchDetailsModal({
         onClick={handleUndo}
         disabled={loading || unmatching || !matchGroupId}
       >
-        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
-        <span className="material-symbols-outlined text-[18px]">undo</span>
         {unmatching ? tCommon('saving') : t('undoMatch')}
       </Button>
     </div>

@@ -119,23 +119,16 @@ export default function UniversalSearch() {
     <div ref={containerRef} className="relative w-full max-w-2xl mb-8">
       <div className="relative">
         <span
-          className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px]"
-          style={{ color: 'var(--text-muted)' }}
+          className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[var(--text-muted)]"
         >
           {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           {'search'}
         </span>
         <input
           id="universal-search"
-          className="w-full pl-12 pr-4 py-3 rounded-full text-sm font-medium outline-none transition-all duration-150"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            boxShadow: showDropdown && results.length > 0
-              ? '0 8px 32px rgba(0,0,0,0.12)'
-              : '0 1px 3px rgba(0,0,0,0.06)',
-          }}
+          className={`w-full pl-12 pr-4 py-3 rounded-full text-sm font-medium outline-none transition-all duration-150 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] ${
+            showDropdown && results.length > 0 ? 'shadow-lg' : 'shadow-sm'
+          }`}
           placeholder={t('placeholder')}
           value={query}
           onChange={(e) => {
@@ -153,33 +146,20 @@ export default function UniversalSearch() {
       </div>
 
       {showDropdown && query.length > 0 && (
-        <div
-          className="absolute z-50 w-full mt-2 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-          }}
-        >
+        <div className="absolute z-50 w-full mt-2 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl">
           {query.length < 2 ? (
-            <div className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <div className="px-4 py-3 text-sm text-[var(--text-muted)]">
               {t('typeMinChars')}
             </div>
           ) : grouped.length === 0 ? (
-            <div className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <div className="px-4 py-3 text-sm text-[var(--text-muted)]">
               {t('noResults')}
             </div>
           ) : (
             grouped.map((group) => (
               <div key={group.type}>
-                <div
-                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--text-muted)', background: 'var(--bg-secondary)' }}
-                >
-                  <span
-                    className="material-symbols-outlined text-[14px]"
-                    style={{ color: 'var(--accent)' }}
-                  >
+                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-secondary)]">
+                  <span className="material-symbols-outlined text-[14px] text-[var(--accent)]">
                     {TYPE_ICONS[group.type]}
                   </span>
                   {t(`types.${group.type}`)}
@@ -191,32 +171,26 @@ export default function UniversalSearch() {
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors duration-100"
-                      style={{
-                        background: isActive ? 'var(--bg-secondary)' : 'transparent',
-                      }}
+                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm transition-colors duration-100 ${
+                        isActive ? 'bg-[var(--bg-secondary)]' : 'bg-transparent'
+                      }`}
                       onMouseDown={() => navigate(item)}
                       onMouseEnter={() => setActiveIndex(idx)}
                     >
                       <div className="flex-1 min-w-0">
-                        <span
-                          className="font-semibold"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
+                        <span className="font-semibold text-[var(--text-primary)]">
                           {item.label}
                         </span>
                         {item.subtitle && (
-                          <span
-                            className="ml-2 text-xs"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
+                          <span className="ml-2 text-xs text-[var(--text-muted)]">
                             {item.subtitle}
                           </span>
                         )}
                       </div>
                       <span
-                        className="material-symbols-outlined text-[16px]"
-                        style={{ color: 'var(--text-muted)', opacity: isActive ? 1 : 0 }}
+                        className={`material-symbols-outlined text-[16px] text-[var(--text-muted)] ${
+                          isActive ? 'opacity-100' : 'opacity-0'
+                        }`}
                       >
                         {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                         {'arrow_forward'}

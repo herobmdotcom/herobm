@@ -59,7 +59,6 @@ export default function OrderDetailsCard({
                             variant="secondary" size="sm"
                             onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
-                            <span className="material-symbols-outlined text-base">mail</span>
                             Email Quote
                         </Button>
                     )}

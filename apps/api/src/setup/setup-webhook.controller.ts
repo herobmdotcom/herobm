@@ -14,11 +14,12 @@ import { Public as InternalPublic } from '../auth/public.decorator';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 import { WebhookPayloadDto } from './dto';
+import { PipelineSecretGuard } from './pipeline-secret.guard';
 
 @ApiExcludeController()
 @InternalPublic()
 @SkipCasbin()
-@UseGuards(ThrottlerGuard)
+@UseGuards(ThrottlerGuard, PipelineSecretGuard)
 @Controller('internal/setup/webhook')
 export class SetupWebhookController {
   constructor(private readonly setupService: SetupService) {}

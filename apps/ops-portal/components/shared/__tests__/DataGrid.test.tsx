@@ -26,8 +26,18 @@ jest.mock('next-intl', () => ({
 }));
 
 // Mock ag-grid-react — we don't need to render the actual grid
+let latestAgGridProps: any = null;
 jest.mock('ag-grid-react', () => ({
-  AgGridReact: () => <div data-testid="ag-grid-mock" />,
+  AgGridReact: (props: any) => {
+    latestAgGridProps = props;
+    return (
+      <div
+        data-testid="ag-grid-mock"
+        data-pagination={props.pagination ? 'true' : 'false'}
+        data-page-size={props.paginationPageSize}
+      />
+    );
+  },
 }));
 
 // Mock ag-grid-community
@@ -49,6 +59,7 @@ describe('DataGrid', () => {
   const mockCustomFetch = customFetch as jest.Mock;
 
   beforeEach(() => {
+    latestAgGridProps = null;
     mockCustomFetch.mockResolvedValue({ data: [] } as never);
   });
 
@@ -66,6 +77,56 @@ describe('DataGrid', () => {
 
     await waitFor(() => {
       expect(mockCustomFetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('enables client-side pagination when rowData is provided and limit is set', async () => {
+    const testRows = Array.from({ length: 250 }, (_, i) => ({ id: `row-${i}`, name: `Item ${i}` }));
+    render(
+      <DataGrid
+        rowData={testRows}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+      />,
+    );
+
+    await waitFor(() => {
+      const grid = screen.getByTestId('ag-grid-mock');
+      expect(grid.getAttribute('data-pagination')).toBe('true');
+      expect(grid.getAttribute('data-page-size')).toBe('200');
+    });
+  });
+
+  it('maintains client-side pagination when onModelUpdated fires with sorted column state', async () => {
+    const testRows = Array.from({ length: 250 }, (_, i) => ({ id: `row-${i}`, name: `Item ${i}` }));
+    render(
+      <DataGrid
+        rowData={testRows}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(latestAgGridProps).not.toBeNull();
+    });
+
+    // Simulate AG Grid onModelUpdated event with a sorted column
+    const mockEvent = {
+      api: {
+        getDisplayedRowCount: () => 250,
+        paginationGetCurrentPage: () => 0,
+        paginationGetTotalPages: () => 2,
+        forEachNodeAfterFilterAndSort: (cb: any) => testRows.forEach(r => cb({ data: r })),
+        getFilterModel: () => ({}),
+        getColumnState: () => [{ colId: 'name', sort: 'asc' }],
+      },
+    };
+
+    latestAgGridProps.onModelUpdated(mockEvent);
+
+    await waitFor(() => {
+      const grid = screen.getByTestId('ag-grid-mock');
+      expect(grid.getAttribute('data-pagination')).toBe('true');
+      expect(grid.getAttribute('data-page-size')).toBe('200');
     });
   });
 });

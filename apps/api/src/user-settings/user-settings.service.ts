@@ -18,9 +18,17 @@ export class UserSettingsService {
       const [inserted] = await this.db
         // @herobm-skip-audit
         .insert(userSettings)
-        .values({ userId })
+        .values({
+          userId,
+          preferences: { density: 'comfortable' },
+        })
         .returning();
       settings = inserted;
+    } else if (!settings.preferences) {
+      settings = {
+        ...settings,
+        preferences: { density: 'comfortable' },
+      };
     }
 
     return settings;
@@ -37,7 +45,27 @@ export class UserSettingsService {
     // Ensure record exists
     const existing = await this.getSettings(userId);
 
-    const audit = calculateAuditTrail(data, existing, AuditMode.DIFF);
+    const mergedData: typeof data = {};
+    if (data.dashboardConfig !== undefined) {
+      mergedData.dashboardConfig = {
+        ...(existing.dashboardConfig || {}),
+        ...data.dashboardConfig,
+      };
+    }
+    if (data.reportConfigs !== undefined) {
+      mergedData.reportConfigs = {
+        ...(existing.reportConfigs || {}),
+        ...data.reportConfigs,
+      };
+    }
+    if (data.preferences !== undefined) {
+      mergedData.preferences = {
+        ...(existing.preferences || {}),
+        ...data.preferences,
+      };
+    }
+
+    const audit = calculateAuditTrail(mergedData, existing, AuditMode.DIFF);
 
     if (audit.hasChanges) {
       const [updated] = await this.db

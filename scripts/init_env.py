@@ -98,6 +98,10 @@ def main():
         content = content.replace("ENCRYPTION_KEY=<REDACTED>", f"ENCRYPTION_KEY={secrets.token_hex(32)}")
         print("  Generated: ENCRYPTION_KEY")
 
+    if "PIPELINE_SECRET=<REDACTED>" in content:
+        content = content.replace("PIPELINE_SECRET=<REDACTED>", f"PIPELINE_SECRET={generate_password(64)}")
+        print("  Generated: PIPELINE_SECRET")
+
     if active_profile:
         postgres_db = f"herobm_{active_profile}"
         content = content.replace("POSTGRES_DB=herobm", f"POSTGRES_DB={postgres_db}")

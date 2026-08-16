@@ -55,8 +55,9 @@ export class PurchaseInvoicePostingService {
   /**
    * Posts a draft invoice, validates totals, and creates the GL entries.
    */
-  async postInvoice(invoiceId: string, actor: string) {
-    const [invoice] = await this.db
+  async postInvoice(invoiceId: string, actor: string, outerTx?: DrizzleDB) {
+    const queryDb = outerTx ?? this.db;
+    const [invoice] = await queryDb
       .select()
       .from(purchaseInvoices)
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
@@ -64,7 +65,7 @@ export class PurchaseInvoicePostingService {
     if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
       throw new BadRequestException('Only draft invoices can be posted');
 
-    const lines = await this.db
+    const lines = await queryDb
       .select({
         line: purchaseInvoiceLines,
         poProductId: purchaseOrderLineItems.productId,
@@ -93,7 +94,7 @@ export class PurchaseInvoicePostingService {
       )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
-    const receipts = await this.db
+    const receipts = await queryDb
       .select({
         invoiceLineId: purchaseInvoiceReceipts.invoiceLineId,
         quantityBilled: purchaseInvoiceReceipts.quantityBilled,
@@ -312,7 +313,7 @@ export class PurchaseInvoicePostingService {
     }
 
     // Verify Vendor default AP / Expense Customers + Dimensions
-    const [supp] = await this.db
+    const [supp] = await queryDb
       .select({
         vendorId: suppliers.vendorId,
         defaultApAccountId: supplierGroups.defaultApAccountId,
@@ -332,7 +333,7 @@ export class PurchaseInvoicePostingService {
     const supplierActivityId = supp?.supplierActivityId || null;
 
     // GL Posting + State Update (atomic transaction)
-    const updatedInvoice = await this.db.transaction(async (tx: DrizzleDB) => {
+    const executePost = async (tx: DrizzleDB) => {
       const settings = await this.glService.getSettings(tx);
       const effectiveApAccountId =
         supplierApAccountId || settings?.defaultApAccountId;
@@ -619,7 +620,7 @@ export class PurchaseInvoicePostingService {
               foreignCredit: headerTotalForeign,
               foreignCurrencyCode: invoice.currencyCode,
               exchangeRate: invoiceRate,
-              memo: `Customers Payable: ${invoice.invoiceNumber}`,
+              memo: `Accounts Payable: ${invoice.invoiceNumber}`,
               partyId: invoice.vendorId,
               partyType: 'supplier',
               costCenterId: apDims.costCenterId || undefined,
@@ -658,7 +659,11 @@ export class PurchaseInvoicePostingService {
       }
 
       return this.core.findOne(invoiceId, tx);
-    });
+    };
+
+    const updatedInvoice = outerTx
+      ? await executePost(outerTx)
+      : await this.db.transaction(executePost);
 
     // Trigger lifecycle rules for affected POs (non-fatal side effect)
     const affectedPoIds = [
@@ -702,8 +707,9 @@ export class PurchaseInvoicePostingService {
     invoiceLineId: string,
     purchaseOrderLineId: string,
     actor: string,
+    outerTx?: DrizzleDB,
   ) {
-    return this.db.transaction(async (tx) => {
+    const executeResolve = async (tx: DrizzleDB) => {
       const [line] = await tx
         .select()
         .from(purchaseInvoiceLines)
@@ -745,7 +751,11 @@ export class PurchaseInvoicePostingService {
       });
 
       return { success: true };
-    });
+    };
+
+    return outerTx
+      ? await executeResolve(outerTx)
+      : await this.db.transaction(executeResolve);
   }
 
   /**
@@ -755,8 +765,9 @@ export class PurchaseInvoicePostingService {
     invoiceId: string,
     purchaseOrderId: string,
     actor: string,
+    outerTx?: DrizzleDB,
   ) {
-    return this.db.transaction(async (tx) => {
+    const executeAutoMatch = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -847,14 +858,22 @@ export class PurchaseInvoicePostingService {
       }
 
       return { success: true, matchedCount, addedCount };
-    });
+    };
+
+    return outerTx
+      ? await executeAutoMatch(outerTx)
+      : await this.db.transaction(executeAutoMatch);
   }
 
   /**
    * Un-matches an invoice line.
    */
-  async unresolveInvoiceLine(invoiceLineId: string, actor: string) {
-    return this.db.transaction(async (tx) => {
+  async unresolveInvoiceLine(
+    invoiceLineId: string,
+    actor: string,
+    outerTx?: DrizzleDB,
+  ) {
+    const executeUnresolve = async (tx: DrizzleDB) => {
       const [line] = await tx
         .select({
           invoiceId: purchaseInvoiceLines.invoiceId,
@@ -906,6 +925,10 @@ export class PurchaseInvoicePostingService {
       }
 
       return { success: true };
-    });
+    };
+
+    return outerTx
+      ? await executeUnresolve(outerTx)
+      : await this.db.transaction(executeUnresolve);
   }
 }

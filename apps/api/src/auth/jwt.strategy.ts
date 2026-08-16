@@ -46,6 +46,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       .select({
         userId: users.userId,
         username: users.username,
+        displayName: users.displayName,
         role: users.role,
         isActive: users.isActive,
       })
@@ -60,6 +61,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       userId: user.userId,
       username: user.username,
+      displayName: user.displayName,
       role: user.role, // DB-fresh role, not JWT-cached
     };
   }

@@ -36,6 +36,7 @@ import {
   SUPPLIER_STATE,
   GOODS_RECEIVED_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 /**
@@ -87,19 +88,19 @@ class PurchaseInvoiceService {
     );
   }
   adminMarkPaid(...args: any[]) {
-    return this.draft.adminMarkPaid(...(args as [any, any]));
+    return (this.draft.adminMarkPaid as any)(...args);
   }
   postInvoice(...args: any[]) {
-    return this.posting.postInvoice(...(args as [any, any]));
+    return (this.posting.postInvoice as any)(...args);
   }
   resolveInvoiceLine(...args: any[]) {
-    return this.posting.resolveInvoiceLine(...(args as [any, any, any]));
+    return (this.posting.resolveInvoiceLine as any)(...args);
   }
   autoMatchPurchaseOrder(...args: any[]) {
-    return this.posting.autoMatchPurchaseOrder(...(args as [any, any, any]));
+    return (this.posting.autoMatchPurchaseOrder as any)(...args);
   }
   unresolveInvoiceLine(...args: any[]) {
-    return this.posting.unresolveInvoiceLine(...(args as [any, any]));
+    return (this.posting.unresolveInvoiceLine as any)(...args);
   }
 }
 
@@ -141,6 +142,7 @@ describe('PurchaseInvoiceService', () => {
 
     const actorId = '00000000-0000-4000-8000-000000000003';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId,
       name: 'Steel Co',
       headquartersAddressLine1: 'AU',
@@ -655,6 +657,81 @@ describe('PurchaseInvoiceService', () => {
       );
       expect(fxLine).toBeDefined();
       expect(fxLine.debit).toBe(10);
+    });
+
+    it('should resolve and unresolve invoice lines within an outer transaction (Pass-the-TX)', async () => {
+      const invoiceId = '00000000-0000-4000-8000-000000000099';
+      const invoiceLineId = '00000000-0000-4000-8000-000000000098';
+      const poId = '00000000-0000-4000-8000-000000000097';
+      const poLineId = '00000000-0000-4000-8000-000000000096';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-TX-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'AUD',
+        exchangeRate: '1.0',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: poLineId,
+        purchaseOrderId: poId,
+        productId: PRODUCT_ID,
+        taxCategoryId: TAX_CAT_ID,
+        quantity: '10',
+        quantityReceived: '10',
+        pricePerUnit: '10.00',
+        amount: '100.00',
+        lineNumber: 1,
+      });
+
+      await pg.db.insert(purchaseInvoices).values({
+        invoiceId,
+        invoiceNumber: 'INV-TX-001',
+        vendorId: VENDOR_ID,
+        purchaseOrderId: poId,
+        totalAmount: '100.00',
+        taxAmount: '0.00',
+        currencyCode: 'AUD',
+        exchangeRate: '1.0',
+        stateCode: PURCHASE_INVOICE_STATE.DRAFT,
+        outstandingAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(purchaseInvoiceLines).values({
+        invoiceLineId,
+        invoiceId,
+        productId: PRODUCT_ID,
+        quantityInvoiced: '10',
+        pricePerUnit: '10.00',
+        amount: '100.00',
+        matchStatus: MATCH_STATUS.UNMATCHED,
+      });
+
+      // Execute within outer transaction
+      await pg.db.transaction(async (tx) => {
+        const resolveRes = await service.resolveInvoiceLine(
+          invoiceLineId,
+          poLineId,
+          'admin',
+          tx,
+        );
+        expect(resolveRes).toEqual({ success: true });
+
+        const unresolveRes = await service.unresolveInvoiceLine(
+          invoiceLineId,
+          'admin',
+          tx,
+        );
+        expect(unresolveRes).toEqual({ success: true });
+      });
     });
   });
 });

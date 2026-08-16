@@ -165,6 +165,27 @@ export default function ReturnDebitNoteSlideOver({
     }
   };
 
+  const handleMarkResolved = async () => {
+    if (!fullReturn) return;
+    const confirm = window.confirm(
+      `Are you sure you want to mark Return ${fullReturn.returnNumber} as dealt with? This will close the return without creating a Debit Note.`
+    );
+    if (!confirm) return;
+
+    try {
+      setSaving(true);
+      await api.globalPurchaseReturnsControllerMarkPurchaseReturnResolved(fullReturn.returnId, {
+        notes: notes || 'Marked as resolved without debit note by Finance',
+      });
+      toast.success(`Return ${fullReturn.returnNumber} marked as dealt with`);
+      onSuccess();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to mark return as dealt with');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const lineColumns: DataTableColumn<ReturnLine>[] = [
     {
       id: 'index',
@@ -389,13 +410,23 @@ export default function ReturnDebitNoteSlideOver({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
-          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
-            {tCommon('cancel')}
+        <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleMarkResolved}
+            disabled={saving}
+          >
+            Mark as Dealt With
           </Button>
-          <Button variant="primary" size="sm" onClick={handleConfirm} disabled={saving}>
-            {submitBtnText}
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+              {tCommon('cancel')}
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={saving}>
+              {submitBtnText}
+            </Button>
+          </div>
         </div>
       </div>
     </SlideOver>

@@ -83,8 +83,8 @@ export default function DashboardContent() {
           <div className="flex flex-col gap-12">
             {(Object.keys(userSettings?.reportConfigs || {}).length > 0 || dashboardConfig?.pinnedReports?.length > 0) && (
               <div className="w-full">
-                <div className="flex items-center justify-between mb-6 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
+                <div className="flex items-center justify-between mb-6 border-b border-[var(--border)] pb-4">
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50 text-[var(--text-primary)]">
                     <span className="material-symbols-outlined text-[16px]">push_pin</span>
                     {t('pinnedReports')}
                   </div>
@@ -113,7 +113,7 @@ export default function DashboardContent() {
             )}
 
             <div className="w-full">
-              <div className="flex items-center gap-2 mb-6 border-b pb-4 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center gap-2 mb-6 border-b border-[var(--border)] pb-4 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50 text-[var(--text-primary)]">
                 {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined text-[16px]">bolt</span>
                 {t('quickActions.title')}
@@ -122,24 +122,19 @@ export default function DashboardContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Link
                   href="/sales-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
-                  style={{
-                    background: 'var(--bg-card)',
-                    borderColor: 'var(--border)',
-                  }}
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
-                    style={{ background: 'rgba(0, 107, 92, 0.08)' }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>request_quote</span>
+                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">request_quote</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors" style={{ color: 'var(--text-primary)' }}>
+                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
                       {t('quickActions.createQuote')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
                       {t('quickActions.createQuoteDesc')}
                     </div>
                   </div>
@@ -147,24 +142,19 @@ export default function DashboardContent() {
 
                 <Link
                   href="/sales-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
-                  style={{
-                    background: 'var(--bg-card)',
-                    borderColor: 'var(--border)',
-                  }}
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
-                    style={{ background: 'rgba(0, 107, 92, 0.08)' }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>receipt_long</span>
+                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">receipt_long</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors" style={{ color: 'var(--text-primary)' }}>
+                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
                       {t('quickActions.createSalesOrder')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
                       {t('quickActions.createSalesDesc')}
                     </div>
                   </div>
@@ -172,24 +162,19 @@ export default function DashboardContent() {
 
                 <Link
                   href="/purchase-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
-                  style={{
-                    background: 'var(--bg-card)',
-                    borderColor: 'var(--border)',
-                  }}
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
-                    style={{ background: 'rgba(0, 107, 92, 0.08)' }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>local_shipping</span>
+                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">local_shipping</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors" style={{ color: 'var(--text-primary)' }}>
+                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
                       {t('quickActions.createPurchaseOrder')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
                       {t('quickActions.createPurchaseDesc')}
                     </div>
                   </div>
@@ -198,8 +183,8 @@ export default function DashboardContent() {
             </div>
 
             <div className="w-full flex flex-col">
-              <div className="flex items-center justify-between mb-6 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
+              <div className="flex items-center justify-between mb-6 border-b border-[var(--border)] pb-4">
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50 text-[var(--text-primary)]">
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined text-[16px]">history</span>
                   {tTimeline('title')}

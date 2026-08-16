@@ -11,9 +11,6 @@ import { users } from './index';
 import { glAccounts, costCenters, activities } from './gl.schema';
 import { taxPositions } from './tax.schema';
 import {
-  ACTOR_STATE,
-  CONTACT_STATE,
-  PROJECT_STATE,
   ActorState,
   ContactState,
   ProjectState,
@@ -28,8 +25,7 @@ export const actors = herobmCore.table('actors', {
   actorId: uuid('actor_id').primaryKey().defaultRandom(),
   stateCode: text('state_code')
     .$type<ActorState>()
-    .notNull()
-    .$defaultFn(() => ACTOR_STATE.ACTIVE),
+    .notNull(),
   name: text('name').notNull(),
   legalStatus: text('legal_status'),
   headquartersAddressLine1: text('headquarters_address_line1'),
@@ -58,8 +54,7 @@ export const contacts = herobmCore.table('contacts', {
   contactId: uuid('contact_id').primaryKey().defaultRandom(),
   stateCode: text('state_code')
     .$type<ContactState>()
-    .notNull()
-    .$defaultFn(() => CONTACT_STATE.ACTIVE),
+    .notNull(),
   firstName: text('first_name'),
   lastName: text('last_name'),
   fullName: text('full_name'),
@@ -109,8 +104,7 @@ export const projects = herobmCore.table('projects', {
   projectId: uuid('project_id').primaryKey().defaultRandom(),
   stateCode: text('state_code')
     .$type<ProjectState>()
-    .notNull()
-    .$defaultFn(() => PROJECT_STATE.ACTIVE),
+    .notNull(),
   name: text('name').notNull(),
   status: text('status').notNull(),
   type: text('type').notNull(),

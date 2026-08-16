@@ -18,6 +18,8 @@ export class ApiError extends Error {
 
 const TOKEN_KEY = 'herobm_token';
 const ROLE_KEY = 'herobm_role';
+const USERNAME_KEY = 'herobm_username';
+const DISPLAY_NAME_KEY = 'herobm_display_name';
 
 function readStorage(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -36,6 +38,8 @@ import { setSdkConfig } from '@herobm/sdk';
 
 let token: string | null = readStorage(TOKEN_KEY);
 let role: string | null = readStorage(ROLE_KEY);
+let username: string | null = readStorage(USERNAME_KEY);
+let displayName: string | null = readStorage(DISPLAY_NAME_KEY);
 
 // Wire up the new @herobm/sdk to use the portal's token and error handling
 setSdkConfig({
@@ -46,11 +50,11 @@ setSdkConfig({
 });
 
 
-export async function login(username: string, password: string) {
+export async function login(user: string, pass: string) {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username: user, password: pass }),
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
@@ -59,20 +63,30 @@ export async function login(username: string, password: string) {
   const data = await res.json();
   token = data.access_token;
   role = data.role;
+  username = data.username || user;
+  displayName = data.displayName || null;
   writeStorage(TOKEN_KEY, token);
   writeStorage(ROLE_KEY, role);
+  writeStorage(USERNAME_KEY, username);
+  writeStorage(DISPLAY_NAME_KEY, displayName);
   return data;
 }
 
 export function getToken() { return token; }
 export function setToken(t: string) { token = t; writeStorage(TOKEN_KEY, t); }
 export function getRole() { return role; }
+export function getUsername() { return username; }
+export function getDisplayName() { return displayName; }
 
 function clearSession() {
   token = null;
   role = null;
+  username = null;
+  displayName = null;
   writeStorage(TOKEN_KEY, null);
   writeStorage(ROLE_KEY, null);
+  writeStorage(USERNAME_KEY, null);
+  writeStorage(DISPLAY_NAME_KEY, null);
 }
 
 export function logout() {
@@ -97,20 +111,40 @@ function clearSessionAndReload(): never {
 export async function validateSession(): Promise<{ valid: boolean; data?: any }> {
   if (!token) return { valid: false };
   try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+
     const res = await fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller?.signal,
     });
+    if (timeoutId) clearTimeout(timeoutId);
+
     if (res.ok) {
       const data = await res.json();
+      if (data.username) {
+        username = data.username;
+        writeStorage(USERNAME_KEY, username);
+      }
+      if (data.displayName !== undefined) {
+        displayName = data.displayName;
+        writeStorage(DISPLAY_NAME_KEY, displayName);
+      }
       return { valid: true, data };
     }
-    // Token is expired or invalid — clear it silently
-    console.info(`[validateSession] Token rejected/expired (Status: ${res.status})`);
-    clearSession();
-    return { valid: false };
-  } catch {
-    // Network error — keep the token, let real API calls handle it
-    return { valid: true, data: { role: getRole() } };
+    // Only clear session if the backend explicitly rejected the token as invalid/unauthorized
+    if (res.status === 401 || res.status === 403) {
+      console.info(`[validateSession] Token rejected/expired (Status: ${res.status})`);
+      clearSession();
+      return { valid: false };
+    }
+    // Server error (e.g. 502/503/504 while API is booting) — preserve cached session
+    console.warn(`[validateSession] API unavailable (Status: ${res.status}). Preserving cached session.`);
+    return { valid: true, data: { role: getRole(), username: getUsername(), displayName: getDisplayName() } };
+  } catch (err) {
+    // Network error or timeout (API starting up) — keep the token, let real API calls handle it
+    console.warn('[validateSession] API unreachable or timed out. Preserving cached session.', err);
+    return { valid: true, data: { role: getRole(), username: getUsername(), displayName: getDisplayName() } };
   }
 }
 
@@ -216,6 +250,35 @@ export async function apiMutate<T = unknown>(
   // Empty response (DELETE, void methods)
   const contentLength = res.headers.get('content-length');
   if (res.status === 204 || contentLength === '0') return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text);
+}
+
+/**
+ * Perform an authenticated multipart/form-data upload.
+ */
+export async function apiUpload<T = unknown>(
+  path: string,
+  formData: FormData,
+  method: 'POST' | 'PATCH' = 'POST',
+): Promise<T> {
+  if (!token) throw new Error('Not authenticated');
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: formData,
+  });
+  if (res.status === 401) clearSessionAndReload();
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new ApiError(errData?.message ?? `Upload failed: ${res.status}`, res.status, errData);
+  }
   const text = await res.text();
   if (!text) return undefined as T;
   return JSON.parse(text);

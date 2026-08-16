@@ -95,8 +95,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   onClick={handleCancelOrder}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                  <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                   {tCommon('cancel')}
                 </Button>
               )}

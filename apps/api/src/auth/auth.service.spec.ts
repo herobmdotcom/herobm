@@ -23,6 +23,7 @@ describe('AuthService', () => {
     await pg.db.insert(users).values({
       userId: '11111111-1111-1111-1111-111111111111',
       username: 'admin',
+      displayName: 'Admin User',
       passwordHash: TEST_HASH,
       role: 'admin',
       isActive: true,
@@ -49,6 +50,7 @@ describe('AuthService', () => {
       const result = await service.login('admin', TEST_PASSWORD);
       expect(result).toHaveProperty('access_token', 'mock.jwt.token');
       expect(result).toHaveProperty('username', 'admin');
+      expect(result).toHaveProperty('displayName', 'Admin User');
       expect(result).toHaveProperty('role', 'admin');
     });
 

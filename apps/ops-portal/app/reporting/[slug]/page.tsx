@@ -343,7 +343,7 @@ export default function ReportViewer() {
               { }
               {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
                 <div key={f.name} className="flex flex-col">
-                  <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
+                  <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5 text-[var(--text-muted)]">{f.label}</label>
                   <input 
                     type={f.type} 
                     className="input max-w-xs"
@@ -356,7 +356,7 @@ export default function ReportViewer() {
           )}
           {drillDownOptions.length > 0 && (
             <div className="flex flex-col">
-              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>Split By</label>
+              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5 text-[var(--text-muted)]">Split By</label>
               <select
                 className="input max-w-xs"
                 value={(filters['drillDown'] as string) || ''}
@@ -377,7 +377,7 @@ export default function ReportViewer() {
           
           {uiConfig.chartConfig && (
             <div className="flex flex-col">
-              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>View As</label>
+              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5 text-[var(--text-muted)]">View As</label>
               <div className="flex bg-white rounded-md border border-[rgba(196,198,205,0.4)] p-0.5 h-[34px]">
                 <Button
                   className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}

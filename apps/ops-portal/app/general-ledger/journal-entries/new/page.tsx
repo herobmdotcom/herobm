@@ -181,7 +181,7 @@ export default function NewJournalEntryPage() {
         <div className="card">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.date')} *
               </label>
               <input
@@ -192,7 +192,7 @@ export default function NewJournalEntryPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.memo')}
               </label>
               <input
@@ -230,9 +230,9 @@ export default function NewJournalEntryPage() {
                   <th>{tCommon('costCenter')}</th>
                   <th>{tCommon('activity')}</th>
                   <th>{t('columns.memo')}</th>
-                  <th style={{ width: 120, textAlign: 'right' }}>{t('columns.debit')}</th>
-                  <th style={{ width: 120, textAlign: 'right' }}>{t('columns.credit')}</th>
-                  <th style={{ width: 50 }}></th>
+                  <th className="w-[120px] text-right">{t('columns.debit')}</th>
+                  <th className="w-[120px] text-right">{t('columns.credit')}</th>
+                  <th className="w-[50px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -242,8 +242,7 @@ export default function NewJournalEntryPage() {
                       <select
                         value={line.accountCode}
                         onChange={(e) => updateLine(line.id, 'accountCode', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                       >
                         <option value="">{t('placeholders.selectAccount')}</option>
                         {accounts.map(a => (
@@ -257,8 +256,7 @@ export default function NewJournalEntryPage() {
                       <select
                         value={line.partyType}
                         onChange={(e) => updateLine(line.id, 'partyType', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                       >
                         <option value="none">{t('partyTypes.none')}</option>
                         <option value="customer">{t('partyTypes.customer')}</option>
@@ -267,7 +265,7 @@ export default function NewJournalEntryPage() {
                     </td>
                     <td>
                       {line.partyType === 'none' && (
-                        <div className="input text-gray-400 bg-gray-50 flex items-center" style={{ width: '100%', height: '32px', fontSize: 13 }}>
+                        <div className="input text-gray-400 bg-gray-50 flex items-center w-full h-8 text-[13px]">
                           —
                         </div>
                       )}
@@ -290,8 +288,7 @@ export default function NewJournalEntryPage() {
                       <select
                         value={line.costCenterId}
                         onChange={(e) => updateLine(line.id, 'costCenterId', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                       >
                         <option value="">—</option>
                         {costCenters.map(cc => (
@@ -303,8 +300,7 @@ export default function NewJournalEntryPage() {
                       <select
                         value={line.activityId}
                         onChange={(e) => updateLine(line.id, 'activityId', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                       >
                         <option value="">—</option>
                         {activities.map(act => (
@@ -318,33 +314,30 @@ export default function NewJournalEntryPage() {
                         value={line.memo}
                         onChange={(e) => updateLine(line.id, 'memo', e.target.value)}
                         placeholder={t('placeholders.lineMemo')}
-                        className="input"
-                        style={{ width: '100%', fontSize: 13 }}
+                        className="input w-full text-[13px]"
                       />
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="text-right">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={line.debit}
                         onChange={(e) => updateLine(line.id, 'debit', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', textAlign: 'right', fontSize: 13 }}
+                        className="input w-full text-right text-[13px]"
                       />
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="text-right">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={line.credit}
                         onChange={(e) => updateLine(line.id, 'credit', e.target.value)}
-                        className="input"
-                        style={{ width: '100%', textAlign: 'right', fontSize: 13 }}
+                        className="input w-full text-right text-[13px]"
                       />
                     </td>
-                    <td style={{ textAlign: 'center' }}>
+                    <td className="text-center">
                       <Button variant="ghost"
                         onClick={() => removeLine(line.id)}
                         disabled={lines.length <= 2}

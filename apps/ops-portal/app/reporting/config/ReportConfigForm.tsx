@@ -138,7 +138,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
       <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] p-6 lg:p-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]">
               {initialData ? formData.name || t('titles.edit') : t('titles.new')}
             </h2>
           </div>
@@ -219,8 +219,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
             <textarea
               value={formData.uiConfigText}
               onChange={e => handleChange('uiConfigText', e.target.value)}
-              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c]"
-              style={{ minHeight: '400px', resize: 'vertical' }}
+              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c] min-h-[400px] resize-y"
               spellCheck={false}
             />
           </div>

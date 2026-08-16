@@ -27,6 +27,7 @@ import {
   PURCHASE_RETURN_SHIPMENT_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -113,6 +114,7 @@ describe('PurchaseReturnsService', () => {
   async function seedBasics() {
     const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId,
       name: 'Supplier 1',
       headquartersAddressLine1: 'AU',

@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState } from 'react';
 import * as api from '@herobm/sdk';
@@ -11,6 +10,7 @@ import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
 import { Button } from '@/components/shared/Button';
+
 export default function ReturnCreditNoteSlideOver({
     isOpen,
     onClose,
@@ -206,8 +206,6 @@ export default function ReturnCreditNoteSlideOver({
             },
         }
     ];
-
-
 
     return (
         <SlideOver

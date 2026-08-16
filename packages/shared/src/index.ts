@@ -170,7 +170,9 @@ export type { GLAccountType, AgedBalanceRow, AgedTotals } from './accounting';
 
 export * from './errors';
 export * from './invoice-discounts';
+export * from './invoice-accounting';
 
 export { SystemResource, hasPermission, hasAnyPermission } from './permissions';
 export type { Permission } from './permissions';
 export * from './data-sources';
+export * from './user-preferences';

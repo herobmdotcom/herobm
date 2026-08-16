@@ -220,12 +220,12 @@ export const purchaseDebitNotes = herobmCore.table(
     debitNoteId: uuid('debit_note_id').primaryKey().defaultRandom(),
     debitNoteNumber: text('debit_note_number').unique().notNull(),
     supplierReferenceNumber: text('supplier_reference_number'),
-    returnId: uuid('return_id')
-      .notNull()
-      .references(() => purchaseOrderReturns.returnId),
-    purchaseOrderId: uuid('purchase_order_id')
-      .notNull()
-      .references(() => purchaseOrders.purchaseOrderId),
+    returnId: uuid('return_id').references(
+      () => purchaseOrderReturns.returnId,
+    ),
+    purchaseOrderId: uuid('purchase_order_id').references(
+      () => purchaseOrders.purchaseOrderId,
+    ),
     vendorId: uuid('vendor_id')
       .notNull()
       .references(() => suppliers.vendorId),
@@ -266,9 +266,14 @@ export const purchaseDebitNoteLines = herobmCore.table(
     debitNoteId: uuid('debit_note_id')
       .notNull()
       .references(() => purchaseDebitNotes.debitNoteId),
-    purchaseOrderLineId: uuid('purchase_order_line_id')
-      .notNull()
-      .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+    purchaseOrderLineId: uuid('purchase_order_line_id').references(
+      () => purchaseOrderLineItems.purchaseOrderLineId,
+    ),
+    description: text('description'),
+    accountId: uuid('account_id').references(() => glAccounts.glAccountId),
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
+    ),
     quantityInvoiced: numeric('quantity_invoiced').notNull(),
     pricePerUnit: numeric('price_per_unit').notNull(),
     amount: numeric('amount').notNull(),

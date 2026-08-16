@@ -173,7 +173,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     <div className="card mb-6">
       <InlineSettingsTable<Expiry>
         title={
-          <h3 className="text-sm font-semibold mb-0" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <h3 className="text-sm font-semibold mb-0 text-[var(--text-muted)] uppercase tracking-[0.05em]">
             {tSupplier('expiries.title')}
           </h3>
         }

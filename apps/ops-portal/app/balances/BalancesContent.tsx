@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import useSWR from 'swr';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import { useRouter } from 'next/navigation';
@@ -12,29 +13,24 @@ import { calculateAgedTotals } from '@herobm/shared';
 
 export default function BalancesContent() {
   const router = useRouter();
-  const [balances, setBalances] = useState<api.AgedBalanceResponseDto[]>([]);
   const [quickFilter, setQuickFilter] = useState<string>('all');
   const [agingBasis, setAgingBasis] = useState<'invoiceDate' | 'dueDate'>('dueDate');
-  const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations('common');
   const tStates = useTranslations('common.states');
   const tAccounts = useTranslations('customers');
 
-  const fetchBalances = async (basis: 'invoiceDate' | 'dueDate') => {
-    setIsLoading(true);
-    try {
-      const response = await api.customersControllerGetAgedBalances({ agingBasis: basis });
-      setBalances(response.data);
-    } catch (error) {
-      reportError(error, 'BalancesContent_fetchBalances');
-    } finally {
-      setIsLoading(false);
+  const { data: balances = [], isLoading } = useSWR(
+    ['customers-aged-balances', agingBasis],
+    async () => {
+      const response = await api.customersControllerGetAgedBalances({ agingBasis });
+      const rawData = response.data as unknown;
+      return (Array.isArray(rawData) ? rawData : (rawData as { data?: api.AgedBalanceResponseDto[] })?.data || []) as api.AgedBalanceResponseDto[];
+    },
+    {
+      keepPreviousData: true,
+      onError: (error) => reportError(error, 'BalancesContent_fetchBalances'),
     }
-  };
-
-  useEffect(() => {
-    fetchBalances(agingBasis);
-  }, [agingBasis]);
+  );
 
   const columns = useMemo<ColDef<api.AgedBalanceResponseDto>[]>(() => [
     { field: 'customerNumber', headerName: 'Account No.', width: 120 },
@@ -124,11 +120,11 @@ export default function BalancesContent() {
       headerName: 'Discrepancy',
       width: 150,
       type: 'numericColumn',
-      cellStyle: (params) => {
+      cellClass: (params) => {
         if (params.value && params.value > 0.01) {
-          return { color: 'var(--danger)', fontWeight: 'bold' };
+          return 'text-red-500 font-bold';
         }
-        return { color: 'var(--success)', fontWeight: 'normal' };
+        return 'text-emerald-500 font-normal';
       },
       valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
     },
@@ -157,9 +153,9 @@ export default function BalancesContent() {
     <DataGrid
       columns={columns}
       rowData={filteredBalances}
+      loading={isLoading}
       rowSelection="multiple"
       pageTitle="Balances"
-      loading={isLoading}
       searchPlaceholder={tAccounts('balancesSearchPlaceholder')}
       defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
       rowHref={(row) => `/customers/${row.customerId}?tab=invoices`}
@@ -168,8 +164,7 @@ export default function BalancesContent() {
           <select
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 160 }}
+            className="input text-sm min-w-[160px]"
           >
             <option value="all">All Accounts</option>
             <option value="discrepancy">Has Discrepancy</option>
@@ -179,8 +174,7 @@ export default function BalancesContent() {
           <select
             value={agingBasis}
             onChange={(e) => setAgingBasis(e.target.value as 'invoiceDate' | 'dueDate')}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            className="input text-sm min-w-[150px]"
           >
             <option value="dueDate">By Due Date</option>
             <option value="invoiceDate">By Invoice Date</option>

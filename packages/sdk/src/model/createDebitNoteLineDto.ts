@@ -8,10 +8,13 @@
 import type { CreateDebitNoteShipmentAllocationDto } from './createDebitNoteShipmentAllocationDto';
 
 export interface CreateDebitNoteLineDto {
-  purchaseOrderLineId: string;
+  purchaseOrderLineId?: string;
+  description?: string;
+  accountId?: string;
+  taxCategoryId?: string;
   shipmentAllocations?: CreateDebitNoteShipmentAllocationDto[];
-  quantityInvoiced: string;
-  pricePerUnit: string;
+  quantityInvoiced?: string;
+  pricePerUnit?: string;
   amount: string;
   taxAmount?: string;
 }

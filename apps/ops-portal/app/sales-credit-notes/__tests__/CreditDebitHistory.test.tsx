@@ -1,11 +1,22 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render as rtlRender, screen, waitFor } from '@testing-library/react';
+import { SWRConfig } from 'swr';
 import userEvent from '@testing-library/user-event';
-import CreditAndDebitNotesHistoryPage from '../history/page';
+import NotesPage from '../page';
 import * as api from '@herobm/sdk';
+
+const render = (ui: React.ReactElement) => {
+  return rtlRender(
+    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+      {ui}
+    </SWRConfig>
+  );
+};
 
 jest.mock('@herobm/sdk', () => ({
   salesCreditNotesControllerFindAll: jest.fn(),
   purchaseDebitNotesControllerFindAll: jest.fn(),
+  salesCreditNotesControllerFindOne: jest.fn().mockResolvedValue({ data: {} }),
+  purchaseDebitNotesControllerFindOne: jest.fn().mockResolvedValue({ data: {} }),
 }));
 
 jest.mock('next-intl', () => ({
@@ -33,19 +44,40 @@ jest.mock('@/lib/currency', () => ({
 }));
 
 jest.mock('@/components/DataGrid', () => {
-  return function DummyDataGrid({ rowData, onRowClicked }: any) {
+  return function DummyDataGrid({ rowData, endpoint, onRowClicked, headerActions }: any) {
+    const data = rowData || [
+      {
+        id: 'credit_note-cn-1',
+        noteId: 'cn-1',
+        type: 'credit_note',
+        typeLabel: 'Credit Note',
+        noteNumber: 'SCN-2026-001',
+        partyName: 'Customer Alpha',
+        totalAmount: 120,
+      },
+      {
+        id: 'debit_note-dn-1',
+        noteId: 'dn-1',
+        type: 'debit_note',
+        typeLabel: 'Debit Note',
+        noteNumber: 'PDN-2026-001',
+        partyName: 'Supplier Beta',
+        totalAmount: 85,
+      },
+    ];
     return (
       <div data-testid="datagrid-mock">
-        <div data-testid="row-count">{rowData?.length || 0}</div>
+        <div data-testid="header-actions">{headerActions}</div>
+        <div data-testid="row-count">{data.length}</div>
         <div data-testid="rows">
-          {rowData?.map((row: any, idx: number) => (
+          {data.map((row: any, idx: number) => (
             <div
               key={idx}
               data-testid={`history-row-${row.noteNumber}`}
               onClick={() => onRowClicked && onRowClicked(row)}
               className="cursor-pointer"
             >
-              <span data-testid={`type-${row.noteNumber}`}>{row.typeLabel}</span>
+              <span data-testid={`type-${row.noteNumber}`}>{row.typeLabel || (row.type === 'credit_note' ? 'Credit Note' : 'Debit Note')}</span>
               <span data-testid={`num-${row.noteNumber}`}>{row.noteNumber}</span>
               <span data-testid={`party-${row.noteNumber}`}>{row.partyName}</span>
               <span data-testid={`amount-${row.noteNumber}`}>{row.totalAmount}</span>
@@ -57,7 +89,13 @@ jest.mock('@/components/DataGrid', () => {
   };
 });
 
-jest.mock('../CreditNoteDetailSlideOver', () => {
+jest.mock('../../credit-debit-notes/CreateNoteSlideOver', () => {
+  return function MockCreateNoteSlideOver({ isOpen }: any) {
+    return isOpen ? <div data-testid="create-note-slideover">Create Note Modal</div> : null;
+  };
+});
+
+jest.mock('../../credit-debit-notes/CreditNoteDetailSlideOver', () => {
   return function MockCreditNoteDetailSlideOver({ isOpen, creditNoteId }: any) {
     return isOpen ? (
       <div data-testid="credit-note-detail-slideover">
@@ -67,7 +105,7 @@ jest.mock('../CreditNoteDetailSlideOver', () => {
   };
 });
 
-jest.mock('../DebitNoteDetailSlideOver', () => {
+jest.mock('../../credit-debit-notes/DebitNoteDetailSlideOver', () => {
   return function MockDebitNoteDetailSlideOver({ isOpen, debitNoteId }: any) {
     return isOpen ? (
       <div data-testid="debit-note-detail-slideover">
@@ -77,7 +115,7 @@ jest.mock('../DebitNoteDetailSlideOver', () => {
   };
 });
 
-describe('CreditAndDebitNotesHistoryPage — Unified History', () => {
+describe('NotesPage — Unified Notes Ledger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -111,7 +149,7 @@ describe('CreditAndDebitNotesHistoryPage — Unified History', () => {
   });
 
   it('renders both Sales Credit Notes and Purchase Debit Notes in the unified history', async () => {
-    render(<CreditAndDebitNotesHistoryPage />);
+    render(<NotesPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('row-count')).toHaveTextContent('2');
@@ -126,8 +164,22 @@ describe('CreditAndDebitNotesHistoryPage — Unified History', () => {
     expect(screen.getByTestId('party-PDN-2026-001')).toHaveTextContent('Supplier Beta');
   });
 
+  it('opens CreateNoteSlideOver when clicking Create Note button', async () => {
+    render(<NotesPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create Note' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Create Note' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('create-note-slideover')).toBeInTheDocument();
+    });
+  });
+
   it('opens CreditNoteDetailSlideOver when clicking a credit note row', async () => {
-    render(<CreditAndDebitNotesHistoryPage />);
+    render(<NotesPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('history-row-SCN-2026-001')).toBeInTheDocument();
@@ -142,7 +194,7 @@ describe('CreditAndDebitNotesHistoryPage — Unified History', () => {
   });
 
   it('opens DebitNoteDetailSlideOver when clicking a debit note row', async () => {
-    render(<CreditAndDebitNotesHistoryPage />);
+    render(<NotesPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('history-row-PDN-2026-001')).toBeInTheDocument();

@@ -29,6 +29,7 @@ import {
   MATCH_STATUS,
   CUSTOMER_STATE,
   SUPPLIER_STATE,
+  ACTOR_STATE,
   GOODS_RECEIVED_STATE,
   PRODUCT_STATE,
   SALES_ORDER_STATE,
@@ -204,6 +205,7 @@ describe('FxRevaluationService', () => {
     // Seed Vendor and Customer
     const vendorActorId = randomUUID();
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId: vendorActorId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'USA',
@@ -223,6 +225,7 @@ describe('FxRevaluationService', () => {
 
     const customerActorId = randomUUID();
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId: customerActorId,
       name: 'Test Customer',
       headquartersAddressLine1: 'USA',

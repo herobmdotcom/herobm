@@ -129,7 +129,6 @@ export default function TopographyView() {
         <div className="flex items-center gap-4 flex-1">
           <h2
             className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0"
-            style={{ fontFamily: 'Manrope, sans-serif' }}
           >
             {tInventory('tabs.locations')}
           </h2>
@@ -140,7 +139,6 @@ export default function TopographyView() {
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg">
               <span
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                style={{ fontFamily: 'Manrope, sans-serif' }}
               >
                 {tCommon('columns.location')}
               </span>
@@ -151,7 +149,6 @@ export default function TopographyView() {
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg">
               <span
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                style={{ fontFamily: 'Manrope, sans-serif' }}
               >
                 {tLoc('zones')}
               </span>
@@ -162,7 +159,6 @@ export default function TopographyView() {
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg">
               <span
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
-                style={{ fontFamily: 'Manrope, sans-serif' }}
               >
                 {tLoc('bins')}
               </span>
@@ -187,16 +183,16 @@ export default function TopographyView() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ background: '#fafbfc' }}>
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 bg-[#fafbfc]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-sm text-[var(--text-muted)]">
               {tCommon('loading')}
             </span>
           </div>
         ) : locations.length === 0 ? (
           <div className="flex items-center justify-center py-16">
-            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-sm text-[var(--text-muted)]">
               {tCommon('noMatchingResults')}
             </span>
           </div>
@@ -209,11 +205,9 @@ export default function TopographyView() {
               return (
                 <div
                   key={loc.locationId}
-                  className="rounded-xl border overflow-hidden transition-all"
-                  style={{
-                    borderColor: isLocExpanded ? 'rgba(0,107,92,0.3)' : 'rgba(196,198,205,0.4)',
-                    background: '#fff',
-                  }}
+                  className={`rounded-xl border overflow-hidden transition-all bg-white ${
+                    isLocExpanded ? 'border-[#006b5c]/30' : 'border-[rgba(196,198,205,0.4)]'
+                  }`}
                 >
                   {/* Location Row */}
                   <div
@@ -225,20 +219,20 @@ export default function TopographyView() {
                   >
                     
                     { }
-                    <span className="material-symbols-outlined text-[18px] transition-transform" style={{ color: 'var(--accent)', transform: isLocExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>chevron_right</span>
+                    <span className={`material-symbols-outlined text-[18px] transition-transform text-[var(--accent)] ${isLocExpanded ? 'rotate-90' : 'rotate-0'}`}>chevron_right</span>
                     
                     {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                    <span className="material-symbols-outlined text-[22px]" style={{ color: 'var(--accent)' }}>warehouse</span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--accent)]">warehouse</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        <span className="text-sm font-bold text-[#041627]">
                           {loc.code}
                         </span>
-                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <span className="text-sm text-[var(--text-secondary)]">
                           {loc.name}
                         </span>
                         {loc.city && (
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          <span className="text-xs text-[var(--text-muted)]">
                             • {loc.city}{loc.country ? `, ${loc.country}` : ''}
                           </span>
                         )}
@@ -303,24 +297,13 @@ export default function TopographyView() {
                         title={`UUID: ${loc.locationId}`}
                       >
                         <span className="material-symbols-outlined text-[18px]">info</span>
-                      </Button>
-                      <span
-                        className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                        style={{
-                          background: 'rgba(0,107,92,0.08)',
-                          color: '#006b5c',
-                          fontFamily: 'Manrope, sans-serif',
-                        }}
+                      </Button>                      <span
+                        className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#006b5c]/[0.08] text-[#006b5c]"
                       >
                         {tLoc('zonesCount', { count: (loc?.zones || []).length })}
                       </span>
                       <span
-                        className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                        style={{
-                          background: 'rgba(4,22,39,0.06)',
-                          color: '#041627',
-                          fontFamily: 'Manrope, sans-serif',
-                        }}
+                        className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#041627]/[0.06] text-[#041627]"
                       >
                         {tLoc('binsCount', { count: binCount })}
                       </span>
@@ -329,7 +312,7 @@ export default function TopographyView() {
 
                   {/* Zones */}
                   {isLocExpanded && (
-                    <div className="border-t" style={{ borderColor: 'rgba(196,198,205,0.3)' }}>
+                    <div className="border-t border-[rgba(196,198,205,0.3)]">
                       {(loc?.zones || []).map((zone) => {
                         const isZoneExpanded = expandedZones.has(zone.zoneId);
 
@@ -341,20 +324,19 @@ export default function TopographyView() {
                               tabIndex={0}
                               onClick={() => toggleZone(zone.zoneId)}
                               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleZone(zone.zoneId); } }}
-                              className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer"
-                              style={{ paddingLeft: 48 }}
+                              className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer pl-12"
                             >
                               
                               { }
-                              <span className="material-symbols-outlined text-[16px] transition-transform" style={{ color: 'var(--text-muted)', transform: isZoneExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>chevron_right</span>
+                              <span className={`material-symbols-outlined text-[16px] transition-transform text-[var(--text-muted)] ${isZoneExpanded ? 'rotate-90' : 'rotate-0'}`}>chevron_right</span>
                               
                               { }
-                              <span className="material-symbols-outlined text-[20px]" style={{ color: '#6366f1' }}>grid_view</span>
+                              <span className="material-symbols-outlined text-[20px] text-indigo-500">grid_view</span>
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <span className="text-sm font-semibold text-[#041627]">
                                   {zone.code}
                                 </span>
-                                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                <span className="text-sm text-[var(--text-secondary)]">
                                   {zone.name}
                                 </span>
                               </div>
@@ -420,11 +402,7 @@ export default function TopographyView() {
                                   <span className="material-symbols-outlined text-[16px]">info</span>
                                 </Button>
                                 <span
-                                  className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
-                                  style={{
-                                    background: 'rgba(4,22,39,0.06)',
-                                    color: '#041627',
-                                  }}
+                                  className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 bg-[#041627]/[0.06] text-[#041627]"
                                 >
                                     {tLoc('binsCount', { count: (zone?.bins || []).length })}
                                   </span>
@@ -433,51 +411,44 @@ export default function TopographyView() {
 
                             {/* Bins Table */}
                             {isZoneExpanded && (zone?.bins || []).length > 0 && (
-                              <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
+                              <div className="pl-20 pb-3 pr-5">
                                 <div
-                                  className="rounded-lg border overflow-hidden"
-                                  style={{ borderColor: 'rgba(196,198,205,0.3)' }}
+                                  className="rounded-lg border overflow-hidden border-[rgba(196,198,205,0.3)]"
                                 >
-                                  <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                                  <table className="w-full text-sm border-collapse">
                                     <thead>
-                                      <tr style={{ background: '#f8f9fa' }}>
+                                      <tr className="bg-[#f8f9fa]">
                                         <th
-                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
-                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
+                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
                                         >
                                           {tLoc('bins')}
                                         </th>
                                         <th
-                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
-                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
+                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
                                         >
                                           {tCommon('columns.type')}
                                         </th>
                                         <th
-                                          className="text-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
-                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
+                                          className="text-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
                                         >
                                           {tLoc('fields.flags')}
                                         </th>
                                         <th
-                                          className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider"
-                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
+                                          className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
                                         >
                                         </th>
-                                        </tr>
-                                      </thead>
+                                      </tr>
+                                    </thead>
                                     <tbody>
                                       {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin, idx) => (
                                         <tr
                                           key={bin.binId}
-                                          style={{
-                                            borderTop: idx > 0 ? '1px solid rgba(196,198,205,0.2)' : undefined,
-                                          }}
+                                          className={idx > 0 ? 'border-t border-[rgba(196,198,205,0.2)]' : ''}
                                         >
-                                          <td className="px-4 py-2 font-medium text-[#041627]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                          <td className="px-4 py-2 font-medium text-[#041627] tabular-nums">
                                             {bin.binNumber}
                                           </td>
-                                          <td className="px-4 py-2" style={{ color: 'var(--text-secondary)' }}>
+                                          <td className="px-4 py-2 text-[var(--text-secondary)]">
                                             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                                             {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
                                           </td>
@@ -485,8 +456,7 @@ export default function TopographyView() {
                                             <div className="flex items-center justify-center gap-1.5">
                                               {bin.isConsignment && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                                  style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500"
                                                 >
                                                   {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
                                                   {'CSG'}
@@ -494,8 +464,7 @@ export default function TopographyView() {
                                               )}
                                               {bin.isBonded && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                                  style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700"
                                                 >
                                                   {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
                                                   {'BND'}
@@ -503,14 +472,13 @@ export default function TopographyView() {
                                               )}
                                               {bin.isUnavailable && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                                  style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-600"
                                                 >
                                                   {tCommon('na')}
                                                 </span>
                                               )}
                                               {!bin.isConsignment && !bin.isBonded && !bin.isUnavailable && (
-                                                <span style={{ color: 'var(--text-muted)' }}>—</span>
+                                                <span className="text-[var(--text-muted)]">—</span>
                                               )}
                                             </div>
                                           </td>
@@ -571,8 +539,8 @@ export default function TopographyView() {
                               )}
 
                             {isZoneExpanded && (zone?.bins || []).length === 0 && (
-                              <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
-                                <p className="text-sm italic mb-2" style={{ color: 'var(--text-muted)' }}>
+                              <div className="pl-20 pb-3 pr-5">
+                                <p className="text-sm italic mb-2 text-[var(--text-muted)]">
                                   {tLoc('noBinsInZone')}
                                 </p>
                               </div>
@@ -662,7 +630,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('columns.code')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('columns.code')}</label>
           <input 
             className="input" 
             required 
@@ -672,7 +640,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('columns.name')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('columns.name')}</label>
           <input 
             className="input" 
             required 
@@ -682,7 +650,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.addressLine1')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.addressLine1')}</label>
           <input 
             className="input" 
             value={formData.addressLine1} 
@@ -690,7 +658,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.addressLine2')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.addressLine2')}</label>
           <input 
             className="input" 
             value={formData.addressLine2} 
@@ -698,7 +666,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.city')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.city')}</label>
           <input 
             className="input" 
             value={formData.city} 
@@ -706,7 +674,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.stateOrProvince')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.stateOrProvince')}</label>
           <input 
             className="input" 
             value={formData.stateOrProvince} 
@@ -714,7 +682,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.country')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.country')}</label>
           <input 
             className="input" 
             value={formData.country} 
@@ -722,7 +690,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.postalCode')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.postalCode')}</label>
           <input 
             className="input" 
             value={formData.postalCode} 
@@ -784,7 +752,7 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.zoneCode')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.zoneCode')}</label>
           <input 
             className="input" 
             required 
@@ -794,7 +762,7 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.zoneName')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.zoneName')}</label>
           <input 
             className="input" 
             required 
@@ -959,7 +927,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
 
         {mode === 'single' ? (
           <div className="flex flex-col gap-1.5">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binNumber')}</label>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.binNumber')}</label>
             <input 
               className="input" 
               required 
@@ -1071,7 +1039,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binType')}</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{tLoc('fields.binType')}</label>
           <select
             className="input"
             value={formData.binType}

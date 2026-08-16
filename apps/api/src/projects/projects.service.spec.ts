@@ -15,7 +15,7 @@ import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { PROJECT_STATE } from '@herobm/shared';
+import { PROJECT_STATE, ACTOR_STATE, CONTACT_STATE } from '@herobm/shared';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -88,7 +88,12 @@ describe('ProjectsService', () => {
     it('should update a project', async () => {
       const [project] = await pg.db
         .insert(projects)
-        .values({ name: 'Old', type: 'internal', status: PROJECT_STATE.ACTIVE })
+        .values({
+          stateCode: PROJECT_STATE.ACTIVE,
+          name: 'Old',
+          type: 'internal',
+          status: PROJECT_STATE.ACTIVE,
+        })
         .returning();
 
       const result = await service.updateProject(
@@ -113,6 +118,7 @@ describe('ProjectsService', () => {
   describe('getProject / getProjects', () => {
     it('should get all projects', async () => {
       await pg.db.insert(projects).values({
+        stateCode: PROJECT_STATE.ACTIVE,
         name: 'Test',
         type: 'internal',
         status: PROJECT_STATE.ACTIVE,
@@ -125,6 +131,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Test',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -146,6 +153,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Project',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -177,6 +185,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Project',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -184,7 +193,10 @@ describe('ProjectsService', () => {
         .returning();
       const [contact] = await pg.db
         .insert(contacts)
-        .values({ firstName: 'John' })
+        .values({
+          stateCode: CONTACT_STATE.ACTIVE,
+          firstName: 'John',
+        })
         .returning();
 
       await service.addContact(
@@ -222,6 +234,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Project',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -229,7 +242,11 @@ describe('ProjectsService', () => {
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Actor',
+          isTaxRegistered: false,
+        })
         .returning();
 
       await service.addActor(
@@ -256,6 +273,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Project',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -282,6 +300,7 @@ describe('ProjectsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'To Archive',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,

@@ -59,13 +59,18 @@ export default tseslint.config(
             /[A-Z_-]+/,
             /^[\p{Emoji}\p{Emoji_Component}\uFE0E\uFE0F\u200D\s✅🚚❌📦]+$/u,
             /^use client$/,
-            /^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check|settings)$/,
+            /^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check|settings|tune|close|folder|search|warning)$/,
             /^[—\-\.\+←→·%\$\(\)\"\'\,\s\&×•]+$/,
             /^(&times;|&bull;)$/
           ]
         }
       }],
       '@typescript-eslint/no-explicit-any': 'error',
+      'react/forbid-elements': ['error', {
+        forbid: [
+          { element: 'button', message: 'ADV-135: Use the shared <Button> component instead of raw HTML <button>.' }
+        ]
+      }],
       'no-restricted-imports': ['error', {
         paths: [{
           name: '@/lib/api',
@@ -126,11 +131,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['lib/date.ts', '**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**'],
+    files: ['app/global-error.tsx', 'components/shared/Button.tsx', 'components/shared/datagrid/**', 'components/DataGrid.tsx', 'lib/date.ts', '**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**'],
     rules: {
       'no-restricted-syntax': 'off',
       'i18next/no-literal-string': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'react/forbid-elements': 'off',
     },
   },
 );

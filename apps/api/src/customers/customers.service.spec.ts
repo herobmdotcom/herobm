@@ -20,6 +20,7 @@ import {
   CUSTOMER_STATE,
   SALES_ORDER_STATE,
   SALES_INVOICE_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 import { CreditAssessmentService } from './credit-assessment.service';
@@ -65,11 +66,13 @@ describe('CustomersService', () => {
         .insert(actors)
         .values([
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Customer A',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Customer B',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -107,11 +110,13 @@ describe('CustomersService', () => {
         .insert(actors)
         .values([
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Acme Corp',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Other Inc',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -165,6 +170,7 @@ describe('CustomersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'VIP Client',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -194,11 +200,13 @@ describe('CustomersService', () => {
         .insert(actors)
         .values([
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Active',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Archived',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -241,6 +249,7 @@ describe('CustomersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Main Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -277,6 +286,7 @@ describe('CustomersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Legacy Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -320,6 +330,7 @@ describe('CustomersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Group Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: true,
@@ -357,6 +368,7 @@ describe('CustomersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Balance Test Customer',
           headquartersAddressLine1: 'US',
           isTaxRegistered: false,
@@ -482,8 +494,8 @@ describe('CustomersService', () => {
       // 5. Assert getAgedBalances
       const results = await service.getAgedBalances('dueDate');
 
-      expect(results).toHaveLength(1);
-      const row = results[0];
+      expect(results.data).toHaveLength(1);
+      const row = results.data[0];
       expect(row.customerName).toBe('Balance Test Customer');
       expect(row.isOnCreditHold).toBe(true);
       expect(row.creditLimit).toBe('5000.00');

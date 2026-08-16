@@ -29,6 +29,7 @@ import {
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
   CUSTOMER_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
@@ -114,6 +115,7 @@ describe('PickingService', () => {
     ]);
     const custActorId = '00000000-0000-4000-8000-000000000002';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId: custActorId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',

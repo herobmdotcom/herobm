@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -8,33 +9,26 @@ import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 
 export default function TaxBalancesContent() {
-  const [balances, setBalances] = useState<api.BasSummaryRowDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
   // Date selection
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
 
-  const fetchTaxSummary = async () => {
-    setIsLoading(true);
-    try {
+  const { data: balances = [], isLoading, mutate } = useSWR(
+    ['tax-bas-summary', fromDate, toDate],
+    async () => {
       const params: api.TaxBasControllerGetBasSummaryParams = {};
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
-      
       const response = await api.taxBasControllerGetBasSummary(params);
-      setBalances(response.data);
-    } catch (error) {
-      reportError(error, 'TaxBalancesContent_fetchTaxSummary');
-    } finally {
-      setIsLoading(false);
+      return response.data || [];
+    },
+    {
+      keepPreviousData: true,
+      onError: (error) => reportError(error, 'TaxBalancesContent_fetchTaxSummary'),
     }
-  };
-
-  useEffect(() => {
-    fetchTaxSummary();
-  }, [fromDate, toDate]);
+  );
 
   const handleCopy = (id: string, amount: number | null | undefined) => {
     const val = amount !== undefined && amount !== null ? amount.toString() : '0';
@@ -65,7 +59,7 @@ export default function TaxBalancesContent() {
         />
       </div>
       <Button 
-        variant="primary" size="sm" onClick={fetchTaxSummary}
+        variant="primary" size="sm" onClick={() => mutate()}
         className="h-9"
       >
         Refresh

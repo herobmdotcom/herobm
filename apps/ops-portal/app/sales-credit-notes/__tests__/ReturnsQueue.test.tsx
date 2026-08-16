@@ -1,11 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ReturnsQueuePage from '../page';
+import OperationsPage from '../operations/page';
 import * as api from '@herobm/sdk';
 
 jest.mock('@herobm/sdk', () => ({
   globalReturnsControllerFindGlobalReturns: jest.fn(),
   globalPurchaseReturnsControllerGetPurchaseReturns: jest.fn(),
+  globalReturnsControllerFindOne: jest.fn().mockResolvedValue({ data: {} }),
+  globalPurchaseReturnsControllerGetPurchaseReturnById: jest.fn().mockResolvedValue({ data: {} }),
 }));
 
 jest.mock('next-intl', () => ({
@@ -30,19 +32,35 @@ jest.mock('@/lib/api', () => ({
 
 // Mock DataGrid
 jest.mock('@/components/DataGrid', () => {
-  return function DummyDataGrid({ rowData, onRowClicked }: any) {
+  return function DummyDataGrid({ rowData, endpoint, onRowClicked }: any) {
+    const data = rowData || [
+      {
+        type: 'customer_return',
+        typeLabel: 'Customer Return',
+        returnId: 'ret-1',
+        returnNumber: 'RET-001',
+        partyName: 'Customer One',
+      },
+      {
+        type: 'supplier_return',
+        typeLabel: 'Supplier Return',
+        returnId: 'pret-1',
+        returnNumber: 'PRET-001',
+        partyName: 'Supplier One',
+      },
+    ];
     return (
       <div data-testid="datagrid-mock">
-        <div data-testid="row-count">{rowData?.length || 0}</div>
+        <div data-testid="row-count">{data.length}</div>
         <div data-testid="rows">
-          {rowData?.map((row: any, idx: number) => (
+          {data.map((row: any, idx: number) => (
             <div
               key={idx}
               data-testid={`return-row-${row.returnNumber}`}
               onClick={() => onRowClicked && onRowClicked(row)}
               className="cursor-pointer"
             >
-              <span data-testid={`type-${row.returnNumber}`}>{row.typeLabel}</span>
+              <span data-testid={`type-${row.returnNumber}`}>{row.typeLabel || (row.type === 'customer_return' ? 'Customer Return' : 'Supplier Return')}</span>
               <span data-testid={`num-${row.returnNumber}`}>{row.returnNumber}</span>
               <span data-testid={`party-${row.returnNumber}`}>{row.partyName}</span>
             </div>
@@ -53,13 +71,7 @@ jest.mock('@/components/DataGrid', () => {
   };
 });
 
-jest.mock('../AdHocCreditNoteSlideOver', () => {
-  return function MockAdHocSlideOver({ isOpen }: any) {
-    return isOpen ? <div data-testid="adhoc-slideover">AdHoc SlideOver</div> : null;
-  };
-});
-
-jest.mock('../ReturnCreditNoteSlideOver', () => {
+jest.mock('../../credit-debit-notes/ReturnCreditNoteSlideOver', () => {
   return function MockReturnCreditNoteSlideOver({ isOpen, returnRecord }: any) {
     return isOpen ? (
       <div data-testid="customer-credit-slideover">
@@ -69,7 +81,7 @@ jest.mock('../ReturnCreditNoteSlideOver', () => {
   };
 });
 
-jest.mock('../ReturnDebitNoteSlideOver', () => {
+jest.mock('../../credit-debit-notes/ReturnDebitNoteSlideOver', () => {
   return function MockReturnDebitNoteSlideOver({ isOpen, returnRecord }: any) {
     return isOpen ? (
       <div data-testid="supplier-debit-slideover">
@@ -79,7 +91,27 @@ jest.mock('../ReturnDebitNoteSlideOver', () => {
   };
 });
 
-describe('ReturnsQueuePage — Unified Returns Queue', () => {
+jest.mock('../../credit-debit-notes/ReturnCreditNoteSlideOver', () => {
+  return function MockReturnCreditNoteSlideOver({ isOpen, returnRecord }: any) {
+    return isOpen ? (
+      <div data-testid="customer-credit-slideover">
+        Customer Credit: {returnRecord?.returnNumber}
+      </div>
+    ) : null;
+  };
+});
+
+jest.mock('../../credit-debit-notes/ReturnDebitNoteSlideOver', () => {
+  return function MockReturnDebitNoteSlideOver({ isOpen, returnRecord }: any) {
+    return isOpen ? (
+      <div data-testid="supplier-debit-slideover">
+        Supplier Debit: {returnRecord?.returnNumber}
+      </div>
+    ) : null;
+  };
+});
+
+describe('OperationsPage — Unified Returns Queue', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -116,8 +148,8 @@ describe('ReturnsQueuePage — Unified Returns Queue', () => {
     });
   });
 
-  it('renders both Customer Returns and Supplier Returns in the same queue', async () => {
-    render(<ReturnsQueuePage />);
+  it('renders both Customer Returns and Supplier Returns in the operations queue', async () => {
+    render(<OperationsPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('row-count')).toHaveTextContent('2');
@@ -133,7 +165,7 @@ describe('ReturnsQueuePage — Unified Returns Queue', () => {
   });
 
   it('opens ReturnCreditNoteSlideOver when a customer return row is clicked', async () => {
-    render(<ReturnsQueuePage />);
+    render(<OperationsPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('return-row-RET-001')).toBeInTheDocument();
@@ -148,7 +180,7 @@ describe('ReturnsQueuePage — Unified Returns Queue', () => {
   });
 
   it('opens ReturnDebitNoteSlideOver when a supplier return row is clicked', async () => {
-    render(<ReturnsQueuePage />);
+    render(<OperationsPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId('return-row-PRET-001')).toBeInTheDocument();

@@ -32,6 +32,8 @@ import {
   salesOrders,
   salesInvoices,
   glAccounts,
+  glJournalEntries,
+  glJournalLines,
   customers as coreAccounts,
   products as coreProducts,
   customerGroups,
@@ -747,10 +749,22 @@ export class SalesCreditNoteService {
     let qb = this.db
       .select({
         ...getTableColumns(salesCreditNotes),
+        orderNumber: salesOrders.orderNumber,
+        salesOrderNumber: salesOrders.orderNumber,
+        referenceNumber: salesOrderReturns.returnNumber,
+        returnNumber: salesOrderReturns.returnNumber,
         customerNumber: coreAccounts.customerNumber,
         customerName: actors.name,
       })
       .from(salesCreditNotes)
+      .leftJoin(
+        salesOrders,
+        eq(salesCreditNotes.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        salesOrderReturns,
+        eq(salesCreditNotes.returnId, salesOrderReturns.returnId),
+      )
       .leftJoin(
         coreAccounts,
         eq(salesCreditNotes.customerId, coreAccounts.customerId),
@@ -825,10 +839,16 @@ export class SalesCreditNoteService {
     }
 
     const noteIds = notes.map((n) => n.creditNoteId);
-    const allLines = await this.db
-      .select()
-      .from(salesCreditNoteLines)
-      .where(inArray(salesCreditNoteLines.creditNoteId, noteIds));
+    const allLines: (typeof salesCreditNoteLines.$inferSelect)[] = [];
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < noteIds.length; i += CHUNK_SIZE) {
+      const chunk = noteIds.slice(i, i + CHUNK_SIZE);
+      const lines = await this.db
+        .select()
+        .from(salesCreditNoteLines)
+        .where(inArray(salesCreditNoteLines.creditNoteId, chunk));
+      allLines.push(...lines);
+    }
 
     const linesByNoteId = new Map<string, typeof allLines>();
     for (const line of allLines) {
@@ -1223,30 +1243,82 @@ export class SalesCreditNoteService {
     actor: string,
     tx?: DrizzleDB,
   ) {
-    if (!VALID_CN_STATES.includes(newState)) {
-      throw new BadRequestException(`Invalid credit note state: '${newState}'`);
-    }
+    const doChange = async (db: DrizzleDB) => {
+      if (!VALID_CN_STATES.includes(newState)) {
+        throw new BadRequestException(
+          `Invalid credit note state: '${newState}'`,
+        );
+      }
 
-    const existing = await this.findOne(creditNoteId, tx);
-    const allowed = SALES_CREDIT_NOTE_TRANSITIONS[existing.stateCode];
+      const existing = await this.findOne(creditNoteId, db);
+      const allowed = SALES_CREDIT_NOTE_TRANSITIONS[existing.stateCode];
 
-    if (!allowed || !allowed.includes(newState)) {
-      throw new BadRequestException(
-        `Cannot transition credit note from '${existing.stateCode}' to '${newState}'. ` +
-          `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      if (!allowed || !allowed.includes(newState)) {
+        throw new BadRequestException(
+          `Cannot transition credit note from '${existing.stateCode}' to '${newState}'. ` +
+            `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+        );
+      }
+
+      if (newState === SALES_CREDIT_NOTE_STATE.CANCELLED) {
+        const [originalEntry] = await db
+          .select()
+          .from(glJournalEntries)
+          .where(
+            and(
+              eq(glJournalEntries.sourceType, 'sales_credit_note'),
+              eq(glJournalEntries.sourceId, creditNoteId),
+            ),
+          )
+          .limit(1);
+
+        if (originalEntry) {
+          const originalLines = await db
+            .select()
+            .from(glJournalLines)
+            .where(
+              eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
+            );
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+          const reversedLines: any[] = originalLines.map((line) => ({
+            accountId: line.glAccountId,
+            debit: parseFloat(line.credit),
+            credit: parseFloat(line.debit),
+            memo: `Cancellation Reversal: ${line.memo}`,
+            costCenterId: line.costCenterId,
+            activityId: line.activityId,
+            partyType: line.partyType,
+            partyId: line.partyId,
+          }));
+
+          await this.glService.postJournalEntry(
+            reversedLines,
+            {
+              sourceId: creditNoteId,
+              sourceType: 'sales_credit_note',
+              memo: `Reversal of Sales Credit Note ${existing.creditNoteNumber}`,
+              entryDate: new Date().toISOString().slice(0, 10),
+              actor,
+            },
+            db,
+          );
+        }
+      }
+
+      const [updated] = await db
+        .update(salesCreditNotes)
+        .set({ stateCode: newState, modifiedOn: new Date() })
+        .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
+        .returning();
+
+      this.logger.log(
+        `Credit note ${existing.creditNoteNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
       );
-    }
 
-    const [updated] = await (tx || this.db)
-      .update(salesCreditNotes)
-      .set({ stateCode: newState, modifiedOn: new Date() })
-      .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
-      .returning();
+      return updated;
+    };
 
-    this.logger.log(
-      `Credit note ${existing.creditNoteNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
-    );
-
-    return updated;
+    return tx ? await doChange(tx) : await this.db.transaction(doChange);
   }
 }

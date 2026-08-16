@@ -8,7 +8,7 @@ import {
 } from '@herobm/db-schema';
 import { sql, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { CUSTOMER_STATE, SALES_ORDER_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE, SALES_ORDER_STATE, ACTOR_STATE } from '@herobm/shared';
 
 describe('orders.sql - getCreditBlockedSql', () => {
   const pg = setupPgliteSuite();
@@ -20,6 +20,7 @@ describe('orders.sql - getCreditBlockedSql', () => {
     const [act] = await pg.db
       .insert(actors)
       .values({
+        stateCode: ACTOR_STATE.ACTIVE,
         name: 'Test Customer',
         isTaxRegistered: false,
       })

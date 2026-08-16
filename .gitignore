@@ -108,3 +108,7 @@ tools/license-keys.js
 
 # Generated
 apps/ops-portal/lib/generated/
+
+# Persistent Storage / Uploads
+/data/storage/*
+!/data/storage/**/.gitkeep

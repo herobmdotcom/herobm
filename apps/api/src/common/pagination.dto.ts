@@ -63,4 +63,14 @@ export class PaginationQuery {
   @IsOptional()
   @IsString()
   productId?: string;
+
+  /** Field to sort by */
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
+  /** Sort direction (asc/desc) */
+  @IsOptional()
+  @IsString()
+  sortDirection?: 'asc' | 'desc';
 }

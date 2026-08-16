@@ -22,6 +22,7 @@ import { PurchaseDebitNotesModule } from './purchase-debit-notes/purchase-debit-
 import { ManufacturingModule } from './manufacturing/manufacturing.module';
 
 import { PdfTemplatesModule } from './pdf-templates/pdf-templates.module';
+import { StorageModule } from './common/storage/storage.module';
 import { DataSourcesModule } from './data-sources/data-sources.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { InvoicesModule } from './invoices/invoices.module';
@@ -88,6 +89,7 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     PurchaseDebitNotesModule,
     ManufacturingModule,
 
+    StorageModule,
     DataSourcesModule,
     PdfTemplatesModule,
     NotificationsModule,

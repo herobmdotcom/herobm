@@ -20,6 +20,7 @@ import {
   GOODS_RECEIVED_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 describe('GoodsReceivedCoreService', () => {
@@ -65,6 +66,7 @@ describe('GoodsReceivedCoreService', () => {
     await pg.db
       .insert(actors)
       .values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId,
         name: 'Supplier 1',
         headquartersAddressLine1: 'AU',

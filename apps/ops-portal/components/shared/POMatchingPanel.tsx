@@ -168,19 +168,10 @@ export default function POMatchingPanel({
   };
 
   return (
-    <div
-      className="card"
-      style={{
-        flex: 1,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="card flex-1 min-w-0 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4" style={{ flexShrink: 0 }}>
-        <h3 className="section-heading" style={{ marginBottom: 0 }}>
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <h3 className="section-heading mb-0">
           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           <span className="material-symbols-outlined">link</span>
           {t('matching.panelTitle')}
@@ -190,7 +181,7 @@ export default function POMatchingPanel({
           variant="secondary"
           size="sm"
           onClick={onClose}
-          style={{ padding: '0 8px', height: 28, fontSize: 12 }}
+          className="px-2 h-7 text-xs"
         >
           ✕
         </Button>
@@ -198,10 +189,9 @@ export default function POMatchingPanel({
       </div>
 
       {/* Search */}
-      <div style={{ marginBottom: 8, flexShrink: 0 }}>
+      <div className="mb-2 shrink-0">
         <input
-          className="input"
-          style={{ width: '100%', fontSize: 12 }}
+          className="input w-full text-xs"
           placeholder={t('placeholders.searchOrders')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value.trimStart())}
@@ -211,20 +201,9 @@ export default function POMatchingPanel({
 
       {/* Selected line hint */}
       {selectedLineId ? (
-        <div
-          style={{
-            padding: '6px 10px',
-            margin: '0 -20px',
-            fontSize: 11,
-            color: 'var(--accent)',
-            background: 'rgba(0, 107, 92, 0.06)',
-            borderBottom: '1px solid var(--border)',
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
+        <div className="py-1.5 px-2.5 -mx-5 text-[11px] text-[var(--accent)] bg-[rgba(0,107,92,0.06)] border-b border-[var(--border)] font-semibold shrink-0">
           { }
-          <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }}>
+          <span className="material-symbols-outlined text-[14px] align-middle mr-1">
             arrow_back
           </span>
           {(() => {
@@ -235,45 +214,19 @@ export default function POMatchingPanel({
           })()}
         </div>
       ) : (
-        <div
-          style={{
-            padding: '8px 10px',
-            margin: '0 -20px',
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            borderBottom: '1px solid var(--border)',
-            flexShrink: 0,
-          }}
-        >
+        <div className="py-2 px-2.5 -mx-5 text-[11px] text-[var(--text-muted)] border-b border-[var(--border)] shrink-0">
           {t('matching.selectInvoiceLine')}
         </div>
       )}
 
       {/* Body */}
-      <div
-        className="scroll-area"
-        style={{ flex: 1, overflowY: 'auto', margin: '8px -8px 0', padding: '0 8px' }}
-      >
+      <div className="scroll-area flex-1 overflow-y-auto -mx-2 mt-2 px-2">
         {loading ? (
-          <div
-            style={{
-              padding: 32,
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: 13,
-            }}
-          >
+          <div className="p-8 text-center text-[var(--text-muted)] text-[13px]">
             {tCommon('loading')}
           </div>
         ) : filteredGroups.length === 0 ? (
-          <div
-            style={{
-              padding: 32,
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: 13,
-            }}
-          >
+          <div className="p-8 text-center text-[var(--text-muted)] text-[13px]">
             {t('matching.noPendingPOs')}
           </div>
         ) : (
@@ -323,69 +276,30 @@ function POCard({
   t: ReturnType<typeof useTranslations<'purchaseOrders'>>;
 }) {
   return (
-    <div
-      style={{
-        marginBottom: 8,
-        borderRadius: 8,
-        border: '1px solid var(--border)',
-        overflow: 'hidden',
-        background: 'var(--bg-card, #fff)',
-      }}
-    >
+    <div className="mb-2 rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
       {/* Card header */}
       <Button
         onClick={onToggle}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 14px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 13,
-          textAlign: 'left',
-        }}
+        className="w-full flex items-center justify-between py-2.5 px-3.5 bg-transparent border-0 cursor-pointer text-[13px] text-left"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2">
           { }
           <span
-            className="material-symbols-outlined"
-            style={{
-              fontSize: 16,
-              transition: 'transform 0.15s',
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-              color: 'var(--text-muted)',
-            }}
+            className={`material-symbols-outlined text-[16px] transition-transform duration-150 text-[var(--text-muted)] ${
+              isExpanded ? 'rotate-90' : 'rotate-0'
+            }`}
           >
             chevron_right
           </span>
           { }
-          <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
+          <span className="font-bold text-[var(--accent)]">
             {group.orderNumber}
           </span>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 11,
-            color: 'var(--text-muted)',
-          }}
-        >
+        <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
           <span>{t('matching.linesCount', { count: group.lines.length })}</span>
           {group.matchableCount > 0 && (
-            <span
-              style={{
-                background: 'rgba(0, 107, 92, 0.1)',
-                color: 'var(--accent)',
-                padding: '2px 6px',
-                borderRadius: 4,
-                fontWeight: 600,
-              }}
-            >
+            <span className="bg-[rgba(0,107,92,0.1)] text-[var(--accent)] py-0.5 px-1.5 rounded font-semibold">
               {t('matching.matchableCount', { count: group.matchableCount })}
             </span>
           )}
@@ -394,21 +308,14 @@ function POCard({
 
       {/* Expanded lines */}
       {isExpanded && (
-        <div style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="border-t border-[var(--border)]">
           {/* Auto-match button */}
           {group.matchableCount > 0 && (
-            <div
-              style={{
-                padding: '6px 14px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className="py-1.5 px-3.5 border-b border-[var(--border)] flex justify-end">
               <Button
                 variant="secondary"
                 size="sm"
-                style={{ fontSize: 11, padding: '2px 10px', height: 24 }}
+                className="text-[11px] py-0.5 px-2.5 h-6"
                 onClick={(e) => {
                   e.stopPropagation();
                   onAutoMatch();
@@ -420,33 +327,25 @@ function POCard({
           )}
 
           {/* Line table */}
-          <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
+          <table className="w-full text-[11px] border-collapse">
             <thead>
-              <tr
-                style={{
-                  borderBottom: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                <th style={{ padding: '6px 8px 6px 14px', textAlign: 'left', fontWeight: 600 }}>
+              <tr className="border-b border-[var(--border)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                <th className="py-1.5 pl-3.5 pr-2 text-left font-semibold">
                   {t('columns.product')}
                 </th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
+                <th className="py-1.5 px-2 text-right font-semibold">
                   {t('columns.ordered')}
                 </th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
+                <th className="py-1.5 px-2 text-right font-semibold">
                   {t('columns.received')}
                 </th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
+                <th className="py-1.5 px-2 text-right font-semibold">
                   {t('columns.billed')}
                 </th>
-                <th style={{ padding: '6px 8px 6px 14px', textAlign: 'right', fontWeight: 600 }}>
+                <th className="py-1.5 pl-2 pr-3.5 text-right font-semibold">
                   {t('matching.remaining')}
                 </th>
-                <th style={{ padding: '6px 8px', width: 60 }}></th>
+                <th className="py-1.5 px-2 w-[60px]"></th>
               </tr>
             </thead>
             <tbody>
@@ -462,84 +361,56 @@ function POCard({
                 return (
                   <tr
                     key={line.purchaseOrderLineId}
-                    style={{
-                      borderBottom: '1px solid var(--border)',
-                      opacity: isFullyInvoiced || isAlreadyMatched ? 0.45 : 1,
-                    }}
+                    className={`border-b border-[var(--border)] ${
+                      isFullyInvoiced || isAlreadyMatched ? 'opacity-45' : ''
+                    }`}
                   >
-                    <td style={{ padding: '6px 8px 6px 14px' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <td className="py-1.5 pl-3.5 pr-2">
+                      <div className="font-semibold text-[var(--text-primary)]">
                         {line.productNumber || line.productId?.substring(0, 8) || '—'}
                       </div>
                       <div
-                        style={{
-                          fontSize: 10,
-                          color: 'var(--text-muted)',
-                          maxWidth: 120,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
+                        className="text-[10px] text-[var(--text-muted)] max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap"
                         title={line.productDescription || ''}
                       >
                         {line.productDescription || ''}
                       </div>
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="py-1.5 px-2 text-right tabular-nums">
                       {ordered}
                     </td>
                     <td
-                      style={{
-                        padding: '6px 8px',
-                        textAlign: 'right',
-                        fontVariantNumeric: 'tabular-nums',
-                        color:
-                          received >= ordered && ordered > 0
-                            ? 'var(--badge-shipped)'
-                            : undefined,
-                        fontWeight: received >= ordered && ordered > 0 ? 600 : 400,
-                      }}
+                      className={`py-1.5 px-2 text-right tabular-nums ${
+                        received >= ordered && ordered > 0
+                          ? 'text-[var(--badge-shipped)] font-semibold'
+                          : 'font-normal'
+                      }`}
                     >
                       {received}
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td className="py-1.5 px-2 text-right tabular-nums">
                       {invoiced}
                     </td>
                     <td
-                      style={{
-                        padding: '6px 8px 6px 14px',
-                        textAlign: 'right',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 600,
-                        color: remaining > 0 ? 'var(--text-primary)' : 'var(--text-muted)',
-                      }}
+                      className={`py-1.5 pl-2 pr-3.5 text-right tabular-nums font-semibold ${
+                        remaining > 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                      }`}
                     >
                       {remaining}
                     </td>
-                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                    <td className="py-1 px-2 text-center">
                       {isAlreadyMatched ? (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: 'var(--badge-shipped)',
-                            fontWeight: 600,
-                          }}
-                        >
+                        <span className="text-[10px] text-[var(--badge-shipped)] font-semibold">
                           {t('matching.matched')}
                         </span>
                       ) : isFullyInvoiced ? (
-                        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">—</span>
                       ) : (
                         <>
                           <Button
                             variant="primary"
                             size="sm"
-                            style={{
-                              padding: '2px 8px',
-                              height: 22,
-                              fontSize: 10,
-                              fontWeight: 600,
-                            }}
+                            className="py-0.5 px-2 h-[22px] text-[10px] font-semibold"
                             disabled={isDisabled}
                             onClick={(e) => {
                               e.stopPropagation();

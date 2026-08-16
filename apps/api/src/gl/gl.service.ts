@@ -755,7 +755,17 @@ export class GlService implements OnModuleInit {
         COALESCE(acc_actor.name, supp_actor.name) as "partyName",
         flp.party_id as "partyIdRef",
         flp.party_type as "partyTypeRef",
-        COALESCE(si.invoice_number, pi.invoice_number, sor.return_number, pe.payment_number, gr.receipt_number) as "sourceNumber"
+        COALESCE(
+          si.invoice_number,
+          pi.invoice_number,
+          scn.credit_note_number,
+          pdn.debit_note_number,
+          sos.shipment_number,
+          pe.payment_number,
+          gr.receipt_number,
+          sir.invoice_number,
+          pir.invoice_number
+        ) as "sourceNumber"
       FROM herobm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
       LEFT JOIN herobm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
@@ -764,9 +774,13 @@ export class GlService implements OnModuleInit {
       LEFT JOIN herobm_core.actors supp_actor ON supp.actor_id = supp_actor.actor_id
       LEFT JOIN herobm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
       LEFT JOIN herobm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
-      LEFT JOIN herobm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
+      LEFT JOIN herobm_core.sales_credit_notes scn ON scn.credit_note_id = je.source_id AND je.source_type = 'sales_credit_note'
+      LEFT JOIN herobm_core.purchase_debit_notes pdn ON pdn.debit_note_id = je.source_id AND je.source_type = 'purchase_debit_note'
+      LEFT JOIN herobm_core.sales_order_shipments sos ON sos.shipment_id = je.source_id AND je.source_type = 'inventory_dispatch'
       LEFT JOIN herobm_core.payment_entries pe ON pe.payment_id = je.source_id AND je.source_type = 'payment_entry'
       LEFT JOIN herobm_core.goods_received gr ON gr.goods_received_id = je.source_id AND je.source_type = 'inventory_receipt'
+      LEFT JOIN herobm_core.sales_invoices sir ON sir.invoice_id = je.source_id AND je.source_type = 'sales_invoice_reversal'
+      LEFT JOIN herobm_core.purchase_invoices pir ON pir.invoice_id = je.source_id AND je.source_type = 'purchase_invoice_reversal'
       ${whereClause ? sql`WHERE ${whereClause}` : sql``}
       ORDER BY je.entry_date DESC, je.entry_number DESC
       LIMIT ${limit} OFFSET ${offset}

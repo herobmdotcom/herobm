@@ -74,6 +74,7 @@ describe('PurchaseOrdersService', () => {
     });
     const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'AU',

@@ -162,6 +162,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           <td className={`px-3 py-1.5 font-mono text-[11px] w-20 shrink-0 ${selectedAccount === node.accountCode ? 'text-[var(--accent)] font-bold' : 'text-[var(--text-muted)]'}`}>
             {node.accountCode}
           </td>
+          {/* inline-style-allowed: Dynamic tree depth indentation for Chart of Accounts picker */}
           <td className={`px-3 py-1.5 text-xs ${selectedAccount === node.accountCode ? 'font-bold text-[var(--text-primary)]' : 'font-medium text-[var(--text-secondary)]'}`} style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}>
              {node.isGroup ? <span className="uppercase text-[9px] font-bold opacity-40 bg-gray-100 px-1 rounded mr-2 border border-gray-200">{t('group')}</span> : null}
              {node.name}
@@ -192,7 +193,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
               { }
               <span className="material-symbols-outlined text-[var(--accent)]">menu_book</span>
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">
               {t('accountingCodes')}
             </h2>
           </div>
@@ -238,7 +239,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           {/* Column 1: Chart of Accounts */}
           <div className="flex-1 border-r border-[var(--border)] flex flex-col min-w-0 bg-white">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
-                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.chartOfAccounts')}
                 </span>
              </div>
@@ -261,7 +262,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           {/* Column 2: Cost Centers */}
           <div className="w-72 border-r border-[var(--border)] flex flex-col shrink-0 bg-white">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
-                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.costCenters')}
                 </span>
              </div>
@@ -296,7 +297,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           {/* Column 3: Activities */}
           <div className="w-72 flex flex-col shrink-0 bg-white">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
-                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.activities')}
                 </span>
              </div>

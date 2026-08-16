@@ -10,7 +10,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { customers, masterDataEvents, actors } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
-import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
+import { getErrorMessage, CUSTOMER_STATE, ACTOR_STATE } from '@herobm/shared';
 
 describe('CustomersWriteService', () => {
   const pg = setupPgliteSuite();
@@ -67,6 +67,7 @@ describe('CustomersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Existing',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -99,6 +100,7 @@ describe('CustomersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'First',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -119,6 +121,7 @@ describe('CustomersWriteService', () => {
         const [act2] = await pg.db
           .insert(actors)
           .values({
+            stateCode: ACTOR_STATE.ACTIVE,
             name: 'Duplicate',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -146,6 +149,7 @@ describe('CustomersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'First',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -195,6 +199,7 @@ describe('CustomersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Old',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,

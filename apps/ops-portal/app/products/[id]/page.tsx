@@ -24,6 +24,7 @@ import { ProductSuppliersTab } from './ProductSuppliersTab';
 import { ProductInventoryTab } from './ProductInventoryTab';
 import { ProductPurchaseOrdersTab } from './ProductPurchaseOrdersTab';
 import { ProductSalesTab } from './ProductSalesTab';
+import ProductImageUploader from '@/components/products/ProductImageUploader';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 
@@ -214,72 +215,84 @@ export default function ProductDetailPage() {
 
       {activeTab === 'details' && (
         <div className="flex flex-col gap-3">
-          {/* Identity Card */}
-          <div id="info-section" className="card">
-            <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
-              <span className="material-symbols-outlined">badge</span>
-              {t('products.cards.identity')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-1">
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                    {t('common.columns.number')}
-                  </label>
-                  <input
-                    className="input"
-                    required
-                    disabled={!isEditable || saving}
-                    value={dto.productNumber ?? ''}
-                    onChange={(e) => updateField('productNumber', e.target.value)}
-                    onBlur={(e) => saveField('productNumber', e.target.value)}
-                    placeholder={t('common.placeholders.number')}
-                  />
+          {/* Identity and Product Image Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
+            <div id="info-section" className="card lg:col-span-3">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                <span className="material-symbols-outlined">badge</span>
+                {t('products.cards.identity')}
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                      {t('common.columns.number')}
+                    </label>
+                    <input
+                      className="input"
+                      required
+                      disabled={!isEditable || saving}
+                      value={dto.productNumber ?? ''}
+                      onChange={(e) => updateField('productNumber', e.target.value)}
+                      onBlur={(e) => saveField('productNumber', e.target.value)}
+                      placeholder={t('common.placeholders.number')}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                      {t('products.productName')}
+                    </label>
+                    <input
+                      className="input w-full"
+                      required
+                      disabled={!isEditable || saving}
+                      value={dto.name ?? ''}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      onBlur={(e) => saveField('name', e.target.value)}
+                      placeholder={t('products.placeholders.productDisplayName')}
+                    />
+                  </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                    {t('products.productName')}
-                  </label>
-                  <input
-                    className="input w-full"
-                    required
-                    disabled={!isEditable || saving}
-                    value={dto.name ?? ''}
-                    onChange={(e) => updateField('name', e.target.value)}
-                    onBlur={(e) => saveField('name', e.target.value)}
-                    placeholder={t('products.placeholders.productDisplayName')}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                      {t('products.columns.barcode')}
+                    </label>
+                    <input
+                      className="input"
+                      disabled={!isEditable || saving}
+                      value={dto.barcode ?? ''}
+                      onChange={(e) => updateField('barcode', e.target.value)}
+                      onBlur={(e) => saveField('barcode', e.target.value)}
+                      placeholder={t('products.placeholders.barcode')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                      {t('products.columns.alternateProductNumber')}
+                    </label>
+                    <input
+                      className="input"
+                      disabled={!isEditable || saving}
+                      value={dto.alternateProductNumber ?? ''}
+                      onChange={(e) => updateField('alternateProductNumber', e.target.value)}
+                      onBlur={(e) => saveField('alternateProductNumber', e.target.value)}
+                      placeholder={t('products.columns.alternateProductNumber')}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                    {t('products.columns.barcode')}
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!isEditable || saving}
-                    value={dto.barcode ?? ''}
-                    onChange={(e) => updateField('barcode', e.target.value)}
-                    onBlur={(e) => saveField('barcode', e.target.value)}
-                    placeholder={t('products.placeholders.barcode')}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                    {t('products.columns.alternateProductNumber')}
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!isEditable || saving}
-                    value={dto.alternateProductNumber ?? ''}
-                    onChange={(e) => updateField('alternateProductNumber', e.target.value)}
-                    onBlur={(e) => saveField('alternateProductNumber', e.target.value)}
-                    placeholder={t('products.columns.alternateProductNumber')}
-                  />
-                </div>
-              </div>
+            </div>
+
+            <div className="lg:col-span-1">
+              <ProductImageUploader
+                productId={product.productId}
+                imagePath={product.imagePath}
+                productName={product.name}
+                onImageUpdated={() => loadProduct()}
+                disabled={!isEditable}
+              />
             </div>
           </div>
 

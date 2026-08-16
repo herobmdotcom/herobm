@@ -203,6 +203,7 @@ export class ContactsService {
       const [newContact] = await tx
         .insert(contacts)
         .values({
+          stateCode: CONTACT_STATE.ACTIVE,
           firstName: dto.firstName,
           lastName: dto.lastName,
           fullName: `${dto.firstName} ${dto.lastName}`.trim(),

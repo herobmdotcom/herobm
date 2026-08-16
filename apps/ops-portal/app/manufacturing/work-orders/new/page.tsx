@@ -353,12 +353,7 @@ export default function NewWorkOrderPage() {
     >
       {error && (
         <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
+          className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
         >
           {error}
         </div>
@@ -375,8 +370,7 @@ export default function NewWorkOrderPage() {
             {/* Output Product Selector */}
             <div>
               <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: 'var(--text-muted)' }}
+                className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]"
               >
                 {t('labels.product')} *
               </label>
@@ -406,7 +400,6 @@ export default function NewWorkOrderPage() {
                   structureType="kit"
                   onSelect={handleProductSelect}
                   placeholder={t('placeholders.searchProduct')}
-                  style={{ width: '100%' }}
                 />
               )}
             </div>
@@ -653,19 +646,17 @@ export default function NewWorkOrderPage() {
                               <div className="flex items-center gap-1 justify-end">
                                 {stockWarn && (
                                   <span
-                                    className="material-symbols-outlined cursor-help"
-                                    style={{ fontSize: 15, color: stockWarn.color }}
+                                    className={`material-symbols-outlined cursor-help text-[15px] ${stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600'}`}
                                     title={stockWarn.title}
                                   >
                                     {stockWarn.icon}
                                   </span>
                                 )}
                                 <input
-                                  className="input text-right w-24 h-8 text-sm !py-1"
+                                  className={`input text-right w-24 h-8 text-sm !py-1 ${stockWarn ? (stockWarn.type === 'shortage' ? '!border-red-600' : '!border-amber-600') : ''}`}
                                   type="number"
                                   min="0.01"
                                   step="any"
-                                  style={{ borderColor: stockWarn ? stockWarn.color : undefined }}
                                   value={line.expectedQuantity}
                                   onChange={(e) =>
                                     updateLine(idx, 'expectedQuantity', e.target.value)
@@ -711,16 +702,16 @@ export default function NewWorkOrderPage() {
                 <table className="table-lines w-full">
                   <thead>
                     <tr>
-                      <th style={{ width: 40 }}>{t('columns.lineNumber')}</th>
+                      <th className="w-10">{t('columns.lineNumber')}</th>
                       <th>{t('columns.product')}</th>
                       <th>{tCommon('columns.description')}</th>
-                      <th style={{ width: 140, textAlign: 'right' }}>
+                      <th className="w-[140px] text-right">
                         {t('columns.expectedQty')}
                       </th>
-                      <th style={{ width: 120, textAlign: 'right' }}>
+                      <th className="w-[120px] text-right">
                         {t('columns.unitCost')}
                       </th>
-                      <th style={{ width: 50 }}></th>
+                      <th className="w-[50px]"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -728,14 +719,8 @@ export default function NewWorkOrderPage() {
                       const stockWarn = getComponentStockWarning(line.productId, locationId, line.expectedQuantity, inventoryLevels);
                       return (
                         <tr key={line.key}>
-                          <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                          <td
-                            style={{
-                              color: 'var(--accent)',
-                              fontWeight: 600,
-                              fontSize: 12,
-                            }}
-                          >
+                          <td className="text-[var(--text-muted)]">{idx + 1}</td>
+                          <td className="text-[var(--accent)] font-semibold text-xs">
                             {line.productNumber}
                           </td>
                           <td>
@@ -743,8 +728,7 @@ export default function NewWorkOrderPage() {
                               line.productDescription || '—'
                             ) : (
                               <input
-                                className="input"
-                                style={{ width: '100%', fontSize: 13 }}
+                                className="input w-full text-[13px]"
                                 value={line.productDescription}
                                 onChange={(e) =>
                                   updateLine(idx, 'productDescription', e.target.value)
@@ -753,23 +737,21 @@ export default function NewWorkOrderPage() {
                               />
                             )}
                           </td>
-                          <td style={{ textAlign: 'right' }}>
+                          <td className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               {stockWarn && (
                                 <span
-                                  className="material-symbols-outlined cursor-help"
-                                  style={{ fontSize: 15, color: stockWarn.color }}
+                                  className={`material-symbols-outlined cursor-help text-[15px] ${stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600'}`}
                                   title={stockWarn.title}
                                 >
                                   {stockWarn.icon}
                                 </span>
                               )}
                               <input
-                                className="input"
+                                className={`input w-full text-right ${stockWarn ? (stockWarn.type === 'shortage' ? '!border-red-600' : '!border-amber-600') : ''}`}
                                 type="number"
                                 min="0.01"
                                 step="any"
-                                style={{ width: '100%', textAlign: 'right', borderColor: stockWarn ? stockWarn.color : undefined }}
                                 value={line.expectedQuantity}
                                 onChange={(e) =>
                                   updateLine(idx, 'expectedQuantity', e.target.value)
@@ -777,13 +759,12 @@ export default function NewWorkOrderPage() {
                               />
                             </div>
                           </td>
-                          <td style={{ textAlign: 'right' }}>
+                          <td className="text-right">
                             <input
-                              className="input"
+                              className="input w-full text-right"
                               type="number"
                               min="0"
                               step="0.01"
-                              style={{ width: '100%', textAlign: 'right' }}
                               value={line.unitCost}
                               onChange={(e) =>
                                 updateLine(idx, 'unitCost', e.target.value)
@@ -806,11 +787,7 @@ export default function NewWorkOrderPage() {
                       <tr>
                         <td
                           colSpan={6}
-                          style={{
-                            textAlign: 'center',
-                            color: 'var(--text-muted)',
-                            padding: '20px 0',
-                          }}
+                          className="text-center text-[var(--text-muted)] py-5"
                         >
                           {t('noLineItems')}
                         </td>

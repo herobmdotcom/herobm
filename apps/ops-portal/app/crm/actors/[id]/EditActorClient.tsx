@@ -79,73 +79,63 @@ function GeneralInfoTab({
         <div className="grid grid-cols-1 gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Name *</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Name *</label>
               <input
-                type="text"
                 className="input w-full"
                 value={dto.name}
-                onChange={e => updateField('name', e.target.value)}
-                onBlur={e => saveField('name', e.target.value)}
+                onChange={(e) => updateField('name', e.target.value)}
+                onBlur={() => saveField('name', dto.name)}
                 disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Industry</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Industry</label>
               <input
-                type="text"
                 className="input w-full"
-                value={dto.industry}
-                onChange={e => updateField('industry', e.target.value)}
-                onBlur={e => saveField('industry', e.target.value)}
+                value={dto.industry || ''}
+                onChange={(e) => updateField('industry', e.target.value)}
+                onBlur={() => saveField('industry', dto.industry || null)}
+                placeholder="e.g. Technology, Healthcare"
                 disabled={loading}
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Legal Status</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Legal Status</label>
               <input
-                type="text"
                 className="input w-full"
-                value={dto.legalStatus}
-                onChange={e => updateField('legalStatus', e.target.value)}
-                onBlur={e => saveField('legalStatus', e.target.value)}
+                value={dto.legalStatus || ''}
+                onChange={(e) => updateField('legalStatus', e.target.value)}
+                onBlur={() => saveField('legalStatus', dto.legalStatus || null)}
+                placeholder="e.g. Corporation, LLC"
                 disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Website</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Website</label>
               <input
-                type="text"
                 className="input w-full"
-                value={dto.website}
-                onChange={e => updateField('website', e.target.value)}
-                onBlur={e => saveField('website', e.target.value)}
+                value={dto.website || ''}
+                onChange={(e) => updateField('website', e.target.value)}
+                onBlur={() => saveField('website', dto.website || null)}
+                placeholder="https://..."
                 disabled={loading}
               />
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Business Number</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Business Number</label>
               <input
-                type="text"
                 className="input w-full"
-                value={dto.businessNumber}
-                onChange={e => updateField('businessNumber', e.target.value)}
-                onBlur={e => saveField('businessNumber', e.target.value)}
+                value={dto.businessNumber || ''}
+                onChange={(e) => updateField('businessNumber', e.target.value)}
+                onBlur={() => saveField('businessNumber', dto.businessNumber || null)}
+                placeholder="Registration / Tax ID"
                 disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Tax Registered</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Tax Registered</label>
               <div
-                className="flex items-center gap-3"
-                style={{
-                  paddingTop: 6,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
+                className={`flex items-center gap-3 pt-1.5 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={() => {
                   if (loading) return;
                   updateField('isTaxRegistered', !dto.isTaxRegistered);
@@ -153,30 +143,13 @@ function GeneralInfoTab({
                 }}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: dto.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
-                    position: 'relative',
-                    transition: 'background 0.2s ease',
-                    opacity: loading ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${loading ? 'opacity-50' : ''} ${dto.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      position: 'absolute',
-                      top: 3,
-                      left: dto.isTaxRegistered ? 21 : 3,
-                      transition: 'left 0.2s ease',
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${dto.isTaxRegistered ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <span className="text-sm text-[var(--text-secondary)]">
                   {(() => {
                     const yesText = 'Yes';
                     const noText = 'No';
@@ -187,8 +160,8 @@ function GeneralInfoTab({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Tags</label>
+          <div className="mt-4">
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Tags</label>
             <div className="flex flex-wrap gap-2">
               {[...actorTags].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => {
                 const tag = r.value;
@@ -226,7 +199,7 @@ function GeneralInfoTab({
         <div className="grid grid-cols-1 gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Address Line 1</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Address Line 1</label>
               <input
                 type="text"
                 className="input w-full"
@@ -237,7 +210,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Address Line 2</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Address Line 2</label>
               <input
                 type="text"
                 className="input w-full"
@@ -250,7 +223,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>City</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">City</label>
               <input
                 type="text"
                 className="input w-full"
@@ -261,7 +234,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>State / Province</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">State / Province</label>
               <input
                 type="text"
                 className="input w-full"
@@ -272,7 +245,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Postal Code</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Postal Code</label>
               <input
                 type="text"
                 className="input w-full"
@@ -285,7 +258,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Country</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Country</label>
               <select
                 className="input w-full"
                 value={dto.headquartersCountry}
@@ -304,7 +277,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4 mt-2">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Email</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
               <input
                 type="email"
                 className="input w-full"
@@ -315,7 +288,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Telephone</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Telephone</label>
               <input
                 type="text"
                 className="input w-full"
@@ -326,7 +299,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Fax</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Fax</label>
               <input
                 type="text"
                 className="input w-full"
@@ -347,7 +320,7 @@ function GeneralInfoTab({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Mode</label>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Referral Mode</label>
             <select
               className="input w-full"
               value={dto.referralMode || ''}
@@ -365,7 +338,7 @@ function GeneralInfoTab({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Actor</label>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Referral Actor</label>
             <ActorSelect
               value={dto.referredByActorId || null}
               initialSearchTerm={dto.referredByActorName || ''}
@@ -379,7 +352,7 @@ function GeneralInfoTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Contact</label>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Referral Contact</label>
             <ContactSelect
               value={dto.referredByContactId || null}
               initialSearchTerm={dto.referredByContactName || ''}
@@ -394,7 +367,7 @@ function GeneralInfoTab({
           </div>
         </div>
         <div className="mt-4">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Referral Notes</label>
+          <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Referral Notes</label>
           <textarea
             className="input w-full min-h-[80px]"
             value={dto.referralNote || ''}
@@ -618,7 +591,7 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
             <Button
               variant="secondary"
               size="sm"
-              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              className="text-red-500 border-red-500 hover:!bg-red-50"
               onClick={archiveActor}
               disabled={loading}
             >

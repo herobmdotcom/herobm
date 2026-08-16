@@ -39,10 +39,11 @@ export function ContentPageHeader({ title, subtitle, actions, children }: Conten
               onClick={action.onClick}
               disabled={action.disabled}
             >
-              {action.icon && (
+              {action.label ? (
+                action.label
+              ) : action.icon ? (
                 <span className="material-symbols-outlined text-[18px]">{action.icon}</span>
-              )}
-              {action.label}
+              ) : null}
             </Button>
           ))}
         </div>

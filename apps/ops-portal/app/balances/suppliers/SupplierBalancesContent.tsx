@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import useSWR from 'swr';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import { useRouter } from 'next/navigation';
@@ -8,32 +9,26 @@ import * as api from '@herobm/sdk';
 import type { ColDef } from 'ag-grid-community';
 import { reportError } from '@/lib/api';
 import { calculateAgedTotals } from '@herobm/shared';
-
 import { useTranslations } from 'next-intl';
 
 export default function SupplierBalancesContent() {
   const router = useRouter();
   const tSuppliers = useTranslations('suppliers');
-  const [balances, setBalances] = useState<api.SupplierAgedBalanceResponseDto[]>([]);
   const [quickFilter, setQuickFilter] = useState<string>('all');
   const [agingBasis, setAgingBasis] = useState<'invoiceDate' | 'dueDate'>('dueDate');
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchBalances = async (basis: 'invoiceDate' | 'dueDate') => {
-    setIsLoading(true);
-    try {
-      const response = await api.suppliersControllerGetAgedBalances({ agingBasis: basis });
-      setBalances(response.data);
-    } catch (error) {
-      reportError(error, 'SupplierBalancesContent_fetchBalances');
-    } finally {
-      setIsLoading(false);
+  const { data: balances = [], isLoading } = useSWR(
+    ['suppliers-aged-balances', agingBasis],
+    async () => {
+      const response = await api.suppliersControllerGetAgedBalances({ agingBasis });
+      const rawData = response.data as unknown;
+      return (Array.isArray(rawData) ? rawData : (rawData as { data?: api.SupplierAgedBalanceResponseDto[] })?.data || []) as api.SupplierAgedBalanceResponseDto[];
+    },
+    {
+      keepPreviousData: true,
+      onError: (error) => reportError(error, 'SupplierBalancesContent_fetchBalances'),
     }
-  };
-
-  useEffect(() => {
-    fetchBalances(agingBasis);
-  }, [agingBasis]);
+  );
 
   const columns = useMemo<ColDef<api.SupplierAgedBalanceResponseDto>[]>(() => [
     { field: 'supplierNumber', headerName: 'Supplier No.', width: 120 },
@@ -80,11 +75,11 @@ export default function SupplierBalancesContent() {
       headerName: 'Discrepancy',
       width: 150,
       type: 'numericColumn',
-      cellStyle: (params) => {
+      cellClass: (params) => {
         if (params.value && params.value > 0.01) {
-          return { color: 'var(--danger)', fontWeight: 'bold' };
+          return 'text-red-500 font-bold';
         }
-        return { color: 'var(--success)', fontWeight: 'normal' };
+        return 'text-emerald-500 font-normal';
       },
       valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
     },
@@ -143,9 +138,9 @@ export default function SupplierBalancesContent() {
     <DataGrid
       columns={columns}
       rowData={filteredBalances}
+      loading={isLoading}
       rowSelection="multiple"
       pageTitle="Supplier Balances"
-      loading={isLoading}
       searchPlaceholder={tSuppliers('balancesSearchPlaceholder')}
       rowHref={(row) => `/suppliers/${row.supplierId}?tab=invoices`}
       headerActions={
@@ -153,8 +148,7 @@ export default function SupplierBalancesContent() {
           <select
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 160 }}
+            className="input text-sm min-w-[160px]"
           >
             <option value="all">All Suppliers</option>
             <option value="discrepancy">Has Discrepancy</option>
@@ -164,8 +158,7 @@ export default function SupplierBalancesContent() {
           <select
             value={agingBasis}
             onChange={(e) => setAgingBasis(e.target.value as 'invoiceDate' | 'dueDate')}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            className="input text-sm min-w-[150px]"
           >
             <option value="dueDate">By Due Date</option>
             <option value="invoiceDate">By Invoice Date</option>
@@ -203,3 +196,4 @@ export default function SupplierBalancesContent() {
     />
   );
 }
+

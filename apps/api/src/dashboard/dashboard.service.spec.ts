@@ -6,6 +6,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   SALES_ORDER_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import {
   customers,
@@ -100,6 +101,7 @@ describe('DashboardService', () => {
     it('should return counts for all entities', async () => {
       const actorId = '00000000-0000-4000-8000-000000000005';
       await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId,
         name: 'Test Customer',
         headquartersAddressLine1: 'AU',
@@ -188,6 +190,7 @@ describe('DashboardService', () => {
         .returning();
       const actorId2 = '00000000-0000-4000-8000-000000000006';
       await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId: actorId2,
         name: 'Alpha Corp',
         headquartersAddressLine1: 'AU',
@@ -227,6 +230,7 @@ describe('DashboardService', () => {
     it('should return correct href for each entity type', async () => {
       const actorId3 = '00000000-0000-4000-8000-000000000007';
       await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId: actorId3,
         name: 'Search Acc',
         headquartersAddressLine1: 'AU',
@@ -274,6 +278,7 @@ describe('DashboardService', () => {
       const customerId = '00000000-0000-4000-8000-00000000000a';
       const actorId4 = '00000000-0000-4000-8000-000000000008';
       await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId: actorId4,
         name: 'Timeline Customer',
         headquartersAddressLine1: 'AU',

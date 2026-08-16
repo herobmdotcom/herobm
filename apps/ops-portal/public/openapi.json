@@ -778,6 +778,40 @@
         ]
       }
     },
+    "/products/images/{path}": {
+      "get": {
+        "description": "Publicly stream a product image with caching headers.",
+        "operationId": "ProductsController_streamImage",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "Product image relative path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product image binary content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream Product Image",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
     "/products": {
       "get": {
         "description": "Retrieve a paginated list of all products in the catalog.",
@@ -1532,6 +1566,88 @@
           }
         },
         "summary": "Remove Component",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/{id}/image": {
+      "post": {
+        "description": "Upload and set the primary image for a product (max 5MB).",
+        "operationId": "ProductsController_uploadImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPG, PNG, WebP, GIF, SVG up to 5MB)"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload Product Image",
+        "tags": [
+          "Products"
+        ]
+      },
+      "delete": {
+        "description": "Remove the assigned image from a product.",
+        "operationId": "ProductsController_removeImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Product Image",
         "tags": [
           "Products"
         ]
@@ -14077,6 +14193,48 @@
         ]
       }
     },
+    "/purchase-returns/{id}/mark-resolved": {
+      "post": {
+        "description": "Marks a purchase return as resolved without issuing a debit note.",
+        "operationId": "GlobalPurchaseReturnsController_markPurchaseReturnResolved",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolvePurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark Purchase Return as Resolved",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
     "/purchase-debit-notes": {
       "get": {
         "description": "Retrieve a list of purchase debit notes.",
@@ -19867,6 +20025,10 @@
             "type": "string",
             "nullable": true
           },
+          "imagePath": {
+            "type": "string",
+            "nullable": true
+          },
           "productGroupId": {
             "type": "string",
             "nullable": true
@@ -19922,6 +20084,7 @@
           "salesTaxCategoryId",
           "externalTaxCode",
           "alternateProductNumber",
+          "imagePath",
           "productGroupId",
           "notes",
           "stateCode",
@@ -19979,6 +20142,9 @@
             "type": "string"
           },
           "alternateProductNumber": {
+            "type": "string"
+          },
+          "imagePath": {
             "type": "string"
           },
           "productGroupId": {
@@ -20063,6 +20229,9 @@
             "type": "string"
           },
           "alternateProductNumber": {
+            "type": "string"
+          },
+          "imagePath": {
             "type": "string"
           },
           "productGroupId": {
@@ -27311,6 +27480,9 @@
           "vendorId": {
             "type": "string"
           },
+          "vendorCode": {
+            "type": "string"
+          },
           "currencyCode": {
             "type": "string"
           },
@@ -27381,6 +27553,14 @@
           "purchaseOrderId",
           "stateCode"
         ]
+      },
+      "ResolvePurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          }
+        }
       },
       "PurchaseDebitNoteLineResponseDto": {
         "type": "object",
@@ -27462,6 +27642,14 @@
           "feeAmount": {
             "type": "string"
           },
+          "vendorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "vendorName": {
+            "type": "string",
+            "nullable": true
+          },
           "createdOn": {
             "format": "date-time",
             "type": "string",
@@ -27511,6 +27699,15 @@
           "purchaseOrderLineId": {
             "type": "string"
           },
+          "description": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "taxCategoryId": {
+            "type": "string"
+          },
           "shipmentAllocations": {
             "type": "array",
             "items": {
@@ -27531,9 +27728,6 @@
           }
         },
         "required": [
-          "purchaseOrderLineId",
-          "quantityInvoiced",
-          "pricePerUnit",
           "amount"
         ]
       },
@@ -27541,6 +27735,9 @@
         "type": "object",
         "properties": {
           "returnId": {
+            "type": "string"
+          },
+          "vendorId": {
             "type": "string"
           },
           "supplierReferenceNumber": {
@@ -27563,7 +27760,6 @@
           }
         },
         "required": [
-          "returnId",
           "lines"
         ]
       },

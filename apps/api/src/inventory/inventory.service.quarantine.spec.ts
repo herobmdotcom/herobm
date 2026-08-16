@@ -24,6 +24,7 @@ import {
   SUPPLIER_STATE,
   GOODS_RECEIVED_STATE,
   MATCH_STATUS,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
@@ -233,6 +234,7 @@ describe('InventoryService - Quarantine', () => {
     beforeEach(async () => {
       const actorId = '00000000-0000-4000-8000-000000000004';
       await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId,
         name: 'Test Vendor',
         headquartersAddressLine1: 'DE',

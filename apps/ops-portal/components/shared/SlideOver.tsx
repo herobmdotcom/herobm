@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 
 interface SlideOverProps {
@@ -22,9 +23,14 @@ export default function SlideOver({
   children,
   actions,
   footer,
-  width = 'max-w-xl'
+  width = 'max-w-xl',
 }: SlideOverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
@@ -50,11 +56,11 @@ export default function SlideOver({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[9999] overflow-hidden">
+  const content = (
+    <div className="fixed inset-0 z-[99999] overflow-hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity" 
         onClick={onClose}
         aria-hidden="true"
       />
@@ -63,16 +69,16 @@ export default function SlideOver({
       <div className="absolute inset-y-0 right-0 flex w-full justify-end pointer-events-none sm:pl-10">
         <div 
           ref={panelRef}
-          className={`pointer-events-auto w-full ${width} bg-white flex flex-col`}
+          className={`pointer-events-auto w-full ${width} bg-[var(--bg-card)] text-[var(--text-primary)] border-l border-[var(--border)] shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 ease-out`}
         >
           {/* Header */}
-          <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">
+          <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-card)] shrink-0">
             <div>
-              <h3 className="font-bold text-xl text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              <h3 className="font-bold text-lg sm:text-xl text-[var(--text-primary)]">
                 {title}
               </h3>
               {subtitle && (
-                <div className="mt-1 text-sm text-gray-500">
+                <div className="mt-1 text-xs sm:text-sm text-[var(--text-muted)]">
                   {subtitle}
                 </div>
               )}
@@ -83,24 +89,24 @@ export default function SlideOver({
                 type="button" 
                 variant="ghost"
                 size="sm"
-                className="btn-circle text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
+                className="btn-circle text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]" 
                 onClick={onClose}
               >
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </Button>
             </div>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto w-full p-3 sm:p-6 relative">
+          <div className="flex-1 overflow-y-auto w-full p-4 sm:p-6 relative">
             {children}
-            <div className="h-12 w-full shrink-0"></div>
+            <div className="h-10 w-full shrink-0"></div>
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+            <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] shrink-0">
               {footer}
             </div>
           )}
@@ -108,4 +114,10 @@ export default function SlideOver({
       </div>
     </div>
   );
+
+  if (!mounted || typeof document === 'undefined') {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }

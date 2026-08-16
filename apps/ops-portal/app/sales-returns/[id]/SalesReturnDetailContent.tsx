@@ -104,11 +104,14 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       id: 'product',
       header: t('columns.product'),
       width: 150,
-      render: (line) => (
-        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
-          {line.productNumber}
-        </Link>
-      )
+      render: (line) =>
+        line.productId ? (
+          <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
+            {line.productNumber || '—'}
+          </Link>
+        ) : (
+          <span className="font-semibold">{line.productNumber || '—'}</span>
+        ),
     },
     {
       id: 'description',

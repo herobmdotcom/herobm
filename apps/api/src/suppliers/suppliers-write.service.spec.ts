@@ -3,7 +3,7 @@ import { SuppliersWriteService } from './suppliers-write.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { SUPPLIER_STATE } from '@herobm/shared';
+import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { suppliers, masterDataEvents, actors } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
@@ -57,6 +57,7 @@ describe('SuppliersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Existing',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -90,6 +91,7 @@ describe('SuppliersWriteService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Old Name',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,

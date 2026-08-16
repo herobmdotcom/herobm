@@ -78,7 +78,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `actor` | `created`, `updated`, `deleted` |
 | `customer` | `created`, `updated`, `archived`, `unarchived`, `status_changed` |
 | `customer_group` | `created`, `updated`, `deleted` |
-| `supplier` | `created`, `updated`, `archived`, `unarchived`, `added_expiry`, `deleted_expiry`, `status_changed`, `updated_expiry` |
+| `supplier` | `created`, `updated`, `archived`, `unarchived`, `added_expiry`, `deleted_expiry`, `status_changed`, `updated_expiry`, `debit_note_posted` |
 | `supplier_group` | `created`, `updated`, `deleted` |
 | `payment` | `submitted`, `allocated`, `payment_cancelled`, `payment_allocated`, `status_changed`, `created`, `updated` |
 | `general_ledger` | `entry_posted` |

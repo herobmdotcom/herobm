@@ -556,3 +556,18 @@ export const workOrderPicksRelations = relations(
     }),
   }),
 );
+
+export const usersRelations = relations(users, ({ one }) => ({
+  settings: one(userSettings, {
+    fields: [users.userId],
+    references: [userSettings.userId],
+  }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSettings.userId],
+    references: [users.userId],
+  }),
+}));
+

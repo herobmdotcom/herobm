@@ -177,12 +177,19 @@ export default function RolesPage() {
     };
 
     return (
-      <div className="overflow-x-auto w-full">
+      <div className="overflow-auto max-h-[600px] w-full border border-[var(--border)] rounded-lg">
         <table className="table-lines w-full table-fixed text-sm">
-          <thead>
-            <tr>
-              <th className="w-[150px] text-left">{tCommon('resource')}</th>
-              {ACTIONS.map(a => <th key={a} className="text-center uppercase text-[var(--text-secondary)] text-xs tracking-wider">{a}</th>)}
+          <thead className="sticky top-0 z-10 bg-[#f8f9fa]">
+            <tr className="bg-[#f8f9fa]">
+              <th className="w-[150px] text-left sticky top-0 z-10 bg-[#f8f9fa] shadow-[0_1px_0_0_var(--border)]">{tCommon('resource')}</th>
+              {ACTIONS.map(a => (
+                <th
+                  key={a}
+                  className="text-center uppercase text-[var(--text-secondary)] text-xs tracking-wider sticky top-0 z-10 bg-[#f8f9fa] shadow-[0_1px_0_0_var(--border)]"
+                >
+                  {a}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>

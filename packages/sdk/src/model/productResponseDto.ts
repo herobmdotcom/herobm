@@ -31,6 +31,8 @@ export interface ProductResponseDto {
   /** @nullable */
   alternateProductNumber: string | null;
   /** @nullable */
+  imagePath: string | null;
+  /** @nullable */
   productGroupId: string | null;
   /** @nullable */
   notes: string | null;

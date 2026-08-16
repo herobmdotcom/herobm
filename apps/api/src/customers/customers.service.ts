@@ -467,23 +467,174 @@ export class CustomersService {
     };
   }
 
-  async getAgedBalances(agingBasis: 'invoiceDate' | 'dueDate' = 'dueDate') {
-    const balances = await calculateCustomerBalances(this.db, agingBasis);
+  async getAgedBalances(
+    agingBasis: 'invoiceDate' | 'dueDate' = 'dueDate',
+    query?: PaginationQuery,
+    quickFilter?: string,
+  ) {
+    const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
+    const { limit, offset, page, searchTerm, sort, sortDirection } =
+      parsePagination(query);
 
-    return balances.map((b) => {
+    let conditions = sql`1=1`;
+    if (searchTerm) {
+      conditions = sql`${conditions} AND (ci.customer_name ILIKE ${searchTerm} OR ci.customer_number ILIKE ${searchTerm})`;
+    }
+
+    if (quickFilter === 'discrepancy') {
+      conditions = sql`${conditions} AND ABS(COALESCE(cgl.gl_balance, 0) - ci.total_outstanding) > 0.01`;
+    } else if (quickFilter === 'overdue') {
+      conditions = sql`${conditions} AND (ci.total_outstanding - ci.current) > 0.01`;
+    } else if (quickFilter === 'overLimit') {
+      conditions = sql`${conditions} AND COALESCE(ci.c_credit_limit, ci.g_credit_limit) IS NOT NULL AND ci.total_outstanding > COALESCE(ci.c_credit_limit, ci.g_credit_limit)`;
+    }
+
+    let orderBy = sql`"customerName" ASC`;
+    if (sort) {
+      const sortMap: Record<string, string> = {
+        customerNumber: '"customerNumber"',
+        customerName: '"customerName"',
+        creditLimit: '"creditLimit"',
+        current: '"current"',
+        days1To30: '"days1To30"',
+        days31To60: '"days31To60"',
+        days61To90: '"days61To90"',
+        days90Plus: '"days90Plus"',
+        totalOutstanding: '"totalOutstanding"',
+        uninvoicedOrdersTotal: '"uninvoicedOrdersTotal"',
+        glBalance: '"glBalance"',
+        discrepancyAmount: '"discrepancyAmount"',
+      };
+      const mappedSort = sortMap[sort] || '"customerName"';
+      orderBy = sql.raw(
+        `${mappedSort} ${sortDirection === 'desc' ? 'DESC' : 'ASC'}`,
+      );
+    }
+
+    const cteQuery = sql`
+      WITH customer_invoices AS (
+        SELECT 
+          c.customer_id,
+          a.name as customer_name,
+          c.customer_number,
+          c.currency_code,
+          c.state_code,
+          c.is_on_credit_hold as c_is_on_credit_hold,
+          c.credit_limit as c_credit_limit,
+          c.override_credit_hold_until as c_override,
+          c.customer_group_id,
+          g.is_on_credit_hold as g_is_on_credit_hold,
+          g.credit_limit as g_credit_limit,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as current,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as days1_to_30,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as days31_to_60,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as days61_to_90,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as days90_plus,
+          COALESCE(SUM(i.outstanding_amount), 0) as total_outstanding
+        FROM herobm_core.sales_invoices i
+        LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
+        JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
+        LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
+        LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
+        WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('draft', 'cancelled', 'paid')
+        GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
+      ),
+      customer_gl AS (
+        SELECT 
+          l.party_id,
+          COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) as gl_balance
+        FROM herobm_core.gl_journal_lines l
+        JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+        WHERE l.party_type = 'customer'
+        GROUP BY l.party_id
+      ),
+      customer_uninvoiced AS (
+        SELECT
+          so.customer_id,
+          SUM(
+            COALESCE((SELECT SUM(sol.total_amount) FROM herobm_core.sales_order_lines sol WHERE sol.sales_order_id = so.sales_order_id), 0)
+            -
+            COALESCE((SELECT SUM(si.total_amount) FROM herobm_core.sales_invoices si WHERE si.sales_order_id = so.sales_order_id AND si.state_code NOT IN ('draft', 'cancelled')), 0)
+          ) as uninvoiced_total
+        FROM herobm_core.sales_orders so
+        WHERE so.state_code IN ('confirmed', 'picking', 'shipped')
+        GROUP BY so.customer_id
+      ),
+      combined AS (
+        SELECT 
+          ci.customer_id as "customerId",
+          ci.customer_name as "customerName",
+          ci.customer_number as "customerNumber",
+          ci.currency_code as "currencyCode",
+          ci.state_code as "stateCode",
+          ci.c_is_on_credit_hold as "cIsOnCreditHold",
+          ci.c_credit_limit as "cCreditLimit",
+          ci.c_override as "cOverride",
+          ci.customer_group_id as "customerGroupId",
+          ci.g_is_on_credit_hold as "gIsOnCreditHold",
+          ci.g_credit_limit as "gCreditLimit",
+          ci.current as "current",
+          ci.days1_to_30 as "days1To30",
+          ci.days31_to_60 as "days31To60",
+          ci.days61_to_90 as "days61To90",
+          ci.days90_plus as "days90Plus",
+          ci.total_outstanding as "totalOutstanding",
+          COALESCE(cgl.gl_balance, 0) as "glBalance",
+          ABS(COALESCE(cgl.gl_balance, 0) - ci.total_outstanding) as "discrepancyAmount",
+          COALESCE(cu.uninvoiced_total, 0) as "uninvoicedOrdersTotal"
+        FROM customer_invoices ci
+        LEFT JOIN customer_gl cgl ON ci.customer_id::text = cgl.party_id
+        LEFT JOIN customer_uninvoiced cu ON ci.customer_id = cu.customer_id
+        WHERE ${conditions}
+      )
+    `;
+
+    const dataQuery = sql`
+      ${cteQuery}
+      SELECT * FROM combined
+      ORDER BY ${orderBy}
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const countQuery = sql`
+      ${cteQuery}
+      SELECT COUNT(*) as total FROM combined
+    `;
+
+    const [dataRes, countRes] = await Promise.all([
+      this.db.execute(dataQuery),
+      this.db.execute(countQuery),
+    ]);
+
+    const dataRows = ((dataRes as unknown as Record<string, unknown>).rows ??
+      dataRes) as Record<string, unknown>[];
+    const countRows = ((countRes as unknown as Record<string, unknown>).rows ??
+      countRes) as Record<string, unknown>[];
+
+    const total = Number(countRows[0]?.total || 0);
+
+    const formattedData = dataRows.map((b) => {
       const custProfile = {
         stateCode: b.stateCode as string,
-        isOnCreditHold: Boolean(b.isOnCreditHold),
-        creditLimit: b.creditLimit ?? null,
+        isOnCreditHold: Boolean(b.cIsOnCreditHold),
+        creditLimit:
+          b.cCreditLimit !== null
+            ? String(b.cCreditLimit as string | number)
+            : null,
         tradingTermsId: null,
-        overrideCreditHoldUntil: b.overrideCreditHoldUntil ?? null,
+        overrideCreditHoldUntil: b.cOverride
+          ? new Date(b.cOverride as string)
+          : null,
       };
 
       const groupProfile = b.customerGroupId
         ? {
             stateCode: b.stateCode as string,
-            isOnCreditHold: Boolean(b.groupIsOnCreditHold),
-            creditLimit: b.groupCreditLimit ?? null,
+            isOnCreditHold: Boolean(b.gIsOnCreditHold),
+            creditLimit:
+              b.gCreditLimit !== null
+                ? String(b.gCreditLimit as string | number)
+                : null,
             tradingTermsId: null,
           }
         : null;
@@ -492,10 +643,10 @@ export class CustomersService {
         custProfile as CustomerProfile,
         groupProfile as CustomerGroupProfile,
         {
-          totalInvoiceBalance: b.totalOutstanding,
-          overdueInvoiceBalance: b.totalOutstanding - b.current,
-          glBalance: b.glBalance,
-          isOverdue: b.totalOutstanding - b.current > 0,
+          totalInvoiceBalance: Number(b.totalOutstanding),
+          overdueInvoiceBalance: Number(b.totalOutstanding) - Number(b.current),
+          glBalance: Number(b.glBalance),
+          isOverdue: Number(b.totalOutstanding) - Number(b.current) > 0,
         },
         0,
         'hard',
@@ -503,23 +654,30 @@ export class CustomersService {
       );
 
       return {
-        customerId: b.customerId,
+        customerId: b.customerId as string,
         customerName: b.customerName as string,
         customerNumber: b.customerNumber as string,
-        currencyCode: b.currencyCode,
-        current: b.current,
-        days1To30: b.days1To30,
-        days31To60: b.days31To60,
-        days61To90: b.days61To90,
-        days90Plus: b.days90Plus,
-        totalOutstanding: b.totalOutstanding,
-        glBalance: b.glBalance,
-        discrepancyAmount: b.discrepancyAmount,
-        uninvoicedOrdersTotal: b.uninvoicedOrdersTotal,
+        currencyCode: b.currencyCode as string,
+        current: Number(b.current),
+        days1To30: Number(b.days1To30),
+        days31To60: Number(b.days31To60),
+        days61To90: Number(b.days61To90),
+        days90Plus: Number(b.days90Plus),
+        totalOutstanding: Number(b.totalOutstanding),
+        glBalance: Number(b.glBalance),
+        discrepancyAmount: Number(b.discrepancyAmount),
+        uninvoicedOrdersTotal: Number(b.uninvoicedOrdersTotal),
         isOnCreditHold: risk.isSalesBlocked,
         creditLimit: risk.effectiveCreditLimit,
         stateCode: b.stateCode as string,
       };
     });
+
+    return {
+      data: formattedData,
+      total,
+      limit,
+      page,
+    };
   }
 }

@@ -12,7 +12,7 @@ import {
   locations,
   actors,
 } from '@herobm/db-schema';
-import { CUSTOMER_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE, ACTOR_STATE } from '@herobm/shared';
 
 describe('CreditAssessmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -63,6 +63,7 @@ describe('CreditAssessmentService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,

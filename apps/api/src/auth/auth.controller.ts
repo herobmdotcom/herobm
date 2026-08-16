@@ -55,7 +55,17 @@ export class AuthController {
     description:
       'Returns the identity and role of the currently authenticated user.',
   })
-  async me(@Request() req: { user: { username: string; role: string } }) {
+  async me(
+    @Request()
+    req: {
+      user: {
+        userId?: string;
+        username: string;
+        displayName?: string | null;
+        role: string;
+      };
+    },
+  ) {
     const implicitPolicies = await this.enforcer.getImplicitPermissionsForUser(
       req.user.role,
     );
@@ -67,6 +77,7 @@ export class AuthController {
 
     return {
       username: req.user.username,
+      displayName: req.user.displayName,
       role: req.user.role,
       permissions,
     };

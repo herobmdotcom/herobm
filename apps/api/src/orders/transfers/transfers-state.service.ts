@@ -1061,6 +1061,45 @@ export class TransfersStateService {
 
       await this.changeTransferState(transferOrderId, nextState, actor, tx);
 
+      const activeShipments = await tx
+        .select()
+        .from(transferOrderShipments)
+        .where(
+          and(
+            eq(transferOrderShipments.transferOrderId, transferOrderId),
+            inArray(transferOrderShipments.stateCode, [
+              SHIPMENT_STATE.DISPATCHED,
+              SHIPMENT_STATE.PARTIALLY_RECEIVED,
+            ]),
+          ),
+        );
+
+      const targetShipmentState = isFullyReceived
+        ? SHIPMENT_STATE.RECEIVED
+        : SHIPMENT_STATE.PARTIALLY_RECEIVED;
+
+      for (const shipment of activeShipments) {
+        if (shipment.stateCode !== targetShipmentState) {
+          await tx
+            .update(transferOrderShipments)
+            // eslint-disable-next-line no-restricted-syntax -- State bypass required
+            .set({ stateCode: targetShipmentState })
+            .where(eq(transferOrderShipments.shipmentId, shipment.shipmentId));
+
+          await emitEvent(tx as unknown as DrizzleDB, {
+            entityType: EntityType.SHIPMENT,
+            entityId: shipment.shipmentId,
+            eventType: EventType.STATUS_CHANGED,
+            entityDisplayName: shipment.shipmentNumber,
+            actor,
+            payload: {
+              from: shipment.stateCode,
+              to: targetShipmentState,
+            },
+          });
+        }
+      }
+
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,

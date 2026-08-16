@@ -3,8 +3,8 @@ import { defineConfig } from 'orval';
 export default defineConfig({
   api: {
     output: {
-      mode: 'split',
-      target: 'src/api.ts',
+      mode: 'tags-split',
+      target: 'src/endpoints',
       schemas: 'src/model',
       client: 'fetch',
       mock: false,
@@ -14,9 +14,11 @@ export default defineConfig({
           name: 'customFetch',
         },
       },
+      indexFiles: true,
     },
     input: {
       target: '../../docs/developers/openapi.json',
     },
   },
 });
+

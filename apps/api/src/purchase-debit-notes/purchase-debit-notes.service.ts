@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -19,6 +19,8 @@ import {
   supplierGroups,
   actors,
   products,
+  glJournalEntries,
+  glJournalLines,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -86,6 +88,7 @@ export class PurchaseDebitNotesService {
         createdOn: purchaseDebitNotes.createdOn,
         modifiedOn: purchaseDebitNotes.modifiedOn,
         orderNumber: purchaseOrders.orderNumber,
+        vendorCode: suppliers.vendorNumber,
         vendorName: actors.name,
       })
       .from(purchaseDebitNotes)
@@ -114,32 +117,60 @@ export class PurchaseDebitNotesService {
 
     const notes = await q.orderBy(desc(purchaseDebitNotes.createdOn));
 
-    const result = [];
-    for (const dn of notes) {
+    if (notes.length === 0) {
+      return [];
+    }
+
+    const noteIds = notes.map((n) => n.debitNoteId);
+    const allLines: (typeof purchaseDebitNoteLines.$inferSelect)[] = [];
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < noteIds.length; i += CHUNK_SIZE) {
+      const chunk = noteIds.slice(i, i + CHUNK_SIZE);
       const lines = await this.db
         .select()
         .from(purchaseDebitNoteLines)
-        .where(eq(purchaseDebitNoteLines.debitNoteId, dn.debitNoteId));
-
-      const linesWithAllocations = [];
-      for (const line of lines) {
-        const allocations = await this.db
-          .select()
-          .from(purchaseDebitNoteShipments)
-          .where(
-            eq(
-              purchaseDebitNoteShipments.debitNoteLineId,
-              line.debitNoteLineId,
-            ),
-          );
-        linesWithAllocations.push({
-          ...line,
-          shipmentAllocations: allocations,
-        });
-      }
-
-      result.push({ ...dn, lines: linesWithAllocations });
+        .where(inArray(purchaseDebitNoteLines.debitNoteId, chunk));
+      allLines.push(...lines);
     }
+
+    const lineIds = allLines.map((l) => l.debitNoteLineId);
+    const allAllocations: (typeof purchaseDebitNoteShipments.$inferSelect)[] =
+      [];
+    for (let i = 0; i < lineIds.length; i += CHUNK_SIZE) {
+      const chunk = lineIds.slice(i, i + CHUNK_SIZE);
+      const allocs = await this.db
+        .select()
+        .from(purchaseDebitNoteShipments)
+        .where(inArray(purchaseDebitNoteShipments.debitNoteLineId, chunk));
+      allAllocations.push(...allocs);
+    }
+
+    const allocationsByLineId = new Map<string, typeof allAllocations>();
+    for (const alloc of allAllocations) {
+      const existing = allocationsByLineId.get(alloc.debitNoteLineId) || [];
+      existing.push(alloc);
+      allocationsByLineId.set(alloc.debitNoteLineId, existing);
+    }
+
+    const linesByNoteId = new Map<
+      string,
+      ((typeof allLines)[0] & { shipmentAllocations: typeof allAllocations })[]
+    >();
+    for (const line of allLines) {
+      const lineWithAllocations = {
+        ...line,
+        shipmentAllocations:
+          allocationsByLineId.get(line.debitNoteLineId) || [],
+      };
+      const existing = linesByNoteId.get(line.debitNoteId) || [];
+      existing.push(lineWithAllocations);
+      linesByNoteId.set(line.debitNoteId, existing);
+    }
+
+    const result = notes.map((dn) => ({
+      ...dn,
+      lines: linesByNoteId.get(dn.debitNoteId) || [],
+    }));
 
     return result;
   }
@@ -189,7 +220,10 @@ export class PurchaseDebitNotesService {
         pricePerUnit: purchaseDebitNoteLines.pricePerUnit,
         amount: purchaseDebitNoteLines.amount,
         taxAmount: purchaseDebitNoteLines.taxAmount,
-        productDescription: purchaseOrderLineItems.productDescription,
+        description: purchaseDebitNoteLines.description,
+        productDescription: sql<
+          string | null
+        >`COALESCE(${purchaseOrderLineItems.productDescription}, ${purchaseDebitNoteLines.description})`,
         productNumber: products.productNumber,
       })
       .from(purchaseDebitNoteLines)
@@ -224,6 +258,10 @@ export class PurchaseDebitNotesService {
   }
 
   async createDebitNote(dto: CreateDebitNoteDto, actor: string) {
+    if (!dto.returnId) {
+      return this.createAdhocDebitNote(dto, actor);
+    }
+
     const [ret] = await this.db
       .select()
       .from(purchaseOrderReturns)
@@ -282,8 +320,8 @@ export class PurchaseDebitNotesService {
       const lineValues = dto.lines.map((line) => ({
         debitNoteId: dn.debitNoteId,
         purchaseOrderLineId: line.purchaseOrderLineId,
-        quantityInvoiced: line.quantityInvoiced,
-        pricePerUnit: line.pricePerUnit,
+        quantityInvoiced: line.quantityInvoiced || '1',
+        pricePerUnit: line.pricePerUnit || line.amount,
         amount: line.amount,
         taxAmount: line.taxAmount ?? '0',
       }));
@@ -336,6 +374,167 @@ export class PurchaseDebitNotesService {
     return result;
   }
 
+  private async createAdhocDebitNote(dto: CreateDebitNoteDto, actor: string) {
+    if (!dto.vendorId) {
+      throw new BadRequestException(
+        'vendorId is required for ad-hoc debit notes',
+      );
+    }
+    if (!dto.lines || dto.lines.length === 0) {
+      throw new BadRequestException(
+        'lines are required for ad-hoc debit notes',
+      );
+    }
+
+    const vendorId = dto.vendorId;
+
+    const [suppInfo] = await this.db
+      .select({
+        vendorId: suppliers.vendorId,
+        currencyCode: suppliers.currencyCode,
+        costCenterId: supplierGroups.defaultCostCenterId,
+        activityId: supplierGroups.defaultActivityId,
+        name: actors.name,
+      })
+      .from(suppliers)
+      .leftJoin(
+        supplierGroups,
+        eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+      )
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .where(eq(suppliers.vendorId, vendorId));
+
+    if (!suppInfo) throw new NotFoundException('Supplier not found');
+
+    const currencyCode = suppInfo.currencyCode || this.appConfig.homeCurrency();
+
+    const settings = await this.glService.getSettings(this.db);
+    if (!settings?.defaultApAccountId) {
+      throw new BadRequestException('GL setting defaultApAccountId is missing');
+    }
+
+    const [apAcct] = await this.db
+      .select()
+      .from(glAccounts)
+      .where(eq(glAccounts.glAccountId, settings.defaultApAccountId));
+
+    if (!apAcct) throw new BadRequestException('AP account not found');
+
+    let totalDebitAmount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL line payload
+    const glLines: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Debit note lines
+    const dnLineValues: any[] = [];
+
+    for (const line of dto.lines) {
+      const amount = parseFloat(line.amount);
+      totalDebitAmount += amount;
+
+      dnLineValues.push({
+        description: line.description,
+        amount: amount.toFixed(2),
+        accountId: line.accountId,
+        taxCategoryId: line.taxCategoryId ?? null,
+        quantityInvoiced: line.quantityInvoiced || '1',
+        pricePerUnit: line.pricePerUnit || amount.toFixed(2),
+        taxAmount: line.taxAmount ?? '0',
+      });
+
+      if (line.accountId) {
+        const [acct] = await this.db
+          .select()
+          .from(glAccounts)
+          .where(eq(glAccounts.glAccountId, line.accountId));
+        if (!acct)
+          throw new BadRequestException(`Account ${line.accountId} not found`);
+
+        glLines.push({
+          accountCode: acct.accountCode,
+          debit: 0,
+          credit: amount,
+          memo: line.description || 'Debit note line',
+          costCenterId: suppInfo.costCenterId || undefined,
+          activityId: suppInfo.activityId || undefined,
+        });
+      }
+    }
+
+    glLines.push({
+      accountCode: apAcct.accountCode,
+      debit: totalDebitAmount,
+      credit: 0,
+      memo: dto.notes ?? 'Ad-hoc debit note',
+      partyType: 'supplier',
+      partyId: vendorId,
+      costCenterId: suppInfo.costCenterId || undefined,
+      activityId: suppInfo.activityId || undefined,
+    });
+
+    const debitNoteNumber = await this.generateDebitNoteNumber();
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const [dn] = await tx
+        .insert(purchaseDebitNotes)
+        .values({
+          debitNoteNumber,
+          supplierReferenceNumber: dto.supplierReferenceNumber,
+          vendorId,
+          totalAmount: totalDebitAmount.toFixed(2),
+          taxAmount: dto.taxAmount ?? '0',
+          feeAmount: dto.feeAmount ?? '0',
+          outstandingAmount: totalDebitAmount.toFixed(2),
+          currencyCode,
+          stateCode: PURCHASE_DEBIT_NOTE_STATE.POSTED,
+          notes: dto.notes ?? 'Ad-hoc debit note',
+          createdBy: actor,
+          baseTotalAmount: '0',
+          baseOutstandingAmount: '0',
+          exchangeRate: '1',
+        })
+        .returning();
+
+      if (dnLineValues.length > 0) {
+        await tx.insert(purchaseDebitNoteLines).values(
+          dnLineValues.map((l) => ({
+            debitNoteId: dn.debitNoteId,
+            ...l,
+          })),
+        );
+      }
+
+      await this.glService.postJournalEntry(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL journal lines
+        glLines as any,
+        {
+          sourceType: 'purchase_debit_note',
+          sourceId: dn.debitNoteId,
+          memo: `Ad-hoc debit note ${debitNoteNumber}`,
+          actor,
+        },
+        tx,
+      );
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.SUPPLIER,
+        entityId: vendorId,
+        eventType: EventType.DEBIT_NOTE_POSTED,
+        entityDisplayName: suppInfo.name || debitNoteNumber,
+        payload: {
+          debitNoteId: dn.debitNoteId,
+          debitNoteNumber,
+          supplierId: vendorId,
+          supplierName: suppInfo.name,
+          totalDebit: totalDebitAmount.toFixed(2),
+        },
+        actor,
+      });
+
+      return dn;
+    });
+
+    return result;
+  }
+
   async postDebitNote(debitNoteId: string, actor: string) {
     const [dn] = await this.db
       .select()
@@ -348,11 +547,13 @@ export class PurchaseDebitNotesService {
       throw new BadRequestException('Debit Note is already posted');
     }
 
-    const [po] = await this.db
-      .select()
-      .from(purchaseOrders)
-      .where(eq(purchaseOrders.purchaseOrderId, dn.purchaseOrderId))
-      .limit(1);
+    const [po] = dn.purchaseOrderId
+      ? await this.db
+          .select()
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, dn.purchaseOrderId))
+          .limit(1)
+      : [null];
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const updated = await this.changeDebitNoteStateInternal(
@@ -380,7 +581,8 @@ export class PurchaseDebitNotesService {
       let suppCostCenterId: string | undefined;
       let suppActivityId: string | undefined;
       let supplierName: string | undefined;
-      if (po.vendorId) {
+      if (po?.vendorId || dn.vendorId) {
+        const vendorId = po?.vendorId || dn.vendorId;
         const [supp] = await tx
           .select({
             name: actors.name,
@@ -393,7 +595,7 @@ export class PurchaseDebitNotesService {
             supplierGroups,
             eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
           )
-          .where(eq(suppliers.vendorId, po.vendorId));
+          .where(eq(suppliers.vendorId, vendorId));
         if (supp) {
           supplierName = supp.name || undefined;
           suppCostCenterId = supp.costCenterId || undefined;
@@ -426,7 +628,7 @@ export class PurchaseDebitNotesService {
             credit: 0,
             memo: `Debit Note ${dn.debitNoteNumber}`,
             partyType: 'supplier',
-            partyId: po.vendorId || undefined,
+            partyId: po?.vendorId || dn.vendorId || undefined,
             costCenterId: suppCostCenterId,
             activityId: suppActivityId,
           },
@@ -436,7 +638,7 @@ export class PurchaseDebitNotesService {
             credit: Number(dn.totalAmount),
             memo: `Debit Note ${dn.debitNoteNumber}`,
             partyType: 'supplier',
-            partyId: po.vendorId || undefined,
+            partyId: po?.vendorId || dn.vendorId || undefined,
             costCenterId: suppCostCenterId,
             activityId: suppActivityId,
           },
@@ -456,23 +658,44 @@ export class PurchaseDebitNotesService {
       }
 
       // @herobm-skip-audit
-      await emitEvent(tx as unknown as DrizzleDB, {
-        entityType: EntityType.PURCHASE_ORDER,
-        entityId: dn.purchaseOrderId,
-        eventType: EventType.DEBIT_NOTE_POSTED,
-        entityDisplayName: po.orderNumber,
-        payload: {
-          debitNoteId,
-          debitNoteNumber: dn.debitNoteNumber,
-          returnId: dn.returnId,
-          purchaseOrderId: dn.purchaseOrderId,
-          orderNumber: po.orderNumber,
-          supplierId: po.vendorId,
-          supplierName: supplierName || '—',
-          totalDebit: dn.totalAmount,
-        },
-        actor,
-      });
+      if (po) {
+        await emitEvent(tx as unknown as DrizzleDB, {
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: po.purchaseOrderId,
+          eventType: EventType.DEBIT_NOTE_POSTED,
+          entityDisplayName:
+            po.orderNumber || supplierName || dn.debitNoteNumber,
+          payload: {
+            debitNoteId,
+            debitNoteNumber: dn.debitNoteNumber,
+            returnId: dn.returnId,
+            purchaseOrderId: dn.purchaseOrderId,
+            orderNumber: po.orderNumber,
+            supplierId: po.vendorId || dn.vendorId,
+            supplierName: supplierName || '—',
+            totalDebit: dn.totalAmount,
+          },
+          actor,
+        });
+      } else {
+        await emitEvent(tx as unknown as DrizzleDB, {
+          entityType: EntityType.SUPPLIER,
+          entityId: dn.vendorId,
+          eventType: EventType.DEBIT_NOTE_POSTED,
+          entityDisplayName: supplierName || dn.debitNoteNumber,
+          payload: {
+            debitNoteId,
+            debitNoteNumber: dn.debitNoteNumber,
+            returnId: dn.returnId,
+            purchaseOrderId: dn.purchaseOrderId,
+            orderNumber: undefined,
+            supplierId: dn.vendorId,
+            supplierName: supplierName || '—',
+            totalDebit: dn.totalAmount,
+          },
+          actor,
+        });
+      }
 
       return updated;
     });
@@ -498,61 +721,130 @@ export class PurchaseDebitNotesService {
     actor: string,
     tx?: DrizzleDB,
   ) {
-    if (!VALID_DN_STATES.includes(newState)) {
-      throw new BadRequestException(`Invalid debit note state: '${newState}'`);
-    }
+    const doChange = async (db: DrizzleDB) => {
+      if (!VALID_DN_STATES.includes(newState)) {
+        throw new BadRequestException(
+          `Invalid debit note state: '${newState}'`,
+        );
+      }
 
-    const db = tx || this.db;
-    const [existing] = await db
-      .select({
-        stateCode: purchaseDebitNotes.stateCode,
-        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
-        purchaseOrderId: purchaseDebitNotes.purchaseOrderId,
-      })
-      .from(purchaseDebitNotes)
-      .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
-      .limit(1);
+      const [existing] = await db
+        .select({
+          stateCode: purchaseDebitNotes.stateCode,
+          debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+          purchaseOrderId: purchaseDebitNotes.purchaseOrderId,
+          vendorId: purchaseDebitNotes.vendorId,
+        })
+        .from(purchaseDebitNotes)
+        .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
+        .limit(1);
 
-    if (!existing) {
-      throw new NotFoundException(`Debit Note ${debitNoteId} not found`);
-    }
+      if (!existing) {
+        throw new NotFoundException(`Debit Note ${debitNoteId} not found`);
+      }
 
-    const allowed = PURCHASE_DEBIT_NOTE_TRANSITIONS[existing.stateCode];
-    if (!allowed || !allowed.includes(newState)) {
-      throw new BadRequestException(
-        `Cannot transition debit note from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
-      );
-    }
+      const allowed = PURCHASE_DEBIT_NOTE_TRANSITIONS[existing.stateCode];
+      if (!allowed || !allowed.includes(newState)) {
+        throw new BadRequestException(
+          `Cannot transition debit note from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+        );
+      }
 
-    const [updated] = await db
-      .update(purchaseDebitNotes)
-      .set({
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- Dynamic state transition from state machine logic bypasses strict Drizzle schema enums
-        stateCode: newState as any,
-        modifiedOn: new Date(),
-      })
-      .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
-      .returning();
+      if (newState === PURCHASE_DEBIT_NOTE_STATE.CANCELLED) {
+        const [originalEntry] = await db
+          .select()
+          .from(glJournalEntries)
+          .where(
+            and(
+              eq(glJournalEntries.sourceType, 'purchase_debit_note'),
+              eq(glJournalEntries.sourceId, debitNoteId),
+            ),
+          )
+          .limit(1);
 
-    const [order] = await db
-      .select({ orderNumber: purchaseOrders.orderNumber })
-      .from(purchaseOrders)
-      .where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
-    await emitEvent(db as unknown as DrizzleDB, {
-      entityType: EntityType.PURCHASE_ORDER,
-      entityId: existing.purchaseOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      entityDisplayName: order.orderNumber,
-      payload: {
-        entity: 'debit_note',
-        entityId: debitNoteId,
-        debitNoteNumber: existing.debitNoteNumber,
-        from: existing.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        if (originalEntry) {
+          const originalLines = await db
+            .select()
+            .from(glJournalLines)
+            .where(
+              eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
+            );
 
-    return updated;
+          const reversedLines = originalLines.map((line) => ({
+            accountId: line.glAccountId,
+            debit: parseFloat(line.credit),
+            credit: parseFloat(line.debit),
+            memo: `Cancellation Reversal: ${line.memo}`,
+            costCenterId: line.costCenterId,
+            activityId: line.activityId,
+            partyType: line.partyType,
+            partyId: line.partyId,
+          }));
+
+          await this.glService.postJournalEntry(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+            reversedLines as any,
+            {
+              sourceId: debitNoteId,
+              sourceType: 'purchase_debit_note',
+              memo: `Reversal of Supplier Debit Note ${existing.debitNoteNumber}`,
+              entryDate: new Date().toISOString().slice(0, 10),
+              actor,
+            },
+            db,
+          );
+        }
+      }
+
+      const [updated] = await db
+        .update(purchaseDebitNotes)
+        .set({
+          // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- Dynamic state transition from state machine logic bypasses strict Drizzle schema enums
+          stateCode: newState as any,
+          modifiedOn: new Date(),
+        })
+        .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
+        .returning();
+
+      if (existing.purchaseOrderId) {
+        const [order] = await db
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
+        await emitEvent(db as unknown as DrizzleDB, {
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: existing.purchaseOrderId,
+          eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: order?.orderNumber || existing.debitNoteNumber,
+          payload: {
+            entity: 'debit_note',
+            entityId: debitNoteId,
+            debitNoteNumber: existing.debitNoteNumber,
+            from: existing.stateCode,
+            to: newState,
+          },
+          actor,
+        });
+      } else {
+        await emitEvent(db as unknown as DrizzleDB, {
+          entityType: EntityType.SUPPLIER,
+          entityId: existing.vendorId,
+          eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: existing.debitNoteNumber,
+          payload: {
+            entity: 'debit_note',
+            entityId: debitNoteId,
+            debitNoteNumber: existing.debitNoteNumber,
+            from: existing.stateCode,
+            to: newState,
+          },
+          actor,
+        });
+      }
+
+      return updated;
+    };
+
+    return tx ? await doChange(tx) : await this.db.transaction(doChange);
   }
 }

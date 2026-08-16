@@ -74,7 +74,7 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
         <div className="flex flex-col gap-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Snapshot Name</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Snapshot Name</label>
               <input
                 type="text"
                 className="input w-full"
@@ -86,7 +86,7 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>As of Date</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">As of Date</label>
               <input
                 type="date"
                 className="input w-full"
@@ -139,7 +139,7 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                       <div>
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Snapshot Name</label>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Snapshot Name</label>
                         <input
                           type="text"
                           className="input w-full"
@@ -153,7 +153,7 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>As of Date</label>
+                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">As of Date</label>
                         <input
                           type="date"
                           className="input w-full"

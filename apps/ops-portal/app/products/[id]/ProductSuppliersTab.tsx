@@ -91,7 +91,6 @@ export function ProductSuppliersTab({ productId, productName, productNumber, isE
             onClick={() => setIsAddSupplierOpen(true)}
             disabled={!isEditable}
           >
-            <span className="material-symbols-outlined text-[16px]">add_link</span>
             {t('products.supplierModal.title')}
           </Button>
         }

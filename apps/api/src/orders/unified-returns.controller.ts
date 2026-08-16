@@ -1,0 +1,20 @@
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { GlobalReturnsService } from './global-returns.service';
+import { PaginationQuery } from '../common/pagination.dto';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { SystemResource } from '@herobm/shared';
+
+@ApiTags('Unified Returns')
+@CasbinResource(SystemResource.SALES_ORDERS)
+@Controller('global-returns')
+export class UnifiedReturnsController {
+  constructor(private readonly globalReturnsService: GlobalReturnsService) {}
+
+  @Get()
+  @CasbinAction('read')
+  @ApiOperation({ summary: 'Find Global Returns (Sales and Purchase)' })
+  async findGlobalReturns(@Query() query: PaginationQuery) {
+    return this.globalReturnsService.findGlobalReturns(query);
+  }
+}

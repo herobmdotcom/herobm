@@ -20,6 +20,7 @@ import {
   SHIPMENT_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 describe('ShippingDocketService', () => {
@@ -74,6 +75,7 @@ describe('ShippingDocketService', () => {
     // Seed Customer Actor
     const customerActorId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId: customerActorId,
       name: 'Acme Corp',
       headquartersAddressLine1:

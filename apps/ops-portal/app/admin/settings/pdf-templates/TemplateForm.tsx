@@ -254,8 +254,6 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                   onClick={() => setBrowserOpen(true)}
                   disabled={!previewVars.hookSlug}
                 >
-                  { }
-                  <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </Button>
               </div>

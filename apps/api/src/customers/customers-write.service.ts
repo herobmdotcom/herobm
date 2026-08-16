@@ -24,6 +24,7 @@ import {
   CUSTOMER_TRANSITIONS,
   CUSTOMER_STATE,
   CustomerState,
+  ACTOR_STATE,
   getValidStates,
   SystemResource,
 } from '@herobm/shared';
@@ -105,6 +106,7 @@ export class CustomersWriteService {
           [actorRecord] = await tx
             .insert(actors)
             .values({
+              stateCode: ACTOR_STATE.ACTIVE,
               name: name as string,
               businessNumber: (businessNumber as string) || null,
               isTaxRegistered: (isTaxRegistered as boolean) ?? false,

@@ -63,7 +63,7 @@ function GeneralInfoTab({
         <div className="grid grid-cols-1 gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Name *
               </label>
               <input
@@ -77,7 +77,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Type *
               </label>
               <select
@@ -104,7 +104,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Status
               </label>
               <select
@@ -130,7 +130,7 @@ function GeneralInfoTab({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Owner
               </label>
               <select
@@ -154,7 +154,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Created On
               </label>
               <input
@@ -165,7 +165,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Last Modified
               </label>
               <input
@@ -475,7 +475,7 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
             <Button
               variant="secondary"
               size="sm"
-              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              className="text-red-500 border-red-500 hover:!bg-red-50"
               onClick={archiveProject}
               disabled={loading}
             >

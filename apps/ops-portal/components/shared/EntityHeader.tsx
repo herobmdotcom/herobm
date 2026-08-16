@@ -52,7 +52,7 @@ export default function EntityHeader({
                 <div className="flex items-center gap-2 shrink-0">
                   {badges}
                   {isSaving && (
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span className="text-xs text-[var(--text-muted)]">
                       {t('saving')}
                     </span>
                   )}
@@ -60,7 +60,7 @@ export default function EntityHeader({
               )}
             </div>
             {subtitle && (
-              <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-sm truncate text-[var(--text-muted)]">
                 {subtitle}
               </p>
             )}

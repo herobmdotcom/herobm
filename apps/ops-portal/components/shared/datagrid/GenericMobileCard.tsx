@@ -68,7 +68,7 @@ export function GenericMobileCard<T>({
               type="checkbox" 
               checked={selected || false} 
               readOnly 
-              style={{ accentColor: "var(--accent)", width: 18, height: 18, cursor: onToggleSelect ? 'pointer' : 'not-allowed', opacity: onToggleSelect ? 1 : 0.5 }} 
+              className={`accent-[var(--accent)] w-[18px] h-[18px] ${onToggleSelect ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
             />
           </div>
         )}

@@ -806,6 +806,34 @@
       "when": 1786716989515,
       "tag": "0114_add_purchase_return_source_bin",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1786802284913,
+      "tag": "0115_add_product_images",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1786804751125,
+      "tag": "0116_allow_adhoc_debit_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1786892631403,
+      "tag": "0117_remove_schema_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1786892766565,
+      "tag": "0118_add_user_settings_created_at",
+      "breakpoints": true
     }
   ]
 }

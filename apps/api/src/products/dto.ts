@@ -81,6 +81,9 @@ export class BaseProductDto {
   @IsString()
   alternateProductNumber?: string;
   @IsOptional()
+  @IsString()
+  imagePath?: string;
+  @IsOptional()
   @IsUUID()
   productGroupId?: string;
   @IsOptional()
@@ -192,6 +195,7 @@ export class ProductResponseDto {
   salesTaxCategoryId: string | null;
   externalTaxCode: string | null;
   alternateProductNumber: string | null;
+  imagePath: string | null;
   productGroupId: string | null;
   notes: string | null;
   stateCode: string | null;
@@ -202,6 +206,19 @@ export class ProductResponseDto {
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class ProductImageResponseDto {
+  imageId: string;
+  productId: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  isPrimary: boolean;
+  sortOrder: number;
+  createdBy: string | null;
+  createdOn: Date | null;
 }
 
 export class ProductGroupResponseDto {
@@ -219,33 +236,78 @@ export class ProductGroupResponseDto {
   updatedAt: Date;
 }
 export class AddProductUomDto {
-  @ApiProperty() uomCode!: string;
-  @ApiProperty() ratio!: string;
-  @ApiProperty({ required: false }) barcode?: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  uomCode!: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  @IsNotEmpty()
+  ratio!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  barcode?: string;
 }
+
 export class AddProductComponentDto {
-  @ApiProperty() childProductId!: string;
-  @ApiProperty() parentQuantity!: string;
-  @ApiProperty() quantity!: string;
-  @ApiProperty({ required: false }) sequenceNumber?: number;
+  @ApiProperty()
+  @IsUUID()
+  @IsNotEmpty()
+  childProductId!: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  @IsNotEmpty()
+  parentQuantity!: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  @IsNotEmpty()
+  quantity!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  sequenceNumber?: number;
+
   @ApiProperty({
     required: false,
     enum: ['allow_fractional', 'round_up', 'round_down', 'round_nearest'],
   })
+  @IsOptional()
+  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'round_nearest'])
   fractionalBehavior?:
     | 'allow_fractional'
     | 'round_up'
     | 'round_down'
     | 'round_nearest';
 }
+
 export class UpdateProductComponentDto {
-  @ApiProperty({ required: false }) parentQuantity?: string;
-  @ApiProperty({ required: false }) quantity?: string;
-  @ApiProperty({ required: false }) sequenceNumber?: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumberString()
+  parentQuantity?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumberString()
+  quantity?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  sequenceNumber?: number;
+
   @ApiProperty({
     required: false,
     enum: ['allow_fractional', 'round_up', 'round_down', 'round_nearest'],
   })
+  @IsOptional()
+  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'round_nearest'])
   fractionalBehavior?:
     | 'allow_fractional'
     | 'round_up'

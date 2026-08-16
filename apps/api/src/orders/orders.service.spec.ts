@@ -18,6 +18,7 @@ import {
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 describe('OrdersService', () => {
@@ -55,6 +56,7 @@ describe('OrdersService', () => {
     const [act] = await pg.db
       .insert(actors)
       .values({
+        stateCode: ACTOR_STATE.ACTIVE,
         name: 'Acme Corp',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,

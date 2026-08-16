@@ -45,7 +45,11 @@ export class ProjectsService {
   ): Promise<ProjectResponseDto> {
     const [newProject] = await this.db
       .insert(projects)
-      .values({ status: dto.status || 'Draft', ...dto })
+      .values({
+        status: dto.status || 'Draft',
+        stateCode: PROJECT_STATE.ACTIVE,
+        ...dto,
+      })
       .returning();
 
     await emitEvent(this.db, {

@@ -138,11 +138,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 {isCancelling ? (
                   tCommon('resolving')
                 ) : (
-                  <>
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Material icon text */}
-                    <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
-                    {tCommon('cancel')}
-                  </>
+                  tCommon('cancel')
                 )}
               </Button>
             )

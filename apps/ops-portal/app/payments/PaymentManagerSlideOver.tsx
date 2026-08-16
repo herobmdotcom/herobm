@@ -738,9 +738,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                           <thead>
                             <tr>
                               <th>{t('manager.labels.glAccount')}</th>
-                              <th style={{ width: '140px' }}>{t('manager.labels.amount')}</th>
+                              <th className="w-[140px]">{t('manager.labels.amount')}</th>
                               <th>{t('manager.labels.memo')}</th>
-                              <th style={{ width: '40px' }}></th>
+                              <th className="w-10"></th>
                             </tr>
                           </thead>
                           <tbody>
@@ -976,9 +976,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 const isCreditNote = a.referenceType as string === 'sales_credit_note';
                                 const isPurchInv = a.referenceType as string === 'purchase_invoice';
                                 const linkUrl = isSalesInv ? `/sales-invoices/${a.referenceId}` : 
-                                                isCreditNote ? `/sales-credit-notes/${a.referenceId}` :
+                                                isCreditNote ? `/credit-debit-notes` :
                                                 isPurchInv ? `/supplier-invoices/${a.referenceId}` :
-                                                `/purchase-debit-notes/${a.referenceId}`; // fallback
+                                                `/credit-debit-notes`; // fallback
                                 return (
                                 <tr key={a.allocationId} className="hover:bg-gray-50/50 transition-colors">
                                   <td className="px-5 py-3">

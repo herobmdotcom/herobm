@@ -20,6 +20,8 @@ import {
   locations,
   uomDictionary,
   glAccounts,
+  glJournalEntries,
+  glJournalLines,
   actors,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
@@ -31,6 +33,7 @@ import {
   PURCHASE_DEBIT_NOTE_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 describe('PurchaseDebitNotesService', () => {
@@ -68,6 +71,7 @@ describe('PurchaseDebitNotesService', () => {
     const [actor] = await pg.db
       .insert(actors)
       .values({
+        stateCode: ACTOR_STATE.ACTIVE,
         actorId: randomUUID(),
         name: 'Test Supplier',
         isTaxRegistered: false,
@@ -342,6 +346,58 @@ describe('PurchaseDebitNotesService', () => {
         ),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('creates an ad-hoc debit note directly against a vendor without a return or PO', async () => {
+      const result = await service.createDebitNote(
+        {
+          vendorId: VENDOR_ID,
+          supplierReferenceNumber: 'SUP-ADHOC-001',
+          notes: 'Ad-hoc debit note for pricing rebate',
+          lines: [
+            {
+              description: 'Rebate on shipment damaged goods',
+              amount: '120.00',
+              accountId: EXPENSE_ACCOUNT_ID,
+            },
+          ],
+        },
+        'test-user',
+      );
+
+      expect(result).toBeDefined();
+      expect(result.debitNoteNumber).toMatch(/^PDN-/);
+      expect(result.supplierReferenceNumber).toBe('SUP-ADHOC-001');
+      expect(result.totalAmount).toBe('120.00');
+      expect(result.stateCode).toBe(PURCHASE_DEBIT_NOTE_STATE.POSTED);
+      expect(result.vendorId).toBe(VENDOR_ID);
+
+      const lines = await pg.db
+        .select()
+        .from(purchaseDebitNoteLines)
+        .where(eq(purchaseDebitNoteLines.debitNoteId, result.debitNoteId));
+      expect(lines.length).toBe(1);
+      expect(lines[0].description).toBe('Rebate on shipment damaged goods');
+      expect(lines[0].amount).toBe('120.00');
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
+      const glCall = mockGlService.postJournalEntry.mock.calls[0];
+      expect(glCall[0]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '2000',
+            debit: 120,
+            credit: 0,
+            partyType: 'supplier',
+            partyId: VENDOR_ID,
+          }),
+          expect.objectContaining({
+            accountCode: '5000',
+            debit: 0,
+            credit: 120,
+          }),
+        ]),
+      );
+    });
   });
 
   describe('postDebitNote', () => {
@@ -464,6 +520,106 @@ describe('PurchaseDebitNotesService', () => {
       await expect(service.findOne(randomUUID())).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('changeDebitNoteState', () => {
+    it('cancels a posted debit note and synchronously posts a reversing GL entry', async () => {
+      const data = await createTestPOAndReturn(PURCHASE_RETURN_STATE.SHIPPED);
+      const dn = await service.createDebitNote(
+        {
+          returnId: data.returnId,
+          lines: [
+            {
+              purchaseOrderLineId: data.poLineId,
+              quantityInvoiced: '5',
+              pricePerUnit: '10.00',
+              amount: '50.00',
+            },
+          ],
+        },
+        'test-user',
+      );
+
+      // Post the debit note
+      await service.changeDebitNoteState(
+        dn.debitNoteId,
+        PURCHASE_DEBIT_NOTE_STATE.POSTED,
+        'test-user',
+      );
+
+      // Seed corresponding gl_journal_entries & lines in database to simulate posted JE
+      const [je] = await pg.db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-20260815-0002',
+          entryDate: '2026-08-15',
+          memo: `Supplier Debit Note ${dn.debitNoteNumber}`,
+          sourceType: 'purchase_debit_note',
+          sourceId: dn.debitNoteId,
+          createdBy: 'test-user',
+          isReversed: false,
+        })
+        .returning();
+
+      await pg.db.insert(glJournalLines).values([
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: AP_ACCOUNT_ID,
+          debit: '50.00',
+          credit: '0.00',
+          foreignDebit: '50.00',
+          foreignCredit: '0.00',
+          memo: 'AP debit',
+          partyType: 'supplier',
+          partyId: VENDOR_ID,
+          isReconciled: false,
+        },
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: GRNI_ACCOUNT_ID,
+          debit: '0.00',
+          credit: '50.00',
+          foreignDebit: '0.00',
+          foreignCredit: '50.00',
+          memo: 'GRNI clearing',
+          partyType: 'supplier',
+          partyId: VENDOR_ID,
+          isReconciled: false,
+        },
+      ]);
+
+      mockGlService.postJournalEntry.mockClear();
+
+      const cancelled = await service.changeDebitNoteState(
+        dn.debitNoteId,
+        PURCHASE_DEBIT_NOTE_STATE.CANCELLED,
+        'test-user',
+      );
+
+      expect(cancelled.stateCode).toBe(PURCHASE_DEBIT_NOTE_STATE.CANCELLED);
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
+
+      const reversalCall = mockGlService.postJournalEntry.mock.calls[0];
+      const reversedLines = reversalCall[0];
+      const meta = reversalCall[1];
+
+      expect(meta.sourceType).toBe('purchase_debit_note');
+      expect(meta.sourceId).toBe(dn.debitNoteId);
+      expect(meta.memo).toContain('Reversal of Supplier Debit Note');
+
+      const apLine = reversedLines.find(
+        (l: any) => l.accountId === AP_ACCOUNT_ID,
+      );
+      const grniLine = reversedLines.find(
+        (l: any) => l.accountId === GRNI_ACCOUNT_ID,
+      );
+
+      expect(apLine.debit).toBe(0);
+      expect(apLine.credit).toBe(50);
+      expect(grniLine.debit).toBe(50);
+      expect(grniLine.credit).toBe(0);
+      expect(apLine.partyId).toBe(VENDOR_ID);
     });
   });
 });

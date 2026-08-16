@@ -32,6 +32,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ShipmentState,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -183,6 +184,7 @@ describe('ShipmentService', () => {
       .insert(actors)
       .values([
         {
+          stateCode: ACTOR_STATE.ACTIVE,
           actorId: custActorId,
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',

@@ -110,6 +110,7 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
     return (
       <Fragment key={key}>
         <tr className={isEdit ? 'bg-[var(--bg-secondary)]' : undefined}>
+          {/* inline-style-allowed: Dynamic tree depth indentation for Chart of Accounts */}
           <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
             {isEdit && coaCreating
               ? <input className="input w-[100px]" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" />

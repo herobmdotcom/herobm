@@ -28,8 +28,7 @@ export default function PageNav({ sections }: PageNavProps) {
     >
         {/* Top Row: Sub-pages & Direct anchors */}
         <div 
-            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all w-full h-[40px] lg:h-[32px]"
-            style={{ border: '1px solid var(--accent)', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all w-full h-[40px] lg:h-[32px] border border-[var(--accent)] hide-scrollbar"
         >
             {visibleSections.map((section) => {
               const isSub = section.isSubPage;
@@ -38,21 +37,9 @@ export default function PageNav({ sections }: PageNavProps) {
               return (
                   <Button
                       key={section.id}
-                      className={`text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
-                      style={{
-                          background: isActive && isSub ? 'rgba(0,107,92,0.1)' : 'none',
-                          border: 'none',
-                          color: isActive && isSub ? 'var(--accent)' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => { 
-                          e.currentTarget.style.color = 'var(--accent)'; 
-                          e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; 
+                      className={`text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-all whitespace-nowrap bg-transparent border-0 cursor-pointer hover:text-[var(--accent)] hover:bg-[rgba(0,107,92,0.08)] ${isSub ? 'font-bold' : ''} ${isActive && isSub ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}
+                      onMouseEnter={() => { 
                           if (isSub) setHoveredSubId(section.id);
-                      }}
-                      onMouseLeave={(e) => { 
-                          e.currentTarget.style.color = (isActive && isSub) ? 'var(--accent)' : 'var(--text-muted)'; 
-                          e.currentTarget.style.background = (isActive && isSub) ? 'rgba(0,107,92,0.1)' : 'none'; 
                       }}
                       onClick={() => {
                           if (section.onClick) {
@@ -87,21 +74,12 @@ export default function PageNav({ sections }: PageNavProps) {
 
             return (
                 <div 
-                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:max-w-none lg:absolute lg:top-[100%] lg:left-0 lg:mt-1 lg:z-50"
-                    style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:max-w-none lg:absolute lg:top-[100%] lg:left-0 lg:mt-1 lg:z-50 hide-scrollbar"
                 >
                     {visibleSubtargets.map((sub) => (
                         <Button
                           key={sub.id}
-                          className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
+                          className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap bg-transparent border-0 cursor-pointer text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(0,107,92,0.08)]"
                           onClick={() => {
                               if (sub.onClick) {
                                   sub.onClick();
@@ -111,7 +89,7 @@ export default function PageNav({ sections }: PageNavProps) {
                               }
                           }}
                         >
-                          {sub.label}
+                            {sub.label}
                         </Button>
                     ))}
                 </div>

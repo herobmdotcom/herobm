@@ -101,13 +101,7 @@ export default function EmailOutboxDashboard() {
               variant: 'ghost'
             },
             {
-              label: (
-                <>
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI icon */}
-                  <span className="material-symbols-outlined text-[18px]">refresh</span>
-                  {t('refresh')}
-                </>
-              ),
+              label: t('refresh'),
               onClick: loadData,
               variant: 'secondary'
             }

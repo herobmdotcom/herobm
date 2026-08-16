@@ -69,11 +69,18 @@ export class SuppliersController {
     required: false,
     enum: ['invoiceDate', 'dueDate'],
   })
-  @ApiOkResponse({ type: [SupplierAgedBalanceResponseDto] })
+  @ApiQuery({ name: 'quickFilter', required: false, type: String })
+  @ApiPaginatedResponse(SupplierAgedBalanceResponseDto)
   async getAgedBalances(
+    @Query() query: PaginationQuery,
     @Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate',
+    @Query('quickFilter') quickFilter?: string,
   ) {
-    return this.suppliersService.getAgedBalances(agingBasis);
+    return this.suppliersService.getAgedBalances(
+      agingBasis,
+      query,
+      quickFilter,
+    );
   }
 
   @Post()

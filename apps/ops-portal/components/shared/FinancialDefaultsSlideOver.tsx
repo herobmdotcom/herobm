@@ -116,7 +116,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
     >
       <div className="flex flex-col">
         {/* OPERATIONAL SECTION */}
-        <h3 className="mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>Operational</h3>
+        <h3 className="mb-4 text-[var(--text-muted)] uppercase tracking-wider text-sm font-semibold">Operational</h3>
         
         <div className="flex flex-col gap-4 mb-6">
 
@@ -128,37 +128,17 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                 Credit Hold
               </label>
               <div
-                className="flex items-center gap-3"
-                style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                className={`flex items-center gap-3 ${saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={() => {
                   if (saving) return;
                   handleChange('isOnCreditHold', !formData.isOnCreditHold);
                 }}
               >
                 <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: !formData.isOnCreditHold
-                      ? 'var(--success)'
-                      : 'var(--danger)',
-                    position: 'relative',
-                    transition: 'background 0.2s ease',
-                    opacity: saving ? 0.5 : 1,
-                  }}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isOnCreditHold ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                 >
                   <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      position: 'absolute',
-                      top: 3,
-                      left: !formData.isOnCreditHold ? 21 : 3,
-                      transition: 'left 0.2s ease',
-                    }}
+                    className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isOnCreditHold ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
                 <span className={`text-sm font-semibold ${!formData.isOnCreditHold ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
@@ -198,37 +178,17 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   Purchasing Block
                 </label>
                 <div
-                  className="flex items-center gap-3"
-                  style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                  className={`flex items-center gap-3 ${saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   onClick={() => {
                     if (saving) return;
                     handleChange('isPurchasingBlocked', !formData.isPurchasingBlocked);
                   }}
                 >
                   <div
-                    style={{
-                      width: 40,
-                      height: 22,
-                      borderRadius: 11,
-                      background: !formData.isPurchasingBlocked
-                        ? 'var(--success)'
-                        : 'var(--danger)',
-                      position: 'relative',
-                      transition: 'background 0.2s ease',
-                      opacity: saving ? 0.5 : 1,
-                    }}
+                    className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isPurchasingBlocked ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                   >
                     <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        position: 'absolute',
-                        top: 3,
-                        left: !formData.isPurchasingBlocked ? 21 : 3,
-                        transition: 'left 0.2s ease',
-                      }}
+                      className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isPurchasingBlocked ? 'left-[21px]' : 'left-[3px]'}`}
                     />
                   </div>
                   <span className={`text-sm font-semibold ${!formData.isPurchasingBlocked ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
@@ -242,37 +202,17 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   Payment Block
                 </label>
                 <div
-                  className="flex items-center gap-3"
-                  style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                  className={`flex items-center gap-3 ${saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   onClick={() => {
                     if (saving) return;
                     handleChange('isPaymentBlocked', !formData.isPaymentBlocked);
                   }}
                 >
                   <div
-                    style={{
-                      width: 40,
-                      height: 22,
-                      borderRadius: 11,
-                      background: !formData.isPaymentBlocked
-                        ? 'var(--success)'
-                        : 'var(--danger)',
-                      position: 'relative',
-                      transition: 'background 0.2s ease',
-                      opacity: saving ? 0.5 : 1,
-                    }}
+                    className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isPaymentBlocked ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                   >
                     <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        position: 'absolute',
-                        top: 3,
-                        left: !formData.isPaymentBlocked ? 21 : 3,
-                        transition: 'left 0.2s ease',
-                      }}
+                      className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isPaymentBlocked ? 'left-[21px]' : 'left-[3px]'}`}
                     />
                   </div>
                   <span className={`text-sm font-semibold ${!formData.isPaymentBlocked ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
@@ -338,7 +278,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-sm font-medium text-[var(--text-muted)]">
                   in
                 </span>
                 <div className="relative w-32">
@@ -401,7 +341,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
         </div>
 
         {/* GENERAL LEDGER SECTION */}
-        <h3 className="mb-4 mt-6" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>General Ledger</h3>
+        <h3 className="mb-4 mt-6 text-[var(--text-muted)] uppercase tracking-wider text-sm font-semibold">General Ledger</h3>
         <div className="flex flex-col gap-4">
           {groupType === 'customer' && (
             <div>

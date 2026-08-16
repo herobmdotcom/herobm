@@ -7,6 +7,7 @@ import { products, masterDataEvents, uomDictionary } from '@herobm/db-schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { EventType, EntityType } from '../common/event-types';
+import { StorageService } from '../common/storage/storage.service';
 
 describe('ProductsWriteService', () => {
   const pg = setupPgliteSuite();
@@ -29,7 +30,11 @@ describe('ProductsWriteService', () => {
     );
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsWriteService, { provide: DRIZZLE, useValue: pg.db }],
+      providers: [
+        ProductsWriteService,
+        { provide: DRIZZLE, useValue: pg.db },
+        StorageService,
+      ],
     }).compile();
 
     service = module.get<ProductsWriteService>(ProductsWriteService);

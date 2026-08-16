@@ -23,6 +23,7 @@ export interface UpdateProductDto {
   salesTaxCategoryId?: string;
   externalTaxCode?: string;
   alternateProductNumber?: string;
+  imagePath?: string;
   productGroupId?: string;
   notes?: string;
   stateCode?: string;

@@ -146,9 +146,13 @@ export class SetupService {
     try {
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+      const secret = process.env.PIPELINE_SECRET || '';
       const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
+        },
         body: JSON.stringify({
           command: 'python',
           args: ['pipelines/abm_extract/preview.py'],
@@ -220,9 +224,13 @@ export class SetupService {
     try {
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+      const secret = process.env.PIPELINE_SECRET || '';
       const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
+        },
         body: JSON.stringify({
           command: 'python',
           args: ['pipelines/odoo_extract/preview.py'],
@@ -989,8 +997,12 @@ export class SetupService {
       try {
         const runnerUrl =
           process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+        const secret = process.env.PIPELINE_SECRET || '';
         await fetch(`${runnerUrl}/run/${jobId}`, {
           method: 'DELETE',
+          headers: {
+            ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
+          },
           signal: AbortSignal.timeout(3000),
         });
       } catch (err) {
@@ -1076,6 +1088,7 @@ export class SetupService {
       );
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+      const secret = process.env.PIPELINE_SECRET || '';
       const envToPass: Record<string, string | undefined> = {
         ...process.env,
         NO_COLOR: '1',
@@ -1089,7 +1102,10 @@ export class SetupService {
 
       fetch(`${runnerUrl}/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
+        },
         body: JSON.stringify({
           jobId,
           command: cmd,

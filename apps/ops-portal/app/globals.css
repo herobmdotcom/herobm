@@ -498,6 +498,86 @@ h2 {
   background-color: var(--bg-secondary) !important;
 }
 
+/* ── Compact Density Mode ────────────────────────────────────────────── */
+[data-density="compact"] {
+  --spacing-density-card: 12px;
+  --spacing-density-gap: 8px;
+}
+
+/* Compact DataGrid */
+[data-density="compact"] .ag-theme-alpine-dark {
+  --ag-row-height: 34px !important;
+  --ag-header-height: 32px !important;
+  --ag-font-size: 12px !important;
+  --ag-cell-horizontal-padding: 10px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-cell {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 12px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-header-cell,
+[data-density="compact"] .ag-theme-alpine-dark .ag-header-cell-text {
+  font-size: 10px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-picker-field-wrapper,
+[data-density="compact"] .ag-theme-alpine-dark .ag-text-field-input-wrapper,
+[data-density="compact"] .ag-theme-alpine-dark .ag-number-field-input-wrapper {
+  min-height: 30px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark input[type="text"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="number"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="tel"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="date"] {
+  padding: 4px 12px 4px 28px !important;
+  font-size: 12px !important;
+}
+
+/* Compact Form inputs & Buttons */
+[data-density="compact"] .input,
+[data-density="compact"] .select {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+}
+
+[data-density="compact"] .btn {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  gap: 4px !important;
+}
+
+[data-density="compact"] .btn-sm {
+  padding: 2px 6px !important;
+  font-size: 11px !important;
+}
+
+/* Compact Table Lines */
+[data-density="compact"] .table-lines th {
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+}
+
+[data-density="compact"] .table-lines td {
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+}
+
+/* Compact Cards & Section Headings */
+[data-density="compact"] .card {
+  padding: 12px !important;
+  border-radius: 8px !important;
+}
+
+[data-density="compact"] .section-heading {
+  margin-bottom: 0.5rem !important;
+  font-size: 0.75rem !important;
+}
 
 /* ── Utility: hide elements in print ─────────────────────────────────── */
 .print-hidden {

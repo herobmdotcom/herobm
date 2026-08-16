@@ -28,12 +28,12 @@ export default function DetailTabGrid<T>({
           renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 gap-3">
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                <h2 className="text-[1.2rem] sm:text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                <h2 className="text-[1.2rem] sm:text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0">
                   {title}
                 </h2>
                 <div className="hidden sm:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                  <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase">
                     {tCommon('grid.rowCountLabel')}
                   </span>
                   <span className="text-[11px] font-bold text-[#006b5c]">

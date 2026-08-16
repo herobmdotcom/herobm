@@ -68,6 +68,8 @@ export function parsePagination(query?: PaginationQuery) {
   const states = query?.state
     ? query.state.split(',').map((s) => s.trim().toLowerCase())
     : null;
+  const sort = query?.sort;
+  const sortDirection = query?.sortDirection ?? 'asc';
 
   return {
     page,
@@ -83,6 +85,8 @@ export function parsePagination(query?: PaginationQuery) {
     purchaseOrderId,
     productId,
     states,
+    sort,
+    sortDirection,
   };
 }
 

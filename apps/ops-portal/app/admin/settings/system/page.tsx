@@ -621,8 +621,6 @@ export default function SystemSettingsPage() {
 
         <div className="flex justify-end mt-8">
           <Button variant="secondary" onClick={flushCache}>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-            <span className="material-symbols-outlined mr-2">sync</span>
             Flush settings cache
           </Button>
         </div>

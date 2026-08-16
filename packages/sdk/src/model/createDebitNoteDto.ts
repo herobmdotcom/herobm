@@ -8,7 +8,8 @@
 import type { CreateDebitNoteLineDto } from './createDebitNoteLineDto';
 
 export interface CreateDebitNoteDto {
-  returnId: string;
+  returnId?: string;
+  vendorId?: string;
   supplierReferenceNumber?: string;
   lines: CreateDebitNoteLineDto[];
   taxAmount?: string;

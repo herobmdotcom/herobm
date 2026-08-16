@@ -122,10 +122,7 @@ export default function AutoMatchPreviewModal({
         onClick={handleConfirm}
         disabled={confirming || !previewData || (effectiveAutoMatchedCount === 0 && effectiveSmartMatchedCount === 0)}
       >
-        { }
-        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
-        {confirming ? tCommon('saving') : 'Confirm Auto Match'}
+        {confirming ? tCommon('saving') : t('confirmAutoMatch')}
       </Button>
     </div>
   );

@@ -173,6 +173,12 @@ export default function DataGrid<T>({
       partialColumnState: true, // we may not have all column properties
     };
 
+    // The grid's page size is controlled by the 'limit' React state (which syncs with the URL).
+    // If we restore pagination state here, it will override the React prop.
+    if (state.pagination) {
+      delete state.pagination;
+    }
+
     if ((!gridState || !gridState.sort || gridState.sort.sortModel?.length === 0) && defaultSortModel) {
       state.sort = { sortModel: defaultSortModel };
     }
@@ -328,7 +334,7 @@ export default function DataGrid<T>({
           const val = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
           if (val) {
             const parsed = Number(val);
-            if (!initialIsMobile || parsed <= 50) {
+            if (parsed !== 99999 && (!initialIsMobile || parsed <= 50)) {
               savedLimit = parsed;
             }
           }
@@ -410,7 +416,10 @@ export default function DataGrid<T>({
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const effectiveFetchAll = Boolean(rowData) || fetchAll || limit === 99999;
+  const isClientData = Boolean(rowData) || fetchAll;
+  const [clientPage, setClientPage] = useState(0);
+  const [clientTotalPages, setClientTotalPages] = useState(1);
+  const effectiveFetchAll = limit === 99999;
 
   useEffect(() => {
     setMounted(true);
@@ -460,7 +469,11 @@ export default function DataGrid<T>({
       if (event.sources.includes('gridInitializing')) return;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
-        saveGridState(gridKey, event.state);
+        const stateToSave = { ...event.state };
+        if (stateToSave.pagination) {
+          delete stateToSave.pagination;
+        }
+        saveGridState(gridKey, stateToSave);
       if (event.state.scroll) {
         if (event.state.scroll.top === 0) {
           clearScrollState(gridKey);
@@ -567,6 +580,22 @@ export default function DataGrid<T>({
     }
   }, [isRestored, rowData, endpoint, swrResponse, swrIsLoading, swrError, onError]);
 
+  // Ensure AG Grid reacts to limit changes and data loads dynamically
+  useEffect(() => {
+    if (gridRef.current?.api && isClientData) {
+      if (limit === 99999) {
+        if (typeof gridRef.current.api.setGridOption === 'function') {
+          gridRef.current.api.setGridOption('pagination', false);
+        }
+      } else {
+        if (typeof gridRef.current.api.setGridOption === 'function') {
+          gridRef.current.api.setGridOption('pagination', true);
+          gridRef.current.api.setGridOption('paginationPageSize', limit);
+        }
+      }
+    }
+  }, [limit, isClientData, effectiveData]);
+
   // Restore scroll position after data loads
   useEffect(() => {
     if (!loading && effectiveData && effectiveData.length > 0 && gridKey) {
@@ -672,6 +701,20 @@ export default function DataGrid<T>({
   /** Auto-size columns on grid ready (initialState handles restoration) */
   const onGridReady = useCallback(
     (event: GridReadyEvent) => {
+      // Force sync pagination state dynamically for React strict mode / prop binding quirks
+      if (isClientData) {
+        if (limit === 99999) {
+          if (typeof event.api.setGridOption === 'function') {
+            event.api.setGridOption('pagination', false);
+          }
+        } else {
+          if (typeof event.api.setGridOption === 'function') {
+            event.api.setGridOption('pagination', true);
+            event.api.setGridOption('paginationPageSize', limit);
+          }
+        }
+      }
+
       // Only auto-size if there's no saved state — otherwise initialState
       // has already applied the saved column widths/order
       if (!gridKey || !loadGridState(gridKey)) {
@@ -679,7 +722,7 @@ export default function DataGrid<T>({
       }
       setColRevision((r) => r + 1);
     },
-    [gridKey],
+    [gridKey, isClientData, limit],
   );
 
   /** Also auto-size when new data arrives (only if no saved state) */
@@ -710,7 +753,7 @@ export default function DataGrid<T>({
 
   /** CSV export handler */
   const handleExport = useCallback(async () => {
-    if (effectiveFetchAll || rowData) {
+    if (isClientData || effectiveFetchAll) {
       gridRef.current?.api?.exportDataAsCsv({
         fileName: `${exportFileName ?? "export"}_${new Date().toISOString().slice(0, 10)}.csv`,
       });
@@ -763,7 +806,7 @@ export default function DataGrid<T>({
     } finally {
       setIsExporting(false);
     }
-  }, [exportFileName, effectiveFetchAll, rowData, endpoint, search, includeArchived, enhancedColumns]);
+  }, [exportFileName, isClientData, effectiveFetchAll, endpoint, search, includeArchived, enhancedColumns]);
 
   /** Reset columns to default layout */
   const handleResetColumns = useCallback(() => {
@@ -807,12 +850,7 @@ export default function DataGrid<T>({
       {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
       <input
-        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 ${!search ? 'pr-0 placeholder-transparent lg:placeholder-slate-400 focus:placeholder-slate-400 lg:pr-4 focus:pr-4' : 'pr-4'}`}
-        style={{
-          background: "#ffffff",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
-        }}
+        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-white border border-[var(--border)] text-[var(--text-primary)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-slate-400 focus:placeholder-slate-400 lg:pr-4 focus:pr-4' : 'pr-4'}`}
         placeholder={searchPlaceholder ?? "Search…"}
         value={search}
         onChange={(e) => {
@@ -820,9 +858,7 @@ export default function DataGrid<T>({
           setCursor(null);
           resetScroll();
         }}
-        onFocus={(e) => e.target.style.borderColor = "var(--accent)"}
         onBlur={(e) => {
-          e.target.style.borderColor = "var(--border)";
           setSearch(e.target.value.trim());
         }}
       />
@@ -830,300 +866,183 @@ export default function DataGrid<T>({
   );
 
   const optionsButtonNode = (
-    <div ref={colPickerRef} style={{ position: "relative" }}>
+    <div ref={colPickerRef} className="relative">
       <Button
         onClick={() => setColPickerOpen((v) => !v)}
-        className="px-3 py-1.5 rounded text-xs cursor-pointer transition-colors"
-        style={{
-          background: colPickerOpen ? "var(--bg-card-hover)" : "var(--bg-card)",
-          color: "var(--text-secondary)",
-          border: "1px solid var(--border)",
-        }}
-        onMouseEnter={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "var(--bg-card-hover)" }}
-        onMouseLeave={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "var(--bg-card)" }}
+        className={`px-3 py-1.5 rounded text-xs cursor-pointer transition-colors text-[var(--text-secondary)] border border-[var(--border)] ${
+          colPickerOpen ? 'bg-[var(--bg-card-hover)]' : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]'
+        }`}
         title={tGrid('options')}
       >
         {tGrid('options')}
       </Button>
       {colPickerOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                right: "auto",
-                left: isMobile ? "50%" : 0,
-                transform: isMobile ? "translateX(-50%)" : "none",
-                marginTop: 4,
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: "6px 0",
-                zIndex: 50,
-                minWidth: 200,
-                maxHeight: 400,
-                overflowY: "auto",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+        <div
+          className={`absolute top-full mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg py-1.5 z-50 min-w-[200px] max-h-[400px] overflow-y-auto shadow-2xl ${
+            isMobile ? 'left-1/2 -translate-x-1/2' : 'left-0'
+          }`}
+        >
+          {/* 1. Export Section */}
+          {canExport && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setColPickerOpen(false);
+                handleExport();
               }}
+              className="flex items-center gap-2 w-full px-3 py-1.5 bg-transparent border-0 cursor-pointer text-[13px] text-[var(--text-primary)] text-left hover:bg-[var(--bg-card-hover)]"
             >
-              {/* 1. Export Section */}
-              {canExport && (
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setColPickerOpen(false);
-                    handleExport();
-                  }}
-                  style={{
-                    display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  width: "100%",
-                  padding: "6px 12px",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: "var(--text-primary)",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-card-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
-                </Button>
-              )}
+              <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
+            </Button>
+          )}
 
-              {/* 2. Columns Section */}
-              {gridKey && (
-                <>
-                  <div
-                    style={{
-                      height: 1,
-                      background: "var(--border)",
-                      margin: "6px 0",
-                    }}
-                  />
-                  <div
-                    style={{
-                      padding: "2px 12px 4px",
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    {tGrid('columns')}
-                  </div>
-                  {columns.map((col) => {
-                    const colId = (col.field ??
-                      col.colId ??
-                      col.headerName ??
-                      "") as string;
-                    if (!colId) return null;
-                    const gridCol = gridRef.current?.api?.getColumn(colId);
-                    const visible = gridCol ? gridCol.isVisible() : true;
-                    return (
-                      <label
-                        key={colId}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "4px 12px",
-                          cursor: "pointer",
-                          fontSize: 13,
-                          color: visible
-                            ? "var(--text-primary)"
-                            : "var(--text-muted)",
-                        }}
-                        onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--bg-card-hover)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visible}
-                          onChange={(e) =>
-                            toggleColumnVisible(colId, e.target.checked)
-                          }
-                          style={{ accentColor: "var(--accent)" }}
-                        />
-                        {col.headerName ?? colId}
-                      </label>
-                    );
-                  })}
-                  <Button
-                    onClick={() => {
-                      handleResetColumns();
-                      setColPickerOpen(false);
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      width: "100%",
-                      padding: "6px 12px",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "var(--text-primary)",
-                      textAlign: "left",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--bg-card-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                    <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
-                  </Button>
-                </>
-              )}
-
-              {/* 3. Rows Section */}
-              {showArchivedToggle && (
-                <>
-                  <div
-                    style={{
-                      height: 1,
-                      background: "var(--border)",
-                      margin: "6px 0",
-                    }}
-                  />
-                  <div
-                    style={{
-                      padding: "2px 12px 4px",
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    {tGrid('rowCountLabel')}
-                  </div>
+          {/* 2. Columns Section */}
+          {gridKey && (
+            <>
+              <div className="h-px bg-[var(--border)] my-1.5" />
+              <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+                {tGrid('columns')}
+              </div>
+              {columns.map((col) => {
+                const colId = (col.field ??
+                  col.colId ??
+                  col.headerName ??
+                  "") as string;
+                if (!colId) return null;
+                const gridCol = gridRef.current?.api?.getColumn(colId);
+                const visible = gridCol ? gridCol.isVisible() : true;
+                return (
                   <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      width: "100%",
-                      padding: "6px 12px",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "var(--text-primary)",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--bg-card-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
+                    key={colId}
+                    className={`flex items-center gap-2 px-3 py-1 cursor-pointer text-[13px] hover:bg-[var(--bg-card-hover)] ${
+                      visible ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                    }`}
                   >
                     <input
                       type="checkbox"
-                      checked={includeArchived}
-                      onChange={(e) => {
-                        setIncludeArchived(e.target.checked);
-                        setCursor(null);
-                      }}
-                      style={{ accentColor: "var(--accent)" }}
-                    />
-                    {tGrid('includeArchived')}
-                  </label>
-                </>
-              )}
-
-              {/* 4. Pagination Section */}
-              <div
-                style={{
-                  height: 1,
-                  background: "var(--border)",
-                  margin: "6px 0",
-                }}
-              />
-              <div
-                style={{
-                  padding: "2px 12px 4px",
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {tGrid('pageSize')}
-              </div>
-              {[10, 25, 50, 100, 200, 99999].map((size) => (
-                <label
-                  key={size}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: limit === size ? "var(--text-primary)" : "var(--text-muted)",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "var(--bg-card-hover)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  <input
-                    type="radio"
-                    name={`${gridKey}-pageSize`}
-                    checked={limit === size}
-                    onChange={() => {
-                      setLimit(size);
-                      if (size === 99999) {
-                        setIsCustomView(false);
+                      checked={visible}
+                      onChange={(e) =>
+                        toggleColumnVisible(colId, e.target.checked)
                       }
-                      setCursor(null); // Reset to first page
-                      setColPickerOpen(false); // Optionally close the menu, but keeping it open is fine too
-                      resetScroll();
-                    }}
-                    style={{ accentColor: "var(--accent)" }}
-                  />
-                  {size === 99999 ? tGrid('all') : size}
-                </label>
-              ))}
-            </div>
+                      className="accent-[var(--accent)]"
+                    />
+                    {col.headerName ?? colId}
+                  </label>
+                );
+              })}
+              <Button
+                onClick={() => {
+                  handleResetColumns();
+                  setColPickerOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-1.5 bg-transparent border-0 cursor-pointer text-[13px] text-[var(--text-primary)] text-left hover:bg-[var(--bg-card-hover)]"
+              >
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+                <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
+              </Button>
+            </>
           )}
+
+          {/* 3. Rows Section */}
+          {showArchivedToggle && (
+            <>
+              <div className="h-px bg-[var(--border)] my-1.5" />
+              <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+                {tGrid('rowCountLabel')}
+              </div>
+              <label
+                className="flex items-center gap-2 w-full px-3 py-1.5 cursor-pointer text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeArchived}
+                  onChange={(e) => {
+                    setIncludeArchived(e.target.checked);
+                    setCursor(null);
+                  }}
+                  className="accent-[var(--accent)]"
+                />
+                {tGrid('includeArchived')}
+              </label>
+            </>
+          )}
+
+          {/* 4. Pagination Section */}
+          <div className="h-px bg-[var(--border)] my-1.5" />
+          <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+            {tGrid('pageSize')}
+          </div>
+          {[10, 25, 50, 100, 200, 99999].map((size) => (
+            <label
+              key={size}
+              className={`flex items-center gap-2 w-full px-3 py-1.5 cursor-pointer text-[13px] hover:bg-[var(--bg-card-hover)] ${
+                limit === size ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+              }`}
+            >
+              <input
+                type="radio"
+                name={`${gridKey}-pageSize`}
+                checked={limit === size}
+                onChange={() => {
+                  setLimit(size);
+                  if (size === 99999) {
+                    setIsCustomView(false);
+                  }
+                  if (isClientData && gridRef.current?.api) {
+                    if (size !== 99999) {
+                      gridRef.current.api.paginationGoToPage(0);
+                    }
+                  }
+                  setCursor(null);
+                  setColPickerOpen(false);
+                  resetScroll();
+                }}
+                className="accent-[var(--accent)]"
+              />
+              {size === 99999 ? tGrid('all') : size}
+            </label>
+          ))}
         </div>
+      )}
+    </div>
   );
 
 
+  const handlePrev = useCallback(() => {
+    if (isClientData) {
+      gridRef.current?.api?.paginationGoToPreviousPage();
+      resetScroll();
+    } else {
+      setCursor(prevCursor);
+      setDirection('prev');
+      resetScroll();
+    }
+  }, [isClientData, prevCursor, resetScroll]);
+
+  const handleNext = useCallback(() => {
+    if (isClientData) {
+      gridRef.current?.api?.paginationGoToNextPage();
+      resetScroll();
+    } else {
+      setCursor(nextCursor);
+      setDirection('next');
+      resetScroll();
+    }
+  }, [isClientData, nextCursor, resetScroll]);
+
+  const isPrevDisabled = isClientData
+    ? clientPage <= 0 || limit === 99999
+    : !cursor || !prevCursor;
+
+  const isNextDisabled = isClientData
+    ? clientPage >= clientTotalPages - 1 || limit === 99999
+    : !nextCursor;
+
   const prevButton = (
     <Button
-      onClick={() => {
-        setCursor(prevCursor);
-        setDirection('prev');
-        resetScroll();
-      }}
-      disabled={!cursor || !prevCursor}
-      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"
-      style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        color: "var(--text-secondary)",
-      }}
+      onClick={handlePrev}
+      disabled={isPrevDisabled}
+      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]"
     >
       <span aria-hidden>←</span>{' '}{tGrid('prev')}
     </Button>
@@ -1131,25 +1050,18 @@ export default function DataGrid<T>({
 
   const nextButton = (
     <Button
-      onClick={() => {
-        setCursor(nextCursor);
-        setDirection('next');
-        resetScroll();
-      }}
-      disabled={!nextCursor}
-      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"
-      style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        color: "var(--text-secondary)",
-      }}
+      onClick={handleNext}
+      disabled={isNextDisabled}
+      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]"
     >
       {tGrid('next')}{' '}<span aria-hidden>→</span>
     </Button>
   );
 
+  const shouldShowPagination = limit !== 99999;
+
   const renderPaginationControls = (isMobileView: boolean) => {
-    if (effectiveFetchAll || !mounted) return null;
+    if (!shouldShowPagination || !mounted) return null;
     
     const wrapperClass = isMobileView 
       ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
@@ -1167,11 +1079,11 @@ export default function DataGrid<T>({
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
       <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-2 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none -[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-t-0 lg:border-x-0 lg:border-b-transparent">
         <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
-          {(!effectiveFetchAll && mounted) && prevButton}
+          {(shouldShowPagination && mounted) && prevButton}
           
           {optionsButtonNode}
           
-          {(!effectiveFetchAll && mounted) && nextButton}
+          {(shouldShowPagination && mounted) && nextButton}
           {(isCustomView) && (
             <>
               <div className="h-4 w-px bg-slate-200" />
@@ -1222,6 +1134,16 @@ export default function DataGrid<T>({
             {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField as keyof T]) } : {})}
             suppressScrollOnNewData={true}
             initialState={savedInitialState}
+            pagination={isClientData && limit !== 99999}
+            paginationPageSize={isClientData && limit !== 99999 ? limit : undefined}
+            paginationPageSizeSelector={false}
+            suppressPaginationPanel={true}
+            onPaginationChanged={(e) => {
+              if (isClientData) {
+                setClientPage(e.api.paginationGetCurrentPage());
+                setClientTotalPages(e.api.paginationGetTotalPages());
+              }
+            }}
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onStateUpdated={onStateUpdated}
@@ -1234,6 +1156,10 @@ export default function DataGrid<T>({
             onFilterChanged={(e) => { lastActionRef.current = e.source ?? null; }}
             onModelUpdated={(e) => {
               setDisplayedRowCount(e.api.getDisplayedRowCount());
+              if (isClientData) {
+                setClientPage(e.api.paginationGetCurrentPage());
+                setClientTotalPages(e.api.paginationGetTotalPages());
+              }
               const nodes: T[] = [];
               e.api.forEachNodeAfterFilterAndSort(node => {
                 if (node.data) nodes.push(node.data);
@@ -1256,22 +1182,24 @@ export default function DataGrid<T>({
               const wasSortedOrFiltered = isGridFilteredRef.current;
               isGridFilteredRef.current = isSortedOrFiltered;
               
-              if (isSortedOrFiltered && !wasSortedOrFiltered) {
-                if (limit !== 99999) {
-                  setPreviousLimit(limit);
-                  setLimit(99999);
-                }
-              } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
-                if (limit === 99999) {
-                  if (previousLimit !== null) {
-                    setLimit(previousLimit);
-                  } else if (!fetchAll || isMobile) {
-                    setLimit(isMobile ? 25 : 200);
+              if (!isClientData) {
+                if (isSortedOrFiltered && !wasSortedOrFiltered) {
+                  if (limit !== 99999) {
+                    setPreviousLimit(limit);
+                    setLimit(99999);
+                  }
+                } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
+                  if (limit === 99999) {
+                    if (previousLimit !== null) {
+                      setLimit(previousLimit);
+                    } else if (!fetchAll || isMobile) {
+                      setLimit(isMobile ? 25 : 200);
+                    }
                   }
                 }
               }
               
-              setIsCustomView(isSortedOrFiltered || (limit === 99999 && !fetchAll));
+              setIsCustomView(!isClientData && (isSortedOrFiltered || (limit === 99999 && !fetchAll)));
               
               lastActionRef.current = null;
             }}
@@ -1289,7 +1217,7 @@ export default function DataGrid<T>({
             } : undefined}
             tooltipShowDelay={300}
             {...(domLayout ? { domLayout } : {})}
-            quickFilterText={effectiveFetchAll ? search : ""}
+            quickFilterText={isClientData ? search : ""}
             {...(overlayNoRowsTemplate ? { overlayNoRowsTemplate: overlayNoRowsTemplate } : {})}
           />
         </div>
@@ -1308,9 +1236,13 @@ export default function DataGrid<T>({
               })
             : enhancedColumns.filter(c => !c.hide);
 
+          const isClientPaginated = isClientData && limit !== 99999;
           const dataToMap = sortedData.length > 0 ? sortedData : (effectiveData || []);
+          const paginatedDataToMap = isClientPaginated
+            ? dataToMap.slice(clientPage * limit, (clientPage + 1) * limit)
+            : dataToMap;
 
-          return dataToMap.map((row: T, idx: number) => {
+          return paginatedDataToMap.map((row: T, idx: number) => {
             const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
             const isSelected = selectedRowIds.has(String(key));
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -1362,12 +1294,12 @@ export default function DataGrid<T>({
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
                   <div className="flex items-center justify-between w-full lg:w-auto gap-4 min-w-0">
                     <div className="flex items-center gap-4 min-w-0">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] truncate min-w-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] truncate min-w-0">
                         {pageTitle}
                       </h2>
                       <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
                       <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase">
                           {tGrid('rowCountLabel')}
                         </span>
                         <span className="text-[11px] font-bold text-[#006b5c]">
@@ -1417,7 +1349,7 @@ export default function DataGrid<T>({
       ) : (
         <div className="flex items-center gap-3">
           {searchInputNode}
-          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+          <span className="text-xs text-[var(--text-muted)]">
             {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(displayedRowCount) })}
           </span>
         </div>

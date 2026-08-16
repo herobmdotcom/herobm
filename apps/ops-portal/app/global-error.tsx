@@ -23,11 +23,9 @@ export default function GlobalError({
     const message = error?.message ?? String(error);
     const stack = error?.stack;
 
-    // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
     console.error('[GlobalError]', message, error);
 
     try {
-      // eslint-disable-next-line no-restricted-syntax -- GlobalError runs outside root layout; apiFetch is unavailable
       fetch('/api/telemetry/client-errors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,47 +48,17 @@ export default function GlobalError({
 
   return (
     <html lang="en" className="dark">
-      <body
-        style={{
-          margin: 0,
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          background: '#0a0e1a',
-          color: '#f8fafc',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 420,
-            padding: 32,
-            borderRadius: 16,
-            background: '#111827',
-            border: '1px solid rgba(255,255,255,0.08)',
-            textAlign: 'center',
-          }}
-        >
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+      <body className="m-0 min-h-screen flex items-center justify-center font-sans bg-[#0a0e1a] text-[#f8fafc]">
+        <div className="max-w-[420px] p-8 rounded-2xl bg-[#111827] border border-white/[0.08] text-center">
+          <h2 className="text-xl font-bold mb-2">
             {errorTitle}
           </h2>
-          <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
+          <p className="text-sm text-slate-400 mb-6">
             {error?.message || fallbackError}
           </p>
           <button
             onClick={reset}
-            style={{
-              padding: '10px 24px',
-              borderRadius: 10,
-              border: 'none',
-              background: '#f59e0b',
-              color: '#0a0e1a',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: 'pointer',
-              marginBottom: 24,
-            }}
+            className="px-6 py-2.5 rounded-xl border-none bg-amber-500 text-[#0a0e1a] font-semibold text-sm cursor-pointer mb-6 hover:bg-amber-400 transition-colors"
           >
             {tryAgain}
           </button>

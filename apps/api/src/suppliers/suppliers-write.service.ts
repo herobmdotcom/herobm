@@ -20,6 +20,7 @@ import {
   SUPPLIER_TRANSITIONS,
   SUPPLIER_STATE,
   SupplierState,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
@@ -81,6 +82,7 @@ export class SuppliersWriteService {
         [actorRecord] = await tx
           .insert(actors)
           .values({
+            stateCode: ACTOR_STATE.ACTIVE,
             name: name as string,
             businessNumber: (businessNumber as string) || null,
             isTaxRegistered: (isTaxRegistered as boolean) ?? false,

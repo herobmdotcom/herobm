@@ -58,7 +58,9 @@ export class PurchaseInvoiceDraftService {
   async createDraftInvoice(
     dto: CreateStandaloneInvoiceDto,
     actor: string,
+    outerTx?: DrizzleDB,
   ): Promise<typeof purchaseInvoices.$inferSelect> {
+    const queryDb = outerTx ?? this.db;
     const internalBillNumber = await this.core.generateBillNumber();
 
     let vendorTermType: string | null = null;
@@ -67,7 +69,7 @@ export class PurchaseInvoiceDraftService {
     let earlyPaymentDiscountDays: number | null = null;
 
     if (dto.vendorId) {
-      const vendRows = await this.db
+      const vendRows = await queryDb
         .select({
           tradingTermsId: suppliers.tradingTermsId,
           groupTradingTermsId: supplierGroups.tradingTermsId,
@@ -108,7 +110,7 @@ export class PurchaseInvoiceDraftService {
           this.appConfig.getAppSettingsRaw()?.defaultSupplierTermsId;
 
         if (effectiveTermsId) {
-          const [term] = await this.db
+          const [term] = await queryDb
             .select()
             .from(tradingTerms)
             .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
@@ -124,7 +126,7 @@ export class PurchaseInvoiceDraftService {
       }
     }
 
-    return this.db.transaction(async (tx: DrizzleDB) => {
+    const executeCreate = async (tx: DrizzleDB) => {
       const invoiceDate = dto.invoiceDate
         ? new Date(dto.invoiceDate)
         : new Date();
@@ -227,7 +229,11 @@ export class PurchaseInvoiceDraftService {
       });
 
       return invoice;
-    });
+    };
+
+    return outerTx
+      ? await executeCreate(outerTx)
+      : await this.db.transaction(executeCreate);
   }
 
   async updateInvoice(
@@ -241,8 +247,9 @@ export class PurchaseInvoiceDraftService {
       vendorId?: string;
     },
     actor: string,
+    outerTx?: DrizzleDB,
   ) {
-    return this.db.transaction(async (tx) => {
+    const executeUpdate = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -283,7 +290,11 @@ export class PurchaseInvoiceDraftService {
       });
 
       return this.core.findOne(invoiceId, tx);
-    });
+    };
+
+    return outerTx
+      ? await executeUpdate(outerTx)
+      : await this.db.transaction(executeUpdate);
   }
 
   async updateLine(
@@ -297,8 +308,9 @@ export class PurchaseInvoiceDraftService {
       pricePerUnit?: string | number;
     },
     actor: string,
+    outerTx?: DrizzleDB,
   ) {
-    return this.db.transaction(async (tx) => {
+    const executeUpdateLine = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -365,11 +377,20 @@ export class PurchaseInvoiceDraftService {
       });
 
       return { success: true };
-    });
+    };
+
+    return outerTx
+      ? await executeUpdateLine(outerTx)
+      : await this.db.transaction(executeUpdateLine);
   }
 
-  async removeLine(invoiceId: string, lineId: string, actor: string) {
-    return this.db.transaction(async (tx) => {
+  async removeLine(
+    invoiceId: string,
+    lineId: string,
+    actor: string,
+    outerTx?: DrizzleDB,
+  ) {
+    const executeRemoveLine = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -396,7 +417,11 @@ export class PurchaseInvoiceDraftService {
       });
 
       return { success: true };
-    });
+    };
+
+    return outerTx
+      ? await executeRemoveLine(outerTx)
+      : await this.db.transaction(executeRemoveLine);
   }
 
   async addLine(
@@ -409,8 +434,9 @@ export class PurchaseInvoiceDraftService {
       pricePerUnit?: string | number;
     },
     actor: string,
+    outerTx?: DrizzleDB,
   ) {
-    return this.db.transaction(async (tx) => {
+    const executeAddLine = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -468,7 +494,11 @@ export class PurchaseInvoiceDraftService {
       });
 
       return { success: true };
-    });
+    };
+
+    return outerTx
+      ? await executeAddLine(outerTx)
+      : await this.db.transaction(executeAddLine);
   }
 
   /**
@@ -579,8 +609,8 @@ export class PurchaseInvoiceDraftService {
     return result;
   }
 
-  async adminMarkPaid(invoiceId: string, actor: string) {
-    return await this.db.transaction(async (tx) => {
+  async adminMarkPaid(invoiceId: string, actor: string, outerTx?: DrizzleDB) {
+    const executeMarkPaid = async (tx: DrizzleDB) => {
       const [invoice] = await tx
         .select()
         .from(purchaseInvoices)
@@ -629,6 +659,10 @@ export class PurchaseInvoiceDraftService {
       });
 
       return updated;
-    });
+    };
+
+    return outerTx
+      ? await executeMarkPaid(outerTx)
+      : await this.db.transaction(executeMarkPaid);
   }
 }

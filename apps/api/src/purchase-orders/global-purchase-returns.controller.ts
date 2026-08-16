@@ -1,17 +1,27 @@
-import { SystemResource, PurchaseReturnState } from '@herobm/shared';
+import { IsOptional, IsString } from 'class-validator';
+import {
+  SystemResource,
+  PurchaseReturnState,
+  PURCHASE_RETURN_STATE,
+} from '@herobm/shared';
 import {
   ApiTags,
   ApiProperty,
   ApiOperation,
   ApiOkResponse,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import {
   Controller,
   Get,
+  Post,
   Param,
+  Body,
   Query,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -31,8 +41,9 @@ import {
   actors,
   bins,
 } from '@herobm/db-schema';
-import { eq, desc, inArray, or, sql, isNull, and } from 'drizzle-orm';
+import { eq, desc, inArray, or, sql, isNull, and, ne } from 'drizzle-orm';
 import { PurchaseReturnResponseDto } from './dto';
+import { PurchaseReturnsService } from './purchase-returns.service';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
   @ApiProperty({ required: false })
@@ -41,6 +52,8 @@ export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
   vendorName?: string;
   @ApiProperty({ required: false })
   vendorId?: string;
+  @ApiProperty({ required: false })
+  vendorCode?: string;
   @ApiProperty({ required: false })
   currencyCode?: string;
   @ApiProperty({ required: false })
@@ -53,6 +66,13 @@ export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
   debitNoteTotalAmount?: string;
 }
 
+export class ResolvePurchaseReturnDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
 export class GlobalPurchaseReturnsListDto {
   @ApiProperty({ type: [GlobalPurchaseReturnDto] })
   data: GlobalPurchaseReturnDto[];
@@ -62,7 +82,10 @@ export class GlobalPurchaseReturnsListDto {
 @CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('Purchase Returns')
 export class GlobalPurchaseReturnsController {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private purchaseReturnsService: PurchaseReturnsService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -86,6 +109,8 @@ export class GlobalPurchaseReturnsController {
         notes: purchaseOrderReturns.notes,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
+        vendorId: suppliers.vendorId,
+        vendorCode: suppliers.vendorNumber,
         vendorName: actors.name,
         debitNoteId: purchaseDebitNotes.debitNoteId,
         debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
@@ -122,6 +147,12 @@ export class GlobalPurchaseReturnsController {
 
     if (requireDebitNote === true || String(requireDebitNote) === 'true') {
       conditions.push(isNull(purchaseDebitNotes.debitNoteId));
+      conditions.push(
+        or(
+          isNull(purchaseOrderReturns.createdBy),
+          ne(purchaseOrderReturns.createdBy, 'abm-import'),
+        ),
+      );
     }
 
     if (conditions.length > 0) {
@@ -148,12 +179,15 @@ export class GlobalPurchaseReturnsController {
         returnId: purchaseOrderReturns.returnId,
         returnNumber: purchaseOrderReturns.returnNumber,
         stateCode: purchaseOrderReturns.stateCode,
-        createdOn: purchaseOrderReturns.createdOn,
         notes: purchaseOrderReturns.notes,
+        createdBy: purchaseOrderReturns.createdBy,
+        createdOn: purchaseOrderReturns.createdOn,
+        modifiedOn: purchaseOrderReturns.modifiedOn,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
+        vendorId: suppliers.vendorId,
+        vendorCode: suppliers.vendorNumber,
         vendorName: actors.name,
-        vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
         debitNoteId: purchaseDebitNotes.debitNoteId,
         debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
@@ -250,5 +284,48 @@ export class GlobalPurchaseReturnsController {
       .where(eq(purchaseDebitNotes.returnId, id));
 
     return { ...ret, lines, shipments, shipmentLines, events, debitNotes };
+  }
+
+  @Post(':id/mark-resolved')
+  @HttpCode(HttpStatus.OK)
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Mark Purchase Return as Resolved',
+    description:
+      'Marks a purchase return as resolved without issuing a debit note.',
+  })
+  @ApiOkResponse({ type: GlobalPurchaseReturnDto })
+  @ApiBody({ type: ResolvePurchaseReturnDto, required: false })
+  async markPurchaseReturnResolved(
+    @Param('id') id: string,
+    @Body() body?: ResolvePurchaseReturnDto,
+  ) {
+    const [existing] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, id))
+      .limit(1);
+
+    if (!existing) throw new NotFoundException('Purchase Return not found');
+
+    const updatedNotes = body?.notes
+      ? `${existing.notes ? existing.notes + ' | ' : ''}${body.notes}`
+      : existing.notes || 'Marked as resolved without debit note';
+
+    await this.db
+      .update(purchaseOrderReturns)
+      .set({
+        notes: updatedNotes,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseOrderReturns.returnId, id));
+
+    const updated = await this.purchaseReturnsService.changePurchaseReturnState(
+      id,
+      PURCHASE_RETURN_STATE.CANCELLED,
+      'finance',
+    );
+
+    return updated;
   }
 }

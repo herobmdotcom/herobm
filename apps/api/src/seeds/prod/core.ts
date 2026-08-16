@@ -3,6 +3,7 @@ import {
   PRODUCT_STATE,
   CUSTOMER_STATE,
   SUPPLIER_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -1933,12 +1934,14 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       name: 'E2E Default Customer',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .onConflictDoUpdate({
       target: actors.actorId,
       set: {
         name: 'E2E Default Customer',
         headquartersAddressLine1: 'AU',
+        stateCode: ACTOR_STATE.ACTIVE,
       },
     });
 
@@ -1970,6 +1973,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       name: 'E2E Default Vendor',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .onConflictDoUpdate({
       target: actors.actorId,

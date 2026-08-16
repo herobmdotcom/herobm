@@ -13,6 +13,7 @@ export interface GlobalPurchaseReturnDto {
   orderNumber?: string;
   vendorName?: string;
   vendorId?: string;
+  vendorCode?: string;
   currencyCode?: string;
   debitNoteId?: string;
   debitNoteNumber?: string;

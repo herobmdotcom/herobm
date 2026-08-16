@@ -121,7 +121,7 @@ export interface EdgeData {
 export type CustomNode = Node<NodeData>;
 
 const ActorNode = ({ data }: NodeProps<CustomNode>) => (
-  <div className="px-4 py-2 rounded-md relative group w-[250px] min-h-[80px] flex flex-col justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+  <div className="px-4 py-2 rounded-md relative group w-[250px] min-h-[80px] flex flex-col justify-center bg-[var(--bg-card)] border border-[var(--border)]">
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
     <Handle type="target" position={Position.Bottom} id="bottom-target" className="opacity-0" />
@@ -132,10 +132,10 @@ const ActorNode = ({ data }: NodeProps<CustomNode>) => (
     <Handle type="source" position={Position.Right} id="right-source" className="opacity-0" />
 
     <div className="flex flex-col relative z-10 pr-6 overflow-hidden">
-      <Link href={`/crm/actors/${data.rawId}`} className="font-bold text-sm hover:underline line-clamp-2" style={{ color: 'var(--text-primary)' }} title={data.label}>
+      <Link href={`/crm/actors/${data.rawId}`} className="font-bold text-sm hover:underline line-clamp-2 text-[var(--text-primary)]" title={data.label}>
         🏢 {data.label}
       </Link>
-      {data.industry && <div className="text-xs line-clamp-1" style={{ color: 'var(--text-muted)' }} title={data.industry}>{data.industry}</div>}
+      {data.industry && <div className="text-xs line-clamp-1 text-[var(--text-muted)]" title={data.industry}>{data.industry}</div>}
     </div>
     
     <Button 
@@ -149,7 +149,7 @@ const ActorNode = ({ data }: NodeProps<CustomNode>) => (
 );
 
 const ContactNode = ({ data }: NodeProps<CustomNode>) => (
-  <div className="px-4 py-2 rounded-full relative group w-[250px] min-h-[80px] flex items-center justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+  <div className="px-4 py-2 rounded-full relative group w-[250px] min-h-[80px] flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border)]">
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
     <Handle type="target" position={Position.Bottom} id="bottom-target" className="opacity-0" />
@@ -159,7 +159,7 @@ const ContactNode = ({ data }: NodeProps<CustomNode>) => (
     <Handle type="target" position={Position.Right} id="right-target" className="opacity-0" />
     <Handle type="source" position={Position.Right} id="right-source" className="opacity-0" />
 
-    <div className="flex items-center justify-center font-bold text-sm relative z-10 w-full px-6 overflow-hidden" style={{ color: 'var(--text-primary)' }}>
+    <div className="flex items-center justify-center font-bold text-sm relative z-10 w-full px-6 overflow-hidden text-[var(--text-primary)]">
       <Link href={`/crm/contacts/${data.rawId}`} className="hover:underline line-clamp-2 w-full text-center" title={data.label}>
         👤 {data.label}
       </Link>
@@ -176,7 +176,7 @@ const ContactNode = ({ data }: NodeProps<CustomNode>) => (
 );
 
 const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
-  <div className="px-4 py-2 rounded-lg relative group w-[250px] min-h-[80px] flex items-center justify-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+  <div className="px-4 py-2 rounded-lg relative group w-[250px] min-h-[80px] flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border)]">
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
     <Handle type="target" position={Position.Bottom} id="bottom-target" className="opacity-0" />
@@ -186,7 +186,7 @@ const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
     <Handle type="target" position={Position.Right} id="right-target" className="opacity-0" />
     <Handle type="source" position={Position.Right} id="right-source" className="opacity-0" />
 
-    <div className="flex items-center justify-center font-bold text-sm relative z-10 w-full px-6 overflow-hidden" style={{ color: 'var(--text-primary)' }}>
+    <div className="flex items-center justify-center font-bold text-sm relative z-10 w-full px-6 overflow-hidden text-[var(--text-primary)]">
       <Link href={`/crm/projects/${data.rawId}`} className="hover:underline line-clamp-2 w-full text-center" title={data.label}>
         📁 {data.label}
       </Link>
@@ -366,11 +366,11 @@ export default function MapContent() {
   }, [mapData, processPayload, handleExpand, setNodes, setEdges]);
 
   return (
-    <div className="flex flex-col h-full rounded-lg shadow p-4 bg-white" style={{ background: 'var(--bg-card)' }}>
+    <div className="flex flex-col h-full rounded-lg shadow p-4 bg-[var(--bg-card)]">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>CRM Map</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">CRM Map</h1>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Center on Actor:</label>
+          <label className="text-sm font-medium text-[var(--text-secondary)]">Center on Actor:</label>
           <div className="w-80">
             <ActorSelect 
               value={focalNodeId}
@@ -384,18 +384,18 @@ export default function MapContent() {
         </div>
       </div>
       
-      <div className="flex-1 w-full h-[800px] rounded overflow-hidden relative" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="flex-1 w-full h-[800px] rounded overflow-hidden relative bg-[var(--bg-secondary)]">
         {!focalNodeId ? (
-          <div className="flex h-full items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+          <div className="flex h-full items-center justify-center text-[var(--text-muted)]">
             Search and select an Actor above to view their relationship map.
           </div>
         ) : error ? (
-          <div className="flex flex-col h-full items-center justify-center" style={{ color: 'var(--danger)' }}>
+          <div className="flex flex-col h-full items-center justify-center text-[var(--danger)]">
             <div>Error loading map data</div>
             <div className="text-xs mt-2 opacity-75">{error.message || String(error)}</div>
           </div>
         ) : isLoading ? (
-          <div className="flex h-full items-center justify-center" style={{ color: 'var(--text-muted)' }}>Loading Map Data...</div>
+          <div className="flex h-full items-center justify-center text-[var(--text-muted)]">Loading Map Data...</div>
         ) : (
           <ReactFlow
             nodes={nodes}
@@ -404,7 +404,7 @@ export default function MapContent() {
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
             fitView
-            style={{ background: '#ffffff' }}
+            className="bg-white"
           >
             <Background color="#ccc" gap={16} />
             <Controls />

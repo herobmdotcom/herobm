@@ -140,9 +140,6 @@ export default function SupplierInvoiceLinesTab({
                   onClick={() => setIsMatchingMode(!isMatchingMode)}
                   disabled={saving}
                 >
-                  <span className="material-symbols-outlined text-[16px] align-middle mr-1">
-                    {matchIcon}
-                  </span>
                   {isMatchingMode ? t('matching.panelTitle') : t('matching.panelTitle')}
                 </Button>
                 {!isMatchingMode && (

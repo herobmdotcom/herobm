@@ -337,6 +337,7 @@
       "bankStatementLine": "Bank Statement Line",
       "bankStatementLines": "Statement",
       "cleared": "Cleared",
+      "confirmAutoMatch": "Confirm Auto Match",
       "confirmMatch": "Confirm Match",
       "confirming": "Confirming...",
       "createEntry": "Create Entry",
@@ -949,6 +950,7 @@
       "invalidCredentials": "Invalid credentials",
       "loading": "Loading...",
       "password": "Password",
+      "settings": "Settings",
       "signIn": "Sign In",
       "signInToContinue": "Sign in to continue",
       "signOut": "Sign Out",
@@ -1217,6 +1219,22 @@
     "placeholders": {
       "number": "e.g., P-1000",
       "quantity": "0"
+    },
+    "preferences": {
+      "cancel": "Cancel",
+      "density": "Display Density",
+      "densityComfortable": "Comfortable",
+      "densityComfortableDesc": "Default spacing and touch target sizing",
+      "densityCompact": "Compact",
+      "densityCompactDesc": "Reduced padding, more data visible on screen",
+      "role": "Role",
+      "save": "Save Preferences",
+      "saveFailed": "Failed to save preferences",
+      "saved": "Preferences saved",
+      "saving": "Saving...",
+      "title": "User Preferences",
+      "userProfile": "User Profile",
+      "username": "Username"
     },
     "productSearch": {
       "availableShort": "Avail",
@@ -2454,6 +2472,7 @@
       "barcode": "Barcode",
       "baseUom": "Base UoM",
       "externalTaxCode": "External Tax Code",
+      "image": "Image",
       "listPrice": "List Price",
       "name": "Name",
       "notes": "Notes",
@@ -2494,6 +2513,19 @@
     "generalInfo": "General Information",
     "help": {
       "parentQuantity": "How many of the kit are needed to require the component quantity below. Usually 1."
+    },
+    "images": {
+      "change": "Change Image",
+      "confirmRemove": "Are you sure you want to remove this product image?",
+      "dropzone": "Drag & drop an image here, or click to browse",
+      "maxSize": "JPEG, PNG, WebP, GIF, SVG up to 5MB",
+      "remove": "Remove",
+      "removeSuccess": "Product image removed",
+      "title": "Product Image",
+      "upload": "Upload Image",
+      "uploadError": "Failed to upload image",
+      "uploadSuccess": "Product image uploaded successfully",
+      "uploading": "Uploading..."
     },
     "inventoryLevels": "Inventory Levels",
     "management": "Product Management",

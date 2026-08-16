@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
@@ -6,6 +5,8 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiConsumes,
+  ApiParam,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -16,9 +17,25 @@ import {
   Patch,
   Body,
   Delete,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
+  UseGuards,
+  NotFoundException,
+  BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '../common/config/throttler.config';
+import type { Request, Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
+import { StorageService } from '../common/storage/storage.service';
 import {
   AddSupplierDto,
   CreateProductDto,
@@ -30,7 +47,8 @@ import {
   UpdateProductComponentDto,
   EmptyBodyDto,
 } from './dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -44,7 +62,62 @@ export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly productsWriteService: ProductsWriteService,
+    private readonly storageService: StorageService,
   ) {}
+
+  @Get('images/*path')
+  @SkipCasbin()
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: RATE_LIMITS.DEFAULT })
+  @ApiParam({
+    name: 'path',
+    type: String,
+    required: true,
+    description: 'Product image relative path',
+  })
+  @ApiOperation({
+    summary: 'Stream Product Image',
+    description: 'Publicly stream a product image with caching headers.',
+  })
+  @ApiOkResponse({
+    description: 'Product image binary content',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  streamImage(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('path') _pathParam?: string,
+  ) {
+    const match = req.url.split('?')[0].match(/\/images\/(.+)$/);
+    const imagePath = match ? decodeURIComponent(match[1]) : '';
+    if (!imagePath) {
+      throw new NotFoundException('Image not found');
+    }
+
+    const { fullPath, exists } = this.storageService.resolveFilePath(imagePath);
+    if (!exists || !fullPath) {
+      throw new NotFoundException('Image not found');
+    }
+
+    const ext = path.extname(fullPath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+    };
+
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+    fs.createReadStream(fullPath).pipe(res);
+  }
 
   @Get()
   @CasbinAction('read')
@@ -302,5 +375,66 @@ export class ProductsController {
       componentId,
       user.username,
     );
+  }
+
+  @Post(':id/image')
+  @HttpCode(HttpStatus.OK)
+  @CasbinAction('write')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (JPG, PNG, WebP, GIF, SVG up to 5MB)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({
+    summary: 'Upload Product Image',
+    description: 'Upload and set the primary image for a product (max 5MB).',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
+  async uploadImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @AuthUser() user: JwtUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No image file uploaded');
+    }
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/svg+xml',
+    ];
+    if (!allowed.includes(file.mimetype.toLowerCase())) {
+      throw new BadRequestException(
+        'Invalid image format. Allowed: JPG, PNG, WebP, GIF, SVG',
+      );
+    }
+    await this.productsWriteService.uploadImage(id, file, user.username);
+    return this.productsService.findOne(id);
+  }
+
+  @Delete(':id/image')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Product Image',
+    description: 'Remove the assigned image from a product.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
+  async removeImage(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    await this.productsWriteService.removeImage(id, user.username);
+    return this.productsService.findOne(id);
   }
 }

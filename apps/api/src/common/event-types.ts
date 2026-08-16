@@ -311,6 +311,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'supplier.added_expiry',
   'supplier.archived',
   'supplier.created',
+  'supplier.debit_note_posted',
   'supplier.deleted_expiry',
   'supplier.status_changed',
   'supplier.unarchived',

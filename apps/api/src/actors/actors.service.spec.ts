@@ -9,7 +9,7 @@ import {
   contacts,
   users,
 } from '@herobm/db-schema';
-import { ACTOR_STATE } from '@herobm/shared';
+import { ACTOR_STATE, CONTACT_STATE } from '@herobm/shared';
 import { NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -79,6 +79,7 @@ describe('ActorsService', () => {
       const [actor] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Existing Actor',
           isTaxRegistered: false,
         })
@@ -102,6 +103,7 @@ describe('ActorsService', () => {
       const [actor] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Old Name',
           isTaxRegistered: false,
         })
@@ -136,6 +138,7 @@ describe('ActorsService', () => {
       const [actor] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'To Delete',
           isTaxRegistered: false,
         })
@@ -161,7 +164,11 @@ describe('ActorsService', () => {
     it('should archive an actor', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'To Archive', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'To Archive',
+          isTaxRegistered: false,
+        })
         .returning();
 
       const res = await service.archiveActor(actor.actorId, mockUserId);
@@ -199,7 +206,11 @@ describe('ActorsService', () => {
     it('should add and remove a note', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Note Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Note Actor',
+          isTaxRegistered: false,
+        })
         .returning();
 
       const noteResult = await service.addNote(
@@ -227,11 +238,16 @@ describe('ActorsService', () => {
     it('should add, update, and remove a contact', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Contact Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Contact Actor',
+          isTaxRegistered: false,
+        })
         .returning();
       const [contact] = await pg.db
         .insert(contacts)
         .values({
+          stateCode: CONTACT_STATE.ACTIVE,
           firstName: 'John',
           lastName: 'Doe',
         })

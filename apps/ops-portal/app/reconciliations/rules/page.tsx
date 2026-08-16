@@ -338,7 +338,7 @@ export default function RulesEnginePage() {
             <div className="space-y-6">
               <div>
                 { }
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Date Tolerance (Days)
                 </label>
                 <input

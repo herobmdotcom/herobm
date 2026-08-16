@@ -21,6 +21,8 @@ import {
   locations,
   actors,
   glAccounts,
+  glJournalEntries,
+  glJournalLines,
   glSettings,
   uomDictionary,
   taxCategories,
@@ -37,6 +39,8 @@ import {
   SHIPMENT_STATE,
   PUTAWAY_STATUS,
   SALES_INVOICE_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 describe('SalesCreditNoteService', () => {
@@ -108,6 +112,7 @@ describe('SalesCreditNoteService', () => {
     });
 
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId: ACTOR_ID,
       name: 'Test Customer Inc',
       isTaxRegistered: true,
@@ -640,6 +645,95 @@ describe('SalesCreditNoteService', () => {
       expect(lines[0].amount).toBe('180.00');
 
       expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('changeCreditNoteState', () => {
+    it('cancels a posted credit note and synchronously posts a reversing GL entry', async () => {
+      const adhoc = await service.createCreditNote(
+        {
+          customerId: CUSTOMER_ID,
+          notes: 'To be cancelled',
+          lines: [
+            {
+              amount: 100,
+              accountId: REV_ACCT_ID,
+              description: 'Refund line',
+            },
+          ],
+        },
+        'test-admin',
+      );
+
+      // Seed corresponding gl_journal_entries & lines in database to simulate posted JE
+      const [je] = await pg.db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-20260815-0001',
+          entryDate: '2026-08-15',
+          memo: `Credit note ${adhoc!.creditNoteNumber}`,
+          sourceType: 'sales_credit_note',
+          sourceId: adhoc!.creditNoteId,
+          createdBy: 'test-admin',
+          isReversed: false,
+        })
+        .returning();
+
+      await pg.db.insert(glJournalLines).values([
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: REV_ACCT_ID,
+          debit: '100.00',
+          credit: '0.00',
+          foreignDebit: '100.00',
+          foreignCredit: '0.00',
+          memo: 'Revenue reversal',
+          isReconciled: false,
+        },
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: AR_ACCT_ID,
+          debit: '0.00',
+          credit: '100.00',
+          foreignDebit: '0.00',
+          foreignCredit: '100.00',
+          memo: 'AR credit',
+          partyType: 'customer',
+          partyId: CUSTOMER_ID,
+          isReconciled: false,
+        },
+      ]);
+
+      mockGlService.postJournalEntry.mockClear();
+
+      const updated = await service.changeCreditNoteState(
+        adhoc!.creditNoteId,
+        SALES_CREDIT_NOTE_STATE.CANCELLED,
+        'test-admin',
+      );
+
+      expect(updated.stateCode).toBe(SALES_CREDIT_NOTE_STATE.CANCELLED);
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
+
+      const reversalCall = mockGlService.postJournalEntry.mock.calls[0];
+      const reversedLines = reversalCall[0];
+      const meta = reversalCall[1];
+
+      expect(meta.sourceType).toBe('sales_credit_note');
+      expect(meta.sourceId).toBe(adhoc!.creditNoteId);
+      expect(meta.memo).toContain('Reversal of Sales Credit Note');
+
+      // Debits and credits should be inverted
+      const revLine = reversedLines.find(
+        (l: any) => l.accountId === REV_ACCT_ID,
+      );
+      const arLine = reversedLines.find((l: any) => l.accountId === AR_ACCT_ID);
+
+      expect(revLine.debit).toBe(0);
+      expect(revLine.credit).toBe(100);
+      expect(arLine.debit).toBe(100);
+      expect(arLine.credit).toBe(0);
+      expect(arLine.partyId).toBe(CUSTOMER_ID);
     });
   });
 });

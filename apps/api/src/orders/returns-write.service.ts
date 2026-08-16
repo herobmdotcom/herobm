@@ -1010,29 +1010,32 @@ export class ReturnsWriteService {
         reason: salesOrderReturnLines.reason,
         resolution: salesOrderReturnLines.resolution,
         returnFee: salesOrderReturnLines.returnFee,
-        productId: salesOrderLineItems.productId,
-        productNumber: coreProducts.productNumber,
-        description: coreProducts.name,
-        pricePerUnit: salesOrderLineItems.pricePerUnit,
-        discountPercentage: salesOrderLineItems.discountPercentage,
-        taxRate: taxCategories.rate,
+        productId: sql<string>`coalesce(${coreProducts.productId}, ${salesOrderLineItems.productId})`,
+        productNumber: sql<string>`coalesce(${coreProducts.productNumber}, ${salesOrderReturnLines.productNumber}, '')`,
+        description: sql<string>`coalesce(${salesOrderReturnLines.productName}, ${salesOrderLineItems.productDescription}, ${coreProducts.name}, '')`,
+        pricePerUnit: sql<string>`coalesce(${salesOrderReturnLines.pricePerUnit}, ${salesOrderLineItems.pricePerUnit}, '0')`,
+        discountPercentage: sql<string>`coalesce(${salesOrderReturnLines.discountPercentage}, ${salesOrderLineItems.discountPercentage}, '0')`,
+        taxRate: sql<string>`coalesce(${taxCategories.rate}, '0')`,
         putawayStatus: salesOrderReturnLines.putawayStatus,
       })
       .from(salesOrderReturnLines)
-      .innerJoin(
+      .leftJoin(
         salesOrderLineItems,
         eq(
           salesOrderReturnLines.salesOrderLineId,
           salesOrderLineItems.salesOrderLineId,
         ),
       )
-      .innerJoin(
+      .leftJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .leftJoin(
         taxCategories,
-        eq(salesOrderLineItems.taxCategoryId, taxCategories.taxCategoryId),
+        eq(
+          sql`coalesce(${salesOrderReturnLines.taxCategoryId}, ${salesOrderLineItems.taxCategoryId})`,
+          taxCategories.taxCategoryId,
+        ),
       )
       .where(eq(salesOrderReturnLines.returnId, returnId));
 
@@ -1127,12 +1130,12 @@ export class ReturnsWriteService {
       const linesQuery = await this.db
         .select({
           line: salesOrderReturnLines,
-          productId: coreProducts.productId,
-          productNumber: coreProducts.productNumber,
-          productDescription: salesOrderLineItems.productDescription,
-          pricePerUnit: salesOrderLineItems.pricePerUnit,
-          discountPercentage: salesOrderLineItems.discountPercentage,
-          taxRate: taxCategories.rate,
+          productId: sql<string>`coalesce(${coreProducts.productId}, ${salesOrderLineItems.productId})`,
+          productNumber: sql<string>`coalesce(${coreProducts.productNumber}, ${salesOrderReturnLines.productNumber}, '')`,
+          productDescription: sql<string>`coalesce(${salesOrderReturnLines.productName}, ${salesOrderLineItems.productDescription}, ${coreProducts.name}, '')`,
+          pricePerUnit: sql<string>`coalesce(${salesOrderReturnLines.pricePerUnit}, ${salesOrderLineItems.pricePerUnit}, '0')`,
+          discountPercentage: sql<string>`coalesce(${salesOrderReturnLines.discountPercentage}, ${salesOrderLineItems.discountPercentage}, '0')`,
+          taxRate: sql<string>`coalesce(${taxCategories.rate}, '0')`,
         })
         .from(salesOrderReturnLines)
         .leftJoin(
@@ -1148,7 +1151,10 @@ export class ReturnsWriteService {
         )
         .leftJoin(
           taxCategories,
-          eq(salesOrderLineItems.taxCategoryId, taxCategories.taxCategoryId),
+          eq(
+            sql`coalesce(${salesOrderReturnLines.taxCategoryId}, ${salesOrderLineItems.taxCategoryId})`,
+            taxCategories.taxCategoryId,
+          ),
         )
         .where(eq(salesOrderReturnLines.returnId, ret.returnId));
 

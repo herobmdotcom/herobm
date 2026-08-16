@@ -17,6 +17,10 @@ export interface PurchaseDebitNoteResponseDto {
   taxAmount: string;
   feeAmount: string;
   /** @nullable */
+  vendorCode?: string | null;
+  /** @nullable */
+  vendorName?: string | null;
+  /** @nullable */
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;

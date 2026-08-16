@@ -34,7 +34,7 @@ export class GlobalReturnsController {
   ) {
     let data = await this.returnsWriteService.findGlobal(stateCode, locationId);
 
-    if (requireCredit) {
+    if (requireCredit === true || String(requireCredit) === 'true') {
       const filtered = [];
       for (const ret of data) {
         const creditTotal =

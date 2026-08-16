@@ -328,14 +328,6 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     size="sm"
                     onClick={() => changeState(t.state)}
                   >
-                    {t.icon === 'close' ? (
-                      <>
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                        <span className="material-symbols-outlined mr-1 !text-[16px]">close</span>
-                      </>
-                    ) : (
-                      t.icon
-                    )}
                     {t.label}
                   </Button>
                 ))}

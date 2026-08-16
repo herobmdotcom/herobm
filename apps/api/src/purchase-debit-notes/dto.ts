@@ -20,8 +20,20 @@ export class CreateDebitNoteShipmentAllocationDto {
 
 export class CreateDebitNoteLineDto {
   @IsString()
-  @IsNotEmpty()
-  purchaseOrderLineId!: string;
+  @IsOptional()
+  purchaseOrderLineId?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  accountId?: string;
+
+  @IsString()
+  @IsOptional()
+  taxCategoryId?: string;
 
   @IsOptional()
   @IsArray()
@@ -30,12 +42,12 @@ export class CreateDebitNoteLineDto {
   shipmentAllocations?: CreateDebitNoteShipmentAllocationDto[];
 
   @IsNumberString()
-  @IsNotEmpty()
-  quantityInvoiced: string;
+  @IsOptional()
+  quantityInvoiced?: string;
 
   @IsNumberString()
-  @IsNotEmpty()
-  pricePerUnit: string;
+  @IsOptional()
+  pricePerUnit?: string;
 
   @IsNumberString()
   @IsNotEmpty()
@@ -48,8 +60,12 @@ export class CreateDebitNoteLineDto {
 
 export class CreateDebitNoteDto {
   @IsString()
-  @IsNotEmpty()
-  returnId: string;
+  @IsOptional()
+  returnId?: string;
+
+  @IsString()
+  @IsOptional()
+  vendorId?: string;
 
   @IsString()
   @IsOptional()
@@ -98,6 +114,8 @@ export class PurchaseDebitNoteResponseDto {
   totalAmount!: string;
   taxAmount!: string;
   feeAmount!: string;
+  vendorCode?: string | null;
+  vendorName?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
   lines?: PurchaseDebitNoteLineResponseDto[];

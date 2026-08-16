@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
       WEBHOOK_URL: "http://custom-api-test:3000/internal/setup/webhook"
       VENV_PYTHON: "python3"
       DBT: "dbt"
@@ -30,6 +31,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
       REDIS_HOST: redis-test
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
       PIPELINE_RUNNER_URL: http://pipeline-runner-test:8001
     networks:
       - app-net

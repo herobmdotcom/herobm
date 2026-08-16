@@ -298,18 +298,17 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         id: 'index',
         header: '#',
         width: 40,
-        render: (_, i) => <span style={{ color: 'var(--text-muted)', fontWeight: 400, position: 'relative' }}>{i + 1}</span>,
+        render: (_, i) => <span className="text-[var(--text-muted)] font-normal relative">{i + 1}</span>,
       },
       {
         id: 'sku',
         header: 'Product SKU',
         width: 160,
         render: (comp) => (
-          <span style={{ fontWeight: 600, fontSize: 12 }}>
+          <span className="font-semibold text-xs">
             <Link
               href={`/products/${comp.productId}`}
-              style={{ color: 'var(--accent)', textDecoration: 'none' }}
-              className="hover:underline"
+              className="text-[var(--accent)] hover:underline no-underline"
             >
               {comp.productNumber}
             </Link>
@@ -319,7 +318,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       {
         id: 'name',
         header: 'Component Name',
-        render: (comp) => <span style={{ fontSize: 12 }}>{comp.productName}</span>,
+        render: (comp) => <span className="text-xs">{comp.productName}</span>,
       },
       {
         id: 'expectedQty',
@@ -332,14 +331,13 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             <div className="flex items-center justify-end gap-1">
               {stockWarn && (
                 <span
-                  className="material-symbols-outlined cursor-help"
-                  style={{ fontSize: 15, color: stockWarn.color }}
+                  className={`material-symbols-outlined cursor-help text-[15px] ${stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600'}`}
                   title={stockWarn.title}
                 >
                   {stockWarn.icon}
                 </span>
               )}
-              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: stockWarn ? stockWarn.color : undefined }}>
+              <span className={`tabular-nums font-semibold ${stockWarn ? (stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600') : ''}`}>
                 {comp.expectedQuantity}
               </span>
             </div>
@@ -395,7 +393,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             );
           }
           const cost = comp.unitCost ? `$${parseFloat(comp.unitCost).toFixed(2)}` : 'Auto';
-          return <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>{cost}</span>;
+          return <span className="tabular-nums text-[var(--text-muted)]">{cost}</span>;
         },
       },
     ],
@@ -405,7 +403,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-1 p-8">
-        <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+        <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -416,7 +414,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         <EntityBanner type="error" title={error || 'Work Order not found'} />
         <Link href="/manufacturing/work-orders">
           <Button variant="secondary">
-            <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>arrow_back</span>
+            <span className="material-symbols-outlined mr-1 text-[16px]">arrow_back</span>
             Back to Work Orders
           </Button>
         </Link>
@@ -463,7 +461,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
               {!isCompleted && !isCancelled && (
                 <Button variant="danger" size="sm" onClick={handleCancel} disabled={actionLoading}>
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
-                  <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                  <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                   Cancel Order
                 </Button>
               )}
@@ -485,18 +483,18 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Output Product
               </label>
-              <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
-                <Link href={`/products/${data.productId}`} className="hover:underline" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+              <p className="text-sm truncate font-medium pt-1.5">
+                <Link href={`/products/${data.productId}`} className="hover:underline text-[var(--accent)] no-underline">
                   {data.productNumber} ({data.productName})
                 </Link>
               </p>
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Target Quantity
               </label>
               {isEditable ? (
@@ -511,27 +509,27 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   onBlur={(e) => saveField('targetQuantity', e.target.value)}
                 />
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {data.targetQuantity}
                 </p>
               )}
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Completed Quantity
               </label>
-              <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm truncate font-medium pt-1.5">
                 {data.completedQuantity}
               </p>
             </div>
 
             {data.putawayStatus && (
               <div className="min-w-0">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Putaway Status
                 </label>
-                <div style={{ paddingTop: 4 }}>
+                <div className="pt-1">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${
                     data.putawayStatus === PUTAWAY_STATUS.COMPLETED
                       ? 'bg-emerald-100 text-emerald-800'
@@ -546,7 +544,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             )}
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Fulfillment Location
               </label>
               {isEditable ? (
@@ -561,7 +559,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   placeholder={tCommon('selectEllipsis')}
                 />
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {data.locationName}
                 </p>
               )}
@@ -569,7 +567,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
             {isEditable && (
               <div className="min-w-0">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Storage Zone
                 </label>
                 <select
@@ -591,7 +589,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             )}
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 WIP Bin
               </label>
               {isEditable ? (
@@ -616,14 +614,14 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   ))}
                 </select>
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {wipBinValue}
                 </p>
               )}
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tWork('labels.outputBin')}
               </label>
               {isEditable ? (
@@ -648,14 +646,14 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   ))}
                 </select>
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {outputBinValue}
                 </p>
               )}
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tWork('labels.assemblyCostPerUnit')}
               </label>
               {isEditable ? (
@@ -671,14 +669,14 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   onBlur={(e) => saveField('assemblyCostPerUnit', e.target.value)}
                 />
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {data.assemblyCostPerUnit ? `$${parseFloat(data.assemblyCostPerUnit).toFixed(2)}` : '—'}
                 </p>
               )}
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tWork('labels.additionalCost')}
               </label>
               {isEditable ? (
@@ -694,27 +692,27 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
                   onBlur={(e) => saveField('additionalCost', e.target.value)}
                 />
               ) : (
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {data.additionalCost ? `$${parseFloat(data.additionalCost).toFixed(2)}` : '—'}
                 </p>
               )}
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tWork('labels.totalCost')}
               </label>
-              <p className="text-sm truncate font-semibold" style={{ color: 'var(--accent)', paddingTop: 6 }}>
+              <p className="text-sm truncate font-semibold text-[var(--accent)] pt-1.5">
                 ${parseFloat(data.totalCost || '0').toFixed(2)}
               </p>
             </div>
             
             {data.createdOn && (
               <div className="min-w-0">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   Created On
                 </label>
-                <p className="text-sm truncate" style={{ fontWeight: 500, paddingTop: 6 }}>
+                <p className="text-sm truncate font-medium pt-1.5">
                   {new Date(data.createdOn).toLocaleString()} {tCommon('by')} {data.createdBy || '—'}
                 </p>
               </div>
@@ -732,28 +730,21 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             <div className="flex overflow-x-auto shrink-0">
               <div className="flex gap-0 min-w-max">
                 <Button
-                  className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
-                  style={{
-                    color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
-                    background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                    cursor: 'pointer',
-                  }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
+                    activeTab === 'lines'
+                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
+                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                  }`}
                   onClick={() => setActiveTab('lines')}
                 >
                   Component Lines
                 </Button>
                 <Button
-                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
-                  style={{
-                    color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
-                    background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                    borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                    cursor: 'pointer',
-                  }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border border-l-0 cursor-pointer ${
+                    activeTab === 'availability'
+                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
+                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
+                  }`}
                   onClick={() => setActiveTab('availability')}
                 >
                   Stock Availability

@@ -69,9 +69,18 @@ export class CustomersController {
     required: false,
     enum: ['invoiceDate', 'dueDate'],
   })
-  @ApiOkResponse({ type: [AgedBalanceResponseDto] })
-  getAgedBalances(@Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate') {
-    return this.customersService.getAgedBalances(agingBasis);
+  @ApiQuery({ name: 'quickFilter', required: false, type: String })
+  @ApiPaginatedResponse(AgedBalanceResponseDto)
+  getAgedBalances(
+    @Query() query: PaginationQuery,
+    @Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate',
+    @Query('quickFilter') quickFilter?: string,
+  ) {
+    return this.customersService.getAgedBalances(
+      agingBasis,
+      query,
+      quickFilter,
+    );
   }
 
   @Get(':id')

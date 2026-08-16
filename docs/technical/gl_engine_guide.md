@@ -57,12 +57,14 @@ The engine also enforces:
 ### Entry Number Generation
 Journal entries receive a sequential identifier formatted as `JE-YYYYMMDD-NNNN` (e.g., `JE-20260322-0001`). This sequence resets daily and is generated safely within a database transaction.
 
-## Immutable Event Sourcing (Triggers)
+## Immutable Event Sourcing & Reversals
 
 Once a Journal Entry is committed, it forms the permanent financial record of the business. 
-To guarantee absolute audit continuity, the `gl_journal_entries` and `gl_journal_lines` tables are protected by native **PostgreSQL BEFORE UPDATE OR DELETE triggers**. 
+To guarantee absolute audit continuity, financial transactions follow strict immutability principles:
 
-Any attempt to modify a posted journal line (even by an admin executing a raw SQL `UPDATE` statement) will be rejected by the database engine. Mistakes cannot be edited away; they must be reversed with a new, opposing Journal Entry.
+1. **No Destructive Edits:** Mistakes or document cancellations cannot be edited away; they are reversed with a new, opposing Journal Entry linked to the source transaction.
+2. **Audit Event Log Integration:** Every `postJournalEntry` execution emits an immutable `gl_posted` audit log event with full line payloads.
+3. **Reconciliation Tracking:** Individual lines maintain bank matching references (`reconciliation_id`, `is_reconciled`) without altering the original posted monetary amounts.
 
 ## Integration with Subledgers
 

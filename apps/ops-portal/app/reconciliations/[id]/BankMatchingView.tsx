@@ -251,7 +251,7 @@ export default function BankMatchingView({
       <div className="flex-1 flex p-4 gap-4 min-h-0">
         {/* LEFT PANE: Bank Lines */}
         <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col z-10 min-h-0">
-          <div className="flex-1 relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
+          <div className="flex-1 relative [--ag-row-height:40px] [--ag-header-height:40px]">
             {loading ? (
               <div className="p-8 text-center text-[var(--text-muted)]">{tCommon('loading')}</div>
             ) : (
@@ -370,7 +370,7 @@ export default function BankMatchingView({
 
         {/* RIGHT PANE: Journal Lines */}
         <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col z-10 min-h-0">
-          <div className="flex-1 relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
+          <div className="flex-1 relative [--ag-row-height:40px] [--ag-header-height:40px]">
             {loading ? (
               <div className="p-8 text-center text-[var(--text-muted)]">{tCommon('loading')}</div>
             ) : (
@@ -502,8 +502,6 @@ export default function BankMatchingView({
             className="px-8 py-3 bg-[var(--accent)] text-white font-medium rounded-lg hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {matching ? tCommon('saving') : t('match')}
-            { }
-            <span className="material-symbols-outlined text-[20px]">done_all</span>
           </Button>
         </div>
       </div>

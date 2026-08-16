@@ -249,7 +249,7 @@ export default function DiscountMatrixSlideOver({
     >
       <div className="flex flex-col gap-8">
         {loading ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm text-[var(--text-muted)]">
             {tCommon('loading')}
           </p>
         ) : (
@@ -262,8 +262,7 @@ export default function DiscountMatrixSlideOver({
               <div className="flex gap-2 items-center">
                 <div className="relative">
                   <input
-                    className="input pr-6"
-                    style={{ width: 100 }}
+                    className="input pr-6 w-[100px]"
                     type="number"
                     step="0.01"
                     defaultValue={wildcardRule?.discountPercentage ?? '0'}

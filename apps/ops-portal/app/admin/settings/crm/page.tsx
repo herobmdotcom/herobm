@@ -151,8 +151,6 @@ export default function CRMSettingsPage() {
 
         <div className="flex justify-end mt-8">
           <Button variant="secondary" onClick={flushCache}>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
-            <span className="material-symbols-outlined mr-2">refresh</span>
             Refresh Cache
           </Button>
         </div>

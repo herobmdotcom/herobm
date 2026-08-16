@@ -3,6 +3,7 @@ import {
   SUPPLIER_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 import {
   glAccounts,
@@ -95,6 +96,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       name: 'Test Supplier LLC',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .onConflictDoNothing();
 
@@ -122,6 +124,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       name: 'Test Customer Inc',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .onConflictDoNothing();
 

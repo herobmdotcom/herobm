@@ -77,7 +77,7 @@ export function WorkOrderAvailabilityTab({
 }: WorkOrderAvailabilityTabProps) {
   if (loading) {
     return (
-      <div className="py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+      <div className="py-8 text-center text-sm text-[var(--text-muted)]">
         Loading component inventory availability...
       </div>
     );
@@ -85,7 +85,7 @@ export function WorkOrderAvailabilityTab({
 
   if (!components || components.length === 0) {
     return (
-      <div className="py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+      <div className="py-8 text-center text-sm text-[var(--text-muted)]">
         No component line items added.
       </div>
     );

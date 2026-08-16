@@ -145,6 +145,7 @@ export const products = herobmCore.table('products', {
   ),
   externalTaxCode: text('external_tax_code'),
   alternateProductNumber: text('alternate_product_number'),
+  imagePath: text('image_path'),
   stateCode: text('state_code').$type<ProductState>().notNull(),
   notes: text('notes'),
   sourceId: text('source_id').unique(),
@@ -178,7 +179,7 @@ export const productComponents = herobmCore.table('product_components', {
   }).notNull(),
   quantity: numeric('quantity', { precision: 14, scale: 4 }).notNull(),
   sequenceNumber: integer('sequence_number'),
-  fractionalBehavior: fractionalBehaviorEnum('fractional_behavior').notNull(),
+  fractionalBehavior: fractionalBehaviorEnum('fractional_behavior'),
 });
 
 // ---------------------------------------------------------------------------
@@ -194,7 +195,7 @@ export const productUoms = herobmCore.table(
     uomCode: text('uom_code')
       .notNull()
       .references(() => uomDictionary.uomCode),
-    ratio: numeric('ratio', { precision: 14, scale: 6 }).notNull(),
+    ratio: numeric('ratio', { precision: 12, scale: 4 }).notNull(),
     barcode: text('barcode'),
     isSalesDefault: boolean('is_sales_default'),
     isPurchaseDefault: boolean('is_purchase_default'),
@@ -237,3 +238,21 @@ export const productSuppliers = herobmCore.table(
     ),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// product_images (Multi-image gallery & metadata tracking)
+// ---------------------------------------------------------------------------
+export const productImages = herobmCore.table('product_images', {
+  imageId: uuid('image_id').primaryKey().defaultRandom(),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.productId, { onDelete: 'cascade' }),
+  storagePath: text('storage_path').notNull(),
+  fileName: text('file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  byteSize: integer('byte_size').notNull(),
+  isPrimary: boolean('is_primary').notNull(),
+  sortOrder: integer('sort_order').notNull(),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});

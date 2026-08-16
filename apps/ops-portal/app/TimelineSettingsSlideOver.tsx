@@ -44,7 +44,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           onChange={() => toggleEvent(event)}
           className="w-4 h-4 rounded text-accent focus:ring-accent"
         />
-        <span className="text-[14px]" style={{ color: 'var(--text-primary)' }}>
+        <span className="text-[14px] text-[var(--text-primary)]">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           {t(`types.${event}` as any)}
         </span>
@@ -55,12 +55,12 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
   return (
     <SlideOver isOpen={isOpen} onClose={onClose} title={t('settings')}>
       <div className="flex flex-col gap-6">
-        <p className="text-[13px] opacity-70" style={{ color: 'var(--text-primary)' }}>
+        <p className="text-[13px] opacity-70 text-[var(--text-primary)]">
           {t('configureInfo')}
         </p>
         
         <div className="flex flex-col gap-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 text-[var(--text-primary)]">
             {tSidebar('sales')}
           </div>
           <OptionRow event="customer.created" />
@@ -76,7 +76,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
         </div>
 
         <div className="flex flex-col gap-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 text-[var(--text-primary)]">
             {tSidebar('purchasing')}
           </div>
           <OptionRow event="supplier.created" />
@@ -93,7 +93,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
         </div>
 
         <div className="flex flex-col gap-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 text-[var(--text-primary)]">
             {tSidebar('inventory')}
           </div>
           <OptionRow event="warehouse.receipt_created" />
@@ -108,7 +108,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
         </div>
 
         <div className="flex flex-col gap-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 text-[var(--text-primary)]">
             {tSidebar('finance')}
           </div>
           <OptionRow event="payment.submitted" />
@@ -118,7 +118,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
         </div>
 
         <div className="flex flex-col gap-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 text-[var(--text-primary)]">
             {tSidebar('admin')}
           </div>
           <OptionRow event="email.queued" />

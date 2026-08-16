@@ -28,6 +28,7 @@ import {
   SALES_INVOICE_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
@@ -73,6 +74,7 @@ describe('SalesInvoiceService', () => {
 
     const actorId = '00000000-0000-4000-8000-000000000002';
     await pg.db.insert(actors).values({
+      stateCode: ACTOR_STATE.ACTIVE,
       actorId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',

@@ -62,18 +62,18 @@ export default function ContactSelect({
       getLabel={(c) => `${c.firstName} ${c.lastName}`.trim()}
       renderOption={(c) => (
         <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
-          <div style={{ minWidth: 0 }}>
-            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          <div className="min-w-0">
+            <span className="text-[var(--accent)] font-semibold">
               {c.firstName} {c.lastName}
             </span>
             {c.jobTitle && (
-              <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: 13 }}>
+              <span className="text-[var(--text-secondary)] ml-2 text-[13px]">
                 ({c.jobTitle})
               </span>
             )}
           </div>
           {c.email && (
-            <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+            <div className="text-[var(--text-secondary)] text-xs">
               {c.email}
             </div>
           )}

@@ -61,20 +61,19 @@ export default function Error({
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div
-        className="max-w-md p-8 rounded-2xl text-center"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        className="max-w-md p-8 rounded-2xl text-center bg-[var(--bg-card)] border border-[var(--border)]"
       >
         <h2 className="text-xl font-bold mb-2">{t('title')}</h2>
-        <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mb-2 text-[var(--text-muted)]">
           {displayMessage || t('unexpected')}
         </p>
         {error?.digest && (
-          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+          <p className="text-xs mb-4 text-[var(--text-muted)] opacity-60">
             {t('reference', { digest: error.digest })}
           </p>
         )}
         {typeof window !== 'undefined' && (
-          <p className="text-xs mb-6" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+          <p className="text-xs mb-6 text-[var(--text-muted)] opacity-60">
             {t('page', { path: window.location.pathname })}
           </p>
         )}

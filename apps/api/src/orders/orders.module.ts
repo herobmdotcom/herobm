@@ -23,6 +23,8 @@ import { OrderPickingController } from './order-picking.controller';
 import { OrderShipmentsController } from './order-shipments.controller';
 import { GlobalShipmentsController } from './global-shipments.controller';
 import { GlobalReturnsController } from './global-returns.controller';
+import { UnifiedReturnsController } from './unified-returns.controller';
+import { GlobalReturnsService } from './global-returns.service';
 import { OrdersService } from './orders.service';
 import { OrdersCoreService } from './orders-core.service';
 import { OrderCreationService } from './order-creation.service';
@@ -82,10 +84,12 @@ import { EmailModule } from '../email/email.module';
     OrderShipmentsController,
     GlobalShipmentsController,
     GlobalReturnsController,
+    UnifiedReturnsController,
     AllocationsController,
     TransfersController,
   ],
   providers: [
+    GlobalReturnsService,
     OrdersService,
     OrdersCoreService,
     OrderCreationService,

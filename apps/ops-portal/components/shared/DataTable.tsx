@@ -51,7 +51,11 @@ export function DataTable<T>({
           <thead>
             <tr>
               {visibleCols.map((col, i) => (
-                <th key={col.id || i} style={{ width: col.width, textAlign: col.align }}>
+                <th
+                  key={col.id || i}
+                  className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}
+                  style={col.width ? { width: col.width } : undefined}
+                >
                   {col.header}
                 </th>
               ))}
@@ -77,7 +81,10 @@ export function DataTable<T>({
                       }
                       
                       return (
-                        <td key={col.id || j} style={{ textAlign: col.align }}>
+                        <td
+                          key={col.id || j}
+                          className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}
+                        >
                           {content}
                         </td>
                       );
@@ -85,7 +92,7 @@ export function DataTable<T>({
                   </tr>
                   {isExpanded && (
                     <tr key={`${keyExtractor(row, i)}-expanded`}>
-                      <td colSpan={visibleCols.length} style={{ padding: 0 }}>
+                      <td colSpan={visibleCols.length} className="p-0">
                         {renderExpandedRow(row, i)}
                       </td>
                     </tr>
@@ -98,7 +105,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={visibleCols.length}
-                  style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
+                  className="text-center text-[var(--text-muted)] py-5"
                 >
                   {emptyMessage || 'No items'}
                 </td>

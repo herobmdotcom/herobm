@@ -13,7 +13,7 @@ import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { PROJECT_STATE, CONTACT_STATE } from '@herobm/shared';
+import { PROJECT_STATE, CONTACT_STATE, ACTOR_STATE } from '@herobm/shared';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -65,7 +65,11 @@ describe('ContactsService', () => {
     it('should create a contact and link to an actor', async () => {
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Test Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Test Actor',
+          isTaxRegistered: false,
+        })
         .returning();
 
       const result = await service.createContact(
@@ -93,6 +97,7 @@ describe('ContactsService', () => {
       const [project] = await pg.db
         .insert(projects)
         .values({
+          stateCode: PROJECT_STATE.ACTIVE,
           name: 'Test Project',
           type: 'internal',
           status: PROJECT_STATE.ACTIVE,
@@ -140,6 +145,7 @@ describe('ContactsService', () => {
       const [contact] = await pg.db
         .insert(contacts)
         .values({
+          stateCode: CONTACT_STATE.ACTIVE,
           firstName: 'Old',
           lastName: 'Name',
         })
@@ -168,11 +174,18 @@ describe('ContactsService', () => {
     it('should update primaryFor on links', async () => {
       const [contact] = await pg.db
         .insert(contacts)
-        .values({ firstName: 'Test' })
+        .values({
+          stateCode: CONTACT_STATE.ACTIVE,
+          firstName: 'Test',
+        })
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Actor',
+          isTaxRegistered: false,
+        })
         .returning();
       await pg.db.insert(actorContactLinks).values({
         actorId: actor.actorId,
@@ -206,11 +219,18 @@ describe('ContactsService', () => {
     it('should delete a contact and its links', async () => {
       const [contact] = await pg.db
         .insert(contacts)
-        .values({ firstName: 'Delete' })
+        .values({
+          stateCode: CONTACT_STATE.ACTIVE,
+          firstName: 'Delete',
+        })
         .returning();
       const [actor] = await pg.db
         .insert(actors)
-        .values({ name: 'Actor', isTaxRegistered: false })
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Actor',
+          isTaxRegistered: false,
+        })
         .returning();
       await pg.db.insert(actorContactLinks).values({
         actorId: actor.actorId,
@@ -244,7 +264,10 @@ describe('ContactsService', () => {
     it('should archive a contact', async () => {
       const [contact] = await pg.db
         .insert(contacts)
-        .values({ firstName: 'To Archive' })
+        .values({
+          stateCode: CONTACT_STATE.ACTIVE,
+          firstName: 'To Archive',
+        })
         .returning();
 
       const res = await service.archiveContact(contact.contactId, mockUserId);

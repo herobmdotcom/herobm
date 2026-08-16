@@ -23,6 +23,7 @@ import {
   inventoryLedger,
   productComponents,
   inventoryLevels,
+  productImages,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -309,7 +310,13 @@ export class ProductsService {
           bins.binType,
         );
 
-      return { ...rows[0], events, productUoms: uoms, defaultBins };
+      const images = await db
+        .select()
+        .from(productImages)
+        .where(eq(productImages.productId, id))
+        .orderBy(asc(productImages.sortOrder), desc(productImages.createdOn));
+
+      return { ...rows[0], events, productUoms: uoms, defaultBins, images };
     }
 
     throw new NotFoundException(`Product '${id}' not found`);

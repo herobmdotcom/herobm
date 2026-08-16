@@ -206,6 +206,7 @@ describe('SuppliersService', () => {
       const [act] = await pg.db
         .insert(actors)
         .values({
+          stateCode: ACTOR_STATE.ACTIVE,
           name: 'Group Supplier',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: true,

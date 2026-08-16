@@ -30,8 +30,6 @@ export default function PrintButton({ title, className }: PrintButtonProps) {
       title={label}
       aria-label={label}
     >
-      { }
-      <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle' }}>print</span>
       {label}
     </Button>
   );

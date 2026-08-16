@@ -49,7 +49,7 @@ function GeneralInfoTab({
         <div className="grid grid-cols-1 gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>First Name *</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">First Name *</label>
               <input
                 type="text"
                 className="input w-full"
@@ -60,7 +60,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Last Name *</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Last Name *</label>
               <input
                 type="text"
                 className="input w-full"
@@ -73,7 +73,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Job Title</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Job Title</label>
               <input
                 type="text"
                 className="input w-full"
@@ -84,7 +84,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Email</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
               <input
                 type="email"
                 className="input w-full"
@@ -97,7 +97,7 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Phone</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Phone</label>
               <input
                 type="text"
                 className="input w-full"
@@ -108,7 +108,7 @@ function GeneralInfoTab({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Mobile</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Mobile</label>
               <input
                 type="text"
                 className="input w-full"
@@ -121,11 +121,11 @@ function GeneralInfoTab({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Created On</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Created On</label>
               <input type="text" className="input w-full bg-gray-50" value={dto.createdOn ? new Date(dto.createdOn).toLocaleString() : ''} disabled />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Last Modified</label>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Last Modified</label>
               <input type="text" className="input w-full bg-gray-50" value={dto.modifiedOn ? new Date(dto.modifiedOn).toLocaleString() : ''} disabled />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
             <Button
               variant="secondary"
               size="sm"
-              style={{ color: "#ef4444", borderColor: "#ef4444" }}
+              className="text-red-500 border-red-500 hover:!bg-red-50"
               onClick={archiveContact}
               disabled={loading}
             >

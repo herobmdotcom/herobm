@@ -158,19 +158,11 @@ export default function AsyncSelect<T>({
       </div>
 
       {showDropdown && searchTerm && !disabled && (
-        <div
-          className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          }}
-        >
+        <div className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl">
           {results.map((item) => (
             <div
               key={getKey(item)}
-              className="px-3 py-2 cursor-pointer text-sm"
-              style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
+              className="px-3 py-2 cursor-pointer text-sm border-b border-[var(--border)] hover:bg-[var(--bg-card-hover)]"
               onMouseDown={(e) => {
                 if (!clearOnSelect) e.preventDefault();
                 handleSelect(item);
@@ -180,7 +172,7 @@ export default function AsyncSelect<T>({
             </div>
           ))}
           {results.length === 0 && (
-            <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <div className="px-3 py-3 text-sm text-[var(--text-muted)]">
               {searchTerm.trim().length < 2 ? typeMinCharsText : noResultsText}
             </div>
           )}

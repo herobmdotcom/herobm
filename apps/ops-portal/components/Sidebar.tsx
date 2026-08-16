@@ -4,7 +4,6 @@ import SharedSidebar from '@/components/shared/Sidebar';
 import type { NavSection } from '@/components/shared/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/components/AuthGate';
-import { useLicense } from '@/components/LicenseProvider';
 import { SystemResource, hasPermission, hasAnyPermission } from '@herobm/shared';
 
 export default function Sidebar() {
@@ -99,12 +98,12 @@ export default function Sidebar() {
       label: t('groups.finance'),
       items: [
         { 
-          href: '/sales-credit-notes', 
+          href: '/credit-debit-notes', 
           label: 'Credit & Debit', 
           icon: 'receipt_long',
           subItems: [
-            { href: '/sales-credit-notes', label: 'Returns Queue' },
-            { href: '/sales-credit-notes/history', label: 'History' },
+            { href: '/credit-debit-notes', label: 'Notes' },
+            { href: '/credit-debit-notes/operations', label: 'Operations' },
           ]
         },
         { 
@@ -251,23 +250,11 @@ export default function Sidebar() {
     });
   }
 
-  const { status, isLoading } = useLicense();
-  let footerText = process.env.BUILD_TIME || 'Unknown Build';
-  
-  if (!isLoading && status) {
-    if (status.licenseHash) {
-      footerText = `License: ${status.licenseHash}`;
-    } else if (status.systemId) {
-      footerText = `SysID: ${status.systemId.substring(0, 8)}`;
-    }
-  }
-
   return (
     <SharedSidebar
       title={t('title')}
       subtitle={t('subtitle')}
       sections={sections}
-      footer={footerText}
     />
   );
 }

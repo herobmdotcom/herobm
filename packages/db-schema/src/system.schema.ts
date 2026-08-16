@@ -66,13 +66,25 @@ export const macros = herobmCore.table('macros', {
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 
+export type DisplayDensity = 'comfortable' | 'compact';
+
+export interface UserPreferences {
+  density?: DisplayDensity;
+  defaultLandingPage?: string;
+  tablePageSize?: number;
+  [key: string]: unknown;
+}
+
 export const userSettings = herobmCore.table('user_settings', {
   userId: uuid('user_id')
     .primaryKey()
     .references(() => users.userId, { onDelete: 'cascade' }),
   dashboardConfig: jsonb('dashboard_config').$type<Record<string, unknown>>(),
   reportConfigs: jsonb('report_configs').$type<Record<string, unknown>>(),
-  preferences: jsonb('preferences').$type<Record<string, unknown>>(),
+  preferences: jsonb('preferences').$type<UserPreferences>(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

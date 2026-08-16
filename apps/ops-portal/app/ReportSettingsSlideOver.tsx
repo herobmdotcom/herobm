@@ -29,7 +29,7 @@ export default function ReportSettingsSlideOver({ isOpen, onClose, reportConfigs
   return (
     <SlideOver isOpen={isOpen} onClose={onClose} title="Dashboard Reports">
       <div className="flex flex-col gap-6">
-        <p className="text-[13px] opacity-70" style={{ color: 'var(--text-primary)' }}>
+        <p className="text-[13px] opacity-70 text-[var(--text-primary)]">
           {t('reportSettingsDescription')}
         </p>
         
@@ -47,7 +47,7 @@ export default function ReportSettingsSlideOver({ isOpen, onClose, reportConfigs
 
               return (
                 <div key={slug} className="flex flex-col gap-1">
-                  <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 mt-2" style={{ color: 'var(--text-primary)' }}>
+                  <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50 mt-2 text-[var(--text-primary)]">
                     {formattedSlug}
                   </div>
                   {configs.map(config => {
@@ -61,7 +61,7 @@ export default function ReportSettingsSlideOver({ isOpen, onClose, reportConfigs
                           onChange={() => togglePin(slug, config.id, pinName)}
                           className="w-4 h-4 rounded text-[var(--accent)] focus:ring-[var(--accent)]"
                         />
-                        <span className="text-[14px]" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-[14px] text-[var(--text-primary)]">
                           {config.name}
                         </span>
                       </label>

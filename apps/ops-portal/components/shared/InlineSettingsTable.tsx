@@ -158,9 +158,9 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           <thead>
             <tr>
               {columns.map(col => (
-                <th key={String(col.key)} style={{ width: col.width }}>{col.title}</th>
+                <th key={String(col.key)} style={col.width ? { width: col.width } : undefined}>{col.title}</th>
               ))}
-              <th style={{ width: 120 }}></th>
+              <th className="w-[120px]"></th>
             </tr>
           </thead>
           <tbody>
@@ -262,7 +262,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                           col.type === 'select' ? (
                             <span>{(typeof col.options === 'function' ? col.options(row) : col.options)?.find(o => o.value === value)?.label || value}</span>
                           ) : col.type === 'boolean' ? (
-                            <span style={{ color: value ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+                            <span className={`text-xs font-bold ${value ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
                               {value ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
                             </span>
                           ) : (
@@ -293,22 +293,19 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                             onClick={() => handleEdit(row)}
                             disabled={isProcessing || editingId !== null}
                           >
-                            { }
-                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
                           </Button>
                         )}
                         {onDelete && (!canDelete || canDelete(row)) && (
                           <Button 
                             variant="secondary"
                             size="xs"
-                            className="flex items-center justify-center hover:!bg-red-50" 
+                            className="flex items-center justify-center hover:!bg-red-50 text-red-500 border-red-500" 
                             title={tSettings('actions.delete')}
-                            style={{ color: '#ef4444', borderColor: '#ef4444' }}
                             onClick={() => handleDelete(row)}
                             disabled={isProcessing || editingId !== null}
                           >
-                            { }
-                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
                           </Button>
                         )}
                         {extraActions && extraActions(row)}

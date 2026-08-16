@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ACTOR_STATE, CUSTOMER_STATE } from '@herobm/shared';
 import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -12,6 +13,14 @@ import {
   costCenters,
   activities,
   glSettings,
+  salesInvoices,
+  salesCreditNotes,
+  purchaseInvoices,
+  purchaseDebitNotes,
+  salesOrderShipments,
+  customers,
+  suppliers,
+  actors,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -637,6 +646,102 @@ describe('GlService', () => {
 
         expect(result.journalEntryId).toBeDefined();
       });
+    });
+  });
+
+  describe('getJournalEntries', () => {
+    beforeEach(async () => {
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: randomUUID(),
+          accountCode: '1000',
+          name: 'Cash',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+        },
+        {
+          glAccountId: randomUUID(),
+          accountCode: '2000',
+          name: 'Revenue',
+          accountType: 'revenue',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'EUR',
+        },
+      ]);
+    });
+
+    it('resolves sourceNumber for sales credit notes, purchase debit notes, and shipments', async () => {
+      const actorId = randomUUID();
+      await pg.db.insert(actors).values({
+        actorId,
+        name: 'Test Party',
+        email: 'test@example.com',
+        isTaxRegistered: false,
+        stateCode: ACTOR_STATE.ACTIVE,
+      });
+
+      const customerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId,
+        actorId,
+        customerNumber: 'CUST-01',
+        currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'test',
+      });
+
+      // 1. Sales Credit Note
+      const cnId = randomUUID();
+      await pg.db.insert(salesCreditNotes).values({
+        creditNoteId: cnId,
+        creditNoteNumber: 'CN-20260815-0001',
+        customerId,
+        totalAmount: '100.00',
+        taxAmount: '0.00',
+        feeAmount: '0.00',
+        outstandingAmount: '100.00',
+        currencyCode: 'EUR',
+        stateCode: 'posted',
+        baseTotalAmount: '100.00',
+        baseOutstandingAmount: '100.00',
+        exchangeRate: '1.0',
+        createdBy: 'test',
+      });
+
+      await service.postJournalEntry(
+        [
+          {
+            accountCode: '1000',
+            debit: 100,
+            credit: 0,
+            partyType: 'customer',
+            partyId: customerId,
+          },
+          { accountCode: '2000', debit: 0, credit: 100 },
+        ],
+        {
+          sourceType: 'sales_credit_note',
+          sourceId: cnId,
+          memo: 'CN JE',
+        },
+      );
+
+      const entries = await service.getJournalEntries({});
+      expect(entries.total).toBe(1);
+
+      const cnEntry = entries.data.find(
+        (e) => e.sourceType === 'sales_credit_note',
+      );
+      expect(cnEntry?.sourceNumber).toBe('CN-20260815-0001');
+      expect(cnEntry?.partyName).toBe('Test Party');
     });
   });
 });

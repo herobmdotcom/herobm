@@ -1,7 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { SWRConfig } from 'swr';
 import userEvent from '@testing-library/user-event';
 import BalancesContent from '../BalancesContent';
 import * as api from '@herobm/sdk';
+
+function renderWithSwr(ui: React.ReactElement) {
+  return render(
+    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+      {ui}
+    </SWRConfig>,
+  );
+};
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -126,12 +135,10 @@ describe('BalancesContent — client-side filtering and loading', () => {
   });
 
   it('fetches aged balances on mount and renders all items', async () => {
-    render(<BalancesContent />);
-
-    // Default agingBasis is 'dueDate'
-    expect(mockGetBalances).toHaveBeenCalledWith({ agingBasis: 'dueDate' });
+    renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
+      expect(mockGetBalances).toHaveBeenCalledWith({ agingBasis: 'dueDate' });
       expect(screen.getByTestId('row-count')).toHaveTextContent('4');
     });
 
@@ -143,7 +150,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
   it('filters by "Has Discrepancy" correctly', async () => {
     const user = userEvent.setup();
-    render(<BalancesContent />);
+    renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('row-count')).toHaveTextContent('4');
@@ -161,7 +168,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
   it('filters by "Overdue Only" correctly', async () => {
     const user = userEvent.setup();
-    render(<BalancesContent />);
+    renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('row-count')).toHaveTextContent('4');
@@ -179,7 +186,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
   it('filters by "Over Credit Limit" correctly', async () => {
     const user = userEvent.setup();
-    render(<BalancesContent />);
+    renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('row-count')).toHaveTextContent('4');
@@ -200,7 +207,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
   it('refetches aged balances when changing the agingBasis select option', async () => {
     const user = userEvent.setup();
-    render(<BalancesContent />);
+    renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
       expect(mockGetBalances).toHaveBeenCalledTimes(1);
@@ -212,7 +219,9 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
     await user.selectOptions(basisSelect, 'invoiceDate');
 
-    expect(mockGetBalances).toHaveBeenCalledTimes(2);
-    expect(mockGetBalances).toHaveBeenLastCalledWith({ agingBasis: 'invoiceDate' });
+    await waitFor(() => {
+      expect(mockGetBalances).toHaveBeenCalledTimes(2);
+      expect(mockGetBalances).toHaveBeenLastCalledWith({ agingBasis: 'invoiceDate' });
+    });
   });
 });

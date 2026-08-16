@@ -34,7 +34,7 @@ export default function MasterDetailLayout({
         <div className="h-full flex flex-col p-4 lg:p-6 bg-[var(--bg-primary)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 shrink-0 gap-3">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                    <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
                         {title}
                     </h1>
                 </div>

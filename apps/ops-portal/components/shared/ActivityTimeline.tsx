@@ -96,18 +96,11 @@ export default function ActivityTimeline({
   if (!events || events.length === 0) {
     return (
       <div>
-        <h3
-          className="text-sm font-semibold mb-4"
-          style={{
-            color: 'var(--text-muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
+        <h3 className="text-sm font-semibold mb-4 text-[var(--text-muted)] uppercase tracking-wider">
           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-          <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
+          <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">history</span> {displayTitle}
         </h3>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm text-[var(--text-muted)]">
           {displayEmptyMessage}
         </p>
       </div>
@@ -116,21 +109,13 @@ export default function ActivityTimeline({
 
   return (
     <details ref={detailsRef} open={defaultOpen || undefined}>
-      <summary
-        className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
-        style={{
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          listStyle: 'none',
-        }}
-      >
-        <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
+      <summary className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2 text-[var(--text-muted)] uppercase tracking-wider list-none">
+        <span className="details-chevron text-[10px] transition-transform duration-200">▶</span>
         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-        <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
-        <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
+        <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">history</span> {displayTitle}
+        <span className="text-[11px] font-normal">({events.length})</span>
       </summary>
-      <div className="space-y-3" style={{ marginTop: 16 }}>
+      <div className="space-y-3 mt-4">
         {events.map((event) => {
           const hasPayload = event.payload && Object.keys(event.payload).length > 0;
           const displayType = (event.payload?.action as string) || event.eventType;
@@ -138,70 +123,64 @@ export default function ActivityTimeline({
           return (
             <details
               key={event.eventId}
-              className="text-sm"
-              style={{
-                padding: '6px 12px',
-                borderRadius: 8,
-                background: 'rgba(0,0,0,0.02)',
-                border: '1px solid var(--border)',
-              }}
+              className="text-sm py-1.5 px-3 rounded-lg bg-black/[0.02] border border-[var(--border)]"
             >
               <summary
-                className="flex items-center gap-3"
-                style={{ cursor: hasPayload ? 'pointer' : 'default', userSelect: 'none', listStyle: 'none' }}
+                className={`flex items-center gap-3 select-none list-none ${hasPayload ? 'cursor-pointer' : 'cursor-default'}`}
               >
                 <EventIcon type={displayType} />
-                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                <span className="font-semibold capitalize">
                   {displayType.replace(/_/g, ' ')}
                 </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                <span className="text-[var(--text-muted)] text-[11px]">
                   {tDynamic(t, 'timeline.by', undefined, { actor: event.actor })}
                 </span>
-                <span className="ml-auto text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                <span className="ml-auto text-xs whitespace-nowrap text-[var(--text-muted)]">
                   {new Date(event.createdOn).toLocaleString()}
                 </span>
                 {hasPayload && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>▶</span>
+                  <span className="text-[var(--text-muted)] text-[10px]">▶</span>
                 )}
               </summary>
               {hasPayload && (
-                <div
-                  className="mt-2 text-xs grid gap-y-1"
-                  style={{ marginLeft: 28, color: 'var(--text-secondary)' }}
-                >
+                <div className="mt-2 text-xs grid gap-y-1 ml-7 text-[var(--text-secondary)]">
                   {Object.entries(event.payload)
                     .filter(([key]) => {
                       if (key.endsWith('Name')) {
                         const idKey = key.replace(/Name$/, 'Id');
-                        if (event.payload[idKey]) return false; // hide name if we have the ID
+                        return !(idKey in event.payload!);
                       }
                       return true;
                     })
                     .map(([key, value]) => {
-                      let displayValue: React.ReactNode = String(value);
-                      let displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      const displayKey = tDynamic(t, `timeline.keys.${key}`, key);
+                      let displayValue: React.ReactNode = String(value ?? '—');
                       
-                      if (typeof value === 'object' && value !== null) {
-                        displayValue = Object.entries(value as Record<string, unknown>)
-                          .map(([k, v]) => `${k}: ${v}`)
-                          .join(', ');
-                      } else if (key.endsWith('Id') && typeof value === 'string') {
-                        const baseKey = key.slice(0, -2);
-                        const nameKey = baseKey + 'Name';
-                        const nameVal = event.payload[nameKey];
+                      // Auto-link Entity IDs if we have a name in the payload
+                      if (key.endsWith('Id')) {
+                        const entityType = key.replace(/Id$/, '');
+                        const nameKey = `${entityType}Name`;
+                        const nameVal = event.payload![nameKey] as string | undefined;
                         
-                        if (nameVal && typeof nameVal === 'string') {
-                          displayKey = baseKey.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                        if (nameVal && typeof value === 'string') {
+                          const routeMap: Record<string, string> = {
+                            customer: '/customers',
+                            supplier: '/suppliers',
+                            vendor: '/suppliers',
+                            product: '/products',
+                            salesOrder: '/sales-orders',
+                            purchaseOrder: '/purchase-orders',
+                            invoice: '/sales-invoices',
+                            quote: '/sales-quotes',
+                            project: '/crm/projects',
+                            actor: '/crm/actors',
+                            contact: '/crm/contacts',
+                            opportunity: '/crm/opportunities',
+                          };
                           
-                          let href = '';
-                          if (baseKey === 'project') href = `/crm/projects/${value}`;
-                          else if (baseKey === 'actor') href = `/crm/actors/${value}`;
-                          else if (baseKey === 'contact') href = `/crm/contacts/${value}`;
-                          else if (baseKey === 'customer') href = `/customers/${value}`;
-                          else if (baseKey === 'supplier') href = `/suppliers/${value}`;
-                          else if (baseKey === 'product') href = `/products/${value}`;
-                          
-                          if (href) {
+                          const route = routeMap[entityType];
+                          if (route) {
+                            const href = `${route}/${value}`;
                             displayValue = (
                               <a href={href} className="text-[var(--accent)] hover:underline">
                                 {nameVal}
@@ -215,10 +194,10 @@ export default function ActivityTimeline({
                       
                       return (
                         <div key={key} className="flex gap-2">
-                          <span style={{ color: 'var(--text-muted)', minWidth: 100, fontWeight: 500 }}>
+                          <span className="text-[var(--text-muted)] min-w-[100px] font-medium">
                             {displayKey}
                           </span>
-                          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          <span className="tabular-nums">
                             {displayValue}
                           </span>
                         </div>

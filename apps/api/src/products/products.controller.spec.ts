@@ -3,6 +3,9 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
 
+import { StorageService } from '../common/storage/storage.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
+
 describe('ProductsController', () => {
   let controller: ProductsController;
 
@@ -23,6 +26,12 @@ describe('ProductsController', () => {
     update: jest.fn(),
   };
 
+  const mockStorageService = {
+    resolveFilePath: jest.fn(),
+    saveProductImage: jest.fn(),
+    deleteFile: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -30,8 +39,12 @@ describe('ProductsController', () => {
       providers: [
         { provide: ProductsService, useValue: mockService },
         { provide: ProductsWriteService, useValue: mockWriteService },
+        { provide: StorageService, useValue: mockStorageService },
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ProductsController>(ProductsController);
   });
