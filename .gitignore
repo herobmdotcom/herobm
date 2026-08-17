@@ -112,3 +112,6 @@ apps/ops-portal/lib/generated/
 # Persistent Storage / Uploads
 /data/storage/*
 !/data/storage/**/.gitkeep
+
+# Agent Rules
+.agents/rules/windows_commands.md
