@@ -1,3 +1,5 @@
 // AUTO-GENERATED FILE - DO NOT EDIT
 
-export const extensionSchemas = {};
+export const extensionSchemas = {
+  
+};

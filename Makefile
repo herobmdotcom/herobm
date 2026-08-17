@@ -1,9 +1,10 @@
-.PHONY: help help-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
 =========================================
 Environment:
+  make fast-install   - Automated full installation for current OS
   make init-env       - Generate .env from .env.example
   make dev-local      - Start hot-reloading dev environment
   make prod-local     - Start production-like local environment
@@ -63,6 +64,7 @@ ifeq ($(OS),Windows_NT)
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
   PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
   CLEAN_BUILD_CMD = powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+  FAST_INSTALL_CMD = powershell -ExecutionPolicy Bypass -File scripts/fast-install.ps1
   TEST_PIPELINE_CMD = powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
   TEST_HEAVY_CMD = powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
@@ -77,6 +79,7 @@ else
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   CLEAN_BUILD_CMD = bash scripts/clean-build.sh
+  FAST_INSTALL_CMD = bash scripts/fast-install.sh
   TEST_PIPELINE_CMD = bash scripts/test-pipeline.sh
   TEST_HEAVY_CMD = bash scripts/run-heavy.sh $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
@@ -127,8 +130,8 @@ up-db: check-postgres-logs
 	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom redis-broker
 
 down-db:
-	$(COMPOSE_CMD) stop postgres-custom
-	-podman rm -f postgres-custom
+	$(COMPOSE_CMD) stop postgres-custom redis-broker
+	-podman rm -f postgres-custom redis-broker
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
@@ -217,16 +220,18 @@ rebuild-db-keep-raw:
 # Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
 # import source data via ELT, then seed application data (users, inventory).
 # Prerequisites: 'make up' running, .env populated with all passwords.
-# (init target defined further down alongside init-no-extract)
+# (init target defined further down alongside elt-no-extract)
 
 
 
 # Create the active profile database and base schemas on a running container
 init-db:
-	@echo "Ensuring database $(POSTGRES_DB) exists..."
-	@podman exec -i postgres-custom sh -c "psql -U $(POSTGRES_USER) -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = '$(POSTGRES_DB)'\" | grep -q 1 || psql -U $(POSTGRES_USER) -d postgres -c \"CREATE DATABASE $(POSTGRES_DB)\""
-	@echo "Initializing database: $(POSTGRES_DB)"
-	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -f /docker-entrypoint-initdb.d/init-schemas.sql
+	@echo "Waiting for database container to be ready..."
+	@"$(PYTHON_CMD)" -c "import time, subprocess, sys; sys.exit(0 if any(subprocess.run(['podman', 'exec', '-i', 'postgres-custom', 'pg_isready', '-U', sys.argv[1], '-d', 'postgres', '-q'], capture_output=True).returncode == 0 or time.sleep(1) for _ in range(60)) else 'Timed out waiting for PostgreSQL container')" "$(or $(POSTGRES_USER),postgres)"
+	@echo "Ensuring database $(or $(POSTGRES_DB),herobm) exists..."
+	@podman exec -i postgres-custom sh -c "psql -U $(or $(POSTGRES_USER),postgres) -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = '$(or $(POSTGRES_DB),herobm)'\" | grep -q 1 || psql -U $(or $(POSTGRES_USER),postgres) -d postgres -c \"CREATE DATABASE $(or $(POSTGRES_DB),herobm)\""
+	@echo "Initializing database: $(or $(POSTGRES_DB),herobm)"
+	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -f /docker-entrypoint-initdb.d/init-schemas.sql
 
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
@@ -342,7 +347,7 @@ extract-docker-dry:
 
 # --- Local Development ---
 # Hot-reloads FE and API natively, assuming database containers are running.
-dev-local:
+dev-local: build-shared build-db-schema build-sdk
 	$(DEV_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG) $(ARGS)
 
 # Production-like local environment. Builds both FE and API and runs them locally.
@@ -356,7 +361,13 @@ dev-mcp:
 	node --env-file=.env apps/mcp-server/dist/index.js
 
 dev-pipeline:
-	"$(VENV_PYTHON)" -m uvicorn pipelines.runner.server:app --port 8001 --reload
+ifeq ($(OS),Windows_NT)
+	if not exist .venv\Scripts\uvicorn.exe $(MAKE) setup-python
+	.venv\Scripts\python -m uvicorn pipelines.runner.server:app --port 8001 --reload
+else
+	[ ! -x .venv/bin/uvicorn ] && $(MAKE) setup-python || true
+	.venv/bin/python -m uvicorn pipelines.runner.server:app --port 8001 --reload
+endif
 
 rebuild-api:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
@@ -469,16 +480,16 @@ init: init-db migrate seed
 
 # --- Typechecks & Builds ---
 
-typecheck-portal:
+typecheck-portal: build-shared build-sdk
 	npm run typecheck -w apps/ops-portal
 
-build-api:
+build-api: build-shared build-db-schema
 	npm run build -w apps/api
 
 build-mcp:
 	npm run build -w apps/mcp-server
 
-build-portal:
+build-portal: build-shared build-sdk
 	npm run build -w apps/ops-portal
 ifeq ($(OS),Windows_NT)
 	if exist apps\ops-portal\public xcopy /E /I /Y apps\ops-portal\public apps\ops-portal\.next\standalone\apps\ops-portal\public
@@ -527,6 +538,7 @@ clean-build:
 
 help-install:
 	@echo "HeroBM Installation Sequence:"
+	@echo "  make fast-install        - One-step automated installation"
 	@echo "  1. make install-prereqs  - Install OS-level tools"
 	@echo "  2. make init-env         - Create .env and secrets"
 	@echo "  3. make install-npm      - Install npm dependencies"
@@ -536,6 +548,9 @@ help-install:
 	@echo "  7. make bootstrap        - Seed base data & verify installation"
 	@echo "  8. make up               - Start application containers (UI + API)"
 
+fast-install:
+	$(FAST_INSTALL_CMD)
+
 install-prereqs:
 ifeq ($(OS),Windows_NT)
 	powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
@@ -544,13 +559,12 @@ else
 endif
 
 setup-python:
-	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make setup-python SOURCE=<source>))
 ifeq ($(OS),Windows_NT)
-	if not exist .venv python -m venv .venv
-	.venv\Scripts\pip install -r pipelines\$(SOURCE)_extract\requirements.txt
+	if not exist .venv $(PYTHON_CMD) -m venv .venv
+	.venv\Scripts\pip install -r pipelines\runner\requirements.txt $(if $(SOURCE),-r pipelines\$(SOURCE)_extract\requirements.txt)
 else
-	[ ! -d .venv ] && python3 -m venv .venv || true
-	.venv/bin/pip install -r pipelines/$(SOURCE)_extract/requirements.txt
+	[ ! -d .venv ] && $(PYTHON_CMD) -m venv .venv || true
+	.venv/bin/pip install -r pipelines/runner/requirements.txt $(if $(SOURCE),-r pipelines/$(SOURCE)_extract/requirements.txt)
 endif
 
 install-npm:
@@ -560,6 +574,7 @@ install-npm:
 bootstrap:
 	$(MAKE) build-shared
 	$(MAKE) build-db-schema
+	$(MAKE) build-sdk
 	$(MAKE) build-api
 	npm run seed
 	$(MAKE) verify-db
@@ -584,6 +599,7 @@ test-deps:
 	python infra/tests/test_dependency_completeness.py
 
 test-single:
+	$(if $(TEST),,$(error Error: TEST is required. Usage: make test-single TEST=<name>))
 	@npx tsx infra/test-utils/run-single.ts $(TEST)
 
 test-structural:

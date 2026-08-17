@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo -e "\e[36mStarting Fast Install Sequence...\e[0m"
+echo -e "\033[36mStarting Fast Install Sequence...\033[0m"
 
 # 1. Install prerequisites interactively (preserves choices)
 # (Aligns with: make cli-install-prereqs)
@@ -29,9 +29,10 @@ make bootstrap
 if [ -f .startup_choice ]; then
     CHOICE=$(cat .startup_choice)
     make $CHOICE
-    rm .startup_choice
+    rm -f .startup_choice
 else
     make up
 fi
 
-echo -e "\e[32mFast Install Complete!\e[0m"
+echo -e "\033[32mFast Install Complete!\033[0m"
+

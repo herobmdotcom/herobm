@@ -50,20 +50,51 @@ export class SetupService {
 
   // @herobm-skip-audit
   private async failStaleJobs() {
-    const staleThreshold = new Date(Date.now() - 10 * 60 * 1000);
+    const timeoutMinutes = parseInt(
+      process.env.PIPELINE_STALE_TIMEOUT_MINUTES || '60',
+      10,
+    );
+    const staleThreshold = new Date(Date.now() - timeoutMinutes * 60 * 1000);
     try {
-      const staleJobs = await this.db
-        .update(pipelineJobs)
-        .set({ status: 'failed', updatedAt: new Date() })
+      const runningJobs = await this.db
+        .select()
+        .from(pipelineJobs)
         .where(
           and(
             eq(pipelineJobs.status, 'running'),
             lt(pipelineJobs.updatedAt, staleThreshold),
           ),
-        )
-        .returning();
+        );
 
-      for (const job of staleJobs) {
+      if (runningJobs.length === 0) return;
+
+      // Attempt to check if pipeline runner still has these jobs active
+      let activeJobIdsFromRunner: string[] = [];
+      try {
+        const runnerUrl =
+          process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+        const secret = process.env.PIPELINE_SECRET || '';
+        const res = await fetch(`${runnerUrl}/jobs`, {
+          headers: secret ? { 'X-Pipeline-Secret': secret } : {},
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { jobs?: string[] };
+          activeJobIdsFromRunner = data.jobs || [];
+        }
+      } catch {
+        // Runner unreachable, proceed with timeout logic
+      }
+
+      for (const job of runningJobs) {
+        if (activeJobIdsFromRunner.includes(job.jobId)) {
+          // Job is still actively running on the pipeline runner! Refresh its timestamp.
+          await this.db
+            .update(pipelineJobs)
+            .set({ updatedAt: new Date() })
+            .where(eq(pipelineJobs.jobId, job.jobId));
+          continue;
+        }
+
         if (
           Array.isArray(job.progressJson) &&
           (job.progressJson as Record<string, unknown>[])[0]
@@ -72,12 +103,18 @@ export class SetupService {
           prog[0].status = 'failed';
           await this.db
             .update(pipelineJobs)
-            .set({ progressJson: prog, updatedAt: new Date() })
+            .set({ progressJson: prog, status: 'failed', updatedAt: new Date() })
+            .where(eq(pipelineJobs.jobId, job.jobId));
+        } else {
+          await this.db
+            .update(pipelineJobs)
+            .set({ status: 'failed', updatedAt: new Date() })
             .where(eq(pipelineJobs.jobId, job.jobId));
         }
+
         await this.db.execute(sql`
           UPDATE herobm_core._pipeline_jobs 
-          SET logs_json = logs_json || ${JSON.stringify(['FATAL: Job timed out due to 10 minutes of inactivity.'])}::jsonb 
+          SET logs_json = logs_json || ${JSON.stringify([`FATAL: Job timed out due to ${timeoutMinutes} minutes of inactivity.`])}::jsonb 
           WHERE job_id = ${job.jobId}
         `);
       }
@@ -1089,16 +1126,22 @@ export class SetupService {
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
       const secret = process.env.PIPELINE_SECRET || '';
+      const isLocalRunner =
+        runnerUrl.includes('127.0.0.1') || runnerUrl.includes('localhost');
+      const apiPort = process.env.PORT || process.env.API_PORT || '3001';
+      const defaultWebhookUrl = isLocalRunner
+        ? `http://127.0.0.1:${apiPort}/internal/setup/webhook`
+        : 'http://herobm-api:3001/internal/setup/webhook';
+
       const envToPass: Record<string, string | undefined> = {
         ...process.env,
         NO_COLOR: '1',
         FORCE_COLOR: '0',
         DBT_USE_COLORS: 'False',
         TERM: 'dumb',
+        WEBHOOK_URL: process.env.WEBHOOK_URL || defaultWebhookUrl,
         ...envOverride,
       };
-      // Let the pipeline runner use its own configured webhook URL
-      delete envToPass.WEBHOOK_URL;
 
       fetch(`${runnerUrl}/run`, {
         method: 'POST',

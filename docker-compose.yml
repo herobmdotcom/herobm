@@ -32,7 +32,22 @@ services:
     container_name: postgres-custom
     hostname: postgres-custom
     restart: unless-stopped
-    command: ["postgres"]
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "max_locks_per_transaction=256"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -77,6 +92,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
       TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH
+      PIPELINE_RUNNER_URL: http://herobm-pipeline:8001
+      WEBHOOK_URL: http://herobm-api:3001/internal/setup/webhook
     ports:
       - "${BIND_IP:-127.0.0.1}:${API_PORT:-3001}:3001"
     volumes:

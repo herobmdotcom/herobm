@@ -23,16 +23,16 @@ fi
 ENV_FILE=".env"
 if [ -n "$ACTIVE_PROFILE" ]; then
     ENV_FILE=".env.$ACTIVE_PROFILE"
-    echo -e "\e[35mTargeting Environment Profile: $ACTIVE_PROFILE\e[0m"
+    echo -e "\033[35mTargeting Environment Profile: $ACTIVE_PROFILE\033[0m"
 else
-    echo -e "\e[35mTargeting Default Environment\e[0m"
+    echo -e "\033[35mTargeting Default Environment\033[0m"
 fi
 
 ENV_EXPORTS=""
+API_PORT=3002
+FE_PORT=4301
 if [ -f "$ENV_FILE" ]; then
-    echo -e "\e[90mLoading configuration from: $ENV_FILE\e[0m"
-    API_PORT=3002
-    FE_PORT=4301
+    echo -e "\033[90mLoading configuration from: $ENV_FILE\033[0m"
     while IFS='=' read -r name value || [ -n "$name" ]; do
         if [[ $name =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
             # Clean up the value by removing trailing comments or quotes if needed
@@ -44,32 +44,35 @@ if [ -f "$ENV_FILE" ]; then
         fi
     done < <(grep -v '^#' "$ENV_FILE" | grep '=')
 else
-    echo -e "\e[33mWarning: $ENV_FILE not found!\e[0m"
+    echo -e "\033[33mWarning: $ENV_FILE not found!\033[0m"
 fi
 
 ENV_EXPORTS="$ENV_EXPORTS ENABLE_SWAGGER='$ENABLE_SWAGGER'"
 
-echo -e "\e[32mStarting local Dev Environment...\e[0m"
-echo -e "\e[36mAPI will start on port $API_PORT\e[0m"
-echo -e "\e[36mPortal will start on port $FE_PORT\e[0m"
+# Default local pipeline runner URL and webhook for native host development
+if [[ "$ENV_EXPORTS" != *"PIPELINE_RUNNER_URL="* ]]; then
+    ENV_EXPORTS="$ENV_EXPORTS PIPELINE_RUNNER_URL='http://127.0.0.1:8001'"
+fi
+if [[ "$ENV_EXPORTS" != *"WEBHOOK_URL="* ]]; then
+    ENV_EXPORTS="$ENV_EXPORTS WEBHOOK_URL='http://127.0.0.1:$API_PORT/internal/setup/webhook'"
+fi
+
+echo -e "\033[32mStarting local Dev Environment...\033[0m"
+echo -e "\033[36mAPI will start on port $API_PORT\033[0m"
+echo -e "\033[36mPortal will start on port $FE_PORT\033[0m"
 
 # The pipeline log dir Needs to be absolute or relative correctly
 LOG_DIR="$(pwd)/logs"
-
-
 
 # Start API in background
 eval "env ENV_FILE='$ENV_FILE' PORT=$API_PORT PIPELINE_LOG_DIR='$LOG_DIR' $ENV_EXPORTS npm run start:dev -w apps/api &"
 API_PID=$!
 
-
 # Start FE in background
 eval "env ENV_FILE='$ENV_FILE' API_URL='http://localhost:$API_PORT' $ENV_EXPORTS npm run dev:local -w apps/ops-portal -- -p $FE_PORT &"
 FE_PID=$!
 
-
-
-
 # Cleanup when user terminates the script
 trap "kill $API_PID $FE_PID 2>/dev/null" EXIT
 wait
+

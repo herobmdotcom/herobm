@@ -44,6 +44,13 @@ if (Test-Path $envFile) {
     Write-Host "Warning: $envFile not found!" -ForegroundColor Yellow
 }
 
+if ($envInjection -notmatch "PIPELINE_RUNNER_URL=") {
+    $envInjection += "`$env:PIPELINE_RUNNER_URL='http://127.0.0.1:8001'; "
+}
+if ($envInjection -notmatch "WEBHOOK_URL=") {
+    $envInjection += "`$env:WEBHOOK_URL='http://127.0.0.1:$apiPort/internal/setup/webhook'; "
+}
+
 Write-Host "Starting local Prod Environment..." -ForegroundColor Green
 Write-Host "API will start on port $apiPort" -ForegroundColor Cyan
 Write-Host "Portal will start on port $fePort" -ForegroundColor Cyan
