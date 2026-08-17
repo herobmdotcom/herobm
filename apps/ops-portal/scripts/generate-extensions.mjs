@@ -71,7 +71,7 @@ if (fs.existsSync(extensionsDir)) {
 }
 
 content += imports.join('\n') + '\n\n';
-content += `export const extensionTabs: ExtensionTab[] = [\n${registryItems.join(',\n')}\n];\n`;
+content += `export const extensionTabs: ExtensionTab[] = [${registryItems.length ? `\n${registryItems.join(',\n')}\n` : ''}];\n`;
 
 fs.writeFileSync(path.join(generatedDir, 'extension-tabs.ts'), content);
 console.log('Successfully generated UI extension tabs.');

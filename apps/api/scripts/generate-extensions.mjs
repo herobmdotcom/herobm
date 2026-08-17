@@ -86,8 +86,8 @@ if (fs.existsSync(extensionsDir)) {
   }
 }
 
-schemasContent += `\nexport const extensionSchemas = {\n  ${schemaExports.join(',\n  ')}\n};\n`;
-modulesContent += `\nexport const extensionModules = [\n  ${moduleExports.join(',\n  ')}\n];\n`;
+schemasContent += `\nexport const extensionSchemas = {${schemaExports.length ? `\n  ${schemaExports.join(',\n  ')}\n` : ''}};\n`;
+modulesContent += `\nexport const extensionModules = [${moduleExports.length ? `\n  ${moduleExports.join(',\n  ')}\n` : ''}];\n`;
 
 fs.writeFileSync(path.join(generatedDir, 'extension-schemas.ts'), schemasContent);
 fs.writeFileSync(path.join(generatedDir, 'extension-modules.ts'), modulesContent);

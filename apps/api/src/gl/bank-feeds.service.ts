@@ -584,6 +584,22 @@ export class BankFeedsService {
             const je = await this.glService.postJournalEntry(jeLines, meta, tx);
             const matchGroupId = randomUUID();
 
+            await tx.insert(glMatchGroups).values({
+              matchGroupId,
+              matchType: 'rule',
+              ruleId: matchedRule.ruleId,
+              createdBy: actor,
+            });
+
+            await emitEvent(tx, {
+              entityType: EntityType.GL_MATCH_GROUP,
+              entityId: matchGroupId,
+              eventType: EventType.CREATED,
+              entityDisplayName: `Match Group (Auto Rule)`,
+              payload: { matchType: 'rule', ruleId: matchedRule.ruleId },
+              actor,
+            });
+
             // Find the journal line that hits the bank account
             const bankJeLine = await tx
               .select()
@@ -619,22 +635,6 @@ export class BankFeedsService {
               .update(bankStatementLines)
               .set({ isReconciled: true, matchGroupId })
               .where(eq(bankStatementLines.lineId, line.lineId));
-
-            await tx.insert(glMatchGroups).values({
-              matchGroupId,
-              matchType: 'rule',
-              ruleId: matchedRule.ruleId,
-              createdBy: actor,
-            });
-
-            await emitEvent(tx, {
-              entityType: EntityType.GL_MATCH_GROUP,
-              entityId: matchGroupId,
-              eventType: EventType.CREATED,
-              entityDisplayName: `Match Group (Auto Rule)`,
-              payload: { matchType: 'rule', ruleId: matchedRule.ruleId },
-              actor,
-            });
 
             autoMatchedCount++;
             continue;
@@ -692,6 +692,21 @@ export class BankFeedsService {
             if (!dryRun) {
               const matchGroupId = randomUUID();
 
+              await tx.insert(glMatchGroups).values({
+                matchGroupId,
+                matchType: 'auto',
+                createdBy: actor,
+              });
+
+              await emitEvent(tx, {
+                entityType: EntityType.GL_MATCH_GROUP,
+                entityId: matchGroupId,
+                eventType: EventType.CREATED,
+                entityDisplayName: `Match Group (Smart Auto)`,
+                payload: { matchType: 'auto' },
+                actor,
+              });
+
               await tx
                 .update(glJournalLines)
                 .set({
@@ -710,21 +725,6 @@ export class BankFeedsService {
                 .update(bankStatementLines)
                 .set({ isReconciled: true, matchGroupId })
                 .where(eq(bankStatementLines.lineId, line.lineId));
-
-              await tx.insert(glMatchGroups).values({
-                matchGroupId,
-                matchType: 'auto',
-                createdBy: actor,
-              });
-
-              await emitEvent(tx, {
-                entityType: EntityType.GL_MATCH_GROUP,
-                entityId: matchGroupId,
-                eventType: EventType.CREATED,
-                entityDisplayName: `Match Group (Smart Auto)`,
-                payload: { matchType: 'auto' },
-                actor,
-              });
             } else {
               smartMatches.push({
                 bankLineIds: [line.lineId],
