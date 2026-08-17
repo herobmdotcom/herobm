@@ -8,6 +8,7 @@ import { Button } from '@/components/shared/Button';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import { routes } from '@/lib/routes';
 import JournalEntrySlideOver, { JournalEntry } from './JournalEntrySlideOver';
 import FxRevalSlideOver from './FxRevalSlideOver';
 
@@ -85,8 +86,8 @@ export default function JournalEntriesPage() {
       cellRenderer: (p: ICellRendererParams<JournalEntryRow>) => {
         if (!p.value || !p.data) return <span className="text-gray-400">{t('na')}</span>;
         const link = p.data.partyType === 'customer' 
-          ? `/accounts/${p.data.partyId}` 
-          : `/suppliers/${p.data.partyId}`;
+          ? routes.customers.detail(p.data.partyId || '') 
+          : routes.suppliers.detail(p.data.partyId || '');
         return (
           <a 
             href={link} 
@@ -111,11 +112,11 @@ export default function JournalEntriesPage() {
       cellRenderer: (p: ICellRendererParams<JournalEntryRow>) => {
         if (!p.value || !p.data) return null;
         let link = '';
-        if (p.data.sourceType === 'sales_invoice') link = `/sales-invoices/${p.data.sourceId}`;
-        if (p.data.sourceType === 'purchase_invoice') link = `/procurement/invoices/${p.data.sourceId}`;
-        if (p.data.sourceType === 'sales_credit_note') link = `/sales-orders/credit-notes/${p.data.sourceId}`;
-        if (p.data.sourceType === 'payment_entry') link = `/payments?payment=${p.data.sourceId}`;
-        if (p.data.sourceType === 'inventory_receipt') link = `/receiving/${p.data.sourceId}`;
+        if (p.data.sourceType === 'sales_invoice') link = routes.salesInvoices.detail(p.data.sourceId || '');
+        if (p.data.sourceType === 'purchase_invoice') link = routes.supplierInvoices.detail(p.data.sourceId || '');
+        if (p.data.sourceType === 'sales_credit_note') link = routes.salesCreditNotes.detail(p.data.sourceId || '');
+        if (p.data.sourceType === 'payment_entry') link = routes.payments.detail(p.data.sourceId || '');
+        if (p.data.sourceType === 'inventory_receipt') link = routes.receiving.detail(p.data.sourceId || '');
         
         if (!link) return <span>{p.value}</span>;
 

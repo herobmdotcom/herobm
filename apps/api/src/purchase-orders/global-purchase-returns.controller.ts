@@ -112,10 +112,34 @@ export class GlobalPurchaseReturnsController {
         vendorId: suppliers.vendorId,
         vendorCode: suppliers.vendorNumber,
         vendorName: actors.name,
-        debitNoteId: purchaseDebitNotes.debitNoteId,
-        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
-        debitNoteState: purchaseDebitNotes.stateCode,
-        debitNoteTotalAmount: purchaseDebitNotes.totalAmount,
+        debitNoteId: sql<string | null>`(
+          SELECT pdn.debit_note_id 
+          FROM herobm_core.purchase_debit_notes pdn 
+          WHERE pdn.return_id = ${purchaseOrderReturns.returnId} 
+          ORDER BY pdn.created_on DESC 
+          LIMIT 1
+        )`,
+        debitNoteNumber: sql<string | null>`(
+          SELECT pdn.debit_note_number 
+          FROM herobm_core.purchase_debit_notes pdn 
+          WHERE pdn.return_id = ${purchaseOrderReturns.returnId} 
+          ORDER BY pdn.created_on DESC 
+          LIMIT 1
+        )`,
+        debitNoteState: sql<string | null>`(
+          SELECT pdn.state_code 
+          FROM herobm_core.purchase_debit_notes pdn 
+          WHERE pdn.return_id = ${purchaseOrderReturns.returnId} 
+          ORDER BY pdn.created_on DESC 
+          LIMIT 1
+        )`,
+        debitNoteTotalAmount: sql<string | null>`(
+          SELECT pdn.total_amount 
+          FROM herobm_core.purchase_debit_notes pdn 
+          WHERE pdn.return_id = ${purchaseOrderReturns.returnId} 
+          ORDER BY pdn.created_on DESC 
+          LIMIT 1
+        )`,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -127,10 +151,6 @@ export class GlobalPurchaseReturnsController {
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
       .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
-      .leftJoin(
-        purchaseDebitNotes,
-        eq(purchaseOrderReturns.returnId, purchaseDebitNotes.returnId),
-      )
       .$dynamic();
 
     const conditions = [];
@@ -146,7 +166,12 @@ export class GlobalPurchaseReturnsController {
     }
 
     if (requireDebitNote === true || String(requireDebitNote) === 'true') {
-      conditions.push(isNull(purchaseDebitNotes.debitNoteId));
+      conditions.push(
+        sql`NOT EXISTS (
+          SELECT 1 FROM herobm_core.purchase_debit_notes pdn 
+          WHERE pdn.return_id = ${purchaseOrderReturns.returnId}
+        )`,
+      );
       conditions.push(
         or(
           isNull(purchaseOrderReturns.createdBy),

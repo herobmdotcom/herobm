@@ -12,6 +12,7 @@ import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 import { PURCHASE_ORDER_STATE, WORK_ORDER_STATE } from '@herobm/shared';
 import { allocationsControllerResolveOpenDemands } from '@herobm/sdk';
 
@@ -126,7 +127,7 @@ export default function DemandsContent() {
         }
         if (params.data?.transferOrderId) {
           return (
-            <Link href={`/transfers/${params.data.transferOrderId}`} className="text-[#006b5c] hover:underline">
+            <Link href={routes.inventory.transfers.detail(params.data.transferOrderId)} className="text-[#006b5c] hover:underline">
               {params.data.transferOrderNumber}
             </Link>
           );

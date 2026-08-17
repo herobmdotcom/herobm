@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import SalesCreditNotesPage from '../page';
+import PurchaseDebitNotesPage from '../page';
 
 const mockPush = jest.fn();
 
@@ -34,10 +34,10 @@ jest.mock('@/components/DataGrid', () => {
         <h1>{pageTitle}</h1>
         <div>{headerActions}</div>
         <button
-          data-testid="row-cn-1"
-          onClick={() => onRowClicked({ creditNoteId: 'cn-1', creditNoteNumber: 'CN-001' })}
+          data-testid="row-dn-1"
+          onClick={() => onRowClicked({ debitNoteId: 'dn-1', debitNoteNumber: 'DN-001' })}
         >
-          Row CN-001
+          Row DN-001
         </button>
       </div>
     );
@@ -55,25 +55,25 @@ jest.mock('@/app/credit-debit-notes/CreateNoteSlideOver', () => {
   };
 });
 
-describe('SalesCreditNotesPage', () => {
+describe('PurchaseDebitNotesPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders page and handles row navigation to detail page', async () => {
-    render(<SalesCreditNotesPage />);
+    render(<PurchaseDebitNotesPage />);
 
-    expect(screen.getByText('Sales Credit Notes')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Credit Note' })).toBeInTheDocument();
+    expect(screen.getByText('Purchase Debit Notes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Debit Note' })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByTestId('row-cn-1'));
-    expect(mockPush).toHaveBeenCalledWith('/sales-credit-notes/cn-1');
+    await userEvent.click(screen.getByTestId('row-dn-1'));
+    expect(mockPush).toHaveBeenCalledWith('/purchase-debit-notes/dn-1');
   });
 
-  it('opens create credit note slideover when clicking header action', async () => {
-    render(<SalesCreditNotesPage />);
+  it('opens create debit note slideover when clicking header action', async () => {
+    render(<PurchaseDebitNotesPage />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Create Credit Note' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Debit Note' }));
     expect(screen.getByTestId('create-note-slideover')).toBeInTheDocument();
   });
 });

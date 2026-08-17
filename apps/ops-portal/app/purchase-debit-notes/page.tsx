@@ -13,15 +13,15 @@ import CreateNoteSlideOver from '@/app/credit-debit-notes/CreateNoteSlideOver';
 import { routes } from '@/lib/routes';
 import type { ColDef, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
 
-export interface SalesCreditNoteRow {
-  creditNoteId: string;
-  creditNoteNumber: string;
+export interface PurchaseDebitNoteRow {
+  debitNoteId: string;
+  debitNoteNumber: string;
   orderNumber?: string;
-  salesOrderNumber?: string;
+  supplierReferenceNumber?: string;
   referenceNumber?: string;
-  returnNumber?: string;
-  customerNumber?: string;
-  customerName?: string;
+  vendorId?: string;
+  vendorCode?: string;
+  vendorName?: string;
   createdOn: string;
   notes?: string;
   totalAmount?: string | number;
@@ -31,59 +31,47 @@ export interface SalesCreditNoteRow {
   stateCode: string;
 }
 
-export default function SalesCreditNotesPage() {
+export default function PurchaseDebitNotesPage() {
   const { baseCurrency } = useSettings();
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
   const router = useRouter();
-  useDocumentTitle('Sales Credit Notes');
+  useDocumentTitle('Purchase Debit Notes');
 
   const [createNoteOpen, setCreateNoteOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleRowClicked = useCallback(
-    (row: SalesCreditNoteRow) => {
-      if (row.creditNoteId) {
-        router.push(routes.salesCreditNotes.detail(row.creditNoteId));
+    (row: PurchaseDebitNoteRow) => {
+      if (row.debitNoteId) {
+        router.push(routes.purchaseDebitNotes.detail(row.debitNoteId));
       }
     },
     [router],
   );
 
-  const gridColumns: ColDef<SalesCreditNoteRow>[] = useMemo(
+  const gridColumns: ColDef<PurchaseDebitNoteRow>[] = useMemo(
     () => [
-      { field: 'creditNoteNumber', headerName: 'Note Number', width: 160 },
+      { field: 'debitNoteNumber', headerName: 'Note Number', width: 160 },
+      { field: 'supplierReferenceNumber', headerName: 'Supplier Ref', width: 140 },
+      { field: 'orderNumber', headerName: 'Order No', width: 140 },
       {
-        field: 'orderNumber',
-        headerName: 'Order No',
-        width: 140,
-        valueGetter: (params: ValueGetterParams<SalesCreditNoteRow>) =>
-          params.data?.orderNumber || params.data?.salesOrderNumber || '—',
-      },
-      {
-        field: 'returnNumber',
-        headerName: 'Return No',
-        width: 140,
-        valueGetter: (params: ValueGetterParams<SalesCreditNoteRow>) =>
-          params.data?.returnNumber || params.data?.referenceNumber || '—',
-      },
-      {
-        field: 'customerName',
-        headerName: 'Customer',
+        field: 'vendorName',
+        headerName: 'Supplier',
         minWidth: 200,
         flex: 1,
-        valueGetter: (params: ValueGetterParams<SalesCreditNoteRow>) => {
-          const name = params.data?.customerName;
-          const num = params.data?.customerNumber;
-          if (name && num) return `${num} - ${name}`;
-          return name || num || '—';
+        valueGetter: (params: ValueGetterParams<PurchaseDebitNoteRow>) => {
+          const name = params.data?.vendorName;
+          const code = params.data?.vendorCode;
+          if (name && code) return `${code} - ${name}`;
+          return name || code || '—';
         },
       },
       {
         field: 'createdOn',
         headerName: tCommon('columns.date'),
         width: 130,
-        valueFormatter: (p: ValueFormatterParams<SalesCreditNoteRow>) =>
+        valueFormatter: (p: ValueFormatterParams<PurchaseDebitNoteRow>) =>
           formatLocalDate(p.value as string | number, undefined, ''),
       },
       {
@@ -91,11 +79,11 @@ export default function SalesCreditNotesPage() {
         headerName: 'Total Amount',
         type: 'numericColumn',
         width: 150,
-        valueGetter: (params: ValueGetterParams<SalesCreditNoteRow>) => {
+        valueGetter: (params: ValueGetterParams<PurchaseDebitNoteRow>) => {
           if (!params.data?.totalAmount) return null;
           return params.data.totalAmount;
         },
-        valueFormatter: (params: ValueFormatterParams<SalesCreditNoteRow>) => {
+        valueFormatter: (params: ValueFormatterParams<PurchaseDebitNoteRow>) => {
           if (!params.value || params.value === 0) return '—';
           return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
         },
@@ -104,7 +92,7 @@ export default function SalesCreditNotesPage() {
         field: 'stateCode',
         headerName: tCommon('columns.state'),
         width: 130,
-        valueFormatter: (params: ValueFormatterParams<SalesCreditNoteRow>) => {
+        valueFormatter: (params: ValueFormatterParams<PurchaseDebitNoteRow>) => {
           if (!params.value) return '';
           const s = String(params.value).toLowerCase();
           const key = s as unknown as Parameters<typeof tStates>[0];
@@ -120,26 +108,26 @@ export default function SalesCreditNotesPage() {
     <>
       <DataGrid
         columns={gridColumns}
-        endpoint="/api/sales-credit-notes"
+        endpoint="/api/purchase-debit-notes"
         refreshTrigger={refreshTrigger}
-        gridKey="sales-credit-notes-list"
-        rowIdField="creditNoteId"
+        gridKey="purchase-debit-notes-list"
+        rowIdField="debitNoteId"
         onRowClicked={handleRowClicked}
-        pageTitle="Sales Credit Notes"
+        pageTitle="Purchase Debit Notes"
         defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
         headerActions={
           <Button
             className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap shadow-sm"
             onClick={() => setCreateNoteOpen(true)}
           >
-            Create Credit Note
+            Create Debit Note
           </Button>
         }
       />
 
       <CreateNoteSlideOver
         isOpen={createNoteOpen}
-        initialType="credit"
+        initialType="debit"
         onClose={() => setCreateNoteOpen(false)}
         onSuccess={() => {
           setCreateNoteOpen(false);

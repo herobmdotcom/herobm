@@ -8,6 +8,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 import { useSettings } from '@/components/SettingsProvider';
 import { formatAmount } from '@/lib/currency';
 import { formatLocalDate } from '@/lib/date';
@@ -975,10 +976,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 const isSalesInv = a.referenceType as string === 'sales_invoice';
                                 const isCreditNote = a.referenceType as string === 'sales_credit_note';
                                 const isPurchInv = a.referenceType as string === 'purchase_invoice';
-                                const linkUrl = isSalesInv ? `/sales-invoices/${a.referenceId}` : 
-                                                isCreditNote ? `/credit-debit-notes` :
-                                                isPurchInv ? `/supplier-invoices/${a.referenceId}` :
-                                                `/credit-debit-notes`; // fallback
+                                const linkUrl = isSalesInv ? routes.salesInvoices.detail(a.referenceId) : 
+                                                isCreditNote ? routes.salesCreditNotes.detail(a.referenceId) :
+                                                isPurchInv ? routes.supplierInvoices.detail(a.referenceId) :
+                                                routes.purchaseDebitNotes.detail(a.referenceId);
                                 return (
                                 <tr key={a.allocationId} className="hover:bg-gray-50/50 transition-colors">
                                   <td className="px-5 py-3">

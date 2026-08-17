@@ -5,6 +5,7 @@ import type { NavSection } from '@/components/shared/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/components/AuthGate';
 import { SystemResource, hasPermission, hasAnyPermission } from '@herobm/shared';
+import { routes } from '@/lib/routes';
 
 export default function Sidebar() {
   const t = useTranslations('sidebar');
@@ -14,54 +15,56 @@ export default function Sidebar() {
   const sections: NavSection[] = [
     {
       items: [
-        { href: '/', label: t('items.dashboard'), icon: 'dashboard' },
+        { href: routes.dashboard(), label: t('items.dashboard'), icon: 'dashboard' },
       ],
     },
     {
       label: t('groups.sales'),
       items: [
-        { href: '/customers', label: t('items.customers'), icon: 'storefront' },
-        { href: '/sales-quotes', label: t('items.salesQuotes'), icon: 'request_quote' },
-        { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
-        { href: '/shipments', label: t('items.shipments'), icon: 'local_post_office' },
-        { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
+        { href: routes.customers.list(), label: t('items.customers'), icon: 'storefront' },
+        { href: routes.salesQuotes.list(), label: t('items.salesQuotes'), icon: 'request_quote' },
+        { href: routes.salesOrders.list(), label: t('items.salesOrders'), icon: 'receipt_long' },
+        { href: routes.shipments.list(), label: t('items.shipments'), icon: 'local_post_office' },
+        { href: routes.salesInvoices.list(), label: t('items.salesInvoices'), icon: 'request_quote' },
+        { href: routes.salesReturns.list(), label: t('items.salesReturns'), icon: 'assignment_return' },
+        { href: routes.salesCreditNotes.list(), label: t('items.creditNotes'), icon: 'receipt_long' },
       ],
     },
     {
       label: t('groups.inventory'),
       items: [
-        { href: '/products', label: t('items.products'), icon: 'category' },
+        { href: routes.products.list(), label: t('items.products'), icon: 'category' },
         { 
-          href: '/inventory/bins', 
+          href: routes.inventory.bins(), 
           label: t('items.inventory'), 
           icon: 'inventory_2',
           subItems: [
-            { href: '/inventory/bins', label: tInventory('tabs.binContents') },
-            { href: '/inventory/ledger', label: tInventory('tabs.ledger') },
-            { href: '/inventory/locations', label: tInventory('tabs.locations') },
-            { href: '/inventory/transfers', label: t('items.transfers') },
-            { href: '/inventory/quarantine', label: t('items.quarantine') }
+            { href: routes.inventory.bins(), label: tInventory('tabs.binContents') },
+            { href: routes.inventory.ledger(), label: tInventory('tabs.ledger') },
+            { href: routes.inventory.locations(), label: tInventory('tabs.locations') },
+            { href: routes.inventory.transfers.list(), label: t('items.transfers') },
+            { href: routes.inventory.quarantine(), label: t('items.quarantine') }
           ]
         },
         { 
-          href: '/receiving', 
+          href: routes.receiving.list(), 
           label: t('items.receiving'), 
           icon: 'move_to_inbox',
           subItems: [
-            { href: '/receiving', label: 'Supplier Receipts' },
-            { href: '/receiving/returns', label: 'Customer Returns' },
-            { href: '/receiving/transfers', label: 'Incoming Transfers' }
+            { href: routes.receiving.list(), label: 'Supplier Receipts' },
+            { href: routes.receiving.returns(), label: 'Customer Returns' },
+            { href: routes.receiving.transfers(), label: 'Incoming Transfers' }
           ]
         },
-        { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },
-        { href: '/inventory/picking', label: t('items.picking'), icon: 'inventory' },
+        { href: routes.inventory.putaway(), label: 'Putaway', icon: 'pallet' },
+        { href: routes.inventory.picking(), label: t('items.picking'), icon: 'inventory' },
         { 
-          href: '/inventory/shipping', 
+          href: routes.inventory.shipping(), 
           label: t('items.shipping'), 
           icon: 'local_shipping',
           subItems: [
-            { href: '/inventory/shipping', label: 'Customer Shipments' },
-            { href: '/shipments/returns', label: 'Supplier Returns' }
+            { href: routes.inventory.shipping(), label: 'Customer Shipments' },
+            { href: routes.shipments.returns(), label: 'Supplier Returns' }
           ]
         },
       ],
@@ -69,25 +72,27 @@ export default function Sidebar() {
     {
       label: t('groups.purchasing'),
       items: [
-        { href: '/suppliers', label: t('items.suppliers'), icon: 'factory' },
-        { href: '/purchase-orders/demands', label: t('items.demand'), icon: 'list_alt' },
-        { href: '/purchase-orders', label: t('items.purchaseOrders'), icon: 'local_shipping' },
-        { href: '/supplier-invoices', label: t('items.supplierInvoices'), icon: 'request_quote' },
+        { href: routes.suppliers.list(), label: t('items.suppliers'), icon: 'factory' },
+        { href: routes.purchaseOrders.demands(), label: t('items.demand'), icon: 'list_alt' },
+        { href: routes.purchaseOrders.list(), label: t('items.purchaseOrders'), icon: 'local_shipping' },
+        { href: routes.supplierInvoices.list(), label: t('items.supplierInvoices'), icon: 'request_quote' },
+        { href: routes.purchaseOrders.returns.list(), label: t('items.purchaseReturns'), icon: 'assignment_return' },
+        { href: routes.purchaseDebitNotes.list(), label: t('items.debitNotes'), icon: 'receipt_long' },
       ],
     },
     {
       label: 'Manufacturing',
       items: [
-        { href: '/manufacturing/work-orders', label: 'Work Orders', icon: 'build' },
+        { href: routes.workOrders.list(), label: 'Work Orders', icon: 'build' },
       ],
     },
     {
       label: 'CRM',
       items: [
-        { href: '/crm/actors', label: 'Actors', icon: 'business' },
-        { href: '/crm/projects', label: 'Projects', icon: 'folder' },
-        { href: '/crm/contacts', label: 'Contacts', icon: 'contacts' },
-        { href: '/crm/map', label: 'Map', icon: 'map' },
+        { href: routes.crm.actors.list(), label: 'Actors', icon: 'business' },
+        { href: routes.crm.projects.list(), label: 'Projects', icon: 'folder' },
+        { href: routes.crm.contacts.list(), label: 'Contacts', icon: 'contacts' },
+        { href: routes.crm.map(), label: 'Map', icon: 'map' },
       ],
     },
   ];
@@ -98,44 +103,34 @@ export default function Sidebar() {
       label: t('groups.finance'),
       items: [
         { 
-          href: '/credit-debit-notes', 
-          label: 'Credit & Debit', 
-          icon: 'receipt_long',
-          subItems: [
-            { href: '/credit-debit-notes', label: 'Notes' },
-            { href: '/credit-debit-notes/operations', label: 'Operations' },
-          ]
-        },
-        { 
-          href: '/general-ledger', 
+          href: routes.generalLedger.list(), 
           label: t('items.generalLedger'), 
           icon: 'menu_book',
           subItems: [
-            { href: '/general-ledger', label: t('items.generalLedger') },
-            { href: '/general-ledger/trial-balance', label: t('items.trialBalance') },
-            { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
+            { href: routes.generalLedger.list(), label: t('items.generalLedger') },
+            { href: routes.generalLedger.trialBalance(), label: t('items.trialBalance') },
+            { href: routes.generalLedger.journalEntries.list(), label: t('items.journalEntries') },
           ]
         },
         { 
-          href: '/balances', 
+          href: routes.balances.customers(), 
           label: 'Balances', 
           icon: 'account_balance',
           subItems: [
-            { href: '/balances/customers', label: 'Customers' },
-            { href: '/balances/suppliers', label: 'Suppliers' },
-            { href: '/balances/tax', label: 'Tax' },
+            { href: routes.balances.customers(), label: 'Customers' },
+            { href: routes.balances.suppliers(), label: 'Suppliers' },
+            { href: routes.balances.tax(), label: 'Tax' },
           ]
-
         },
-        { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
+        { href: routes.payments.list(), label: 'Payments', icon: 'account_balance_wallet' },
         { 
-          href: '/reconciliations', 
+          href: routes.reconciliations.list(), 
           label: 'Bank Rec\'n', 
           icon: 'compare_arrows',
           subItems: [
-            { href: '/reconciliations', label: 'Statements' },
-            { href: '/reconciliations/profiles', label: 'Import Profiles' },
-            { href: '/reconciliations/rules', label: 'Rules' },
+            { href: routes.reconciliations.list(), label: 'Statements' },
+            { href: routes.reconciliations.profiles(), label: 'Import Profiles' },
+            { href: routes.reconciliations.rules(), label: 'Rules' },
           ]
         },
       ],
@@ -148,12 +143,12 @@ export default function Sidebar() {
       label: 'Reporting',
       items: [
         { 
-          href: '/reporting', 
+          href: routes.reporting.list(), 
           label: 'Reports', 
           icon: 'bar_chart',
           subItems: [
-            { href: '/reporting', label: 'View Reports' },
-            { href: '/reporting/config', label: 'Configuration' },
+            { href: routes.reporting.list(), label: 'View Reports' },
+            { href: routes.reporting.config.list(), label: 'Configuration' },
           ]
         },
       ],
@@ -166,36 +161,36 @@ export default function Sidebar() {
       label: t('groups.admin'),
       items: [
         { 
-          href: '/admin/customer-groups', 
+          href: routes.admin.customerGroups(), 
           label: 'Groups', 
           icon: 'folder_shared',
           subItems: [
-            { href: '/admin/customer-groups', label: 'Customer Groups' },
-            { href: '/admin/supplier-groups', label: 'Supplier Groups' },
-            { href: '/admin/product-groups', label: 'Product Groups' },
+            { href: routes.admin.customerGroups(), label: 'Customer Groups' },
+            { href: routes.admin.supplierGroups(), label: 'Supplier Groups' },
+            { href: routes.admin.productGroups(), label: 'Product Groups' },
           ]
         },
         { 
-          href: '/admin/settings/system', 
+          href: routes.admin.settings.system(), 
           label: t('items.settings'), 
           icon: 'settings',
           subItems: [
-            { href: '/admin/settings/crm', label: 'CRM' },
-            { href: '/admin/settings/financial', label: t('items.financial') },
-            { href: '/admin/settings/integrations', label: 'Integrations' },
-            { href: '/admin/settings/license', label: 'License' },
-            { href: '/admin/settings/pdf-hooks', label: 'PDF Hooks' },
-            { href: '/admin/settings/pdf-templates', label: 'PDF Templates' },
-            { href: '/admin/settings/system', label: t('items.system') },
+            { href: routes.admin.settings.crm(), label: 'CRM' },
+            { href: routes.admin.settings.financial(), label: t('items.financial') },
+            { href: routes.admin.settings.integrations(), label: 'Integrations' },
+            { href: routes.admin.settings.license(), label: 'License' },
+            { href: routes.admin.settings.pdfHooks(), label: 'PDF Hooks' },
+            { href: routes.admin.settings.pdfTemplates.list(), label: 'PDF Templates' },
+            { href: routes.admin.settings.system(), label: t('items.system') },
           ]
         },
         { 
-          href: '/admin/users', 
+          href: routes.admin.users.list(), 
           label: t('items.users'), 
           icon: 'group',
           subItems: [
-            { href: '/admin/users', label: 'Users' },
-            { href: '/admin/users/roles', label: 'Roles & Permissions' },
+            { href: routes.admin.users.list(), label: 'Users' },
+            { href: routes.admin.users.roles(), label: 'Roles & Permissions' },
           ]
         },
       ],
@@ -208,42 +203,42 @@ export default function Sidebar() {
       label: 'Technical',
       items: [
         { 
-          href: '/admin/developers', 
+          href: routes.admin.developers.list(), 
           label: 'Developers', 
           icon: 'code',
           subItems: [
-            { href: '/admin/developers', label: 'Configuration' },
-            { href: '/admin/developers/api-reference', label: 'Docs: API' },
-            { href: '/admin/developers/webhooks-api', label: 'Docs: Webhooks' },
+            { href: routes.admin.developers.list(), label: 'Configuration' },
+            { href: routes.admin.developers.apiReference(), label: 'Docs: API' },
+            { href: routes.admin.developers.webhooksApi(), label: 'Docs: Webhooks' },
           ]
         },
         {
-          href: '/admin/email/outbox',
+          href: routes.admin.email.outbox(),
           label: 'Email',
           icon: 'mail',
           subItems: [
-            { href: '/admin/email/outbox', label: 'Outbox' },
-            { href: '/admin/email/settings', label: 'SMTP Settings' },
+            { href: routes.admin.email.outbox(), label: 'Outbox' },
+            { href: routes.admin.email.settings(), label: 'SMTP Settings' },
           ]
         },
         { 
-          href: '/admin/import/csv', 
+          href: routes.admin.import.csv(), 
           label: 'Import', 
           icon: 'cloud_upload',
           subItems: [
-            { href: '/admin/import/csv', label: 'CSV Upload' },
-            { href: '/admin/import/abm', label: 'ABM Database' },
-            { href: '/admin/import/odoo', label: 'Odoo Database' },
+            { href: routes.admin.import.csv(), label: 'CSV Upload' },
+            { href: routes.admin.import.abm(), label: 'ABM Database' },
+            { href: routes.admin.import.odoo(), label: 'Odoo Database' },
           ]
         },
         { 
-          href: '/admin/event-queue', 
+          href: routes.admin.eventQueue(), 
           label: 'System Health', 
           icon: 'monitor_heart',
           subItems: [
-            { href: '/admin/event-queue', label: t('items.eventQueue') },
-            { href: '/admin/system-logs', label: t('items.systemLogs') },
-            { href: '/admin/version', label: t('items.version') },
+            { href: routes.admin.eventQueue(), label: t('items.eventQueue') },
+            { href: routes.admin.systemLogs(), label: t('items.systemLogs') },
+            { href: routes.admin.version(), label: t('items.version') },
           ]
         },
       ],

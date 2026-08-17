@@ -7,6 +7,7 @@ import SlideOver from '@/components/shared/SlideOver';
 import { formatLocalDate } from '@/lib/date';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 
 export interface JournalEntry {
   journalEntryId: string;
@@ -101,14 +102,14 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                   <Link 
                     href={
                       entry.sourceType === 'payment_entry' 
-                        ? `/payments?payment=${entry.sourceId}` 
+                        ? routes.payments.detail(entry.sourceId) 
                         : entry.sourceType === 'sales_invoice' 
-                          ? `/sales-invoices/${entry.sourceId}` 
+                          ? routes.salesInvoices.detail(entry.sourceId) 
                           : entry.sourceType === 'purchase_invoice'
-                            ? `/supplier-invoices/${entry.sourceId}`
+                            ? routes.supplierInvoices.detail(entry.sourceId)
                             : entry.sourceType === 'inventory_receipt'
-                              ? `/receiving/${entry.sourceId}`
-                              : `/sales-orders/credit-notes/${entry.sourceId}`
+                              ? routes.receiving.detail(entry.sourceId)
+                              : routes.salesCreditNotes.detail(entry.sourceId)
                     }
                     className="text-[var(--accent)] hover:underline"
                     onClick={onClose}
@@ -148,7 +149,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                       <td className="px-5 py-3 text-xs">
                         {l.partyType && l.partyId ? (
                           <Link 
-                            href={`/${l.partyType === 'customer' ? 'accounts' : 'suppliers'}/${l.partyId}`}
+                            href={l.partyType === 'customer' ? routes.customers.detail(l.partyId) : routes.suppliers.detail(l.partyId)}
                             className="text-[var(--accent)] hover:underline"
                             onClick={onClose}
                           >

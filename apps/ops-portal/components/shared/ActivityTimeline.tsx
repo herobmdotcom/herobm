@@ -13,11 +13,9 @@ export interface TimelineEvent {
 }
 
 function EventIcon({ type }: { type: string }) {
-  const tCommon = useTranslations('common.eventTypes');
   const typeLower = (type || '').toLowerCase();
 
   // Common emoji mappings
-   
   if (typeLower.includes('warning') || typeLower.includes('discrepancy')) return <span>⚠️</span>;
   if (typeLower.includes('receive') || typeLower.includes('reception')) return <span>📥</span>;
   if (typeLower.includes('shipment')) return <span>🚚</span>;
@@ -171,10 +169,19 @@ export default function ActivityTimeline({
                             salesOrder: '/sales-orders',
                             purchaseOrder: '/purchase-orders',
                             invoice: '/sales-invoices',
+                            salesInvoice: '/sales-invoices',
+                            supplierInvoice: '/supplier-invoices',
+                            salesReturn: '/sales-returns',
+                            purchaseReturn: '/purchase-orders/returns',
+                            creditNote: '/sales-credit-notes',
+                            debitNote: '/purchase-debit-notes',
                             quote: '/sales-quotes',
                             project: '/crm/projects',
                             actor: '/crm/actors',
                             contact: '/crm/contacts',
+                            workOrder: '/manufacturing/work-orders',
+                            transferOrder: '/inventory/transfers',
+                            shipment: '/shipments',
                             opportunity: '/crm/opportunities',
                           };
                           

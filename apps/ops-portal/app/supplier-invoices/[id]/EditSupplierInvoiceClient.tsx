@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
@@ -220,7 +221,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                   />
                 </div>
               ) : (
-                <Link href={`/customers/${invoice.vendorId}`} className="text-sm text-[var(--brand-blue)] hover:underline">
+                <Link href={routes.suppliers.detail(invoice.vendorId)} className="text-sm text-[var(--brand-blue)] hover:underline">
                   {invoice.vendorName || invoice.vendorId}
                 </Link>
               )}

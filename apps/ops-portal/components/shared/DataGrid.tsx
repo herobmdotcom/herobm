@@ -1243,8 +1243,9 @@ export default function DataGrid<T>({
             : dataToMap;
 
           return paginatedDataToMap.map((row: T, idx: number) => {
-            const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
-            const isSelected = selectedRowIds.has(String(key));
+            const rowId = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T] ?? '') : '';
+            const key = rowId ? `${rowId}-${idx}` : idx;
+            const isSelected = rowId ? selectedRowIds.has(rowId) : false;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const isSelectable = isRowSelectable ? isRowSelectable({ data: row } as any) : true;
             return <GenericMobileCard 
@@ -1254,8 +1255,8 @@ export default function DataGrid<T>({
             selectable={!!onSelectionChanged || rowSelection === 'multiple'}
             selected={isSelected}
             onToggleSelect={isSelectable ? () => {
-              if (rowIdField && gridRef.current?.api) {
-                const node = gridRef.current.api.getRowNode(String(key));
+              if (rowId && gridRef.current?.api) {
+                const node = gridRef.current.api.getRowNode(rowId);
                 if (node) {
                   node.setSelected(!node.isSelected());
                 }

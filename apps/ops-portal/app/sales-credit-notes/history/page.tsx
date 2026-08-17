@@ -1,3 +1,5 @@
-import NotesPage from '../page';
+import { redirect } from 'next/navigation';
 
-export default NotesPage;
+export default function SalesCreditNotesHistoryRedirect() {
+  redirect('/sales-credit-notes');
+}

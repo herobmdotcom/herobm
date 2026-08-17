@@ -22,20 +22,20 @@ interface Props {
 const EVENT_ICONS: Record<string, { icon: string, colorClass: string, bgClass: string, path: string }> = {
   'sales_order.created': { icon: 'add_circle', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-orders' },
   'sales_order.status_changed': { icon: 'check_circle', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-orders' },
-  'sales_order.credit_note_posted': { icon: 'credit_card', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/credit-debit-notes' },
+  'sales_order.credit_note_posted': { icon: 'credit_card', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-credit-notes' },
   'sales_invoice.created': { icon: 'receipt_long', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-invoices' },
   'sales_invoice.status_changed': { icon: 'check_circle', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-invoices' },
-  'sales_invoice.credit_note_posted': { icon: 'credit_card', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/credit-debit-notes' },
-  'sales_return.created': { icon: 'assignment_return', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-orders' },
-  'sales_return.status_changed': { icon: 'published_with_changes', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-orders' },
+  'sales_invoice.credit_note_posted': { icon: 'credit_card', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-credit-notes' },
+  'sales_return.created': { icon: 'assignment_return', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-returns' },
+  'sales_return.status_changed': { icon: 'published_with_changes', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/sales-returns' },
   
   'purchase_order.created': { icon: 'add_shopping_cart', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
   'purchase_order.status_changed': { icon: 'inventory_2', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
-  'purchase_order.debit_note_created': { icon: 'request_quote', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
-  'purchase_order.debit_note_posted': { icon: 'price_check', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
+  'purchase_order.debit_note_created': { icon: 'request_quote', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-debit-notes' },
+  'purchase_order.debit_note_posted': { icon: 'price_check', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-debit-notes' },
   'purchase_invoice.created': { icon: 'receipt', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/supplier-invoices' },
-  'purchase_return.created': { icon: 'assignment_return', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
-  'purchase_return.status_changed': { icon: 'published_with_changes', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders' },
+  'purchase_return.created': { icon: 'assignment_return', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders/returns' },
+  'purchase_return.status_changed': { icon: 'published_with_changes', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/10', path: '/purchase-orders/returns' },
   
   'customer.created': { icon: 'person_add', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/customers' },
   'customer.updated': { icon: 'manage_accounts', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/customers' },
@@ -48,10 +48,10 @@ const EVENT_ICONS: Record<string, { icon: string, colorClass: string, bgClass: s
   'warehouse.shipment_dispatched': { icon: 'flight_takeoff', colorClass: 'text-orange-500', bgClass: 'bg-orange-500/10', path: '/shipments' },
   
   'inventory_ledger.entry_posted': { icon: 'exposure', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/inventory/ledger?entryId=' },
-  'transfer_order.created': { icon: 'sync_alt', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/inventory' },
+  'transfer_order.created': { icon: 'sync_alt', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/inventory/transfers' },
   
-  'payment.submitted': { icon: 'payments', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments' },
-  'payment.allocated': { icon: 'account_balance', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments' },
+  'payment.submitted': { icon: 'payments', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments?paymentId=' },
+  'payment.allocated': { icon: 'account_balance', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments?paymentId=' },
   'general_ledger.entry_posted': { icon: 'menu_book', colorClass: 'text-slate-500', bgClass: 'bg-slate-500/10', path: '/general-ledger' },
   'stock_adjusted': { icon: 'tune', colorClass: 'text-amber-500', bgClass: 'bg-amber-500/10', path: '/inventory/ledger?entryId=' },
 };

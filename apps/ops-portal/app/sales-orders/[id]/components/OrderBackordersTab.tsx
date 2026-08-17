@@ -3,6 +3,7 @@
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { routes } from '@/lib/routes';
 import { formatLocalDate } from '@/lib/date';
 import StateBadge from '@/components/StateBadge';
 import type { OrderDetail } from '../types';
@@ -49,7 +50,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                             <td>
                                 {isAllocated ? (
                                     <Link 
-                                        href={isPo ? `/purchase-orders/${bo.purchaseOrderId}` : `/transfers/${bo.transferOrderId}`}
+                                        href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId) : routes.inventory.transfers.detail(bo.transferOrderId)}
                                         className="text-[var(--accent)] font-medium hover:underline"
                                     >
                                         {displayOrderNumber}
@@ -96,7 +97,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                 <MobileCardField label={tSales('columns.allocatedTo')} value={
                                     isAllocated ? (
                                         <Link 
-                                            href={isPo ? `/purchase-orders/${bo.purchaseOrderId}` : `/transfers/${bo.transferOrderId}`}
+                                            href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId) : routes.inventory.transfers.detail(bo.transferOrderId)}
                                             className="text-[var(--accent)] font-medium hover:underline"
                                         >
                                             {displayOrderNumber}

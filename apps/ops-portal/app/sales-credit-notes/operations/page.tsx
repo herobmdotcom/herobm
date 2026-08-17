@@ -1,3 +1,5 @@
-import CreditDebitOperationsPage from '../../credit-debit-notes/operations/page';
+import { redirect } from 'next/navigation';
 
-export default CreditDebitOperationsPage;
+export default function SalesCreditNotesOperationsRedirect() {
+  redirect('/sales-returns');
+}

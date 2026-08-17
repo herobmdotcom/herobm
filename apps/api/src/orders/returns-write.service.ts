@@ -8,8 +8,22 @@ import {
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 
-import { randomUUID } from 'crypto';
-import { eq, sql, and, desc, inArray } from 'drizzle-orm';
+import {
+  eq,
+  sql,
+  and,
+  or,
+  ilike,
+  desc,
+  asc,
+  inArray,
+  getTableColumns,
+} from 'drizzle-orm';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -1104,61 +1118,174 @@ export class ReturnsWriteService {
   }
 
   /**
-   * List all returns globally, optionally filtered by state.
+   * List all returns globally, optionally filtered by state, location, search, and customer.
    */
-  async findGlobal(stateCode?: string, locationId?: string) {
-    let q = this.db.select().from(salesOrderReturns).$dynamic();
+  async findGlobal(
+    query?: PaginationQuery | string,
+    stateCode?: string,
+    locationId?: string,
+  ) {
+    const queryObj =
+      typeof query === 'object' && query !== null ? query : undefined;
+    const { limit, cursor, direction, searchTerm, customerId } =
+      parsePagination(queryObj);
 
-    if (stateCode) {
-      const states = stateCode.split(',');
+    const targetState =
+      (typeof query === 'string' ? query : queryObj?.state) || stateCode;
+    const targetLoc = locationId;
+    const targetCustomer = queryObj?.customerId || customerId;
+
+    let qb = this.db
+      .select({
+        ...getTableColumns(salesOrderReturns),
+        orderNumber: salesOrders.orderNumber,
+        salesOrderNumber: salesOrders.orderNumber,
+        customerId: coreAccounts.customerId,
+        customerNumber: coreAccounts.customerNumber,
+        customerName: actors.name,
+      })
+      .from(salesOrderReturns)
+      .leftJoin(
+        salesOrders,
+        eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .$dynamic();
+
+    const conditions = [];
+
+    if (targetState) {
+      const states = targetState.split(',');
       if (states.length === 1) {
-        q = q.where(
-          eq(salesOrderReturns.stateCode, stateCode as any), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        conditions.push(
+          eq(salesOrderReturns.stateCode, targetState as any), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
         );
       } else {
-        q = q.where(
+        conditions.push(
           inArray(salesOrderReturns.stateCode, states as any[]), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
         );
       }
     }
 
-    const returns = await q.orderBy(salesOrderReturns.createdOn);
+    if (targetLoc) {
+      conditions.push(
+        or(
+          eq(salesOrderReturns.locationId, targetLoc),
+          eq(salesOrders.fulfillmentLocationId, targetLoc),
+        ),
+      );
+    }
 
-    // Fetch lines and credit note number for each return
-    const result = [];
-    for (const ret of returns) {
-      const linesQuery = await this.db
-        .select({
-          line: salesOrderReturnLines,
-          productId: sql<string>`coalesce(${coreProducts.productId}, ${salesOrderLineItems.productId})`,
-          productNumber: sql<string>`coalesce(${coreProducts.productNumber}, ${salesOrderReturnLines.productNumber}, '')`,
-          productDescription: sql<string>`coalesce(${salesOrderReturnLines.productName}, ${salesOrderLineItems.productDescription}, ${coreProducts.name}, '')`,
-          pricePerUnit: sql<string>`coalesce(${salesOrderReturnLines.pricePerUnit}, ${salesOrderLineItems.pricePerUnit}, '0')`,
-          discountPercentage: sql<string>`coalesce(${salesOrderReturnLines.discountPercentage}, ${salesOrderLineItems.discountPercentage}, '0')`,
-          taxRate: sql<string>`coalesce(${taxCategories.rate}, '0')`,
-        })
-        .from(salesOrderReturnLines)
-        .leftJoin(
-          salesOrderLineItems,
-          eq(
-            salesOrderReturnLines.salesOrderLineId,
-            salesOrderLineItems.salesOrderLineId,
-          ),
-        )
-        .leftJoin(
-          coreProducts,
-          eq(salesOrderLineItems.productId, coreProducts.productId),
-        )
-        .leftJoin(
-          taxCategories,
-          eq(
-            sql`coalesce(${salesOrderReturnLines.taxCategoryId}, ${salesOrderLineItems.taxCategoryId})`,
-            taxCategories.taxCategoryId,
-          ),
-        )
-        .where(eq(salesOrderReturnLines.returnId, ret.returnId));
+    if (targetCustomer) {
+      conditions.push(eq(coreAccounts.customerId, targetCustomer));
+    }
 
-      const lines = linesQuery.map((l) => ({
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(salesOrderReturns.returnNumber, searchTerm),
+          ilike(salesOrderReturns.notes, searchTerm),
+          ilike(salesOrders.orderNumber, searchTerm),
+          ilike(coreAccounts.customerNumber, searchTerm),
+          ilike(actors.name, searchTerm),
+        ),
+      );
+    }
+
+    if (conditions.length > 0) {
+      qb = qb.where(and(...conditions));
+    }
+
+    const {
+      data: returns,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor as { createdOn: string; returnId: string } | null,
+      direction,
+      applyWhere: (q, c, dir) => {
+        const dateOp = dir === 'next' ? sql`<` : sql`>`;
+        const idOp = dir === 'next' ? sql`<` : sql`>`;
+        return q.where(
+          or(
+            sql`${salesOrderReturns.createdOn} ${dateOp} ${c.createdOn}`,
+            and(
+              sql`${salesOrderReturns.createdOn} = ${c.createdOn}`,
+              sql`${salesOrderReturns.returnId} ${idOp} ${c.returnId}`,
+            ),
+          ),
+        );
+      },
+      applyOrderBy: (q, dir) => {
+        const order = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          order(salesOrderReturns.createdOn),
+          order(salesOrderReturns.returnId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn,
+        returnId: row.returnId,
+      }),
+    });
+
+    if (returns.length === 0) {
+      return { data: [], limit, nextCursor, prevCursor };
+    }
+
+    const returnIds = returns.map((r) => r.returnId);
+    const linesQuery = await this.db
+      .select({
+        line: salesOrderReturnLines,
+        productId: sql<string>`coalesce(${coreProducts.productId}, ${salesOrderLineItems.productId})`,
+        productNumber: sql<string>`coalesce(${coreProducts.productNumber}, ${salesOrderReturnLines.productNumber}, '')`,
+        productDescription: sql<string>`coalesce(${salesOrderReturnLines.productName}, ${salesOrderLineItems.productDescription}, ${coreProducts.name}, '')`,
+        pricePerUnit: sql<string>`coalesce(${salesOrderReturnLines.pricePerUnit}, ${salesOrderLineItems.pricePerUnit}, '0')`,
+        discountPercentage: sql<string>`coalesce(${salesOrderReturnLines.discountPercentage}, ${salesOrderLineItems.discountPercentage}, '0')`,
+        taxRate: sql<string>`coalesce(${taxCategories.rate}, '0')`,
+      })
+      .from(salesOrderReturnLines)
+      .leftJoin(
+        salesOrderLineItems,
+        eq(
+          salesOrderReturnLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        taxCategories,
+        eq(
+          sql`coalesce(${salesOrderReturnLines.taxCategoryId}, ${salesOrderLineItems.taxCategoryId})`,
+          taxCategories.taxCategoryId,
+        ),
+      )
+      .where(inArray(salesOrderReturnLines.returnId, returnIds));
+
+    const linesByReturn = new Map<
+      string,
+      (typeof salesOrderReturnLines.$inferSelect & {
+        productId: string | null;
+        productNumber: string;
+        productDescription: string;
+        pricePerUnit: string;
+        discountPercentage: string;
+        taxRate: string;
+      })[]
+    >();
+    for (const l of linesQuery) {
+      const rId = l.line.returnId;
+      if (!linesByReturn.has(rId)) linesByReturn.set(rId, []);
+      linesByReturn.get(rId)!.push({
         ...l.line,
         productId: l.productId,
         productNumber: l.productNumber,
@@ -1166,42 +1293,20 @@ export class ReturnsWriteService {
         pricePerUnit: l.pricePerUnit,
         discountPercentage: l.discountPercentage,
         taxRate: l.taxRate,
-      }));
-
-      // Join with sales order to get location and order number
-      const [orderInfo] = await this.db
-        .select({
-          orderNumber: salesOrders.orderNumber,
-          locationId: salesOrders.fulfillmentLocationId,
-          customerId: coreAccounts.customerId,
-          customerNumber: coreAccounts.customerNumber,
-          customerName: actors.name,
-        })
-        .from(salesOrders)
-        .leftJoin(
-          coreAccounts,
-          eq(salesOrders.customerId, coreAccounts.customerId),
-        )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
-        .where(eq(salesOrders.salesOrderId, ret.salesOrderId))
-        .limit(1);
-
-      result.push({
-        ...ret,
-        orderNumber: orderInfo?.orderNumber,
-        customerId: orderInfo?.customerId,
-        customerNumber: orderInfo?.customerNumber,
-        customerName: orderInfo?.customerName,
-        locationId: orderInfo?.locationId,
-        lines,
       });
     }
 
-    if (locationId) {
-      return result.filter((r) => r.locationId === locationId);
-    }
+    const result = returns.map((r) => ({
+      ...r,
+      lines: linesByReturn.get(r.returnId) || [],
+    }));
 
-    return result;
+    return {
+      data: result,
+      limit,
+      nextCursor,
+      prevCursor,
+    };
   }
 
   // -------------------------------------------------------------------------

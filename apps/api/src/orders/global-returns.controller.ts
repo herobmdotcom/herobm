@@ -9,6 +9,7 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ReturnsWriteService } from './returns-write.service';
 import { GlobalReturnListResponseDto, ReturnResponseDto } from './dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { PaginationQuery } from '../common/pagination';
 
 @ApiTags('Sales Returns')
 @Controller('sales-returns')
@@ -27,16 +28,25 @@ export class GlobalReturnsController {
   @ApiQuery({ name: 'stateCode', required: false })
   @ApiQuery({ name: 'locationId', required: false })
   @ApiQuery({ name: 'requireCredit', required: false, type: Boolean })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'direction', required: false })
+  @ApiQuery({ name: 'q', required: false })
   async findGlobalReturns(
+    @Query() query: PaginationQuery,
     @Query('stateCode') stateCode?: string,
     @Query('locationId') locationId?: string,
     @Query('requireCredit') requireCredit?: boolean,
   ) {
-    let data = await this.returnsWriteService.findGlobal(stateCode, locationId);
+    const result = await this.returnsWriteService.findGlobal(
+      query,
+      stateCode,
+      locationId,
+    );
 
     if (requireCredit === true || String(requireCredit) === 'true') {
       const filtered = [];
-      for (const ret of data) {
+      for (const ret of result.data) {
         const creditTotal =
           await this.returnsWriteService.creditNoteService.calculateReturnCreditTotal(
             ret.returnId,
@@ -45,10 +55,13 @@ export class GlobalReturnsController {
           filtered.push(ret);
         }
       }
-      data = filtered;
+      return {
+        ...result,
+        data: filtered,
+      };
     }
 
-    return { data, meta: { total: data.length } };
+    return result;
   }
 
   @Get(':id')
