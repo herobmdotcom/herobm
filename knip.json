@@ -45,7 +45,8 @@
         "depcheck",
         "source-map-support",
         "@nestjs/testing",
-        "ts-morph"
+        "ts-morph",
+        "fast-check"
       ],
       "ignoreBinaries": [
         "cross-env",

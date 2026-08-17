@@ -26,7 +26,7 @@ import {
   MATCH_STATUS,
   ACTOR_STATE,
 } from '@herobm/shared';
-import { eq } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
 import { InventoryMovementService } from './inventory-movement.service';
 import { InventoryQueryService } from './inventory-query.service';
@@ -153,9 +153,9 @@ describe('InventoryService - Quarantine', () => {
         .select()
         .from(inventoryEntries)
         .where(
-          eq(
+          like(
             inventoryEntries.entryNumber,
-            `QUAR-BIN-${RECV_BIN_ID.substring(0, 4)}`,
+            `QUAR-BIN-${RECV_BIN_ID.substring(0, 4)}%`,
           ),
         );
       const ledger = await pg.db
@@ -198,9 +198,9 @@ describe('InventoryService - Quarantine', () => {
         .select()
         .from(inventoryEntries)
         .where(
-          eq(
+          like(
             inventoryEntries.entryNumber,
-            `UNQUAR-BIN-${QUAR_BIN_ID.substring(0, 4)}`,
+            `UNQUAR-BIN-${QUAR_BIN_ID.substring(0, 4)}%`,
           ),
         );
       const ledger = await pg.db
@@ -285,7 +285,7 @@ describe('InventoryService - Quarantine', () => {
       const entry = await pg.db
         .select()
         .from(inventoryEntries)
-        .where(eq(inventoryEntries.entryNumber, 'QUAR-LINE-0000'));
+        .where(like(inventoryEntries.entryNumber, 'QUAR-LINE-0000%'));
       const ledger = await pg.db
         .select()
         .from(inventoryLedger)
@@ -314,7 +314,7 @@ describe('InventoryService - Quarantine', () => {
       const entry = await pg.db
         .select()
         .from(inventoryEntries)
-        .where(eq(inventoryEntries.entryNumber, 'UNQUAR-LINE-0000'));
+        .where(like(inventoryEntries.entryNumber, 'UNQUAR-LINE-0000%'));
       const ledger = await pg.db
         .select()
         .from(inventoryLedger)

@@ -1312,6 +1312,22 @@ export class SalesCreditNoteService {
         .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
+      await emitEvent(db as any, {
+        entityType: EntityType.SALES_ORDER,
+        entityId: existing.salesOrderId || creditNoteId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: existing.creditNoteNumber,
+        payload: {
+          entity: 'sales_credit_note',
+          entityId: creditNoteId,
+          from: existing.stateCode,
+          to: newState,
+          creditNoteNumber: existing.creditNoteNumber,
+        },
+        actor,
+      });
+
       this.logger.log(
         `Credit note ${existing.creditNoteNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
       );

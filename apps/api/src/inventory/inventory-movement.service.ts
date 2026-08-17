@@ -1004,7 +1004,7 @@ export class InventoryMovementService {
         .limit(1);
 
       await this.recordInventoryMovement(tx, {
-        entryNumber: `${prefix}-${reference}`,
+        entryNumber: `${prefix}-${reference}-${randomUUID().substring(0, 8).toUpperCase()}`,
         sourceType: recordSourceType,
         sourceId: recordSourceId,
         memo: `${isUnquarantining ? 'Un-quarantine' : 'Quarantine'} item. Reason: ${dto.reason || 'None'}`,
@@ -1152,6 +1152,7 @@ export class InventoryMovementService {
           );
         }
 
+        const requestedUom = line.uomCode || product?.baseUom || 'EA';
         const qtyToMove = parseFloat(line.quantity);
         if (qtyToMove <= 0) {
           throw new BadRequestException(
@@ -1159,7 +1160,13 @@ export class InventoryMovementService {
           );
         }
 
-        // Verify available quantity in source bin
+        const absoluteQty = await this.uomService.calculateAbsoluteBaseQuantity(
+          line.productId,
+          [{ quantity: qtyToMove, uomCode: requestedUom }],
+          tx,
+        );
+
+        // Verify available quantity in source bin (in base units)
         const [binContent] = await tx
           .select({ quantity: binContents.actualQuantity })
           .from(binContents)
@@ -1172,7 +1179,7 @@ export class InventoryMovementService {
           .limit(1);
 
         const availableQty = parseFloat(binContent?.quantity || '0');
-        if (availableQty < qtyToMove) {
+        if (availableQty < absoluteQty) {
           throw new BadRequestException(
             `Insufficient stock in source bin. Available: ${availableQty}`,
           );
@@ -1183,13 +1190,13 @@ export class InventoryMovementService {
             productId: line.productId,
             binId: line.sourceBinId,
             quantity: -qtyToMove,
-            uomCode: product?.baseUom || 'EA',
+            uomCode: requestedUom,
           },
           {
             productId: line.productId,
             binId: line.targetBinId,
             quantity: qtyToMove,
-            uomCode: product?.baseUom || 'EA',
+            uomCode: requestedUom,
           },
         );
       }
@@ -1283,8 +1290,15 @@ export class InventoryMovementService {
           currentContent.length > 0
             ? Number(currentContent[0].actualQuantity)
             : 0;
-        const newQty = Number(line.newQuantity);
-        const diff = newQty - currentQty;
+
+        const requestedUom = line.uomCode || product?.baseUom || 'EA';
+        const absoluteNewQty =
+          await this.uomService.calculateAbsoluteBaseQuantity(
+            line.productId,
+            [{ quantity: Number(line.newQuantity), uomCode: requestedUom }],
+            tx,
+          );
+        const diff = absoluteNewQty - currentQty;
 
         if (Math.abs(diff) > 0.001) {
           movementLines.push({

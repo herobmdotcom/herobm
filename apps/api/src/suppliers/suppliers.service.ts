@@ -494,8 +494,9 @@ export class SuppliersService {
     quickFilter?: string,
   ) {
     const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
-    const { limit, offset, page, searchTerm, sort, sortDirection } =
+    const { limit, page, searchTerm, sort, sortDirection } =
       parsePagination(query);
+    const offset = (page - 1) * limit;
 
     let conditions = sql`1=1`;
     if (searchTerm) {
@@ -513,18 +514,20 @@ export class SuppliersService {
     let orderBy = sql`"supplierName" ASC`;
     if (sort) {
       const sortMap: Record<string, string> = {
-        supplierName: '"supplierName"',
-        supplierNumber: '"supplierNumber"',
-        glBalance: '"glBalance"',
-        totalOutstanding: '"totalOutstanding"',
-        discrepancyAmount: '"discrepancyAmount"',
-        current: '"current"',
-        creditLimit: '"creditLimit"',
+        supplierName: 'supplierName',
+        supplierNumber: 'supplierNumber',
+        glBalance: 'glBalance',
+        totalOutstanding: 'totalOutstanding',
+        discrepancyAmount: 'discrepancyAmount',
+        current: 'current',
+        creditLimit: 'creditLimit',
       };
-      const mappedSort = sortMap[sort] || '"supplierName"';
-      orderBy = sql.raw(
-        `${mappedSort} ${sortDirection === 'desc' ? 'DESC' : 'ASC'}`,
-      );
+      const mappedCol = sortMap[sort] || 'supplierName';
+      const sortIdentifier = sql.identifier(mappedCol);
+      orderBy =
+        sortDirection === 'desc'
+          ? sql`${sortIdentifier} DESC`
+          : sql`${sortIdentifier} ASC`;
     }
 
     const cteQuery = sql`

@@ -43,21 +43,12 @@ jest.mock('@/hooks/useDocumentTitle', () => ({
 }));
 
 describe('InvoiceDetailContent', () => {
-    const originalLocation = window.location;
-
     beforeAll(() => {
-        delete (window as any).location;
-        window.location = { 
-            ...originalLocation, 
-            reload: jest.fn(),
-            assign: jest.fn(),
-            replace: jest.fn(),
-            toString: () => 'http://localhost'
-        } as any;
-    });
-
-    afterAll(() => {
-        window.location = originalLocation as any;
+        Object.defineProperty(Object.getPrototypeOf(window.location), 'reload', {
+            configurable: true,
+            writable: true,
+            value: jest.fn(),
+        });
     });
 
     beforeEach(() => {

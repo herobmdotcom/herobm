@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { GlobalReturnsService } from './global-returns.service';
+import { GlobalReturnListResponseDto } from './dto';
 import { PaginationQuery } from '../common/pagination.dto';
 import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { SystemResource } from '@herobm/shared';
@@ -12,6 +13,7 @@ export class UnifiedReturnsController {
   constructor(private readonly globalReturnsService: GlobalReturnsService) {}
 
   @Get()
+  @ApiOkResponse({ type: GlobalReturnListResponseDto })
   @CasbinAction('read')
   @ApiOperation({ summary: 'Find Global Returns (Sales and Purchase)' })
   async findGlobalReturns(@Query() query: PaginationQuery) {

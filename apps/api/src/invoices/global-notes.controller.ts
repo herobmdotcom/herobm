@@ -6,6 +6,7 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { GlobalNotesService } from './global-notes.service';
+import { GlobalNotesListResponseDto } from './dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PaginationQuery } from '../common/pagination';
 import { SystemResource } from '@herobm/shared';
@@ -17,6 +18,7 @@ export class GlobalNotesController {
   constructor(private readonly globalNotesService: GlobalNotesService) {}
 
   @Get()
+  @ApiOkResponse({ type: GlobalNotesListResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find All Global Notes',

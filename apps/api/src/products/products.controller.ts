@@ -378,6 +378,7 @@ export class ProductsController {
   }
 
   @Post(':id/image')
+  @ApiOkResponse({ type: ProductResponseDto })
   @HttpCode(HttpStatus.OK)
   @CasbinAction('write')
   @UseInterceptors(
@@ -401,7 +402,6 @@ export class ProductsController {
     summary: 'Upload Product Image',
     description: 'Upload and set the primary image for a product (max 5MB).',
   })
-  @ApiOkResponse({ type: ProductResponseDto })
   async uploadImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,

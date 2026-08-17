@@ -142,6 +142,54 @@ describe('GlService', () => {
         ),
       ).rejects.toThrow('unbalanced');
     });
+
+    it('should reject lines with negative debit or credit amounts', async () => {
+      await expect(
+        service.postJournalEntry(
+          [
+            { accountCode: '1100', debit: -100, credit: 0 },
+            { accountCode: '4100', debit: 0, credit: -100 },
+          ],
+          { sourceType: 'manual' },
+        ),
+      ).rejects.toThrow('negative amounts');
+    });
+
+    it('should reject lines with negative foreign amounts', async () => {
+      await expect(
+        service.postJournalEntry(
+          [
+            { accountCode: '1100', debit: 100, credit: 0, foreignDebit: -100 },
+            { accountCode: '4100', debit: 0, credit: 100, foreignCredit: 100 },
+          ],
+          { sourceType: 'manual' },
+        ),
+      ).rejects.toThrow('negative foreign amounts');
+    });
+
+    it('should reject dual-sided lines with both debit and credit', async () => {
+      await expect(
+        service.postJournalEntry(
+          [
+            { accountCode: '1100', debit: 100, credit: 50 },
+            { accountCode: '4100', debit: 0, credit: 50 },
+          ],
+          { sourceType: 'manual' },
+        ),
+      ).rejects.toThrow('both debit');
+    });
+
+    it('should reject zero-amount lines where debit and credit are zero', async () => {
+      await expect(
+        service.postJournalEntry(
+          [
+            { accountCode: '1100', debit: 0, credit: 0 },
+            { accountCode: '4100', debit: 0, credit: 0 },
+          ],
+          { sourceType: 'manual' },
+        ),
+      ).rejects.toThrow('zero debit and credit');
+    });
   });
 
   describe('postJournalEntry — account validation', () => {

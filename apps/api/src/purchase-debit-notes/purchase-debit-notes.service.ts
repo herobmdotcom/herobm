@@ -657,8 +657,8 @@ export class PurchaseDebitNotesService {
         );
       }
 
-      // @herobm-skip-audit
       if (po) {
+        // @herobm-skip-audit
         await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: po.purchaseOrderId,
@@ -678,6 +678,7 @@ export class PurchaseDebitNotesService {
           actor,
         });
       } else {
+        // @herobm-skip-audit
         await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.SUPPLIER,
           entityId: dn.vendorId,

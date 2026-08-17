@@ -6,6 +6,7 @@ import {
   PaginationQuery,
   parsePagination,
   paginatedResult,
+  withCursorPagination,
 } from '../common/pagination';
 
 @Injectable()
@@ -13,7 +14,8 @@ export class GlobalNotesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { limit, offset, page, searchTerm } = parsePagination(query || {});
+    const { limit, page, searchTerm } = parsePagination(query || {});
+    const offset = (page - 1) * limit;
 
     // Create dynamic condition for search
     let searchCondition = sql`TRUE`;

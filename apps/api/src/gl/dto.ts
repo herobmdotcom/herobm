@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsBoolean,
   IsObject,
+  Min,
 } from 'class-validator';
 
 export * from './dto/reconciliation.dto';
@@ -40,17 +41,21 @@ export class JournalLineDto {
   partyId?: string | null;
 
   @IsNumber()
+  @Min(0)
   debit!: number;
 
   @IsNumber()
+  @Min(0)
   credit!: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   foreignDebit?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   foreignCredit?: number;
 
   @IsOptional()

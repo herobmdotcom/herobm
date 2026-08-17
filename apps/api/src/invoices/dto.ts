@@ -252,3 +252,33 @@ export class UpdatePurchaseInvoiceDto {
   @IsString()
   vendorId?: string;
 }
+
+export class GlobalNoteDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() type!: string;
+  @ApiProperty() noteId!: string;
+  @ApiProperty() noteNumber!: string;
+  @ApiProperty() referenceNumber!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiProperty() partyNumber!: string;
+  @ApiProperty() partyName!: string;
+  @ApiProperty() createdOn!: string;
+  @ApiProperty() notes!: string;
+  @ApiProperty() totalAmount!: number;
+  @ApiProperty() currencyCode!: string;
+  @ApiProperty() stateCode!: string;
+}
+
+export class GlobalNotesListResponseDto {
+  @ApiProperty({ type: () => [GlobalNoteDto] })
+  data!: GlobalNoteDto[];
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  limit!: number;
+}

@@ -473,8 +473,9 @@ export class CustomersService {
     quickFilter?: string,
   ) {
     const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
-    const { limit, offset, page, searchTerm, sort, sortDirection } =
+    const { limit, page, searchTerm, sort, sortDirection } =
       parsePagination(query);
+    const offset = (page - 1) * limit;
 
     let conditions = sql`1=1`;
     if (searchTerm) {
@@ -492,23 +493,25 @@ export class CustomersService {
     let orderBy = sql`"customerName" ASC`;
     if (sort) {
       const sortMap: Record<string, string> = {
-        customerNumber: '"customerNumber"',
-        customerName: '"customerName"',
-        creditLimit: '"creditLimit"',
-        current: '"current"',
-        days1To30: '"days1To30"',
-        days31To60: '"days31To60"',
-        days61To90: '"days61To90"',
-        days90Plus: '"days90Plus"',
-        totalOutstanding: '"totalOutstanding"',
-        uninvoicedOrdersTotal: '"uninvoicedOrdersTotal"',
-        glBalance: '"glBalance"',
-        discrepancyAmount: '"discrepancyAmount"',
+        customerNumber: 'customerNumber',
+        customerName: 'customerName',
+        creditLimit: 'creditLimit',
+        current: 'current',
+        days1To30: 'days1To30',
+        days31To60: 'days31To60',
+        days61To90: 'days61To90',
+        days90Plus: 'days90Plus',
+        totalOutstanding: 'totalOutstanding',
+        uninvoicedOrdersTotal: 'uninvoicedOrdersTotal',
+        glBalance: 'glBalance',
+        discrepancyAmount: 'discrepancyAmount',
       };
-      const mappedSort = sortMap[sort] || '"customerName"';
-      orderBy = sql.raw(
-        `${mappedSort} ${sortDirection === 'desc' ? 'DESC' : 'ASC'}`,
-      );
+      const mappedCol = sortMap[sort] || 'customerName';
+      const sortIdentifier = sql.identifier(mappedCol);
+      orderBy =
+        sortDirection === 'desc'
+          ? sql`${sortIdentifier} DESC`
+          : sql`${sortIdentifier} ASC`;
     }
 
     const cteQuery = sql`

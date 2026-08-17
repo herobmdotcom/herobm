@@ -159,9 +159,40 @@ export class GlService implements OnModuleInit {
       );
     }
 
-    // 1. Validate balance invariant
-    const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
-    const totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
+    // 1. Validate line-level invariants
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.debit < 0 || line.credit < 0) {
+        throw new BadRequestException(
+          `Journal line ${i + 1} has negative amounts. Debit and credit amounts must be non-negative.`,
+        );
+      }
+      if (
+        (line.foreignDebit !== undefined && line.foreignDebit < 0) ||
+        (line.foreignCredit !== undefined && line.foreignCredit < 0)
+      ) {
+        throw new BadRequestException(
+          `Journal line ${i + 1} has negative foreign amounts. Foreign amounts must be non-negative.`,
+        );
+      }
+      if (line.debit > 0 && line.credit > 0) {
+        throw new BadRequestException(
+          `Journal line ${i + 1} specifies both debit (${line.debit}) and credit (${line.credit}). A line must be either debit or credit.`,
+        );
+      }
+      if (
+        (line.debit === 0 || line.debit === undefined || line.debit === null) &&
+        (line.credit === 0 || line.credit === undefined || line.credit === null)
+      ) {
+        throw new BadRequestException(
+          `Journal line ${i + 1} has zero debit and credit amounts. Each line must specify a non-zero amount.`,
+        );
+      }
+    }
+
+    // 2. Validate balance invariant
+    const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
+    const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
 
     // Use rounding to avoid floating-point issues (2 decimal places)
     if (Math.abs(totalDebit - totalCredit) > 0.005) {
@@ -323,11 +354,18 @@ export class GlService implements OnModuleInit {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `JE-${today}-`;
 
+    // Acquire transaction-scoped advisory lock to serialize concurrent sequence generation
+    await queryDb.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext('gl_journal_entries_seq'))`,
+    );
+
     const result = await queryDb
       .select({ entryNumber: glJournalEntries.entryNumber })
       .from(glJournalEntries)
       .where(sql`${glJournalEntries.entryNumber} LIKE ${prefix + '%'}`)
-      .orderBy(sql`${glJournalEntries.entryNumber} DESC`)
+      .orderBy(
+        sql`LENGTH(${glJournalEntries.entryNumber}) DESC, ${glJournalEntries.entryNumber} DESC`,
+      )
       .limit(1);
 
     const seq =

@@ -103,7 +103,11 @@ export class SetupService {
           prog[0].status = 'failed';
           await this.db
             .update(pipelineJobs)
-            .set({ progressJson: prog, status: 'failed', updatedAt: new Date() })
+            .set({
+              progressJson: prog,
+              status: 'failed',
+              updatedAt: new Date(),
+            })
             .where(eq(pipelineJobs.jobId, job.jobId));
         } else {
           await this.db

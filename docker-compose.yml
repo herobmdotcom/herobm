@@ -48,6 +48,7 @@ services:
       - "wal_buffers=16MB"
       - "-c"
       - "max_locks_per_transaction=256"
+    shm_size: 1gb
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

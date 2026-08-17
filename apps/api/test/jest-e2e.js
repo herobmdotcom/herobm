@@ -23,9 +23,10 @@ module.exports = {
   testEnvironment: 'node',
   testRegex: '.e2e-spec.ts$',
   maxWorkers: 1,
+  moduleDirectories: ['node_modules', path.resolve(__dirname, '../node_modules'), path.resolve(__dirname, '../../../node_modules')],
   transform: {
     '^.+\\.(t|j)s$': [
-      'ts-jest',
+      require.resolve('ts-jest'),
       {
         isolatedModules: true,
       },

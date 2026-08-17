@@ -120,6 +120,11 @@ export class MoveStockLineDto {
   @ApiProperty()
   @IsNumberString()
   quantity!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  uomCode?: string;
 }
 
 export class InventoryResponseDto {
@@ -268,6 +273,11 @@ export class AdjustStockLineDto {
 
   @IsNumberString()
   newQuantity!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  uomCode?: string;
 }
 
 export class AdjustStockDto {

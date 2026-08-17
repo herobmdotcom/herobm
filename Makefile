@@ -69,11 +69,16 @@ ifeq ($(OS),Windows_NT)
   TEST_HEAVY_CMD = powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
+  NPX ?= npx
+  NPM ?= npm
 else
+  export PATH := $(PATH):/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE =
   DBT ?= $(shell if [ -x $(CURDIR)/.venv/bin/dbt ]; then echo "$(CURDIR)/.venv/bin/dbt"; else echo "dbt"; fi)
   VENV_PYTHON ?= $(shell if [ -x $(CURDIR)/.venv/bin/python ]; then echo "$(CURDIR)/.venv/bin/python"; else echo "python3"; fi)
+  NPX ?= $(shell which npx 2>/dev/null || if [ -x /opt/homebrew/bin/npx ]; then echo "/opt/homebrew/bin/npx"; else echo "npx"; fi)
+  NPM ?= $(shell which npm 2>/dev/null || if [ -x /opt/homebrew/bin/npm ]; then echo "/opt/homebrew/bin/npm"; else echo "npm"; fi)
   PYTHON_CMD = python3
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
@@ -432,17 +437,17 @@ TEST_API_TARGET = test:pglite
 TEST_E2E_TARGET = test:e2e
 
 test-api-unit:
-	npm run $(TEST_API_TARGET) -w apps/api
+	$(NPM) run $(TEST_API_TARGET) -w apps/api
 
 test-portal-unit:
-	npm run test -w apps/ops-portal
+	$(NPM) run test -w apps/ops-portal
 
 test-api-cov:
-	npm run test:cov -w apps/api
+	$(NPM) run test:cov -w apps/api
 
 test-api-e2e:
 	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) USE_PGLITE=$(USE_PGLITE) TEST_API_URL=$(TEST_API_URL)"
-	npm run $(TEST_E2E_TARGET) -w apps/api
+	$(NPM) run $(TEST_E2E_TARGET) -w apps/api
 
 # --- Portal (unified, containerised) ---
 
@@ -596,18 +601,18 @@ test-pipeline:
 check-all: check-types check-lint
 
 test-deps:
-	python infra/tests/test_dependency_completeness.py
+	@"$(PYTHON_CMD)" infra/tests/test_dependency_completeness.py
 
 test-single:
 	$(if $(TEST),,$(error Error: TEST is required. Usage: make test-single TEST=<name>))
-	@npx tsx infra/test-utils/run-single.ts $(TEST)
+	@$(NPX) tsx infra/test-utils/run-single.ts $(TEST)
 
 test-structural:
 	@$(MAKE) build-shared
 	@$(MAKE) build-db-schema
-	@python infra/tests/test_docker_env_alignment.py
-	@npx tsx infra/test-utils/run-structural.ts
-	@npx knip
+	@"$(PYTHON_CMD)" infra/tests/test_docker_env_alignment.py
+	@$(NPX) tsx infra/test-utils/run-structural.ts
+	@$(NPX) knip
 
 query-drizzle:
 	cd apps/api && npx tsx tools/query_drizzle.ts ../../tmp/test_query.ts
