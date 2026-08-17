@@ -246,7 +246,7 @@ export class ProductsService {
 
     const rows = await db
       .select({
-        ...getTableColumns(coreProducts),
+        product: coreProducts,
         productGroupName: productGroups.name,
         productGroupCode: productGroups.groupCode,
       })
@@ -316,7 +316,15 @@ export class ProductsService {
         .where(eq(productImages.productId, id))
         .orderBy(asc(productImages.sortOrder), desc(productImages.createdOn));
 
-      return { ...rows[0], events, productUoms: uoms, defaultBins, images };
+      return {
+        ...rows[0].product,
+        productGroupName: rows[0].productGroupName,
+        productGroupCode: rows[0].productGroupCode,
+        events,
+        productUoms: uoms,
+        defaultBins,
+        images,
+      };
     }
 
     throw new NotFoundException(`Product '${id}' not found`);

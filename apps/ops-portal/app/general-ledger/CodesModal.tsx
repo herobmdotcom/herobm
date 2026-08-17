@@ -227,7 +227,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--bg-primary)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
+
               <span className="material-symbols-outlined">close</span>
             </Button>
           </div>

@@ -1,17 +1,12 @@
-FROM node:22-bookworm-slim
+# ==============================================================================
+# HeroBM API — Multi-stage Container Build
+# ==============================================================================
 
+# --- Stage 1: Install dependencies -------------------------------------------
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    ca-certificates \
-    xz-utils \
-    fonts-dejavu \
-    && rm -rf /var/lib/apt/lists/* \
-    && wget -qO- https://github.com/typst/typst/releases/download/v0.11.0/typst-x86_64-unknown-linux-musl.tar.xz | tar -xJ --strip-components=1 -C /usr/local/bin typst-x86_64-unknown-linux-musl/typst \
-    && apt-get purge -y --auto-remove wget xz-utils
-
-# To use NPM workspaces effectively in Docker, copy package info first to cache
+# Copy workspace metadata for cacheable dependency installation
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/db-schema/package.json ./packages/db-schema/
@@ -20,6 +15,13 @@ COPY apps/api/package*.json ./apps/api/
 
 # Install the monorepo dependencies (this scopes to API and its dependencies due to -w)
 RUN npm install
+
+# --- Stage 2: Build ----------------------------------------------------------
+FROM deps AS builder
+
+# Download typst binary
+RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates xz-utils && \
+    wget -qO- https://github.com/typst/typst/releases/download/v0.11.0/typst-x86_64-unknown-linux-musl.tar.xz | tar -xJ --strip-components=1 -C /usr/local/bin typst-x86_64-unknown-linux-musl/typst
 
 # Copy the actual source code
 COPY packages/ ./packages/
@@ -32,8 +34,47 @@ WORKDIR /app/apps/api
 # Skip tests during container build for speed and environmental stability
 # RUN npm test
 RUN npm run build
+
+# Prune dev dependencies from the root monorepo. 
+# Running in /app is necessary to correctly prune workspace dev dependencies
+WORKDIR /app
 RUN npm prune --omit=dev
 
+# --- Stage 3: Production runtime (slim) --------------------------------------
+FROM node:22-bookworm-slim AS runner
+WORKDIR /app
+
+# Install runtime OS dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    fonts-dejavu \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy typst binary from builder
+COPY --from=builder /usr/local/bin/typst /usr/local/bin/typst
+
+# Copy package metadata and pruned node_modules from builder
+COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json ./
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+
+# Copy built workspace packages
+COPY --from=builder --chown=node:node /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=node:node /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder --chown=node:node /app/packages/db-schema/package.json ./packages/db-schema/
+COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/
+COPY --from=builder --chown=node:node /app/packages/sdk/package.json ./packages/sdk/
+
+# Copy built API app and necessary runtime assets
+COPY --from=builder --chown=node:node /app/apps/api/package.json ./apps/api/
+COPY --from=builder --chown=node:node /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=node:node /app/apps/api/migrations ./apps/api/migrations
+
+# Ensure app directories and runtime temp dirs are owned by non-root node user
+RUN mkdir -p /app/apps/api/tmp && chown -R node:node /app
+
+USER node
+
+WORKDIR /app/apps/api
 EXPOSE 3001
 
 CMD ["node", "dist/main.js"]

@@ -80,10 +80,14 @@ ENV HOSTNAME=0.0.0.0
 
 # The standalone output bundles all runtime deps into a self-contained directory.
 # Only server.js + bundled node_modules + static assets are needed.
-COPY --from=builder /app/apps/ops-portal/.next/standalone ./
-COPY --from=builder /app/apps/ops-portal/.next/static ./apps/ops-portal/.next/static
-COPY --from=builder /app/apps/ops-portal/messages ./apps/ops-portal/messages
-COPY --from=builder /app/apps/ops-portal/public ./apps/ops-portal/public
+COPY --from=builder --chown=node:node /app/apps/ops-portal/.next/standalone ./
+COPY --from=builder --chown=node:node /app/apps/ops-portal/.next/static ./apps/ops-portal/.next/static
+COPY --from=builder --chown=node:node /app/apps/ops-portal/messages ./apps/ops-portal/messages
+COPY --from=builder --chown=node:node /app/apps/ops-portal/public ./apps/ops-portal/public
+
+RUN chown -R node:node /app
+
+USER node
 
 EXPOSE 3000
 

@@ -61,12 +61,12 @@ ifeq ($(OS),Windows_NT)
   VENV_PYTHON ?= $(shell if exist "$(CURDIR)\.venv\Scripts\python.exe" (echo $(CURDIR)/.venv/Scripts/python) else (echo python))
   PYTHON_CMD = python
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
-  DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
-  PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
-  CLEAN_BUILD_CMD = powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
-  FAST_INSTALL_CMD = powershell -ExecutionPolicy Bypass -File scripts/fast-install.ps1
-  TEST_PIPELINE_CMD = powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
-  TEST_HEAVY_CMD = powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
+  DEV_LOCAL_CMD = node scripts/dev-local.mjs
+  PROD_LOCAL_CMD = node scripts/prod-local.mjs
+  CLEAN_BUILD_CMD = node scripts/clean-build.mjs
+  FAST_INSTALL_CMD = node scripts/fast-install.mjs
+  TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
+  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
   NPX ?= npx
@@ -81,12 +81,12 @@ else
   NPM ?= $(shell which npm 2>/dev/null || if [ -x /opt/homebrew/bin/npm ]; then echo "/opt/homebrew/bin/npm"; else echo "npm"; fi)
   PYTHON_CMD = python3
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
-  DEV_LOCAL_CMD = bash scripts/dev-local.sh
-  PROD_LOCAL_CMD = bash scripts/prod-local.sh
-  CLEAN_BUILD_CMD = bash scripts/clean-build.sh
-  FAST_INSTALL_CMD = bash scripts/fast-install.sh
-  TEST_PIPELINE_CMD = bash scripts/test-pipeline.sh
-  TEST_HEAVY_CMD = bash scripts/run-heavy.sh $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
+  DEV_LOCAL_CMD = node scripts/dev-local.mjs
+  PROD_LOCAL_CMD = node scripts/prod-local.mjs
+  CLEAN_BUILD_CMD = node scripts/clean-build.mjs
+  FAST_INSTALL_CMD = node scripts/fast-install.mjs
+  TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
+  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif

@@ -130,7 +130,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             <p className="text-sm text-gray-500 mt-1">{t('demands.reviewDraftPosDesc')}</p>
           </div>
           <Button variant="ghost" onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
             <span className="material-symbols-outlined">close</span>
           </Button>
         </div>

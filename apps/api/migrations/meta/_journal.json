@@ -834,6 +834,13 @@
       "when": 1786892766565,
       "tag": "0118_add_user_settings_created_at",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1787001118018,
+      "tag": "0119_adv_145_fk_and_indexes",
+      "breakpoints": true
     }
   ]
 }

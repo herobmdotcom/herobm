@@ -147,7 +147,9 @@ export const glJournalEntries = herobmCore.table('gl_journal_entries', {
   sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | purchase_debit_note | manual | adjustment
   sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
   isReversed: boolean('is_reversed').notNull(),
-  reversedBy: uuid('reversed_by'), // self-ref to reversing JE
+  reversedBy: uuid('reversed_by').references(
+    (): any => glJournalEntries.journalEntryId,
+  ), // self-ref to reversing JE
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
@@ -196,7 +198,9 @@ export const glJournalLines = herobmCore.table('gl_journal_lines', {
     () => costCenters.costCenterId,
   ),
   activityId: uuid('activity_id').references(() => activities.activityId),
-  matchGroupId: uuid('match_group_id'),
+  matchGroupId: uuid('match_group_id').references(
+    () => glMatchGroups.matchGroupId,
+  ),
 });
 
 // ---------------------------------------------------------------------------
@@ -354,7 +358,7 @@ export const reconciliationRules = herobmCore.table('reconciliation_rules', {
 // gl_match_groups (Metadata about bank statement matches)
 // ---------------------------------------------------------------------------
 export const glMatchGroups = herobmCore.table('gl_match_groups', {
-  matchGroupId: uuid('match_group_id').primaryKey(),
+  matchGroupId: uuid('match_group_id').primaryKey().defaultRandom(),
   matchType: text('match_type').notNull(), // 'manual', 'rule', 'auto'
   ruleId: uuid('rule_id').references(() => reconciliationRules.ruleId),
   createdBy: text('created_by').notNull(),
@@ -382,6 +386,8 @@ export const bankStatementLines = herobmCore.table('bank_statement_lines', {
   matchedJournalLineId: uuid('matched_journal_line_id').references(
     () => glJournalLines.journalLineId,
   ),
-  matchGroupId: uuid('match_group_id'),
+  matchGroupId: uuid('match_group_id').references(
+    () => glMatchGroups.matchGroupId,
+  ),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });

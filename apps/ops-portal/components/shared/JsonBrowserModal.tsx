@@ -53,7 +53,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
       <div className="flex flex-col gap-4 h-full">
         {isMockData && (
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md flex items-start gap-3">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+
             <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
             <div>
               <h4 className="text-sm font-bold text-amber-800">{t('jsonBrowser.sampleData')}</h4>

@@ -92,7 +92,7 @@ export default function SlideOver({
                 className="btn-circle text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]" 
                 onClick={onClose}
               >
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </Button>
             </div>

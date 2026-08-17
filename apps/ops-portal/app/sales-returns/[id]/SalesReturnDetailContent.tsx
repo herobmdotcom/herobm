@@ -282,7 +282,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                             >
                                 {s === RETURN_STATE.CANCELLED ? (
                                     <>
-                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                                         <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                                         {tCommon('cancel')}
                                     </>

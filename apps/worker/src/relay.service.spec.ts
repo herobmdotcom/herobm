@@ -28,9 +28,17 @@ describe('relay.service', () => {
       };
     });
 
-    it('should poll pending events and enqueue them', async () => {
+    it('should poll pending events and enqueue them with retry backoff', async () => {
       await pollOutbox(mockDb, mockQueue);
       expect(mockQueue.add).toHaveBeenCalledTimes(2);
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        'process-event',
+        expect.any(Object),
+        expect.objectContaining({
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 1000 }
+        })
+      );
       expect(mockDb.update).toHaveBeenCalledTimes(2);
       expect(mockDb.set).toHaveBeenCalledWith({ lockedUntil: expect.any(Date) });
     });
@@ -67,8 +75,6 @@ describe('relay.service', () => {
         }
       } as unknown as Job;
     };
-
-
 
     describe('Webhooks', () => {
       let fetchSpy: any;
@@ -115,32 +121,38 @@ describe('relay.service', () => {
         expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
       });
 
-      it('should gracefully handle and log HTTP 500 errors from webhooks without failing the event', async () => {
+      it('should attempt all webhooks and throw on HTTP 500 errors to trigger BullMQ retry', async () => {
         fetchSpy.mockResolvedValueOnce({ ok: false, status: 500 } as Response);
         const job = createJob('sales_order.created', { orderId: 'SO-1' });
         
-        await processEvent(job, mockDb);
+        await expect(processEvent(job, mockDb)).rejects.toThrow('Webhook dispatch failed: Webhook wh-1 returned status 500');
         
         // Even though one failed, we should still call the second one
         expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-        // And still mark as terminal success
+        // And mark as failed in outbox
         expect(mockDb.update).toHaveBeenCalledTimes(1);
-        expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
+        expect(mockDb.set).toHaveBeenCalledWith({
+          lastError: expect.stringContaining('Webhook dispatch failed'),
+          lockedUntil: null,
+        });
       });
 
-      it('should gracefully handle network errors (fetch throw) from webhooks without failing the event', async () => {
+      it('should attempt all webhooks and throw on network errors to trigger BullMQ retry', async () => {
         fetchSpy.mockRejectedValueOnce(new Error('ECONNREFUSED'));
         const job = createJob('sales_order.created', { orderId: 'SO-1' });
         
-        await processEvent(job, mockDb);
+        await expect(processEvent(job, mockDb)).rejects.toThrow('Webhook dispatch failed: Webhook wh-1 error: ECONNREFUSED');
         
         // Second webhook should still be attempted
         expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-        // And still mark as terminal success
+        // And mark as failed in outbox
         expect(mockDb.update).toHaveBeenCalledTimes(1);
-        expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
+        expect(mockDb.set).toHaveBeenCalledWith({
+          lastError: expect.stringContaining('Webhook dispatch failed'),
+          lockedUntil: null,
+        });
       });
       
       it('should NOT dispatch if no webhooks match the query (empty array returned)', async () => {

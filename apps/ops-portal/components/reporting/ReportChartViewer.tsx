@@ -135,7 +135,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
   if (pivotedData.data.length > 500) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-white/50 text-[var(--text-muted)]">
-        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+
         <span className="material-symbols-outlined text-4xl text-amber-500 mb-2">warning</span>
         <p className="max-w-md">{t('chartTooLarge', { count: pivotedData.data.length })}</p>
       </div>

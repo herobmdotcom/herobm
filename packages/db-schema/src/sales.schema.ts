@@ -96,6 +96,9 @@ export const salesOrders = herobmCore.table(
       ),
     ),
     customerIdx: index('idx_sales_orders_customer_id').on(t.customerId),
+    fulfillmentLocationIdx: index(
+      'idx_sales_orders_fulfillment_location_id',
+    ).on(t.fulfillmentLocationId),
     stateIdx: index('idx_sales_orders_state_code').on(t.stateCode),
     createdOnIdx: index('idx_sales_orders_created_on').on(t.createdOn),
   }),

@@ -140,7 +140,8 @@ export class PurchasingReportsService implements OnModuleInit {
       groupCols.push(actors.name);
     }
 
-    let qb = this.db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
       .select(selectCols)
       .from(purchaseOrderLineItems)
       .innerJoin(
@@ -203,7 +204,8 @@ export class PurchasingReportsService implements OnModuleInit {
       groupCols.push(actors.name);
     }
 
-    let qb = this.db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
       .select(selectCols)
       .from(purchaseOrderLineItems)
       .innerJoin(

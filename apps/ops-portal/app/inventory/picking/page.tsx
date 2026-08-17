@@ -798,7 +798,7 @@ export default function PickingPage() {
                                                                  <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
                                                                      {pick.line && !pick.line.isFullyPicked && (
                                                                          <>
-                                                                             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                                                                              <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>
                                                                                  warning
                                                                              </span>
@@ -818,7 +818,7 @@ export default function PickingPage() {
                                                                         className="!p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                         title={t('tooltips.cancelPick')}
                                                                     >
-                                                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                                                                         <span className="material-symbols-outlined text-[18px]">close</span>
                                                                     </Button>
                                                                 </div>
@@ -845,7 +845,7 @@ export default function PickingPage() {
                                                                     className="!p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                     title={t('tooltips.cancelPick')}
                                                                 >
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                                                                     <span className="material-symbols-outlined text-[18px]">close</span>
                                                                 </Button>
                                                             </div>
@@ -859,7 +859,7 @@ export default function PickingPage() {
                                                                 <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.pickQty')}</div>
                                                                 <div className="text-xs font-medium flex items-center gap-1">
                                                                     {pick.line && !pick.line.isFullyPicked && (
-                                                                        /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
+
                                                                         <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>warning</span>
                                                                     )}
                                                                     {parseFloat(pick.quantity).toLocaleString()}
