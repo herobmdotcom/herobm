@@ -110,4 +110,42 @@ describe('EditPurchaseReturnClient — Shipped State & Debit Note Decoupling', (
       screen.queryByText(/Return has been shipped to supplier\. Pending Debit Note reconciliation/i),
     ).not.toBeInTheDocument();
   });
+
+  it('renders debit note net amount including tax and minus fees', async () => {
+    (api.globalPurchaseReturnsControllerGetPurchaseReturnById as jest.Mock).mockResolvedValue({
+      data: {
+        returnId: 'pr-1572',
+        returnNumber: 'PR 1572',
+        purchaseOrderId: 'po-1572',
+        orderNumber: 'Standalone Return - RAYWHI',
+        stateCode: 'shipped',
+        vendorName: 'RAY WHITE COMMERCIAL',
+        vendorId: 'vend-raywhi',
+        currencyCode: 'AUD',
+        createdOn: '2024-12-01T00:00:00Z',
+        debitNotes: [
+          {
+            debitNoteId: 'dn-1344',
+            debitNoteNumber: 'PC 1344',
+            stateCode: 'posted',
+            totalAmount: '3411.65',
+            taxAmount: '341.16',
+            feeAmount: '0.00',
+            createdOn: '2024-12-01T00:00:00Z',
+          },
+        ],
+        lines: [],
+      },
+    });
+
+    render(<EditPurchaseReturnClient id="pr-1572" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('PR 1572')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('PC 1344')).toBeInTheDocument();
+    // Net Debit Total: 3411.65 + 341.16 = 3752.81
+    expect(screen.getByText(/3,752\.81/)).toBeInTheDocument();
+  });
 });

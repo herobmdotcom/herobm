@@ -66,6 +66,8 @@ interface ReturnDetails {
     debitNoteNumber?: string;
     stateCode?: string;
     totalAmount?: string;
+    taxAmount?: string;
+    feeAmount?: string;
     createdOn?: string;
   }>;
   events?: TimelineEvent[];
@@ -475,27 +477,34 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
                       stateCode: returnDetails.debitNoteState,
                       totalAmount: returnDetails.debitNoteTotalAmount,
                     }]
-                ).map((dn, idx) => (
-                  <div key={dn.debitNoteId || idx} className="p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-[var(--accent)] text-lg">receipt_long</span>
-                      <div>
-                        <div className="font-semibold text-sm text-[var(--text-primary)]">{dn.debitNoteNumber}</div>
-                        {dn.createdOn && (
-                          <div className="text-xs text-[var(--text-muted)]">{formatLocalDate(dn.createdOn)}</div>
+                ).map((dn, idx) => {
+                  const dnTotal =
+                    parseFloat(dn.totalAmount || '0') +
+                    parseFloat(dn.taxAmount || '0') -
+                    parseFloat(dn.feeAmount || '0');
+                  const displayAmount = dnTotal > 0 ? dnTotal : parseFloat(dn.totalAmount || '0');
+                  return (
+                    <div key={dn.debitNoteId || idx} className="p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[var(--accent)] text-lg">receipt_long</span>
+                        <div>
+                          <div className="font-semibold text-sm text-[var(--text-primary)]">{dn.debitNoteNumber}</div>
+                          {dn.createdOn && (
+                            <div className="text-xs text-[var(--text-muted)]">{formatLocalDate(dn.createdOn)}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {displayAmount > 0 && (
+                          <span className="font-semibold text-sm tabular-nums">
+                            {formatAmount(displayAmount, currency)}
+                          </span>
                         )}
+                        {dn.stateCode && <StateBadge state={dn.stateCode as ValidState} />}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {dn.totalAmount && (
-                        <span className="font-semibold text-sm tabular-nums">
-                          {formatAmount(parseFloat(dn.totalAmount), currency)}
-                        </span>
-                      )}
-                      {dn.stateCode && <StateBadge state={dn.stateCode as ValidState} />}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-4 rounded-lg bg-[var(--bg-muted)] border border-[var(--border)] flex items-center gap-3 text-sm text-[var(--text-muted)]">

@@ -134,7 +134,7 @@ export class GlobalPurchaseReturnsController {
           LIMIT 1
         )`,
         debitNoteTotalAmount: sql<string | null>`(
-          SELECT pdn.total_amount 
+          SELECT (COALESCE(pdn.total_amount, 0) + COALESCE(pdn.tax_amount, 0) - COALESCE(pdn.fee_amount, 0))::text 
           FROM herobm_core.purchase_debit_notes pdn 
           WHERE pdn.return_id = ${purchaseOrderReturns.returnId} 
           ORDER BY pdn.created_on DESC 
@@ -217,7 +217,9 @@ export class GlobalPurchaseReturnsController {
         debitNoteId: purchaseDebitNotes.debitNoteId,
         debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
         debitNoteState: purchaseDebitNotes.stateCode,
-        debitNoteTotalAmount: purchaseDebitNotes.totalAmount,
+        debitNoteTotalAmount: sql<
+          string | null
+        >`(COALESCE(${purchaseDebitNotes.totalAmount}, 0) + COALESCE(${purchaseDebitNotes.taxAmount}, 0) - COALESCE(${purchaseDebitNotes.feeAmount}, 0))::text`,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -304,6 +306,8 @@ export class GlobalPurchaseReturnsController {
         stateCode: purchaseDebitNotes.stateCode,
         createdOn: purchaseDebitNotes.createdOn,
         totalAmount: purchaseDebitNotes.totalAmount,
+        taxAmount: purchaseDebitNotes.taxAmount,
+        feeAmount: purchaseDebitNotes.feeAmount,
       })
       .from(purchaseDebitNotes)
       .where(eq(purchaseDebitNotes.returnId, id));
