@@ -300,7 +300,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
               : 'hover:border-[#94A3B8] hover:bg-[#E2E8F0]/70'
           }`}
         >
-          <div className="w-6 h-6 rounded-md bg-[#006B5C] text-white font-medium text-xs flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-md bg-[#006B5C]/15 text-[#006B5C] font-bold text-xs flex items-center justify-center shrink-0">
             {initial}
           </div>
           <div className="flex-1 min-w-0">
@@ -320,7 +320,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
           onClick={toggleHelp}
           aria-label={tHelp('title')}
           title={contextTopic ? `${tHelp('manual')}: ${contextTopic.title}` : tHelp('manual')}
-          className="h-10 w-10 rounded-lg bg-transparent hover:bg-[#E2E8F0]/70 text-[#006B5C] hover:text-[#005145] border border-[#CBD5E1] hover:border-[#006B5C] flex items-center justify-center shrink-0 cursor-pointer shadow-none !p-0 font-medium text-xs transition-all"
+          className="h-10 w-10 rounded-lg bg-transparent hover:bg-[#E2E8F0]/70 text-[#006B5C] hover:text-[#005145] border border-[#CBD5E1] hover:border-[#006B5C] flex items-center justify-center shrink-0 cursor-pointer shadow-none !p-0 font-bold text-xs transition-all"
         >
           {HELP_SYMBOL}
         </Button>
