@@ -205,22 +205,27 @@ export class ShipmentsStateService {
             sl.salesOrderLineId,
             shipment.salesOrderId,
           );
-          const [product] = await innerTx
-            .select({
-              productType: coreProducts.productType,
-              structureType: coreProducts.structureType,
-            })
-            .from(coreProducts)
-            .where(eq(coreProducts.productId, orderLine.productId!));
+          const [product] = orderLine.productId
+            ? await innerTx
+                .select({
+                  productType: coreProducts.productType,
+                  structureType: coreProducts.structureType,
+                })
+                .from(coreProducts)
+                .where(eq(coreProducts.productId, orderLine.productId))
+            : [undefined];
+
+          const isStocked =
+            Boolean(orderLine.productId) &&
+            (!product ||
+              !product.productType ||
+              product.productType === 'inventory');
 
           stockLines.push({
             productId: orderLine.productId,
             quantity: sl.quantityShipped,
             unitCost: orderLine.unitCost,
-            isPhysical:
-              !product ||
-              !product.productType ||
-              product.productType === 'inventory',
+            isPhysical: isStocked,
             uomCode: orderLine.unitOfMeasure,
           });
         }

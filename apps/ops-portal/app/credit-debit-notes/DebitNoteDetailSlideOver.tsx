@@ -163,30 +163,30 @@ export default function DebitNoteDetailSlideOver({
               <div>
                 <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Supplier</span>
                 {data.vendorId ? (
-                  <Link href={`/suppliers/${data.vendorId}`} className="text-[var(--accent)] hover:underline font-semibold">
+                  <Link href={`/suppliers/${data.vendorId}`} className="text-[var(--accent)] hover:underline font-medium">
                     {data.vendorName || '—'}
                   </Link>
                 ) : (
-                  <span className="font-semibold">{data.vendorName || '—'}</span>
+                  <span>{data.vendorName || '—'}</span>
                 )}
               </div>
               <div>
                 <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Purchase Order</span>
                 {data.purchaseOrderId ? (
-                  <Link href={`/purchase-orders/${data.purchaseOrderId}`} className="text-[var(--accent)] hover:underline font-semibold">
+                  <Link href={`/purchase-orders/${data.purchaseOrderId}`} className="text-[var(--accent)] hover:underline font-medium">
                     {data.orderNumber || '—'}
                   </Link>
                 ) : (
-                  <span className="font-semibold">{data.orderNumber || '—'}</span>
+                  <span>{data.orderNumber || '—'}</span>
                 )}
               </div>
               <div>
                 <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Supplier Ref #</span>
-                <span className="font-semibold">{data.supplierReferenceNumber || '—'}</span>
+                <span>{data.supplierReferenceNumber || '—'}</span>
               </div>
               <div>
                 <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Created Date</span>
-                <span className="font-semibold">{formatLocalDate(data.createdOn)}</span>
+                <span>{formatLocalDate(data.createdOn)}</span>
               </div>
             </div>
 

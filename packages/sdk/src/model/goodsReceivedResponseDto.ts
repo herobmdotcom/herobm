@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { GoodsReceivedResponseDtoEventsItem } from './goodsReceivedResponseDtoEventsItem';
 
 export interface GoodsReceivedResponseDto {
   goodsReceivedId: string;
@@ -19,6 +20,8 @@ export interface GoodsReceivedResponseDto {
   modifiedOn?: string;
   vendorName?: string;
   vendorNumber?: string;
+  locationName?: string;
   totalLines?: number;
   matchedLines?: number;
+  events?: GoodsReceivedResponseDtoEventsItem[];
 }

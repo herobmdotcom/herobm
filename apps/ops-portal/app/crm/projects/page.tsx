@@ -2,7 +2,7 @@ import ProjectsContent from './ProjectsContent';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Projects - CRM',
+  title: 'Projects',
 };
 
 export default function ProjectsPage() {

@@ -20,6 +20,8 @@ vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
 productId?: string;
+sort?: string;
+sortDirection?: Object;
 locationNo?: string;
 /**
  * Comma separated list of fields to include in the response (e.g. "id,name")

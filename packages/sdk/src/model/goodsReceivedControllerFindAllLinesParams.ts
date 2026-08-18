@@ -20,6 +20,8 @@ vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
 productId?: string;
+sort?: string;
+sortDirection?: Object;
 putawayStatus?: string;
 locationId?: string;
 };

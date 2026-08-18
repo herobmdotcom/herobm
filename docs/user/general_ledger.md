@@ -1,6 +1,49 @@
+---
+id: general-ledger
+title: "General Ledger & Financial Accounting"
+description: "Chart of Accounts, journal entry double-entry balance invariants, AR/AP party tagging, and financial reports."
+category: "Finance"
+order: 1
+resource: "gl"
+action: "read"
+routes:
+  - "/general-ledger"
+  - "/general-ledger/trial-balance"
+  - "/general-ledger/journal-entries"
+  - "/general-ledger/journal-entries/new"
+  - "/general-ledger/journal-entries/:id"
+  - "/balances/customers"
+  - "/balances/suppliers"
+  - "/balances/tax"
+  - "/payments"
+  - "/reconciliations"
+tags: ["finance", "gl", "accounts", "journal", "balance", "trial-balance", "reconciliation", "tax", "payments"]
+fields:
+  account_code:
+    title: "Account Code"
+    summary: "Unique numerical or alphanumeric identifier for the leaf account in the Chart of Accounts."
+  debit:
+    title: "Debit Amount"
+    summary: "Debit side of the double-entry transaction. Increases Assets/Expenses, decreases Liabilities/Equity/Income."
+  credit:
+    title: "Credit Amount"
+    summary: "Credit side of the double-entry transaction. Increases Liabilities/Equity/Income, decreases Assets/Expenses."
+  party_type:
+    title: "Party Type"
+    summary: "Subledger entity type (Customer or Supplier) for AR/AP aging analysis."
+  party_id:
+    title: "Party ID"
+    summary: "Unique identifier linking the journal line to a specific customer or supplier."
+related:
+  - "sales-orders"
+  - "purchase-orders"
+  - "dynamic-reporting"
+---
+
 # General Ledger (GL) & Financial Fundamentals
 
 This document describes how HeroBM handles core financial accounting. The native General Ledger (GL) sits at the center of the system, acting as the ultimate source of truth for all financial movements.
+
 
 ## The Chart of Accounts (COA)
 

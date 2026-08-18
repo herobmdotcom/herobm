@@ -18,5 +18,10 @@ export type ValidState =
   | 'legacy'
   | 'released'
   | 'in_progress'
-  | 'completed';
+  | 'completed'
+  | 'posted'
+  | 'paid'
+  | 'partially_paid'
+  | 'submitted'
+  | 'overdue';
 

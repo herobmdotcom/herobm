@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import ReportConfigForm from '../ReportConfigForm';
 
 export default function EditReportConfigPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  useDocumentTitle('Edit Configuration | Business Reports');
   const params = use(paramsPromise);
   const t = useTranslations('admin.reporting');
   const tCommon = useTranslations('common.auth');
@@ -16,6 +15,12 @@ export default function EditReportConfigPage({ params: paramsPromise }: { params
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(
+    data?.name
+      ? `${data.name} - Report Configuration`
+      : 'Edit Report Configuration',
+  );
 
   useEffect(() => {
     api.businessReportsControllerGetReportById(params.id)

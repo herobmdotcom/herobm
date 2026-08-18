@@ -1612,6 +1612,8 @@
   },
   "fulfillment": {
     "columns": {
+      "description": "Description",
+      "lineNumber": "#",
       "onHand": "On Hand",
       "ordered": "Ordered",
       "picked": "Picked",
@@ -1976,6 +1978,10 @@
       "matched": "Matched",
       "unmatched": "Unmatched"
     },
+    "messages": {
+      "saveFailed": "Failed to update receipt",
+      "saved": "Receipt updated successfully"
+    },
     "placeholders": {
       "notes": "Reception notes",
       "packingSlip": "Packing slip number",
@@ -2037,6 +2043,35 @@
       "selectLocation": "Please select a receiving location.",
       "selectSupplier": "Please select a supplier."
     }
+  },
+  "help": {
+    "allTopics": "All Topics",
+    "back": "Back",
+    "backToScreen": "Back to screen context",
+    "categories": "Categories",
+    "contextTab": "Active Screen",
+    "emptySearch": "No documentation matching your search.",
+    "fieldGuide": "Field Reference",
+    "filterTopics": "Filter topics...",
+    "fullManual": "Full Manual",
+    "loadingDocs": "Loading documentation...",
+    "manual": "User Manual",
+    "match": "match",
+    "matches": "matches",
+    "noContextDesc": "Select a topic from the directory or search the documentation.",
+    "noContextTitle": "General Knowledge Base",
+    "openManual": "Open Manual",
+    "quickActions": "Quick Workflows",
+    "relatedTopics": "Related Topics",
+    "search": "Search manual...",
+    "searchPrompt": "Type keywords to search documentation.",
+    "searchPromptSub": "Matches headings, tags, field definitions, and workflows.",
+    "searchTab": "Search",
+    "selectTopicPrompt": "Select a topic to view its manual.",
+    "shortcut": "Press ? or F1 for help",
+    "title": "Help & Documentation",
+    "tocTab": "Table of Contents",
+    "topicsAvailable": "topics available"
   },
   "inventory": {
     "columns": {
@@ -2774,7 +2809,7 @@
       "supplier": "Supplier"
     },
     "lineItemPrefix": "Line",
-    "lineItems": "Line items",
+    "lineItems": "Line Items",
     "loadingInventory": "Loading inventory data...",
     "loadingReturns": "Loading returns...",
     "location": "Location",
@@ -2925,6 +2960,15 @@
       "taxTotalAmount": "{tax} (Total Amount)"
     },
     "supplierInvoicesCardHeading": "Supplier Invoices",
+    "tabs": {
+      "activity": "Activity",
+      "allocations": "Allocated",
+      "invoices": "Invoices",
+      "lines": "Lines",
+      "overview": "Overview",
+      "receptions": "Receptions",
+      "returns": "Returns"
+    },
     "title": "Purchase Orders",
     "tradingTerms": "Trading Terms",
     "unnamedCustomer": "Unnamed customer",
@@ -3126,7 +3170,7 @@
       "notes": "Notes",
       "orderName": "Order Name"
     },
-    "lineItems": "Line items",
+    "lineItems": "Line Items",
     "loadingInventory": "Loading inventory data...",
     "loadingReturns": "Loading returns...",
     "newReturn": "New Return",
@@ -3185,6 +3229,8 @@
     },
     "subtitle": "Manage customer orders and quotes",
     "tabs": {
+      "activity": "Activity",
+      "delivery": "Delivery",
       "fulfillment": "Fulfillment",
       "invoices": "Invoices",
       "lines": "Lines",
@@ -3794,7 +3840,7 @@
       "subtitle": "Create an internal transfer between locations",
       "title": "New Transfer Order"
     },
-    "lineItems": "Line items",
+    "lineItems": "Line Items",
     "noLineItems": "No line items",
     "noLinesAdded": "No lines added.",
     "notFound": "Transfer order not found",

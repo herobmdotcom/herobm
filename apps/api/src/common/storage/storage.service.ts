@@ -15,14 +15,19 @@ export class StorageService {
   private readonly storageRoot: string;
 
   constructor() {
-    // Priority: Explicit env var -> Container standard path -> Local monorepo relative path
-    if (process.env.STORAGE_PATH) {
-      this.storageRoot = path.resolve(process.cwd(), process.env.STORAGE_PATH);
-    } else if (fs.existsSync('/app/data/storage')) {
-      this.storageRoot = '/app/data/storage';
-    } else {
-      this.storageRoot = path.resolve(process.cwd(), '../../data/storage');
-    }
+    // Priority: Explicit env var -> Container standard path -> Monorepo paths
+    const candidates = [
+      process.env.STORAGE_PATH
+        ? path.resolve(process.cwd(), process.env.STORAGE_PATH)
+        : null,
+      '/app/data/storage',
+      path.resolve(process.cwd(), 'data/storage'),
+      path.resolve(process.cwd(), '../../data/storage'),
+      path.resolve(__dirname, '../../../../data/storage'),
+    ].filter(Boolean) as string[];
+
+    this.storageRoot =
+      candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
 
     this.ensureDirectory(this.storageRoot);
     this.ensureDirectory(path.join(this.storageRoot, 'products', 'abm'));

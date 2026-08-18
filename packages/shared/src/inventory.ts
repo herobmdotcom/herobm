@@ -1,4 +1,4 @@
-export type ProductType = 'inventory' | 'non-stock' | 'service';
+export type ProductType = 'inventory' | 'non-stock' | 'service' | 'freight';
 export enum BIN_TYPE {
   /** Standard racking or shelving intended for general long-term or short-term storage */
   STORAGE = 'storage',
@@ -72,21 +72,40 @@ export const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
 export const LEGACY_CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
 
 /**
- * Centralized check to determine if a line represents a physical product
- * that requires picking, shipping, or physical return.
+ * Check to determine if a line represents a tracked inventory item
+ * that is stocked in warehouse bins and requires perpetual inventory tracking / bin picking.
  */
-export function isPhysicalProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
+export function isStockedProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
   if (!line) return false;
   const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === LEGACY_CUSTOM_LINE_ID;
   if (isCustom) return false;
   
-  // If productType is explicitly set, only 'inventory' is physical
+  // Only 'inventory' productType has tracked warehouse bin stock
   if (line.productType) {
     return line.productType === 'inventory';
   }
   
-  // If productType is missing but it has a valid productId, assume physical (legacy fallback)
+  // If productType is missing but it has a valid productId, assume inventory
   return true;
+}
+
+/**
+ * Check to determine if a line represents physical deliverable goods
+ * (both stocked inventory and non-stock items / physical custom items) vs intangible services/fees.
+ */
+export function isPhysicalProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
+  if (!line) return false;
+  if (line.productType) {
+    return line.productType !== 'service' && line.productType !== 'freight';
+  }
+  return true;
+}
+
+/**
+ * Check if a product line is shippable / can be included on shipments and packing slips.
+ */
+export function isShippableProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
+  return isPhysicalProductLine(line);
 }
 
 /**
@@ -114,12 +133,12 @@ export function calculateInventoryGaps(
 
   const gaps: InventoryGap[] = [];
   for (const line of lines) {
-    const isPhysical = isPhysicalProductLine(line);
+    const isStocked = isStockedProductLine(line);
     
     // Exclude non-stock Kit parent items from gaps (components are calculated separately)
     const isKitParent = line.structureType === 'kit' && line.productType === 'non-stock';
     
-    if (!isPhysical || isKitParent || !line.productId) continue;
+    if (!isStocked || isKitParent || !line.productId) continue;
 
     const pid = line.productId;
     const locId = line.fulfillmentLocationId || headerLocationId;

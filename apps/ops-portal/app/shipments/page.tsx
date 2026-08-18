@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { formatLocalDate } from '@/lib/date';
@@ -13,6 +14,7 @@ export default function ShipmentsPage() {
   const t = useTranslations('shipments');
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
+  useDocumentTitle(t('title'));
   const router = useRouter();
   const [days, setDays, isReady] = usePersistedFilter('shipments-days', '30');
 

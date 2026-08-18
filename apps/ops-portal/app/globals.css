@@ -27,6 +27,7 @@
 .badge-submitted { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
 .badge-paid { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
 .badge-partially_paid { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-posted { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
 .badge-cancelled { background: rgba(71, 85, 105, 0.1); color: #475569; }
 .badge-discontinued { background: rgba(71, 85, 105, 0.1); color: #475569; }
 .badge-archived { background: rgba(100, 116, 139, 0.1); color: #64748b; }
@@ -214,6 +215,9 @@ select.input:not([multiple]):not([size]) {
 }
 
 @layer base {
+  h1 {
+    font-weight: 700;
+  }
   .material-symbols-outlined {
     font-size: 24px;
     display: inline-flex;
@@ -502,6 +506,7 @@ h2 {
 [data-density="compact"] {
   --spacing-density-card: 12px;
   --spacing-density-gap: 8px;
+  --spacing-density-section-gap: 6px;
 }
 
 /* Compact DataGrid */
@@ -577,6 +582,43 @@ h2 {
 [data-density="compact"] .section-heading {
   margin-bottom: 0.5rem !important;
   font-size: 0.75rem !important;
+}
+
+/* Compact Page Section Spacing */
+[data-density="compact"] .flex-col:has(> .card),
+[data-density="compact"] .flex-col:has(> [id*="-section"]),
+[data-density="compact"] .flex-col:has(> div > .card),
+[data-density="compact"] .flex.flex-col:has(> .card),
+[data-density="compact"] .flex.flex-col:has(> [id*="-section"]),
+[data-density="compact"] .flex.flex-col:has(> div > .card) {
+  gap: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .space-y-4:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-5:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-6:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-8:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-4:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-5:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-6:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-8:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card.mb-4,
+[data-density="compact"] .card.mb-6,
+[data-density="compact"] .card.mb-8 {
+  margin-bottom: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card.mt-4,
+[data-density="compact"] .card.mt-6,
+[data-density="compact"] .card.mt-8 {
+  margin-top: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card + .card {
+  margin-top: var(--spacing-density-section-gap, 6px);
 }
 
 /* ── Utility: hide elements in print ─────────────────────────────────── */

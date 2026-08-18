@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Button } from '@/components/shared/Button';
 import { useRouter } from 'next/navigation';
 import { reportError } from '@/lib/api';
@@ -63,6 +64,14 @@ export default function EditShipmentClient({ id }: { id: string }) {
   const [shipment, setShipment] = useState<ShipmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  useDocumentTitle(
+    shipment
+      ? shipment.customerName
+        ? `${shipment.shipmentNumber} - ${shipment.customerName}`
+        : shipment.shipmentNumber
+      : null,
+  );
 
   const loadShipment = () => {
     setLoading(true);

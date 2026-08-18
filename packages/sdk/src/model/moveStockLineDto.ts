@@ -11,4 +11,5 @@ export interface MoveStockLineDto {
   sourceBinId: string;
   targetBinId: string;
   quantity: string;
+  uomCode?: string;
 }

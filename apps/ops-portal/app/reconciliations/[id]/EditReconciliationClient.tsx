@@ -78,9 +78,8 @@ const ToggleCell = (p: ToggleCellParams) => {
 export default function EditReconciliationClient({ id }: { id: string }) {
   const t = useTranslations('gl.reconciliations');
   const tCommon = useTranslations('common');
-  useDocumentTitle(t('detailsTitle'));
   const router = useRouter();
-  
+
   const [reconciliation, setReconciliation] = useState<api.ReconciliationDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -88,6 +87,14 @@ export default function EditReconciliationClient({ id }: { id: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [isSplitModalOpen, setSplitModalOpen] = useState(false);
+
+  useDocumentTitle(
+    reconciliation
+      ? reconciliation.accountName
+        ? `Reconciliation - ${reconciliation.accountName}`
+        : 'Reconciliation'
+      : null,
+  );
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [previewData, setPreviewData] = useState<api.AutoMatchResponseDto | null>(null);

@@ -48,7 +48,13 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     docName: ''
   });
 
-  useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : t('loading'));
+  useDocumentTitle(
+    invoice
+      ? invoice.customerName
+        ? `${invoice.invoiceNumber} - ${invoice.customerName}`
+        : invoice.invoiceNumber
+      : null,
+  );
 
   if (loading) return <div className="p-8">{t('loadingEllipsis')}</div>;
   if (error) return <div className="p-8 text-red-500">{t('errorLoading', { message: error.message })}</div>;

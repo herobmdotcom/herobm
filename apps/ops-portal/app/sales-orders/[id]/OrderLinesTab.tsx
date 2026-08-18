@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { useTranslations } from 'next-intl';
 import type { TaxCategory, OrderLine, OrderDetail } from './types';
@@ -70,81 +71,57 @@ export default function OrderLinesTab({
     return (
         <div className="max-w-5xl">
             <div id="lines-section" className="card">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-                    <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
-                        <div className="flex gap-0 min-w-max">
-                            <Button
-                                className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
-                                    activeTab === 'lines'
-                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
-                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                                }`}
-                                onClick={() => setActiveTab('lines')}
-                            >
-                                {tSales('lineItems')}
-                            </Button>
-                            <Button
-                                className={`text-xs font-medium px-3 py-1.5 border border-l-0 cursor-pointer ${
-                                    activeTab === 'availability'
-                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
-                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                                }`}
-                                onClick={() => setActiveTab('availability')}
-                            >
-                                {tSales('availability')}
-                            </Button>
-                            <Button
-                                className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border border-l-0 cursor-pointer ${
-                                    activeTab === 'backorders'
-                                        ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
-                                        : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                                }`}
-                                onClick={() => setActiveTab('backorders')}
-                            >
-                                {tSales('backordersTab')}
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-                        {(isOrderLinesEditable || (isOrderDetailsEditable && activeTab === 'lines' && isPostConfirmationAddingEnabled)) && (
+                <div className="mb-4">
+                    <Tabs<'lines' | 'availability' | 'backorders'>
+                        tabs={[
+                            { id: 'lines', label: tSales('lineItems') },
+                            { id: 'availability', label: tSales('availability') },
+                            { id: 'backorders', label: tSales('backordersTab') },
+                        ]}
+                        activeTab={activeTab}
+                        onChange={setActiveTab}
+                        actions={
                             <>
-                                <div className="flex-1 min-w-[200px] max-w-sm">
-                                    <ProductSearchInput
-                                        onSelect={addLineFromProduct}
-                                        placeholder={tSales('placeholders.searchProduct')}
-                                        className="w-full"
-                                        fulfillmentLocationId={editFulfillmentLocationId || order?.fulfillmentLocationId || undefined}
-                                    />
-                                </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="whitespace-nowrap"
-                                    onClick={addBlankLine}
-                                    disabled={saving}
-                                >
-                                    {tSales('buttons.customLine')}
-                                </Button>
+                                {(isOrderLinesEditable || (isOrderDetailsEditable && activeTab === 'lines' && isPostConfirmationAddingEnabled)) && (
+                                    <>
+                                        <div className="flex-1 min-w-[200px] max-w-sm">
+                                            <ProductSearchInput
+                                                onSelect={addLineFromProduct}
+                                                placeholder={tSales('placeholders.searchProduct')}
+                                                className="w-full"
+                                                fulfillmentLocationId={editFulfillmentLocationId || order?.fulfillmentLocationId || undefined}
+                                            />
+                                        </div>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="whitespace-nowrap"
+                                            onClick={addBlankLine}
+                                            disabled={saving}
+                                        >
+                                            {tSales('buttons.customLine')}
+                                        </Button>
+                                    </>
+                                )}
+                                {!isOrderLinesEditable && isOrderDetailsEditable && activeTab === 'lines' && !isPostConfirmationAddingEnabled && (ORDER_LIFECYCLE[order?.stateCode ?? ''] >= ORDER_LIFECYCLE[SALES_ORDER_STATE.CONFIRMED]) && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="whitespace-nowrap"
+                                        onClick={() => {
+                                            if (window.confirm(tSales('postConfirmationLineWarningBody'))) {
+                                                setIsPostConfirmationAddingEnabled(true);
+                                            }
+                                        }}
+                                        disabled={saving}
+                                        title={tSales('postConfirmationLineWarningTitle')}
+                                    >
+                                        {tSales('buttons.addPostConfirmationLine')}
+                                    </Button>
+                                )}
                             </>
-                        )}
-                        {!isOrderLinesEditable && isOrderDetailsEditable && activeTab === 'lines' && !isPostConfirmationAddingEnabled && (ORDER_LIFECYCLE[order?.stateCode ?? ''] >= ORDER_LIFECYCLE[SALES_ORDER_STATE.CONFIRMED]) && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                className="whitespace-nowrap"
-                                onClick={() => {
-                                    if (window.confirm(tSales('postConfirmationLineWarningBody'))) {
-                                        setIsPostConfirmationAddingEnabled(true);
-                                    }
-                                }}
-                                disabled={saving}
-                                title={tSales('postConfirmationLineWarningTitle')}
-                            >
-                                {tSales('buttons.addPostConfirmationLine')}
-                            </Button>
-                        )}
-                    </div>
+                        }
+                    />
                 </div>
 
                 {activeTab === 'lines' && (

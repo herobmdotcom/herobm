@@ -375,9 +375,9 @@ export function ProductInventoryTab({
               <table className="w-full text-left border-collapse text-[13px]">
               <thead className="bg-[#f9fafb] sticky top-0 z-10">
                 <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
-                  <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
-                  <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                  <th className="py-2 px-6 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
+                  <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
+                  <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
@@ -396,7 +396,7 @@ export function ProductInventoryTab({
                           <div className="text-[#0f172a]">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
                         </td>
                         <td className="py-3 px-4 text-right font-medium text-[#475569]">{formatInt(comp.parentQuantity || 1)}</td>
-                        <td className="py-3 px-4 text-right font-bold text-[#006b5c]">{formatInt(totalAvail)}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-[#006b5c]">{formatInt(totalAvail)}</td>
                       </tr>
                     );
                   })
@@ -408,14 +408,14 @@ export function ProductInventoryTab({
             <table className="w-full text-left border-collapse text-[13px]">
             <thead className="bg-[#f9fafb] sticky top-0 z-10">
               <tr className="border-b border-[var(--border)]">
-                <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.maxQty')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantityOnHand')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
-                <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
+                <th className="py-2 px-6 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.maxQty')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantityOnHand')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
                 <th className="w-[90px]"></th>
               </tr>
             </thead>

@@ -528,7 +528,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
                     inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none">%</span>
                 </div>
                 {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
                 <span className="text-sm font-medium shrink-0 text-[var(--text-muted)]">
@@ -548,7 +548,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
                   />
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
                 {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
                   <span className="text-xs italic text-[var(--primary)] ml-2">

@@ -2,7 +2,7 @@ import PaymentsContent from './PaymentsContent';
 import { Suspense } from 'react';
 
 export const metadata = {
-  title: 'Payments | HeroBM',
+  title: 'Payments',
 };
 
 export default function PaymentsPage() {

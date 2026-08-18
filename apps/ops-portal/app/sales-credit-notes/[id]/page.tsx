@@ -2,7 +2,7 @@ import React from 'react';
 import CreditNoteDetailContent from './CreditNoteDetailContent';
 
 export const metadata = {
-  title: 'Credit Note Details | HeroBM',
+  title: 'Credit Note',
 };
 
 export default async function CreditNoteDetailPage(props: { params: Promise<{ id: string }> }) {

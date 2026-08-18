@@ -35,10 +35,6 @@ export default function BusinessReportsConfigPage() {
     }
   ], []);
 
-  const handleRowClicked = useCallback((row: ReportConfigRow) => {
-    router.push(`/reporting/config/${row.id}`);
-  }, [router]);
-
   return (
     <>
       <DataGrid
@@ -49,7 +45,7 @@ export default function BusinessReportsConfigPage() {
         exportFileName="business-reports-config"
         fetchAll
         rowIdField="id"
-        onRowClicked={handleRowClicked}
+        rowHref={(row) => (row.id ? `/reporting/config/${row.id}` : '')}
         pageTitle="Configuration"
         headerActions={
           <Link href="/reporting/config/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 ml-2 lg:ml-0 whitespace-nowrap">

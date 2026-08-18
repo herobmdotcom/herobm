@@ -9,6 +9,8 @@ import InitiateReturnModal from './InitiateReturnModal';
 import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
 import StateBadge from '@/components/StateBadge';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
+import { routes } from '@/lib/routes';
 import type { ValidState } from '@/types/states';
 
 interface ReturnLine {
@@ -140,48 +142,32 @@ export default function ReturnsSection({
             const relatedEvents = events?.filter((e) => e.payload && e.payload.returnId === ret.returnId) || [];
             const locWarning = relatedEvents.find((e) => e.eventType === 'location_discrepancy_warning');
 
+            const subtitleTokens = [
+              formatLocalDate(ret.createdOn),
+              `${ret.lines?.length || 0} ${tCommon('tabs.lines').toLowerCase()}`,
+              ret.createdBy ? tCommon('timeline.by', { actor: ret.createdBy }) : null,
+              ret.packingSlipNumber ? `Slip: ${ret.packingSlipNumber}` : null,
+              ret.notes ? `Notes: ${ret.notes}` : null,
+            ];
+
             return (
-              <div
+              <LinkedEntityCard
                 key={ret.returnId}
-                className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors group"
+                icon="assignment_return"
+                title={ret.returnNumber}
+                href={routes.purchaseOrders.returns.detail(ret.returnId)}
+                subtitle={subtitleTokens}
+                status={ret.stateCode}
               >
-                <div className="flex items-center justify-between">
-                  <Link
-                    href={`/purchase-orders/returns/${ret.returnId}`}
-                    className="flex items-center gap-3 flex-1 min-w-0"
-                  >
-                    <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">
-                      assignment_return
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-sm text-[var(--text-primary)]">
-                        {ret.returnNumber}
-                      </div>
-                      <div className="text-xs text-[var(--text-muted)] truncate">
-                        {formatLocalDate(ret.createdOn)} {' \u00B7 '}{' '}
-                        {ret.lines?.length || 0}
-                        <span> {tCommon('tabs.lines').toLowerCase()} </span>
-                        {ret.createdBy && <span> {' \u00B7 '} {tCommon('timeline.by', { actor: ret.createdBy })}</span>}
-                        {ret.packingSlipNumber && <span> {' \u00B7 '} Slip: {ret.packingSlipNumber}</span>}
-                        {ret.notes && <span> {' \u00B7 '} Notes: {ret.notes}</span>}
-                      </div>
-                    </div>
-                  </Link>
-
-                  <div className="flex items-center gap-3 shrink-0 ml-3">
-                    <StateBadge state={ret.stateCode as ValidState} />
-                  </div>
-                </div>
-
                 {locWarning && (
-                  <div className="mt-2 text-xs px-3 py-1.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-700 flex items-center gap-2">
+                  <div className="text-xs px-3 py-1.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-700 flex items-center gap-2">
                     <span className="material-symbols-outlined text-[16px]">warning_amber</span>
                     <span>
                       <strong>Warning:</strong> Location discrepancy detected for this return.
                     </span>
                   </div>
                 )}
-              </div>
+              </LinkedEntityCard>
             );
           })}
         </div>

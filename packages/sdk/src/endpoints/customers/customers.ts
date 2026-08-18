@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  AgedBalanceResponseDto,
   CreateCustomerDto,
   CreateCustomerGroupDto,
   CreditAssessmentResponseDto,
@@ -18,6 +17,7 @@ import type {
   CustomersControllerFindAll200,
   CustomersControllerFindAllParams,
   CustomersControllerFindOneParams,
+  CustomersControllerGetAgedBalances200,
   CustomersControllerGetAgedBalancesParams,
   EmptyBodyDto,
   UpdateCustomerDto,
@@ -111,7 +111,7 @@ export const customersControllerCreate = async (createCustomerDto: CreateCustome
  * @summary Get Aged Balances
  */
 export type customersControllerGetAgedBalancesResponse200 = {
-  data: AgedBalanceResponseDto[]
+  data: CustomersControllerGetAgedBalances200
   status: 200
 }
     

@@ -15,9 +15,13 @@ export interface JournalLineDto {
   partyType?: JournalLineDtoPartyType;
   /** @nullable */
   partyId?: string | null;
+  /** @minimum 0 */
   debit: number;
+  /** @minimum 0 */
   credit: number;
+  /** @minimum 0 */
   foreignDebit?: number;
+  /** @minimum 0 */
   foreignCredit?: number;
   foreignCurrencyCode?: string;
   exchangeRate?: number;

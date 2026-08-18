@@ -9,6 +9,8 @@ import type { MeResponseDtoPermissionsItem } from './meResponseDtoPermissionsIte
 
 export interface MeResponseDto {
   username: string;
+  /** @nullable */
+  displayName?: string | null;
   role: string;
   permissions?: MeResponseDtoPermissionsItem[];
 }

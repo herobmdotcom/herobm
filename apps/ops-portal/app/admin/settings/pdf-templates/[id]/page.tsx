@@ -11,11 +11,16 @@ import { useTranslations } from 'next-intl';
 
 export default function EditTemplatePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('admin.reporting');
-  useDocumentTitle(t('title'));
   const params = use(paramsPromise);
   const [initialData, setInitialData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  useDocumentTitle(
+    initialData?.name
+      ? `${initialData.name} - PDF Template`
+      : t('title'),
+  );
 
   useEffect(() => {
     api.pdfTemplatesControllerGetReport(params.id)

@@ -136,34 +136,34 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.displayName')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.displayName')}</label>
               <input className="input w-full" value={formData.name} onChange={e => setFormData(d => ({ ...d, name: e.target.value }))} />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.uniqueSlug')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.uniqueSlug')}</label>
               <input className="input w-full" value={formData.slug} onChange={e => setFormData(d => ({ ...d, slug: e.target.value }))} placeholder={t('placeholders.slug')} />
             </div>
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.outputPattern')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.outputPattern')}</label>
               <input className="input w-full" value={formData.outputNamePattern} onChange={e => setFormData(d => ({ ...d, outputNamePattern: e.target.value }))} />
             </div>
             <div className="flex-[2]">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.description')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.description')}</label>
               <input className="input w-full" value={formData.description} onChange={e => setFormData(d => ({ ...d, description: e.target.value }))} />
             </div>
           </div>
           
           <div className="flex gap-4 mt-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{t('labels.supportedContexts')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.supportedContexts')}</label>
               <div className="relative w-full">
                 <div 
                   className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white"
                   onClick={() => setContextsOpen(!contextsOpen)}
                 >
-                  <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
+                  <span className="truncate pr-4 text-sm text-gray-700 font-medium">
                     {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">{t('placeholders.selectContexts')}</span>}
                   </span>
                   {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
@@ -193,7 +193,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                                 }));
                               }}
                             />
-                            <span className="text-[13px] font-semibold text-gray-700">{h.slug}</span>
+                            <span className="text-[13px] font-medium text-gray-700">{h.slug}</span>
                           </label>
                         ))
                       )}
@@ -208,7 +208,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           </div>
 
           <div className="flex flex-col flex-1 mt-4 min-h-[500px]">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.typstSource')}</label>
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.typstSource')}</label>
             <textarea 
               className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c] min-h-[500px] resize-y"
               value={formData.template}
@@ -218,12 +218,12 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           </div>
 
           <div className="flex items-center gap-3 mt-4">
-            <Button variant="primary" className="px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
+            <Button variant="primary" className="px-8 py-3 text-sm font-semibold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
               {saving ? t('buttons.saving') : t('buttons.save')}
             </Button>
             {!isNew && (
               <Button 
-                variant="secondary" className="px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
+                variant="secondary" className="px-8 py-3 text-sm font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
                 onClick={handleDelete} 
                 disabled={saving || deleting}
               >
@@ -238,12 +238,12 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
       <div className="flex flex-col w-full min-h-[800px] shrink-0">
         <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#041627] font-['Manrope',sans-serif]">{t('livePreview.title')}</h3>
-            <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
+            <h3 className="text-lg font-semibold text-[#041627] font-['Manrope',sans-serif]">{t('livePreview.title')}</h3>
+            <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
           </div>
           <div className="flex gap-3 items-end bg-[#f8f9fa] p-4 rounded-lg border border-[rgba(196,198,205,0.4)]">
             <div className="flex-1">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{t('labels.contextResolver')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.contextResolver')}</label>
               <div className="flex gap-2">
                 <select className="select flex-1 bg-white" value={previewVars.hookSlug} onChange={e => handleHookChange(e.target.value)}>
                   <option value="">{t('none')}</option>
@@ -259,7 +259,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
               </div>
             </div>
             <div className="flex-1 relative">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{t('labels.targetRecordId')}</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.targetRecordId')}</label>
               <div className="flex gap-2">
                  <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
                  <Button variant="secondary" className="px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
@@ -267,7 +267,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                  </Button>
               </div>
             </div>
-            <Button variant="secondary" className="w-36 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
+            <Button variant="secondary" className="w-36 px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
                {previewing ? t('buttons.compiling') : t('buttons.generatePdf')}
             </Button>
           </div>

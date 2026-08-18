@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import Sidebar from '../Sidebar';
 import { logout } from '../../../lib/api';
 
@@ -33,7 +33,13 @@ jest.mock('next-intl', () => ({
 }));
 
 jest.mock('../UserPreferencesModal', () => {
-  return function MockUserPreferencesModal({ isOpen, onClose }: any) {
+  return function MockUserPreferencesModal({
+    isOpen,
+    onClose,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+  }) {
     return isOpen ? (
       <div data-testid="user-preferences-modal">
         <button onClick={onClose}>Close Preferences</button>
@@ -47,7 +53,7 @@ describe('Sidebar', () => {
     jest.clearAllMocks();
   });
 
-  it('renders user button with first name and initial', () => {
+  it('renders user button with initial and help button', () => {
     render(
       <Sidebar
         title="HeroBM"
@@ -56,9 +62,9 @@ describe('Sidebar', () => {
       />,
     );
 
-    // Initial 'M' and first name 'Marcel'
+    // Initial 'M' and help '?' button
     expect(screen.getByText('M')).toBeInTheDocument();
-    expect(screen.getByText('Marcel')).toBeInTheDocument();
+    expect(screen.getByText('?')).toBeInTheDocument();
   });
 
   it('toggles the menu when user button is clicked', () => {
@@ -72,13 +78,14 @@ describe('Sidebar', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
-    const userButton = screen.getByText('Marcel').closest('button');
+    const userButton = screen.getByText('M').closest('button');
     expect(userButton).toBeInTheDocument();
     fireEvent.click(userButton!);
 
-    expect(screen.getByRole('menu')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
-    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    const menu = screen.getByRole('menu');
+    expect(menu).toBeInTheDocument();
+    expect(within(menu).getByText('Settings')).toBeInTheDocument();
+    expect(within(menu).getByText('Sign Out')).toBeInTheDocument();
 
     // Clicking again closes menu
     fireEvent.click(userButton!);
@@ -94,7 +101,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('Marcel').closest('button');
+    const userButton = screen.getByText('M').closest('button');
     fireEvent.click(userButton!);
 
     const settingsItem = screen.getByText('Settings');
@@ -114,7 +121,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('Marcel').closest('button');
+    const userButton = screen.getByText('M').closest('button');
     fireEvent.click(userButton!);
 
     const signOutItem = screen.getByText('Sign Out');
@@ -133,7 +140,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('Marcel').closest('button');
+    const userButton = screen.getByText('M').closest('button');
     fireEvent.click(userButton!);
 
     expect(screen.getByRole('menu')).toBeInTheDocument();

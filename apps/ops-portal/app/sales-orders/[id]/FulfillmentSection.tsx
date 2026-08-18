@@ -20,7 +20,9 @@ interface ShippingLine {
     productId: string;
     productNumber: string;
     productDescription: string;
+    productType?: string;
     isPhysical: boolean;
+    isStocked?: boolean;
     quantity: string;
     quantityPicked: string;
     quantityShipped: string;
@@ -120,7 +122,9 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                         data={sortedLines}
                         keyExtractor={(line) => line.salesOrderLineId}
                         columns={[
-                            { header: t('columns.product') },
+                            { header: t('columns.lineNumber'), width: 40 },
+                            { header: t('columns.product'), width: 140 },
+                            { header: t('columns.description') },
                             { header: t('columns.ordered'), align: 'right' },
                             { header: t('columns.picked'), align: 'right' },
                             { header: t('columns.onHand'), align: 'right' },
@@ -130,6 +134,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                         emptyMessage={t('noPhysicalLines')}
                         renderCustomRow={(line: ShippingLine, idx: number) => {
                             const isPhysical = line.isPhysical;
+                            const isStocked = line.isStocked ?? (isPhysical && Boolean(line.productId) && (!line.productType || line.productType === 'inventory'));
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);
@@ -141,48 +146,60 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
 
                             return (
                                 <tr key={line.salesOrderLineId}>
-                                    <td>
-                                        <div className="font-bold text-sm">
-                                            {line.productId ? (
-                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
-                                                    {line.productNumber}
-                                                </Link>
-                                            ) : line.productNumber}
-                                        </div>
-                                        <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                                    <td className="text-[var(--text-muted)] font-normal relative">{line.lineNumber}</td>
+                                    <td className="font-semibold text-sm">
+                                        {line.productId ? (
+                                            <Link href={`/products/${line.productId}`} className="text-[var(--accent)] hover:underline">
+                                                {line.productNumber || '—'}
+                                            </Link>
+                                        ) : (
+                                            line.productNumber || '—'
+                                        )}
                                     </td>
-                                    <td className="text-right tabular-nums">
+                                    <td className="text-sm">
+                                        {line.productDescription || '—'}
+                                    </td>
+                                    <td className="text-right tabular-nums text-sm">
                                         {ordered.toLocaleString()}
                                     </td>
-                                    {isPhysical ? (
+                                    {isStocked ? (
                                         <>
-                                            <td className="text-right tabular-nums">
-                                                <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
+                                            <td className="text-right tabular-nums text-sm">
+                                                <span className={isPicked ? 'text-[var(--success)] font-semibold' : picked > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
                                                     {picked.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="text-right tabular-nums text-[var(--text-muted)]">
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">
                                                 {onHand !== null ? onHand.toLocaleString() : '—'}
                                             </td>
-                                            <td className="text-right tabular-nums">
-                                                <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
+                                            <td className="text-right tabular-nums text-sm">
+                                                <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
                                                     {shipped.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="text-right tabular-nums">
-                                                <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
-                                                    {available.toLocaleString()}
+                                            <td className="text-right tabular-nums text-sm">
+                                                {available.toLocaleString()}
+                                            </td>
+                                        </>
+                                    ) : isPhysical ? (
+                                        <>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm">
+                                                <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
+                                                    {shipped.toLocaleString()}
                                                 </span>
+                                            </td>
+                                            <td className="text-right tabular-nums text-sm">
+                                                {available.toLocaleString()}
                                             </td>
                                         </>
                                     ) : (
                                         <>
-                                            <td className="text-right tabular-nums">
-                                                <span className="text-[var(--text-muted)] text-xs">Not Required</span>
-                                            </td>
-                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
-                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
-                                            <td className="text-right tabular-nums text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
+                                            <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">—</td>
                                         </>
                                     )}
                                 </tr>
@@ -190,6 +207,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                         }}
                         mobileCard={(line: ShippingLine) => {
                             const isPhysical = line.isPhysical;
+                            const isStocked = line.isStocked ?? (isPhysical && Boolean(line.productId) && (!line.productType || line.productType === 'inventory'));
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);
@@ -204,20 +222,21 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {line.productId ? (
-                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
+                                                <Link href={`/products/${line.productId}`} className="text-[var(--accent)] hover:underline">
                                                     {line.productNumber}
                                                 </Link>
                                             ) : line.productNumber}
                                         </div>
+                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                                     </div>
                                     <div className="text-sm text-slate-600 font-medium mb-3">
-                                        {line.productDescription}
+                                        {line.productDescription || '—'}
                                     </div>
                                     <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
                                         <MobileCardField label={t('columns.ordered')} value={
                                             <span className="font-semibold">{ordered.toLocaleString()}</span>
                                         } />
-                                        {isPhysical ? (
+                                        {isStocked ? (
                                             <>
                                                 <MobileCardField label={t('columns.picked')} value={
                                                     <span className={isPicked ? 'text-[var(--success)] font-semibold' : picked > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
@@ -235,16 +254,25 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                                     </span>
                                                 } />
                                                 <MobileCardField label={t('columns.readyToShip')} value={
-                                                    <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
-                                                        {available.toLocaleString()}
+                                                    <span>{available.toLocaleString()}</span>
+                                                } />
+                                            </>
+                                        ) : isPhysical ? (
+                                            <>
+                                                <MobileCardField label={t('columns.picked')} value={<span className="text-[var(--text-muted)]">—</span>} />
+                                                <MobileCardField label={t('columns.onHand')} value={<span className="text-[var(--text-muted)]">—</span>} />
+                                                <MobileCardField label={t('columns.shipped')} value={
+                                                    <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
+                                                        {shipped.toLocaleString()}
                                                     </span>
+                                                } />
+                                                <MobileCardField label={t('columns.readyToShip')} value={
+                                                    <span>{available.toLocaleString()}</span>
                                                 } />
                                             </>
                                         ) : (
                                             <>
-                                                <MobileCardField label={t('columns.picked')} value={
-                                                    <span className="text-[var(--text-muted)] text-xs">Not Required</span>
-                                                } />
+                                                <MobileCardField label={t('columns.picked')} value={<span className="text-[var(--text-muted)]">—</span>} />
                                                 <MobileCardField label={t('columns.onHand')} value={<span className="text-[var(--text-muted)]">—</span>} />
                                                 <MobileCardField label={t('columns.shipped')} value={<span className="text-[var(--text-muted)]">—</span>} />
                                                 <MobileCardField label={t('columns.readyToShip')} value={<span className="text-[var(--text-muted)]">—</span>} />

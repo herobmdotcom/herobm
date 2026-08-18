@@ -1,4 +1,11 @@
-import { calculateInventoryGaps, OrderLineMinimal, InventoryLevelMinimal } from './inventory';
+import {
+  calculateInventoryGaps,
+  OrderLineMinimal,
+  InventoryLevelMinimal,
+  isStockedProductLine,
+  isPhysicalProductLine,
+  isShippableProductLine,
+} from './inventory';
 
 describe('Inventory Logic (Shared)', () => {
   const p1 = 'prod-1';
@@ -67,21 +74,30 @@ describe('Inventory Logic (Shared)', () => {
     expect(gaps).toHaveLength(0);
   });
 
-  it('should calculate gaps for stock kits but ignore non-stock kits', () => {
-    const lines: OrderLineMinimal[] = [
-      // Stock kit: should have gap calculated
-      { salesOrderLineId: 'l1', productId: 'stock-kit', productDescription: 'p1', quantity: 10, productType: 'inventory', structureType: 'kit' },
-      // Non-stock kit: should be ignored (no gap for parent)
-      { salesOrderLineId: 'l2', productId: 'non-stock-kit', productDescription: 'p2', quantity: 10, productType: 'non-stock', structureType: 'kit' }
-    ];
-    const levels: InventoryLevelMinimal[] = [
-      { productId: 'stock-kit', locationId: loc1, quantityAvailable: 2 },
-      { productId: 'non-stock-kit', locationId: loc1, quantityAvailable: 0 }
-    ];
+  it('should distinguish between stocked, physical, and shippable products', () => {
+    // Inventory: stocked + physical + shippable
+    expect(isStockedProductLine({ productId: p1, productType: 'inventory' })).toBe(true);
+    expect(isPhysicalProductLine({ productId: p1, productType: 'inventory' })).toBe(true);
+    expect(isShippableProductLine({ productId: p1, productType: 'inventory' })).toBe(true);
 
-    const gaps = calculateInventoryGaps(lines, levels, loc1);
-    expect(gaps).toHaveLength(1);
-    expect(gaps[0].productId).toBe('stock-kit');
-    expect(gaps[0].shortage).toBe(8);
+    // Non-stock: NOT stocked, but physical + shippable
+    expect(isStockedProductLine({ productId: p1, productType: 'non-stock' })).toBe(false);
+    expect(isPhysicalProductLine({ productId: p1, productType: 'non-stock' })).toBe(true);
+    expect(isShippableProductLine({ productId: p1, productType: 'non-stock' })).toBe(true);
+
+    // Service: NOT stocked, NOT physical, NOT shippable
+    expect(isStockedProductLine({ productId: p1, productType: 'service' })).toBe(false);
+    expect(isPhysicalProductLine({ productId: p1, productType: 'service' })).toBe(false);
+    expect(isShippableProductLine({ productId: p1, productType: 'service' })).toBe(false);
+
+    // Freight: NOT stocked, NOT physical, NOT shippable
+    expect(isStockedProductLine({ productId: p1, productType: 'freight' })).toBe(false);
+    expect(isPhysicalProductLine({ productId: p1, productType: 'freight' })).toBe(false);
+    expect(isShippableProductLine({ productId: p1, productType: 'freight' })).toBe(false);
+
+    // Custom lines (no productId): NOT stocked in warehouse bins, but physical + shippable
+    expect(isStockedProductLine({ productId: null })).toBe(false);
+    expect(isPhysicalProductLine({ productId: null })).toBe(true);
+    expect(isShippableProductLine({ productId: null })).toBe(true);
   });
 });

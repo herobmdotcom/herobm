@@ -94,7 +94,7 @@ export default function ActivityTimeline({
   if (!events || events.length === 0) {
     return (
       <div>
-        <h3 className="text-sm font-semibold mb-4 text-[var(--text-muted)] uppercase tracking-wider">
+        <h3 className="section-heading mb-4">
           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">history</span> {displayTitle}
         </h3>
@@ -107,11 +107,11 @@ export default function ActivityTimeline({
 
   return (
     <details ref={detailsRef} open={defaultOpen || undefined}>
-      <summary className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2 text-[var(--text-muted)] uppercase tracking-wider list-none">
+      <summary className="section-heading cursor-pointer select-none mb-0 list-none">
         <span className="details-chevron text-[10px] transition-transform duration-200">▶</span>
         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">history</span> {displayTitle}
-        <span className="text-[11px] font-normal">({events.length})</span>
+        <span className="text-[11px] font-normal lowercase tracking-normal">({events.length})</span>
       </summary>
       <div className="space-y-3 mt-4">
         {events.map((event) => {

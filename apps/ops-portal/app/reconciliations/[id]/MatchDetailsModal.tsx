@@ -121,7 +121,7 @@ export default function MatchDetailsModal({
               <div className="card space-y-5">
                 <div className="flex flex-col gap-5 text-sm">
                   <div>
-                    <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('matchSource')}</span>
+                    <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">{t('matchSource')}</span>
                     <span className="text-[#041627] font-medium flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px]">
                         {getMatchIcon(matchMetadata.matchType)}
@@ -131,11 +131,11 @@ export default function MatchDetailsModal({
                     </span>
                   </div>
                   <div>
-                    <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('matchBy')}</span>
+                    <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">{t('matchBy')}</span>
                     <span className="text-[#041627]">{matchMetadata.createdBy}</span>
                   </div>
                   <div>
-                    <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('date')}</span>
+                    <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">{t('date')}</span>
                     <span className="text-[#041627]">
                       {new Date(matchMetadata.createdOn).toLocaleString()}
                     </span>
@@ -145,7 +145,7 @@ export default function MatchDetailsModal({
             )}
             
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('statementLines')}</h3>
+              <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{t('statementLines')}</h3>
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
@@ -172,7 +172,7 @@ export default function MatchDetailsModal({
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ledgerLines')}</h3>
+              <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{t('ledgerLines')}</h3>
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">

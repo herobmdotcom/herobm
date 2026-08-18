@@ -172,18 +172,25 @@ export class PickingQueryService {
 
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
-      const isPhysical = !line.productType || line.productType === 'inventory';
+      const isStocked =
+        Boolean(line.productId) &&
+        (!line.productType || line.productType === 'inventory');
+      const isPhysical =
+        !line.productType ||
+        (line.productType !== 'service' && line.productType !== 'freight');
       const key = `${line.salesOrderLineId}_${line.productId}`;
-      const picked = isPhysical ? (pickedMap.get(key) ?? 0) : ordered;
+      const picked = isStocked ? (pickedMap.get(key) ?? 0) : ordered;
       const committed = isPhysical
         ? (committedMap.get(line.salesOrderLineId) ?? 0)
         : ordered;
 
-      const productLocationBins = binStock.filter(
-        (s) =>
-          s.productId === line.productId &&
-          s.locationId === line.fulfillmentLocationId,
-      );
+      const productLocationBins = isStocked
+        ? binStock.filter(
+            (s) =>
+              s.productId === line.productId &&
+              s.locationId === line.fulfillmentLocationId,
+          )
+        : [];
 
       const availableBins = filterPickableBins(productLocationBins)
         .sort(
@@ -206,11 +213,12 @@ export class PickingQueryService {
         productDescription: line.productDescription,
         locationName: line.locationName || 'System Default',
         quantity: line.quantity,
-        quantityPicked: isPhysical ? String(picked) : String(ordered),
+        quantityPicked: isStocked ? String(picked) : String(ordered),
         quantityShipped: String(committed),
         remaining: String(ordered - picked),
         isFullyPicked: picked >= ordered,
-        isPhysical,
+        isPhysical: isStocked,
+        isStocked,
         onHand: String(calculatePickableOnHand(productLocationBins)),
         availableBins,
         hasAllocation: (allocationMap.get(key) ?? 0) > 0,
@@ -218,10 +226,14 @@ export class PickingQueryService {
     });
 
     const filteredSummary = summary.filter((s) => parseFloat(s.quantity) > 0);
-    const activePhysicalLines = filteredSummary.filter((s) => s.isPhysical);
+    const activeStockedLines = filteredSummary.filter(
+      (s) =>
+        Boolean(s.productId) &&
+        (!s.productType || s.productType === 'inventory'),
+    );
 
-    const totalLines = activePhysicalLines.length;
-    const fullyPickedLines = activePhysicalLines.filter(
+    const totalLines = activeStockedLines.length;
+    const fullyPickedLines = activeStockedLines.filter(
       (s) => s.isFullyPicked,
     ).length;
 
@@ -258,6 +270,7 @@ export class PickingQueryService {
     const summary = await this.getPickingSummary(orderId);
 
     const unshipped = summary.lines.filter((l) => {
+      if (!l.isPhysical) return false;
       const ordered = parseFloat(l.quantity);
       const shipped = parseFloat(l.quantityShipped ?? '0');
       return shipped < ordered;

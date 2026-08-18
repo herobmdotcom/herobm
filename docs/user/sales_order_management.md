@@ -1,6 +1,48 @@
+---
+id: sales-orders
+title: "Sales Order Management"
+description: "Order lifecycle, pricing rules, tax handling, discounts, and dispatch workflows."
+category: "Sales"
+order: 1
+resource: "orders"
+action: "read"
+routes:
+  - "/sales-orders"
+  - "/sales-orders/new"
+  - "/sales-orders/:id"
+  - "/sales-orders/:id/edit"
+  - "/sales-quotes"
+  - "/sales-invoices"
+  - "/sales-returns"
+  - "/customers"
+  - "/customers/:id"
+tags: ["sales", "orders", "pricing", "discounts", "quotes", "shipping", "invoices"]
+fields:
+  customer_id:
+    title: "Customer"
+    summary: "Target customer for the order. Auto-populates trading terms, currency, and default tax rate."
+  delivery_address_id:
+    title: "Delivery Address"
+    summary: "Destination address for physical product dispatch."
+  payment_terms:
+    title: "Payment Terms"
+    summary: "Credit duration and due date calculation based on customer terms (e.g., Net 30, COD)."
+  currency:
+    title: "Order Currency"
+    summary: "Operating currency. Defaults to company base currency unless foreign currency is assigned."
+  exchange_rate:
+    title: "Exchange Rate"
+    summary: "Spot FX rate applied to convert foreign currency totals to GL base currency."
+related:
+  - "customers"
+  - "inventory"
+  - "general-ledger"
+---
+
 # Sales Order Management
 
 This document describes how sales orders work in herobm, including the order lifecycle, pricing, currency, discounts, and tax.
+
 
 ---
 

@@ -1,6 +1,49 @@
+---
+id: inventory
+title: "Inventory Management & Ledger"
+description: "Double-entry immutable stock ledger, bin contents, warehouse locations, and stock movements."
+category: "Inventory"
+order: 1
+resource: "inventory"
+action: "read"
+routes:
+  - "/inventory/bins"
+  - "/inventory/ledger"
+  - "/inventory/locations"
+  - "/inventory/transfers"
+  - "/inventory/transfers/new"
+  - "/inventory/transfers/:id"
+  - "/inventory/quarantine"
+  - "/inventory/putaway"
+  - "/inventory/picking"
+  - "/inventory/shipping"
+  - "/products"
+  - "/products/new"
+  - "/products/:id"
+tags: ["inventory", "stock", "bins", "warehouse", "ledger", "transfers", "picking", "products"]
+fields:
+  bin_id:
+    title: "Bin Location"
+    summary: "Specific physical storage coordinate within a warehouse location."
+  product_id:
+    title: "Product / SKU"
+    summary: "Unique product identifier. Tracks stock levels, unit weights, and standard costs."
+  quantity:
+    title: "Movement Quantity"
+    summary: "Signed integer/decimal representing stock inflow (+), outflow (-), or transfer."
+  reason_code:
+    title: "Adjustment Reason"
+    summary: "Audit classification for ad-hoc inventory adjustments (e.g., Stocktake, Damage, Write-off)."
+related:
+  - "sales-orders"
+  - "purchase-orders"
+  - "general-ledger"
+---
+
 # Inventory Management
 
 This document describes how inventory works in herobm — the data model, how stock levels are tracked, and how movements flow through the system.
+
 
 ---
 

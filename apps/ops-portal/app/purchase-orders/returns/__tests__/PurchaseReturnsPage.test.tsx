@@ -24,14 +24,20 @@ jest.mock('@/hooks/useDocumentTitle', () => ({
 }));
 
 jest.mock('@/components/DataGrid', () => {
-  return function DummyDataGrid({ onRowClicked, headerActions, pageTitle }: any) {
+  return function DummyDataGrid({ onRowClicked, rowHref, headerActions, pageTitle }: any) {
     return (
       <div data-testid="data-grid">
         <h1>{pageTitle}</h1>
         <div>{headerActions}</div>
         <button
           data-testid="row-pr-1"
-          onClick={() => onRowClicked({ returnId: 'ret-1', returnNumber: 'PR-001' })}
+          onClick={() => {
+            if (rowHref) {
+              mockPush(rowHref({ returnId: 'ret-1', returnNumber: 'PR-001' }));
+            } else if (onRowClicked) {
+              onRowClicked({ returnId: 'ret-1', returnNumber: 'PR-001' });
+            }
+          }}
         >
           Row PR-001
         </button>

@@ -10,6 +10,8 @@ import {
   products,
   purchaseOrders,
   actors,
+  procurementEvents,
+  warehouseEvents,
 } from '@herobm/db-schema';
 import {
   eq,
@@ -608,10 +610,12 @@ export class GoodsReceivedCoreService {
         receipt: goodsReceived,
         vendorName: actors.name,
         vendorNumber: suppliers.vendorNumber,
+        locationName: locations.name,
       })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
       .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(locations, eq(goodsReceived.locationId, locations.locationId))
       .where(eq(goodsReceived.goodsReceivedId, id))
       .limit(1)
       .then(
@@ -620,6 +624,7 @@ export class GoodsReceivedCoreService {
             receipt: typeof goodsReceived.$inferSelect;
             vendorName: string | null;
             vendorNumber: string | null;
+            locationName: string | null;
           }[],
         ) => res[0],
       );
@@ -649,11 +654,53 @@ export class GoodsReceivedCoreService {
       )
       .where(eq(goodsReceivedLines.goodsReceivedId, id));
 
+    const whEvents = await tx
+      .select({
+        eventId: warehouseEvents.eventId,
+        eventType: warehouseEvents.eventType,
+        payload: warehouseEvents.payload,
+        actor: warehouseEvents.actor,
+        createdOn: warehouseEvents.createdOn,
+      })
+      .from(warehouseEvents)
+      .where(
+        or(
+          eq(warehouseEvents.entityId, id),
+          sql`${warehouseEvents.payload}->>'goodsReceivedId' = ${id}`,
+          sql`${warehouseEvents.payload}->>'receiptNumber' = ${receipt.receipt.receiptNumber}`,
+        ),
+      );
+
+    const procEvents = await tx
+      .select({
+        eventId: procurementEvents.eventId,
+        eventType: procurementEvents.eventType,
+        payload: procurementEvents.payload,
+        actor: procurementEvents.actor,
+        createdOn: procurementEvents.createdOn,
+      })
+      .from(procurementEvents)
+      .where(
+        or(
+          eq(procurementEvents.entityId, id),
+          sql`${procurementEvents.payload}->>'goodsReceivedId' = ${id}`,
+          sql`${procurementEvents.payload}->>'receiptNumber' = ${receipt.receipt.receiptNumber}`,
+        ),
+      );
+
+    const events = [...whEvents, ...procEvents].sort(
+      (a, b) =>
+        new Date(b.createdOn || 0).getTime() -
+        new Date(a.createdOn || 0).getTime(),
+    );
+
     return {
       ...receipt.receipt,
       vendorName: receipt.vendorName,
       vendorNumber: receipt.vendorNumber,
+      locationName: receipt.locationName,
       lines,
+      events,
     };
   }
 }

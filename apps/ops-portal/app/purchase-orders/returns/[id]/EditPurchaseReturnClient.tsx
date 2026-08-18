@@ -17,9 +17,11 @@ import { Button } from '@/components/shared/Button';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
 import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE, getErrorMessage, computeReturnCreditSummary } from '@herobm/shared';
 import { reportError } from '@/lib/api';
+import { routes } from '@/lib/routes';
 
 interface ReturnLine {
   returnLineId: string;
@@ -91,7 +93,11 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
   const [shipNotes, setShipNotes] = useState('');
 
   useDocumentTitle(
-    returnDetails ? `Return ${returnDetails.returnNumber}` : 'Return Details',
+    returnDetails
+      ? returnDetails.vendorName
+        ? `${returnDetails.returnNumber} - ${returnDetails.vendorName}`
+        : returnDetails.returnNumber
+      : null,
   );
 
   const fetchDetails = async () => {
@@ -349,7 +355,6 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
                     Stage Return
                   </Button>
                   <Button variant="danger" size="sm" disabled={submitting} onClick={handleCancelReturn}>
-                    <span className="material-symbols-outlined mr-1 text-base">delete</span>
                     {tCommon('cancel')}
                   </Button>
                 </>
@@ -357,14 +362,13 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
 
               {isStaged && (
                 <>
+                  <Button variant="secondary" size="sm" disabled={submitting} onClick={handleUnstageReturn}>
+                    ← Draft
+                  </Button>
                   <Button variant="primary" size="sm" disabled={submitting} onClick={() => setIsShipModalOpen(true)}>
                     Ship Return
                   </Button>
-                  <Button variant="secondary" size="sm" disabled={submitting} onClick={handleUnstageReturn}>
-                    ← Return to Draft
-                  </Button>
                   <Button variant="danger" size="sm" disabled={submitting} onClick={handleCancelReturn}>
-                    <span className="material-symbols-outlined mr-1 text-base">delete</span>
                     {tCommon('cancel')}
                   </Button>
                 </>
@@ -373,7 +377,7 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
               {isShipped && (
                 <>
                   <Button variant="secondary" size="sm" disabled={submitting} onClick={handleUnshipReturn}>
-                    ← Return to Staged
+                    ← Staged
                   </Button>
                 </>
               )}
@@ -399,7 +403,7 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
               </label>
               <div className="text-sm">
                 <Link
-                  href={`/purchase-orders/${returnDetails.purchaseOrderId}`}
+                  href={routes.purchaseOrders.detail(returnDetails.purchaseOrderId)}
                   className="text-[var(--accent)] hover:underline font-medium"
                 >
                   {returnDetails.orderNumber}
@@ -414,7 +418,7 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
               <div className="text-sm">
                 {returnDetails.vendorId ? (
                   <Link
-                    href={`/suppliers/${returnDetails.vendorId}`}
+                    href={routes.suppliers.detail(returnDetails.vendorId)}
                     className="text-[var(--accent)] hover:underline font-medium"
                   >
                     {returnDetails.vendorName}
@@ -460,6 +464,33 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
           )}
         </div>
 
+        {/* Return Items Section */}
+        <div id="lines-section" className="card">
+          <h3 className="section-heading mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined shrink-0">assignment_return</span>
+            <span>Returned Items ({returnDetails.lines.length})</span>
+          </h3>
+
+          <DataTable
+            columns={lineColumns}
+            data={returnDetails.lines}
+            keyExtractor={(line) => line.returnLineId}
+            footer={linesFooter}
+            mobileCard={(line, idx) => (
+              <MobileLineItemCard
+                title={line.productNumber || '—'}
+                subtitle={line.productDescription || '—'}
+                topRightBadge={`#${idx + 1}`}
+                details={[
+                  { label: 'Return Qty', value: parseFloat(line.quantityReturned || '0') },
+                  { label: 'Unit Price', value: formatAmount(parseFloat(line.pricePerUnit || '0'), currency) },
+                  { label: 'Reason', value: line.reason || '—' },
+                ]}
+              />
+            )}
+          />
+        </div>
+
         {/* Linked Debit Notes Section */}
         {((returnDetails.debitNotes && returnDetails.debitNotes.length > 0) || returnDetails.debitNoteNumber || isShipped) && (
           <div id="debit-notes-section" className="card">
@@ -484,25 +515,15 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
                     parseFloat(dn.feeAmount || '0');
                   const displayAmount = dnTotal > 0 ? dnTotal : parseFloat(dn.totalAmount || '0');
                   return (
-                    <div key={dn.debitNoteId || idx} className="p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[var(--accent)] text-lg">receipt_long</span>
-                        <div>
-                          <div className="font-semibold text-sm text-[var(--text-primary)]">{dn.debitNoteNumber}</div>
-                          {dn.createdOn && (
-                            <div className="text-xs text-[var(--text-muted)]">{formatLocalDate(dn.createdOn)}</div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {displayAmount > 0 && (
-                          <span className="font-semibold text-sm tabular-nums">
-                            {formatAmount(displayAmount, currency)}
-                          </span>
-                        )}
-                        {dn.stateCode && <StateBadge state={dn.stateCode as ValidState} />}
-                      </div>
-                    </div>
+                    <LinkedEntityCard
+                      key={dn.debitNoteId || idx}
+                      icon="receipt_long"
+                      title={dn.debitNoteNumber}
+                      href={dn.debitNoteId ? routes.purchaseDebitNotes.detail(dn.debitNoteId) : undefined}
+                      subtitle={dn.createdOn ? formatLocalDate(dn.createdOn) : undefined}
+                      amount={displayAmount > 0 ? formatAmount(displayAmount, currency) : undefined}
+                      status={dn.stateCode}
+                    />
                   );
                 })}
               </div>
@@ -514,33 +535,6 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
             )}
           </div>
         )}
-
-        {/* Return Items Section */}
-        <div id="lines-section" className="card">
-          <h3 className="section-heading mb-4">
-            <span className="material-symbols-outlined">assignment_return</span>
-            Returned Items ({returnDetails.lines.length})
-          </h3>
-
-          <DataTable
-            columns={lineColumns}
-            data={returnDetails.lines}
-            keyExtractor={(line) => line.returnLineId}
-            footer={linesFooter}
-            mobileCard={(line, idx) => (
-              <MobileLineItemCard
-                title={line.productNumber || '—'}
-                subtitle={line.productDescription || '—'}
-                topRightBadge={`#${idx + 1}`}
-                details={[
-                  { label: 'Return Qty', value: parseFloat(line.quantityReturned || '0') },
-                  { label: 'Unit Price', value: formatAmount(parseFloat(line.pricePerUnit || '0'), currency) },
-                  { label: 'Reason', value: line.reason || '—' },
-                ]}
-              />
-            )}
-          />
-        </div>
 
         {/* Activity Timeline Card */}
         <div id="timeline-section" className="card">

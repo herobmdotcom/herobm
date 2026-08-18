@@ -7,6 +7,7 @@
  */
 
 export interface AdjustStockLineDto {
+  uomCode?: string;
   productId: string;
   binId: string;
   newQuantity: string;

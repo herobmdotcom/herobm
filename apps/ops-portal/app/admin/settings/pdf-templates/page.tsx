@@ -35,10 +35,6 @@ export default function ReportingPage() {
     },
   ], []);
 
-  const handleRowClicked = useCallback((row: { id: string }) => {
-    router.push(`/admin/settings/pdf-templates/${row.id}`);
-  }, [router]);
-
   return (
     <>
       <>
@@ -50,7 +46,7 @@ export default function ReportingPage() {
               exportFileName="reports"
               fetchAll
               rowIdField="id"
-              onRowClicked={handleRowClicked}
+              rowHref={(row: { id?: string }) => (row.id ? `/admin/settings/pdf-templates/${row.id}` : '')}
               pageTitle={t('title')}
               headerActions={
                 <Link href="/admin/settings/pdf-templates/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 ml-2 lg:ml-0 whitespace-nowrap">

@@ -16,6 +16,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import LocationSelect from '@/components/shared/LocationSelect';
+import Tabs from '@/components/shared/Tabs';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
 
 import type { OrderLine, TaxCategory, OrderDetail, InventoryLevel, Allocation } from './types';
@@ -40,7 +41,7 @@ interface PurchaseOrderLinesTabProps {
   inventoryLoading: boolean;
   allocations: Allocation[];
   invoices: PurchaseInvoice[];
-  activeTab: string;
+  activeTab: 'lines' | 'availability' | 'status';
   setActiveTab: (tab: 'lines' | 'availability' | 'status') => void;
   isLinesEditable: boolean;
   saving: boolean;
@@ -80,11 +81,13 @@ export default function PurchaseOrderLinesTab({
 
   const lineColumns: CustomLineColumn[] = useMemo(() => [
     {
+        id: 'lineNumber',
         header: tPurchase('columns.lineNumber'), width: 40,
-        render: (line) => <span className="text-slate-500 font-medium">#{line.lineNumber}</span>,
+        render: (line) => <span className="text-[var(--text-muted)] font-normal relative">{line.lineNumber}</span>,
         mobileCard: () => null
     },
     {
+        id: 'product',
         header: tPurchase('columns.product'),
         render: (line) => (
             <div className="font-semibold text-sm">
@@ -99,6 +102,7 @@ export default function PurchaseOrderLinesTab({
         )
     },
     {
+        id: 'description',
         header: tPurchase('columns.description'),
         render: (line) => (
             (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
@@ -119,6 +123,7 @@ export default function PurchaseOrderLinesTab({
         )
     },
     {
+        id: 'qty',
         header: tPurchase('columns.qty'), width: 90, align: 'right',
         render: (line) => (
             isLinesEditable ? (
@@ -142,6 +147,7 @@ export default function PurchaseOrderLinesTab({
         } />
     },
     {
+        id: 'received',
         header: tPurchase('columns.received'), width: 90, align: 'right',
         render: (line) => (
             <span className={`text-sm tabular-nums ${parseFloat(line.quantityReceived || '0') > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>
@@ -151,6 +157,7 @@ export default function PurchaseOrderLinesTab({
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.received')} value={defaultRender} />
     },
     {
+        id: 'uom',
         header: tPurchase('columns.uom'), width: 80, align: 'right',
         render: (line) => {
             if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>;
@@ -186,6 +193,7 @@ export default function PurchaseOrderLinesTab({
         mobileCard: () => null
     },
     {
+        id: 'unitPrice',
         header: tPurchase('columns.unitPrice'), width: 110, align: 'right',
         render: (line) => (
             isLinesEditable ? (
@@ -210,6 +218,7 @@ export default function PurchaseOrderLinesTab({
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
     },
     {
+        id: 'discountPct',
         header: tPurchase('columns.discountPct'), width: 80, align: 'right',
         render: (line) => (
             isLinesEditable ? (
@@ -236,6 +245,7 @@ export default function PurchaseOrderLinesTab({
         )
     },
     {
+        id: 'tax',
         header: tPurchase('columns.tax'), width: 110, align: 'right',
         render: (line) => (
             isLinesEditable ? (
@@ -274,9 +284,10 @@ export default function PurchaseOrderLinesTab({
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.tax')} value={defaultRender} />
     },
     {
+        id: 'amount',
         header: tPurchase('columns.amount'), width: 110, align: 'right',
         render: (line) => (
-            <span className="font-bold tabular-nums">
+            <span className="font-semibold tabular-nums text-sm">
                 {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
             </span>
         ),
@@ -285,7 +296,8 @@ export default function PurchaseOrderLinesTab({
         } />
     },
     ...(isLinesEditable ? [{
-        header: '', width: 50,
+        id: 'actions',
+        header: '', width: 50, align: 'right' as const,
         render: (line: OrderLine) => (
             <Button
                 variant="danger" size="sm"
@@ -312,60 +324,39 @@ export default function PurchaseOrderLinesTab({
     <>
 
         <div id="lines-section" className="card">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
-              <div className="flex gap-0 min-w-max">
-                <Button variant="ghost"
-                className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
-                  activeTab === 'lines'
-                    ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
-                    : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                }`}
-                onClick={() => setActiveTab('lines')}
-              >
-                {tPurchase('lineItems')}
-              </Button>
-              <Button variant="ghost"
-                className={`text-xs font-medium px-3 py-1.5 border cursor-pointer ${order.stateCode !== PURCHASE_ORDER_STATE.DRAFT ? '' : 'rounded-r-lg'} ${
-                  activeTab === 'availability'
-                    ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
-                    : 'text-[var(--text-muted)] bg-transparent border-[var(--border)] border-l-0'
-                }`}
-                onClick={() => setActiveTab('availability')}
-              >
-                {tPurchase('availability')}
-              </Button>
-              {order.stateCode !== PURCHASE_ORDER_STATE.DRAFT && (
-                <Button variant="ghost"
-                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border cursor-pointer ${
-                    activeTab === 'status'
-                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30 border-l-blue-500/30'
-                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)] border-l-0'
-                  }`}
-                  onClick={() => setActiveTab('status')}
-                >
-                  {tPurchase('statusTab')}
-                </Button>
-              )}
-              </div>
-            </div>
-            {isLinesEditable && activeTab === 'lines' && (
-              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-                <div className="flex-1 min-w-[200px] max-w-sm">
-                  <ProductSearchInput
-                    onSelect={addLineFromProduct}
-                    placeholder="Add product… (search)"
-                  />
-                </div>
-                <Button
-                  variant="secondary" size="sm" className="whitespace-nowrap"
-                  onClick={addBlankLine}
-                  disabled={saving}
-                >
-                  {tPurchase('buttons.customLine')}
-                </Button>
-              </div>
-            )}
+          <div className="mb-4">
+            <Tabs<'lines' | 'availability' | 'status'>
+              tabs={[
+                { id: 'lines' as const, label: tPurchase('lineItems') },
+                { id: 'availability' as const, label: tPurchase('availability') },
+                ...(order.stateCode !== PURCHASE_ORDER_STATE.DRAFT
+                  ? [{ id: 'status' as const, label: tPurchase('statusTab') }]
+                  : []),
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              actions={
+                isLinesEditable && activeTab === 'lines' ? (
+                  <>
+                    <div className="flex-1 min-w-[200px] max-w-sm">
+                      <ProductSearchInput
+                        onSelect={addLineFromProduct}
+                        placeholder="Add product… (search)"
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="whitespace-nowrap"
+                      onClick={addBlankLine}
+                      disabled={saving}
+                    >
+                      {tPurchase('buttons.customLine')}
+                    </Button>
+                  </>
+                ) : undefined
+              }
+            />
           </div>
 
           {activeTab === 'lines' ? (
@@ -375,33 +366,30 @@ export default function PurchaseOrderLinesTab({
               columns={lineColumns}
               mobileCard={(line: OrderLine) => {
                 const isAmountCol = (colHeader: React.ReactNode) => colHeader === tPurchase('columns.amount');
-                const actionCol = lineColumns.length > 10 ? lineColumns[10].render?.(line, 0) : null;
+                const actionCol = lineColumns.find(c => c.id === 'actions')?.render?.(line, 0);
                 return (
                   <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div className="font-semibold text-sm text-[var(--accent)]">
-                        {lineColumns[1].render?.(line, 0)}
+                        {lineColumns.find(c => c.id === 'product')?.render?.(line, 0)}
                       </div>
-                      <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                      <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                     </div>
                     <div className="text-sm text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1">
-                      {lineColumns[2].render?.(line, 0)}
+                      {lineColumns.find(c => c.id === 'description')?.render?.(line, 0)}
                     </div>
                     <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                      {[3, 4, 5, 6, 7, 8, 9].map(colIdx => {
-                        const col = lineColumns[colIdx];
-                        return (
-                          <MobileCardField
-                            key={colIdx}
-                            label={col.header}
-                            value={
-                              <div className={isAmountCol(col.header) ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
-                                {col.render?.(line, 0)}
-                              </div>
-                            }
-                          />
-                        );
-                      })}
+                      {lineColumns.filter(c => ['qty', 'received', 'uom', 'unitPrice', 'discountPct', 'tax', 'amount'].includes(c.id!)).map(col => (
+                        <MobileCardField
+                          key={col.id}
+                          label={col.header}
+                          value={
+                            <div className={isAmountCol(col.header) ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
+                              {col.render?.(line, 0)}
+                            </div>
+                          }
+                        />
+                      ))}
                       {actionCol && (
                         <div className="flex justify-end mt-2">
                           {actionCol}
@@ -418,7 +406,7 @@ export default function PurchaseOrderLinesTab({
                   return (
                     <>
                       <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
-                        <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
+                        <td colSpan={9} className="text-right font-semibold text-[var(--text-muted)]">
                           {tCommon('subtotal')}
                         </td>
                         <td className="text-right font-semibold tabular-nums">
@@ -427,7 +415,7 @@ export default function PurchaseOrderLinesTab({
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr className="hidden lg:table-row">
-                        <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
+                        <td colSpan={9} className="text-right font-semibold text-[var(--text-muted)]">
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
                         <td className="text-right font-semibold tabular-nums">
@@ -436,7 +424,7 @@ export default function PurchaseOrderLinesTab({
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr className="hidden lg:table-row bg-blue-500/[0.02]">
-                        <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
+                        <td colSpan={9} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                           {tCommon('total')}
                         </td>
                         <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
@@ -469,7 +457,7 @@ export default function PurchaseOrderLinesTab({
               <p className="text-sm text-[var(--text-muted)] py-5 text-center">{tPurchase('loadingInventory')}</p>
             ) : (
               <DataTable
-                data={order.lines}
+                data={(order.lines || []).filter((line) => parseFloat(line.quantity || '0') > 0)}
                 keyExtractor={(line) => line.purchaseOrderLineId}
                 columns={[
                   { header: tPurchase('columns.lineNumber'), width: 40 },
@@ -585,7 +573,7 @@ export default function PurchaseOrderLinesTab({
                                 <div className="font-semibold text-sm text-[var(--accent)]">
                                     {line.productNumber || line.productId?.substring(0, 8) || '—'}
                                 </div>
-                                <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                                <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                             </div>
                             <div className="text-sm text-slate-600 font-medium mb-3">
                                 {line.productDescription || '—'}
@@ -629,7 +617,7 @@ export default function PurchaseOrderLinesTab({
             /* Status / Bill Summary tab */
             <div className="overflow-x-auto">
               <DataTable
-                  data={order.lines || []}
+                  data={(order.lines || []).filter((line) => parseFloat(line.quantity || '0') > 0)}
                   keyExtractor={(line) => line.purchaseOrderLineId}
                   columns={[
                       { header: tPurchase('columns.lineNumber'), width: 40 },
@@ -686,7 +674,7 @@ export default function PurchaseOrderLinesTab({
                                   <div className="font-semibold text-sm text-[var(--accent)]">
                                       {line.productNumber || line.productId?.substring(0, 8) || '—'}
                                   </div>
-                                  <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                                  <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                               </div>
                               <div className="text-sm text-slate-600 font-medium mb-3">
                                   {line.productDescription || '—'}

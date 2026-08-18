@@ -10,7 +10,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] hover:brightness-110',
+        primary: 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]',
         secondary: 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-solid border-[var(--border)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] hover:border-[var(--accent)]',
         danger: 'bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-solid border-[rgba(239,68,68,0.3)] hover:bg-[rgba(239,68,68,0.25)]',
         'danger-ghost': 'bg-transparent text-[var(--danger)] hover:bg-[rgba(239,68,68,0.05)]',

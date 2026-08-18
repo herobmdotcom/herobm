@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
-import Link from 'next/link';
 import { formatLocalDate } from '@/lib/date';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
+import { routes } from '@/lib/routes';
 
 interface ShipmentLine {
     shipmentLineId: string;
@@ -66,26 +65,18 @@ export default function ShipmentsSection({ orderId }: Props) {
             ) : (
                 <div className="flex flex-col gap-2">
                     {shipments.map(shipment => (
-                        <Link
+                        <LinkedEntityCard
                             key={shipment.shipmentId}
-                            href={`/shipments/${shipment.shipmentId}`}
-                            className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                { }
-                                <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
-                                <div>
-                                    <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
-                                    <div className="text-xs text-[var(--text-muted)]">
-                                        {formatLocalDate(shipment.createdOn)} · {tShipping('shipmentLines', { count: shipment.lines?.length || 0 })}
-                                        {shipment.trackingNumber && (
-                                            <span> · {shipment.trackingNumber}</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            <StateBadge state={shipment.stateCode as ValidState} />
-                        </Link>
+                            icon="inventory_2"
+                            title={shipment.shipmentNumber}
+                            href={routes.shipments.detail(shipment.shipmentId)}
+                            subtitle={[
+                                formatLocalDate(shipment.createdOn),
+                                tShipping('shipmentLines', { count: shipment.lines?.length || 0 }),
+                                shipment.trackingNumber || null,
+                            ]}
+                            status={shipment.stateCode}
+                        />
                     ))}
                 </div>
             )}

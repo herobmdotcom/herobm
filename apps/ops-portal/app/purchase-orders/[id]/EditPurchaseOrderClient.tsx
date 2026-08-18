@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 import { formatLocalDate } from '@/lib/date';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
@@ -66,7 +67,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
   const lineColumns: CustomLineColumn[] = useMemo(() => [
     {
         header: tPurchase('columns.lineNumber'), width: 40,
-        render: (line) => <span className="text-slate-500 font-medium">#{line.lineNumber}</span>,
+        render: (line) => <span className="text-[var(--text-muted)] font-normal relative">{line.lineNumber}</span>,
         mobileCard: () => null
     },
     {
@@ -252,7 +253,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     {
         header: tPurchase('columns.amount'), width: 110, align: 'right',
         render: (line) => (
-            <span className="font-bold tabular-nums">
+            <span className="font-medium tabular-nums">
                 {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
             </span>
         ),
@@ -283,6 +284,16 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
         )
     }] : [])
   ], [tPurchase, isLinesEditable, order?.currencyCode, taxCategories, updateLine, removeLine, updateLineFields, tCommon]);
+
+  const navSections = useMemo(() => [
+    { id: 'details-section', label: tPurchase('tabs.overview') },
+    { id: 'lines-section', label: tPurchase('tabs.lines') },
+    { id: 'allocations-section', label: tPurchase('tabs.allocations') },
+    ...(order?.createdBy !== 'abm-import' ? [{ id: 'receptions-section', label: tPurchase('tabs.receptions') }] : []),
+    { id: 'returns-section', label: tPurchase('tabs.returns') },
+    { id: 'invoices-section', label: tPurchase('tabs.invoices') },
+    { id: 'activity-section', label: tPurchase('tabs.activity') },
+  ], [order?.createdBy, tPurchase]);
 
   if (loading) {
     return (
@@ -318,6 +329,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
             subtitle={order.name === order.orderNumber ? null : (order.name || tPurchase('untitledOrder'))}
             isSaving={saving}
             badges={<StateBadge state={order.stateCode as ValidState} />}
+            nav={<PageNav sections={navSections} />}
             actions={
               <>
 

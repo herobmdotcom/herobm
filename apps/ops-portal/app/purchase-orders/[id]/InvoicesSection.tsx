@@ -55,7 +55,7 @@ export default function InvoicesSection({
     const totalReceived = order.lines.reduce((sum, line) => sum + parseFloat(line.quantityReceived || '0'), 0);
 
     return (
-        <div id="Invoices-section" className="card">
+        <div id="invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
                     { }

@@ -35,15 +35,6 @@ export default function PurchaseReturnsPage() {
   const router = useRouter();
   useDocumentTitle('Purchase Returns');
 
-  const handleRowClicked = useCallback(
-    (row: PurchaseReturnRow) => {
-      if (row.returnId) {
-        router.push(routes.purchaseOrders.returns.detail(row.returnId));
-      }
-    },
-    [router],
-  );
-
   const gridColumns: ColDef<PurchaseReturnRow>[] = useMemo(
     () => [
       { field: 'returnNumber', headerName: 'Return No', width: 140 },
@@ -99,7 +90,7 @@ export default function PurchaseReturnsPage() {
       gridKey="purchase-returns-list"
       fetchAll
       rowIdField="returnId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => (row.returnId ? routes.purchaseOrders.returns.detail(row.returnId) : '')}
       pageTitle="Purchase Returns"
       defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
       headerActions={

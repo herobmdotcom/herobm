@@ -531,7 +531,7 @@ export function CustomerDetailsTab({
                     inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
                     inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none">%</span>
                 </div>
                 {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
                 <span className="text-sm font-medium text-[var(--text-muted)]">
@@ -553,7 +553,7 @@ export function CustomerDetailsTab({
                     inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
                   />
                   {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
 
                 {!!(earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel) && (

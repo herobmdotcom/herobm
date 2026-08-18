@@ -11,6 +11,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -26,6 +27,7 @@ import { ApiPaginatedResponse } from '../common/pagination';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   CreateGoodsReceivedDto,
+  UpdateGoodsReceivedDto,
   ResolveAllocationDto,
   GoodsReceivedResponseDto,
   GoodsReceivedLineResponseDto,
@@ -118,6 +120,22 @@ export class GoodsReceivedController {
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.coreService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiBody({ type: UpdateGoodsReceivedDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Goods Receipt',
+    description: 'Update header fields for an existing goods receipt note.',
+  })
+  @ApiOkResponse({ type: GoodsReceivedResponseDto })
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateGoodsReceivedDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.writeService.update(id, updateDto, user.username);
   }
 
   @Post(':id/cancel')

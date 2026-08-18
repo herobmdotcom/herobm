@@ -462,7 +462,7 @@ export default function SupplierInvoiceLinesTab({
                   >
                     {!isMatchingMode && (
                       <div className="pt-2 mt-2 border-t border-slate-100">
-                        <label className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 mb-1.5 block">{t('columns.allocation')}</label>
+                        <label className="text-[11px] uppercase tracking-wider font-medium text-slate-500 mb-1.5 block">{t('columns.allocation')}</label>
                         <div className="border border-slate-200 rounded p-2 bg-[var(--bg-primary)]">
                           <InvoiceAllocationCell line={line} />
                         </div>
@@ -545,7 +545,7 @@ export default function SupplierInvoiceLinesTab({
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-900">{t('invoiceDiscrepancies')}</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{t('invoiceDiscrepancies')}</h2>
                 <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
                   <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                 </Button>
@@ -556,9 +556,9 @@ export default function SupplierInvoiceLinesTab({
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
-                        <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.line')}</th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.issueType')}</th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.details')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.line')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.issueType')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.details')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
@@ -567,7 +567,7 @@ export default function SupplierInvoiceLinesTab({
                         return (
                           <tr key={i} className="hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3 text-xs text-gray-500 font-medium">{lineIdx + 1}</td>
-                            <td className="px-4 py-3 text-xs text-gray-900 font-bold uppercase tracking-tight">
+                            <td className="px-4 py-3 text-xs text-gray-900 font-medium uppercase tracking-tight">
                               {(d as { type?: string }).type?.replace(/_/g, ' ')}
                             </td>
                             <td className="px-4 py-3 text-xs text-gray-600">{(d as { message?: string }).message}</td>

@@ -10,7 +10,6 @@ import type {
   CreateSupplierExpiryDto,
   CreateSupplierGroupDto,
   EmptyBodyDto,
-  SupplierAgedBalanceResponseDto,
   SupplierGroupResponseDto,
   SupplierGroupsControllerFindAllParams,
   SupplierGroupsControllerFindOneParams,
@@ -24,6 +23,7 @@ import type {
   SuppliersControllerFindSupplierExpiriesParams,
   SuppliersControllerFindSupplierProducts200,
   SuppliersControllerFindSupplierProductsParams,
+  SuppliersControllerGetAgedBalances200,
   SuppliersControllerGetAgedBalancesParams,
   UpdateSupplierDto,
   UpdateSupplierExpiryDto,
@@ -117,7 +117,7 @@ export const suppliersControllerCreate = async (createSupplierDto: CreateSupplie
  * @summary Get Aged Balances
  */
 export type suppliersControllerGetAgedBalancesResponse200 = {
-  data: SupplierAgedBalanceResponseDto[]
+  data: SuppliersControllerGetAgedBalances200
   status: 200
 }
     

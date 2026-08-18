@@ -68,7 +68,7 @@ export function OrderLinesTable({
             render: (line: OrderLine) => (
                 <span className="font-semibold text-xs">
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline">
+                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
                             {line.productNumber || line.productId?.substring(0, 8)}
                         </Link>
                     ) : (
@@ -419,7 +419,7 @@ export function OrderLinesTable({
                             <div className="font-semibold text-sm text-[var(--accent)]">
                                 {lineColumns.find(c => c.id === 'product')?.render?.(line, 0)}
                             </div>
-                            <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                            <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                         </div>
                         <div className="text-sm text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1">
                             {lineColumns.find(c => c.id === 'description')?.render?.(line, 0)}
@@ -453,7 +453,7 @@ export function OrderLinesTable({
                     return (
                         <>
                             <tr className="hidden lg:table-row border-t-2 border-[var(--border)]">
-                                <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
+                                <td colSpan={9} className="text-right font-semibold text-[var(--text-muted)]">
                                     {tCommon('subtotal')}
                                 </td>
                                 <td className="text-right font-semibold tabular-nums">
@@ -462,7 +462,7 @@ export function OrderLinesTable({
                                 {hasActionColumn && <td></td>}
                             </tr>
                             <tr className="hidden lg:table-row">
-                                <td colSpan={8} className="text-right font-semibold text-[var(--text-muted)]">
+                                <td colSpan={9} className="text-right font-semibold text-[var(--text-muted)]">
                                     {tCommon('tax')}{taxPct > 0 && !isStale ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                                 </td>
                                 <td className="text-right font-semibold tabular-nums">
@@ -471,7 +471,7 @@ export function OrderLinesTable({
                                 {hasActionColumn && <td></td>}
                             </tr>
                             <tr className="hidden lg:table-row bg-blue-500/[0.02]">
-                                <td colSpan={8} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
+                                <td colSpan={9} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
                                     {tCommon('total')}
                                 </td>
                                 <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">

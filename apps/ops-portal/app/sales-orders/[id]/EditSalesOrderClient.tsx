@@ -17,6 +17,7 @@ import EntityBanner from '@/components/shared/EntityBanner';
 import { useAuth } from '@/components/shared/AuthGate';
 import { SystemResource, isPhysicalProductLine, hasPermission } from '@herobm/shared';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 import OrderLinesTab from './OrderLinesTab';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import PhoneInput from 'react-phone-number-input';
@@ -134,7 +135,13 @@ function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
 }
 
-
+const PICKING_INVOICE_STATES: string[] = [
+    SALES_ORDER_STATE.PICKING, 
+    SALES_ORDER_STATE.SHIPPED, 
+    SALES_ORDER_STATE.INVOICED, 
+    'legacy',
+    SALES_ORDER_STATE.ARCHIVED
+];
 
 export default function EditSalesOrderClient({ id }: { id: string }) {
     const router = useRouter();
@@ -191,6 +198,19 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     }, [o.loading, o.order]);
 
     useDocumentTitle(o.order ? (o.order.name ? `${o.order.orderNumber} - ${o.order.name}` : o.order.orderNumber) : null);
+
+    const navSections = useMemo(() => [
+        { id: 'details-section', label: tSales('tabs.overview') },
+        { id: 'lines-section', label: tSales('tabs.lines') },
+        { id: 'delivery-section', label: tSales('tabs.delivery') },
+        ...(o.order?.stateCode && PICKING_INVOICE_STATES.includes(o.order.stateCode) ? [
+            { id: 'fulfillment-section', label: tSales('tabs.fulfillment') },
+            { id: 'shipments-section', label: tSales('tabs.shipments') },
+            { id: 'invoices-section', label: tSales('tabs.invoices') },
+            { id: 'returns-section', label: tSales('tabs.returns') },
+        ] : []),
+        { id: 'activity-section', label: tSales('tabs.activity') },
+    ], [o.order?.stateCode, tSales]);
 
     if (o.loading) {
         return (
@@ -277,15 +297,6 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         }
     };
 
-    /* ── Centralised section visibility rules ──────────────────────── */
-    const PICKING_INVOICE_STATES: string[] = [
-        SALES_ORDER_STATE.PICKING, 
-        SALES_ORDER_STATE.SHIPPED, 
-        SALES_ORDER_STATE.INVOICED, 
-        'legacy',
-        SALES_ORDER_STATE.ARCHIVED
-    ];
-    
     // Pre-calculate gaps for the Availability tab
     const gaps = calculateInventoryGaps(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
@@ -323,6 +334,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         subtitle={order.name === order.orderNumber ? null : (order.name || tSales('untitledOrder'))}
                         isSaving={saving}
                         badges={order.stateCode ? <StateBadge state={order.stateCode as ValidState} /> : ''}
+                        nav={<PageNav sections={navSections} />}
                         actions={
                             <>
 
@@ -622,12 +634,12 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-gray-50 sticky top-0">
                                         <tr>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.lineNumber')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.product')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.description')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.ordered')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.available')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right text-red-600">{tSales('columns.gap')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.lineNumber')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.product')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.description')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.ordered')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.available')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right text-red-600">{tSales('columns.gap')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
@@ -638,11 +650,11 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                                                 return (
                                                     <tr key={line.salesOrderLineId} className="hover:bg-gray-50 transition-colors">
                                                         <td className="px-4 py-3 text-xs text-gray-500 font-medium">{line.lineNumber}</td>
-                                                        <td className="px-4 py-3 text-xs text-gray-900 font-bold">{line.productNumber}</td>
+                                                        <td className="px-4 py-3 text-xs text-gray-900 font-medium">{line.productNumber}</td>
                                                         <td className="px-4 py-3 text-xs text-gray-600 truncate max-w-[150px]" title={line.productDescription}>{line.productDescription}</td>
                                                         <td className="px-4 py-3 text-xs text-gray-900 text-right font-medium">{gap?.orderedQuantity}</td>
                                                         <td className="px-4 py-3 text-xs text-gray-600 text-right">{gap?.availableQuantity}</td>
-                                                        <td className="px-4 py-3 text-xs text-red-600 text-right font-bold">{gap?.shortage}</td>
+                                                        <td className="px-4 py-3 text-xs text-red-600 text-right font-semibold">{gap?.shortage}</td>
                                                     </tr>
                                                 );
                                             })

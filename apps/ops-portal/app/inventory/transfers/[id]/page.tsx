@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import TransferDetailsClient from './TransferDetailsClient';
 
 export const metadata: Metadata = {
-  title: 'Transfer Details',
+  title: 'Transfer',
 };
 
 export default async function TransferDetailsPage(props: { params: Promise<{ id: string }> }) {

@@ -74,6 +74,7 @@ import type {
   ShippingQueueOrderDto,
   TopographyLocationResponseDto,
   UpdateBinDto,
+  UpdateGoodsReceivedDto,
   UpdateLocationDto,
   UpdateShipmentDto,
   UpdateShipmentLineDto,
@@ -2273,6 +2274,44 @@ export const goodsReceivedControllerFindOne = async (id: string,
     method: 'GET'
     
     
+  }
+);}
+
+
+/**
+ * Update header fields for an existing goods receipt note.
+ * @summary Update Goods Receipt
+ */
+export type goodsReceivedControllerUpdateResponse200 = {
+  data: GoodsReceivedResponseDto
+  status: 200
+}
+    
+export type goodsReceivedControllerUpdateResponseSuccess = (goodsReceivedControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type goodsReceivedControllerUpdateResponse = (goodsReceivedControllerUpdateResponseSuccess)
+
+export const getGoodsReceivedControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/goods-received/${id}`
+}
+
+export const goodsReceivedControllerUpdate = async (id: string,
+    updateGoodsReceivedDto: UpdateGoodsReceivedDto, options?: RequestInit): Promise<goodsReceivedControllerUpdateResponse> => {
+  
+  return customFetch<goodsReceivedControllerUpdateResponse>(getGoodsReceivedControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateGoodsReceivedDto,)
   }
 );}
 

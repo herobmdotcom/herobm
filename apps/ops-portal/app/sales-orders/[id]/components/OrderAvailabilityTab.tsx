@@ -169,7 +169,7 @@ export function OrderAvailabilityTab({
                             <div className="font-semibold text-sm text-[var(--accent)]">
                                 {line.productNumber || line.productId?.substring(0, 8) || '—'}
                             </div>
-                            <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                            <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                         </div>
                         <div className="text-sm text-slate-600 font-medium mb-3">
                             {line.productDescription}

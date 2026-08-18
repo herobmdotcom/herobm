@@ -75,7 +75,8 @@ function startProcess(name, command, args, extraEnv) {
     const child = spawn(cmd, args, {
         cwd: rootDir,
         env: { ...envVars, ...extraEnv },
-        stdio: 'inherit'
+        stdio: 'inherit',
+        shell: isWindows
     });
     
     child.on('error', (err) => {

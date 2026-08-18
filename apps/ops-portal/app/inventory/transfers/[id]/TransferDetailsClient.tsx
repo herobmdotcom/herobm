@@ -39,7 +39,13 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     cancelOrder,
   } = useTransferOrder(id);
 
-  useDocumentTitle(order ? tTransfers('transferTitle', { number: order.orderNumber }) : null);
+  useDocumentTitle(
+    order
+      ? order.notes
+        ? `${order.orderNumber} - ${order.notes}`
+        : `${order.orderNumber} - Transfer`
+      : null,
+  );
 
   if (loading) {
     return (

@@ -5,8 +5,24 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { Object } from './object';
 import type { SuppliersControllerGetAgedBalancesAgingBasis } from './suppliersControllerGetAgedBalancesAgingBasis';
 
 export type SuppliersControllerGetAgedBalancesParams = {
+q?: string;
+page?: number;
+cursor?: string;
+direction?: Object;
+limit?: number;
+state?: string;
+includeArchived?: boolean;
+customerId?: string;
+vendorId?: string;
+days?: number;
+purchaseOrderId?: string;
+productId?: string;
+sort?: string;
+sortDirection?: Object;
 agingBasis?: SuppliersControllerGetAgedBalancesAgingBasis;
+quickFilter?: string;
 };

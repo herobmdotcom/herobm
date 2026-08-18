@@ -1,6 +1,10 @@
 import TemplateForm from '../TemplateForm';
 import { getTranslations } from 'next-intl/server';
 
+export const metadata = {
+  title: 'New PDF Template',
+};
+
 export default async function NewTemplatePage() {
   const tCommon = await getTranslations('common');
 

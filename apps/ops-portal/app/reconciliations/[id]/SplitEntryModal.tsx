@@ -94,27 +94,27 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
           <div className="border border-[var(--border)] rounded-lg overflow-hidden text-sm">
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.date')}</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-medium text-[var(--text-secondary)]">{t('splitEntryForm.date')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)]">{selectedLine.entryDate || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.party')}</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-medium text-[var(--text-secondary)]">{t('splitEntryForm.party')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)]">{selectedLine.partyName || selectedLine.partyId || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.memo')}</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-medium text-[var(--text-secondary)]">{t('splitEntryForm.memo')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)] truncate" title={selectedLine.memo || '-'}>{selectedLine.memo || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.total')}</div>
-              <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)] font-bold">
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-medium text-[var(--text-secondary)]">{t('splitEntryForm.total')}</div>
+              <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)] font-medium">
                 ${lineTotal.toFixed(2)} <span className="font-normal text-[var(--text-muted)] text-xs ml-1">({isDebit ? t('splitEntryForm.debit') : t('splitEntryForm.credit')})</span>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2">
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
               {t('splitEntryForm.amountToClear')}
             </label>
             <input
@@ -156,7 +156,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
             <Button variant="primary"
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? t('splitEntryForm.splitting') : t('splitEntryForm.confirmSplit')}
             </Button>

@@ -20,5 +20,7 @@ vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
 productId?: string;
+sort?: string;
+sortDirection?: Object;
 balanceStatus?: string;
 };

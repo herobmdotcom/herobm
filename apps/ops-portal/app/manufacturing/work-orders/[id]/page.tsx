@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import WorkOrderDetails from './WorkOrderDetails';
 
 export const metadata: Metadata = {
-  title: 'Work Order Details | Manufacturing',
+  title: 'Work Order',
 };
 
 export default async function WorkOrderDetailsPage(props: {

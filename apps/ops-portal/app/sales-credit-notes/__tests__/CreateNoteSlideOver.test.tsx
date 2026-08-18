@@ -135,7 +135,7 @@ describe('CreateNoteSlideOver', () => {
     );
 
     // Click Debit Note toggle
-    const debitToggle = screen.getByRole('button', { name: 'Debit Note (Supplier)' });
+    const debitToggle = screen.getByRole('tab', { name: 'Debit Note (Supplier)' });
     await userEvent.click(debitToggle);
 
     await waitFor(() => {

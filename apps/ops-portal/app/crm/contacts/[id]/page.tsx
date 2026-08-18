@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import EditContactClient from './EditContactClient';
 
 export const metadata: Metadata = {
-  title: 'Edit Contact - CRM',
+  title: 'Contact',
 };
 
 export default async function EditContactPage({ params }: { params: Promise<{ id: string }> }) {

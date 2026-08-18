@@ -20,6 +20,8 @@ import EntityBanner from '@/components/shared/EntityBanner';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
+import { routes } from '@/lib/routes';
 
 import * as api from '@herobm/sdk';
 import { getErrorMessage, RETURN_STATE, RETURN_TRANSITIONS, DATA_SOURCE_CONTEXT, computeReturnCreditSummary, computeLinePrice, isBackTransition, RETURN_LIFECYCLE, PUTAWAY_STATUS, RETURN_RESOLUTION } from '@herobm/shared';
@@ -55,7 +57,13 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
     docName: ''
   });
 
-  useDocumentTitle(ret ? `Return ${ret.returnNumber}` : 'Loading...');
+  useDocumentTitle(
+    ret
+      ? ret.customerName
+        ? `${ret.returnNumber} - ${ret.customerName}`
+        : ret.returnNumber
+      : null,
+  );
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (error) return <div className="p-8 text-red-500">{tCommon('errors.failedToCreateReturn')} {error.message}</div>;
@@ -268,6 +276,8 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                         const aBack = isBackTransition(RETURN_LIFECYCLE, ret.stateCode, a);
                         const bBack = isBackTransition(RETURN_LIFECYCLE, ret.stateCode, b);
                         if (aBack !== bBack) return aBack ? -1 : 1;
+                        if (a === RETURN_STATE.CANCELLED) return 1;
+                        if (b === RETURN_STATE.CANCELLED) return -1;
                         return 0;
                     })
                     .map((s: string) => {
@@ -281,11 +291,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                                 onClick={() => handleStateChange(s)}
                             >
                                 {s === RETURN_STATE.CANCELLED ? (
-                                    <>
-
-                                        <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
-                                        {tCommon('cancel')}
-                                    </>
+                                    tCommon('cancel')
                                 ) : back ? (
                                     <>← <StateName state={s as ValidState} /></>
                                 ) : (
@@ -418,7 +424,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
           </div>
           {(isEditable || ret.notes) && (
             <div className="mt-6">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Notes</div>
+              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">Notes</label>
               {isEditable ? (
                 <textarea
                   className="input text-sm w-full"
@@ -440,7 +446,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                   disabled={saving}
                 />
               ) : (
-                <div className="text-sm font-medium whitespace-pre-wrap">{ret.notes}</div>
+                <div className="text-sm whitespace-pre-wrap">{ret.notes}</div>
               )}
             </div>
           )}
@@ -473,49 +479,43 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               {(ret.creditNotes && ret.creditNotes.length > 0
                 ? ret.creditNotes
                 : [{ creditNoteNumber: ret.creditNoteNumber }]
-              ).map((cn, idx) => (
-                <div key={cn.creditNoteId || idx} className="p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--accent)] text-lg">receipt_long</span>
-                    <div>
-                      <div className="font-semibold text-sm text-[var(--text-primary)]">{cn.creditNoteNumber}</div>
-                      {cn.createdOn && (
-                        <div className="text-xs text-[var(--text-muted)]">{formatLocalDate(cn.createdOn)}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {(() => {
-                      const cnTotal =
-                        parseFloat(cn.totalAmount || '0') +
-                        parseFloat(cn.taxAmount || '0') -
-                        parseFloat(cn.feeAmount || '0');
-                      const displayAmount = cnTotal > 0 ? cnTotal : parseFloat(cn.totalAmount || '0');
-                      return displayAmount > 0 ? (
-                        <span className="font-semibold text-sm tabular-nums">
-                          {formatAmount(displayAmount, ret.currencyCode || 'USD')}
-                        </span>
-                      ) : null;
-                    })()}
-                    {cn.stateCode && <StateBadge state={cn.stateCode as ValidState} />}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setEmailDialogConfig({
-                        isOpen: true,
-                        hookSlug: 'sales-return-credit',
-                        title: 'Email Credit Note',
-                        prefix: 'Credit Note',
-                        docName: 'Credit Note',
-                        targetId: ret.returnId,
-                        contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                      })}
-                    >
-                      Email Credit Note
-                    </Button>
-                  </div>
-                </div>
-              ))}
+              ).map((cn, idx) => {
+                const cnTotal =
+                  parseFloat(cn.totalAmount || '0') +
+                  parseFloat(cn.taxAmount || '0') -
+                  parseFloat(cn.feeAmount || '0');
+                const displayAmount = cnTotal > 0 ? cnTotal : parseFloat(cn.totalAmount || '0');
+
+                return (
+                  <LinkedEntityCard
+                    key={cn.creditNoteId || idx}
+                    icon="receipt_long"
+                    title={cn.creditNoteNumber}
+                    href={cn.creditNoteId ? routes.salesCreditNotes.detail(cn.creditNoteId) : undefined}
+                    subtitle={cn.createdOn ? formatLocalDate(cn.createdOn) : undefined}
+                    amount={displayAmount > 0 ? formatAmount(displayAmount, ret.currencyCode || 'USD') : undefined}
+                    status={cn.stateCode}
+                    actions={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEmailDialogConfig({
+                          isOpen: true,
+                          hookSlug: 'sales-return-credit',
+                          title: 'Email Credit Note',
+                          prefix: 'Credit Note',
+                          docName: 'Credit Note',
+                          targetId: ret.returnId,
+                          contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                        })}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">mail</span>
+                        <span className="sr-only">Email Credit Note</span>
+                      </Button>
+                    }
+                  />
+                );
+              })}
             </div>
           </div>
         )}

@@ -103,7 +103,9 @@ describe('EditPurchaseReturnClient — Shipped State & Debit Note Decoupling', (
 
     // Should display the linked debit note reference in Debit Notes section
     expect(screen.getByText('Debit Notes')).toBeInTheDocument();
-    expect(screen.getByText('PDN-2026-0099')).toBeInTheDocument();
+    const debitNoteLink = screen.getByRole('link', { name: /PDN-2026-0099/i });
+    expect(debitNoteLink).toBeInTheDocument();
+    expect(debitNoteLink).toHaveAttribute('href', '/purchase-debit-notes/dn-999');
 
     // Should NOT show the pending notice when debit note is already linked
     expect(
@@ -144,7 +146,9 @@ describe('EditPurchaseReturnClient — Shipped State & Debit Note Decoupling', (
       expect(screen.getByText('PR 1572')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('PC 1344')).toBeInTheDocument();
+    const debitNoteLink = screen.getByRole('link', { name: /PC 1344/i });
+    expect(debitNoteLink).toBeInTheDocument();
+    expect(debitNoteLink).toHaveAttribute('href', '/purchase-debit-notes/dn-1344');
     // Net Debit Total: 3411.65 + 341.16 = 3752.81
     expect(screen.getByText(/3,752\.81/)).toBeInTheDocument();
   });

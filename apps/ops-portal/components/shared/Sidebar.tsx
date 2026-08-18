@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useLayoutEffect, useEffect, useState } from 'react';
 import { useAuth } from './AuthGate';
 import UserPreferencesModal from './UserPreferencesModal';
+import { useHelp } from '@/components/help/HelpContext';
 
 export interface NavItem {
   href: string;
@@ -33,9 +34,13 @@ export interface SidebarProps {
   footer?: string;
 }
 
+const HELP_SYMBOL = '?';
+
 export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('common.auth');
+  const tHelp = useTranslations('help');
+  const { toggleHelp, contextTopic } = useHelp();
   const { username, displayName } = useAuth();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [isPrefsOpen, setIsPrefsOpen] = useState(false);
@@ -76,14 +81,14 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
   }, [isMenuOpen]);
 
   useLayoutEffect(() => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = { ...prev };
       let changed = false;
-      
+
       sections.forEach((section, si) => {
         if (!section.label) return;
         const allItems = sections.flatMap((s) => s.items);
-        const isSectionActive = section.items.some(item => {
+        const isSectionActive = section.items.some((item) => {
           return item.href === '/'
             ? pathname === '/'
             : item.subItems
@@ -100,137 +105,151 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                     (pathname === other.href || pathname.startsWith(other.href + '/')),
                 );
         });
-        
+
         if (isSectionActive && !next[si]) {
           next[si] = true;
           changed = true;
         }
       });
-      
+
       return changed ? next : prev;
     });
   }, [pathname, sections]);
 
   return (
     <aside
-      className="w-60 h-full flex flex-col print:hidden bg-[var(--bg-secondary)] border-r border-[var(--border)]"
+      className="w-60 h-full flex flex-col print:hidden bg-[#F8FAFC] text-[#0F172A] border-r border-[#E2E8F0] select-none"
     >
-      <div className="px-5 py-5">
-        <Link href="/" className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg">
+      {/* Brand Header */}
+      <div className="px-5 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+        <Link href="/" className="flex items-center gap-2.5 no-underline hover:opacity-85 transition-opacity">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#006B5C] text-white font-extrabold text-sm shadow-xs">
             H
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
-            {title}
-          </h1>
-        </Link>
-        <p className="text-[11px] mt-1 text-[var(--text-muted)]">
-          {subtitle}
-        </p>
-      </div>
-      <nav className="flex-1 px-3 mt-2 overflow-y-auto">
-        {sections.map((section, si) => (
-          <div key={si} className={si > 0 ? 'mt-4' : ''}>
-            {section.label && (
-              <div 
-                className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
-                onClick={() => setExpanded(prev => ({ ...prev, [si]: !prev[si] }))}
-              >
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-wider transition-colors group-hover:text-[var(--text-primary)] text-[var(--text-muted)]"
-                >
-                  {section.label}
-                </p>
-                <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-50 transition-opacity text-[var(--text-muted)]">
-                  {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                  {!expanded[si] ? 'expand_more' : 'expand_less'}
-                </span>
-              </div>
-            )}
-            {(!section.label || expanded[si]) && section.items.map((item) => {
-              const allItems = sections.flatMap((s) => s.items);
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : item.subItems
-                    ? item.subItems.some(
-                        (sub) =>
-                          pathname === sub.href ||
-                          pathname.startsWith(sub.href + '/'),
-                      )
-                    : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
-                      !allItems.some(
-                        (other) =>
-                          other.href !== item.href &&
-                          other.href.length > item.href.length &&
-                          (pathname === other.href || pathname.startsWith(other.href + '/')),
-                      );
-
-              return (
-                <div key={item.href} className="mb-0.5">
-                  <Link
-                    href={item.href}
-                    scroll={false}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 relative ${
-                      isActive
-                        ? 'bg-[var(--accent-glow)] text-[var(--accent)] font-semibold'
-                        : 'bg-transparent text-[var(--text-secondary)] font-normal'
-                    }`}
-                  >
-                    <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>{item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    {item.subItems && (
-                      <span className="material-symbols-outlined text-[16px] opacity-70">
-                        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                        {isActive ? 'expand_less' : 'expand_more'}
-                      </span>
-                    )}
-                  </Link>
-                  
-                  {item.subItems && isActive && (
-                    <div className="ml-9 mt-1 mb-2 flex flex-col gap-0.5 border-l-2 pl-3 py-1 border-[var(--border)]">
-                      {item.subItems.map(sub => {
-                        const isSubActive =
-                          sub.href === '/'
-                            ? pathname === '/'
-                            : (pathname === sub.href || pathname.startsWith(sub.href + '/')) &&
-                              !item.subItems!.some(
-                                (other) =>
-                                  other.href !== sub.href &&
-                                  other.href.length > sub.href.length &&
-                                  (pathname === other.href || pathname.startsWith(other.href + '/'))
-                              );
-                        return (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            scroll={false}
-                            className={`text-xs py-1.5 px-3 rounded-md transition-colors ${
-                              isSubActive
-                                ? 'bg-[var(--bg-secondary-hover)] text-[var(--text-primary)] font-semibold'
-                                : 'bg-transparent text-[var(--text-muted)] font-normal'
-                            }`}
-                          >
-                            {sub.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div>
+            <h1 className="text-base font-bold tracking-tight text-[#0F172A] leading-tight">
+              {title}
+            </h1>
+            <p className="text-[10px] text-[#64748B] tracking-normal font-medium">
+              {subtitle}
+            </p>
           </div>
-        ))}
+        </Link>
+      </div>
+
+      {/* Navigation Groups */}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3 bg-[#F8FAFC]">
+        {sections.map((section, si) => {
+          const sectionExpandIcon = expanded[si] ? 'expand_less' : 'expand_more';
+          return (
+            <div key={si} className="space-y-0.5">
+              {section.label && (
+                <div
+                  className="flex items-center justify-between px-2.5 py-1 cursor-pointer group"
+                  onClick={() => setExpanded((prev) => ({ ...prev, [si]: !prev[si] }))}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] group-hover:text-[#475569] transition-colors">
+                    {section.label}
+                  </p>
+                  <span className="material-symbols-outlined text-[14px] text-[#94A3B8] group-hover:text-[#475569] transition-colors">
+                    {sectionExpandIcon}
+                  </span>
+                </div>
+              )}
+              {(!section.label || expanded[si]) &&
+                section.items.map((item) => {
+                  const allItems = sections.flatMap((s) => s.items);
+                  const isActive =
+                    item.href === '/'
+                      ? pathname === '/'
+                      : item.subItems
+                        ? item.subItems.some(
+                            (sub) =>
+                              pathname === sub.href ||
+                              pathname.startsWith(sub.href + '/'),
+                          )
+                        : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+                          !allItems.some(
+                            (other) =>
+                              other.href !== item.href &&
+                              other.href.length > item.href.length &&
+                              (pathname === other.href || pathname.startsWith(other.href + '/')),
+                          );
+                  const itemExpandIcon = isActive ? 'expand_less' : 'expand_more';
+
+                  return (
+                    <div key={item.href} className="mb-0.5">
+                      <Link
+                        href={item.href}
+                        scroll={false}
+                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all duration-150 relative no-underline ${
+                          isActive
+                            ? 'bg-[#006B5C]/10 text-[#006B5C] font-semibold'
+                            : 'bg-transparent text-[#475569] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 font-normal'
+                        }`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-[17px] ${
+                            isActive ? 'text-[#006B5C]' : 'text-[#64748B]'
+                          }`}
+                        >
+                          {item.icon}
+                        </span>
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {item.subItems && (
+                          <span className="material-symbols-outlined text-[15px] opacity-70">
+                            {itemExpandIcon}
+                          </span>
+                        )}
+                      </Link>
+
+                      {item.subItems && isActive && (
+                        <div className="ml-5 mt-1 mb-1.5 flex flex-col gap-0.5 border-l border-[#CBD5E1] pl-2.5 py-0.5">
+                          {item.subItems.map((sub) => {
+                            const isSubActive =
+                              sub.href === '/'
+                                ? pathname === '/'
+                                : (pathname === sub.href || pathname.startsWith(sub.href + '/')) &&
+                                  !item.subItems!.some(
+                                    (other) =>
+                                      other.href !== sub.href &&
+                                      other.href.length > sub.href.length &&
+                                      (pathname === other.href || pathname.startsWith(other.href + '/')),
+                                  );
+                            return (
+                              <Link
+                                key={sub.href}
+                                href={sub.href}
+                                scroll={false}
+                                className={`text-[11px] py-1 px-2 rounded-md transition-colors no-underline truncate ${
+                                  isSubActive
+                                    ? 'bg-[#006B5C]/15 text-[#006B5C] font-semibold'
+                                    : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70'
+                                }`}
+                              >
+                                {sub.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          );
+        })}
       </nav>
-      <div className="px-3 py-2.5 border-t border-[var(--border)] relative">
+
+      {/* Footer: User Button & Help Button */}
+      <div className="px-3 py-3 border-t border-[#E2E8F0] flex items-center gap-2 bg-[#F8FAFC] relative">
         {/* User Menu Popover */}
         {isMenuOpen && (
           <div
             ref={menuRef}
             role="menu"
             aria-orientation="vertical"
-            className="absolute bottom-full left-3 right-3 mb-1.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-150"
+            className="absolute bottom-full left-3 right-3 mb-2 bg-white border border-[#CBD5E1] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1 text-[#0F172A] animate-in fade-in slide-in-from-bottom-2 duration-150"
           >
             <Button
               variant="secondary"
@@ -239,15 +258,14 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                 setIsMenuOpen(false);
                 setIsPrefsOpen(true);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer !border-0 text-left justify-start"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[#334155] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
             >
-
-              <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)]">
+              <span className="material-symbols-outlined text-[16px] text-[#64748B]">
                 tune
               </span>
               <span>{t('settings')}</span>
             </Button>
-            <div className="h-[1px] bg-[var(--border)] my-0.5" />
+            <div className="h-[1px] bg-[#E2E8F0] my-0.5" />
             <Button
               variant="secondary"
               role="menuitem"
@@ -255,10 +273,10 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                 setIsMenuOpen(false);
                 logout();
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-[var(--danger)] hover:bg-[rgba(239,68,68,0.1)] transition-colors cursor-pointer !border-0 text-left justify-start"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[#DC2626] hover:bg-[#DC2626]/10 transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
             >
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-              <span className="material-symbols-outlined text-[18px] text-[var(--danger)]">
+              <span className="material-symbols-outlined text-[16px] text-[#DC2626]">
                 logout
               </span>
               <span>{t('signOut')}</span>
@@ -266,31 +284,48 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
           </div>
         )}
 
-        {/* User Button */}
+        {/* User Button (Left, h-10, Transparent BG, Unbolded Name) */}
         <Button
           ref={triggerRef}
           variant="ghost"
+          size="sm"
           onClick={() => setIsMenuOpen((prev) => !prev)}
           aria-expanded={isMenuOpen}
           aria-haspopup="menu"
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-colors bg-transparent hover:bg-[var(--bg-secondary-hover)] cursor-pointer !border-0 justify-start shadow-none group"
+          aria-label={rawName}
+          title={rawName}
+          className={`h-10 flex-1 flex items-center gap-2 px-2 rounded-lg bg-transparent border border-[#CBD5E1] text-left overflow-hidden cursor-pointer shadow-none justify-start transition-all !p-1.5 ${
+            isMenuOpen
+              ? 'border-[#006B5C] bg-[#006B5C]/10 ring-2 ring-[#006B5C]/15'
+              : 'hover:border-[#94A3B8] hover:bg-[#E2E8F0]/70'
+          }`}
         >
-          <div className="w-6 h-6 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] font-medium text-[11px] flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors">
+          <div className="w-6 h-6 rounded-md bg-[#006B5C] text-white font-medium text-xs flex items-center justify-center shrink-0">
             {initial}
           </div>
-          <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)] truncate flex-1 transition-colors">
-            {firstName}
-          </span>
-
-          <span
-            className={`material-symbols-outlined text-[16px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-all duration-150 ${
-              isMenuOpen ? 'rotate-180 text-[var(--text-primary)]' : ''
-            }`}
-          >
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-normal text-[#0F172A] truncate">
+              {rawName}
+            </p>
+          </div>
+          <span className="material-symbols-outlined text-[15px] text-[#94A3B8] shrink-0">
             unfold_more
           </span>
         </Button>
+
+        {/* Help Button (Right, h-10 w-10, Transparent BG) */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleHelp}
+          aria-label={tHelp('title')}
+          title={contextTopic ? `${tHelp('manual')}: ${contextTopic.title}` : tHelp('manual')}
+          className="h-10 w-10 rounded-lg bg-transparent hover:bg-[#E2E8F0]/70 text-[#006B5C] hover:text-[#005145] border border-[#CBD5E1] hover:border-[#006B5C] flex items-center justify-center shrink-0 cursor-pointer shadow-none !p-0 font-medium text-xs transition-all"
+        >
+          {HELP_SYMBOL}
+        </Button>
       </div>
+
       <UserPreferencesModal
         isOpen={isPrefsOpen}
         onClose={() => setIsPrefsOpen(false)}

@@ -2,7 +2,7 @@ import TaxBalancesContent from './TaxBalancesContent';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Tax BAS Report | HeroBM',
+  title: 'Tax BAS Report',
   description: 'Australian ATO BAS Reporting Summary',
 };
 

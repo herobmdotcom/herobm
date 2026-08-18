@@ -87,7 +87,13 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
     return allocs;
   }, [invoice]);
 
-  useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : 'Loading Invoice...');
+  useDocumentTitle(
+    invoice
+      ? invoice.vendorName
+        ? `${invoice.invoiceNumber} - ${invoice.vendorName}`
+        : invoice.invoiceNumber
+      : null,
+  );
 
   // Auto-select first unmatched line when entering matching mode
   useEffect(() => {

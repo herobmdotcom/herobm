@@ -1,7 +1,7 @@
 import SalesReturnDetailContent from './SalesReturnDetailContent';
 
 export const metadata = {
-  title: 'Sales Return | HeroBM',
+  title: 'Sales Return',
 };
 
 export default async function SalesReturnPage(props: { params: Promise<{ id: string }> }) {

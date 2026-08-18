@@ -26,6 +26,9 @@
         "apps/api/run-migrations.ts",
         "apps/api/scratch.ts",
         "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
+        "apps/ops-portal/app/credit-debit-notes/CreditNoteDetailSlideOver.tsx",
+        "apps/ops-portal/app/credit-debit-notes/DebitNoteDetailSlideOver.tsx",
+        "apps/ops-portal/components/help/HelpTrigger.tsx",
         "apps/api/src/orders/picking-math.utils.ts"
       ],
       "ignoreDependencies": [

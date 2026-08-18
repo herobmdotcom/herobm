@@ -833,10 +833,13 @@ export default function DataGrid<T>({
       }
       if (rowHref && event.data) {
         const url = rowHref(event.data);
-        if (event.event && ((event.event as MouseEvent).ctrlKey || (event.event as MouseEvent).metaKey)) {
-          window.open(url, '_blank');
-        } else {
-          router.push(url);
+        if (url) {
+          const mouseEvent = event.event as MouseEvent | undefined;
+          if (mouseEvent && (mouseEvent.ctrlKey || mouseEvent.metaKey || mouseEvent.button === 1 || mouseEvent.which === 2)) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+          } else {
+            router.push(url);
+          }
         }
       } else if (onRowClicked && event.data) {
         onRowClicked(event.data, event.event as MouseEvent | KeyboardEvent);
@@ -1269,10 +1272,12 @@ export default function DataGrid<T>({
               }
               if (rowHref) {
                 const url = rowHref(r);
-                if (e && (e.ctrlKey || e.metaKey)) {
-                  window.open(url, '_blank');
-                } else {
-                  router.push(url);
+                if (url) {
+                  if (e && (e.ctrlKey || e.metaKey || e.button === 1)) {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  } else {
+                    router.push(url);
+                  }
                 }
               } else if (onRowClicked) {
                 onRowClicked(r, e as unknown as MouseEvent);

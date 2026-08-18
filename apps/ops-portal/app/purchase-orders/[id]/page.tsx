@@ -1,8 +1,7 @@
 import EditPurchaseOrderClient from './EditPurchaseOrderClient';
-import { useTranslations } from 'next-intl';
-
+ 
 export const metadata = {
-  title: 'Purchase Order | HeroBM',
+  title: 'Purchase Order',
 };
 
 export default async function PurchaseOrderPage(props: { params: Promise<{ id: string }> }) {

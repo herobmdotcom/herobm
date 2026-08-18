@@ -7,6 +7,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
@@ -556,49 +557,35 @@ export default function NewWorkOrderPage() {
             <span className="material-symbols-outlined">inventory_2</span>
             {t('lineItems')}
           </h3>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <div className="flex overflow-x-auto shrink-0">
-              <div className="flex gap-0 min-w-max">
-                <Button
-                  className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border ${
-                    activeTab === 'lines'
-                      ? 'text-primary bg-primary/10 border-primary/30'
-                      : 'text-muted-foreground bg-transparent border-slate-200'
-                  }`}
-                  onClick={() => setActiveTab('lines')}
-                >
-                  Component Lines
-                </Button>
-                <Button
-                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border ${
-                    activeTab === 'availability'
-                      ? 'text-primary bg-primary/10 border-primary/30 border-l-primary/30'
-                      : 'text-muted-foreground bg-transparent border-slate-200 border-l-0'
-                  }`}
-                  onClick={() => setActiveTab('availability')}
-                >
-                  Stock Availability
-                </Button>
-              </div>
-            </div>
-            {activeTab === 'lines' && (
-              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-                <div className="flex-1 min-w-[200px] max-w-sm">
-                  <ProductSearchInput
-                    onSelect={addLineFromProduct}
-                    placeholder={t('placeholders.searchComponent')}
-                  />
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="whitespace-nowrap"
-                  onClick={addCustomLine}
-                >
-                  {t('buttons.customLine')}
-                </Button>
-              </div>
-            )}
+          <div className="mb-4">
+            <Tabs<'lines' | 'availability'>
+              tabs={[
+                { id: 'lines', label: 'Component Lines' },
+                { id: 'availability', label: 'Stock Availability' },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              actions={
+                activeTab === 'lines' ? (
+                  <>
+                    <div className="flex-1 min-w-[200px] max-w-sm">
+                      <ProductSearchInput
+                        onSelect={addLineFromProduct}
+                        placeholder={t('placeholders.searchComponent')}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="whitespace-nowrap"
+                      onClick={addCustomLine}
+                    >
+                      {t('buttons.customLine')}
+                    </Button>
+                  </>
+                ) : undefined
+              }
+            />
           </div>
 
           {activeTab === 'lines' ? (

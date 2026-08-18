@@ -71,6 +71,7 @@ const VALID_GRN_STATES = getValidStates(GOODS_RECEIVED_TRANSITIONS);
 
 import { GoodsReceivedCoreService } from './goods-received-core.service';
 import { GoodsReceivedStateService } from './goods-received-state.service';
+import { CreateGoodsReceivedDto, UpdateGoodsReceivedDto } from './dto';
 
 @Injectable()
 export class GoodsReceivedWriteService {
@@ -1174,6 +1175,89 @@ export class GoodsReceivedWriteService {
       });
 
       return { success: true };
+    });
+  }
+
+  /**
+   * Update header fields for an existing goods receipt.
+   */
+  async update(id: string, updateDto: UpdateGoodsReceivedDto, userId: string) {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(goodsReceived)
+        .where(eq(goodsReceived.goodsReceivedId, id))
+        .limit(1);
+
+      if (!existing) {
+        throw new NotFoundException(`Goods receipt ${id} not found`);
+      }
+
+      if (existing.stateCode === GOODS_RECEIVED_STATE.CANCELLED) {
+        throw new BadRequestException('Cannot update a cancelled receipt');
+      }
+
+      if (updateDto.vendorId) {
+        const [vendor] = await tx
+          .select()
+          .from(suppliers)
+          .where(eq(suppliers.vendorId, updateDto.vendorId))
+          .limit(1);
+        if (!vendor) {
+          throw new NotFoundException(
+            `Supplier ${updateDto.vendorId} not found`,
+          );
+        }
+      }
+
+      if (updateDto.locationId) {
+        const [location] = await tx
+          .select()
+          .from(locations)
+          .where(eq(locations.locationId, updateDto.locationId))
+          .limit(1);
+        if (!location) {
+          throw new NotFoundException(
+            `Location ${updateDto.locationId} not found`,
+          );
+        }
+      }
+
+      const updateData: Partial<typeof goodsReceived.$inferInsert> = {
+        modifiedOn: new Date(),
+      };
+      if (updateDto.vendorId !== undefined) {
+        updateData.vendorId = updateDto.vendorId;
+      }
+      if (updateDto.locationId !== undefined) {
+        updateData.locationId = updateDto.locationId;
+      }
+      if (updateDto.packingSlipNumber !== undefined) {
+        updateData.packingSlipNumber = updateDto.packingSlipNumber;
+      }
+      if (updateDto.notes !== undefined) {
+        updateData.notes = updateDto.notes;
+      }
+
+      await tx
+        .update(goodsReceived)
+        .set(updateData)
+        .where(eq(goodsReceived.goodsReceivedId, id));
+
+      await emitEvent(tx, {
+        entityType: EntityType.WAREHOUSE,
+        entityId: id,
+        eventType: EventType.UPDATED,
+        entityDisplayName: existing.receiptNumber,
+        payload: {
+          goodsReceivedId: id,
+          receiptNumber: existing.receiptNumber,
+          changes: updateDto,
+        },
+        actor: userId,
+      });
+
+      return this.coreService.findOne(id, tx);
     });
   }
 }

@@ -17,6 +17,7 @@ import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -598,19 +599,26 @@ export default function ShippingPage() {
             detailTitle={selectedOrder ? selectedOrder.orderNumber : undefined}
             masterPane={
                 <>
-                    <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
-                        <Button variant="ghost" 
-                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => setActiveTab('ready')}
-                        >
-                            {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'ready').length})</span>
-                        </Button>
-                        <Button variant="ghost" 
-                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => setActiveTab('partial')}
-                        >
-                            {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'partial').length})</span>
-                        </Button>
+                    <div className="lg:bg-[var(--bg-secondary)] pt-1 lg:px-1">
+                        <Tabs<'ready' | 'partial'>
+                            tabs={[
+                                {
+                                    id: 'ready',
+                                    label: t('tabs.ready'),
+                                    color: 'success',
+                                    badge: <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'ready').length})</span>,
+                                },
+                                {
+                                    id: 'partial',
+                                    label: t('tabs.partial'),
+                                    color: 'warning',
+                                    badge: <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'partial').length})</span>,
+                                },
+                            ]}
+                            activeTab={activeTab}
+                            onChange={setActiveTab}
+                            equalWidth
+                        />
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2 pb-24 lg:pb-2 bg-[var(--bg-card)] lg:bg-transparent rounded-b-md lg:rounded-none">

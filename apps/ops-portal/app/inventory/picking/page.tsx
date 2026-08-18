@@ -15,6 +15,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { SALES_ORDER_PICK_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 
 interface UnifiedOrder {
     id: string;
@@ -352,25 +353,32 @@ export default function PickingPage() {
             detailTitle={selectedOrder ? selectedOrder.orderNumber : t('title')}
             masterPane={
                 <>
-                    <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
-                        <Button variant="ghost" 
-                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'ready' ? 'border-emerald-500 text-emerald-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => handleTabChange('ready')}
-                        >
-                            {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.readyCount})</span>
-                        </Button>
-                        <Button variant="ghost" 
-                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'partial' ? 'border-amber-500 text-amber-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => handleTabChange('partial')}
-                        >
-                            {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.partialCount})</span>
-                        </Button>
-                        <Button variant="ghost" 
-                            className={`flex-1 py-3 px-2 text-center border-b-2 rounded-t-md transition-colors min-h-[44px] touch-manipulation ${activeTab === 'blocked' ? 'border-rose-500 text-rose-500 bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
-                            onClick={() => handleTabChange('blocked')}
-                        >
-                            {t('tabs.blocked')} <span className="ml-1 opacity-75 font-normal">({paginationMeta.blockedCount})</span>
-                        </Button>
+                    <div className="lg:bg-[var(--bg-secondary)] pt-1 lg:px-1">
+                        <Tabs<'ready' | 'partial' | 'blocked'>
+                            tabs={[
+                                {
+                                    id: 'ready',
+                                    label: t('tabs.ready'),
+                                    color: 'emerald',
+                                    badge: <span className="ml-1 opacity-75 font-normal">({paginationMeta.readyCount})</span>,
+                                },
+                                {
+                                    id: 'partial',
+                                    label: t('tabs.partial'),
+                                    color: 'amber',
+                                    badge: <span className="ml-1 opacity-75 font-normal">({paginationMeta.partialCount})</span>,
+                                },
+                                {
+                                    id: 'blocked',
+                                    label: t('tabs.blocked'),
+                                    color: 'rose',
+                                    badge: <span className="ml-1 opacity-75 font-normal">({paginationMeta.blockedCount})</span>,
+                                },
+                            ]}
+                            activeTab={activeTab}
+                            onChange={handleTabChange}
+                            equalWidth
+                        />
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2 bg-[var(--bg-card)] lg:bg-transparent rounded-b-md lg:rounded-none">

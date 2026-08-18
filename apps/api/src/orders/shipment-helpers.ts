@@ -110,19 +110,21 @@ export async function assertShipmentQtyAvailable(
 ): Promise<void> {
   const orderLine = await findOrderLine(db, salesOrderLineId, salesOrderId);
 
-  // Check if the line is for a non-stock product (e.g. freight, service).
-  // Non-stock products don't require physical picks — treat ordered qty as available.
-  const [productRow] = await db
-    .select({ productType: products.productType })
-    .from(products)
-    .where(eq(products.productId, orderLine.productId!))
-    .limit(1);
+  // Check product type for inventory vs non-stock/custom line
+  const [productRow] = orderLine.productId
+    ? await db
+        .select({ productType: products.productType })
+        .from(products)
+        .where(eq(products.productId, orderLine.productId))
+        .limit(1)
+    : [undefined];
 
-  const isPhysical =
-    !productRow?.productType || productRow.productType === 'inventory';
+  const isStocked =
+    Boolean(orderLine.productId) &&
+    (!productRow?.productType || productRow.productType === 'inventory');
 
   let picked: number;
-  if (isPhysical) {
+  if (isStocked) {
     // Derive picked qty from the sub-ledger (replaces legacy quantityPicked column)
     const [pickSum] = await db
       .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number) })
@@ -135,7 +137,7 @@ export async function assertShipmentQtyAvailable(
       );
     picked = parseFloat(String(pickSum?.sum ?? 0));
   } else {
-    // Non-stock: treat ordered quantity as fully available
+    // Non-stock / custom line: does not require physical bin picking — treat ordered quantity as available
     picked = parseFloat(orderLine.quantity);
   }
 

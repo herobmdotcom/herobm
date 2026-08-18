@@ -9,5 +9,7 @@
 export interface LoginResponseDto {
   access_token: string;
   username: string;
+  /** @nullable */
+  displayName?: string | null;
   role: string;
 }

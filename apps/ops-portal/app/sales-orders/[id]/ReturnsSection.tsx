@@ -2,9 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
+import { routes } from '@/lib/routes';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
@@ -347,7 +348,7 @@ export default function ReturnsSection({
                                                 <option value="replace">Replace</option>
                                             </select>
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                                     </div>
                                     <div className="text-sm text-slate-600 font-medium mb-3">
                                         {line.productDescription || '—'}
@@ -546,29 +547,21 @@ export default function ReturnsSection({
             ) : (
                 <div className="flex flex-col gap-2">
                     {returns.map((ret) => {
+                        const subtitleTokens = [
+                            formatLocalDate(ret.createdOn),
+                            `${ret.lines?.length || 0} ${tCommon('tabs.lines').toLowerCase()}`,
+                            ret.createdBy ? tCommon('timeline.by', { actor: ret.createdBy }) : null,
+                        ];
+
                         return (
-                            <Link
+                            <LinkedEntityCard
                                 key={ret.returnId}
-                                href={`/sales-returns/${ret.returnId}`}
-                                className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">assignment_return</span>
-                                    <div>
-                                        <div className="font-bold text-sm text-[var(--text-primary)]">
-                                            {ret.returnNumber}
-                                        </div>
-                                        <div className="text-xs text-[var(--text-muted)]">
-                                            {formatLocalDate(ret.createdOn)} {' \u00B7 '} {ret.lines?.length || 0}
-                                            <span> {tCommon('tabs.lines').toLowerCase()} </span>
-                                            {ret.createdBy && <span> {' \u00B7 '} {tCommon('timeline.by', { actor: ret.createdBy })}</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <PurchaseReturnStateBadge state={ret.stateCode as ValidState} />
-                                </div>
-                            </Link>
+                                icon="assignment_return"
+                                title={ret.returnNumber}
+                                href={routes.salesReturns.detail(ret.returnId)}
+                                subtitle={subtitleTokens}
+                                status={ret.stateCode}
+                            />
                         );
                     })}
                 </div>

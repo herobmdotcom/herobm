@@ -10,6 +10,8 @@ import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
 import { useAuth } from '@/components/AuthGate';
+import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
+import { routes } from '@/lib/routes';
 
 import { SalesInvoice, TaxCategory, OrderDetail, OrderReturn } from './types';
 import { SALES_INVOICE_STATE } from '@herobm/shared';
@@ -197,7 +199,7 @@ export default function InvoicesSection({
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{origLine?.lineNumber}</div>
+                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{origLine?.lineNumber}</div>
                                     </div>
                                     <div className="text-sm text-slate-600 font-medium mb-3">
                                         {origLine?.productDescription || '—'}
@@ -251,38 +253,21 @@ export default function InvoicesSection({
                     </div>
                 </div>
             )}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
                 {invoices.map((inv) => (
-                    <Link
+                    <LinkedEntityCard
                         key={inv.invoiceId}
-                        href={`/sales-invoices/${inv.invoiceId}`}
-                        className="p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--bg-card)] cursor-pointer no-underline text-inherit group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="p-2.5 rounded-lg bg-[rgba(var(--primary-rgb),0.05)] text-[var(--accent)] group-hover:scale-105 transition-transform flex items-center justify-center">
-                                <span className="material-symbols-outlined text-[24px]">receipt_long</span>
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-[var(--accent)] group-hover:underline">
-                                        {inv.invoiceNumber}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                                    {formatLocalDate(inv.createdOn)}
-                                    {inv.createdBy && ` · ${tCommon('timeline.by', { actor: inv.createdBy })}`}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-right">
-                                <div className="font-bold text-sm text-[var(--text-primary)] tabular-nums">
-                                    {formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}
-                                </div>
-                                <div className="text-xs text-[var(--text-muted)] tabular-nums">
-                                    {tCommon('tax')}: {formatAmount(parseFloat(inv.taxAmount || '0'), order.currencyCode || baseCurrency)}
-                                </div>
-                            </div>
+                        icon="receipt_long"
+                        title={inv.invoiceNumber}
+                        href={routes.salesInvoices.detail(inv.invoiceId)}
+                        subtitle={[
+                            formatLocalDate(inv.createdOn),
+                            inv.createdBy ? tCommon('timeline.by', { actor: inv.createdBy }) : null,
+                        ]}
+                        amount={formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}
+                        amountSubtext={`${tCommon('tax')}: ${formatAmount(parseFloat(inv.taxAmount || '0'), order.currencyCode || baseCurrency)}`}
+                        status={inv.stateCode}
+                        actions={
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -296,8 +281,8 @@ export default function InvoicesSection({
                                 <span className="material-symbols-outlined text-[20px]">mail</span>
                                 <span className="sr-only">Email Invoice</span>
                             </Button>
-                        </div>
-                    </Link>
+                        }
+                    />
                 ))}
                 {invoices.length === 0 && (
                     <div className="text-center py-6 text-sm text-[var(--text-muted)]">

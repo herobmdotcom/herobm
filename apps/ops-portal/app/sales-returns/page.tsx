@@ -29,15 +29,6 @@ export default function SalesReturnsPage() {
   const router = useRouter();
   useDocumentTitle('Sales Returns');
 
-  const handleRowClicked = useCallback(
-    (row: SalesReturnRow) => {
-      if (row.returnId) {
-        router.push(routes.salesReturns.detail(row.returnId));
-      }
-    },
-    [router],
-  );
-
   const gridColumns: ColDef<SalesReturnRow>[] = useMemo(
     () => [
       { field: 'returnNumber', headerName: 'Return No', width: 140 },
@@ -96,7 +87,7 @@ export default function SalesReturnsPage() {
       endpoint="/api/sales-returns"
       gridKey="sales-returns-list"
       rowIdField="returnId"
-      onRowClicked={handleRowClicked}
+      rowHref={(row) => (row.returnId ? routes.salesReturns.detail(row.returnId) : '')}
       pageTitle="Sales Returns"
       defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
     />

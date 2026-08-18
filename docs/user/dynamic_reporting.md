@@ -1,6 +1,37 @@
+---
+id: dynamic-reporting
+title: "Dynamic Reporting & Typst Templates"
+description: "Browser-based visual template editor, Typst markup, live test records, and automated PDF document generation."
+category: "Reporting"
+order: 1
+resource: "report"
+action: "read"
+routes:
+  - "/reporting"
+  - "/reporting/config"
+  - "/reporting/config/:id"
+  - "/admin/settings/pdf-templates"
+  - "/admin/settings/pdf-hooks"
+tags: ["reporting", "pdf", "templates", "typst", "invoices", "picking-slips", "admin"]
+fields:
+  system_hook:
+    title: "System Hook"
+    summary: "The operational trigger point (e.g., sales-invoice, purchase-order, picking-slip) calling this template."
+  target_record:
+    title: "Target Record"
+    summary: "Sample entity ID used to populate test data into the live Typst PDF preview."
+  typst_source:
+    title: "Typst Source"
+    summary: "Typesetting markup defining page geometry, headers, tables, typography, and JSON data bindings."
+related:
+  - "sales-orders"
+  - "general-ledger"
+---
+
 # Dynamic Reporting Guide
 
 Welcome to the **Dynamic Reporting** system! HeroBM now features a fully database-driven reporting engine that allows you to manage, edit, and test all printable documents (like Invoices, Quotes, and Picking Slips) directly from your browser. 
+ 
 
 You no longer need an engineer to modify the visual aesthetics, layout, or text of your operational documents.
 

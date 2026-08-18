@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast test-pipeline check-all test-deps test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline check-all test-deps test-unit test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -33,14 +33,21 @@ Cleanup & Rebuild:
   make clean-dev      - Wipe node_modules, caches, reinstall, and build shared
   make clean-build    - Full deep clean, reinstall, and build all workspaces
 
-Verification & Testing:
-  make verify-fast    - Run linting, typechecks, unit tests
-  make test-all       - Run all tests (unit, e2e, data, structural, heavy)
-  make test-heavy     - Run structural tests and heavy/long-running tests
-  make test-structural- Run structural architecture and safety checks
-  make test-single TEST=name - Run a single test file
+Verification & Quality Gates:
+  make verify-fast    - Fast pre-commit gate (<25s): types, lint, unit tests, deps, schema drift
+  make verify-api     - API subsystem verification: types, lint, unit + E2E against Postgres
+  make verify-portal  - Portal subsystem verification: types, lint, unit tests, Next.js build
+  make verify-pipeline- Data pipeline verification: ELT runner & data counts
+  make verify-all     - Full monorepo verification before merge/release
+  make pre-push       - Pre-push gate (verify-all + build container images)
+  make check-all      - Fast static analysis: typecheck and linting across all workspaces
+  make test-unit      - Run all fast unit tests (API PGlite + Ops Portal components)
+  make test-single TEST=name - Run a single test file (API, Portal, or Structural)
+  make test-api-unit  - Run API unit tests (PGlite)
+  make test-portal-unit - Run Ops Portal unit tests
   make test-api-e2e   - Run end-to-end API tests against real Postgres
-  make check-all      - Run typechecks and linting
+  make test-structural- Run structural architecture, security & knip checks
+  make test-heavy     - Run containerized fuzzing and full-stack heavy tests
 =========================================
 endef
 export HELP_TEXT
@@ -221,6 +228,8 @@ rebuild-db-keep-raw:
 	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_abm_transform CASCADE; DROP SCHEMA IF EXISTS dbt_odoo_transform CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
+
+clean-db-keep-extract: rebuild-db-keep-raw
 
 # Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
 # import source data via ELT, then seed application data (users, inventory).
@@ -592,8 +601,28 @@ verify-db: migrate-status
 
 verify-all: build-all check-all verify-db test-all
 
+# Tier 1: Fast Task / Pre-Commit Verification Gate (< 25s, No external DB containers required)
 # Supports skipping phases using environment variables, e.g. make verify-fast SKIP_CHECK=1 SKIP_UNIT=1
-verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_E2E),,test-api-e2e)
+verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-unit) $(if $(SKIP_DEPS),,test-deps)
+
+# Unit Tests (Fast in-memory & PGlite tests, no live Postgres required)
+test-unit: test-api-unit test-portal-unit
+
+# Tier 2: Subsystem Verification Gates
+verify-api: build-shared build-db-schema
+	@npm run typecheck -w apps/api
+	@npm run lint -w apps/api
+	@npm run lint:oas -w apps/api
+	$(MAKE) test-api-unit
+	$(MAKE) test-api-e2e
+
+verify-portal: build-shared build-sdk
+	@npm run typecheck -w apps/ops-portal
+	@npm run lint -w apps/ops-portal
+	$(MAKE) test-portal-unit
+	$(MAKE) build-portal
+
+verify-pipeline: test-pipeline test-data
 
 test-pipeline:
 	@$(TEST_PIPELINE_CMD)

@@ -1,6 +1,45 @@
+---
+id: purchase-orders
+title: "Purchase Order Management"
+description: "Procurement lifecycle, supplier pricing, currency management, and receiving workflows."
+category: "Purchasing"
+order: 1
+resource: "purchasing"
+action: "read"
+routes:
+  - "/purchase-orders"
+  - "/purchase-orders/new"
+  - "/purchase-orders/:id"
+  - "/purchase-orders/:id/edit"
+  - "/purchase-orders/demands"
+  - "/suppliers"
+  - "/suppliers/:id"
+  - "/receiving"
+  - "/receiving/supplier-receipts"
+tags: ["purchasing", "po", "suppliers", "procurement", "receipts", "demands", "debit-notes"]
+fields:
+  supplier_id:
+    title: "Supplier"
+    summary: "Target vendor. Determines trading terms, default currency, and lead time estimates."
+  delivery_location:
+    title: "Delivery Location"
+    summary: "Destination warehouse location where physical stock will be received and put away."
+  order_date:
+    title: "Order Date"
+    summary: "Official date of purchase order issuance."
+  required_date:
+    title: "Required Date"
+    summary: "Target delivery deadline communicated to the supplier."
+related:
+  - "suppliers"
+  - "inventory"
+  - "general-ledger"
+---
+
 # Purchase Order Management
 
 This document describes how purchase orders work in herobm, including the order lifecycle, pricing, currency, and the receiving process for suppliers.
+
 
 ---
 

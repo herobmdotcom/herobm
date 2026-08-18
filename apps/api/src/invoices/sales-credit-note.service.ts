@@ -38,6 +38,7 @@ import {
   products as coreProducts,
   customerGroups,
   actors,
+  salesEvents,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -1198,7 +1199,25 @@ export class SalesCreditNoteService {
       returnFee: l.returnFee || '0',
     }));
 
-    return { ...cn, lines };
+    const events = await db
+      .select({
+        eventId: salesEvents.eventId,
+        eventType: salesEvents.eventType,
+        payload: salesEvents.payload,
+        actor: salesEvents.actor,
+        createdOn: salesEvents.createdOn,
+      })
+      .from(salesEvents)
+      .where(
+        or(
+          eq(salesEvents.entityId, creditNoteId),
+          sql`${salesEvents.payload}->>'creditNoteId' = ${creditNoteId}`,
+          sql`${salesEvents.payload}->>'creditNoteNumber' = ${cn.creditNoteNumber}`,
+        ),
+      )
+      .orderBy(desc(salesEvents.createdOn));
+
+    return { ...cn, lines, events };
   }
 
   /**

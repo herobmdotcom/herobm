@@ -9,6 +9,7 @@ import { getErrorMessage } from '@herobm/shared';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 import { useSettings } from '@/components/SettingsProvider';
 import { formatAmount } from '@/lib/currency';
 
@@ -166,75 +167,47 @@ export default function CreateNoteSlideOver({
       subtitle="Create an ad-hoc Credit Note for a customer or Debit Note for a supplier"
       width="max-w-3xl"
       footer={
-        <div className="flex items-center justify-between w-full">
-          <div className="text-sm">
-            <span className="text-[var(--text-muted)] mr-2">Total Amount:</span>
-            <span className="font-bold text-base text-[#041627] font-mono">
-              {formatAmount(totalAmount, baseCurrency)}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 text-sm rounded-lg transition-all bg-white border border-gray-200 text-[#041627] hover:bg-gray-50"
-            >
-              {tCommon('cancel')}
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirm}
-              className="px-5 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 shadow-sm"
-              disabled={saving || isInvalid}
-            >
-              {saving ? (
-                <>
-                  <span className="loading loading-spinner loading-xs mr-2" />
-                  Issuing...
-                </>
-              ) : noteType === 'credit' ? (
-                'Issue Credit Note'
-              ) : (
-                'Issue Debit Note'
-              )}
-            </Button>
-          </div>
+        <div className="flex items-center justify-end w-full gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={saving}
+          >
+            {tCommon('cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirm}
+            disabled={saving || isInvalid}
+          >
+            {saving ? (
+              <>
+                <span className="loading loading-spinner loading-xs mr-2" />
+                Issuing...
+              </>
+            ) : noteType === 'credit' ? (
+              'Issue Credit Note'
+            ) : (
+              'Issue Debit Note'
+            )}
+          </Button>
         </div>
       }
     >
       <div className="space-y-6">
         {/* Note Type Selector */}
-        <div className="flex bg-[var(--bg-muted)] p-1 rounded-xl border border-gray-200 max-w-md">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setNoteType('credit')}
-            className={`flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all border-none ${
-              noteType === 'credit'
-                ? 'bg-white shadow-sm text-[#006b5c]'
-                : 'text-[var(--text-muted)] hover:text-[#041627]'
-            }`}
-          >
-            Credit Note (Customer)
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setNoteType('debit')}
-            className={`flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all border-none ${
-              noteType === 'debit'
-                ? 'bg-white shadow-sm text-[#006b5c]'
-                : 'text-[var(--text-muted)] hover:text-[#041627]'
-            }`}
-          >
-            Debit Note (Supplier)
-          </Button>
-        </div>
+        <Tabs<NoteType>
+          tabs={[
+            { id: 'credit', label: 'Credit Note (Customer)' },
+            { id: 'debit', label: 'Debit Note (Supplier)' },
+          ]}
+          activeTab={noteType}
+          onChange={(newType) => setNoteType(newType)}
+        />
 
-        {/* Primary Information Card */}
-        <div className="card space-y-4">
+        {/* Primary Information Section */}
+        <div className="space-y-4">
           <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
             {detailsSectionTitle}
           </h4>

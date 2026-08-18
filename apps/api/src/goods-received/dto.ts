@@ -53,6 +53,24 @@ export class CreateGoodsReceivedDto {
   lines!: CreateGoodsReceivedLineDto[];
 }
 
+export class UpdateGoodsReceivedDto {
+  @IsOptional()
+  @IsUUID()
+  vendorId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  locationId?: string;
+
+  @IsOptional()
+  @IsString()
+  packingSlipNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
 export class ResolveAllocationDto {
   @IsString()
   @IsNotEmpty()
@@ -77,8 +95,10 @@ export class GoodsReceivedResponseDto {
 
   vendorName?: string;
   vendorNumber?: string;
+  locationName?: string;
   totalLines?: number;
   matchedLines?: number;
+  events?: Record<string, unknown>[];
 }
 
 export class GoodsReceivedLineResponseDto {

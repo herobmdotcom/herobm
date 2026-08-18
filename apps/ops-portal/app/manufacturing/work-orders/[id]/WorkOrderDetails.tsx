@@ -11,6 +11,7 @@ import StateBadge from '@/components/StateBadge';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EntityBanner from '@/components/shared/EntityBanner';
 import LocationSelect from '@/components/shared/LocationSelect';
+import Tabs from '@/components/shared/Tabs';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { ValidState } from '@/types/states';
 import { WORK_ORDER_STATE, PUTAWAY_STATUS, compareBinNumbers } from '@herobm/shared';
@@ -91,7 +92,13 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   const [inventoryLevels, setInventoryLevels] = useState<InventoryItem[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
 
-  useDocumentTitle(data ? `${data.orderNumber} - Work Order` : null);
+  useDocumentTitle(
+    data
+      ? data.productName
+        ? `${data.orderNumber} - ${data.productName}`
+        : data.orderNumber
+      : null,
+  );
 
   const fetchWorkOrder = useCallback(async (showSpinner = true) => {
     try {
@@ -726,31 +733,15 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             <span className="material-symbols-outlined">inventory_2</span>
             {tWork('lineItems')}
           </h3>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <div className="flex overflow-x-auto shrink-0">
-              <div className="flex gap-0 min-w-max">
-                <Button
-                  className={`text-xs font-medium px-3 py-1.5 rounded-l-lg border cursor-pointer ${
-                    activeTab === 'lines'
-                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
-                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                  }`}
-                  onClick={() => setActiveTab('lines')}
-                >
-                  Component Lines
-                </Button>
-                <Button
-                  className={`text-xs font-medium px-3 py-1.5 rounded-r-lg border border-l-0 cursor-pointer ${
-                    activeTab === 'availability'
-                      ? 'text-[var(--accent)] bg-blue-500/10 border-blue-500/30'
-                      : 'text-[var(--text-muted)] bg-transparent border-[var(--border)]'
-                  }`}
-                  onClick={() => setActiveTab('availability')}
-                >
-                  Stock Availability
-                </Button>
-              </div>
-            </div>
+          <div className="mb-4">
+            <Tabs<'lines' | 'availability'>
+              tabs={[
+                { id: 'lines', label: 'Component Lines' },
+                { id: 'availability', label: 'Stock Availability' },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+            />
           </div>
 
           {activeTab === 'lines' ? (

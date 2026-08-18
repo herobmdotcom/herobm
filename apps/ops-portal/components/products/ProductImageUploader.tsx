@@ -105,75 +105,72 @@ export default function ProductImageUploader({
   };
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[var(--text-main)]">
-          {t('images.title')}
-        </h3>
-        {imagePath && !disabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRemove}
-            disabled={isDeleting || isUploading}
-            className="text-xs text-red-500 hover:text-red-400 font-medium p-0 h-auto"
-          >
-            {t('images.remove')}
-          </Button>
-        )}
-      </div>
-
-      <div
-        className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-3 transition-colors ${
-          isDragOver
-            ? 'border-blue-500 bg-blue-500/5'
-            : 'border-[var(--border)] hover:border-[var(--text-muted)] bg-[var(--bg-card)]'
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (!disabled) setIsDragOver(true);
-        }}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={handleDrop}
-      >
+    <div
+      className={`card flex flex-col items-center justify-center p-3 h-full relative transition-colors ${
+        isDragOver ? 'border-[var(--accent)] bg-[var(--accent)]/5' : ''
+      }`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!disabled) setIsDragOver(true);
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+    >
+      <div className="relative group w-36 h-36 sm:w-40 sm:h-40 shrink-0 rounded-xl overflow-hidden">
         <ProductImage
           imagePath={imagePath}
           alt={productName || t('images.title')}
-          size="lg"
+          size="full"
           showPreviewOnClick={Boolean(imagePath)}
-          className="rounded-lg mb-2 shadow-xs"
-        />
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
-          className="hidden"
-          onChange={handleFileChange}
-          disabled={disabled || isUploading}
+          className="w-full h-full rounded-xl shadow-xs"
         />
 
         {!disabled && (
-          <div className="flex flex-col items-center text-center gap-1 mt-1">
+          <div
+            className="absolute bottom-1.5 right-1.5 flex items-center gap-1 bg-black/60 backdrop-blur-xs border border-white/10 rounded-lg p-0.5 shadow-md transition-opacity duration-150 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
-              variant="secondary"
+              variant="ghost"
+              type="button"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="text-xs font-medium text-blue-500 hover:text-blue-400"
+              title={imagePath ? t('images.change') : t('images.upload')}
+              className="text-white hover:text-[var(--accent)] hover:bg-white/10 transition-colors p-1 h-7 w-7 flex items-center justify-center rounded-md cursor-pointer"
             >
-              {isUploading
-                ? t('images.uploading')
-                : imagePath
-                  ? t('images.change')
-                  : t('images.upload')}
+              <span className="material-symbols-outlined text-[16px]">
+                edit
+              </span>
             </Button>
-            <span className="text-[10px] text-[var(--text-muted)]">
-              {t('images.maxSize')}
-            </span>
+
+            {imagePath && (
+              <Button
+                variant="ghost"
+                type="button"
+                size="sm"
+                onClick={handleRemove}
+                disabled={isDeleting || isUploading}
+                title={t('images.remove')}
+                className="text-white hover:text-red-400 hover:bg-white/10 transition-colors p-1 h-7 w-7 flex items-center justify-center rounded-md cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  delete
+                </span>
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={disabled || isUploading}
+      />
     </div>
   );
 }

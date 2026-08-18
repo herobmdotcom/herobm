@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, BusinessReportsControllerGetReports200Item, BusinessReportsControllerRunReport200Item } from '@herobm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -144,6 +145,14 @@ export default function ReportViewer() {
 
    
   const report = reports?.find((r: any) => r.slug === slug);
+
+  useDocumentTitle(
+    report
+      ? loadedConfig
+        ? `${report.name} - ${loadedConfig.name}`
+        : (report.name as string)
+      : null,
+  );
 
   const fetchReportData = useCallback((overrideFilters?: Record<string, unknown>) => {
     if (!report) return;

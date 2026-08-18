@@ -25,7 +25,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest",
     "test:e2e": "cross-env ADMIN_PASSWORD=password tsx test/utils/provision-e2e-db.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=false POSTGRES_DB=herobm_e2e_test jest --config ./test/jest-e2e.js --forceExit",
     "test:unit:pglite": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest",
-    "test:pglite": "npm run lint && npm run test:unit:pglite",
+    "test:pglite": "npm run test:unit:pglite",
     "test:e2e:fast": "cross-env ADMIN_PASSWORD=password USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --config ./test/jest-e2e.js --forceExit",
     "seed": "tsx src/seeds/run.ts --mode=prod",
     "seed:dry": "tsx src/seeds/run.ts --mode=prod --dry-run",

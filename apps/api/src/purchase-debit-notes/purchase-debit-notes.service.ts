@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, and, desc, inArray } from 'drizzle-orm';
+import { eq, sql, and, or, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -21,6 +21,7 @@ import {
   products,
   glJournalEntries,
   glJournalLines,
+  procurementEvents,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -254,7 +255,25 @@ export class PurchaseDebitNotesService {
       });
     }
 
-    return { ...dn, lines: linesWithAllocations };
+    const events = await this.db
+      .select({
+        eventId: procurementEvents.eventId,
+        eventType: procurementEvents.eventType,
+        payload: procurementEvents.payload,
+        actor: procurementEvents.actor,
+        createdOn: procurementEvents.createdOn,
+      })
+      .from(procurementEvents)
+      .where(
+        or(
+          eq(procurementEvents.entityId, id),
+          sql`${procurementEvents.payload}->>'debitNoteId' = ${id}`,
+          sql`${procurementEvents.payload}->>'debitNoteNumber' = ${dn.debitNoteNumber}`,
+        ),
+      )
+      .orderBy(desc(procurementEvents.createdOn));
+
+    return { ...dn, lines: linesWithAllocations, events };
   }
 
   async createDebitNote(dto: CreateDebitNoteDto, actor: string) {

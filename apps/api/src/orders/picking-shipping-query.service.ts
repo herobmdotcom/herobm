@@ -51,7 +51,8 @@ export class PickingShippingQueryService {
         isCreditBlocked: getCreditBlockedSql(),
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
-        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} IS NULL OR (${coreProducts.productType} != 'service' AND ${coreProducts.productType} != 'freight') THEN true ELSE false END`,
+        isStocked: sql<boolean>`CASE WHEN ${coreProducts.productId} IS NOT NULL AND (${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL) THEN true ELSE false END`,
         pickedQty: sql<number>`COALESCE((
           SELECT SUM(quantity)
           FROM herobm_core.sales_order_picks
@@ -108,7 +109,8 @@ export class PickingShippingQueryService {
         isCreditBlocked: sql<boolean>`false`,
         lineId: transferOrderLines.transferOrderLineId,
         lineQuantity: transferOrderLines.quantity,
-        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} IS NULL OR (${coreProducts.productType} != 'service' AND ${coreProducts.productType} != 'freight') THEN true ELSE false END`,
+        isStocked: sql<boolean>`CASE WHEN ${coreProducts.productId} IS NOT NULL AND (${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL) THEN true ELSE false END`,
         pickedQty: sql<number>`COALESCE((
           SELECT SUM(quantity)
           FROM herobm_core.transfer_order_picks
@@ -130,7 +132,7 @@ export class PickingShippingQueryService {
       )
       .leftJoin(
         locations,
-        eq(transferOrders.destinationLocationId, locations.locationId),
+        eq(transferOrders.sourceLocationId, locations.locationId),
       )
       .leftJoin(
         coreProducts,
@@ -147,8 +149,11 @@ export class PickingShippingQueryService {
       .orderBy(transferOrders.createdOn);
 
     const allLines = [
-      ...rawLines.map((r) => ({ ...r, type: 'sales_order' })),
-      ...rawTransferLines.map((r) => ({ ...r, type: 'transfer_order' })),
+      ...rawLines.map((l) => ({ ...l, type: 'sales_order' as const })),
+      ...rawTransferLines.map((l) => ({
+        ...l,
+        type: 'transfer_order' as const,
+      })),
     ];
 
     const orderMap = new Map<
@@ -163,6 +168,7 @@ export class PickingShippingQueryService {
         createdOn: Date | null;
         createdBy: string | null;
         currencyCode: string | null;
+        isCreditBlocked?: boolean;
         type: string;
         _totalPhysicalLines?: number;
         _fullyPickedLines?: number;
@@ -177,6 +183,7 @@ export class PickingShippingQueryService {
           orderNumber: row.orderNumber,
           name: row.name,
           customerName: row.customerName,
+          isCreditBlocked: Boolean(row.isCreditBlocked),
           customerOrderNumber: row.customerOrderNumber,
           // eslint-disable-next-line no-restricted-syntax -- State initialization on map object result.
           stateCode: row.stateCode,
@@ -196,7 +203,9 @@ export class PickingShippingQueryService {
       const ordered = parseFloat(row.lineQuantity ?? '0');
       if (row.isPhysical && ordered > 0) {
         order._totalPhysicalLines = (order._totalPhysicalLines || 0) + 1;
-        const picked = parseFloat(row.pickedQty?.toString() ?? '0');
+        const picked = row.isStocked
+          ? parseFloat(row.pickedQty?.toString() ?? '0')
+          : ordered;
         const shipped = parseFloat(row.shippedQty?.toString() ?? '0');
         const availableToShip = picked - shipped;
 
@@ -306,22 +315,29 @@ export class PickingShippingQueryService {
 
     const enrichedLines = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
-      const isPhysical = !line.productType || line.productType === 'inventory';
-      const picked = isPhysical
+      const isStocked =
+        Boolean(line.productId) &&
+        (!line.productType || line.productType === 'inventory');
+      const isPhysical =
+        !line.productType ||
+        (line.productType !== 'service' && line.productType !== 'freight');
+      const picked = isStocked
         ? (pickedMap.get(line.salesOrderLineId) ?? 0)
         : ordered;
       const shipped = committedMap.get(line.salesOrderLineId) ?? 0;
-      const availableToShip = Math.max(0, picked - shipped);
+      const availableToShip = isPhysical ? Math.max(0, picked - shipped) : 0;
 
       return {
         salesOrderLineId: line.salesOrderLineId,
         lineNumber: line.lineNumber,
         productId: line.productId,
         productNumber: line.productNumber,
+        productType: line.productType,
         productDescription: line.productDescription,
         isPhysical,
+        isStocked,
         quantity: line.quantity,
-        quantityPicked: String(picked),
+        quantityPicked: isStocked ? String(picked) : '—',
         quantityShipped: String(shipped),
         availableToShip: String(availableToShip),
       };

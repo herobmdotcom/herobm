@@ -19,6 +19,7 @@ import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-
 import { GOODS_RECEIVED_STATE, PUTAWAY_STATUS, MATCH_STATUS } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 import QuarantineModal from './QuarantineModal';
+import { routes } from '@/lib/routes';
 
 interface ReceivingGridRow extends GoodsReceivedLine {
     goodsReceivedId?: string | null;
@@ -230,6 +231,21 @@ export default function GoodsReceivedListPage() {
             width: 140,
             checkboxSelection: true,
             headerCheckboxSelection: true,
+            cellRenderer: (p: ICellRendererParams<ReceivingGridRow>) => {
+                if (!p.data?.receiptNumber) return null;
+                if (p.data.goodsReceivedId) {
+                    return (
+                        <Link
+                            href={routes.receiving.detail(p.data.goodsReceivedId)}
+                            className="font-medium text-[var(--accent)] hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {p.data.receiptNumber}
+                        </Link>
+                    );
+                }
+                return p.data.receiptNumber;
+            }
         },
         { field: 'goodsReceivedLineId', headerName: tCommon('columns.id'), hide: true },
         {
@@ -248,7 +264,26 @@ export default function GoodsReceivedListPage() {
         },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, 
             valueFormatter: (p: ValueFormatterParams<ReceivingGridRow>) => formatLocalDate(p.value as string | number, undefined, '') },
-        { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
+        {
+            field: 'vendorName',
+            headerName: t('columns.supplier'),
+            width: 160,
+            cellRenderer: (p: ICellRendererParams<ReceivingGridRow>) => {
+                if (!p.data?.vendorName) return null;
+                if (p.data.vendorId) {
+                    return (
+                        <Link
+                            href={routes.suppliers.detail(p.data.vendorId)}
+                            className="text-slate-800 hover:text-[var(--accent)] hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {p.data.vendorName}
+                        </Link>
+                    );
+                }
+                return p.data.vendorName;
+            }
+        },
         { field: 'locationName', headerName: tCommon('columns.location'), width: 140 },
         { 
             field: 'productNumber', 
@@ -258,7 +293,17 @@ export default function GoodsReceivedListPage() {
                 if (!p.data) return null;
                 return (
                     <div className="leading-tight py-1">
-                        <div className="font-semibold text-[var(--accent)]">{p.data.productNumber}</div>
+                        {p.data.productId ? (
+                            <Link
+                                href={routes.products.detail(p.data.productId)}
+                                className="font-semibold text-[var(--accent)] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {p.data.productNumber}
+                            </Link>
+                        ) : (
+                            <div className="font-semibold text-[var(--accent)]">{p.data.productNumber}</div>
+                        )}
                         <div className="text-[11px] text-[var(--text-muted)]">{p.data.productName}</div>
                     </div>
                 );

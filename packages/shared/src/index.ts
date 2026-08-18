@@ -150,7 +150,9 @@ export {
   calculateAvailableQuantity,
   compareBinNumbers,
   BIN_TYPE,
+  isStockedProductLine,
   isPhysicalProductLine,
+  isShippableProductLine,
 } from './inventory';
 export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType } from './inventory';
 
