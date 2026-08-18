@@ -56,7 +56,7 @@ export function ProjectsTab({ entityId, entityType }: ProjectsTabProps) {
       <div className="card">
         <div className="flex items-start justify-between mb-4">
           <h3 className="section-heading m-0">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
+
             <span className="material-symbols-outlined">folder</span>
             Projects
           </h3>

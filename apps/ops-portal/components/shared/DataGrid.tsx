@@ -847,7 +847,7 @@ export default function DataGrid<T>({
 
   const searchInputNode = hideSearch ? null : (
     <div className="relative flex items-center w-full">
-      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
       <input
         className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-white border border-[var(--border)] text-[var(--text-primary)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-slate-400 focus:placeholder-slate-400 lg:pr-4 focus:pr-4' : 'pr-4'}`}

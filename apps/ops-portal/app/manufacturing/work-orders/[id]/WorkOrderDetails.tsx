@@ -460,7 +460,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
               {!isCompleted && !isCancelled && (
                 <Button variant="danger" size="sm" onClick={handleCancel} disabled={actionLoading}>
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
+
                   <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
                   Cancel Order
                 </Button>

@@ -89,7 +89,21 @@ import { checkSupplierCompliance } from './check-supplier-compliance.service';
 const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
 
 worker.on('failed', (job, err) => {
-  logger.error({ jobId: job?.id, err: err.message }, 'BullMQ job failed');
+  const attemptsMade = job?.attemptsMade || 1;
+  const maxAttempts = job?.opts.attempts || 1;
+
+  if (attemptsMade >= maxAttempts) {
+    logger.error(
+      { jobId: job?.id, attemptsMade, maxAttempts, err: err.message },
+      'ALERT: BullMQ job permanently failed (max retries reached). Event moved to dead-letter state in outbox.'
+    );
+  } else {
+    logger.warn(
+      { jobId: job?.id, attemptsMade, maxAttempts, err: err.message },
+      'BullMQ job failed, scheduled for retry'
+    );
+  }
+
   if (job?.data?.type) {
     eventsFailedCounter.inc({ event_type: job.data.type });
   }

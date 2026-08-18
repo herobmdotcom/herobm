@@ -135,8 +135,12 @@ export const products = herobmCore.table('products', {
   baseUom: text('base_uom')
     .notNull()
     .references(() => uomDictionary.uomCode),
-  defaultSalesUomId: uuid('default_sales_uom_id'),
-  defaultPurchaseUomId: uuid('default_purchase_uom_id'),
+  defaultSalesUomId: uuid('default_sales_uom_id').references(
+    (): any => productUoms.productUomId,
+  ),
+  defaultPurchaseUomId: uuid('default_purchase_uom_id').references(
+    (): any => productUoms.productUomId,
+  ),
   purchaseTaxCategoryId: uuid('purchase_tax_category_id').references(
     () => taxCategories.taxCategoryId,
   ),

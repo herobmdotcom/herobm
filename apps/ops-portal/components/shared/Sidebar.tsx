@@ -241,7 +241,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer !border-0 text-left justify-start"
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
               <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)]">
                 tune
               </span>
@@ -281,7 +281,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
           <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)] truncate flex-1 transition-colors">
             {firstName}
           </span>
-          {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
           <span
             className={`material-symbols-outlined text-[16px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-all duration-150 ${
               isMenuOpen ? 'rotate-180 text-[var(--text-primary)]' : ''

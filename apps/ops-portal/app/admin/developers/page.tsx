@@ -251,7 +251,7 @@ export default function DevelopersPage() {
             <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
               <div className="bg-[var(--bg-card)] rounded-lg max-w-lg w-full p-6 border border-[var(--border)] relative">
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-[var(--warning)]">
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                   <span className="material-symbols-outlined text-[24px]">warning</span>
                   {/* eslint-disable-next-line no-restricted-syntax -- Temporary literal for webhook */}
                   {newSecret.startsWith('whsec_') ? 'Copy Webhook Secret' : tDev('copyApiKeyWarning')}

@@ -197,7 +197,8 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    let qb = this.db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
       .select(selectCols)
       .from(salesOrderLineItems)
       .innerJoin(
@@ -252,7 +253,8 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    let qb = this.db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
       .select(selectCols)
       .from(salesOrderLineItems)
       .innerJoin(
@@ -287,7 +289,7 @@ export class OrdersService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(salesOrders.createdOn, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
@@ -313,7 +315,8 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    let qb = this.db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
       .select(selectCols)
       .from(salesOrders)
       .leftJoin(

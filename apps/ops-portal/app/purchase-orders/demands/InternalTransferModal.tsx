@@ -122,7 +122,7 @@ export default function InternalTransferModal({
             {t('demands.createTransferTitle')}
           </h2>
           <Button variant="ghost" onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
             <span className="material-symbols-outlined">close</span>
           </Button>
         </div>

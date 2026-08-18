@@ -484,7 +484,7 @@ export function ProductInventoryTab({
                           <td className="py-2 px-4 text-right">
                             <div className="flex justify-end gap-1">
                               <Button onClick={() => setEditingBinId(null)} size="xs" variant="ghost" className="px-1.5" title={tCommon('buttons.cancel')}>
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+
                                 <span className="material-symbols-outlined text-[16px] text-gray-500">close</span>
                               </Button>
                               <Button 

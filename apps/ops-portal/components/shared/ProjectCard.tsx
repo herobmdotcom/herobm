@@ -13,7 +13,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       href={`/crm/projects/${project.projectId}`}
       className="p-4 border border-[var(--border)] rounded-lg bg-[var(--bg-card)] flex items-start gap-3 w-full hover:border-[var(--accent)] hover:shadow-sm transition-all cursor-pointer block"
     >
-      {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
+
       <span className="material-symbols-outlined text-gray-400 mt-0.5">folder</span>
       
       <div className="flex flex-col gap-1 w-full">

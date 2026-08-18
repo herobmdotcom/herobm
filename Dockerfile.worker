@@ -19,6 +19,10 @@ WORKDIR /app
 RUN npm run build -w packages/shared
 RUN npm run build -w packages/db-schema
 
+RUN chown -R node:node /app
+
+USER node
+
 EXPOSE 9090
 
 WORKDIR /app/apps/worker

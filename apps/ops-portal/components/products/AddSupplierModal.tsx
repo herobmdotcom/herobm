@@ -145,7 +145,7 @@ export default function AddSupplierModal({
             className="rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
             onClick={onClose}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+
             <span className="material-symbols-outlined text-[20px]">close</span>
           </Button>
         </div>
@@ -168,7 +168,7 @@ export default function AddSupplierModal({
           <div className="relative" ref={wrapperRef}>
             <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">{t('inputs.searchSupplier')}</label>
             <div className="relative">
-               {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+
                <span autoFocus className="material-symbols-outlined absolute left-3.5 top-[11px] text-gray-400 text-[20px] pointer-events-none z-10">search</span>
                <input 
                  type="text" 

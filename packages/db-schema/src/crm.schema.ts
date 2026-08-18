@@ -42,8 +42,12 @@ export const actors = herobmCore.table('actors', {
   businessNumber: text('business_number'),
   isTaxRegistered: boolean('is_tax_registered').notNull(),
   referralMode: text('referral_mode'),
-  referredByActorId: uuid('referred_by_actor_id'), // Self-reference
-  referredByContactId: uuid('referred_by_contact_id'), // Reference to contacts
+  referredByActorId: uuid('referred_by_actor_id').references(
+    (): any => actors.actorId,
+  ), // Self-reference
+  referredByContactId: uuid('referred_by_contact_id').references(
+    (): any => contacts.contactId,
+  ), // Reference to contacts
   referralNote: text('referral_note'),
   tags: text('tags').array(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -64,9 +68,11 @@ export const contacts = herobmCore.table('contacts', {
   mobile: text('mobile'),
   linkedinProfile: text('linkedin_profile'),
   referredByActorId: uuid('referred_by_actor_id').references(
-    () => actors.actorId,
+    (): any => actors.actorId,
   ),
-  referredByContactId: uuid('referred_by_contact_id'), // Self-reference
+  referredByContactId: uuid('referred_by_contact_id').references(
+    (): any => contacts.contactId,
+  ), // Self-reference
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });

@@ -11,6 +11,4 @@ export interface ExtensionTab {
 
 
 
-export const extensionTabs: ExtensionTab[] = [
-
-];
+export const extensionTabs: ExtensionTab[] = [];

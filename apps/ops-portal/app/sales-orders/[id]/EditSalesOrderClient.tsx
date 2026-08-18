@@ -612,7 +612,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                             <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
                             <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="!text-gray-400 hover:!text-gray-600 !p-2 h-auto !min-h-0 !min-w-0">
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+
                                 <span className="material-symbols-outlined">close</span>
                             </Button>
                         </div>

@@ -37,7 +37,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
       .limit(500);
 
     for (const event of pendingEvents) {
-      // Add to BullMQ with ID dedup
+      // Add to BullMQ with ID dedup and exponential backoff
       await syncQueue.add(
         'process-event',
         { 
@@ -49,7 +49,15 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
           createdOn: event.createdOn,
           payload: event.payload 
         },
-        { jobId: event.id, removeOnComplete: true }
+        { 
+          jobId: event.id, 
+          removeOnComplete: true,
+          attempts: 5,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        }
       );
       
       const lockTime = new Date(now.getTime() + 5 * 60000); // +5 minutes
@@ -99,6 +107,8 @@ export async function processEvent(job: Job, db: any) {
         payload 
       });
       
+      const errors: string[] = [];
+
       for (const wh of activeWebhooks) {
         try {
           const signature = crypto.createHmac('sha256', wh.secretKey).update(payloadString).digest('hex');
@@ -114,14 +124,16 @@ export async function processEvent(job: Job, db: any) {
           
           if (!res.ok) {
             processingLogger.warn({ webhookId: wh.webhookId, status: res.status }, 'Webhook returned non-200 status');
+            errors.push(`Webhook ${wh.webhookId} returned status ${res.status}`);
           }
         } catch (whErr: any) {
-          // BEST EFFORT DELIVERY (FIRE-AND-FORGET):
-          // We intentionally swallow webhook HTTP failures (like connection errors or timeouts) 
-          // to prevent a single failing webhook from blocking the outbox queue or causing 
-          // duplicate events to be sent to other successful webhooks upon retry.
           processingLogger.error({ webhookId: wh.webhookId, err: whErr.message }, 'Failed to dispatch webhook');
+          errors.push(`Webhook ${wh.webhookId} error: ${whErr.message}`);
         }
+      }
+
+      if (errors.length > 0) {
+        throw new Error(`Webhook dispatch failed: ${errors.join('; ')}`);
       }
     }
 

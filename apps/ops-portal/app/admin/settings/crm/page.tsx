@@ -113,7 +113,7 @@ export default function CRMSettingsPage() {
         {/* ── Projects Settings ─────────────────────────────────────────────── */}
         <div id="projects-section" className="card">
           <h3 className="section-heading flex items-center gap-2 mb-6">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
+
             <span className="material-symbols-outlined">folder</span>
             Projects
           </h3>

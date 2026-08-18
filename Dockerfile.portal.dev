@@ -28,6 +28,10 @@ RUN cd packages/shared && npm run build
 
 COPY apps/ops-portal ./apps/ops-portal
 
+RUN chown -R node:node /app
+
+USER node
+
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 

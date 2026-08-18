@@ -310,7 +310,7 @@ export default function PutawayPage() {
                                                     className="h-14 px-1 border border-gray-300 rounded-lg flex items-center justify-center text-sm font-bold transition-all bg-white text-black hover:bg-gray-100"
                                                     title="Clear filter"
                                                 >
-                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+
                                                     <span className="material-symbols-outlined text-[20px]">close</span>
                                                 </Button>
                                             )}
@@ -321,7 +321,7 @@ export default function PutawayPage() {
 
                             {context.primaryBinId && selectedBinId && selectedBinId !== context.primaryBinId && (
                                 <p className="mt-2 text-[11px] text-[var(--warning)] flex items-center gap-1">
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+
                                     <span className="material-symbols-outlined text-[14px]">warning</span>
                                     {t('putaway.warningNotPrimary', { bin: context.primaryBinNumber || '' })}
                                 </p>

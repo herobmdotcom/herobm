@@ -78,6 +78,16 @@ beforeAll(async () => {
           -- 2. Purchase Orders & related
           FOR r_po IN SELECT purchase_order_id, vendor_id FROM herobm_core.purchase_orders WHERE name LIKE 'E2E%'
           LOOP
+              -- Delete Debit Notes and their GL entries
+              FOR r_inv IN SELECT debit_note_id FROM herobm_core.purchase_debit_notes WHERE return_id IN (SELECT return_id FROM herobm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id) OR purchase_order_id = r_po.purchase_order_id
+              LOOP
+                  DELETE FROM herobm_core.gl_journal_lines WHERE journal_entry_id IN (SELECT journal_entry_id FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.debit_note_id::text);
+                  DELETE FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.debit_note_id::text;
+                  DELETE FROM herobm_core.purchase_debit_note_shipments WHERE debit_note_line_id IN (SELECT debit_note_line_id FROM herobm_core.purchase_debit_note_lines WHERE debit_note_id = r_inv.debit_note_id);
+                  DELETE FROM herobm_core.purchase_debit_note_lines WHERE debit_note_id = r_inv.debit_note_id;
+                  DELETE FROM herobm_core.purchase_debit_notes WHERE debit_note_id = r_inv.debit_note_id;
+              END LOOP;
+
               -- Delete Invoices and their GL entries
               FOR r_inv IN SELECT invoice_id FROM herobm_core.purchase_invoices WHERE purchase_order_id = r_po.purchase_order_id
               LOOP
