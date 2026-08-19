@@ -5894,6 +5894,41 @@
         ]
       }
     },
+    "/sales-orders/{id}/picking/barcodes": {
+      "get": {
+        "description": "Retrieve scan-to-pick barcode payloads for all pickable lines and bins of an order.",
+        "operationId": "OrderPickingController_getPickingBarcodes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickingBarcodeDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Picking Barcodes",
+        "tags": [
+          "Warehouse"
+        ]
+      }
+    },
     "/sales-orders/{id}/picking/lines/{lineId}": {
       "post": {
         "description": "Record a picked quantity for a specific sales order line item.",
@@ -7877,6 +7912,7 @@
     },
     "/global-returns": {
       "get": {
+        "description": "Retrieves a paginated list of global returns across both sales and purchase domains.",
         "operationId": "UnifiedReturnsController_findGlobalReturns",
         "parameters": [
           {
@@ -11604,7 +11640,7 @@
         },
         "summary": "Find All Global Notes",
         "tags": [
-          "Invoices"
+          "Global Notes"
         ]
       }
     },
@@ -20021,6 +20057,133 @@
           "CRM Map"
         ]
       }
+    },
+    "/help/context": {
+      "get": {
+        "description": "Resolves the most relevant help topic and field guide for a route.",
+        "operationId": "HelpController_getContext",
+        "parameters": [
+          {
+            "name": "route",
+            "required": true,
+            "in": "query",
+            "description": "The screen route path to resolve help for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpContextResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get contextual help for the active screen route",
+        "tags": [
+          "Help"
+        ]
+      }
+    },
+    "/help/topics": {
+      "get": {
+        "description": "Returns the categorized table of contents for user manuals.",
+        "operationId": "HelpController_getTopics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HelpTopicSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all accessible documentation topics",
+        "tags": [
+          "Help"
+        ]
+      }
+    },
+    "/help/topics/{id}": {
+      "get": {
+        "description": "Returns the full markdown content and metadata for a specific topic.",
+        "operationId": "HelpController_getTopicById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpTopicDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get full topic content by ID",
+        "tags": [
+          "Help"
+        ]
+      }
+    },
+    "/help/search": {
+      "get": {
+        "description": "Searches titles, tags, field definitions, and markdown content.",
+        "operationId": "HelpController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "The search query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HelpSearchResultDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search documentation topics",
+        "tags": [
+          "Help"
+        ]
+      }
     }
   },
   "info": {
@@ -20113,6 +20276,18 @@
     {
       "name": "Tax",
       "description": "Tax configuration and mappings"
+    },
+    {
+      "name": "Unified Returns",
+      "description": "Global queries across sales and purchase returns"
+    },
+    {
+      "name": "Global Notes",
+      "description": "Global cross-domain notes"
+    },
+    {
+      "name": "Help",
+      "description": "In-app user documentation and field guides"
     }
   ],
   "servers": [
@@ -24318,6 +24493,9 @@
       "PickingSummaryDto": {
         "type": "object",
         "properties": {
+          "isCreditBlocked": {
+            "type": "boolean"
+          },
           "totalLines": {
             "type": "number"
           },
@@ -24346,6 +24524,53 @@
           "isFullyPicked",
           "lines",
           "picks"
+        ]
+      },
+      "PickingBarcodeDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderId": {
+            "type": "string"
+          },
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "lineNumber": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "productDescription": {
+            "type": "string"
+          },
+          "binId": {
+            "type": "string"
+          },
+          "binName": {
+            "type": "string"
+          },
+          "quantityToPick": {
+            "type": "string"
+          },
+          "barcodePayload": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderId",
+          "salesOrderLineId",
+          "lineNumber",
+          "productId",
+          "productNumber",
+          "productDescription",
+          "binId",
+          "binName",
+          "quantityToPick",
+          "barcodePayload"
         ]
       },
       "PickOrderLineDto": {
@@ -24570,6 +24795,9 @@
       "ShippingContextDto": {
         "type": "object",
         "properties": {
+          "isCreditBlocked": {
+            "type": "boolean"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -31873,6 +32101,176 @@
         "required": [
           "nodes",
           "edges"
+        ]
+      },
+      "HelpTopicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "filePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "filePath"
+        ]
+      },
+      "RelatedTopicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "HelpContextResponseDto": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HelpTopicDto"
+              }
+            ]
+          },
+          "matchedRoute": {
+            "type": "string"
+          },
+          "relatedTopics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedTopicDto"
+            }
+          }
+        },
+        "required": [
+          "relatedTopics"
+        ]
+      },
+      "HelpTopicSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "order",
+          "routes",
+          "tags"
+        ]
+      },
+      "HelpSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "snippet",
+          "score"
         ]
       }
     }

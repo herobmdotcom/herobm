@@ -13,7 +13,7 @@ import { SystemResource } from '@herobm/shared';
 
 @Controller('global-notes')
 @CasbinResource(SystemResource.SALES_CREDIT_NOTES) // Adjust if necessary, as both are needed, but we'll re-use this resource for simplicity
-@ApiTags('Invoices')
+@ApiTags('Global Notes')
 export class GlobalNotesController {
   constructor(private readonly globalNotesService: GlobalNotesService) {}
 

@@ -53,6 +53,9 @@ async function generateDocs() {
     .addTag('Payments', 'Payment processing and reconciliation')
     .addTag('General Ledger', 'Accounting, charts, and journals')
     .addTag('Tax', 'Tax configuration and mappings')
+    .addTag('Unified Returns', 'Global queries across sales and purchase returns')
+    .addTag('Global Notes', 'Global cross-domain notes')
+    .addTag('Help', 'In-app user documentation and field guides')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

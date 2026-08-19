@@ -14,6 +14,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { binContents } from '@herobm/db-schema';
 import { parsePickBarcode } from '@herobm/shared';
 
 import request from 'supertest';
@@ -125,6 +126,24 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       })
       .expect(201);
     secondProductId = p2.body.productId;
+
+    // Seed stock into pickable MAIN-BIN-1 for both products
+    const mainBinId = '00000000-0000-4000-8000-000000000003';
+    await db
+      .insert(binContents)
+      .values([
+        {
+          binId: mainBinId,
+          productId: validProductId,
+          actualQuantity: '100',
+        },
+        {
+          binId: mainBinId,
+          productId: secondProductId,
+          actualQuantity: '100',
+        },
+      ])
+      .onConflictDoNothing();
   }, 120_000);
 
   afterAll(async () => {
