@@ -61,7 +61,7 @@ COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/packages/shared/package.json ./packages/shared/
 COPY --from=builder --chown=node:node /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=node:node /app/packages/db-schema/package.json ./packages/db-schema/
-COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/
+COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/dist
 COPY --from=builder --chown=node:node /app/packages/sdk/package.json ./packages/sdk/
 
 # Copy built API app and necessary runtime assets
