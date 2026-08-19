@@ -332,9 +332,15 @@ import-legacy-shipments:
 dev-docs-schema:
 	"$(VENV_PYTHON)" tools/generate_schema_reference.py
 
+dev-docs-webhooks:
+	npx tsx tools/generate_webhook_docs.ts
+
 dev-docs-api: build-api
 	@echo "Generating OpenAPI spec from source..."
 	node apps/api/dist/scripts/generate-openapi.js
+	npx tsx tools/generate_api_docs.ts
+
+dev-docs-all: dev-docs-schema dev-docs-api dev-docs-webhooks
 
 dev-generate-sdk: dev-docs-api
 	@echo "Generating TypeScript SDK..."

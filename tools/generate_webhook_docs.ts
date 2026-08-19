@@ -53,7 +53,6 @@ resource: "system"
 action: "read"
 routes:
   - "/admin/developers"
-  - "/admin/developers/webhooks-api"
 tags: ["webhooks", "api", "events", "integration", "outbox", "developers"]
 ---
 
@@ -66,7 +65,7 @@ Webhooks allow external applications to receive real-time HTTP POST notification
 ## Configuration & Subscription
 
 To create and manage webhook endpoints:
-1. Navigate to **Technical** → **Developers** (`/admin/developers`).
+1. Navigate to **Technical** → **Developers** (\`/admin/developers\`).
 2. Scroll to the **Webhooks** section.
 3. Click **+ Add Webhook**.
 4. Enter your destination **Target URL** (e.g. \`https://api.yourdomain.com/webhooks/herobm\`).

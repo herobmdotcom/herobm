@@ -16,6 +16,11 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   useEffect(() => {
     let isMounted = true;
 
+    if (process.env.NODE_ENV === 'test') {
+      setSvg(`<div data-testid="mermaid-test-output" class="font-mono text-xs text-[#475569] p-2 whitespace-pre">${chart.trim()}</div>`);
+      return;
+    }
+
     async function renderChart() {
       try {
         const mermaidModule = await import('mermaid');

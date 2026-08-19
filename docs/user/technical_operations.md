@@ -8,8 +8,6 @@ resource: "system"
 action: "read"
 routes:
   - "/admin/developers"
-  - "/admin/developers/api-reference"
-  - "/admin/developers/webhooks-api"
   - "/admin/email/outbox"
   - "/admin/email/settings"
   - "/admin/import/csv"

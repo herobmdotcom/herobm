@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/generate-webhooks-content.js",
     "dev": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "dev:local": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/generate-extensions.mjs && node scripts/generate-webhooks-content.js && tsc --noEmit",
+    "prebuild": "node scripts/generate-extensions.mjs && tsc --noEmit",
     "build": "next build",
     "start": "next start",
     "start:prod": "node .next/standalone/apps/ops-portal/server.js",

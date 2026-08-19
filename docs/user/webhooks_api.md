@@ -1,3 +1,16 @@
+---
+id: webhooks-api
+title: "Webhooks API Reference"
+description: "Real-time event subscriptions, payload schemas, event matrix, signature verification, and delivery retry policies."
+category: "Technical"
+order: 32
+resource: "system"
+action: "read"
+routes:
+  - "/admin/developers"
+tags: ["webhooks", "api", "events", "integration", "outbox", "developers"]
+---
+
 # Webhooks API Reference
 
 Webhooks allow external applications to receive real-time HTTP POST notifications when state changes or operational events occur in HeroBM.

@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import { formatLocalDate } from '@/lib/date';
+import { useHelp } from '@/components/help/HelpContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ export default function DevelopersPage() {
   const tCommon = useTranslations('admin.common');
   const tDev = useTranslations('admin.developers');
   const router = useRouter();
+  const { openHelp } = useHelp();
 
   // ── Rate Limits State ───────────────────────────────────────────────────────
   const [appForm, setAppForm] = useState<Partial<api.AppConfigResponseDto>>({});
@@ -147,6 +149,41 @@ export default function DevelopersPage() {
       <ContentPageHeader
         title="Developers"
         subtitle="Manage API access, webhooks, and rate limits"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => openHelp('webhooks-api')}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+              <span className="material-symbols-outlined text-[16px]">webhook</span>
+              <span>{tDev('webhooksGuide')}</span>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => openHelp('api-reference')}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+              <span className="material-symbols-outlined text-[16px]">api</span>
+              <span>{tDev('apiReference')}</span>
+            </Button>
+            <a
+              href="/api/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-[#F0FDFA] border border-[#E2E8F0] hover:border-[#006B5C] text-[#0F172A] hover:text-[#006B5C] flex items-center gap-1.5 transition-colors no-underline shadow-xs"
+            >
+              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+              <span>{tDev('swaggerUi')}</span>
+            </a>
+          </div>
+        }
       >
         <PageNav sections={navSections} />
       </ContentPageHeader>

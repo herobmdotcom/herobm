@@ -192,8 +192,6 @@ export const routes = {
     },
     developers: {
       list: () => '/admin/developers',
-      apiReference: () => '/admin/developers/api-reference',
-      webhooksApi: () => '/admin/developers/webhooks-api',
     },
     email: {
       outbox: () => '/admin/email/outbox',

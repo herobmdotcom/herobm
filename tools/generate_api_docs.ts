@@ -70,7 +70,6 @@ resource: "system"
 action: "read"
 routes:
   - "/admin/developers"
-  - "/admin/developers/api-reference"
 tags: ["api", "rest", "swagger", "openapi", "endpoints", "developers", "integration"]
 ---
 

@@ -206,11 +206,6 @@ export default function Sidebar() {
           href: routes.admin.developers.list(), 
           label: 'Developers', 
           icon: 'code',
-          subItems: [
-            { href: routes.admin.developers.list(), label: 'Configuration' },
-            { href: routes.admin.developers.apiReference(), label: 'Docs: API' },
-            { href: routes.admin.developers.webhooksApi(), label: 'Docs: Webhooks' },
-          ]
         },
         {
           href: routes.admin.email.outbox(),
