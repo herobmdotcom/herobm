@@ -15,7 +15,7 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'purchase-returns': ['read', 'write', 'handle'],
   'purchase-debit-notes': ['read', 'write'],
   'suppliers': ['read', 'write', 'archive'],
-  'goods-received': ['read', 'handle'],
+  'goods-received': ['read', 'write', 'handle'],
   'dashboard': ['read'],
   'settings': ['read', 'write'],
   'report': ['read', 'write'],
