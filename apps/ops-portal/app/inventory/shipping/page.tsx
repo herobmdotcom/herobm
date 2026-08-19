@@ -73,7 +73,6 @@ interface ShippingContext {
 
 export default function ShippingPage() {
     const t = useTranslations('shipping');
-    const tPicking = useTranslations('picking');
     const tCommon = useTranslations('common');
     useDocumentTitle(t('title'));
     const { app } = useSettings();
@@ -291,7 +290,7 @@ export default function ShippingPage() {
 
                             {context.isCreditBlocked && (
                                 <div className="mb-4">
-                                    <InlineAlert type="warning" message={`${tPicking('creditBlockedTitle')}: ${tPicking('creditBlockedMessage')}`} />
+                                    <InlineAlert type="warning" message={`${t('creditBlockedTitle')}: ${t('creditBlockedMessage')}`} />
                                 </div>
                             )}
 

@@ -719,6 +719,19 @@ export class PickingSummaryDto {
   picks!: PickingSummaryPickDto[];
 }
 
+export class PickingBarcodeDto {
+  @ApiProperty() salesOrderId!: string;
+  @ApiProperty() salesOrderLineId!: string;
+  @ApiProperty() lineNumber!: number;
+  @ApiProperty() productId!: string;
+  @ApiProperty() productNumber!: string;
+  @ApiProperty() productDescription!: string;
+  @ApiProperty() binId!: string;
+  @ApiProperty() binName!: string;
+  @ApiProperty() quantityToPick!: string;
+  @ApiProperty() barcodePayload!: string;
+}
+
 export class OrderQueueBaseDto {
   @ApiProperty() id!: string;
   @ApiProperty() orderNumber!: string;

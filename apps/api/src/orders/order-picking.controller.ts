@@ -30,6 +30,7 @@ import {
   ShippingQueueOrderDto,
   PickOrderLineDto,
   PickingSummaryPickDto,
+  PickingBarcodeDto,
 } from './dto';
 
 @ApiTags('Warehouse')
@@ -59,6 +60,18 @@ export class OrderPickingController {
   })
   getPickingSummary(@Param('id') id: string) {
     return this.pickingService.getPickingSummary(id);
+  }
+
+  @Get(':id/picking/barcodes')
+  @ApiOkResponse({ type: [PickingBarcodeDto] })
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Picking Barcodes',
+    description:
+      'Retrieve scan-to-pick barcode payloads for all pickable lines and bins of an order.',
+  })
+  getPickingBarcodes(@Param('id') id: string) {
+    return this.pickingService.getPickingBarcodes(id);
   }
 
   @Post(':id/picking/lines/:lineId')

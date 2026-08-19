@@ -22,13 +22,11 @@
   ]
 ] else [
   #for (i, pickLine) in data.pickingLines.enumerate() [
-    #let lineId = pickLine.at("lineId", default: "")
-    #let binId = pickLine.at("binId", default: "")
     #let binNumber = pickLine.at("binNumber", default: "—")
     #let productCode = pickLine.at("productCode", default: "")
     #let description = pickLine.at("description", default: "")
     #let qty = str(pickLine.at("qtyToPick", default: 0))
-    #let barcodePayload = "PICK:" + orderId + ":" + lineId + ":" + binId + ":" + qty
+    #let barcodePayload = pickLine.at("barcodePayload", default: "")
 
     // Header banner
     #grid(

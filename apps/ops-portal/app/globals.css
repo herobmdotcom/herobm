@@ -56,6 +56,16 @@
   line-height: 1.4;
 }
 
+/* Disable increment/decrement spinners on number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Form inputs & Selects */
 .input, .select {
   width: 100%;
@@ -252,12 +262,12 @@ select.input:not([multiple]):not([size]) {
 .table-lines {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .table-lines th {
   text-align: left;
-  padding: 8px 12px;
+  padding: 6px 6px;
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -267,9 +277,36 @@ select.input:not([multiple]):not([size]) {
 }
 
 .table-lines td {
-  padding: 10px 12px;
+  padding: 6px 6px;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
+  font-size: 12px;
+}
+
+.table-lines th:first-child,
+.table-lines td:first-child {
+  padding-left: 8px;
+}
+
+.table-lines th:last-child,
+.table-lines td:last-child {
+  padding-right: 8px;
+}
+
+.table-lines input,
+.table-lines select,
+.table-lines .input,
+.table-lines .select {
+  font-size: 12px;
+  padding: 4px 6px;
+  height: 28px;
+}
+
+.table-lines select.input,
+.table-lines .select {
+  padding-right: 18px;
+  background-position: right 4px center;
+  background-size: 0.85em 0.85em;
 }
 
 .table-lines tr:hover td {

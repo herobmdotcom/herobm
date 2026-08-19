@@ -161,6 +161,9 @@ export function calculateInventoryGaps(
         locationId: locId || null,
       });
     }
+
+    // Deduct consumed stock from availabilityMap so subsequent lines reflect remaining stock
+    availabilityMap.set(key, available - ordered);
   }
 
   return gaps;
@@ -176,3 +179,48 @@ export function compareBinNumbers(a?: string | null, b?: string | null): number 
   if (!b) return -1;
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
+
+export interface PickBarcodePayload {
+  orderId: string;
+  lineId: string;
+  binId: string;
+  quantity: string;
+}
+
+/**
+ * Construct the canonical scan-to-pick barcode string.
+ * Format: PICK:{orderId}:{lineId}:{binId}:{quantity}
+ */
+export function formatPickBarcode(params: PickBarcodePayload): string {
+  return `PICK:${params.orderId}:${params.lineId}:${params.binId}:${params.quantity}`;
+}
+
+/**
+ * Parse a scanned barcode string into its picking components.
+ * Accepts both 'PICK:{orderId}:{lineId}:{binId}:{quantity}' and raw '{orderId}:{lineId}:{binId}:{quantity}'.
+ */
+export function parsePickBarcode(barcode: string): PickBarcodePayload | null {
+  if (!barcode) return null;
+  const trimmed = barcode.trim();
+  if (!trimmed) return null;
+
+  const raw = trimmed.startsWith('PICK:') ? trimmed.slice(5) : trimmed;
+  const parts = raw.split(':');
+  if (parts.length < 4) {
+    return null;
+  }
+
+  const [orderId, lineId, binId, qtyStr] = parts;
+  if (!orderId || !lineId || !binId) {
+    return null;
+  }
+
+  const quantity = qtyStr || '1';
+  return {
+    orderId,
+    lineId,
+    binId,
+    quantity,
+  };
+}
+

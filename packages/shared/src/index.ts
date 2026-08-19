@@ -153,8 +153,12 @@ export {
   isStockedProductLine,
   isPhysicalProductLine,
   isShippableProductLine,
+  CUSTOM_LINE_ID,
+  LEGACY_CUSTOM_LINE_ID,
+  formatPickBarcode,
+  parsePickBarcode,
 } from './inventory';
-export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType } from './inventory';
+export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType, PickBarcodePayload } from './inventory';
 
 export type { ReportDefinition } from './reports';
 

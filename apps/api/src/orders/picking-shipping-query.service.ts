@@ -285,6 +285,14 @@ export class PickingShippingQueryService {
       this.db
         .select({ isCreditBlocked: getCreditBlockedSql() })
         .from(salesOrders)
+        .leftJoin(
+          coreAccounts,
+          eq(salesOrders.customerId, coreAccounts.customerId),
+        )
+        .leftJoin(
+          customerGroups,
+          eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
+        )
         .where(eq(salesOrders.salesOrderId, orderId)),
     ]);
 

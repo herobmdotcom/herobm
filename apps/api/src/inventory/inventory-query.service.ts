@@ -430,8 +430,9 @@ export class InventoryQueryService {
             0,
             locInv.compAvailable[c.childProductId] || 0,
           );
-          const reqQty = Number(c.parentQuantity) || 1;
-          const buildable = Math.floor(available / reqQty);
+          const reqQty =
+            (Number(c.quantity) || 1) / (Number(c.parentQuantity) || 1);
+          const buildable = reqQty > 0 ? Math.floor(available / reqQty) : 0;
           if (buildable < totalBuildable) {
             totalBuildable = buildable;
           }

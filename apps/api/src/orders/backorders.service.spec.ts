@@ -162,6 +162,115 @@ describe('BackordersService', () => {
       expect(gaps[0].productId).toBe(PROD_ID);
       expect(gaps[0].shortage).toBe(7);
     });
+
+    it('should return empty gaps when stock is fully available', async () => {
+      await pg.db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'P1',
+        baseUom: 'EA',
+        productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+      await seedBasicOrder();
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderLineId: LINE_ID,
+        salesOrderId: ORDER_ID,
+        lineNumber: 1,
+        productId: PROD_ID,
+        quantity: '5',
+        pricePerUnit: '50',
+        fulfillmentLocationId: LOCATION_ID,
+        taxCategoryId: TAX_CAT_ID,
+        discountPercentage: '0',
+        amount: '0',
+        tax: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      inventoryQueryService.findByProductIds.mockResolvedValue({
+        data: [
+          {
+            productId: PROD_ID,
+            locationId: LOCATION_ID,
+            quantityAvailable: 10,
+          },
+        ],
+      });
+
+      const gaps = await service.evaluateGaps(ORDER_ID);
+      expect(gaps).toHaveLength(0);
+    });
+
+    it('should sequentially deduct available stock when multiple lines order the same product', async () => {
+      const LINE_ID_2 = '00000000-0000-4000-8000-000000000012';
+      await pg.db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'P1',
+        baseUom: 'EA',
+        productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+      await seedBasicOrder();
+      await pg.db.insert(salesOrderLineItems).values([
+        {
+          salesOrderLineId: LINE_ID,
+          salesOrderId: ORDER_ID,
+          lineNumber: 1,
+          productId: PROD_ID,
+          quantity: '6',
+          pricePerUnit: '50',
+          fulfillmentLocationId: LOCATION_ID,
+          taxCategoryId: TAX_CAT_ID,
+          discountPercentage: '0',
+          amount: '0',
+          tax: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+        {
+          salesOrderLineId: LINE_ID_2,
+          salesOrderId: ORDER_ID,
+          lineNumber: 2,
+          productId: PROD_ID,
+          quantity: '6',
+          pricePerUnit: '50',
+          fulfillmentLocationId: LOCATION_ID,
+          taxCategoryId: TAX_CAT_ID,
+          discountPercentage: '0',
+          amount: '0',
+          tax: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+      ]);
+
+      inventoryQueryService.findByProductIds.mockResolvedValue({
+        data: [
+          {
+            productId: PROD_ID,
+            locationId: LOCATION_ID,
+            quantityAvailable: 10,
+          },
+        ],
+      });
+
+      const gaps = await service.evaluateGaps(ORDER_ID);
+      // Line 1 uses 6 of 10 -> 4 remaining. Line 2 requests 6 -> shortage of 2.
+      expect(gaps).toHaveLength(1);
+      expect(gaps[0].salesOrderLineId).toBe(LINE_ID_2);
+      expect(gaps[0].orderedQuantity).toBe(6);
+      expect(gaps[0].availableQuantity).toBe(4);
+      expect(gaps[0].shortage).toBe(2);
+    });
   });
 
   describe('generateDemand', () => {

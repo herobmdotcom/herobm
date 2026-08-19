@@ -20,6 +20,10 @@ export class PickingService {
     return this.pickingQueryService.getPickingSummary(orderId);
   }
 
+  async getPickingBarcodes(orderId: string) {
+    return this.pickingQueryService.getPickingBarcodes(orderId);
+  }
+
   async pickLine(
     orderId: string,
     lineId: string,

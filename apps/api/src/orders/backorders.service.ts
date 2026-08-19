@@ -36,6 +36,9 @@ import {
   OPEN_PURCHASE_ORDER_STATES,
   BACKORDER_TRANSITIONS,
   WORK_ORDER_STATE,
+  CUSTOM_LINE_ID,
+  LEGACY_CUSTOM_LINE_ID,
+  isStockedProductLine,
 } from '@herobm/shared';
 import { calculateInventoryGaps } from '@herobm/shared';
 import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
@@ -85,14 +88,7 @@ export class BackordersService {
       .where(eq(salesOrders.salesOrderId, salesOrderId))
       .limit(1);
 
-    const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
-
-    const validLines = lines.filter(
-      (l) =>
-        l.productId != null &&
-        l.productId !== CUSTOM_LINE_ID &&
-        (!l.productType || l.productType === 'inventory'),
-    );
+    const validLines = lines.filter((l) => isStockedProductLine(l));
     if (validLines.length === 0) {
       Logger.warn(
         `[evaluateGaps] No valid lines found for order ${salesOrderId}`,

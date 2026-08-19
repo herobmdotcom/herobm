@@ -71,7 +71,6 @@ import {
   resolveEffectiveCreditLimit,
   resolveEffectiveTradingTermsId,
 } from '../customers/credit-control.utils';
-import { getCreditBlockedSql } from './orders.sql';
 import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
 import { EmailService } from '../email/email.service';
 import { EmailDocumentDto } from './dto';

@@ -40,7 +40,9 @@ import {
   BACKORDER_STATE,
   WORK_ORDER_STATE,
   WORK_ORDER_PICK_STATE,
+  formatPickBarcode,
 } from '@herobm/shared';
+import { PickingBarcodeDto } from './dto';
 
 @Injectable()
 export class PickingQueryService {
@@ -79,6 +81,14 @@ export class PickingQueryService {
       this.db
         .select({ isCreditBlocked: getCreditBlockedSql() })
         .from(salesOrders)
+        .leftJoin(
+          coreAccounts,
+          eq(salesOrders.customerId, coreAccounts.customerId),
+        )
+        .leftJoin(
+          customerGroups,
+          eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
+        )
         .where(eq(salesOrders.salesOrderId, orderId)),
     ]);
 
@@ -250,6 +260,57 @@ export class PickingQueryService {
       lines: filteredSummary,
       picks,
     };
+  }
+
+  /**
+   * Retrieve scan-to-pick barcode payloads for all pickable lines and best available bins of an order.
+   */
+  async getPickingBarcodes(orderId: string): Promise<PickingBarcodeDto[]> {
+    const summary = await this.getPickingSummary(orderId);
+    const barcodes: PickingBarcodeDto[] = [];
+
+    for (const line of summary.lines) {
+      const remaining = parseFloat(line.remaining ?? '0');
+      const isPhysical = line.isPhysical ?? true;
+
+      if (!isPhysical || line.isFullyPicked || remaining <= 0) {
+        continue;
+      }
+
+      // If available bins exist, generate barcode for the best pickable bin
+      const bestBin = line.availableBins?.[0];
+      if (!bestBin) {
+        continue;
+      }
+
+      const binOnHand = parseFloat(bestBin.onHand || '0');
+      if (binOnHand <= 0) {
+        continue;
+      }
+
+      const quantityToPick = String(Math.min(remaining, binOnHand));
+      const barcodePayload = formatPickBarcode({
+        orderId,
+        lineId: line.salesOrderLineId,
+        binId: bestBin.binId,
+        quantity: quantityToPick,
+      });
+
+      barcodes.push({
+        salesOrderId: orderId,
+        salesOrderLineId: line.salesOrderLineId,
+        lineNumber: line.lineNumber,
+        productId: line.productId || '',
+        productNumber: line.productNumber || '',
+        productDescription: line.productDescription || '',
+        binId: bestBin.binId,
+        binName: bestBin.binName,
+        quantityToPick,
+        barcodePayload,
+      });
+    }
+
+    return barcodes;
   }
 
   async assertFullyPicked(orderId: string): Promise<void> {

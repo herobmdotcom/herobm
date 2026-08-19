@@ -16,6 +16,7 @@ import {
   binContents,
   uomDictionary,
   productUoms,
+  productComponents,
 } from '@herobm/db-schema';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { eq, sql } from 'drizzle-orm';
@@ -578,6 +579,63 @@ describe('InventoryService', () => {
         hasStock: true,
       });
       expect(res.data).toHaveLength(0);
+    });
+  });
+
+  describe('findByProductIds (Kit Buildable & Availability)', () => {
+    it('should calculate kit buildable quantity based on component quantity requirement', async () => {
+      const COMP_ID = '00000000-0000-4000-8000-000000000099';
+      const KIT_ID = '00000000-0000-4000-8000-000000000088';
+
+      // 1. Create Child Component
+      await pg.db.insert(products).values({
+        productId: COMP_ID,
+        productNumber: 'COMP-1',
+        name: 'Component Bolt',
+        baseUom: 'EA',
+        productType: 'inventory',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      // 2. Create Non-Stock Kit Parent
+      await pg.db.insert(products).values({
+        productId: KIT_ID,
+        productNumber: 'KIT-1',
+        name: 'Assembly Kit',
+        baseUom: 'EA',
+        productType: 'non-stock',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'kit',
+        createdBy: 'system',
+      });
+
+      // 3. Link Kit Component: 2 bolts per 1 kit
+      await pg.db.insert(productComponents).values({
+        parentProductId: KIT_ID,
+        childProductId: COMP_ID,
+        quantity: '2',
+        parentQuantity: '1',
+      });
+
+      // 4. Seed 10 bolts in bin
+      await pg.db.insert(binContents).values({
+        binId: BIN_ID,
+        productId: COMP_ID,
+        actualQuantity: '10',
+      });
+
+      // 5. Query kit inventory
+      const res = await queryService.findByProductIds([KIT_ID]);
+      expect(res.data).toHaveLength(1);
+      const kitRow = res.data[0];
+      expect(kitRow.productId).toBe(KIT_ID);
+      // 10 bolts / 2 bolts per kit = 5 buildable kits
+      expect(kitRow.quantityOnHand).toBe('5');
+      expect(kitRow.quantityAvailable).toBe(5);
     });
   });
 });

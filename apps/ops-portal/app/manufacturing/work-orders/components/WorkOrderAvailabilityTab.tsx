@@ -58,7 +58,7 @@ export function getComponentStockWarning(
     type: 'shortage',
     icon: 'warning',
     color: '#dc2626',
-    title: `Stock Shortage (Local: ${locAvail}, Required: ${expectedQty})`,
+    title: `Shortage (Local: ${locAvail}, Required: ${expectedQty})`,
   };
 }
 
@@ -119,7 +119,7 @@ export function WorkOrderAvailabilityTab({
         } else if (totalAvail >= expectedQty && expectedQty > 0) {
           statusElement = <span className="text-amber-600 font-medium">Available at Other Sites</span>;
         } else {
-          statusElement = <span className="text-rose-600 font-medium">Stock Shortage</span>;
+          statusElement = <span className="text-rose-600 font-medium">Shortage</span>;
         }
 
         return (

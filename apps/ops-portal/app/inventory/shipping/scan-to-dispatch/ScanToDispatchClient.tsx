@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { Button } from '@/components/shared/Button';
 import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
-import { getErrorMessage, SHIPMENT_STATE } from '@herobm/shared';
+import { getErrorMessage, SHIPMENT_STATE, SALES_ORDER_PICK_STATE, parsePickBarcode } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
-import Link from 'next/link';
-import { routes } from '@/lib/routes';
+import PickingOrderLinesView, { PickingLine, PickAllocation } from '@/app/inventory/components/PickingOrderLinesView';
 
 interface ScannedLine {
   scanId: string;
@@ -18,9 +18,6 @@ interface ScannedLine {
   lineId: string;
   binId: string;
   quantity: string;
-  productCode?: string;
-  description?: string;
-  binNumber?: string;
   scannedAt: Date;
   status: 'picked' | 'error';
   errorMessage?: string;
@@ -31,9 +28,15 @@ interface OrderSummary {
   orderNumber: string;
   customerName: string;
   totalLines: number;
-  fullyPickedLines: number;
-  scannedLines: ScannedLine[];
+  pickedLinesCount: number;
+  fullyPickedLinesCount: number;
   isFullyPicked: boolean;
+  isAllAvailablePicked: boolean;
+  canShip: boolean;
+  lines: PickingLine[];
+  picks: PickAllocation[];
+  scannedLines: ScannedLine[];
+  lastScannedAt: Date;
 }
 
 export default function ScanToDispatchClient() {
@@ -42,15 +45,14 @@ export default function ScanToDispatchClient() {
 
   const [barcodeInput, setBarcodeInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scannedHistory, setScannedHistory] = useState<ScannedLine[]>([]);
   const [ordersMap, setOrdersMap] = useState<Record<string, OrderSummary>>({});
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
     detail?: string;
   } | null>(null);
-  const [isDispatching, setIsDispatching] = useState(false);
+  const [dispatchingOrderId, setDispatchingOrderId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,18 +76,18 @@ export default function ScanToDispatchClient() {
       gain.connect(ctx.destination);
 
       if (success) {
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch (A5)
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
       } else {
-        osc.frequency.setValueAtTime(220, ctx.currentTime); // Low pitch warning
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
         osc.start();
         osc.stop(ctx.currentTime + 0.28);
       }
     } catch {
-      // Audio context might be restricted before first gesture
+      // Audio context may require prior interaction
     }
   }, []);
 
@@ -95,8 +97,44 @@ export default function ScanToDispatchClient() {
       const summary = res.data;
       if (!summary) return;
 
-      const orderInfo = await api.salesOrderFindOne(orderId).catch(() => null);
+      const orderInfo = await api.ordersControllerFindOne(orderId).catch(() => null);
       const orderData = orderInfo?.data as { orderNumber?: string; customerName?: string } | undefined;
+
+      const summaryLines = ((summary.lines || []) as unknown) as PickingLine[];
+      const summaryPicks = ((summary.picks || []) as unknown) as PickAllocation[];
+
+      const activePhysicalLines = summaryLines.filter((l) => (l.isPhysical ?? l.isStocked ?? true));
+      const totalLines = Math.max(activePhysicalLines.length, summary.totalLines ?? 0, summaryLines.length, 1);
+
+      // Find all line IDs that have any picked quantity (from lines or picks)
+      const pickedLineIds = new Set<string>();
+
+      activePhysicalLines.forEach((l) => {
+        if (parseFloat(String(l.quantityPicked || '0')) > 0 || l.isFullyPicked) {
+          pickedLineIds.add(l.salesOrderLineId);
+        }
+      });
+
+      summaryPicks.forEach((p) => {
+        if (p.stateCode === SALES_ORDER_PICK_STATE.PICKED && parseFloat(String(p.quantity || '0')) > 0) {
+          pickedLineIds.add(p.salesOrderLineId);
+        }
+      });
+
+      const pickedLinesCount = pickedLineIds.size;
+
+      // Fully picked lines
+      const fullyPickedLinesCount = summary.fullyPickedLines ?? activePhysicalLines.filter((l) => l.isFullyPicked).length;
+      const isFullyPicked = Boolean(summary.isFullyPicked || (totalLines > 0 && fullyPickedLinesCount >= totalLines));
+
+      // Check if all unpicked lines are out of stock
+      const unpickedLines = activePhysicalLines.filter((l) => !l.isFullyPicked && !pickedLineIds.has(l.salesOrderLineId));
+      const hasUnpickableRemaining = unpickedLines.length > 0 && unpickedLines.every(
+        (l) => !l.availableBins || l.availableBins.length === 0 || parseFloat(String(l.onHand || 0)) <= 0
+      );
+
+      const canShip = pickedLinesCount > 0 || summaryPicks.some((p) => p.stateCode === SALES_ORDER_PICK_STATE.PICKED && parseFloat(String(p.quantity || '0')) > 0);
+      const isAllAvailablePicked = isFullyPicked || (canShip && (hasUnpickableRemaining || unpickedLines.length === 0));
 
       setOrdersMap((prev) => {
         const existing = prev[orderId];
@@ -111,21 +149,23 @@ export default function ScanToDispatchClient() {
             orderId,
             orderNumber: orderData?.orderNumber || orderId.slice(0, 8),
             customerName: orderData?.customerName || '',
-            totalLines: summary.totalLines,
-            fullyPickedLines: summary.fullyPickedLines,
+            totalLines,
+            pickedLinesCount,
+            fullyPickedLinesCount,
+            isFullyPicked,
+            isAllAvailablePicked,
+            canShip,
+            lines: summaryLines,
+            picks: summaryPicks,
             scannedLines: newLines,
-            isFullyPicked: summary.isFullyPicked,
+            lastScannedAt: new Date(),
           },
         };
       });
-
-      if (!activeOrderId || activeOrderId === orderId) {
-        setActiveOrderId(orderId);
-      }
     } catch (err) {
       reportError(err, 'Failed to fetch order summary');
     }
-  }, [activeOrderId]);
+  }, []);
 
   const processBarcode = async (rawCode: string) => {
     const code = rawCode.trim();
@@ -135,17 +175,14 @@ export default function ScanToDispatchClient() {
     setBarcodeInput('');
 
     try {
-      // Format: PICK:{orderId}:{salesOrderLineId}:{binId}:{quantity}
-      const parts = code.startsWith('PICK:') ? code.slice(5).split(':') : code.split(':');
-
-      if (parts.length < 4) {
+      const parsed = parsePickBarcode(code);
+      if (!parsed) {
         throw new Error('Invalid barcode format. Expected: PICK:{orderId}:{lineId}:{binId}:{quantity}');
       }
 
-      const [orderId, lineId, binId, qtyStr] = parts;
-      const quantity = qtyStr || '1';
+      const { orderId, lineId, binId, quantity } = parsed;
 
-      // 1. Call the pickLine API
+      // 1. Call pickLine API
       await api.orderPickingControllerPickLine(orderId, lineId, {
         binId,
         quantity,
@@ -162,8 +199,6 @@ export default function ScanToDispatchClient() {
         scannedAt: new Date(),
         status: 'picked',
       };
-
-      setScannedHistory((prev) => [scannedItem, ...prev]);
 
       setFeedback({
         type: 'success',
@@ -198,9 +233,8 @@ export default function ScanToDispatchClient() {
     const order = ordersMap[orderId];
     if (!order) return;
 
-    setIsDispatching(true);
+    setDispatchingOrderId(orderId);
     try {
-      // Fetch shipping context to know shippable lines
       const contextRes = await api.orderPickingControllerGetShippingContext(orderId);
       const context = contextRes.data;
 
@@ -233,17 +267,12 @@ export default function ScanToDispatchClient() {
       playBeep(true);
       toast.success(t('orderDispatchedToast', { orderNumber: order.orderNumber }));
 
-      // Remove from map
+      // Remove dispatched order from map
       setOrdersMap((prev) => {
         const next = { ...prev };
         delete next[orderId];
         return next;
       });
-
-      if (activeOrderId === orderId) {
-        const remaining = Object.keys(ordersMap).filter((id) => id !== orderId);
-        setActiveOrderId(remaining.length > 0 ? remaining[0] : null);
-      }
 
       setFeedback({
         type: 'success',
@@ -260,211 +289,206 @@ export default function ScanToDispatchClient() {
         detail: errMsg,
       });
     } finally {
-      setIsDispatching(false);
+      setDispatchingOrderId(null);
       inputRef.current?.focus();
     }
   };
 
-  const activeOrder = activeOrderId ? ordersMap[activeOrderId] : null;
+  const handleCancelPick = async (orderId: string, pickId: string) => {
+    try {
+      await api.orderPickingControllerCancelPick(orderId, pickId);
+      playBeep(true);
+      toast.success(t('pickCancelled'));
+      await refreshOrderSummary(orderId);
+    } catch (err: unknown) {
+      playBeep(false);
+      const errMsg = getErrorMessage(err);
+      toast.error(errMsg);
+    } finally {
+      inputRef.current?.focus();
+    }
+  };
+
+  const toggleOrderExpand = (orderId: string) => {
+    setExpandedOrders((prev) => {
+      const currentlyExpanded = prev[orderId] ?? true;
+      return {
+        ...prev,
+        [orderId]: !currentlyExpanded,
+      };
+    });
+  };
+
+  const activeOrdersList = useMemo(() => {
+    return Object.values(ordersMap).sort(
+      (a, b) => b.lastScannedAt.getTime() - a.lastScannedAt.getTime()
+    );
+  }, [ordersMap]);
 
   return (
-    <div className="flex flex-col h-full w-full min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      {/* Header Bar */}
-      <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-            <span className="material-symbols-outlined text-[var(--accent)] text-2xl">barcode_scanner</span>
-            <h1 className="text-lg font-bold">{t('title')}</h1>
-          </div>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            {t('subtitle')}
-          </p>
-        </div>
+    <div className="flex flex-col flex-1 h-full p-4 lg:p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+      {/* Standard Header */}
+      <ContentPageHeader title={t('title')} />
 
-        <div className="flex items-center gap-3">
-          <Link href={routes.inventory.shipping()}>
-            <Button variant="secondary" size="sm">
-              {t('standardShipping')}
-            </Button>
-          </Link>
-          <Link href={routes.inventory.picking()}>
-            <Button variant="secondary" size="sm">
-              {t('pickingQueue')}
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto w-full">
-        {/* Left Column: Scanner Bar & Active Order Action */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          {/* Scanner Input Card */}
-          <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <label htmlFor="scanner-input" className="text-sm font-semibold flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                {t('scannerActive')}
-              </label>
-              {isProcessing && (
-                <span className="text-xs text-[var(--accent)] flex items-center gap-1">
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                  <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
-                  {t('processing')}
-                </span>
-              )}
-            </div>
-
-            <div className="relative">
-              <input
-                id="scanner-input"
-                ref={inputRef}
-                type="text"
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={t('placeholder')}
-                className="w-full px-4 py-3 text-base rounded-lg border border-[var(--border)] bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all font-mono"
-                autoComplete="off"
-                disabled={isProcessing}
-              />
-              <div className="absolute right-3 top-3.5 text-xs text-[var(--text-muted)] pointer-events-none">
-                {t('autoFocusOn')}
-              </div>
-            </div>
-
-            {/* Live Feedback Banner */}
-            {feedback && (
-              <div className="mt-4">
-                <InlineAlert
-                  type={feedback.type === 'success' ? 'info' : 'error'}
-                  title={feedback.message}
-                  message={feedback.detail}
-                />
-              </div>
+      <div className="flex flex-col gap-6 w-full">
+        {/* Scanner Input Card */}
+        <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <label htmlFor="scanner-input" className="text-sm font-semibold flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              {t('scannerActive')}
+            </label>
+            {isProcessing && (
+              <span className="text-xs text-[var(--accent)] flex items-center gap-1">
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
+                {t('processing')}
+              </span>
             )}
           </div>
 
-          {/* Active Order Card */}
-          {activeOrder ? (
-            <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <div>
-                  <span className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-semibold">{t('activeOrder')}</span>
-                  <h2 className="text-xl font-bold text-[var(--text-primary)]">{activeOrder.orderNumber}</h2>
-                  {activeOrder.customerName && (
-                    <p className="text-sm text-[var(--text-secondary)]">{activeOrder.customerName}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-[var(--text-muted)]">{t('progress')}</span>
-                  <div className="text-lg font-bold text-[var(--accent)]">
-                    {t('linesPicked', { picked: activeOrder.fullyPickedLines, total: activeOrder.totalLines })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-[var(--bg-secondary)] h-3 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      activeOrder.totalLines > 0
-                        ? (activeOrder.fullyPickedLines / activeOrder.totalLines) * 100
-                        : 0
-                    )}%`,
-                  }}
-                />
-              </div>
-
-              {/* Dispatch Action */}
-              <div className="pt-2 flex items-center justify-between gap-4">
-                <p className="text-xs text-[var(--text-muted)]">
-                  {activeOrder.isFullyPicked ? t('allLinesPicked') : t('partialOrderPrompt')}
-                </p>
-                <Button
-                  variant="primary"
-                  size="default"
-                  onClick={() => handleDispatchOrder(activeOrder.orderId)}
-                  disabled={isDispatching || activeOrder.fullyPickedLines === 0}
-                  className="shrink-0 px-6 py-2.5 text-sm"
-                >
-                  {isDispatching ? (
-                    <span className="flex items-center gap-2">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                      <span className="material-symbols-outlined text-base animate-spin">refresh</span>
-                      {t('dispatching')}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                      <span className="material-symbols-outlined text-base">local_shipping</span>
-                      {t('completeDispatch')}
-                    </span>
-                  )}
-                </Button>
-              </div>
+          <div className="relative">
+            <input
+              id="scanner-input"
+              ref={inputRef}
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t('placeholder')}
+              className="w-full px-4 py-3 text-base rounded-lg border border-[var(--border)] bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all font-mono"
+              autoComplete="off"
+              disabled={isProcessing}
+            />
+            <div className="absolute right-3 top-3.5 text-xs text-[var(--text-muted)] pointer-events-none">
+              {t('autoFocusOn')}
             </div>
-          ) : (
-            <div className="p-8 rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-card)] text-center text-[var(--text-muted)]">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-              <span className="material-symbols-outlined text-4xl mb-2 opacity-50">qr_code_scanner</span>
-              <p className="text-sm">{t('emptyPrompt')}</p>
+          </div>
+
+          {/* Live Feedback Banner */}
+          {feedback && (
+            <div className="mt-4">
+              <InlineAlert
+                type={feedback.type === 'success' ? 'info' : 'error'}
+                message={
+                  <div>
+                    <div className="font-bold">{feedback.message}</div>
+                    {feedback.detail && <div className="text-xs mt-0.5">{feedback.detail}</div>}
+                  </div>
+                }
+              />
             </div>
           )}
         </div>
 
-        {/* Right Column: Scanned Items Feed */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-sm flex flex-col h-full max-h-[600px]">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-3">
-              <h3 className="text-sm font-bold flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                <span className="material-symbols-outlined text-base text-[var(--text-muted)]">history</span>
-                {t('scannedFeed')}
-              </h3>
-              <span className="text-xs text-[var(--text-muted)]">
-                {t('totalScans', { count: scannedHistory.length })}
-              </span>
-            </div>
+        {/* Active Orders List */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-[var(--text-primary)]">
+              {t('activeOrdersCount', { count: activeOrdersList.length })}
+            </h2>
+          </div>
 
-            <div className="flex-1 overflow-y-auto flex flex-col gap-2">
-              {scannedHistory.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-[var(--text-muted)]">
-                  <p className="text-xs">{t('emptyHistory')}</p>
-                </div>
-              ) : (
-                scannedHistory.map((item) => (
-                  <div
-                    key={item.scanId}
-                    className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between text-xs transition-all hover:border-[var(--accent)]"
-                  >
-                    <div>
-                      <div className="font-bold text-[var(--text-primary)]">
-                        {t('pickedLine', { lineId: item.lineId.slice(0, 8) })}
-                      </div>
-                      <div className="text-[var(--text-muted)] text-[11px] mt-0.5">
-                        Bin: {item.binId.slice(0, 8)} &middot; Qty: {item.quantity}
+          {activeOrdersList.length === 0 ? (
+            <div className="p-12 rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-card)] text-center text-[var(--text-muted)]">
+              <span className="material-symbols-outlined text-4xl mb-2 opacity-50">qr_code_scanner</span>
+              <p className="text-sm">{t('emptyPrompt')}</p>
+            </div>
+          ) : (
+            activeOrdersList.map((order) => {
+              const isExpanded = expandedOrders[order.orderId] ?? true;
+              const isDispatching = dispatchingOrderId === order.orderId;
+
+              return (
+                <div
+                  key={order.orderId}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 flex flex-col gap-4 transition-all"
+                >
+                  {/* Order Card Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                            {order.orderNumber}
+                          </h3>
+                          {order.isFullyPicked ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border)]">
+                              {t('fullyPicked')}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border)]">
+                              {t('partiallyPicked', { picked: String(order.pickedLinesCount), total: String(order.totalLines) })}
+                            </span>
+                          )}
+                        </div>
+                        {order.customerName && (
+                          <p className="text-xs text-[var(--text-muted)] mt-1">
+                            {order.customerName}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                        <span className="material-symbols-outlined text-sm">check_circle</span>
-                        {t('success')}
-                      </span>
-                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        {item.scannedAt.toLocaleTimeString()}
-                      </div>
+
+                    {/* Ship Action */}
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="primary"
+                        size="default"
+                        onClick={() => handleDispatchOrder(order.orderId)}
+                        disabled={isDispatching || !order.canShip}
+                        className="shrink-0 px-5 py-2 text-sm"
+                      >
+                        {isDispatching ? (
+                          <span className="flex items-center gap-2">
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            <span className="material-symbols-outlined text-base animate-spin">refresh</span>
+                            {t('dispatching')}
+                          </span>
+                        ) : order.isAllAvailablePicked ? (
+                          t('shipOrder')
+                        ) : (
+                          t('shipPartial')
+                        )}
+                      </Button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+
+                  {/* Line Items List Toggle */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleOrderExpand(order.orderId)}
+                        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-0 py-1"
+                      >
+                        <span className="flex items-center gap-1">
+                          {isExpanded ? (
+                            <span className="material-symbols-outlined text-sm">expand_less</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-sm">expand_more</span>
+                          )}
+                          {isExpanded ? t('hideDetails') : t('showDetails', { count: order.lines.length })}
+                        </span>
+                      </Button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="pt-1">
+                        <PickingOrderLinesView
+                          lines={order.lines}
+                          picks={order.picks}
+                          readOnly={true}
+                          onCancelPick={(pickId) => handleCancelPick(order.orderId, pickId)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

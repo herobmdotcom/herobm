@@ -55,9 +55,9 @@ export function OrderLinesTable({
         {
             id: 'lineNumber',
             header: tSales('columns.lineNumber'),
-            width: 40,
+            width: 32,
             render: (line: OrderLine) => (
-                <span className="text-[var(--text-muted)] font-normal relative">
+                <span className="text-[var(--text-muted)] font-normal text-xs relative">
                     {line.lineNumber}
                 </span>
             )
@@ -65,6 +65,7 @@ export function OrderLinesTable({
         {
             id: 'product',
             header: tSales('columns.product'),
+            width: 100,
             render: (line: OrderLine) => (
                 <span className="font-semibold text-xs">
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
@@ -89,7 +90,7 @@ export function OrderLinesTable({
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return isEditable ? (
                     <input
-                        className="input w-full text-[13px]"
+                        className="input w-full !text-xs h-7 py-1"
                         defaultValue={line.productDescription || ''}
                         key={`desc-${line.salesOrderLineId}-${line.productDescription}`}
                         onBlur={(e) => {
@@ -100,14 +101,14 @@ export function OrderLinesTable({
                         placeholder="Custom description..."
                     />
                 ) : (
-                    <>{line.productDescription || '—'}</>
+                    <span className="text-xs">{line.productDescription || '—'}</span>
                 );
             }
         },
         {
             id: 'qty',
             header: tSales('columns.qty'),
-            width: 90,
+            width: 70,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
@@ -121,7 +122,7 @@ export function OrderLinesTable({
 
                 const warningIcon = hasWarning ? (
                     <span 
-                        className={`material-symbols-outlined text-sm ${isEditable ? 'absolute -left-4 top-1/2 -translate-y-1/2 z-[1]' : 'relative align-middle mr-1'} ${hasGap ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}
+                        className={`material-symbols-outlined text-[13px] font-normal opacity-75 ${isEditable ? 'absolute -left-3.5 top-1/2 -translate-y-1/2 z-[1]' : 'relative align-middle mr-1'} ${hasGap ? 'text-rose-500' : 'text-amber-500'}`}
                         title={warningTitle}
                     >
                         {warningIconStr}
@@ -133,7 +134,7 @@ export function OrderLinesTable({
                         <div className="relative">
                             {warningIcon}
                             <input
-                                className={`input w-full text-right ${hasWarning ? (hasGap ? 'border-[var(--danger)]' : 'border-[var(--warning)]') : ''}`}
+                                className={`input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1 ${hasWarning ? (hasGap ? 'border-rose-300' : 'border-amber-300') : ''}`}
                                 type="number"
                                 min="0"
                                 step="any"
@@ -149,7 +150,7 @@ export function OrderLinesTable({
                     );
                 }
                 return (
-                    <span className={`tabular-nums ${hasGap ? 'text-[var(--danger)] font-semibold' : ''}`}>
+                    <span className={`tabular-nums text-xs ${hasGap ? 'text-rose-600 font-medium' : ''}`}>
                         {warningIcon}
                         {parseFloat(line.quantity || '0')}
                     </span>
@@ -159,54 +160,60 @@ export function OrderLinesTable({
         {
             id: 'uom',
             header: tSales('columns.uom'),
-            width: 80,
+            width: 50,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 const defaultUom = line.baseUom || 'EA';
+                const currentUom = line.unitOfMeasure || defaultUom;
                 if (isEditable) {
                     const selectOptions: ProductUom[] = (line.productUoms || []).length > 0 ? (line.productUoms as ProductUom[]) : [{ uomCode: defaultUom, ratio: 1 }];
                     return (
-                        <select
-                            className="input w-full text-[13px] text-right"
-                            value={line.unitOfMeasure || defaultUom}
-                            onChange={(e) => {
-                                const newVal = e.target.value;
-                                const oldVal = line.unitOfMeasure || defaultUom;
-                                if (newVal !== oldVal) {
-                                    const oldO = selectOptions.find((o) => o.uomCode === oldVal);
-                                    const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
-                                    const newO = selectOptions.find((o) => o.uomCode === newVal);
-                                    const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
-                                    const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
-                                    updateLineFields(line.salesOrderLineId, {
-                                        unitOfMeasure: newVal,
-                                        pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
-                                    });
-                                }
-                            }}
-                        >
-                            {selectOptions.map((o) => (
-                                <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
-                            ))}
-                        </select>
+                        <div className="relative w-full">
+                            <div className="input w-full !text-xs text-center h-7 !px-1 py-1 flex items-center justify-center pointer-events-none bg-white">
+                                <span className="tabular-nums">{currentUom}</span>
+                            </div>
+                            <select
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                value={currentUom}
+                                onChange={(e) => {
+                                    const newVal = e.target.value;
+                                    const oldVal = currentUom;
+                                    if (newVal !== oldVal) {
+                                        const oldO = selectOptions.find((o) => o.uomCode === oldVal);
+                                        const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+                                        const newO = selectOptions.find((o) => o.uomCode === newVal);
+                                        const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+                                        const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                                        updateLineFields(line.salesOrderLineId, {
+                                            unitOfMeasure: newVal,
+                                            pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
+                                        });
+                                    }
+                                }}
+                            >
+                                {selectOptions.map((o) => (
+                                    <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
+                                ))}
+                            </select>
+                        </div>
                     );
                 }
                 // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., UOM default).
-                return <span className="tabular-nums">{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
+                return <span className="tabular-nums text-xs">{currentUom}</span>;
             }
         },
         {
             id: 'unitPrice',
             header: tSales('columns.unitPrice'),
-            width: 110,
+            width: 80,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 if (isEditable) {
                     return (
                         <input
-                            className="input w-full text-right"
+                            className="input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1"
                             type="number"
                             min="0"
                             step="0.01"
@@ -223,20 +230,20 @@ export function OrderLinesTable({
                         />
                     );
                 }
-                return <span className="tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}</span>;
+                return <span className="tabular-nums text-xs">{formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}</span>;
             }
         },
         {
             id: 'unitCost',
             header: 'Unit Cost',
-            width: 110,
+            width: 80,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 if (isEditable) {
                     return (
                         <input
-                            className="input w-full text-right"
+                            className="input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1"
                             type="number"
                             min="0"
                             step="0.01"
@@ -261,35 +268,40 @@ export function OrderLinesTable({
                         />
                     );
                 }
-                return <span className="tabular-nums text-[var(--text-muted)]">{line.unitCost ? formatAmount(parseFloat(line.unitCost), order.currencyCode || 'EUR') : tCommon('auto')}</span>;
+                return <span className="tabular-nums text-[var(--text-muted)] text-xs">{line.unitCost ? formatAmount(parseFloat(line.unitCost), order.currencyCode || 'EUR') : tCommon('auto')}</span>;
             }
         },
         {
             id: 'discountPct',
             header: tSales('columns.discountPct'),
-            width: 80,
+            width: 65,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
+                const discVal = parseFloat(line.discountPercentage || '0');
+                const formattedDisc = isNaN(discVal) ? '0' : String(discVal);
                 if (isEditable) {
                     return (
                         <input
-                            className="input w-full text-right"
+                            className="input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1"
                             type="number"
                             min="0"
                             max="100"
-                            step="0.1"
-                            defaultValue={line.discountPercentage || '0'}
+                            step="any"
+                            defaultValue={formattedDisc}
                             key={`disc-${line.salesOrderLineId}-${line.discountPercentage}`}
                             onBlur={(e) => {
-                                if (e.target.value !== (line.discountPercentage || '0')) {
-                                    updateLine(line.salesOrderLineId, 'discountPercentage', e.target.value);
+                                const val = parseFloat(e.target.value);
+                                const nextVal = isNaN(val) ? '0' : String(val);
+                                e.target.value = nextVal;
+                                if (nextVal !== formattedDisc) {
+                                    updateLine(line.salesOrderLineId, 'discountPercentage', nextVal);
                                 }
                             }}
                         />
                     );
                 }
-                return <span className="tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>;
+                return <span className="tabular-nums text-xs">{formattedDisc}%</span>;
             }
         },
         {
@@ -311,7 +323,7 @@ export function OrderLinesTable({
                     )}
                 </div>
             ),
-            width: 110,
+            width: 65,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
@@ -322,46 +334,54 @@ export function OrderLinesTable({
                     if (isStale) {
                         return <span className="badge badge-warning" title={tSales('taxNeedsToBeCalculated', { provider: order.taxProvider || '' })}>{tCommon('pending')}</span>;
                     }
-                    return <span title={`Calculated by ${order.taxProvider}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">
+                    return <span title={`Calculated by ${order.taxProvider}`} className="cursor-help border-b border-dotted border-[var(--text-muted)] text-xs">
                         {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
                     </span>;
                 }
 
+                const selectedCat = taxCategories.find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
+                const formattedPct = selectedCat
+                    ? (() => {
+                          const pct = parseFloat(selectedCat.rate || '0');
+                          return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toString()}%`;
+                      })()
+                    : (() => {
+                          const amt = parseFloat(line.amount || '0');
+                          const tax = parseFloat(line.tax || '0');
+                          if (amt > 0 && tax > 0) {
+                              const pct = (tax / amt) * 100;
+                              return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                          }
+                          if (amt > 0 && tax === 0) return '0%';
+                          return '—';
+                      })();
+
                 if (isEditable) {
                     return (
-                        <select
-                            className="input w-full text-xs text-right"
-                            value={line.taxCategoryId || ''}
-                            onChange={(e) => {
-                                updateLine(line.salesOrderLineId, 'taxCategoryId', e.target.value);
-                            }}
-                        >
-                            {taxCategories.map((c: TaxCategory) => (
-                                <option key={c.taxCategoryId} value={c.taxCategoryId}>
-                                    {getTaxLabel(c)}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="relative w-full">
+                            <div className="input w-full !text-xs text-right h-7 !px-1.5 py-1 flex items-center justify-end pointer-events-none bg-white">
+                                <span className="tabular-nums">{formattedPct}</span>
+                            </div>
+                            <select
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                value={line.taxCategoryId || ''}
+                                onChange={(e) => {
+                                    updateLine(line.salesOrderLineId, 'taxCategoryId', e.target.value);
+                                }}
+                                title={selectedCat ? getTaxLabel(selectedCat) : 'Tax Category'}
+                            >
+                                {taxCategories.map((c: TaxCategory) => (
+                                    <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                                        {getTaxLabel(c)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     );
                 }
                 return (
-                    <span className="text-xs">
-                        {(() => {
-                            const c = taxCategories.find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
-                            if (c) {
-                                const pct = parseFloat(c.rate || '0');
-                                const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                                return <span title={`Tax Category: ${c.title}`} className="cursor-help border-b border-dotted border-[var(--text-muted)]">{formattedPct}%</span>;
-                            }
-                            const amt = parseFloat(line.amount || '0');
-                            const tax = parseFloat(line.tax || '0');
-                            if (amt > 0 && tax > 0) {
-                                const pct = (tax / amt) * 100;
-                                return <span title="Tax Category: Custom" className="cursor-help border-b border-dotted border-[var(--text-muted)]">{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
-                            }
-                            if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} className="cursor-help border-b border-dotted border-[var(--text-muted)]">0%</span>;
-                            return '—';
-                        })()}
+                    <span className="text-xs tabular-nums" title={selectedCat ? `Tax Category: ${selectedCat.title}` : undefined}>
+                        {formattedPct}
                     </span>
                 );
             }
@@ -369,12 +389,12 @@ export function OrderLinesTable({
         {
             id: 'amount',
             header: tSales('columns.amount'),
-            width: 110,
+            width: 85,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return (
-                    <span className={`font-semibold tabular-nums ${isEditable ? 'text-[var(--text-primary)]' : ''}`}>
+                    <span className={`font-semibold tabular-nums text-xs ${isEditable ? 'text-[var(--text-primary)]' : ''}`}>
                         {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
                     </span>
                 );
@@ -386,7 +406,7 @@ export function OrderLinesTable({
         lineColumns.push({
             id: 'actions',
             header: '',
-            width: 50,
+            width: 36,
             align: 'right',
             render: (line: OrderLine) => {
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
@@ -421,7 +441,7 @@ export function OrderLinesTable({
                             </div>
                             <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                         </div>
-                        <div className="text-sm text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1">
+                        <div className="text-xs text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:!text-xs [&_.input]:h-7 [&_.input]:!py-1">
                             {lineColumns.find(c => c.id === 'description')?.render?.(line, 0)}
                         </div>
                         <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
@@ -430,7 +450,7 @@ export function OrderLinesTable({
                                     key={col.id} 
                                     label={col.id === 'tax' ? tSales('columns.tax') : col.header} 
                                     value={
-                                        <div className={col.id === 'amount' ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
+                                        <div className={col.id === 'amount' ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:!text-xs [&_.input]:h-7 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
                                             {col.render?.(line, 0)}
                                         </div>
                                     } 

@@ -704,8 +704,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     margin-bottom: 1.5rem;
                 }
                 .table-lines th {
-                    text-align: left;
-                    padding: 10px 12px;
+                    padding: 6px 6px;
                     font-size: 11px;
                     font-weight: 700;
                     text-transform: uppercase;
@@ -714,10 +713,33 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     border-bottom: 2px solid var(--border);
                 }
                 .table-lines td {
-                    padding: 12px;
-                    font-size: 13px;
+                    padding: 6px 6px;
+                    font-size: 12px;
                     border-bottom: 1px solid var(--border);
                     vertical-align: middle;
+                }
+                .table-lines th:first-child,
+                .table-lines td:first-child {
+                    padding-left: 8px;
+                }
+                .table-lines th:last-child,
+                .table-lines td:last-child {
+                    padding-right: 8px;
+                }
+                .table-lines input,
+                .table-lines select,
+                .table-lines .input,
+                .table-lines .select {
+                    font-size: 12px;
+                    padding: 4px 6px;
+                    height: 28px;
+                }
+
+                .table-lines select.input,
+                .table-lines .select {
+                    padding-right: 18px;
+                    background-position: right 4px center;
+                    background-size: 0.85em 0.85em;
                 }
 
                 .badge-draft { background: #f3f4f6; color: #374151; }

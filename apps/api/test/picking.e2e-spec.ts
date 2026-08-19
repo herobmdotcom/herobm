@@ -14,6 +14,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { parsePickBarcode } from '@herobm/shared';
 
 import request from 'supertest';
 
@@ -629,6 +630,82 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(detailAfter.body.stateCode).toBe('picking');
+    });
+  });
+
+  // =========================================================================
+  // Scan-to-Pick Barcode Round-Trip (Producer & Consumer)
+  // =========================================================================
+
+  describe('Scan-to-Pick Barcode Round-Trip (Producer & Consumer)', () => {
+    let orderId: string;
+    let lineIds: string[];
+
+    beforeAll(async () => {
+      const result = await createConfirmedOrder();
+      orderId = result.orderId;
+      lineIds = result.lineIds;
+    });
+
+    it('Producer: generates scan-to-pick barcodes via GET /picking/barcodes', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/picking/barcodes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+
+      const barcodeItem = res.body[0];
+      expect(barcodeItem.salesOrderId).toBe(orderId);
+      expect(barcodeItem.salesOrderLineId).toBe(lineIds[0]);
+      expect(barcodeItem.barcodePayload).toMatch(
+        /^PICK:[a-f0-9-]+:[a-f0-9-]+:[a-f0-9-]+:\d+(\.\d+)?$/,
+      );
+    });
+
+    it('Consumer: parses barcode payload and executes pick via POST /picking/lines/:lineId', async () => {
+      // 1. Fetch generated barcodes from API (Producer)
+      const barcodesRes = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/picking/barcodes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const barcodeItem = barcodesRes.body[0];
+      const scannedRawBarcode = barcodeItem.barcodePayload;
+
+      // 2. Client-side consumer parses the scanned barcode
+      const parsed = parsePickBarcode(scannedRawBarcode);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.orderId).toBe(orderId);
+      expect(parsed!.lineId).toBe(lineIds[0]);
+      expect(parsed!.binId).toBe(barcodeItem.binId);
+
+      // 3. Dispatch pick operation using parsed parameters
+      const pickRes = await pickLine(
+        parsed!.orderId,
+        parsed!.lineId,
+        parsed!.binId,
+        parsed!.quantity,
+      );
+
+      expect(pickRes.body).toHaveProperty('pickId');
+      expect(pickRes.body.salesOrderLineId).toBe(lineIds[0]);
+      expect(parseFloat(pickRes.body.quantity)).toBe(
+        parseFloat(parsed!.quantity),
+      );
+
+      // 4. Verify picking summary reflects the picked state
+      const summaryRes = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/picking`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const pickedLine = summaryRes.body.lines.find(
+        (l: { salesOrderLineId: string }) => l.salesOrderLineId === lineIds[0],
+      );
+      expect(pickedLine).toBeDefined();
+      expect(parseFloat(pickedLine.quantityPicked)).toBeGreaterThan(0);
     });
   });
 

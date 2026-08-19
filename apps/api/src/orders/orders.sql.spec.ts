@@ -77,6 +77,19 @@ describe('orders.sql - getCreditBlockedSql', () => {
     return res[0]?.isBlocked ?? false;
   }
 
+  async function checkCreditBlockedStandalone(
+    salesOrderId: string,
+  ): Promise<boolean> {
+    const res = await pg.db
+      .select({
+        isBlocked: getCreditBlockedSql(),
+      })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    return res[0]?.isBlocked ?? false;
+  }
+
   it('should return false if customer is active and not on hold', async () => {
     const customerId = await createCustomer({
       stateCode: CUSTOMER_STATE.ACTIVE,
@@ -86,6 +99,17 @@ describe('orders.sql - getCreditBlockedSql', () => {
 
     const isBlocked = await checkCreditBlocked(orderId);
     expect(isBlocked).toBe(false);
+  });
+
+  it('should evaluate correctly without requiring outer joins on customers or customerGroups', async () => {
+    const customerId = await createCustomer({
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      isOnCreditHold: true,
+    });
+    const orderId = await createOrder(customerId);
+
+    const isBlocked = await checkCreditBlockedStandalone(orderId);
+    expect(isBlocked).toBe(true);
   });
 
   it('should return true if customer isOnCreditHold is true', async () => {

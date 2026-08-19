@@ -5,6 +5,8 @@ import {
   isStockedProductLine,
   isPhysicalProductLine,
   isShippableProductLine,
+  formatPickBarcode,
+  parsePickBarcode,
 } from './inventory';
 
 describe('Inventory Logic (Shared)', () => {
@@ -99,5 +101,77 @@ describe('Inventory Logic (Shared)', () => {
     expect(isStockedProductLine({ productId: null })).toBe(false);
     expect(isPhysicalProductLine({ productId: null })).toBe(true);
     expect(isShippableProductLine({ productId: null })).toBe(true);
+  });
+
+  it('should sequentially deduct available stock when multiple lines order the same product', () => {
+    const lines: OrderLineMinimal[] = [
+      { salesOrderLineId: 'line-1', productId: p1, productDescription: 'Part 1', quantity: 6, fulfillmentLocationId: loc1, productType: 'inventory' },
+      { salesOrderLineId: 'line-2', productId: p1, productDescription: 'Part 1', quantity: 6, fulfillmentLocationId: loc1, productType: 'inventory' },
+    ];
+    const levels: InventoryLevelMinimal[] = [
+      { productId: p1, locationId: loc1, quantityAvailable: 10 },
+    ];
+
+    const gaps = calculateInventoryGaps(lines, levels);
+
+    // Line 1 uses 6 of 10 available -> 4 remaining. No gap for Line 1.
+    // Line 2 needs 6, only 4 remaining -> Shortage of 2 for Line 2.
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].salesOrderLineId).toBe('line-2');
+    expect(gaps[0].orderedQuantity).toBe(6);
+    expect(gaps[0].availableQuantity).toBe(4);
+    expect(gaps[0].shortage).toBe(2);
+  });
+
+  it('should not create gaps for legacy custom lines', () => {
+    const lines: OrderLineMinimal[] = [
+      { salesOrderLineId: 'line-custom-1', productId: '00000000-0000-0000-0000-000000000000', productDescription: 'Custom Item 1', quantity: 10, fulfillmentLocationId: loc1 },
+      { salesOrderLineId: 'line-custom-2', productId: '00000000-0000-4000-8000-000000000000', productDescription: 'Custom Item 2', quantity: 10, fulfillmentLocationId: loc1 },
+    ];
+    const levels: InventoryLevelMinimal[] = [];
+
+    const gaps = calculateInventoryGaps(lines, levels);
+    expect(gaps).toHaveLength(0);
+  });
+
+  describe('Scan-to-Pick Barcode Formatter & Parser', () => {
+    it('should format a valid pick barcode string', () => {
+      const payload = {
+        orderId: 'ord-123',
+        lineId: 'line-456',
+        binId: 'bin-789',
+        quantity: '5',
+      };
+      expect(formatPickBarcode(payload)).toBe('PICK:ord-123:line-456:bin-789:5');
+    });
+
+    it('should parse a standard PICK: prefixed barcode string', () => {
+      const barcode = 'PICK:ord-123:line-456:bin-789:5';
+      const parsed = parsePickBarcode(barcode);
+      expect(parsed).toEqual({
+        orderId: 'ord-123',
+        lineId: 'line-456',
+        binId: 'bin-789',
+        quantity: '5',
+      });
+    });
+
+    it('should parse a raw barcode string without PICK: prefix', () => {
+      const barcode = 'ord-123:line-456:bin-789:3';
+      const parsed = parsePickBarcode(barcode);
+      expect(parsed).toEqual({
+        orderId: 'ord-123',
+        lineId: 'line-456',
+        binId: 'bin-789',
+        quantity: '3',
+      });
+    });
+
+    it('should return null for invalid or incomplete barcode strings', () => {
+      expect(parsePickBarcode('')).toBeNull();
+      expect(parsePickBarcode('   ')).toBeNull();
+      expect(parsePickBarcode('PICK:ord-123:line-456')).toBeNull();
+      expect(parsePickBarcode('INVALID')).toBeNull();
+    });
   });
 });

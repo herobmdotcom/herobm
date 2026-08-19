@@ -22,6 +22,7 @@ import {
 import {
   SALES_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_STATE,
+  formatPickBarcode,
 } from '@herobm/shared';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ export interface PickingLine {
   binId?: string;
   binNumber: string;
   qtyToPick: number;
+  barcodePayload?: string;
 }
 
 export interface BackOrderLine {
@@ -352,15 +354,26 @@ export class PickingSlipService {
 
       if (toPick > 0) {
         const binInfo = binMap.get(line.productId!);
+        const binId = binInfo?.binId ?? '';
+        const barcodePayload = binId
+          ? formatPickBarcode({
+              orderId: header.orderId ?? '',
+              lineId: line.lineId,
+              binId,
+              quantity: String(toPick),
+            })
+          : '';
+
         pickingLines.push({
           lineId: line.lineId,
           orderId: header.orderId ?? '',
           productId: line.productId ?? '',
           productCode,
           description,
-          binId: binInfo?.binId ?? '',
+          binId,
           binNumber: binInfo?.binNumber ?? '—',
           qtyToPick: toPick,
+          barcodePayload,
         });
       }
 
