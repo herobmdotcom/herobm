@@ -38,33 +38,24 @@ export class UomDictionaryService {
     if (!dto.uomCode || !dto.description) {
       throw new BadRequestException('uomCode and description are required');
     }
-    try {
-      const rows = await this.db
-        .insert(uomDictionary)
-        .values({
-          uomCode: dto.uomCode.toUpperCase().trim(),
-          description: dto.description.trim(),
-        })
-        .returning();
+    const rows = await this.db
+      .insert(uomDictionary)
+      .values({
+        uomCode: dto.uomCode.toUpperCase().trim(),
+        description: dto.description.trim(),
+      })
+      .returning();
 
-      await emitEvent(this.db, {
-        entityType: EntityType.SYSTEM,
-        entityId: 'system',
-        eventType: EventType.UPDATED,
-        entityDisplayName: 'System UOM',
-        payload: { uomCode: rows[0].uomCode },
-        actor: 'system', // we could take actor in create() but no param exists currently
-      });
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system',
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'System UOM',
+      payload: { uomCode: rows[0].uomCode },
+      actor: 'system', // we could take actor in create() but no param exists currently
+    });
 
-      return rows[0];
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23505') {
-        throw new BadRequestException(
-          `UOM code '${dto.uomCode}' already exists`,
-        );
-      }
-      throw err;
-    }
+    return rows[0];
   }
 
   async update(code: string, dto: UpdateUomDto) {
@@ -106,28 +97,17 @@ export class UomDictionaryService {
 
   async delete(code: string) {
     await this.findOne(code);
-    try {
-      await this.db
-        .delete(uomDictionary)
-        .where(eq(uomDictionary.uomCode, code));
+    await this.db.delete(uomDictionary).where(eq(uomDictionary.uomCode, code));
 
-      await emitEvent(this.db, {
-        entityType: EntityType.SYSTEM,
-        entityId: 'system',
-        eventType: EventType.UPDATED,
-        entityDisplayName: 'System UOM',
-        payload: { uomCode: code, action: 'deleted' },
-        actor: 'system',
-      });
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system',
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'System UOM',
+      payload: { uomCode: code, action: 'deleted' },
+      actor: 'system',
+    });
 
-      return { deleted: true };
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23503') {
-        throw new BadRequestException(
-          `Cannot delete UOM '${code}' because it is assigned to one or more products. Remove the assignments first.`,
-        );
-      }
-      throw err;
-    }
+    return { deleted: true };
   }
 }

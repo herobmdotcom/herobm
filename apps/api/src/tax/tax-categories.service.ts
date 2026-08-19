@@ -147,30 +147,18 @@ export class TaxCategoriesService {
     return await this.db.transaction(async (tx) => {
       const cat = await this.getById(id, tx);
 
-      try {
-        await tx
-          .delete(taxCategories)
-          .where(eq(taxCategories.taxCategoryId, id));
+      await tx.delete(taxCategories).where(eq(taxCategories.taxCategoryId, id));
 
-        await emitEvent(tx, {
-          entityType: EntityType.TAX_CATEGORY,
-          entityId: id,
-          eventType: EventType.DELETED,
-          entityDisplayName: cat.code,
-          payload: {},
-          actor: userId,
-        });
+      await emitEvent(tx, {
+        entityType: EntityType.TAX_CATEGORY,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: cat.code,
+        payload: {},
+        actor: userId,
+      });
 
-        return { deleted: true };
-      } catch (err: unknown) {
-        // Postgres foreign_key_violation
-        if ((err as { code?: string })?.code === '23503') {
-          throw new BadRequestException(
-            'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',
-          );
-        }
-        throw err;
-      }
+      return { deleted: true };
     });
   }
 }

@@ -86,12 +86,12 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, fetchContextHelp]);
 
-  // Load all topics when opened or on first mount
+  // Load all topics whenever help drawer is opened
   useEffect(() => {
-    if (isOpen && topics.length === 0) {
+    if (isOpen) {
       fetchAllTopics();
     }
-  }, [isOpen, topics.length, fetchAllTopics]);
+  }, [isOpen, fetchAllTopics]);
 
   // Handle live search debouncing
   useEffect(() => {

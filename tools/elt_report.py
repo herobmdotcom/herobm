@@ -1,7 +1,6 @@
 import sys
 import os
 import json
-import subprocess
 import argparse
 from datetime import datetime
 
@@ -16,7 +15,8 @@ def load_env(profile=None):
                     continue
                 if '=' in line:
                     k, v = line.split('=', 1)
-                    os.environ[k.strip()] = v.strip()
+                    if k.strip() not in os.environ:
+                        os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 # To import test_data_counts we need to add infra/tests to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'infra', 'tests')))
@@ -31,7 +31,7 @@ def get_db_metrics(source):
     try:
         import psycopg2
         conn = psycopg2.connect(
-            host=os.environ.get("POSTGRES_HOST", "postgres-custom"),
+            host=os.environ.get("POSTGRES_HOST", "localhost"),
             port=os.environ.get("POSTGRES_PORT", "5432"),
             user=os.environ.get("POSTGRES_USER", "postgres"),
             password=os.environ.get("POSTGRES_PASSWORD", "postgres"),
@@ -54,25 +54,49 @@ def get_db_metrics(source):
     return None
 
 def get_dbt_results(source):
-    path = os.path.join(os.path.dirname(__file__), '..', 'pipelines', f'{source}_transform', 'target', 'run_results.json')
-    if not os.path.exists(path):
+    target_dir = os.path.join(os.path.dirname(__file__), '..', 'pipelines', f'{source}_transform', 'target')
+    manifest_path = os.path.join(target_dir, 'manifest.json')
+    run_results_path = os.path.join(target_dir, 'run_results.json')
+    
+    total_models = 0
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                manifest = json.load(f)
+            total_models = len([
+                k for k, v in manifest.get('nodes', {}).items()
+                if v.get('resource_type') == 'model' and v.get('config', {}).get('enabled', True)
+            ])
+        except Exception:
+            pass
+
+    if not os.path.exists(run_results_path):
         return None
-    with open(path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+
+    try:
+        with open(run_results_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        return None
     
     passed = 0
     errors = 0
     warnings = 0
     for res in data.get('results', []):
-        if res.get('status') == 'success' or res.get('status') == 'pass':
+        if res.get('status') in ('success', 'pass'):
             passed += 1
-        elif res.get('status') == 'error' or res.get('status') == 'fail':
+        elif res.get('status') in ('error', 'fail'):
             errors += 1
         elif res.get('status') == 'warn':
             warnings += 1
             
-    return {"passed": passed, "errors": errors, "warnings": warnings, "total": len(data.get('results', []))}
-
+    return {
+        "passed": passed,
+        "errors": errors,
+        "warnings": warnings,
+        "last_batch_total": len(data.get('results', [])),
+        "project_total_models": total_models
+    }
 
 def main():
     parser = argparse.ArgumentParser(description="ELT Pipeline Summary Report")
@@ -89,43 +113,38 @@ def main():
     
     metrics = get_db_metrics(args.source)
     if metrics:
-        print("\n[ EXTRACTION PHASE ]")
+        print("\n[ EXTRACTION PHASE (dlt) ]")
         print(f"  Status    : {metrics['status']}")
         print(f"  Tables    : {metrics['tables']} synced")
         print(f"  Duration  : {float(metrics['duration']):.1f}s")
         if metrics['error']:
             print(f"  Error     : {metrics['error']}")
     else:
-        print("\n[ EXTRACTION PHASE ]")
+        print("\n[ EXTRACTION PHASE (dlt) ]")
         print("  Status    : Unknown / No metrics found in DB.")
         
     dbt_res = get_dbt_results(args.source)
     if dbt_res:
-        print("\n[ TRANSFORMATION PHASE (DBT) ]")
-        print(f"  Models Built : {dbt_res['passed']} / {dbt_res['total']}")
-        print(f"  Warnings     : {dbt_res['warnings']}")
-        print(f"  Errors       : {dbt_res['errors']}")
+        print("\n[ TRANSFORMATION & IMPORT PHASE (dbt) ]")
+        if dbt_res['project_total_models'] > 0:
+            print(f"  Total Models in Project : {dbt_res['project_total_models']}")
+        print(f"  Last Run Status         : {'SUCCESS' if dbt_res['errors'] == 0 else 'FAILURE'}")
         if dbt_res['errors'] > 0:
+            print(f"  Errors                  : {dbt_res['errors']}")
             print("  [!] Please check dbt logs for failure details.")
     else:
-        print("\n[ TRANSFORMATION PHASE (DBT) ]")
+        print("\n[ TRANSFORMATION & IMPORT PHASE (dbt) ]")
         print("  Status    : Unknown / No run_results.json found.")
         
-    print("\n[ DATA VERIFICATION ]")
     if test_data_counts:
-        # We temporarily hijack sys.stdout to capture test output or just run it directly.
-        # test_data_counts.main() directly prints to stdout. Let's let it print!
-        print("  Checking alignment between Staging and Core DB:")
-        # avoid sys.exit(1) on failure, since we just want a report.
         try:
             test_data_counts.main()
         except SystemExit as e:
             if e.code != 0:
-                print("\n  [!] Discrepancies detected between staging and final tables.")
+                print("\n  [!] Quality gate failure detected during data verification.")
     else:
+        print("\n[ DATA VERIFICATION ]")
         print("  test_data_counts module not found.")
-        
-    print("="*70 + "\n")
 
 if __name__ == "__main__":
     main()

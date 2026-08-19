@@ -1,148 +1,85 @@
 ---
 id: general-ledger
-title: "General Ledger & Financial Accounting"
-description: "Chart of Accounts, journal entry double-entry balance invariants, AR/AP party tagging, and financial reports."
+title: "General Ledger & Chart of Accounts"
+description: "Manage financial accounts, create manual journal entries, and generate the Trial Balance."
 category: "Finance"
-order: 1
-resource: "gl"
+order: 23
+resource: "finance"
 action: "read"
 routes:
   - "/general-ledger"
   - "/general-ledger/trial-balance"
   - "/general-ledger/journal-entries"
-  - "/general-ledger/journal-entries/new"
-  - "/general-ledger/journal-entries/:id"
-  - "/balances/customers"
-  - "/balances/suppliers"
-  - "/balances/tax"
-  - "/payments"
-  - "/reconciliations"
-tags: ["finance", "gl", "accounts", "journal", "balance", "trial-balance", "reconciliation", "tax", "payments"]
+tags: ["finance", "general-ledger", "gl", "chart-of-accounts", "journal-entries", "trial-balance", "accounting"]
 fields:
   account_code:
     title: "Account Code"
-    summary: "Unique numerical or alphanumeric identifier for the leaf account in the Chart of Accounts."
-  debit:
-    title: "Debit Amount"
-    summary: "Debit side of the double-entry transaction. Increases Assets/Expenses, decreases Liabilities/Equity/Income."
-  credit:
-    title: "Credit Amount"
-    summary: "Credit side of the double-entry transaction. Increases Liabilities/Equity/Income, decreases Assets/Expenses."
-  party_type:
-    title: "Party Type"
-    summary: "Subledger entity type (Customer or Supplier) for AR/AP aging analysis."
-  party_id:
-    title: "Party ID"
-    summary: "Unique identifier linking the journal line to a specific customer or supplier."
+    summary: "Unique numerical GL code (e.g. 1000 Bank, 4000 Sales, 5000 COGS)."
+  account_type:
+    title: "Account Classification"
+    summary: "Standard accounting class: Asset, Liability, Equity, Revenue, or Expense."
+  journal_entry_number:
+    title: "Journal Entry Number"
+    summary: "Unique transaction identifier (e.g. JRN-2026-00041)."
+  debit_amount:
+    title: "Debit (DR)"
+    summary: "Left-side transaction value."
+  credit_amount:
+    title: "Credit (CR)"
+    summary: "Right-side transaction value."
 related:
-  - "sales-orders"
-  - "purchase-orders"
-  - "dynamic-reporting"
+  - "balances"
+  - "payments"
+  - "reconciliations"
 ---
 
-# General Ledger (GL) & Financial Fundamentals
+# General Ledger & Chart of Accounts
 
-This document describes how HeroBM handles core financial accounting. The native General Ledger (GL) sits at the center of the system, acting as the ultimate source of truth for all financial movements.
-
-
-## The Chart of Accounts (COA)
-
-The Chart of Accounts is the backbone of the financial system. It is a hierarchical list of all accounts used to record transactions.
-
-### Organization
-
-Accounts are organized into an expandable "tree" structure using groups and leaf nodes. You can only post financial amounts to **leaf accounts** (accounts that do not have children). Group accounts are used purely for organization and rolling up totals on reports.
-
-Every account in the system belongs to one of five fundamental root types:
-
-| Type | Behavioral Rule | Examples |
-|------|-----------------|----------|
-| **Asset** | Increased by Debits. What you own or are owed. | Bank, Accounts Receivable, Inventory |
-| **Liability**| Increased by Credits. What you owe to others. | Accounts Payable, Tax Collected |
-| **Equity** | Increased by Credits. The owner's residual interest. | Retained Earnings, Share Capital |
-| **Income** | Increased by Credits. Money earned. | Sales Revenue, Interest Income |
-| **Expense** | Increased by Debits. Money spent to operate. | Cost of Goods Sold, Rent, Software Subscriptions |
-
-### System Accounts
-
-Certain accounts are flagged as **System Accounts** (e.g., Accounts Receivable, Sales Revenue, GST Collected). These accounts are automatically targeted by normal business operations (like invoicing). To prevent catastrophic system failure, System Accounts cannot be deleted or deactivated, though their names can be updated.
+The **General Ledger (GL)** is the financial backbone of HeroBM. It records all automated postings from operations and allows accountants to enter manual adjusting journals and generate Trial Balances.
 
 ---
 
-## Subledger Party Tracking (AR/AP)
+## Double-Entry Accounting Invariants
 
-To support robust Accounts Receivable (AR) and Accounts Payable (AP) reporting, the GL supports tagging individual journal lines with a **Party Type** and **Party ID**. 
+Every posted transaction in the system must obey the double-entry equation:
 
-When a transaction involves a customer or a supplier, the relevant line (e.g., the line hitting the Accounts Receivable system account) is tagged with that entity's unique ID. This allows the finance team to generate accurate aging reports and see exactly who owes the business money, or who the business owes, directly from the General Ledger without needing to cross-reference the native Sales or Procurement modules.
+$$\sum \text{Debits} = \sum \text{Credits}$$
 
----
+### Standard Automatic Postings
 
-## Double-Entry Accounting
-
-HeroBM strictly enforces the principles of double-entry accounting. Every business event must be recorded as a **Journal Entry** consisting of two or more lines.
-
-### The Golden Rule: The Balance Invariant
-
-The system refuses to save any transaction where the total Debits do not mathematically equal the total Credits.
-
-```
-Total Debits = Total Credits
-```
-
-If you attempt to post an unbalanced entry, the system will immediately reject it. This ensures your books are always perfectly balanced.
+| Operational Event | Debit Account | Credit Account |
+| :--- | :--- | :--- |
+| **Sales Invoice** | Accounts Receivable | Sales Revenue + Tax Payable |
+| **Supplier Invoice** | Inventory / Expense + Input Tax | Accounts Payable |
+| **Customer Payment** | Bank Account | Accounts Receivable |
+| **Supplier Payment** | Accounts Payable | Bank Account |
+| **Stock Loss Adjustment** | Inventory Variance Expense | Inventory Asset |
 
 ---
 
-## How Transactions Are Generated
+## Step-by-Step Workflows
 
-Journal entries enter the ledger through two distinct pathways:
+### 1. Creating a Manual Journal Entry
+1. Go to **Finance** → **General Ledger** → **Journal Entries** (`/general-ledger/journal-entries`).
+2. Click **+ New Journal Entry**.
+3. Enter the **Transaction Date** and a clear **Description / Reference**.
+4. Add line items: select GL accounts and enter Debit and Credit amounts.
+5. Verify that total debits exactly equal total credits.
+6. Click **Post Journal Entry**.
 
-### 1. Automated Subledger Posting (Business Operations)
-
-When your team performs daily operational tasks, the system figures out the accounting for you automatically behind the scenes.
-
-**Example: Creating a Sales Invoice**
-When a Sales Invoice for EUR 100.00 + 9% GST is submitted, the invoice engine automatically generates and posts a balanced journal entry:
-
-*   **Debit:** Accounts Receivable — EUR 109.00
-*   **Credit:** Sales Revenue — EUR 100.00
-*   **Credit:** GST Collected (Liability) — EUR 9.00
-
-*The user creating the invoice never sees or worries about debits and credits; it happens instantly.*
-
-**Example: Creating a Purchase Invoice (Bill)**
-When a Purchase Invoice for EUR 200.00 + 9% GST is submitted:
-
-*   **Credit:** Accounts Payable — EUR 218.00
-*   **Debit:** Expenses — EUR 200.00
-*   **Debit:** GST Paid (Asset) — EUR 18.00
-
-### 2. Manual Journal Entries
-
-Sometimes the finance team needs to record transactions that fall outside normal operational workflows (e.g., recording depreciation, owner dividend payouts, or correcting a mistake).
-
-Authorized users (`admin` or `finance` roles) can create manual journal entries directly through the Ops Portal via **Finance > Journal Entries**. These entries are subject to the exact same strict balancing rules as automated entries.
+### 2. Viewing the Trial Balance
+1. Go to **Finance** → **General Ledger** → **Trial Balance** (`/general-ledger/trial-balance`).
+2. Select the financial period or date range.
+3. Review debit/credit balances across all active accounts.
 
 ---
 
-## Financial Reporting
+## Field Reference
 
-HeroBM provides real-time visibility into the financial health of the business via the Ops Portal.
-
-### Trial Balance
-The Trial Balance is a snapshot proving that your books are balanced. It lists every active leaf account alongside its total Debits, total Credits, and current running Balance up to a specific "As of Date". 
-
-If the grand total at the bottom of the Trial Balance shows `Debits = Credits`, you know the math in the database holds true.
-
-### General Ledger
-The General Ledger view is the detailed investigative tool. You can filter the view down to a single account (e.g., "Accounts Receivable") across a specific date range. It will display every single transaction line that touched that account, providing a chronological running balance so you can audit exactly why an account sits at a particular number.
-
----
-
-## Security and Permissions
-
-Financial data is strictly controlled via Role-Based Access Control (RBAC).
-
-By default, standard operational roles (`sales`, `warehouse`, `procurement`) cannot see any financial reporting, nor can they view the Chart of Accounts or Journal Entries.
-
-Only users explicitly assigned the **`admin`** or **`finance`** roles have the authority to view the GL reports and post manual journal entries.
+| Field | Description |
+| :--- | :--- |
+| **Account Code** | Numerical GL identifier. |
+| **Account Name** | Description (e.g. Operating Bank Account). |
+| **Account Type** | `Asset`, `Liability`, `Equity`, `Revenue`, or `Expense`. |
+| **Debit / Credit** | Transaction amounts (must balance). |
+| **Period** | Active financial month/year. |

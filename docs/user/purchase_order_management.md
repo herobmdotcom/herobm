@@ -1,156 +1,105 @@
 ---
 id: purchase-orders
-title: "Purchase Order Management"
-description: "Procurement lifecycle, supplier pricing, currency management, and receiving workflows."
+title: "Purchase Orders"
+description: "Manage supplier purchase orders, vendor pricing, delivery schedules, and receiving integration."
 category: "Purchasing"
-order: 1
-resource: "purchasing"
+order: 18
+resource: "orders"
 action: "read"
 routes:
   - "/purchase-orders"
   - "/purchase-orders/new"
   - "/purchase-orders/:id"
-  - "/purchase-orders/:id/edit"
-  - "/purchase-orders/demands"
-  - "/suppliers"
-  - "/suppliers/:id"
-  - "/receiving"
-  - "/receiving/supplier-receipts"
-tags: ["purchasing", "po", "suppliers", "procurement", "receipts", "demands", "debit-notes"]
+tags: ["purchasing", "po", "orders", "suppliers", "procurement", "receiving"]
 fields:
-  supplier_id:
+  vendor_id:
     title: "Supplier"
-    summary: "Target vendor. Determines trading terms, default currency, and lead time estimates."
-  delivery_location:
-    title: "Delivery Location"
-    summary: "Destination warehouse location where physical stock will be received and put away."
-  order_date:
-    title: "Order Date"
-    summary: "Official date of purchase order issuance."
-  required_date:
-    title: "Required Date"
-    summary: "Target delivery deadline communicated to the supplier."
+    summary: "Vendor account receiving the order."
+  order_number:
+    title: "PO Number"
+    summary: "Unique purchase order identifier (e.g. PO-2026-00067)."
+  expected_date:
+    title: "Expected Delivery Date"
+    summary: "Target date goods should arrive at the receiving dock."
+  fulfillment_location_id:
+    title: "Receiving Warehouse"
+    summary: "Warehouse destination where inbound goods will be received."
+  currency_code:
+    title: "Currency"
+    summary: "Purchasing currency snapshotted from supplier settings."
+  state_code:
+    title: "PO Status"
+    summary: "Order state (Draft, Sent, Confirmed, Receiving, Received, Invoiced, Cancelled)."
 related:
   - "suppliers"
-  - "inventory"
-  - "general-ledger"
+  - "purchase-demands"
+  - "receiving"
+  - "supplier-invoices"
 ---
 
-# Purchase Order Management
+# Purchase Orders
 
-This document describes how purchase orders work in herobm, including the order lifecycle, pricing, currency, and the receiving process for suppliers.
-
+The **Purchase Orders** module manages procurement with external vendors. It tracks order placement, expected shipping schedules, and dock receiving.
 
 ---
 
-## Order Lifecycle
-
-Every purchase order passes through a defined set of statuses. The system enforces which transitions are valid — you cannot skip stages or move backwards except where explicitly allowed.
+## Purchase Order Lifecycle & Rules
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft
-    Draft --> Ordered
-    Draft --> Cancelled
-    Ordered --> Partially_Received : Partial shipment received
-    Ordered --> Received : Full shipment received
-    Ordered --> Cancelled
-    Partially_Received --> Received : Remaining shipment received
-    Partially_Received --> Cancelled
-    Received --> [*]
-    Cancelled --> Draft : Re-open
+    [*] --> Draft : Create PO
+    Draft --> Sent : Send to Supplier
+    Draft --> Cancelled : Cancel
+
+    Sent --> Confirmed : Supplier Acknowledges
+    Sent --> Draft : Revise
+    Sent --> Cancelled : Cancel
+
+    Confirmed --> Receiving : First Item Received
+    Receiving --> Received : 100% Received
+    Received --> Invoiced : Supplier Invoice Matched
+    Invoiced --> Closed : Complete
 ```
 
-### Status Definitions
+### State Definitions
 
-| Status | Meaning | What can be changed? |
-|--------|---------|---------------------|
-| **Draft** | Purchase order is being prepared. | Everything — lines, quantities, prices, currency, header fields. |
-| **Ordered** | Purchase order has been sent to the supplier/vendor. | Cannot edit order lines. Ready to receive shipments. |
-| **Partially Received**| Some, but not all, of the ordered goods have been received. | Cannot edit order lines. More receptions can be added. |
-| **Received** | All ordered goods have been fully received. | Nothing — the order is closed. |
-| **Cancelled** | Order was cancelled at any prior stage. | Can be re-opened as a new Draft. |
-
-> [!IMPORTANT]
-> **Only Draft orders can be edited.** Once an order moves to Ordered or beyond, all line items and prices are locked.
-
----
-
-## Custom Lines
-
-Users can add "Custom Lines" to purchase orders for ad-hoc products or services that do not exist in the formal product catalogue. 
-
-Under the hood, all Custom Lines are mapped to a reserved system product (`SYSTEM-CUSTOM-LINE` with UUID `00000000-0000-0000-0000-000000000000`). This ensures referential integrity in the database while allowing users to override the description freely. 
+| State | Meaning | What can be changed? |
+| :--- | :--- | :--- |
+| **Draft** | Order is being prepared. | Everything (supplier, lines, costs, quantities). |
+| **Sent** | Order transmitted to supplier. | Locked. Can return to Draft to modify or move to Confirmed. |
+| **Confirmed** | Supplier confirmed price and delivery date. | Locked. Ready for dock receiving. |
+| **Receiving** | Warehouse has received partial quantities. | Locked. Open for further receipts. |
+| **Received** | All line quantities fully received at the dock. | Locked. Ready for 3-way invoice matching. |
+| **Invoiced** | Supplier bill matched and posted to AP. | Closed. |
+| **Cancelled** | Order was cancelled. | Closed. |
 
 ---
 
-## Pricing
+## Step-by-Step Workflows
 
-### Default Line Pricing
+### 1. Creating and Sending a Purchase Order
+1. Go to **Purchasing** → **Purchase Orders** (`/purchase-orders`).
+2. Click **+ New Purchase Order**.
+3. Select the **Supplier**. Currency and terms fill automatically.
+4. Set the **Expected Delivery Date** and **Receiving Warehouse**.
+5. Add line items, quantities, and agreed unit costs.
+6. Click **Save as Draft**.
+7. Click **Send Order**, then click **PDF** or **Email** to issue the order to the vendor.
 
-When adding a product to a purchase order from the catalogue, the system automatically defaults the line's unit price using the following priority fallback:
-
-1. **Standard Cost** (`standardCost`) — The primary wholesale cost.
-2. **Trade Price** (`tradePrice`) — Price Level 2, used if no standard cost is recorded.
-3. **List Price** (`listPrice`) — Price Level 1 (Retail), used as a last resort.
-4. **0.00** — Defaults to zero if no pricing data exists.
-
-### Line Amount Calculation
-
-Each order line calculates its amounts as follows:
-
-```
-Amount = Quantity × Unit Price
-```
-
-**Example:** 10 units at EUR 12.50 each:
-- Amount = 10 × 12.50 = **EUR 125.00**
+### 2. Receiving and Completing an Order
+1. When goods arrive at the dock, warehouse staff receive items via **Inventory** → **Receiving**.
+2. When all items are received, the PO automatically moves to **Received**.
+3. When the supplier bill arrives, match it in **Supplier Invoices** to complete the order.
 
 ---
 
-## Currency
+## Field Reference
 
-The system uses standard **ISO 4217** currency codes (EUR, SGD, USD, AUD, etc.). 
-
-When a new purchase order is created, the currency is set on the order header (defaulting to EUR if not provided). This currency is displayed alongside all monetary amounts on the order.
-
-> [!NOTE]
-> Currency is informational at this stage — the system does not perform exchange rate conversions. All prices are entered and stored as-is in the order's currency.
-
----
-
-## Data Sources
-
-Purchase Orders in the system come from two sources:
-
-| Source | Description | Editable? |
-|--------|-------------|-----------|
-| **App** | Created in the Supplier Portal | Yes (when in Draft) |
-| **ABM** | Historical purchase orders imported from the legacy ABM system | No (read-only) |
-
-ABM purchase orders appear in the order list (via unified view) alongside new app orders and can be viewed in full detail. The originals cannot be modified.
-
----
-
-## Receptions
-
-A Reception records goods received from a supplier against an active purchase order. Receptions can be full (entire order) or partial (specific lines and quantities). Multiple partial receptions can be raised against the same order.
-
-### Reception Features
-
-When a shipment arrives with a packing slip, a Reception is created in the system to log the arriving goods.
-
-### Validation Rules
-
-- Receptions update the `quantityReceived` on the corresponding purchase order lines.
-- The `quantityReceived` in a reception plus any previously received quantity **cannot exceed** the original `quantity` ordered for that line. Attempting to receive more than ordered will result in a validation error.
-- When a reception is created, the system checks if all lines on the purchase order have been fully received (i.e., `quantityReceived` >= `quantity`). 
-  - If all lines are fulfilled, the purchase order status is automatically updated to `received`. 
-  - If some lines are still pending, the purchase order status is updated to `partially_received`.
-
-### Data Model
-
-Receptions are stored as two tables in `herobm_core`:
-
-- **`purchase_order_receptions`** — reception header (linked to `purchase_orders`), storing the auto-generated reception number, packing slip number, notes, and the user who created it.
-- **`purchase_order_reception_lines`** — per-line received quantities (linked to `purchase_order_line_items`).
+| Field | Description |
+| :--- | :--- |
+| **Supplier** | Vendor account. |
+| **PO Number** | Unique purchase order reference. |
+| **Expected Delivery** | Scheduled dock arrival date. |
+| **Receiving Warehouse** | Target warehouse facility. |
+| **Unit Cost** | Agreed purchase price per unit in supplier currency. |
+| **Status** | Stage in procurement lifecycle. |

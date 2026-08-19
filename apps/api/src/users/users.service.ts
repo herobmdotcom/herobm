@@ -78,50 +78,41 @@ export class UsersService {
   async create(dto: CreateUserDto, actor: string) {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
-    try {
-      const result = await this.db.transaction(async (tx: DrizzleDB) => {
-        const [created] = await tx
-          .insert(users)
-          .values({
-            username: dto.username.trim().toLowerCase(),
-            passwordHash,
-            role: dto.role,
-            displayName: dto.displayName?.trim() || null,
-            email: dto.email?.trim().toLowerCase() || null,
-            isActive: true,
-          })
-          .returning(PUBLIC_COLUMNS);
+    const result = await this.db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(users)
+        .values({
+          username: dto.username.trim().toLowerCase(),
+          passwordHash,
+          role: dto.role,
+          displayName: dto.displayName?.trim() || null,
+          email: dto.email?.trim().toLowerCase() || null,
+          isActive: true,
+        })
+        .returning(PUBLIC_COLUMNS);
 
-        await emitEvent(tx, {
-          entityType: EntityType.USER,
-          entityId: created.userId,
-          eventType: EventType.CREATED,
-          entityDisplayName: created.username,
-          payload: {
-            username: created.username,
-            role: dto.role,
-            displayName: dto.displayName || null,
-            email: dto.email || null,
-          },
-          actor,
-        });
-
-        return created;
+      await emitEvent(tx, {
+        entityType: EntityType.USER,
+        entityId: created.userId,
+        eventType: EventType.CREATED,
+        entityDisplayName: created.username,
+        payload: {
+          username: created.username,
+          role: dto.role,
+          displayName: dto.displayName || null,
+          email: dto.email || null,
+        },
+        actor,
       });
 
-      this.logger.log(
-        `[AUDIT] User '${actor}' created user '${result.username}' (Name: ${dto.displayName || 'N/A'}) with role '${dto.role}'`,
-      );
+      return created;
+    });
 
-      return result;
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23505') {
-        throw new ConflictException(
-          `Username '${dto.username}' is already taken`,
-        );
-      }
-      throw err;
-    }
+    this.logger.log(
+      `[AUDIT] User '${actor}' created user '${result.username}' (Name: ${dto.displayName || 'N/A'}) with role '${dto.role}'`,
+    );
+
+    return result;
   }
 
   async update(id: string, dto: UpdateUserDto, actorId: string, actor: string) {

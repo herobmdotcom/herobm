@@ -271,14 +271,14 @@ export function HelpDrawer() {
                             <Button
                               key={rel.id}
                               type="button"
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               onClick={() => selectTopic(rel.id)}
-                              className="px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-3 py-1.5 rounded-lg text-xs bg-white hover:bg-[#F0FDFA] border border-[#E2E8F0] hover:border-[#006B5C] text-[#0F172A] hover:text-[#006B5C] flex items-center gap-1.5 transition-colors cursor-pointer group shadow-none"
                             >
-                              <span className="text-[10px] text-[var(--accent)] font-medium">[{rel.category}]</span>
-                              <span>{rel.title}</span>
-                              <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">chevron_right</span>
+                              <span className="text-[10px] text-[#006B5C] font-semibold">[{rel.category}]</span>
+                              <span className="font-medium">{rel.title}</span>
+                              <span className="material-symbols-outlined text-[14px] text-[#94A3B8] group-hover:text-[#006B5C] transition-colors">chevron_right</span>
                             </Button>
                           ))}
                         </div>
@@ -336,19 +336,19 @@ export function HelpDrawer() {
                           type="button"
                           variant="ghost"
                           onClick={() => selectTopic(item.id)}
-                          className="w-full text-left p-3 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary-hover)] border border-[var(--border)] transition-all flex items-start justify-between gap-3 group cursor-pointer shadow-none !h-auto"
+                          className="w-full text-left p-3 rounded-xl bg-white hover:bg-[#F0FDFA] border border-[#E2E8F0] hover:border-[#006B5C] transition-all flex items-start justify-between gap-3 group cursor-pointer shadow-none !h-auto"
                         >
                           <div className="space-y-1 text-left flex-1">
-                            <h5 className="text-xs font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                            <h5 className="text-xs font-bold text-[#0F172A] group-hover:text-[#006B5C] transition-colors">
                               {item.title}
                             </h5>
                             {item.description && (
-                              <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-relaxed font-normal">
+                              <p className="text-[11px] text-[#64748B] group-hover:text-[#334155] line-clamp-2 leading-relaxed font-normal">
                                 {item.description}
                               </p>
                             )}
                           </div>
-                          <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5">
+                          <span className="material-symbols-outlined text-[18px] text-[#94A3B8] group-hover:text-[#006B5C] group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5">
                             chevron_right
                           </span>
                         </Button>
@@ -372,7 +372,7 @@ export function HelpDrawer() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('search')}
                     autoFocus
-                    className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-white border border-[#E2E8F0] focus:border-[#006B5C] text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-colors"
                   />
                   {searchQuery && (
                     <Button
@@ -401,18 +401,18 @@ export function HelpDrawer() {
                           type="button"
                           variant="ghost"
                           onClick={() => selectTopic(result.id)}
-                          className="w-full text-left p-3 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary-hover)] border border-[var(--border)] transition-all space-y-1.5 group cursor-pointer shadow-none !h-auto flex flex-col items-start"
+                          className="w-full text-left p-3 rounded-xl bg-white hover:bg-[#F0FDFA] border border-[#E2E8F0] hover:border-[#006B5C] transition-all space-y-1.5 group cursor-pointer shadow-none !h-auto flex flex-col items-start"
                         >
                           <div className="flex items-center justify-between gap-2 w-full">
-                            <span className="text-xs font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                            <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#006B5C] transition-colors">
                               {result.title}
                             </span>
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--bg-card)] text-[var(--accent)] border border-[var(--border)]">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#F8FAFC] group-hover:bg-white text-[#006B5C] border border-[#E2E8F0] group-hover:border-[#006B5C]/30">
                               {result.category}
                             </span>
                           </div>
                           {result.snippet && (
-                            <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-relaxed font-normal text-left">
+                            <p className="text-[11px] text-[#64748B] group-hover:text-[#334155] line-clamp-2 leading-relaxed font-normal text-left">
                               {result.snippet}
                             </p>
                           )}

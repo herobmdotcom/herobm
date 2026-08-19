@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certifi
 # Copy the actual source code
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
+COPY docs/ ./docs/
+COPY tools/ ./tools/
 
 RUN npm run build -w packages/shared
 RUN npm run build -w packages/db-schema
@@ -56,9 +58,12 @@ COPY --from=builder /usr/local/bin/typst /usr/local/bin/typst
 # Copy package metadata and pruned node_modules from builder
 COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json ./
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/docs ./docs
+COPY --from=builder --chown=node:node /app/tools ./tools
 
 # Copy built workspace packages
 COPY --from=builder --chown=node:node /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=node:node /app/packages/shared/reports-config.json ./packages/shared/
 COPY --from=builder --chown=node:node /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=node:node /app/packages/db-schema/package.json ./packages/db-schema/
 COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/dist

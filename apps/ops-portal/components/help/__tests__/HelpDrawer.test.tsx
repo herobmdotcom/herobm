@@ -55,6 +55,16 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('Important context')).toBeInTheDocument();
     expect(screen.getByText('NOTE')).toBeInTheDocument();
   });
+
+  it('renders mermaid diagram container when mermaid code block is present', async () => {
+    const markdown = `# Workflow\n\n\`\`\`mermaid\nstateDiagram-v2\n[*] --> Draft\n\`\`\`\n\nDetails below.`;
+    render(<MarkdownRenderer content={markdown} />);
+
+    expect(screen.getByText('Workflow')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Details below.')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('HelpDrawer & HelpContext', () => {

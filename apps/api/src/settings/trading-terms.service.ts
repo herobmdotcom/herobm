@@ -31,85 +31,55 @@ export class TradingTermsService {
   // @herobm-skip-audit
   async create(dto: CreateTradingTermDto) {
     return this.db.transaction(async (tx) => {
-      try {
-        const [record] = await tx
-          .insert(tradingTerms)
-          .values({
-            code: dto.code,
-            description: dto.description,
-            days: dto.days,
-            type: dto.type,
-            source: 'app',
-            isActive: true,
-          })
-          .returning();
-        return {
-          tradingTermsId: record.tradingTermsId,
-          code: record.code,
-          description: record.description,
-          days: record.days,
-          type: record.type,
-        };
-      } catch (e: unknown) {
-        const err = e as { code?: string };
-        if (err.code === '23505') {
-          throw new BadRequestException(
-            'A trading term with this code already exists.',
-          );
-        }
-        throw e;
-      }
+      const [record] = await tx
+        .insert(tradingTerms)
+        .values({
+          code: dto.code,
+          description: dto.description,
+          days: dto.days,
+          type: dto.type,
+          source: 'app',
+          isActive: true,
+        })
+        .returning();
+      return {
+        tradingTermsId: record.tradingTermsId,
+        code: record.code,
+        description: record.description,
+        days: record.days,
+        type: record.type,
+      };
     });
   }
 
   // @herobm-skip-audit
   async update(id: string, dto: UpdateTradingTermDto) {
     return this.db.transaction(async (tx) => {
-      try {
-        const [record] = await tx
-          .update(tradingTerms)
-          .set(dto)
-          .where(eq(tradingTerms.tradingTermsId, id))
-          .returning();
+      const [record] = await tx
+        .update(tradingTerms)
+        .set(dto)
+        .where(eq(tradingTerms.tradingTermsId, id))
+        .returning();
 
-        if (!record) throw new NotFoundException('Trading term not found');
+      if (!record) throw new NotFoundException('Trading term not found');
 
-        return {
-          tradingTermsId: record.tradingTermsId,
-          code: record.code,
-          description: record.description,
-          days: record.days,
-          type: record.type,
-        };
-      } catch (e: unknown) {
-        const err = e as { code?: string };
-        if (err.code === '23505') {
-          throw new BadRequestException(
-            'A trading term with this code already exists.',
-          );
-        }
-        throw e;
-      }
+      return {
+        tradingTermsId: record.tradingTermsId,
+        code: record.code,
+        description: record.description,
+        days: record.days,
+        type: record.type,
+      };
     });
   }
 
   // @herobm-skip-audit
   async delete(id: string) {
-    try {
-      const [record] = await this.db
-        .delete(tradingTerms)
-        .where(eq(tradingTerms.tradingTermsId, id))
-        .returning();
-      if (!record) throw new NotFoundException('Trading term not found');
-      return { success: true };
-    } catch (e: unknown) {
-      const err = e as { code?: string };
-      if (err.code === '23503') {
-        throw new BadRequestException(
-          'Cannot delete trading term because it is in use.',
-        );
-      }
-      throw e;
-    }
+    const [record] = await this.db
+      .delete(tradingTerms)
+      .where(eq(tradingTerms.tradingTermsId, id))
+      .returning();
+    if (!record) throw new NotFoundException('Trading term not found');
+    return { success: true };
   }
 }

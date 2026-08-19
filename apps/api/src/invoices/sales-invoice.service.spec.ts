@@ -245,7 +245,7 @@ describe('SalesInvoiceService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should post GL lines split by tax categories if matrix routing is used', async () => {
+    const seedTaxOrderData = async () => {
       const TAX_CAT_1_UUID = '00000000-0000-4000-8000-000000000101';
       const TAX_CAT_2_UUID = '00000000-0000-4000-8000-000000000102';
       const SPECIFIC_TAX_ID = '00000000-0000-4000-8000-000000000103';
@@ -303,7 +303,6 @@ describe('SalesInvoiceService', () => {
         await pg.db.insert(glAccounts).values(account as any);
       }
 
-      // Setup mock GL settings
       mockGlService.getSettings.mockResolvedValue({
         defaultArAccountId: AR_ID,
         defaultRevenueAccountId: REV_ID,
@@ -314,7 +313,6 @@ describe('SalesInvoiceService', () => {
       );
       mockAppConfigService.defaultRevenueAccountId.mockReturnValue(REV_ID);
 
-      // Seed an order with two lines having different tax categories
       const orderId = '00000000-0000-4000-8000-000000000099';
       const SERVICE_PRODUCT_ID = '00000000-0000-4000-8000-000000000098';
 
@@ -359,13 +357,12 @@ describe('SalesInvoiceService', () => {
         createdBy: 'system',
       });
 
-      // Line 1: Non-physical product (can be invoiced without shipment) - Category 1
       await pg.db.insert(salesOrderLineItems).values({
         salesOrderId: orderId,
         lineNumber: 1,
         productId: SERVICE_PRODUCT_ID,
         quantity: '10',
-        pricePerUnit: '10.00', // Amount = 100
+        pricePerUnit: '10.00',
         taxCategoryId: TAX_CAT_1_UUID,
         fulfillmentLocationId: LOCATION_ID,
         amount: '100.00',
@@ -376,13 +373,12 @@ describe('SalesInvoiceService', () => {
         isPostConfirmation: false,
       });
 
-      // Line 2: Non-physical product - Category 2
       await pg.db.insert(salesOrderLineItems).values({
         salesOrderId: orderId,
         lineNumber: 2,
         productId: SERVICE_PRODUCT_ID,
         quantity: '5',
-        pricePerUnit: '20.00', // Amount = 100
+        pricePerUnit: '20.00',
         taxCategoryId: TAX_CAT_2_UUID,
         fulfillmentLocationId: LOCATION_ID,
         amount: '100.00',
@@ -392,6 +388,24 @@ describe('SalesInvoiceService', () => {
         quantityPicked: '0',
         isPostConfirmation: false,
       });
+
+      return {
+        orderId,
+        TAX_CAT_1_UUID,
+        TAX_CAT_2_UUID,
+        SPECIFIC_TAX_ID,
+        DEFAULT_TAX_ID,
+      };
+    };
+
+    it('should post GL lines split by tax categories if matrix routing is used', async () => {
+      const {
+        orderId,
+        TAX_CAT_1_UUID,
+        TAX_CAT_2_UUID,
+        SPECIFIC_TAX_ID,
+        DEFAULT_TAX_ID,
+      } = await seedTaxOrderData();
 
       // Mock tax service to return different salesGlAccountId
       const taxCategoriesService = (service as any).taxService;
@@ -429,6 +443,30 @@ describe('SalesInvoiceService', () => {
       );
       expect(specificLine).toBeDefined();
       expect(defaultLine).toBeDefined();
+    });
+
+    it('should propagate database/system errors during tax category resolution (ADV-147)', async () => {
+      const { orderId } = await seedTaxOrderData();
+      const taxCategoriesService = (service as any).taxService;
+      taxCategoriesService.getById = jest
+        .fn()
+        .mockRejectedValue(new Error('PostgreSQL connection timeout'));
+
+      await expect(service.createInvoice(orderId, {}, 'admin')).rejects.toThrow(
+        'PostgreSQL connection timeout',
+      );
+    });
+
+    it('should gracefully fall back to 0% tax when tax category is not found (ADV-147)', async () => {
+      const { orderId } = await seedTaxOrderData();
+      const taxCategoriesService = (service as any).taxService;
+      taxCategoriesService.getById = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException('Tax category not found'));
+
+      const res = await service.createInvoice(orderId, {}, 'admin');
+      expect(res).toBeDefined();
+      expect(parseFloat(res.taxAmount ?? '0')).toBe(0);
     });
   });
 

@@ -35,37 +35,28 @@ export class ActivitiesService {
   }
 
   async create(dto: CreateActivityDto, userId?: string) {
-    try {
-      return await this.db.transaction(async (tx) => {
-        const rows = await tx
-          .insert(activities)
-          .values({
-            code: dto.code.trim(),
-            name: dto.name.trim(),
-            isActive: dto.isActive ?? true,
-            isSystem: false,
-          })
-          .returning();
+    return await this.db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(activities)
+        .values({
+          code: dto.code.trim(),
+          name: dto.name.trim(),
+          isActive: dto.isActive ?? true,
+          isSystem: false,
+        })
+        .returning();
 
-        await emitEvent(tx, {
-          entityType: EntityType.ACTIVITY,
-          entityId: rows[0].activityId,
-          eventType: EventType.CREATED,
-          entityDisplayName: rows[0].code,
-          payload: dto,
-          actor: userId,
-        });
-
-        return rows[0];
+      await emitEvent(tx, {
+        entityType: EntityType.ACTIVITY,
+        entityId: rows[0].activityId,
+        eventType: EventType.CREATED,
+        entityDisplayName: rows[0].code,
+        payload: dto,
+        actor: userId,
       });
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23505') {
-        throw new BadRequestException(
-          `Activity code '${dto.code}' already exists`,
-        );
-      }
-      throw err;
-    }
+
+      return rows[0];
+    });
   }
 
   async update(id: string, dto: UpdateActivityDto, userId?: string) {
@@ -114,27 +105,18 @@ export class ActivitiesService {
         throw new BadRequestException('Cannot delete a system activity');
       }
 
-      try {
-        await tx.delete(activities).where(eq(activities.activityId, id));
+      await tx.delete(activities).where(eq(activities.activityId, id));
 
-        await emitEvent(tx, {
-          entityType: EntityType.ACTIVITY,
-          entityId: id,
-          eventType: EventType.DELETED,
-          entityDisplayName: existing.code,
-          payload: {},
-          actor: userId,
-        });
+      await emitEvent(tx, {
+        entityType: EntityType.ACTIVITY,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: existing.code,
+        payload: {},
+        actor: userId,
+      });
 
-        return { deleted: true };
-      } catch (err: unknown) {
-        if ((err as { code?: string })?.code === '23503') {
-          throw new BadRequestException(
-            `Cannot delete activity '${existing.code}' because it is in use by journal entries.`,
-          );
-        }
-        throw err;
-      }
+      return { deleted: true };
     });
   }
 

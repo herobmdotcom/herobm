@@ -87,41 +87,32 @@ export class ExchangeRatesService {
         'currencyCode, currencyName, buyRate, and sellRate are required',
       );
     }
-    try {
-      return await this.db.transaction(async (tx) => {
-        const rows = await tx
-          .insert(exchangeRates)
-          .values({
-            currencyCode: dto.currencyCode.toUpperCase().trim(),
-            currencyName: dto.currencyName.trim(),
-            buyRate: dto.buyRate,
-            sellRate: dto.sellRate,
-            effectiveDate: dto.effectiveDate
-              ? new Date(dto.effectiveDate)
-              : new Date(),
-            updatedOn: new Date(),
-          })
-          .returning();
+    return await this.db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(exchangeRates)
+        .values({
+          currencyCode: dto.currencyCode.toUpperCase().trim(),
+          currencyName: dto.currencyName.trim(),
+          buyRate: dto.buyRate,
+          sellRate: dto.sellRate,
+          effectiveDate: dto.effectiveDate
+            ? new Date(dto.effectiveDate)
+            : new Date(),
+          updatedOn: new Date(),
+        })
+        .returning();
 
-        await emitEvent(tx, {
-          entityType: EntityType.EXCHANGE_RATE,
-          entityId: rows[0].exchangeRateId,
-          eventType: EventType.CREATED,
-          entityDisplayName: rows[0].currencyCode,
-          payload: dto,
-          actor: userId,
-        });
-
-        return rows[0];
+      await emitEvent(tx, {
+        entityType: EntityType.EXCHANGE_RATE,
+        entityId: rows[0].exchangeRateId,
+        eventType: EventType.CREATED,
+        entityDisplayName: rows[0].currencyCode,
+        payload: dto,
+        actor: userId,
       });
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23505') {
-        throw new BadRequestException(
-          `Exchange rate for currency '${dto.currencyCode}' already exists`,
-        );
-      }
-      throw err;
-    }
+
+      return rows[0];
+    });
   }
 
   async update(id: string, dto: UpdateExchangeRateDto, userId?: string) {

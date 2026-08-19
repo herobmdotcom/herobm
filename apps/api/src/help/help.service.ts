@@ -22,6 +22,8 @@ export class HelpService implements OnModuleInit {
   private readonly logger = new Logger(HelpService.name);
   private topics: Map<string, HelpTopic> = new Map();
   private docsDir: string = '';
+  private lastScanTime = 0;
+  private readonly CACHE_TTL_MS = 1000;
 
   constructor(
     @Optional()
@@ -34,9 +36,21 @@ export class HelpService implements OnModuleInit {
     await this.reloadDocs();
   }
 
+  private async ensureFreshDocs(): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastScanTime > this.CACHE_TTL_MS || this.topics.size === 0) {
+      await this.reloadDocs(this.docsDir);
+      this.lastScanTime = now;
+    }
+  }
+
   public resolveDocsDir(customDir?: string): string {
     if (customDir && fs.existsSync(customDir)) {
       this.docsDir = customDir;
+      return this.docsDir;
+    }
+
+    if (this.docsDir && fs.existsSync(this.docsDir)) {
       return this.docsDir;
     }
 
@@ -59,8 +73,9 @@ export class HelpService implements OnModuleInit {
   }
 
   public async reloadDocs(customDir?: string): Promise<void> {
-    const dir = this.resolveDocsDir(customDir);
+    const dir = customDir || this.docsDir || this.resolveDocsDir();
     this.topics.clear();
+    this.lastScanTime = Date.now();
 
     if (!fs.existsSync(dir)) {
       this.logger.warn(`User docs directory not found at: ${dir}`);
@@ -127,6 +142,7 @@ export class HelpService implements OnModuleInit {
     route: string,
     userRole?: string,
   ): Promise<HelpContextResponse> {
+    await this.ensureFreshDocs();
     const cleanRoute = (route || '/').split('?')[0].replace(/\/$/, '') || '/';
     let bestMatch: { topic: HelpTopic; score: number; pattern: string } | null =
       null;
@@ -146,16 +162,21 @@ export class HelpService implements OnModuleInit {
 
     if (!bestMatch) {
       // Fallback: If on root dashboard '/', check for topic with id 'dashboard' or '/'
-      const dashboardTopic = this.topics.get('dashboard');
-      if (
-        dashboardTopic &&
-        (await this.isAuthorized(dashboardTopic, userRole))
-      ) {
-        return {
-          topic: dashboardTopic,
-          matchedRoute: '/',
-          relatedTopics: await this.getRelatedTopics(dashboardTopic, userRole),
-        };
+      if (cleanRoute === '/') {
+        const dashboardTopic = this.topics.get('dashboard');
+        if (
+          dashboardTopic &&
+          (await this.isAuthorized(dashboardTopic, userRole))
+        ) {
+          return {
+            topic: dashboardTopic,
+            matchedRoute: '/',
+            relatedTopics: await this.getRelatedTopics(
+              dashboardTopic,
+              userRole,
+            ),
+          };
+        }
       }
 
       return {
@@ -239,6 +260,7 @@ export class HelpService implements OnModuleInit {
    * Retrieves all available topics as a structured list / tree.
    */
   public async getTopics(userRole?: string): Promise<HelpTopicSummary[]> {
+    await this.ensureFreshDocs();
     const results: HelpTopicSummary[] = [];
 
     for (const topic of this.topics.values()) {
@@ -256,9 +278,10 @@ export class HelpService implements OnModuleInit {
     }
 
     return results.sort((a, b) => {
-      if (a.category !== b.category)
-        return a.category.localeCompare(b.category);
-      return (a.order || 999) - (b.order || 999);
+      const orderA = a.order ?? 999;
+      const orderB = b.order ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.title.localeCompare(b.title);
     });
   }
 
@@ -269,6 +292,7 @@ export class HelpService implements OnModuleInit {
     id: string,
     userRole?: string,
   ): Promise<HelpTopic | null> {
+    await this.ensureFreshDocs();
     const topic = this.topics.get(id);
     if (!topic) return null;
     if (!(await this.isAuthorized(topic, userRole))) return null;
@@ -282,6 +306,7 @@ export class HelpService implements OnModuleInit {
     query: string,
     userRole?: string,
   ): Promise<HelpSearchResult[]> {
+    await this.ensureFreshDocs();
     if (!query || !query.trim()) return [];
 
     const q = query.toLowerCase().trim();

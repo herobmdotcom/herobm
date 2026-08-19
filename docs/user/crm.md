@@ -1,44 +1,61 @@
 ---
 id: crm
-title: "CRM: Actors, Contacts & Projects"
-description: "Managing business relationships, stakeholders, project associations, and geographic mapping."
+title: "CRM: Actors, Projects & Contacts"
+description: "Manage business relationships, internal projects, contacts, activity logs, and geographic account maps."
 category: "CRM"
-order: 1
-resource: "actor"
+order: 22
+resource: "crm"
 action: "read"
 routes:
   - "/crm/actors"
-  - "/crm/actors/:id"
   - "/crm/projects"
-  - "/crm/projects/:id"
   - "/crm/contacts"
-  - "/crm/contacts/:id"
   - "/crm/map"
-tags: ["crm", "actors", "contacts", "projects", "relationships", "map"]
+tags: ["crm", "actors", "companies", "projects", "contacts", "map"]
 fields:
   actor_name:
-    title: "Actor Name"
-    summary: "Company, organization, or stakeholder name representing an external commercial entity."
-  project_id:
-    title: "Project"
-    summary: "Commercial job or site project linked to actors, sales quotes, and orders."
-  contact_details:
-    title: "Contact Information"
-    summary: "Direct telephone numbers, email addresses, and key decision-maker roles."
+    title: "Actor / Company Name"
+    summary: "Unified business entity profile (Customer, Supplier, Prospect, or Partner)."
+  project_title:
+    title: "Project Title"
+    summary: "Internal initiative or project tracker."
 related:
+  - "customers"
+  - "suppliers"
+  - "sales-quotes"
   - "sales-orders"
-  - "purchase-orders"
 ---
 
-# Customer Relationship Management (CRM)
+# CRM: Actors, Projects & Contacts
 
-The **CRM Module** provides a unified view of relationships with clients, contractors, vendors, and partners.
+The **CRM** module tracks client relationships, project initiatives, communication history, and geographic territory mapping.
 
 ---
 
-## Structure & Concepts
+## Unified Actor Model
 
-1. **Actors**: Commercial entities, suppliers, customers, or prospective partners.
-2. **Projects**: Specific jobs or operational undertakings tied to one or more actors.
-3. **Contacts**: Individual people associated with actors and projects.
-4. **CRM Map**: Visual map representation of actor locations, job sites, and warehouse proximity.
+### 1. The Unified Actor Concept
+Instead of maintaining separate records across departments, an **Actor** represents a business entity. An Actor can be simultaneously a customer, supplier, and prospect without duplicating records or addresses.
+
+### 2. Map View
+The **Map** view (`/crm/map`) plots customer and prospect locations geographically, helping sales representatives plan on-site visits and territory routes.
+
+---
+
+## Step-by-Step Workflows
+
+### 1. Creating a CRM Project
+1. Go to **CRM** → **Projects** (`/crm/projects`).
+2. Click **+ New Project**.
+3. Select or create the **Actor (Company)**.
+4. Enter the **Project Title**.
+5. Log meeting notes, calls, and follow-up tasks in the activity timeline.
+
+---
+
+## Field Reference
+
+| Field | Description |
+| :--- | :--- |
+| **Actor** | Company or organisation entity. |
+| **Project Title** | Project or initiative name. |

@@ -1,68 +1,79 @@
 ---
-id: dynamic-reporting
-title: "Dynamic Reporting & Typst Templates"
-description: "Browser-based visual template editor, Typst markup, live test records, and automated PDF document generation."
+id: reporting
+title: "Reporting & PDF Templates"
+description: "Generate operational reports, analyze business data, and design branded PDF documents using Typst."
 category: "Reporting"
-order: 1
+order: 27
 resource: "report"
 action: "read"
 routes:
   - "/reporting"
   - "/reporting/config"
-  - "/reporting/config/:id"
-  - "/admin/settings/pdf-templates"
-  - "/admin/settings/pdf-hooks"
-tags: ["reporting", "pdf", "templates", "typst", "invoices", "picking-slips", "admin"]
+tags: ["reporting", "analytics", "pdf", "typst", "templates", "exports"]
 fields:
-  system_hook:
-    title: "System Hook"
-    summary: "The operational trigger point (e.g., sales-invoice, purchase-order, picking-slip) calling this template."
-  target_record:
-    title: "Target Record"
-    summary: "Sample entity ID used to populate test data into the live Typst PDF preview."
-  typst_source:
-    title: "Typst Source"
-    summary: "Typesetting markup defining page geometry, headers, tables, typography, and JSON data bindings."
+  report_type:
+    title: "Report Category"
+    summary: "Sales Performance, Inventory Valuation, Debtors Aging, Tax Summaries."
+  date_range:
+    title: "Date Range"
+    summary: "Filter window for reporting metrics."
+  typst_template:
+    title: "Typst PDF Template"
+    summary: "Declarative document markup defining layout, typography, logos, and tables."
 related:
   - "sales-orders"
+  - "inventory"
   - "general-ledger"
 ---
 
-# Dynamic Reporting Guide
+# Reporting & PDF Templates
 
-Welcome to the **Dynamic Reporting** system! HeroBM now features a fully database-driven reporting engine that allows you to manage, edit, and test all printable documents (like Invoices, Quotes, and Picking Slips) directly from your browser. 
- 
+The **Reporting** module combines interactive operational data explorers with high-precision PDF document generation powered by the modern **Typst** layout engine.
 
-You no longer need an engineer to modify the visual aesthetics, layout, or text of your operational documents.
+---
 
-## How It Works
+## Reporting & Typst PDF Architecture
 
-HeroBM's dynamic reporting allows administrators to map **Context Data** (like a specific "Sales Invoice") into a **Typst Template** in real-time. Whenever a user prints a PDF, the system grabs the latest template string from the database, retrieves the latest structured data for that specific record, and complies them into a pixel-perfect PDF document.
+```mermaid
+flowchart LR
+    A[Operational Data] --> B[Data Hook Bindings]
+    B --> C[Typst Document Template]
+    C --> D[Live Real-Time Preview]
+    D --> E[Export Pixel-Perfect PDF]
+```
 
-### The Reporting Admin UI
+### 1. Interactive Reports Explorer
+View, filter, sort, and aggregate live data across:
+- **Sales**: Product sales velocity, customer rankings, margin analysis.
+- **Inventory**: Stock valuation by warehouse, slow-moving items, stocktake variances.
+- **Finance**: Monthly P&L, Balance Sheet, Aged Receivables & Payables.
 
-To access the template management console, go to **Admin > Reporting** on the left-side navigation panel. 
+### 2. Typst Document Engine
+All printable documents (Quotes, Invoices, Pick Slips, Statements, Packing Lists) use **Typst** templates. Typst offers high rendering speed and pixel-perfect typographic control.
 
-Here you will see a master list of all templates currently running your system's operations. You will immediately notice several core attributes:
-- **System Hook**: What internal system trigger this template belongs to (e.g., `sales-invoice`, `picking-slip`).
-- **Data Context**: What context format the template expects.
+---
 
-### Modifying and Live-Testing Templates
+## Step-by-Step Workflows
 
-1. Click on any report in the master list (or click **Edit**) to open the Dual-Pane Editor.
-2. The Top Panel is the **Source Editor**. Here, you write your raw [Typst](https://typst.app/docs/) layout markup. Typst is a modern, deeply capable typesetting markup language similar to LaTeX, but with native JSON data ingestion. 
-3. The Bottom Panel is your **Live Preview**. In order to compile a valid PDF to view the visual results of your markup changes, you need to provide real data.
+### 1. Running an Operational Report
+1. Go to **Reporting** → **Reports** (`/reporting`).
+2. Select a report from the catalog (e.g. Sales Margin by Product).
+3. Set your date filters and grouping parameters.
+4. Click **Run Report** to view on screen or **Export to CSV/Excel**.
 
-To preview your changes instantly without leaving the page:
-1. Look at the **Target Context** options along the top. 
-2. Ensure the correct context is selected (e.g., you are editing the Invoice, so choose `sales-invoice`).
-3. Click the **🎲 (Magic Dice)** button next to the **Target Record** input field! The system will automatically select a random, real entry from your current database (e.g., a random Sales Invoice ID).
-4. Click **Preview**. The PDF will instantly compile and render inside the viewport!
+### 2. Customizing a PDF Template
+1. Go to **Reporting** → **Configuration** (`/reporting/config`).
+2. Select the template to customize (e.g. `Sales Invoice`).
+3. Edit the Typst markup (adjust company logo size, font family, footer legal notices).
+4. The live preview pane renders changes in real time.
+5. Click **Save Template**.
 
-Whenever you are satisfied with your layout changes, hit **Save Changes**. The very next time your warehouse staff or sales manager clicks 'Print' for that document type anywhere in the HeroBM application, they will seamlessly receive your new design. 
+---
 
-## Best Practices
+## Field Reference
 
-- Make sure you thoroughly test your template changes by pressing the **🎲 Magic Dice** multiple times to sample different records. For example, some picking slips may have extremely long product descriptions, or some invoices might span multiple pages. Testing various random records ensures your layout correctly handles varying text lengths and pagination.
-- Only administrators with the `report:write` permission in the Casbin authorization suite can edit templates.
-- If you accidentally corrupt a master file, you can utilize Drizzle database backups to recover it. It is always recommended to copy and paste your working templates into a secure text editor before executing a major rewrite.
+| Field | Description |
+| :--- | :--- |
+| **Report Title** | Name of the analytical report. |
+| **Template Key** | Identifier for the Typst document (e.g. `invoice_standard`). |
+| **Export Formats** | PDF, Excel, CSV. |

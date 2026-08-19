@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { SalesCreditNoteService } from './sales-credit-note.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
@@ -552,6 +553,74 @@ describe('SalesCreditNoteService', () => {
       expect(cn?.totalAmount).toBe('160.00'); // 2 × 80.00
       expect(cn?.taxAmount).toBe('16.00'); // 10% of 160
       expect(cn?.outstandingAmount).toBe('176.00'); // 160 + 16
+    });
+
+    it('should propagate database errors during tax category resolution (ADV-147)', async () => {
+      const { line1Id } = await createOrderWithShipmentAndInvoice();
+
+      const returnId = '00000000-0000-4000-8000-000000000024';
+      await pg.db.insert(salesOrderReturns).values({
+        returnId,
+        returnNumber: 'RET-20260813-004',
+        salesOrderId: ORDER_ID,
+        locationId: LOCATION_ID,
+        stateCode: RETURN_STATE.RECEIVED,
+        createdBy: 'test-admin',
+      });
+
+      await pg.db.insert(salesOrderReturnLines).values({
+        returnLineId: '00000000-0000-4000-8000-000000000031',
+        returnId,
+        salesOrderLineId: line1Id,
+        quantityReturned: '1',
+        resolution: RETURN_RESOLUTION.REFUND,
+        returnFee: '0.00',
+        putawayStatus: PUTAWAY_STATUS.AWAITING_MATCHING,
+      });
+
+      mockTaxService.getById.mockRejectedValueOnce(
+        new Error('PostgreSQL tax lookup error'),
+      );
+
+      await expect(
+        service.createCreditNote({ returnId, lines: [] }, 'test-admin'),
+      ).rejects.toThrow('PostgreSQL tax lookup error');
+    });
+
+    it('should gracefully fall back to 0% tax when tax category is not found (ADV-147)', async () => {
+      const { line1Id } = await createOrderWithShipmentAndInvoice();
+
+      const returnId = '00000000-0000-4000-8000-000000000025';
+      await pg.db.insert(salesOrderReturns).values({
+        returnId,
+        returnNumber: 'RET-20260813-005',
+        salesOrderId: ORDER_ID,
+        locationId: LOCATION_ID,
+        stateCode: RETURN_STATE.RECEIVED,
+        createdBy: 'test-admin',
+      });
+
+      await pg.db.insert(salesOrderReturnLines).values({
+        returnLineId: '00000000-0000-4000-8000-000000000031',
+        returnId,
+        salesOrderLineId: line1Id,
+        quantityReturned: '1',
+        resolution: RETURN_RESOLUTION.REFUND,
+        returnFee: '0.00',
+        putawayStatus: PUTAWAY_STATUS.AWAITING_MATCHING,
+      });
+
+      mockTaxService.getById.mockRejectedValueOnce(
+        new NotFoundException('Tax category not found'),
+      );
+
+      const cn = await service.createCreditNote(
+        { returnId, lines: [] },
+        'test-admin',
+      );
+
+      expect(cn).toBeDefined();
+      expect(parseFloat(cn!.taxAmount ?? '0')).toBe(0);
     });
 
     it('enforces sequential credit limits across multiple returns for same order', async () => {

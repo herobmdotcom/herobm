@@ -3,7 +3,6 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
@@ -67,131 +66,117 @@ export class CustomersWriteService {
 
     const sanitizedDto = buildUpdatePayload(dto);
 
-    let result;
-    try {
-      result = await this.db.transaction(async (tx: DrizzleDB) => {
-        const {
-          name,
-          businessNumber,
-          isTaxRegistered,
-          billingAddressLine1,
-          billingAddressLine2,
-          billingAddressCity,
-          billingAddressStateOrProvince,
-          billingAddressPostalCode,
-          billingAddressCountry,
-          telephone1,
-          fax,
-          emailAddress1,
-          actorId,
-          parentCustomerId,
-          ...customerFields
-        } = sanitizedDto as Record<string, unknown>;
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const {
+        name,
+        businessNumber,
+        isTaxRegistered,
+        billingAddressLine1,
+        billingAddressLine2,
+        billingAddressCity,
+        billingAddressStateOrProvince,
+        billingAddressPostalCode,
+        billingAddressCountry,
+        telephone1,
+        fax,
+        emailAddress1,
+        actorId,
+        parentCustomerId,
+        ...customerFields
+      } = sanitizedDto as Record<string, unknown>;
 
-        let actorRecord;
-        if (actorId) {
-          const existingActors = await tx
-            .select()
-            .from(actors)
-            .where(eq(actors.actorId, actorId as string))
-            .limit(1);
+      let actorRecord;
+      if (actorId) {
+        const existingActors = await tx
+          .select()
+          .from(actors)
+          .where(eq(actors.actorId, actorId as string))
+          .limit(1);
 
-          if (existingActors.length === 0) {
-            throw new BadRequestException(
-              `Actor with id '${actorId as string}' does not exist`,
-            );
-          }
-          actorRecord = existingActors[0];
-        } else {
-          [actorRecord] = await tx
-            .insert(actors)
-            .values({
-              stateCode: ACTOR_STATE.ACTIVE,
-              name: name as string,
-              businessNumber: (businessNumber as string) || null,
-              isTaxRegistered: (isTaxRegistered as boolean) ?? false,
-              headquartersAddressLine1: billingAddressLine1 as string,
-              headquartersAddressLine2: billingAddressLine2 as string,
-              headquartersCity: billingAddressCity as string,
-              headquartersStateOrProvince:
-                billingAddressStateOrProvince as string,
-              headquartersPostalCode: billingAddressPostalCode as string,
-              headquartersCountry: billingAddressCountry as string,
-              telephone: telephone1 as string,
-              fax: fax as string,
-              email: emailAddress1 as string,
-            })
-            .returning();
+        if (existingActors.length === 0) {
+          throw new BadRequestException(
+            `Actor with id '${actorId as string}' does not exist`,
+          );
         }
-
-        const [customer] = await tx
-          .insert(customers)
+        actorRecord = existingActors[0];
+      } else {
+        [actorRecord] = await tx
+          .insert(actors)
           .values({
-            ...customerFields,
-            actorId: actorRecord.actorId,
-            stateCode:
-              (customerFields.stateCode as string) || CUSTOMER_STATE.ACTIVE,
-            source: (customerFields.source as string) || 'system',
-            currencyCode:
-              (customerFields.currencyCode as string) ||
-              this.appConfig.homeCurrency(),
-            createdBy: actor,
-          } as typeof customers.$inferInsert)
+            stateCode: ACTOR_STATE.ACTIVE,
+            name: name as string,
+            businessNumber: (businessNumber as string) || null,
+            isTaxRegistered: (isTaxRegistered as boolean) ?? false,
+            headquartersAddressLine1: billingAddressLine1 as string,
+            headquartersAddressLine2: billingAddressLine2 as string,
+            headquartersCity: billingAddressCity as string,
+            headquartersStateOrProvince:
+              billingAddressStateOrProvince as string,
+            headquartersPostalCode: billingAddressPostalCode as string,
+            headquartersCountry: billingAddressCountry as string,
+            telephone: telephone1 as string,
+            fax: fax as string,
+            email: emailAddress1 as string,
+          })
           .returning();
-
-        if (parentCustomerId) {
-          const parentRows = await tx
-            .select({ actorId: customers.actorId })
-            .from(customers)
-            .where(eq(customers.customerId, parentCustomerId as string))
-            .limit(1);
-
-          if (parentRows.length > 0 && parentRows[0].actorId) {
-            await tx.insert(actorActorLinks).values({
-              sourceActorId: actorRecord.actorId,
-              targetActorId: parentRows[0].actorId,
-              linkType: 'parent_company',
-            });
-          }
-        }
-
-        await emitEvent(tx, {
-          entityType: EntityType.CUSTOMER,
-          entityId: customer.customerId,
-          eventType: EventType.CREATED,
-          entityDisplayName: name as string,
-          payload: dto,
-          actor,
-        });
-
-        return {
-          ...customer,
-          name: actorRecord.name,
-          businessNumber: actorRecord.businessNumber,
-          isTaxRegistered: actorRecord.isTaxRegistered,
-          billingAddressLine1: actorRecord.headquartersAddressLine1,
-          billingAddressLine2: actorRecord.headquartersAddressLine2,
-          billingAddressCity: actorRecord.headquartersCity,
-          billingAddressStateOrProvince:
-            actorRecord.headquartersStateOrProvince,
-          billingAddressPostalCode: actorRecord.headquartersPostalCode,
-          billingAddressCountry: actorRecord.headquartersCountry,
-          telephone1: actorRecord.telephone,
-          fax: actorRecord.fax,
-          emailAddress1: actorRecord.email,
-        };
-      });
-    } catch (e: unknown) {
-      const pgCode =
-        (e as { code?: string; cause?: { code?: string } }).code ||
-        (e as { code?: string; cause?: { code?: string } }).cause?.code;
-      if (pgCode === '23505') {
-        throw new ConflictException(
-          `Customer number '${dto.customerNumber}' already exists`,
-        );
       }
-      throw e;
-    }
+
+      const [customer] = await tx
+        .insert(customers)
+        .values({
+          ...customerFields,
+          actorId: actorRecord.actorId,
+          stateCode:
+            (customerFields.stateCode as string) || CUSTOMER_STATE.ACTIVE,
+          source: (customerFields.source as string) || 'system',
+          currencyCode:
+            (customerFields.currencyCode as string) ||
+            this.appConfig.homeCurrency(),
+          createdBy: actor,
+        } as typeof customers.$inferInsert)
+        .returning();
+
+      if (parentCustomerId) {
+        const parentRows = await tx
+          .select({ actorId: customers.actorId })
+          .from(customers)
+          .where(eq(customers.customerId, parentCustomerId as string))
+          .limit(1);
+
+        if (parentRows.length > 0 && parentRows[0].actorId) {
+          await tx.insert(actorActorLinks).values({
+            sourceActorId: actorRecord.actorId,
+            targetActorId: parentRows[0].actorId,
+            linkType: 'parent_company',
+          });
+        }
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.CUSTOMER,
+        entityId: customer.customerId,
+        eventType: EventType.CREATED,
+        entityDisplayName: name as string,
+        payload: dto,
+        actor,
+      });
+
+      return {
+        ...customer,
+        name: actorRecord.name,
+        businessNumber: actorRecord.businessNumber,
+        isTaxRegistered: actorRecord.isTaxRegistered,
+        billingAddressLine1: actorRecord.headquartersAddressLine1,
+        billingAddressLine2: actorRecord.headquartersAddressLine2,
+        billingAddressCity: actorRecord.headquartersCity,
+        billingAddressStateOrProvince: actorRecord.headquartersStateOrProvince,
+        billingAddressPostalCode: actorRecord.headquartersPostalCode,
+        billingAddressCountry: actorRecord.headquartersCountry,
+        telephone1: actorRecord.telephone,
+        fax: actorRecord.fax,
+        emailAddress1: actorRecord.email,
+      };
+    });
 
     this.logger.log(
       `Customer created: ${dto.customerNumber} (ID: ${result.customerId}) by ${actor}`,

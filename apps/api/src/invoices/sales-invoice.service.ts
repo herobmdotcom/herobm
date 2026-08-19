@@ -428,8 +428,12 @@ export class SalesInvoiceService {
           const cat = await this.taxService.getById(line.taxCategoryId);
           taxRate = parseFloat(cat.rate ?? '0');
           lineSalesTaxAcctId = cat.salesGlAccountId;
-        } catch {
-          // Category not found — fall back to 0% tax
+        } catch (err: unknown) {
+          if (err instanceof NotFoundException) {
+            // Category not found — fall back to 0% tax
+          } else {
+            throw err;
+          }
         }
       }
 

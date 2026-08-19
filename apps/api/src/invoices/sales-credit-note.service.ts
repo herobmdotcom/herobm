@@ -390,8 +390,12 @@ export class SalesCreditNoteService {
               innerTx,
             );
             taxRate = parseFloat(cat.rate ?? '0');
-          } catch {
-            // Category not found — fall back to 0%
+          } catch (err: unknown) {
+            if (err instanceof NotFoundException) {
+              // Category not found — fall back to 0%
+            } else {
+              throw err;
+            }
           }
         }
 
@@ -970,8 +974,12 @@ export class SalesCreditNoteService {
             innerTx,
           );
           taxRate = parseFloat(cat.rate ?? '0');
-        } catch {
-          // Category not found — fall back to 0%
+        } catch (err: unknown) {
+          if (err instanceof NotFoundException) {
+            // Category not found — fall back to 0%
+          } else {
+            throw err;
+          }
         }
       }
 

@@ -35,37 +35,28 @@ export class CostCentersService {
   }
 
   async create(dto: CreateCostCenterDto, userId?: string) {
-    try {
-      return await this.db.transaction(async (tx) => {
-        const rows = await tx
-          .insert(costCenters)
-          .values({
-            code: dto.code.trim(),
-            name: dto.name.trim(),
-            isActive: dto.isActive ?? true,
-            isSystem: false,
-          })
-          .returning();
+    return await this.db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(costCenters)
+        .values({
+          code: dto.code.trim(),
+          name: dto.name.trim(),
+          isActive: dto.isActive ?? true,
+          isSystem: false,
+        })
+        .returning();
 
-        await emitEvent(tx, {
-          entityType: EntityType.COST_CENTER,
-          entityId: rows[0].costCenterId,
-          eventType: EventType.CREATED,
-          entityDisplayName: rows[0].code,
-          payload: dto,
-          actor: userId,
-        });
-
-        return rows[0];
+      await emitEvent(tx, {
+        entityType: EntityType.COST_CENTER,
+        entityId: rows[0].costCenterId,
+        eventType: EventType.CREATED,
+        entityDisplayName: rows[0].code,
+        payload: dto,
+        actor: userId,
       });
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === '23505') {
-        throw new BadRequestException(
-          `Cost center code '${dto.code}' already exists`,
-        );
-      }
-      throw err;
-    }
+
+      return rows[0];
+    });
   }
 
   async update(id: string, dto: UpdateCostCenterDto, userId?: string) {
@@ -114,27 +105,18 @@ export class CostCentersService {
         throw new BadRequestException('Cannot delete a system cost center');
       }
 
-      try {
-        await tx.delete(costCenters).where(eq(costCenters.costCenterId, id));
+      await tx.delete(costCenters).where(eq(costCenters.costCenterId, id));
 
-        await emitEvent(tx, {
-          entityType: EntityType.COST_CENTER,
-          entityId: id,
-          eventType: EventType.DELETED,
-          entityDisplayName: existing.code,
-          payload: {},
-          actor: userId,
-        });
+      await emitEvent(tx, {
+        entityType: EntityType.COST_CENTER,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: existing.code,
+        payload: {},
+        actor: userId,
+      });
 
-        return { deleted: true };
-      } catch (err: unknown) {
-        if ((err as { code?: string })?.code === '23503') {
-          throw new BadRequestException(
-            `Cannot delete cost center '${existing.code}' because it is in use by journal entries.`,
-          );
-        }
-        throw err;
-      }
+      return { deleted: true };
     });
   }
 

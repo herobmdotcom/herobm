@@ -209,10 +209,14 @@ export class OrdersCoreService {
           rate: parseFloat(cat.rate ?? '0'),
           taxProvider,
         };
-      } catch (err) {
-        this.logger.warn(
-          `Resolved invalid tax category ID: ${resolvedTaxCategoryId}`,
-        );
+      } catch (err: unknown) {
+        if (err instanceof NotFoundException) {
+          this.logger.warn(
+            `Resolved invalid tax category ID: ${resolvedTaxCategoryId}`,
+          );
+        } else {
+          throw err;
+        }
       }
     }
 
