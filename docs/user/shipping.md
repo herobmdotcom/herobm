@@ -11,15 +11,6 @@ routes:
   - "/shipments/returns"
 tags: ["shipping", "logistics", "packing", "dispatch", "carriers", "rtv"]
 fields:
-  carrier_id:
-    title: "Shipping Carrier"
-    summary: "Transport provider (e.g. DHL, FedEx, UPS, Local Fleet)."
-  package_weight:
-    title: "Gross Weight"
-    summary: "Total parcel weight for transport manifests."
-  consignment_number:
-    title: "Consignment / Waybill"
-    summary: "Carrier tracking barcode and reference."
   shipping_notes:
     title: "Driver Instructions"
     summary: "Special delivery instructions (e.g. Tailgate required, Gate code)."
@@ -68,7 +59,4 @@ flowchart LR
 
 | Field | Description |
 | :--- | :--- |
-| **Carrier** | Assigned transport service. |
-| **Gross Weight** | Total shipment weight in kg/lbs. |
-| **Tracking Number** | Waybill tracking reference. |
 | **Shipping Notes** | Special delivery instructions. |

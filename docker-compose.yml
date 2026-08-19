@@ -182,6 +182,7 @@ services:
       dockerfile: Dockerfile.pipeline
     container_name: herobm-pipeline
     restart: unless-stopped
+    env_file: .env
     security_opt:
       - "no-new-privileges:true"
     cap_drop:

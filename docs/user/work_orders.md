@@ -7,20 +7,20 @@ order: 21
 resource: "manufacturing"
 action: "read"
 routes:
-  - "/work-orders"
-  - "/work-orders/:id"
+  - "/manufacturing/work-orders"
+  - "/manufacturing/work-orders/:id"
 tags: ["manufacturing", "work-orders", "production", "assembly", "bom", "finished-goods"]
 fields:
-  work_order_number:
+  order_number:
     title: "Work Order Number"
     summary: "Unique production job identifier (e.g. WO-2026-00021)."
   product_id:
     title: "Finished Good"
     summary: "Target product item to manufacture."
-  quantity_to_produce:
+  target_quantity:
     title: "Target Quantity"
     summary: "Number of finished units scheduled for assembly."
-  fulfillment_location_id:
+  location_id:
     title: "Production Warehouse"
     summary: "Facility where manufacturing and stock movements occur."
   status:
@@ -66,7 +66,7 @@ stateDiagram-v2
 4. The system loads the default **Bill of Materials (BOM)** component list.
 5. Click **Release Order** to reserve raw materials in the warehouse.
 6. When assembly begins, click **Start Assembly**.
-7. When production completes, enter the **Actual Produced Quantity** and any recorded **Scrap Quantity**.
+7. When production completes, enter the **Actual completedQuantity**.
 8. Click **Complete Work Order** to restock the finished goods into storage bins.
 
 ---
@@ -78,6 +78,5 @@ stateDiagram-v2
 | **Work Order Number** | Unique production identifier. |
 | **Finished Good** | Assembled product SKU. |
 | **Target Quantity** | Scheduled production count. |
-| **Produced Quantity** | Actual good units manufactured. |
-| **Scrap Quantity** | Defective/wasted component count. |
+| **completedQuantity** | Actual good units manufactured. |
 | **Status** | Stage (`Draft`, `Released`, `In-Progress`, `Completed`). |

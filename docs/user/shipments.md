@@ -17,18 +17,12 @@ fields:
   sales_order_id:
     title: "Sales Order"
     summary: "Originating sales order for the dispatched items."
-  carrier_name:
-    title: "Shipping Carrier"
-    summary: "Logistics provider handling transport (e.g. DHL, FedEx, Local Courier)."
   tracking_number:
     title: "Tracking Number"
     summary: "Consignment tracking code provided by the carrier."
   status:
     title: "Shipment Status"
     summary: "Current shipment stage (Draft, Packing, Dispatched, Delivered, Cancelled)."
-  packages_count:
-    title: "Package Count & Weight"
-    summary: "Total cartons and gross weight for freight calculation."
 related:
   - "sales-orders"
   - "inventory-shipping"
@@ -79,7 +73,6 @@ stateDiagram-v2
 | :--- | :--- |
 | **Shipment Number** | Unique shipment tracking identifier. |
 | **Sales Order** | The parent sales order being fulfilled. |
-| **Carrier** | Transport company (e.g. DHL, UPS, Road Freight). |
 | **Tracking Number** | Waybill / tracking number for online tracking. |
 | **Status** | Stage in dispatch workflow (`Draft`, `Packing`, `Dispatched`, `Delivered`). |
 | **Delivery Address** | Destination physical address for delivery. |
