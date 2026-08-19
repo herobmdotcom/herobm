@@ -64,7 +64,8 @@ export default function Sidebar() {
           icon: 'local_shipping',
           subItems: [
             { href: routes.inventory.shipping(), label: 'Customer Shipments' },
-            { href: routes.shipments.returns(), label: 'Supplier Returns' }
+            { href: routes.shipments.returns(), label: 'Supplier Returns' },
+            { href: routes.inventory.scanToDispatch(), label: 'Scan to Dispatch' }
           ]
         },
       ],

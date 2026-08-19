@@ -27,6 +27,7 @@ import {
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
 export interface PickingSlipHeader {
+  orderId?: string;
   orderNumber: string;
   customerName: string;
   customerOrderNumber: string;
@@ -35,8 +36,12 @@ export interface PickingSlipHeader {
 }
 
 export interface PickingLine {
+  lineId?: string;
+  orderId?: string;
+  productId?: string;
   productCode: string;
   description: string;
+  binId?: string;
   binNumber: string;
   qtyToPick: number;
 }
@@ -56,6 +61,7 @@ export interface PickingSlipData {
 
 // Internal raw data shapes for shared processing
 interface RawOrderHeader {
+  orderId?: string;
   orderNumber: string;
   customerName: string;
   customerOrderNumber: string;
@@ -145,6 +151,7 @@ export class PickingSlipService {
     if (orderRows.length === 0)
       throw new NotFoundException(`Sales Order '${orderId}' not found`);
     const order = {
+      orderId,
       ...orderRows[0],
       customerName: orderRows[0].customerName ?? '',
       locationName: orderRows[0].locationName ?? '',
@@ -217,6 +224,7 @@ export class PickingSlipService {
     if (orderRows.length === 0)
       throw new NotFoundException(`Transfer Order '${orderId}' not found`);
     const order = {
+      orderId,
       ...orderRows[0],
       customerName: orderRows[0].customerName ?? '',
       locationName: orderRows[0].locationName ?? '',
@@ -271,11 +279,12 @@ export class PickingSlipService {
     const lineIds = lines.map((l) => l.lineId);
 
     // 1. Resolve Bins
-    const binMap = new Map<string, string>();
+    const binMap = new Map<string, { binId: string; binNumber: string }>();
     if (productIds.length > 0) {
       const binRows = await this.db
         .select({
           productId: binContents.productId,
+          binId: bins.binId,
           binNumber: bins.binNumber,
           zoneCode: zones.code,
         })
@@ -291,7 +300,10 @@ export class PickingSlipService {
 
       for (const row of binRows) {
         if (!binMap.has(row.productId)) {
-          binMap.set(row.productId, `${row.zoneCode}.${row.binNumber}`);
+          binMap.set(row.productId, {
+            binId: row.binId,
+            binNumber: `${row.zoneCode}.${row.binNumber}`,
+          });
         }
       }
     }
@@ -339,10 +351,15 @@ export class PickingSlipService {
       const description = line.productDescription || '';
 
       if (toPick > 0) {
+        const binInfo = binMap.get(line.productId!);
         pickingLines.push({
+          lineId: line.lineId,
+          orderId: header.orderId ?? '',
+          productId: line.productId ?? '',
           productCode,
           description,
-          binNumber: binMap.get(line.productId!) ?? '—',
+          binId: binInfo?.binId ?? '',
+          binNumber: binInfo?.binNumber ?? '—',
           qtyToPick: toPick,
         });
       }
@@ -359,6 +376,7 @@ export class PickingSlipService {
 
     return {
       header: {
+        orderId: header.orderId ?? '',
         orderNumber: header.orderNumber ?? '',
         customerName: header.customerName ?? '',
         customerOrderNumber: header.customerOrderNumber ?? '',

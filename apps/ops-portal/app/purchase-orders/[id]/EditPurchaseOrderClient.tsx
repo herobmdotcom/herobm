@@ -112,8 +112,8 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     className="input text-right w-full h-8 text-sm"
                     type="number"
                     min="0"
-                    step="1"
-                    defaultValue={line.quantity}
+                    step="any"
+                    defaultValue={parseFloat(line.quantity || '0')}
                     key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
                     onBlur={(e) => {
                         if (e.target.value !== line.quantity) {
@@ -121,10 +121,10 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         }
                     }}
                 />
-            ) : <span className="text-sm tabular-nums">{line.quantity}</span>
+            ) : <span className="text-sm tabular-nums">{parseFloat(line.quantity || '0')}</span>
         ),
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.qty')} value={
-            isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
+            isLinesEditable ? defaultRender : <span className="text-sm">{parseFloat(line.quantity || '0')} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
     },
     {

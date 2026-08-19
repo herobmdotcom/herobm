@@ -50,7 +50,7 @@ export class PickingQueryService {
    * Get picking summary for an order, including shipped quantities.
    */
   async getPickingSummary(orderId: string) {
-    const [, rawLines] = await Promise.all([
+    const [, rawLines, creditStatus] = await Promise.all([
       findOrder(this.db, orderId),
       this.db
         .select({
@@ -76,9 +76,14 @@ export class PickingQueryService {
         )
         .where(eq(salesOrderLineItems.salesOrderId, orderId))
         .orderBy(salesOrderLineItems.lineNumber),
+      this.db
+        .select({ isCreditBlocked: getCreditBlockedSql() })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, orderId)),
     ]);
 
     const lines = rawLines;
+    const isCreditBlocked = creditStatus?.[0]?.isCreditBlocked ?? false;
     const lineIds = lines.map((l) => l.salesOrderLineId);
     const productIds = Array.from(
       new Set(lines.map((l) => l.productId).filter(Boolean) as string[]),
@@ -238,6 +243,7 @@ export class PickingQueryService {
     ).length;
 
     return {
+      isCreditBlocked: Boolean(isCreditBlocked),
       totalLines,
       fullyPickedLines,
       isFullyPicked: totalLines > 0 && fullyPickedLines === totalLines,
@@ -310,7 +316,7 @@ export class PickingQueryService {
           createdOn: salesOrders.createdOn,
           createdBy: salesOrders.createdBy,
           currencyCode: salesOrders.currencyCode,
-          isCreditBlocked: getCreditBlockedSql(),
+          isCreditBlocked: sql<boolean>`false`,
           lineId: salesOrderLineItems.salesOrderLineId,
           productId: salesOrderLineItems.productId,
           fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,

@@ -92,6 +92,7 @@ export const routes = {
     putaway: () => '/inventory/putaway',
     picking: () => '/inventory/picking',
     shipping: () => '/inventory/shipping',
+    scanToDispatch: () => '/inventory/shipping/scan-to-dispatch',
   },
   receiving: {
     list: () => '/receiving',

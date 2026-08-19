@@ -131,8 +131,8 @@ export default function PurchaseOrderLinesTab({
                     className="input text-right w-full h-8 text-sm"
                     type="number"
                     min="0"
-                    step="1"
-                    defaultValue={line.quantity}
+                    step="any"
+                    defaultValue={parseFloat(line.quantity || '0')}
                     key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
                     onBlur={(e) => {
                         if (e.target.value !== line.quantity) {
@@ -140,10 +140,10 @@ export default function PurchaseOrderLinesTab({
                         }
                     }}
                 />
-            ) : <span className="text-sm tabular-nums">{line.quantity}</span>
+            ) : <span className="text-sm tabular-nums">{parseFloat(line.quantity || '0')}</span>
         ),
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.qty')} value={
-            isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
+            isLinesEditable ? defaultRender : <span className="text-sm">{parseFloat(line.quantity || '0')} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
     },
     {
@@ -497,7 +497,7 @@ export default function PurchaseOrderLinesTab({
                             )}
                           </td>
                           <td>{line.productDescription || '—'}</td>
-                          <td className="text-right tabular-nums">{line.quantity}</td>
+                          <td className="text-right tabular-nums">{parseFloat(line.quantity || '0')}</td>
                           <td colSpan={6} className="text-center text-[var(--text-muted)] text-xs">
                             {tPurchase('noInventoryData')}
                           </td>
@@ -526,7 +526,7 @@ export default function PurchaseOrderLinesTab({
                               </td>
                               <td rowSpan={lineInventory.length}>{line.productDescription || '—'}</td>
                               <td className="text-right tabular-nums" rowSpan={lineInventory.length}>
-                                {line.quantity}
+                                {parseFloat(line.quantity || '0')}
                               </td>
                             </>
                           )}
@@ -585,7 +585,7 @@ export default function PurchaseOrderLinesTab({
                                 <>
                                     <div className="flex justify-between items-center py-2 border-t border-slate-100">
                                         <span className="text-xs font-medium text-slate-500">{tPurchase('columns.thisOrder')}</span>
-                                        <span className="text-sm font-semibold">{line.quantity}</span>
+                                        <span className="text-sm font-semibold">{parseFloat(line.quantity || '0')}</span>
                                     </div>
                                     
                                     <div className="mt-3 flex flex-col gap-2">

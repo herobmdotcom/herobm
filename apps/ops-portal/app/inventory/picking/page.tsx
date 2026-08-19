@@ -68,6 +68,7 @@ interface PickingSummary {
     totalLines: number;
     fullyPickedLines: number;
     isFullyPicked: boolean;
+    isCreditBlocked?: boolean;
     lines: PickingLine[];
     picks: PickAllocation[];
 }
@@ -496,9 +497,7 @@ export default function PickingPage() {
                                             /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                                         )}
-                                        <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
-                                        { }
-                                        <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
+                                        <span>{t('pickingSlipPdf')}</span>
                                     </Button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                         {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
@@ -511,6 +510,12 @@ export default function PickingPage() {
                                     {error && (
                                         <div className="mb-4">
                                             <InlineAlert type="error" message={error} />
+                                        </div>
+                                    )}
+                                    
+                                    {pickingSummary.isCreditBlocked && (
+                                        <div className="mb-4">
+                                            <InlineAlert type="warning" message={`${t('creditBlockedTitle')}: ${t('creditBlockedMessage')}`} />
                                         </div>
                                     )}
 

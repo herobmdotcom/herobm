@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import SlideOver from './SlideOver';
 
 interface MasterDetailLayoutProps {
@@ -30,6 +30,15 @@ export default function MasterDetailLayout({
     detailTitle = 'Details',
     masterWidthClass = 'lg:w-1/3'
 }: MasterDetailLayoutProps) {
+    const [isDesktop, setIsDesktop] = useState(true);
+
+    useEffect(() => {
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
+
     return (
         <div className="h-full flex flex-col p-4 lg:p-6 bg-[var(--bg-primary)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 shrink-0 gap-3">
@@ -58,7 +67,7 @@ export default function MasterDetailLayout({
                 </div>
 
                 {/* SlideOver: Detail (Mobile) */}
-                <div className="lg:hidden">
+                {!isDesktop && (
                     <SlideOver
                         isOpen={isDetailOpen}
                         onClose={onCloseDetail}
@@ -66,7 +75,7 @@ export default function MasterDetailLayout({
                     >
                         {detailPane}
                     </SlideOver>
-                </div>
+                )}
             </div>
         </div>
     );

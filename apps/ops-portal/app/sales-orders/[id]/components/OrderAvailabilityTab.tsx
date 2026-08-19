@@ -75,7 +75,7 @@ export function OrderAvailabilityTab({
                                     )}
                                 </td>
                                 <td className="text-xs text-[var(--text-muted)]">{line.productDescription}</td>
-                                <td className="text-right tabular-nums">{line.quantity}</td>
+                                <td className="text-right tabular-nums">{parseFloat(line.quantity || '0')}</td>
                                 <td colSpan={3} className="text-center text-[var(--danger)] text-xs italic">
                                     {tSales('noInventoryFound')}
                                 </td>
@@ -96,7 +96,7 @@ export function OrderAvailabilityTab({
                                             )}
                                         </td>
                                         <td rowSpan={lineInventory.length} className="text-xs">{line.productDescription}</td>
-                                        <td rowSpan={lineInventory.length} className="text-right tabular-nums font-semibold">{line.quantity}</td>
+                                        <td rowSpan={lineInventory.length} className="text-right tabular-nums font-semibold">{parseFloat(line.quantity || '0')}</td>
                                         <td rowSpan={lineInventory.length}>
                                             {(() => {
                                                 if (isShipped) {
@@ -181,7 +181,7 @@ export function OrderAvailabilityTab({
                             <>
                                 <div className="flex justify-between items-center py-2 border-t border-slate-100">
                                     <span className="text-xs font-medium text-slate-500">{tSales('columns.ordered')}</span>
-                                    <span className="text-sm font-semibold">{line.quantity}</span>
+                                    <span className="text-sm font-semibold">{parseFloat(line.quantity || '0')}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                                     <span className="text-xs font-medium text-slate-500">{tSales('columns.fulfillment')}</span>

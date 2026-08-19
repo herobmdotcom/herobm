@@ -48,7 +48,7 @@ export class PickingShippingQueryService {
         createdOn: salesOrders.createdOn,
         createdBy: salesOrders.createdBy,
         currencyCode: salesOrders.currencyCode,
-        isCreditBlocked: getCreditBlockedSql(),
+        isCreditBlocked: sql<boolean>`false`,
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} IS NULL OR (${coreProducts.productType} != 'service' AND ${coreProducts.productType} != 'freight') THEN true ELSE false END`,
@@ -263,26 +263,32 @@ export class PickingShippingQueryService {
       return this.getTransferShippingContext(orderId, transferOrder);
     }
 
-    const order = await findOrder(this.db, orderId);
+    const [order, lines, creditStatus] = await Promise.all([
+      findOrder(this.db, orderId),
+      this.db
+        .select({
+          salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+          lineNumber: salesOrderLineItems.lineNumber,
+          productId: salesOrderLineItems.productId,
+          productDescription: salesOrderLineItems.productDescription,
+          quantity: salesOrderLineItems.quantity,
+          productNumber: coreProducts.productNumber,
+          productType: coreProducts.productType,
+        })
+        .from(salesOrderLineItems)
+        .leftJoin(
+          coreProducts,
+          eq(salesOrderLineItems.productId, coreProducts.productId),
+        )
+        .where(eq(salesOrderLineItems.salesOrderId, orderId))
+        .orderBy(salesOrderLineItems.lineNumber),
+      this.db
+        .select({ isCreditBlocked: getCreditBlockedSql() })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, orderId)),
+    ]);
 
-    const lines = await this.db
-      .select({
-        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
-        lineNumber: salesOrderLineItems.lineNumber,
-        productId: salesOrderLineItems.productId,
-        productDescription: salesOrderLineItems.productDescription,
-        quantity: salesOrderLineItems.quantity,
-        productNumber: coreProducts.productNumber,
-        productType: coreProducts.productType,
-      })
-      .from(salesOrderLineItems)
-      .leftJoin(
-        coreProducts,
-        eq(salesOrderLineItems.productId, coreProducts.productId),
-      )
-      .where(eq(salesOrderLineItems.salesOrderId, orderId))
-      .orderBy(salesOrderLineItems.lineNumber);
-
+    const isCreditBlocked = creditStatus?.[0]?.isCreditBlocked ?? false;
     const lineIds = lines.map((l) => l.salesOrderLineId);
     const pickedMap = new Map<string, number>();
     if (lineIds.length > 0) {
@@ -379,6 +385,7 @@ export class PickingShippingQueryService {
     }
 
     return {
+      isCreditBlocked: Boolean(isCreditBlocked),
       order,
       lines: enrichedLines,
       shipments: shipments.map((s) => ({

@@ -660,6 +660,7 @@ export class ShippingContextLineDto {
 }
 
 export class ShippingContextDto {
+  @ApiPropertyOptional() isCreditBlocked?: boolean;
   @ApiProperty({ type: () => [ShippingContextLineDto] })
   lines!: ShippingContextLineDto[];
 
@@ -708,6 +709,7 @@ export class PickingSummaryPickDto {
 }
 
 export class PickingSummaryDto {
+  @ApiPropertyOptional() isCreditBlocked?: boolean;
   @ApiProperty() totalLines!: number;
   @ApiProperty() fullyPickedLines!: number;
   @ApiProperty() isFullyPicked!: boolean;

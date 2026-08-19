@@ -7,6 +7,13 @@ const __dirname = path.dirname(__filename);
 
 const extensionsDir = path.resolve(__dirname, '../../../extensions');
 const generatedDir = path.resolve(__dirname, '../src/generated');
+const nextTypesDir = path.resolve(__dirname, '../.next/types');
+
+if (fs.existsSync(nextTypesDir)) {
+  try {
+    fs.rmSync(nextTypesDir, { recursive: true, force: true });
+  } catch (e) {}
+}
 
 if (!fs.existsSync(generatedDir)) {
   fs.mkdirSync(generatedDir, { recursive: true });

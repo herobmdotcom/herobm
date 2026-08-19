@@ -136,8 +136,8 @@ export function OrderLinesTable({
                                 className={`input w-full text-right ${hasWarning ? (hasGap ? 'border-[var(--danger)]' : 'border-[var(--warning)]') : ''}`}
                                 type="number"
                                 min="0"
-                                step="1"
-                                defaultValue={line.quantity}
+                                step="any"
+                                defaultValue={parseFloat(line.quantity || '0')}
                                 key={`qty-${line.salesOrderLineId}-${line.quantity}`}
                                 onBlur={(e) => {
                                     if (e.target.value !== line.quantity) {
@@ -151,7 +151,7 @@ export function OrderLinesTable({
                 return (
                     <span className={`tabular-nums ${hasGap ? 'text-[var(--danger)] font-semibold' : ''}`}>
                         {warningIcon}
-                        {line.quantity}
+                        {parseFloat(line.quantity || '0')}
                     </span>
                 );
             }

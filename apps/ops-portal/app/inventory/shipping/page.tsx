@@ -64,6 +64,7 @@ interface ShipmentSummary {
 interface ShippingContext {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     order: any;
+    isCreditBlocked?: boolean;
     lines: ShippingLine[];
     shipments: ShipmentSummary[];
 }
@@ -72,6 +73,7 @@ interface ShippingContext {
 
 export default function ShippingPage() {
     const t = useTranslations('shipping');
+    const tPicking = useTranslations('picking');
     const tCommon = useTranslations('common');
     useDocumentTitle(t('title'));
     const { app } = useSettings();
@@ -284,6 +286,12 @@ export default function ShippingPage() {
                             {error && (
                                 <div className="mb-4">
                                     <InlineAlert type="error" message={error} />
+                                </div>
+                            )}
+
+                            {context.isCreditBlocked && (
+                                <div className="mb-4">
+                                    <InlineAlert type="warning" message={`${tPicking('creditBlockedTitle')}: ${tPicking('creditBlockedMessage')}`} />
                                 </div>
                             )}
 
