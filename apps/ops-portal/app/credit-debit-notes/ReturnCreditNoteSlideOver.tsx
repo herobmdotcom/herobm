@@ -320,7 +320,7 @@ export default function ReturnCreditNoteSlideOver({
                                     </td>
                                     <td className="px-5 py-3 text-right font-mono text-[var(--text-muted)]">N/A</td>
                                     <td className="px-5 py-3 text-right font-mono text-[#041627]">
-                                        {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(creditSummary.netCredit)}
+                                        {Number(creditSummary.netCredit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     <td className="px-5 py-3">
                                         <input 
@@ -337,7 +337,7 @@ export default function ReturnCreditNoteSlideOver({
                                 <tr>
                                     <td colSpan={2} className="px-5 py-3 text-right uppercase text-xs tracking-wider">Total</td>
                                     <td className="px-5 py-3 text-right font-mono text-[var(--text-muted)]">N/A</td>
-                                    <td className="px-5 py-3 text-right font-mono">{new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(creditSummary.netCredit)}</td>
+                                    <td className="px-5 py-3 text-right font-mono">{Number(creditSummary.netCredit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     <td className="px-5 py-3"></td>
                                 </tr>
                             </tfoot>

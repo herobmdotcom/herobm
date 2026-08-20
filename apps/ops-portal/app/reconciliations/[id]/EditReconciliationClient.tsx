@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
 import BankMatchingView from './BankMatchingView';
-import { getErrorMessage } from '@herobm/shared';
+import { getErrorMessage, formatAmount } from '@herobm/shared';
 
 interface UnreconciledLine {
   journalLineId: string;
@@ -211,13 +211,13 @@ export default function EditReconciliationClient({ id }: { id: string }) {
         field: 'debit', 
         headerName: t('columns.debit'), 
         width: 120,
-        valueFormatter: (p) => p.value ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(p.value) : ''
+        valueFormatter: (p) => p.value ? formatAmount(Number(p.value), 'AUD') : ''
       },
       { 
         field: 'credit', 
         headerName: t('columns.credit'), 
         width: 120,
-        valueFormatter: (p) => p.value ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(p.value) : ''
+        valueFormatter: (p) => p.value ? formatAmount(Number(p.value), 'AUD') : ''
       },
       {
         headerName: t('columns.cleared'),
@@ -236,7 +236,7 @@ export default function EditReconciliationClient({ id }: { id: string }) {
   if (!reconciliation) return <div className="p-4">{t('notFound')}</div>;
 
   const isPosted = reconciliation.status === 'posted';
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
+  const formatCurrency = (val: number) => formatAmount(val, 'AUD');
 
   return (
     <div className="h-full flex flex-col bg-white">

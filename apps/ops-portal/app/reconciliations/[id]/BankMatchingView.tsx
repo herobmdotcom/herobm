@@ -11,6 +11,7 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import MatchDetailsModal from './MatchDetailsModal';
 import { Button } from '@/components/shared/Button';
+import { formatAmount } from '@herobm/shared';
 
 interface UnreconciledLine {
   journalLineId: string;
@@ -81,7 +82,7 @@ export default function BankMatchingView({
     }
   };
 
-  const formatCurrency = (val: number | string) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(val));
+  const formatCurrency = (val: number | string) => formatAmount(Number(val), 'AUD');
 
   const sumBankLines = useMemo(() => {
     return Array.from(selectedBankLines).reduce((sum, id) => {

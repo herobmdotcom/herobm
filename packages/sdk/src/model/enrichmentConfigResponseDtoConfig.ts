@@ -6,4 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export type EnrichmentControllerUpdateConfig200 = { [key: string]: unknown };
+export type EnrichmentConfigResponseDtoConfig = { [key: string]: unknown };

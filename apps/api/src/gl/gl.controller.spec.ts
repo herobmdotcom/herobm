@@ -34,6 +34,9 @@ describe('GlController', () => {
       getTrialBalance: jest.fn().mockResolvedValue([]),
       getGeneralLedger: jest.fn().mockResolvedValue([]),
       getSettings: jest.fn().mockResolvedValue({ baseCurrency: 'AUD' }),
+      updateSettings: jest
+        .fn()
+        .mockResolvedValue({ defaultArAccountId: 'ar-id-123' }),
     };
 
     coaLoader = {
@@ -336,6 +339,15 @@ describe('GlController', () => {
       const result = await controller.getSettings();
       expect(glService.getSettings).toHaveBeenCalled();
       expect(result.baseCurrency).toBe('AUD');
+    });
+  });
+
+  describe('PATCH /gl/settings', () => {
+    it('should delegate updateSettings with payload', async () => {
+      const payload = { defaultArAccountId: 'ar-id-123' };
+      const result = await controller.updateSettings(payload);
+      expect(glService.updateSettings).toHaveBeenCalledWith(payload);
+      expect(result).toEqual({ defaultArAccountId: 'ar-id-123' });
     });
   });
 

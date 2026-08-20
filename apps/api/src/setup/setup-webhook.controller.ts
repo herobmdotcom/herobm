@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import {
   Controller,
   Post,

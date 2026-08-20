@@ -6,4 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export type EnrichmentControllerUpdateConfigBody = { [key: string]: unknown };
+/**
+ * Provider configuration JSON key-value pairs
+ */
+export type UpdateEnrichmentConfigDtoConfig = { [key: string]: unknown };

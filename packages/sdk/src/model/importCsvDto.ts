@@ -8,7 +8,7 @@
 
 export interface ImportCsvDto {
   /** The CSV file to import */
-  file: Blob;
+  file?: Blob;
   glAccountId: string;
   profileId: string;
 }

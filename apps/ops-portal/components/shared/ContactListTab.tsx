@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -17,6 +18,7 @@ interface ContactListTabProps {
 }
 
 export function ContactListTab({ entityId, entityType, contacts, onContactAdded }: ContactListTabProps) {
+  const tCommon = useTranslations('common');
   const [isAdding, setIsAdding] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Temporary type fallback
   const [editingContact, setEditingContact] = useState<any | null>(null);
@@ -84,7 +86,7 @@ export function ContactListTab({ entityId, entityType, contacts, onContactAdded 
             Contacts
           </h3>
           <Button variant="primary" size="sm" onClick={handleAdd}>
-            + Add Contact
+            {tCommon('buttons.addContact')}
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

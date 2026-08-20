@@ -32,6 +32,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const { invoice, loading, error } = useSalesInvoice(id as string);
   const [cancelling, setCancelling] = React.useState(false);
   const [markingPaid, setMarkingPaid] = React.useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
   const [emailDialogConfig, setEmailDialogConfig] = React.useState<{
     isOpen: boolean;
     hookSlug: string;
@@ -59,6 +60,24 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   if (loading) return <div className="p-8">{t('loadingEllipsis')}</div>;
   if (error) return <div className="p-8 text-red-500">{t('errorLoading', { message: error.message })}</div>;
   if (!invoice) return <div className="p-8 text-red-500">{t('notFound')}</div>;
+
+  const handlePrintInvoice = async () => {
+    if (!invoice) return;
+    setIsGeneratingPdf(true);
+    try {
+      const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, {
+        id: invoice.invoiceId,
+        context: 'sales-invoice',
+      });
+      const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || tCommon('errors.failedToGenerateReport'));
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleCancel = async () => {
     if (!window.confirm('Are you sure you want to cancel this invoice? This will reverse the GL postings.')) return;
@@ -241,21 +260,31 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span>{t('invoiceDetails')}</span>
             </h3>
             {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEmailDialogConfig({
-                  isOpen: true,
-                  hookSlug: 'sales-invoice',
-                  title: 'Email Sales Invoice',
-                  prefix: 'Invoice',
-                  docName: 'Sales Invoice',
-                  targetId: invoice.invoiceId,
-                  contextSlug: 'sales-invoice'
-                })}
-              >
-                Email Invoice
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handlePrintInvoice}
+                  disabled={isGeneratingPdf}
+                >
+                  {isGeneratingPdf ? tCommon('loading') : t('printInvoice')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEmailDialogConfig({
+                    isOpen: true,
+                    hookSlug: 'sales-invoice',
+                    title: 'Email Sales Invoice',
+                    prefix: 'Invoice',
+                    docName: 'Sales Invoice',
+                    targetId: invoice.invoiceId,
+                    contextSlug: 'sales-invoice'
+                  })}
+                >
+                  {t('emailInvoice')}
+                </Button>
+              </div>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

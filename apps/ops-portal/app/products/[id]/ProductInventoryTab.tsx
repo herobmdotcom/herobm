@@ -5,14 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { getErrorMessage, compareBinNumbers } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
-import { formatLocationDisplay } from '@/lib/formatters';
-
-const formatInt = (val: string | number | undefined | null) => {
-  if (!val) return '0';
-  const num = typeof val === 'string' ? parseFloat(val) : val;
-  if (isNaN(num)) return '0';
-  return Math.round(num).toString();
-};
+import { formatLocationDisplay, formatQuantity } from '@/lib/formatters';
 
 interface ProductInventoryTabProps {
   productId: string;
@@ -241,7 +234,7 @@ export function ProductInventoryTab({
             <Button
               size="sm"
               variant="primary"
-              className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5 text-[13px]"
+              className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
               onClick={() => setAddingBinLink(true)}
               disabled={saving}
             >
@@ -395,8 +388,8 @@ export function ProductInventoryTab({
                         <td className="py-3 px-6">
                           <div className="text-[#0f172a]">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-[#475569]">{formatInt(comp.parentQuantity || 1)}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-[#006b5c]">{formatInt(totalAvail)}</td>
+                        <td className="py-3 px-4 text-right font-medium text-[#475569]">{formatQuantity(comp.parentQuantity || 1)}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-[#006b5c]">{formatQuantity(totalAvail)}</td>
                       </tr>
                     );
                   })
@@ -431,10 +424,10 @@ export function ProductInventoryTab({
                       <td className="py-2 px-6 font-bold text-[#0f172a]" colSpan={4}>
                         {lvl.locationName} <span className="text-[#64748b] ml-1 font-semibold">({lvl.locationNo})</span>
                       </td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityOnHand)}</td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityCommitted)}</td>
-                      <td className="py-2 px-4 font-bold text-[#006b5c] text-right tabular-nums">{formatInt(lvl.quantityAvailable)}</td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityOnOrder)}</td>
+                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityOnHand)}</td>
+                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityCommitted)}</td>
+                      <td className="py-2 px-4 font-bold text-[#006b5c] text-right tabular-nums">{formatQuantity(lvl.quantityAvailable)}</td>
+                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityOnOrder)}</td>
                       <td></td>
                     </tr>
                     {lvl.bins.length === 0 ? (
@@ -526,9 +519,9 @@ export function ProductInventoryTab({
                               )}
                             </div>
                           </td>
-                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? bin.minQty || '0' : '—'}</td>
-                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? bin.maxQty || '0' : '—'}</td>
-                          <td className="py-2 px-4 font-medium text-[#475569] text-right tabular-nums">{formatInt(bin.quantityOnHand)}</td>
+                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? (bin.minQty !== undefined && bin.minQty !== null && bin.minQty !== '' ? formatQuantity(bin.minQty) : '0') : '—'}</td>
+                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? (bin.maxQty !== undefined && bin.maxQty !== null && bin.maxQty !== '' ? formatQuantity(bin.maxQty) : '0') : '—'}</td>
+                          <td className="py-2 px-4 font-medium text-[#475569] text-right tabular-nums">{formatQuantity(bin.quantityOnHand)}</td>
                           <td colSpan={3}></td>
                           <td className="py-2 px-4 text-center">
                             {isEditable && (

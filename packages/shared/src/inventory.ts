@@ -224,3 +224,26 @@ export function parsePickBarcode(barcode: string): PickBarcodePayload | null {
   };
 }
 
+/**
+ * Formats a numeric quantity for natural human display:
+ * - Whole numbers render without decimals (e.g. 10, 1,000)
+ * - Fractional numbers render with natural decimals up to maxFractionDigits without trailing zero noise (e.g. 9.93, 0.5)
+ * - Uses locale-aware thousands separators (delegating to client runtime locale if undefined)
+ * - Fallbacks gracefully to '0' for null/undefined/empty/NaN values.
+ */
+export function formatQuantity(
+  val: string | number | undefined | null,
+  maxFractionDigits = 4,
+  locale?: string,
+): string {
+  if (val === undefined || val === null || val === '') return '0';
+  const num = typeof val === 'string' ? parseFloat(val) : Number(val);
+  if (isNaN(num)) return '0';
+
+  return num.toLocaleString(locale || undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxFractionDigits,
+  });
+}
+
+

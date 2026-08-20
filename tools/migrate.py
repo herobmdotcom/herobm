@@ -18,6 +18,28 @@ import glob
 
 MIGRATIONS_DIR = os.path.join("apps", "api", "migrations")
 EXTENSIONS_FILE = os.path.join("apps", "api", "src", "drizzle", "extensions.sql")
+
+def load_env(profile=None):
+    if not profile:
+        active_prof_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.active_profile'))
+        if os.path.exists(active_prof_path):
+            with open(active_prof_path, 'r', encoding='utf-8') as f:
+                profile = f.read().strip()
+    env_file = f".env.{profile}" if profile else ".env"
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', env_file))
+    if os.path.exists(env_path):
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    k, v = line.split('=', 1)
+                    if k.strip() not in os.environ:
+                        os.environ[k.strip()] = v.strip().strip('"').strip("'")
+
+load_env()
+
 CONTAINER = os.environ.get("POSTGRES_CONTAINER", "postgres-custom")
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
 DB_NAME = os.environ.get("POSTGRES_DB", "herobm")

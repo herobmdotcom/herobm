@@ -4,7 +4,25 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 // Fix path resolution for dotenv to support being run from anywhere
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env.volzau') });
+const rootDir = path.resolve(process.cwd(), process.cwd().endsWith('apps\\api') || process.cwd().endsWith('apps/api') ? '..' : '.');
+let activeProfile = '';
+if (fs.existsSync(path.resolve(rootDir, '.active_profile'))) {
+  activeProfile = fs.readFileSync(path.resolve(rootDir, '.active_profile'), 'utf8').trim();
+}
+const possibleEnvFiles = [
+  activeProfile ? `.env.${activeProfile}` : '',
+  '.env',
+  '.env.volzau',
+  '.env.hfp',
+  '.env.local'
+].filter(Boolean);
+for (const envFile of possibleEnvFiles) {
+  const fullPath = path.resolve(rootDir, envFile);
+  if (fs.existsSync(fullPath)) {
+    dotenv.config({ path: fullPath });
+    break;
+  }
+}
 
 const input = process.argv[2];
 
@@ -14,8 +32,16 @@ if (!input) {
 }
 
 let sql = input;
-if (fs.existsSync(input)) {
+const querySqlInRoot = path.resolve(rootDir, 'tmp', 'query.sql');
+if ((input.includes('query.sql') || input.includes('tmp')) && fs.existsSync(querySqlInRoot)) {
+  sql = fs.readFileSync(querySqlInRoot, 'utf8');
+  console.log(`[query_pg] Loaded from querySqlInRoot: ${querySqlInRoot} (${sql.length} chars)`);
+} else if (fs.existsSync(input) && fs.statSync(input).isFile()) {
   sql = fs.readFileSync(input, 'utf8');
+  console.log(`[query_pg] Loaded from input: ${input} (${sql.length} chars)`);
+} else if (fs.existsSync(path.resolve(rootDir, input)) && fs.statSync(path.resolve(rootDir, input)).isFile()) {
+  sql = fs.readFileSync(path.resolve(rootDir, input), 'utf8');
+  console.log(`[query_pg] Loaded from rootDir/input: ${path.resolve(rootDir, input)} (${sql.length} chars)`);
 }
 
 // Security: Prevent agents from bypassing make migrate or corrupting data natively
@@ -31,13 +57,14 @@ if (!isSafeQuery) {
 */
 
 const sqlClient = process.env.DATABASE_URL
-  ? postgres(process.env.DATABASE_URL)
+  ? postgres(process.env.DATABASE_URL, { max: 1 })
   : postgres({
       host: process.env.POSTGRES_HOST || 'localhost',
       port: Number(process.env.POSTGRES_PORT || 5432),
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB || 'herobm_core',
+      database: process.env.TARGET_DB || process.env.POSTGRES_DB || 'herobm',
+      max: 1,
     });
 
 async function run() {

@@ -194,7 +194,7 @@ export default function IntegrationsSettingsPage() {
   const handleSaveConfig = async (provider: ProviderConfig) => {
     try {
       setSaving(true);
-      const payloadToSave = { ...configData, testPayload };
+      const payloadToSave = { config: configData, testPayload };
       await api.enrichmentControllerUpdateConfig(
         payloadToSave,
         { provider: provider.name }
@@ -242,7 +242,7 @@ export default function IntegrationsSettingsPage() {
            const currentConfigRes = await api.enrichmentControllerGetConfig({ provider: providerName });
            const currentData = (currentConfigRes.data as Record<string, unknown>) || {};
            await api.enrichmentControllerUpdateConfig(
-             { ...currentData, testPayload },
+             { config: currentData, testPayload },
              { provider: providerName }
            );
          } catch (e) {

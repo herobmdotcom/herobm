@@ -520,12 +520,11 @@ export default function AccountDetailPage({
           <DetailTabGrid
             title={tSales("title")}
             headerActions={
-              <Link
-                href={`/sales-orders/new?customerId=${params.id}`}
-                className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110"
-              >
-                {tSales("buttons.createOrder")}
-              </Link>
+              <Button asChild size="sm" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white">
+                <Link href={`/sales-orders/new?customerId=${params.id}`}>
+                  {tSales("buttons.createOrder")}
+                </Link>
+              </Button>
             }
             endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
             columns={orderColumns}

@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   Controller,
@@ -14,6 +13,8 @@ import {
   EnrichmentPayloadDto,
   EnrichmentResultDto,
   EnrichmentProviderDto,
+  UpdateEnrichmentConfigDto,
+  EnrichmentConfigResponseDto,
 } from './enrichment.dto';
 import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
 import { ApiOkResponse, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
@@ -144,15 +145,21 @@ export class EnrichmentController {
     summary: 'Update config',
     description: 'Update config for provider',
   })
-  @ApiBody({ schema: { type: 'object', additionalProperties: true } })
+  @ApiBody({ type: UpdateEnrichmentConfigDto })
   @ApiOkResponse({
     description: 'Update config for provider',
-    schema: { type: 'object', additionalProperties: true },
+    type: EnrichmentConfigResponseDto,
   })
   async updateConfig(
     @Query('provider') provider: string,
-    @Body() config: Record<string, unknown>,
+    @Body() dto: UpdateEnrichmentConfigDto,
   ) {
-    return this.enrichmentService.updateConfig(provider, config);
+    const configToSave: Record<string, unknown> = {
+      ...(dto.config || {}),
+      ...(dto.testPayload !== undefined
+        ? { testPayload: dto.testPayload }
+        : {}),
+    };
+    return this.enrichmentService.updateConfig(provider, configToSave);
   }
 }

@@ -129,16 +129,225 @@ export class GeneralLedgerResponseDto {
   glEntryId: string;
 }
 export class SettingsResponseDto {
-  id: string;
-  accountMetadataSchema?: unknown[];
+  @ApiPropertyOptional()
+  settingsId?: string;
+
+  @ApiPropertyOptional({ type: [Object] })
+  accountMetadataSchema?: unknown[] | null;
+
+  @ApiPropertyOptional()
+  fiscalYearStartMonth?: number;
+
+  @ApiPropertyOptional()
+  bankMatchDateToleranceDays?: number;
+
+  @ApiPropertyOptional()
+  defaultArAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultApAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultRevenueAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultCogsAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultSalesTaxAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultPurchaseTaxAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultExpenseAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultInventoryAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultGrniAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultShrinkageAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultPpvAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultFeeRevenueAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultDiscountsReceivedAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultDiscountsGivenAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultCostCenterId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultActivityId?: string | null;
+
+  @ApiPropertyOptional()
+  realisedFxGainAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  realisedFxLossAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  unrealisedFxGainAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  unrealisedFxLossAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  baseCurrency?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  supportedBatchPaymentFormats?: string[];
+
+  @ApiPropertyOptional()
+  revenueRoutingPrecedence?: string;
+
+  @ApiPropertyOptional()
+  expenseRoutingPrecedence?: string;
 }
+
 export class UpdateGlSettingsDto {
-  @ApiProperty({ required: false, type: [Object] })
+  @ApiPropertyOptional({ type: [Object] })
+  @IsOptional()
+  accountMetadataSchema?: unknown[] | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  fiscalYearStartMonth?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  bankMatchDateToleranceDays?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultArAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultApAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultRevenueAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultCogsAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultSalesTaxAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultPurchaseTaxAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultExpenseAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultInventoryAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultGrniAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultShrinkageAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultPpvAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultFeeRevenueAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultDiscountsReceivedAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultDiscountsGivenAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultCostCenterId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultActivityId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  realisedFxGainAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  realisedFxLossAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  unrealisedFxGainAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  unrealisedFxLossAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  baseCurrency?: string;
+
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
-  accountMetadataSchema?: unknown[];
+  supportedBatchPaymentFormats?: string[];
 
-  [key: string]: unknown;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  revenueRoutingPrecedence?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  expenseRoutingPrecedence?: string;
 }
 export class SuccessMessageResponseDto {
   success: boolean;
@@ -231,34 +440,6 @@ export class PaginatedJournalEntriesDto {
 export class PaginatedGeneralLedgerDto {
   data!: GeneralLedgerResponseDto[];
   meta!: Record<string, unknown>;
-}
-
-export class UpdateGLSettingsDto {
-  @IsOptional() @IsObject() accountMetadataSchema?: Record<string, unknown>;
-  @IsOptional() @IsNumber() fiscalYearStartMonth?: number;
-  @IsOptional() @IsString() defaultArAccountId?: string | null;
-  @IsOptional() @IsString() defaultApAccountId?: string | null;
-  @IsOptional() @IsString() defaultRevenueAccountId?: string | null;
-  @IsOptional() @IsString() defaultCogsAccountId?: string | null;
-  @IsOptional() @IsString() defaultSalesTaxAccountId?: string | null;
-  @IsOptional() @IsString() defaultPurchaseTaxAccountId?: string | null;
-  @IsOptional() @IsString() defaultExpenseAccountId?: string | null;
-  @IsOptional() @IsString() defaultInventoryAccountId?: string | null;
-  @IsOptional() @IsString() defaultGrniAccountId?: string | null;
-  @IsOptional() @IsString() defaultShrinkageAccountId?: string | null;
-  @IsOptional() @IsString() defaultFeeRevenueAccountId?: string | null;
-  @IsOptional() @IsString() defaultDiscountsReceivedAccountId?: string | null;
-  @IsOptional() @IsString() defaultDiscountsGivenAccountId?: string | null;
-  @IsOptional() @IsString() defaultCostCenterId?: string | null;
-  @IsOptional() @IsString() defaultActivityId?: string | null;
-  @IsOptional() @IsString() realisedFxGainAccountId?: string | null;
-  @IsOptional() @IsString() realisedFxLossAccountId?: string | null;
-  @IsOptional() @IsString() unrealisedFxGainAccountId?: string | null;
-  @IsOptional() @IsString() unrealisedFxLossAccountId?: string | null;
-  @IsOptional() @IsString() baseCurrency?: string;
-  @IsOptional() @IsArray() supportedBatchPaymentFormats?: string[];
-  @IsOptional() @IsString() revenueRoutingPrecedence?: string;
-  @IsOptional() @IsString() expenseRoutingPrecedence?: string;
 }
 
 export class RunFxRevaluationDto {

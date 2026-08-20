@@ -1,4 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsDateString,
+  IsUUID,
+  IsBoolean,
+} from 'class-validator';
 
 export class MatchedJournalLineDto {
   @ApiProperty()
@@ -58,50 +68,65 @@ export class BankStatementLinesResponseDto {
 }
 
 export class BankStatementConfirmMatchDto {
-  @ApiProperty({
-    required: false,
+  @ApiPropertyOptional({
     description:
       'Optional reconciliation ID to link the matched ledger line to',
   })
+  @IsOptional()
+  @IsString()
   reconciliationId?: string;
 }
 
 export class BankStatementManualMatchDto {
   @ApiProperty({ description: 'The journal line ID to link against' })
+  @IsString()
+  @IsNotEmpty()
   journalLineId!: string;
 
-  @ApiProperty({
-    required: false,
+  @ApiPropertyOptional({
     description:
       'Optional reconciliation ID to link the matched ledger line to',
   })
+  @IsOptional()
+  @IsString()
   reconciliationId?: string;
 }
 
 export class CreateBankStatementLineDto {
   @ApiProperty()
-  glAccountId: string;
+  @IsUUID()
+  @IsNotEmpty()
+  glAccountId!: string;
 
   @ApiProperty({ type: String, format: 'date' })
-  date: string;
+  @IsDateString()
+  @IsNotEmpty()
+  date!: string;
 
   @ApiProperty()
-  description: string;
+  @IsString()
+  @IsNotEmpty()
+  description!: string;
 
   @ApiProperty()
-  amount: number;
+  @IsNumber()
+  amount!: number;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
   reference?: string;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
   type?: string;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
   payee?: string;
 }
-
-import { IsArray, IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class BankStatementBulkMatchDto {
   @ApiProperty({ type: [String] })

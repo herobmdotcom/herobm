@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   Controller,
@@ -68,9 +67,10 @@ export class BusinessReportsController {
   @ApiOkResponse({ schema: { type: 'array', items: { type: 'object' } } })
   async runReport(
     @Param('slug') slug: string,
-    @Body() filters: RunBusinessReportDto,
+    @Body() dto: RunBusinessReportDto,
     @AuthUser() user: JwtUser,
   ) {
+    const filters = dto.filters ?? (dto as unknown as Record<string, unknown>);
     const data = await this.service.runReport(slug, filters, user);
     return data;
   }

@@ -1,5 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import {
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 
 export class EmptyBodyDto {}
 
@@ -14,10 +20,10 @@ export class ReportDto {
   @ApiProperty() id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() name!: string;
-  @ApiProperty({ required: false }) description?: string;
+  @ApiPropertyOptional() description?: string;
   @ApiProperty() template!: string;
-  @ApiProperty({ required: false }) outputNamePattern?: string;
-  @ApiProperty({ type: [String], required: false }) contexts?: string[];
+  @ApiPropertyOptional() outputNamePattern?: string;
+  @ApiPropertyOptional({ type: [String] }) contexts?: string[];
   @ApiProperty() isSystem!: boolean;
 }
 
@@ -40,28 +46,60 @@ export class RandomIdResponseDto {
 }
 
 export class CreateReportDto {
-  @ApiProperty() name!: string;
-  @ApiProperty() slug!: string;
-  @ApiProperty({ required: false }) description?: string;
-  @ApiProperty() template!: string;
-  @ApiProperty({ required: false }) outputNamePattern?: string;
-  @ApiProperty({ type: [String], required: false }) contexts?: string[];
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  slug!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  template!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  outputNamePattern?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  contexts?: string[];
 }
 
-export class UpdateReportDto {
-  @ApiProperty({ required: false }) name?: string;
-  @ApiProperty({ required: false }) slug?: string;
-  @ApiProperty({ required: false }) description?: string;
-  @ApiProperty({ required: false }) template?: string;
-  @ApiProperty({ required: false }) outputNamePattern?: string;
-  @ApiProperty({ type: [String], required: false }) contexts?: string[];
-}
+export class UpdateReportDto extends PartialType(CreateReportDto) {}
 
 export class PreviewReportDto {
-  @ApiProperty() template!: string;
-  @ApiProperty({ required: false }) mockData?: Record<string, unknown>;
-  @ApiProperty({ required: false }) hookSlug?: string;
-  @ApiProperty({ required: false }) entityId?: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  template!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  mockData?: Record<string, unknown>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  hookSlug?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  entityId?: string;
 }
 
 export class UpdateHookAssignmentDto {
@@ -74,21 +112,25 @@ export class UpdateHookAssignmentDto {
   contextSlug?: string;
 }
 
-export class RunHookBodyDto {
-  [key: string]: unknown;
-}
-
 export class RunHookOptionsDto {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({
+    description: 'Optional shipment ID for shipment/picking hooks',
+  })
+  @IsString()
+  @IsOptional()
+  shipmentId?: string;
+
+  @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   customPdfText?: string;
 
-  @ApiProperty({
-    required: false,
+  @ApiPropertyOptional({
     description: 'Deprecated legacy alias for customPdfText',
   })
   @IsString()
   @IsOptional()
   quoteIntroText?: string;
 }
+
+export class RunHookBodyDto extends RunHookOptionsDto {}

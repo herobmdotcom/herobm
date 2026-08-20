@@ -1094,7 +1094,9 @@ export const getBankFeedsControllerParseCsvUrl = () => {
 
 export const bankFeedsControllerParseCsv = async (fileUploadDto: FileUploadDto, options?: RequestInit): Promise<bankFeedsControllerParseCsvResponse> => {
     const formData = new FormData();
-formData.append(`file`, fileUploadDto.file)
+if(fileUploadDto.file !== undefined) {
+ formData.append(`file`, fileUploadDto.file)
+ }
 
   return customFetch<bankFeedsControllerParseCsvResponse>(getBankFeedsControllerParseCsvUrl(),
   {      
@@ -1133,7 +1135,9 @@ export const getBankFeedsControllerImportCsvUrl = () => {
 
 export const bankFeedsControllerImportCsv = async (importCsvDto: ImportCsvDto, options?: RequestInit): Promise<bankFeedsControllerImportCsvResponse> => {
     const formData = new FormData();
-formData.append(`file`, importCsvDto.file)
+if(importCsvDto.file !== undefined) {
+ formData.append(`file`, importCsvDto.file)
+ }
 formData.append(`glAccountId`, importCsvDto.glAccountId)
 formData.append(`profileId`, importCsvDto.profileId)
 

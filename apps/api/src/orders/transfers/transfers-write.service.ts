@@ -1,9 +1,10 @@
 import {
   Injectable,
+  Inject,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
@@ -28,6 +29,8 @@ import { TransfersCoreService } from './transfers-core.service';
 
 @Injectable()
 export class TransfersWriteService {
+  private readonly logger = new Logger(TransfersWriteService.name);
+
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly coreService: TransfersCoreService,

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsObject } from 'class-validator';
+import { IsOptional, IsObject, IsString } from 'class-validator';
 
 export class EnrichmentPayloadDto {
   @ApiPropertyOptional({
@@ -14,15 +14,20 @@ export class EnrichmentPayloadDto {
 }
 
 export class UpdateEnrichmentConfigDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Provider configuration JSON key-value pairs',
     type: Object,
   })
+  @IsOptional()
   @IsObject()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  config!: Record<string, any>;
+  config?: Record<string, unknown>;
 
-  [key: string]: unknown;
+  @ApiPropertyOptional({
+    description: 'Saved test payload string or JSON',
+  })
+  @IsOptional()
+  @IsString()
+  testPayload?: string;
 }
 
 export class EnrichmentResultDto {

@@ -42,10 +42,10 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => params.data ? (
         <div className="flex gap-1 items-center h-full">
-          <Button size="sm" variant="ghost" className="min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
+          <Button size="xs" variant="ghost" className="text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
             <span className="material-symbols-outlined text-[18px]">edit</span>
           </Button>
-          <Button size="sm" variant="ghost" className="text-red-500 hover:bg-red-50 min-h-0 h-8 px-2" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
+          <Button size="xs" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </Button>
         </div>

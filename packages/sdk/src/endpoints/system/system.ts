@@ -47,6 +47,7 @@ import type {
   EmailControllerRetryEmailBody,
   EmailControllerTestConnection200,
   EmptyBodyDto,
+  EnrichmentConfigResponseDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
   EnrichmentControllerLookupParams,
@@ -55,8 +56,6 @@ import type {
   EnrichmentControllerTestLookupParams,
   EnrichmentControllerTestLookupPost201,
   EnrichmentControllerTestLookupPostParams,
-  EnrichmentControllerUpdateConfig200,
-  EnrichmentControllerUpdateConfigBody,
   EnrichmentControllerUpdateConfigParams,
   EnrichmentPayloadDto,
   EnrichmentProviderDto,
@@ -118,6 +117,7 @@ import type {
   UpdateAppConfigDto,
   UpdateBusinessReportDto,
   UpdateDiscountMatrixDto,
+  UpdateEnrichmentConfigDto,
   UpdateHookAssignmentDto,
   UpdateMacroDto,
   UpdateOrganizationDto,
@@ -2187,7 +2187,7 @@ export const enrichmentControllerGetConfig = async (params: EnrichmentController
  * @summary Update config
  */
 export type enrichmentControllerUpdateConfigResponse200 = {
-  data: EnrichmentControllerUpdateConfig200
+  data: EnrichmentConfigResponseDto
   status: 200
 }
     
@@ -2213,7 +2213,7 @@ export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControl
   return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
 }
 
-export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: EnrichmentControllerUpdateConfigBody,
+export const enrichmentControllerUpdateConfig = async (updateEnrichmentConfigDto: UpdateEnrichmentConfigDto,
     params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
   
   return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
@@ -2222,7 +2222,7 @@ export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdat
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      enrichmentControllerUpdateConfigBody,)
+      updateEnrichmentConfigDto,)
   }
 );}
 

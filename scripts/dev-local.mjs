@@ -10,15 +10,18 @@ const args = process.argv.slice(2);
 let profile = "";
 let enableSwagger = "true";
 let enableMcp = "true";
+let dryRun = false;
 
 for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '-Profile' || arg === '--profile' || arg === '-p') {
+    if (arg === '-Profile' || arg === '--profile' || arg === '-p' || arg === '-TargetProfile' || arg === '--target-profile') {
         profile = args[++i];
     } else if (arg === '-NoSwagger' || arg === '--no-swagger') {
         enableSwagger = "false";
     } else if (arg === '-NoMcp' || arg === '--no-mcp') {
         enableMcp = "false";
+    } else if (arg === '--dry-run' || arg === '-DryRun') {
+        dryRun = true;
     }
 }
 
@@ -68,6 +71,11 @@ console.log(`\x1b[32mStarting local Dev Environment...\x1b[0m`);
 console.log(`\x1b[36mAPI will start on port ${apiPort}\x1b[0m`);
 console.log(`\x1b[36mPortal will start on port ${fePort}\x1b[0m`);
 console.log(`\x1b[36mWorker will start on port ${workerPort}\x1b[0m`);
+
+if (dryRun) {
+    console.log(`\x1b[32m[dry-run] Resolved profile: '${activeProfile}', envFile: '${envFile}', apiPort: ${apiPort}, fePort: ${fePort}, workerPort: ${workerPort}\x1b[0m`);
+    process.exit(0);
+}
 
 function startProcess(name, command, args, extraEnv) {
     const isWindows = process.platform === 'win32';

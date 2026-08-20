@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
@@ -86,7 +85,7 @@ export class OrderPickingController {
   pickLine(
     @Param('id') orderId: string,
     @Param('lineId') lineId: string,
-    @Body() dto: import('./dto').PickOrderLineDto,
+    @Body() dto: PickOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.pickingService.pickLine(

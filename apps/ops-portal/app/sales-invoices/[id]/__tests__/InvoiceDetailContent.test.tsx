@@ -30,12 +30,13 @@ jest.mock('@/components/SettingsProvider', () => ({
 
 const mockInvoiceDetailControllerChangeSalesInvoiceState = jest.fn().mockResolvedValue({});
 const mockInvoiceDetailControllerAdminMarkSalesInvoicePaid = jest.fn().mockResolvedValue({});
+const mockPdfTemplatesControllerRunHook = jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) });
 jest.mock('@herobm/sdk', () => ({
     __esModule: true,
     setSdkConfig: jest.fn(),
     invoiceDetailControllerChangeSalesInvoiceState: (...args: any[]) => mockInvoiceDetailControllerChangeSalesInvoiceState(...args),
     invoiceDetailControllerAdminMarkSalesInvoicePaid: (...args: any[]) => mockInvoiceDetailControllerAdminMarkSalesInvoicePaid(...args),
-    pdfTemplatesControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) }),
+    pdfTemplatesControllerRunHook: (...args: any[]) => mockPdfTemplatesControllerRunHook(...args),
 }));
 
 jest.mock('@/hooks/useDocumentTitle', () => ({
@@ -49,6 +50,8 @@ describe('InvoiceDetailContent', () => {
             writable: true,
             value: jest.fn(),
         });
+        window.URL.createObjectURL = jest.fn().mockReturnValue('blob:http://localhost/blob');
+        window.open = jest.fn();
     });
 
     beforeEach(() => {
@@ -115,5 +118,20 @@ describe('InvoiceDetailContent', () => {
         await user.click(markPaidBtn);
 
         expect(mockInvoiceDetailControllerAdminMarkSalesInvoicePaid).toHaveBeenCalledWith('inv-1', {});
+    });
+
+    it('allows printing invoice PDF', async () => {
+        const user = userEvent.setup();
+
+        render(<InvoiceDetailContent id="inv-1" />);
+        
+        const printBtn = screen.getByText('printInvoice');
+        await user.click(printBtn);
+
+        expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith('sales-invoice', {}, {
+            id: 'inv-1',
+            context: 'sales-invoice',
+        });
+        expect(window.open).toHaveBeenCalledWith('blob:http://localhost/blob', '_blank');
     });
 });

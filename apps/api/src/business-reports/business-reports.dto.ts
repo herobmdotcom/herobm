@@ -81,8 +81,6 @@ export class RunBusinessReportDto {
   @IsObject()
   @IsOptional()
   filters?: Record<string, unknown>;
-
-  [key: string]: unknown;
 }
 
 export class DeleteReportResponseDto {

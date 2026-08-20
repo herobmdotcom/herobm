@@ -7,6 +7,7 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
+import { formatAmount } from '@herobm/shared';
 
 export default function ReconciliationsPage() {
   const t = useTranslations('gl.reconciliations');
@@ -23,7 +24,7 @@ export default function ReconciliationsPage() {
       width: 180,
       valueFormatter: (params) => {
         if (params.value == null) return '';
-        return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(params.value);
+        return formatAmount(Number(params.value), 'AUD');
       }
     },
     { 

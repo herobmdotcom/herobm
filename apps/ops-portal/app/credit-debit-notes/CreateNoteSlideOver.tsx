@@ -277,10 +277,10 @@ export default function CreateNoteSlideOver({
             <Button
               type="button"
               variant="secondary"
+              size="sm"
               onClick={handleAddLine}
-              className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white border border-gray-200 hover:bg-gray-50 text-[#041627]"
             >
-              + Add Line
+              Add Line
             </Button>
           </div>
 

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
+import { formatAmount } from '@herobm/shared';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -50,7 +51,7 @@ export default function CustomersContent() {
       width: 140,
       type: 'numericColumn',
       valueFormatter: (p: { value?: number, data?: { currencyCode?: string } }) => 
-        p.value != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: p.data?.currencyCode || 'USD' }).format(p.value) : '—',
+        p.value != null ? formatAmount(p.value, p.data?.currencyCode || 'USD') : '—',
     },
     {
       field: 'totalOutstanding',
@@ -58,7 +59,7 @@ export default function CustomersContent() {
       width: 140,
       type: 'numericColumn',
       valueFormatter: (p: { value?: number, data?: { currencyCode?: string } }) => 
-        p.value != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: p.data?.currencyCode || 'USD' }).format(p.value) : '—',
+        p.value != null ? formatAmount(p.value, p.data?.currencyCode || 'USD') : '—',
     },
     {
       field: 'createdOn',

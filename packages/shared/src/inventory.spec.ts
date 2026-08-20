@@ -7,6 +7,7 @@ import {
   isShippableProductLine,
   formatPickBarcode,
   parsePickBarcode,
+  formatQuantity,
 } from './inventory';
 
 describe('Inventory Logic (Shared)', () => {
@@ -172,6 +173,35 @@ describe('Inventory Logic (Shared)', () => {
       expect(parsePickBarcode('   ')).toBeNull();
       expect(parsePickBarcode('PICK:ord-123:line-456')).toBeNull();
       expect(parsePickBarcode('INVALID')).toBeNull();
+    });
+  });
+
+  describe('formatQuantity', () => {
+    it('should format whole numbers without decimals', () => {
+      expect(formatQuantity(0)).toBe('0');
+      expect(formatQuantity(10)).toBe('10');
+      expect(formatQuantity('25')).toBe('25');
+      expect(formatQuantity(1000, 4, 'en-US')).toBe('1,000');
+    });
+
+    it('should format fractional numbers with natural decimals', () => {
+      expect(formatQuantity(9.93, 4, 'en-US')).toBe('9.93');
+      expect(formatQuantity('9.9300', 4, 'en-US')).toBe('9.93');
+      expect(formatQuantity(0.5, 4, 'en-US')).toBe('0.5');
+      expect(formatQuantity(1234.5678, 4, 'en-US')).toBe('1,234.5678');
+      expect(formatQuantity(1234.56789, 4, 'en-US')).toBe('1,234.5679');
+    });
+
+    it('should handle negative numbers correctly', () => {
+      expect(formatQuantity(-3, 4, 'en-US')).toBe('-3');
+      expect(formatQuantity('-15.75', 4, 'en-US')).toBe('-15.75');
+    });
+
+    it('should fallback to 0 for null/undefined/empty/invalid input', () => {
+      expect(formatQuantity(null)).toBe('0');
+      expect(formatQuantity(undefined)).toBe('0');
+      expect(formatQuantity('')).toBe('0');
+      expect(formatQuantity('abc')).toBe('0');
     });
   });
 });

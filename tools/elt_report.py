@@ -5,6 +5,11 @@ import argparse
 from datetime import datetime
 
 def load_env(profile=None):
+    if not profile:
+        active_prof_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.active_profile'))
+        if os.path.exists(active_prof_path):
+            with open(active_prof_path, 'r', encoding='utf-8') as f:
+                profile = f.read().strip()
     env_file = f".env.{profile}" if profile else ".env"
     env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', env_file))
     if os.path.exists(env_path):

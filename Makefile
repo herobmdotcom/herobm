@@ -106,11 +106,7 @@ ifeq ($(origin PROFILE),command line)
 else
   EFFECTIVE_PROFILE := $(ACTIVE_PROFILE)
 endif
-ifeq ($(OS),Windows_NT)
-  DEV_LOCAL_PROFILE_ARG = $(if $(EFFECTIVE_PROFILE),-TargetProfile $(EFFECTIVE_PROFILE))
-else
-  DEV_LOCAL_PROFILE_ARG = $(if $(EFFECTIVE_PROFILE),-Profile $(EFFECTIVE_PROFILE))
-endif
+DEV_LOCAL_PROFILE_ARG = $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
 
 ENV_FILE := $(if $(EFFECTIVE_PROFILE),.env.$(EFFECTIVE_PROFILE),.env)
 -include $(ENV_FILE)
@@ -667,10 +663,10 @@ test-structural:
 	@$(NPX) knip
 
 query-drizzle:
-	cd apps/api && $(NPX) tsx tools/query_drizzle.ts ../../tmp/test_query.ts
+	cd apps/api && $(NPX) tsx tools/query_drizzle.ts ../tmp/test_query.ts
 
 query-postgres:
-	cd apps/api && $(NPX) tsx tools/query_pg.ts ../../tmp/query.sql
+	cd apps/api && $(NPX) tsx tools/query_pg.ts ../tmp/query.sql
 
 test-heavy: $(if $(SKIP_STRUCTURAL),,test-structural)
 	@$(TEST_HEAVY_CMD)

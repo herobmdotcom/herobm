@@ -38,11 +38,11 @@ describe('Tabs Component', () => {
         tabs={tabs}
         activeTab="lines"
         onChange={jest.fn()}
-        actions={<button type="button">+ Add Line</button>}
+        actions={<button type="button">Add Line</button>}
       />,
     );
 
-    expect(screen.getByRole('button', { name: /\+ Add Line/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add Line/i })).toBeInTheDocument();
   });
 
   it('renders with custom status colors and badges', () => {

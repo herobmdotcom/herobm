@@ -10,10 +10,11 @@ const args = process.argv.slice(2);
 let profile = "";
 let enableSwagger = "true";
 let enableMcp = "true";
+let dryRun = false;
 
 for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '-Profile' || arg === '--profile' || arg === '-p') {
+    if (arg === '-Profile' || arg === '--profile' || arg === '-p' || arg === '-TargetProfile' || arg === '--target-profile') {
         profile = args[++i];
     } else if (arg === '-WithSwagger' || arg === '--with-swagger') {
         enableSwagger = "true";
@@ -23,6 +24,8 @@ for (let i = 0; i < args.length; i++) {
         enableMcp = "false";
     } else if (arg === '-Mcp' || arg === '--mcp') {
         enableMcp = "true";
+    } else if (arg === '--dry-run' || arg === '-DryRun') {
+        dryRun = true;
     }
 }
 
@@ -71,6 +74,11 @@ if (!envVars.WEBHOOK_URL) envVars.WEBHOOK_URL = `http://127.0.0.1:${apiPort}/int
 console.log(`\x1b[32mStarting local Prod Environment...\x1b[0m`);
 console.log(`\x1b[36mAPI will start on port ${apiPort}\x1b[0m`);
 console.log(`\x1b[36mPortal will start on port ${fePort}\x1b[0m`);
+
+if (dryRun) {
+    console.log(`\x1b[32m[dry-run] Resolved profile: '${activeProfile}', envFile: '${envFile}', apiPort: ${apiPort}, fePort: ${fePort}, workerPort: ${workerPort}\x1b[0m`);
+    process.exit(0);
+}
 
 function startProcess(name, command, args, extraEnv) {
     const isWindows = process.platform === 'win32';

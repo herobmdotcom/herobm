@@ -6,4 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface RunHookBodyDto { [key: string]: unknown }
+export interface RunHookBodyDto {
+  /** Optional shipment ID for shipment/picking hooks */
+  shipmentId?: string;
+  customPdfText?: string;
+  /** Deprecated legacy alias for customPdfText */
+  quoteIntroText?: string;
+}

@@ -11910,8 +11910,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "$ref": "#/components/schemas/UpdateEnrichmentConfigDto"
               }
             }
           }
@@ -11922,8 +11921,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EnrichmentConfigResponseDto"
                 }
               }
             }
@@ -22452,28 +22450,229 @@
       "SettingsResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "settingsId": {
             "type": "string"
           },
           "accountMetadataSchema": {
+            "nullable": true,
             "type": "array",
             "items": {
               "type": "object"
             }
+          },
+          "fiscalYearStartMonth": {
+            "type": "number"
+          },
+          "bankMatchDateToleranceDays": {
+            "type": "number"
+          },
+          "defaultArAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultApAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultRevenueAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCogsAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultSalesTaxAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultPurchaseTaxAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultExpenseAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultInventoryAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultGrniAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultShrinkageAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultPpvAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultFeeRevenueAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultDiscountsReceivedAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultDiscountsGivenAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCostCenterId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultActivityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "realisedFxGainAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "realisedFxLossAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "unrealisedFxGainAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "unrealisedFxLossAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string"
+          },
+          "supportedBatchPaymentFormats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revenueRoutingPrecedence": {
+            "type": "string"
+          },
+          "expenseRoutingPrecedence": {
+            "type": "string"
           }
-        },
-        "required": [
-          "id"
-        ]
+        }
       },
       "UpdateGlSettingsDto": {
         "type": "object",
         "properties": {
           "accountMetadataSchema": {
+            "nullable": true,
             "type": "array",
             "items": {
               "type": "object"
             }
+          },
+          "fiscalYearStartMonth": {
+            "type": "number"
+          },
+          "bankMatchDateToleranceDays": {
+            "type": "number"
+          },
+          "defaultArAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultApAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultRevenueAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCogsAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultSalesTaxAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultPurchaseTaxAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultExpenseAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultInventoryAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultGrniAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultShrinkageAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultPpvAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultFeeRevenueAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultDiscountsReceivedAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultDiscountsGivenAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCostCenterId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultActivityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "realisedFxGainAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "realisedFxLossAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "unrealisedFxGainAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "unrealisedFxLossAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string"
+          },
+          "supportedBatchPaymentFormats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revenueRoutingPrecedence": {
+            "type": "string"
+          },
+          "expenseRoutingPrecedence": {
+            "type": "string"
           }
         }
       },
@@ -22781,10 +22980,7 @@
             "format": "binary",
             "description": "The CSV file to upload"
           }
-        },
-        "required": [
-          "file"
-        ]
+        }
       },
       "ParseCsvResponseDto": {
         "type": "object",
@@ -22828,7 +23024,6 @@
           }
         },
         "required": [
-          "file",
           "glAccountId",
           "profileId"
         ]
@@ -23276,7 +23471,8 @@
         "type": "object",
         "properties": {
           "glAccountId": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "date": {
             "type": "string",
@@ -26380,7 +26576,19 @@
       },
       "RunHookBodyDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "description": "Optional shipment ID for shipment/picking hooks"
+          },
+          "customPdfText": {
+            "type": "string"
+          },
+          "quoteIntroText": {
+            "type": "string",
+            "description": "Deprecated legacy alias for customPdfText"
+          }
+        }
       },
       "HookDto": {
         "type": "object",
@@ -27334,6 +27542,30 @@
           "type",
           "supportedCountries",
           "schema"
+        ]
+      },
+      "UpdateEnrichmentConfigDto": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "object",
+            "description": "Provider configuration JSON key-value pairs"
+          },
+          "testPayload": {
+            "type": "string",
+            "description": "Saved test payload string or JSON"
+          }
+        }
+      },
+      "EnrichmentConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "config"
         ]
       },
       "PaymentResponseDto": {

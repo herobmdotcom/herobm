@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
@@ -121,7 +120,6 @@ export class SuppliersController {
     return this.suppliersService.findOne(id);
   }
 
-  // security-ignore: dto-validation
   @Patch(':id')
   @ApiBody({ type: UpdateSupplierDto })
   @CasbinAction('write')

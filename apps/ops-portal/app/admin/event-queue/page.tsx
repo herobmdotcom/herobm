@@ -236,13 +236,13 @@ export default function EventQueueDashboard() {
                       header: t('columns.actions'), align: 'right', width: 160,
                       render: (row) => (
                         <div className="flex gap-1 justify-end">
-                          <Button variant="secondary" size="sm" className="text-[10px]" onClick={() => handleViewEvents(row.eventType)}>
+                          <Button variant="secondary" size="xs" onClick={() => handleViewEvents(row.eventType)}>
                             {drawerType === row.eventType ? t('actions.hide') : t('actions.view')}
                           </Button>
                           {row.pending > 0 && (
                             <Button
-                              size="sm"
-                              className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/30"
+                              size="xs"
+                              className="bg-red-500/10 text-red-400 border border-red-500/30"
                               disabled={clearing === row.eventType}
                               onClick={() => handleClearEvents(row.eventType)}
                             >
@@ -278,8 +278,7 @@ export default function EventQueueDashboard() {
                               render: (evt) => (
                                 <Button
                                   variant="secondary"
-                                  size="sm"
-                                  className="text-[9px] px-1 py-0.5"
+                                  size="xs"
                                   onClick={() => setSlideOverEvent(evt)}
                                 >
                                   📄
@@ -328,7 +327,7 @@ export default function EventQueueDashboard() {
                     {
                       header: t('columns.payload'), width: 70,
                       render: (evt) => (
-                        <Button variant="secondary" size="sm" className="text-[10px]" onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
+                        <Button variant="secondary" size="xs" onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
                           📄
                         </Button>
                       )

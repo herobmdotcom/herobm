@@ -157,6 +157,7 @@ export {
   LEGACY_CUSTOM_LINE_ID,
   formatPickBarcode,
   parsePickBarcode,
+  formatQuantity,
 } from './inventory';
 export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType, PickBarcodePayload } from './inventory';
 

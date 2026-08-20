@@ -4,6 +4,7 @@ import {
   forwardRef,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { eq, and, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -36,6 +37,8 @@ import { PaymentsPostingService } from './payments-posting.service';
 
 @Injectable()
 export class PaymentsWriteService {
+  private readonly logger = new Logger(PaymentsWriteService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,

@@ -6,6 +6,7 @@ import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
+import { formatAmount } from '@herobm/shared';
 
 export default function MatchDetailsModal({ 
   matchGroupId, 
@@ -69,7 +70,7 @@ export default function MatchDetailsModal({
     }
   };
 
-  const formatCurrency = (val: number | string) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(val));
+  const formatCurrency = (val: number | string) => formatAmount(Number(val), 'AUD');
 
   const handleUndo = async () => {
     try {

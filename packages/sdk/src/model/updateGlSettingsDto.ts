@@ -8,5 +8,52 @@
 import type { UpdateGlSettingsDtoAccountMetadataSchemaItem } from './updateGlSettingsDtoAccountMetadataSchemaItem';
 
 export interface UpdateGlSettingsDto {
-  accountMetadataSchema?: UpdateGlSettingsDtoAccountMetadataSchemaItem[];
+  /** @nullable */
+  accountMetadataSchema?: UpdateGlSettingsDtoAccountMetadataSchemaItem[] | null;
+  fiscalYearStartMonth?: number;
+  bankMatchDateToleranceDays?: number;
+  /** @nullable */
+  defaultArAccountId?: string | null;
+  /** @nullable */
+  defaultApAccountId?: string | null;
+  /** @nullable */
+  defaultRevenueAccountId?: string | null;
+  /** @nullable */
+  defaultCogsAccountId?: string | null;
+  /** @nullable */
+  defaultSalesTaxAccountId?: string | null;
+  /** @nullable */
+  defaultPurchaseTaxAccountId?: string | null;
+  /** @nullable */
+  defaultExpenseAccountId?: string | null;
+  /** @nullable */
+  defaultInventoryAccountId?: string | null;
+  /** @nullable */
+  defaultGrniAccountId?: string | null;
+  /** @nullable */
+  defaultShrinkageAccountId?: string | null;
+  /** @nullable */
+  defaultPpvAccountId?: string | null;
+  /** @nullable */
+  defaultFeeRevenueAccountId?: string | null;
+  /** @nullable */
+  defaultDiscountsReceivedAccountId?: string | null;
+  /** @nullable */
+  defaultDiscountsGivenAccountId?: string | null;
+  /** @nullable */
+  defaultCostCenterId?: string | null;
+  /** @nullable */
+  defaultActivityId?: string | null;
+  /** @nullable */
+  realisedFxGainAccountId?: string | null;
+  /** @nullable */
+  realisedFxLossAccountId?: string | null;
+  /** @nullable */
+  unrealisedFxGainAccountId?: string | null;
+  /** @nullable */
+  unrealisedFxLossAccountId?: string | null;
+  baseCurrency?: string;
+  supportedBatchPaymentFormats?: string[];
+  revenueRoutingPrecedence?: string;
+  expenseRoutingPrecedence?: string;
 }

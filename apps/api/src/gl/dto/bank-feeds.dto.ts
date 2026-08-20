@@ -98,9 +98,11 @@ export class CreateReconciliationRuleDto {
   payeeConditionValue?: string;
 
   @IsOptional()
+  @IsNumber()
   amountMin?: number;
 
   @IsOptional()
+  @IsNumber()
   amountMax?: number;
 
   @IsUUID()
@@ -141,7 +143,8 @@ export class ImportCsvDto {
     format: 'binary',
     description: 'The CSV file to import',
   })
-  file: unknown;
+  @IsOptional()
+  file?: unknown;
 
   @ApiProperty()
   @IsUUID()
@@ -158,7 +161,8 @@ export class FileUploadDto {
     format: 'binary',
     description: 'The CSV file to upload',
   })
-  file: unknown;
+  @IsOptional()
+  file?: unknown;
 }
 
 export class MappingProfileResponseDto extends CreateMappingProfileDto {

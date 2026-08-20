@@ -8,7 +8,14 @@ import { EnvService } from './env.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: process.env.ENV_FILE
+        ? [
+            `../../${process.env.ENV_FILE}`,
+            process.env.ENV_FILE,
+            '../../.env',
+            '.env',
+          ]
+        : ['../../.env', '.env'],
       validate: validateEnv,
     }),
   ],

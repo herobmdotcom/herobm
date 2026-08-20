@@ -13,3 +13,6 @@ export function formatLocationDisplay(loc: { code?: string; name?: string; locat
   
   return `${code} \u2014 ${name}`;
 }
+
+export { formatQuantity } from '@herobm/shared';
+

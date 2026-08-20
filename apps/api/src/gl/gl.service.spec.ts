@@ -792,4 +792,77 @@ describe('GlService', () => {
       expect(cnEntry?.partyName).toBe('Test Party');
     });
   });
+
+  describe('updateSettings', () => {
+    it('should create new settings if none exist', async () => {
+      const arAccountId = randomUUID();
+      await pg.db.insert(glAccounts).values({
+        glAccountId: arAccountId,
+        accountCode: 'AR-100',
+        name: 'Accounts Receivable',
+        accountType: 'asset',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+        isSystem: false,
+        isBankAccount: false,
+      });
+
+      const updated = await service.updateSettings({
+        fiscalYearStartMonth: 7,
+        bankMatchDateToleranceDays: 0,
+        baseCurrency: 'AUD',
+        revenueRoutingPrecedence: 'customer_first',
+        expenseRoutingPrecedence: 'supplier_first',
+        defaultArAccountId: arAccountId,
+      });
+      expect(updated.defaultArAccountId).toBe(arAccountId);
+    });
+
+    it('should update existing settings when provided valid fields', async () => {
+      const arAccountId = randomUUID();
+      const revAccountId = randomUUID();
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: arAccountId,
+          accountCode: 'AR-200',
+          name: 'Accounts Receivable',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+        },
+        {
+          glAccountId: revAccountId,
+          accountCode: 'REV-200',
+          name: 'Sales Revenue',
+          accountType: 'revenue',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+        },
+      ]);
+
+      await pg.db.insert(glSettings).values({
+        settingsId: randomUUID(),
+        fiscalYearStartMonth: 7,
+        bankMatchDateToleranceDays: 0,
+        baseCurrency: 'AUD',
+        revenueRoutingPrecedence: 'customer_first',
+        expenseRoutingPrecedence: 'supplier_first',
+      });
+
+      const updated = await service.updateSettings({
+        defaultArAccountId: arAccountId,
+        defaultRevenueAccountId: revAccountId,
+      });
+
+      expect(updated.defaultArAccountId).toBe(arAccountId);
+      expect(updated.defaultRevenueAccountId).toBe(revAccountId);
+    });
+  });
 });

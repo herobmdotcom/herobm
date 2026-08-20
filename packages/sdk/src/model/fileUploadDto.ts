@@ -8,5 +8,5 @@
 
 export interface FileUploadDto {
   /** The CSV file to upload */
-  file: Blob;
+  file?: Blob;
 }

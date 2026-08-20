@@ -8,6 +8,7 @@ import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
+import { formatAmount } from '@herobm/shared';
 
 export default function AutoMatchPreviewModal({
   isOpen,
@@ -34,7 +35,7 @@ export default function AutoMatchPreviewModal({
   const tCommon = useTranslations('common');
   const t = useTranslations('admin.reconciliations');
 
-  const formatCurrency = (val: number | string) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(val));
+  const formatCurrency = (val: number | string) => formatAmount(Number(val), 'AUD');
   const formatDate = (dateStr: string) => formatLocalDate(dateStr, undefined, '');
 
   useEffect(() => {

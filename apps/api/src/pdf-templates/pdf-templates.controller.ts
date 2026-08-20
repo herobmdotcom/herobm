@@ -1,4 +1,3 @@
-// security-ignore: dto-validation
 import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
@@ -68,12 +67,14 @@ export class PdfTemplatesController {
       throw new UnauthorizedException('Missing id or context parameter');
     }
 
+    const options = body ? ({ ...body } as Record<string, unknown>) : undefined;
+
     const { pdfBuffer, fileName } = await this.pdfTemplatesService.runHook(
       hookSlug,
       id,
       context,
       user,
-      body,
+      options,
     );
 
     res.set({
