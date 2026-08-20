@@ -94,7 +94,7 @@ describe('OrderDetailsCard - Analysis Code', () => {
     expect(screen.getByText('LEGACY_CODE (Custom)')).toBeInTheDocument();
   });
 
-  it('falls back to input when no analysis codes are configured', () => {
+  it('renders select dropdown with None and custom option when no analysis codes are configured', () => {
     mockUseSettingsReturn = {
       app: {
         salesAnalysisCodes: [],
@@ -120,7 +120,8 @@ describe('OrderDetailsCard - Analysis Code', () => {
       />
     );
 
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText('e.g. Q3_PROMO')).toBeInTheDocument();
+    const select = screen.getByRole('combobox');
+    expect(select).toBeInTheDocument();
+    expect(screen.getByText('CUSTOM (Custom)')).toBeInTheDocument();
   });
 });

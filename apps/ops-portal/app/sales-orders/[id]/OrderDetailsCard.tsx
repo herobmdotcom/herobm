@@ -150,39 +150,28 @@ export default function OrderDetailsCard({
                     <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         Analysis Code
                     </label>
-                    {configuredAnalysisCodes.length > 0 ? (
-                        <select
-                            className="input w-full"
-                            disabled={!isOrderDetailsEditable}
-                            value={editAnalysisCode}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setEditAnalysisCode(val);
-                                saveHeader({ customFields: { analysisCode: val || undefined } });
-                            }}
-                        >
-                            <option value="">— None —</option>
-                            {configuredAnalysisCodes.map((c) => (
-                                <option key={c.value} value={c.value}>
-                                    {c.value}
-                                </option>
-                            ))}
-                            {editAnalysisCode && !configuredAnalysisCodes.some((c) => c.value === editAnalysisCode) && (
-                                <option value={editAnalysisCode}>
-                                    {editAnalysisCode} (Custom)
-                                </option>
-                            )}
-                        </select>
-                    ) : (
-                        <input
-                            className="input w-full"
-                            disabled={!isOrderDetailsEditable}
-                            value={editAnalysisCode}
-                            onChange={(e) => setEditAnalysisCode(e.target.value)}
-                            onBlur={() => saveHeader()}
-                            placeholder="e.g. Q3_PROMO"
-                        />
-                    )}
+                    <select
+                        className="input w-full"
+                        disabled={!isOrderDetailsEditable}
+                        value={editAnalysisCode}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setEditAnalysisCode(val);
+                            saveHeader({ customFields: { analysisCode: val || undefined } });
+                        }}
+                    >
+                        <option value="">— None —</option>
+                        {configuredAnalysisCodes.map((c) => (
+                            <option key={c.value} value={c.value}>
+                                {c.value}
+                            </option>
+                        ))}
+                        {editAnalysisCode && !configuredAnalysisCodes.some((c) => c.value === editAnalysisCode) && (
+                            <option value={editAnalysisCode}>
+                                {editAnalysisCode} (Custom)
+                            </option>
+                        )}
+                    </select>
                 </div>
 
                 <div className="min-w-0 col-span-1 md:col-span-2">

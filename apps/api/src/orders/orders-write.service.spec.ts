@@ -631,10 +631,31 @@ describe('OrdersWriteService', () => {
       expect(result).toBeDefined();
     });
 
-    it('should reject update on invoiced order', async () => {
+    it('should allow metadata updates (name, notes, customFields) on invoiced order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.INVOICED);
+      const result = await service.update(
+        order.salesOrderId,
+        {
+          name: 'Updated Order Name',
+          notes: 'Updated notes',
+          customFields: { analysisCode: 'PROMO' },
+        },
+        'admin',
+      );
+      expect(result).toBeDefined();
+      expect(result.name).toBe('Updated Order Name');
+      expect(result.notes).toBe('Updated notes');
+      expect(result.customFields).toEqual({ analysisCode: 'PROMO' });
+    });
+
+    it('should reject fulfillmentLocationId change on invoiced order', async () => {
       const { order } = await setupForUpdate(SALES_ORDER_STATE.INVOICED);
       await expect(
-        service.update(order.salesOrderId, { name: 'Test' }, 'admin'),
+        service.update(
+          order.salesOrderId,
+          { fulfillmentLocationId: 'different-loc' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 

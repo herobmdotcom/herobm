@@ -562,34 +562,24 @@ export default function NewOrderPage() {
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Analysis Code
               </label>
-              {configuredAnalysisCodes.length > 0 ? (
-                <select
-                  id="order-analysis-code"
-                  className="input w-full"
-                  value={analysisCode}
-                  onChange={(e) => setAnalysisCode(e.target.value)}
-                >
-                  <option value="">— None —</option>
-                  {configuredAnalysisCodes.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.value}
-                    </option>
-                  ))}
-                  {analysisCode && !configuredAnalysisCodes.some((c) => c.value === analysisCode) && (
-                    <option value={analysisCode}>
-                      {analysisCode} (Custom)
-                    </option>
-                  )}
-                </select>
-              ) : (
-                <input
-                  id="order-analysis-code"
-                  className="input"
-                  placeholder="e.g. Q3_PROMO"
-                  value={analysisCode}
-                  onChange={(e) => setAnalysisCode(e.target.value)}
-                />
-              )}
+              <select
+                id="order-analysis-code"
+                className="input w-full"
+                value={analysisCode}
+                onChange={(e) => setAnalysisCode(e.target.value)}
+              >
+                <option value="">— None —</option>
+                {configuredAnalysisCodes.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.value}
+                  </option>
+                ))}
+                {analysisCode && !configuredAnalysisCodes.some((c) => c.value === analysisCode) && (
+                  <option value={analysisCode}>
+                    {analysisCode} (Custom)
+                  </option>
+                )}
+              </select>
             </div>
 
 

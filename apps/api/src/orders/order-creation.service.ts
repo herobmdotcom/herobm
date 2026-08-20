@@ -464,12 +464,19 @@ export class OrderCreationService {
   async update(id: string, dto: UpdateOrderDto, actor: string) {
     const existing = await this.ordersQueryService.findOrder(id);
 
-    if (
-      existing.stateCode === SALES_ORDER_STATE.INVOICED ||
-      existing.stateCode === SALES_ORDER_STATE.CANCELLED
-    ) {
+    if (existing.stateCode === SALES_ORDER_STATE.CANCELLED) {
       throw new BadRequestException(
         `Cannot update order in state '${existing.stateCode}'`,
+      );
+    }
+
+    if (
+      existing.stateCode === SALES_ORDER_STATE.INVOICED &&
+      dto.fulfillmentLocationId !== undefined &&
+      dto.fulfillmentLocationId !== existing.fulfillmentLocationId
+    ) {
+      throw new BadRequestException(
+        'Cannot modify fulfillment location on an invoiced order',
       );
     }
 
