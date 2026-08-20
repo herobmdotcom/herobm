@@ -47,8 +47,8 @@ Displays real-time events across all departments:
 
 ### 3. Quick Actions
 Direct shortcuts to common daily workflows:
-- **+ New Sales Order**: Create a draft quotation or sales order.
-- **+ New Purchase Order**: Raise a supplier purchase order.
+- **New Sales Order**: Create a draft quotation or sales order.
+- **New Purchase Order**: Raise a supplier purchase order.
 
 ---
 

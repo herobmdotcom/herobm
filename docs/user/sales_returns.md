@@ -60,7 +60,7 @@ stateDiagram-v2
 
 ### 1. Creating a Sales Return
 1. Go to **Sales** → **Sales Returns** (`/sales-returns`).
-2. Click **+ New Return** and select the original **Sales Order**.
+2. Click **New Return** and select the original **Sales Order**.
 3. Select which line items are being returned and enter the **Quantity Returned**.
 4. Select a **Return Reason** for each item.
 5. (Optional) Enter a **Restocking Fee** if applicable.

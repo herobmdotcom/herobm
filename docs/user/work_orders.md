@@ -61,7 +61,7 @@ stateDiagram-v2
 
 ### 1. Creating and Completing a Work Order
 1. Go to **Manufacturing** → **Work Orders** (`/work-orders`).
-2. Click **+ New Work Order**.
+2. Click **New Work Order**.
 3. Select the **Finished Product** to manufacture and enter the **Quantity to Produce**.
 4. The system loads the default **Bill of Materials (BOM)** component list.
 5. Click **Release Order** to reserve raw materials in the warehouse.

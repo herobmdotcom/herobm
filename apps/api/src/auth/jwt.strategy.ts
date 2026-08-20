@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users } from '@herobm/db-schema';
+import { EnvService } from '../common/config/env.service';
 
 export interface JwtPayload {
   sub: string;
@@ -14,18 +15,14 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly env: EnvService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: (() => {
-        const secret = process.env.JWT_SECRET;
-        if (!secret)
-          throw new Error(
-            'FATAL: JWT_SECRET environment variable is not set. Check your .env file.',
-          );
-        return secret;
-      })(),
+      secretOrKey: env.jwtSecret,
     });
   }
 

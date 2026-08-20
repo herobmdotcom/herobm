@@ -60,7 +60,7 @@ stateDiagram-v2
 
 ### 1. Creating an Inter-Warehouse Transfer
 1. Go to **Inventory** → **Transfers** (`/inventory/transfers`).
-2. Click **+ New Transfer**.
+2. Click **New Transfer**.
 3. Select the **Source Warehouse** and **Destination Warehouse**.
 4. Add line items and transfer quantities.
 5. Click **Dispatch Transfer** when goods leave the origin facility.
@@ -68,7 +68,7 @@ stateDiagram-v2
 
 ### 2. Placing Items in Quarantine
 1. Go to **Inventory** → **Quarantine** (`/inventory/quarantine`).
-2. Click **+ Move to Quarantine**.
+2. Click **Move to Quarantine**.
 3. Select the product, quantity, origin bin, and **Quarantine Reason**.
 4. Once inspected, click **Release from Quarantine** to return items to an active storage bin.
 

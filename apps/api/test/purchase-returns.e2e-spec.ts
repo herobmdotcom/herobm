@@ -12,7 +12,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
 import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
@@ -32,8 +31,6 @@ describe('API E2E — Purchase Order Returns', () => {
   let sourceBinId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

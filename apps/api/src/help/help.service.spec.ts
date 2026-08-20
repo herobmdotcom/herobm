@@ -218,5 +218,30 @@ Admin only doc.
       expect(resultsByContent.length).toBeGreaterThan(0);
       expect(resultsByContent[0].id).toBe('invoices');
     });
+
+    it('should successfully load real user docs and match scan-to-dispatch route', async () => {
+      const realDocsDir = path.resolve(__dirname, '../../../../docs/user');
+      if (fs.existsSync(realDocsDir)) {
+        await service.reloadDocs(realDocsDir);
+        const allTopics = await service.getTopics('admin');
+        expect(allTopics.length).toBeGreaterThan(20);
+
+        const scanContext = await service.getContextHelp(
+          '/inventory/shipping/scan-to-dispatch',
+          'admin',
+        );
+        expect(scanContext.topic).toBeDefined();
+        expect(scanContext.topic?.id).toBe('inventory-shipping');
+        expect(scanContext.matchedRoute).toBe(
+          '/inventory/shipping/scan-to-dispatch',
+        );
+
+        const searchResults = await service.search('scan to dispatch', 'admin');
+        expect(searchResults.length).toBeGreaterThan(0);
+        expect(searchResults.some((r) => r.id === 'inventory-shipping')).toBe(
+          true,
+        );
+      }
+    });
   });
 });

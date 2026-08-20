@@ -66,7 +66,7 @@ Configurable rules (`/reconciliations/rules`) can automatically detect:
 
 ### 1. Reconciling a Bank Statement
 1. Go to **Finance** → **Bank Rec'n** → **Statements** (`/reconciliations`).
-2. Click **+ Import Statement** and upload the bank CSV/OFX file.
+2. Click **Import Statement** and upload the bank CSV/OFX file.
 3. Review the side-by-side matching screen:
    - Left side: Bank statement lines.
    - Right side: Unmatched GL payments and receipts.

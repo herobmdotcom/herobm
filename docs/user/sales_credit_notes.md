@@ -57,7 +57,7 @@ Posting a credit note creates an automatic reversing entry in the General Ledger
 
 ### 1. Creating a Standalone Credit Note
 1. Go to **Sales** → **Credit Notes** (`/sales-credit-notes`).
-2. Click **+ New Credit Note**.
+2. Click **New Credit Note**.
 3. Select the **Customer** and (optional) linked **Sales Invoice**.
 4. Add line descriptions, credited amounts, and tax classifications.
 5. Click **Post Credit Note**.

@@ -8,21 +8,18 @@ import { CasbinGuard } from './casbin.guard';
 import { CasbinEnforcerProvider, CASBIN_ENFORCER } from './casbin.provider';
 
 import { ApiKeyStrategy } from './api-key.strategy';
+import { EnvService } from '../common/config/env.service';
 
 @Global()
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: (() => {
-        const s = process.env.JWT_SECRET;
-        if (!s)
-          throw new Error(
-            'FATAL: JWT_SECRET environment variable is not set. Check your .env file.',
-          );
-        return s;
-      })(),
-      signOptions: { expiresIn: '8h' },
+    JwtModule.registerAsync({
+      inject: [EnvService],
+      useFactory: (env: EnvService) => ({
+        secret: env.jwtSecret,
+        signOptions: { expiresIn: '8h' },
+      }),
     }),
   ],
   controllers: [AuthController],

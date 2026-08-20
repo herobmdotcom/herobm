@@ -59,7 +59,7 @@ stateDiagram-v2
 
 ### 1. Creating and Sending a Quote
 1. Go to **Sales** → **Sales Quotes** (`/sales-quotes`), which shows orders in draft/quoted states.
-2. Click **+ New Quote** (this creates a new Sales Order).
+2. Click **New Quote** (this creates a new Sales Order).
 3. Select the **Customer**. Price scale, currency, and addresses fill automatically.
 4. Add line items, quantities, unit prices, and discounts.
 5. Click **Save as Draft**.

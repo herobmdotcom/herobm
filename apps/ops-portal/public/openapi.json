@@ -14062,6 +14062,29 @@
         ]
       }
     },
+    "/health": {
+      "get": {
+        "description": "Returns operational readiness for container orchestration health checks.",
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "System Healthcheck",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/purchase-orders": {
       "post": {
         "description": "Create a new purchase order.",
@@ -28369,6 +28392,10 @@
         "required": [
           "message"
         ]
+      },
+      "HealthResponseDto": {
+        "type": "object",
+        "properties": {}
       },
       "CreatePurchaseOrderLineDto": {
         "type": "object",

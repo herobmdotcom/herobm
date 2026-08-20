@@ -5,10 +5,12 @@ import {
   Logger,
   Inject,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { EnvService } from '../common/config/env.service';
 import {
   pdfTemplates,
   pdfTemplateHooks,
@@ -39,6 +41,7 @@ export class PdfTemplatesService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly registry: DataSourcesRegistry,
     @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
+    @Optional() private readonly env?: EnvService,
   ) {}
 
   async runHook(
@@ -416,7 +419,8 @@ export class PdfTemplatesService {
         }
       }
 
-      const typstBinary = process.env.TYPST_BINARY_PATH || 'typst';
+      const typstBinary =
+        this.env?.typstBinaryPath || process.env.TYPST_BINARY_PATH || 'typst';
       await execAsync(
         `"${typstBinary}" compile "${typstFile}" "${pdfFile}" --input data="${jobId}.json"`,
       );

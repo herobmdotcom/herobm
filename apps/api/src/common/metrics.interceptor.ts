@@ -6,25 +6,26 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
-import { Histogram, Counter } from 'prom-client';
+import { getMeter } from '@herobm/shared';
 
 /**
  * Intercepts every HTTP request to:
  * 1. Log structured request/response data (method, path, status, duration)
- * 2. Record Prometheus metrics (request count + latency histogram)
+ * 2. Record OpenTelemetry metrics (request count + latency histogram sockets)
  */
 
-const httpRequestDuration = new Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
-});
+const meter = getMeter('herobm-api');
 
-const httpRequestTotal = new Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code'],
+const httpRequestDuration = meter.createHistogram(
+  'http_request_duration_seconds',
+  {
+    description: 'Duration of HTTP requests in seconds',
+    unit: 's',
+  },
+);
+
+const httpRequestTotal = meter.createCounter('http_requests_total', {
+  description: 'Total number of HTTP requests',
 });
 
 @Injectable()
@@ -46,10 +47,17 @@ export class MetricsInterceptor implements NestInterceptor {
           // Route label uses the controller path pattern, not the actual URL
           const route = req.route?.path ?? url.split('?')[0];
 
-          httpRequestDuration
-            .labels(method, route, String(statusCode))
-            .observe(duration);
-          httpRequestTotal.labels(method, route, String(statusCode)).inc();
+          const attributes = {
+            'http.method': method,
+            'http.route': route,
+            'http.status_code': statusCode,
+            method,
+            route,
+            status_code: String(statusCode),
+          };
+
+          httpRequestDuration.record(duration, attributes);
+          httpRequestTotal.add(1, attributes);
 
           this.logger.log(
             `${method} ${url} ${statusCode} ${(duration * 1000).toFixed(0)}ms`,
@@ -60,10 +68,17 @@ export class MetricsInterceptor implements NestInterceptor {
           const statusCode = err.status ?? 500;
           const route = req.route?.path ?? url.split('?')[0];
 
-          httpRequestDuration
-            .labels(method, route, String(statusCode))
-            .observe(duration);
-          httpRequestTotal.labels(method, route, String(statusCode)).inc();
+          const attributes = {
+            'http.method': method,
+            'http.route': route,
+            'http.status_code': statusCode,
+            method,
+            route,
+            status_code: String(statusCode),
+          };
+
+          httpRequestDuration.record(duration, attributes);
+          httpRequestTotal.add(1, attributes);
 
           this.logger.warn(
             `${method} ${url} ${statusCode} ${(duration * 1000).toFixed(0)}ms — ${err.message}`,

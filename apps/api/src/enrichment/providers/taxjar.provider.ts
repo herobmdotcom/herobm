@@ -1,15 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   IEnrichmentProvider,
   EnrichmentResult,
 } from './enrichment-provider.interface';
 import { getErrorMessage } from '@herobm/shared';
-
+import { EnvService } from '../../common/config/env.service';
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
 
 @Injectable()
 export class TaxJarProvider implements IEnrichmentProvider {
-  constructor(private readonly logger: IntegrationLoggerService) {
+  constructor(
+    private readonly logger: IntegrationLoggerService,
+    @Optional() private readonly env?: EnvService,
+  ) {
     this.logger.setContext(TaxJarProvider.name);
   }
 
@@ -82,7 +85,10 @@ export class TaxJarProvider implements IEnrichmentProvider {
       };
     }
 
-    const apiKey = (config?.apiKey as string) || process.env.TAXJAR_API_KEY;
+    const apiKey =
+      (config?.apiKey as string) ||
+      this.env?.get('TAXJAR_API_KEY') ||
+      process.env.TAXJAR_API_KEY;
     if (!apiKey) {
       this.logger.error(
         'TaxJar API key is missing from config and environment',
@@ -93,8 +99,8 @@ export class TaxJarProvider implements IEnrichmentProvider {
       };
     }
 
-    const isSandbox =
-      config?.sandbox !== false && process.env.TAXJAR_ENV !== 'production';
+    const taxjarEnv = this.env?.get('TAXJAR_ENV') || process.env.TAXJAR_ENV;
+    const isSandbox = config?.sandbox !== false && taxjarEnv !== 'production';
     const baseUrl = isSandbox
       ? 'https://api.sandbox.taxjar.com/v2'
       : 'https://api.taxjar.com/v2';

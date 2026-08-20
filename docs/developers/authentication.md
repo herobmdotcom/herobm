@@ -7,7 +7,7 @@ The HeroBM API uses API Keys to authenticate external requests. API keys should 
 You can generate an API key in the HeroBM Operations Portal:
 
 1. Navigate to **Admin > Developers**.
-2. Click **+ Create Key**.
+2. Click **Create Key**.
 3. Copy the generated `secretKey`. 
 
 > [!WARNING]

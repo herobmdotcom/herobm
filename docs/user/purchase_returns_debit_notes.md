@@ -59,7 +59,7 @@ Posting a debit note reduces your liability to the supplier:
 
 ### 1. Returning Goods to a Supplier
 1. Go to **Purchasing** → **Purchase Returns** (`/purchase-orders/returns`).
-2. Click **+ New Purchase Return** and select the **Purchase Order**.
+2. Click **New Purchase Return** and select the **Purchase Order**.
 3. Choose the items and quantities to return and select a **Reason Code**.
 4. Click **Confirm Return**.
 5. Warehouse staff pack and dispatch the items via **Inventory** → **Shipping** → **Supplier Returns**.

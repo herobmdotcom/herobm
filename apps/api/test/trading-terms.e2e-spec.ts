@@ -4,7 +4,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import { CreditAssessmentService } from '../src/customers/credit-assessment.service';
 
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
@@ -25,7 +24,6 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
   let salesAccountId: string;
 
   beforeAll(async () => {
-    register.clear();
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

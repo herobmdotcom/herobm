@@ -59,7 +59,7 @@ flowchart LR
 
 ### 1. Recording a Customer Payment
 1. Go to **Finance** → **Payments** (`/payments`).
-2. Click **+ New Receipt**.
+2. Click **New Receipt**.
 3. Select the **Customer** and the target **Bank Account**.
 4. Enter the **Payment Date**, **Payment Method**, and **Amount Received**.
 5. In the open invoices table, check the invoices being settled (or click **Auto-Allocate Oldest First**).

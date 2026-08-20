@@ -13,7 +13,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import {
   CUSTOMER_STATE,
@@ -38,8 +37,6 @@ describe('Archive E2E — Full Round-Trip', () => {
   let validLocationId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

@@ -61,7 +61,7 @@ $$\sum \text{Debits} = \sum \text{Credits}$$
 
 ### 1. Creating a Manual Journal Entry
 1. Go to **Finance** → **General Ledger** → **Journal Entries** (`/general-ledger/journal-entries`).
-2. Click **+ New Journal Entry**.
+2. Click **New Journal Entry**.
 3. Enter the **Transaction Date** and a clear **Description / Reference**.
 4. Add line items: select GL accounts and enter Debit and Credit amounts.
 5. Verify that total debits exactly equal total credits.

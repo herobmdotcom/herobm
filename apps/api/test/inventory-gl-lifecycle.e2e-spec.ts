@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { register } from 'prom-client';
 import request from 'supertest';
 import * as crypto from 'crypto';
 import { eq, sql, and } from 'drizzle-orm';
@@ -36,8 +35,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
   let receiptLineId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

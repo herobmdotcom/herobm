@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import * as crypto from 'crypto';
 
 import request from 'supertest';
@@ -685,7 +684,6 @@ describe('API E2E — Ledger Symmetry Register', () => {
   ];
 
   beforeAll(async () => {
-    register.clear();
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

@@ -22,7 +22,7 @@ Webhooks allow external applications to receive real-time HTTP POST notification
 To create and manage webhook endpoints:
 1. Navigate to **Technical** → **Developers** (`/admin/developers`).
 2. Scroll to the **Webhooks** section.
-3. Click **+ Add Webhook**.
+3. Click **Add Webhook**.
 4. Enter your destination **Target URL** (e.g. `https://api.yourdomain.com/webhooks/herobm`).
 5. Select the event types to subscribe to (e.g. `sales_order.*`, `payment.allocated`, or `*` for all events).
 6. Copy and store the generated **Secret Key** (`whsec_...`) for HMAC signature validation.

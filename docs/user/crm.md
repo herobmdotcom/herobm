@@ -46,7 +46,7 @@ The **Map** view (`/crm/map`) plots customer and prospect locations geographical
 
 ### 1. Creating a CRM Project
 1. Go to **CRM** → **Projects** (`/crm/projects`).
-2. Click **+ New Project**.
+2. Click **New Project**.
 3. Select or create the **Actor (Company)**.
 4. Enter the **Project Title**.
 5. Log meeting notes, calls, and follow-up tasks in the activity timeline.

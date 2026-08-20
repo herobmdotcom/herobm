@@ -9,7 +9,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import request from 'supertest';
 import * as fc from 'fast-check';
 import postgres from 'postgres';
@@ -100,8 +99,6 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
   };
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

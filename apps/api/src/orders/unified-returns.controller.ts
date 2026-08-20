@@ -15,7 +15,11 @@ export class UnifiedReturnsController {
   @Get()
   @ApiOkResponse({ type: GlobalReturnListResponseDto })
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Find Global Returns (Sales and Purchase)', description: 'Retrieves a paginated list of global returns across both sales and purchase domains.' })
+  @ApiOperation({
+    summary: 'Find Global Returns (Sales and Purchase)',
+    description:
+      'Retrieves a paginated list of global returns across both sales and purchase domains.',
+  })
   async findGlobalReturns(@Query() query: PaginationQuery) {
     return this.globalReturnsService.findGlobalReturns(query);
   }

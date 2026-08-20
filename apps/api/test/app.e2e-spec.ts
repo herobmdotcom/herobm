@@ -10,7 +10,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
@@ -29,9 +28,6 @@ describe('API E2E — Data Pipeline Verification', () => {
   let authToken: string;
 
   beforeAll(async () => {
-    // Clear Prometheus metrics (may be polluted from other tests)
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

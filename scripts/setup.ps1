@@ -166,8 +166,11 @@ if ($podmanCmd) {
     try {
         podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
     }
-    catch {
-        # Ignore if volume already exists
+    # Pre-create logs directory
+    $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
+    $logsDir = Join-Path $projectDir "logs"
+    if (-not (Test-Path $logsDir)) {
+        New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
     }
 }
 

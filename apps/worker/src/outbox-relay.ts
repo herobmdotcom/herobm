@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { outbox, herobmCore } from '@herobm/db-schema';
 import { eq, isNull, sql } from 'drizzle-orm';
 import express from 'express';
-import { collectDefaultMetrics, Registry, Counter } from 'prom-client';
+import { getMeter } from '@herobm/shared';
 import { relayLogger as logger } from './logger';
 
 process.on('uncaughtException', (err) => { logger.error({ err }, 'UNCAUGHT EXCEPTION'); process.exit(1); });
@@ -52,29 +52,19 @@ const connection = {
 
 const syncQueue = new Queue('external-sync', { connection });
 
-// Setup Metrics
-const register = new Registry();
-collectDefaultMetrics({ register });
+// Setup Metrics via OpenTelemetry Sockets
+const meter = getMeter('herobm-worker');
 
-const eventsProcessedCounter = new Counter({
-  name: 'outbox_events_processed_total',
-  help: 'Total outbox events successfully enqueued for external sync',
-  labelNames: ['event_type'],
-  registers: [register],
+const eventsProcessedCounter = meter.createCounter('outbox_events_processed_total', {
+  description: 'Total outbox events successfully enqueued for external sync',
 });
 
-const eventsFailedCounter = new Counter({
-  name: 'outbox_events_failed_total',
-  help: 'Total outbox event processing failures',
-  labelNames: ['event_type'],
-  registers: [register],
+const eventsFailedCounter = meter.createCounter('outbox_events_failed_total', {
+  description: 'Total outbox event processing failures',
 });
 
-const journalEntriesCounter = new Counter({
-  name: 'journal_entries_created_total',
-  help: 'Total Journal Entries successfully created',
-  labelNames: ['event_type'],
-  registers: [register],
+const journalEntriesCounter = meter.createCounter('journal_entries_created_total', {
+  description: 'Total Journal Entries successfully created',
 });
 
 // Re-export counters for relay.service to use
@@ -105,7 +95,7 @@ worker.on('failed', (job, err) => {
   }
 
   if (job?.data?.type) {
-    eventsFailedCounter.inc({ event_type: job.data.type });
+    eventsFailedCounter.add(1, { event_type: job.data.type });
   }
 });
 
@@ -151,11 +141,22 @@ maintenanceWorker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, err: err.message }, 'BullMQ maintenance job failed');
 });
 
-// Start Express for Metrics
+// Start Express for Health & Metrics
 const app = express();
-app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+app.get('/metrics', (req, res) => {
+  res.json({
+    telemetry: 'opentelemetry',
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 let server: any;
 const startServer = (retryCount = 0) => {

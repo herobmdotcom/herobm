@@ -25,6 +25,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
     "country-to-currency": "^2.0.3",
     "i18n-iso-countries": "^7.14.0"
   }

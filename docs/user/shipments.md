@@ -50,20 +50,24 @@ stateDiagram-v2
 ### Key Rules
 1. **Partial Shipments Supported**: Multiple shipments can be created against a single sales order when fulfilling in batches.
 2. **Auto-Transition to Shipped**: When all line items on a sales order have been 100% dispatched across shipments, the sales order automatically updates from `picking` to `shipped`.
-3. **Reverting Shipments**: If a shipment is cancelled before delivery, the committed quantities are released back to the warehouse, and if the order is no longer 100% shipped, its status reverts to `picking`.
+3. **Fast-Track Barcode Dispatch**: For high-volume warehouse fulfillment, operators can bypass manual shipment entry by using the [Scan-to-Dispatch](file:///docs/user/shipping.md) station (`/inventory/shipping/scan-to-dispatch`) to automatically create and dispatch shipments upon scanning.
+4. **Reverting Shipments**: If a shipment is cancelled before delivery, the committed quantities are released back to the warehouse, and if the order is no longer 100% shipped, its status reverts to `picking`.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Creating and Dispatching a Shipment
+### 1. Creating and Dispatching a Shipment (Manual Workbench)
 1. Go to **Sales** → **Shipments** (`/shipments`).
-2. Click **+ New Shipment** and select the **Sales Order**.
+2. Click **New Shipment** and select the **Sales Order**.
 3. Verify the delivery address and packed line quantities.
 4. Select the **Carrier** and enter the **Tracking Number**.
 5. (Optional) Enter the number of packages and total weight.
 6. Click **Print Packing Slip** to include with the parcel.
 7. Click **Mark as Dispatched**.
+
+### 2. Fast-Track Barcode Dispatch
+- Use the **Scan-to-Dispatch** terminal (`/inventory/shipping/scan-to-dispatch`) to scan Zebra pick labels directly, create shipments automatically, and mark them `Dispatched` in real time.
 
 ---
 

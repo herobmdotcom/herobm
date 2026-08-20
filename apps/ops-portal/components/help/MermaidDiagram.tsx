@@ -23,7 +23,8 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
     async function renderChart() {
       try {
-        const mermaidModule = await import('mermaid');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic mermaid ESM import
+        const mermaidModule = (await import('mermaid' as any)) as any;
         // Handle ESM default vs named export
         const mermaid = mermaidModule.default ?? mermaidModule;
 

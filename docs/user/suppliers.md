@@ -50,7 +50,7 @@ Each supplier has an assigned purchasing currency (e.g. `USD`, `EUR`, `JPY`). Wh
 
 ### 1. Adding a New Supplier
 1. Go to **Purchasing** → **Suppliers** (`/suppliers`).
-2. Click **+ New Supplier**.
+2. Click **New Supplier**.
 3. Enter the **Company Name**, **Supplier Group**, and **Currency**.
 4. Set the **Payment Terms** (e.g. Net 30) and **Default Lead Time**.
 5. Add the primary **Billing Address** and supplier contact email.

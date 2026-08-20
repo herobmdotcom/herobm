@@ -75,7 +75,7 @@ Every physical movement generates an immutable transaction in the Stock Ledger:
 
 ### 2. Performing a Manual Stock Adjustment
 1. Go to **Inventory** → **Stock Ledger** (`/inventory/ledger`).
-2. Click **+ Stock Adjustment**.
+2. Click **Stock Adjustment**.
 3. Select the **Warehouse**, **Bin**, and **Product**.
 4. Enter the count difference (+/- quantity) and select an **Adjustment Reason** (e.g. Stocktake Variance, Damaged Goods).
 5. Click **Post Adjustment** to update stock counts and post an inventory revaluation to the General Ledger.

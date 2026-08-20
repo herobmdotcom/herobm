@@ -14,15 +14,27 @@ dotenv.config({
 async function generateDocs() {
   process.env.USE_PGLITE = 'true';
   process.env.JWT_SECRET = 'dummy_secret_for_openapi_generation';
-  const { NestFactory } = require('@nestjs/core');
+  const { Test } = require('@nestjs/testing');
   // @ts-ignore
   const { AppModule } = require('../app.module');
+  // @ts-ignore
+  const { DRIZZLE, POSTGRES_CLIENT } = require('../drizzle/drizzle.module');
   const { DocumentBuilder, SwaggerModule } = require('@nestjs/swagger');
   const fs = require('fs');
 
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn'],
-  });
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+  })
+    .overrideProvider(POSTGRES_CLIENT)
+    .useValue({ end: async () => {} })
+    .overrideProvider(DRIZZLE)
+    .useValue({
+      query: { casbinRules: { findMany: async () => [] } },
+      select: () => ({ from: () => [] }),
+    })
+    .compile();
+
+  const app = moduleRef.createNestApplication();
   const config = new DocumentBuilder()
     .setTitle('HeroBM API')
     .setDescription('Core API System endpoints')
@@ -53,7 +65,10 @@ async function generateDocs() {
     .addTag('Payments', 'Payment processing and reconciliation')
     .addTag('General Ledger', 'Accounting, charts, and journals')
     .addTag('Tax', 'Tax configuration and mappings')
-    .addTag('Unified Returns', 'Global queries across sales and purchase returns')
+    .addTag(
+      'Unified Returns',
+      'Global queries across sales and purchase returns',
+    )
     .addTag('Global Notes', 'Global cross-domain notes')
     .addTag('Help', 'In-app user documentation and field guides')
     .build();

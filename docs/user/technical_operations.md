@@ -73,7 +73,7 @@ flowchart LR
 
 ### 1. Generating an API Key
 1. Go to **Technical** → **Developers** (`/admin/developers`).
-2. Click **+ Generate API Key**.
+2. Click **Generate API Key**.
 3. Enter a descriptive **Key Name** and set an expiration window.
 4. Copy the generated secret key (it will not be shown again).
 

@@ -68,7 +68,7 @@ flowchart TD
 
 ### 1. Creating a Customer Group
 1. Go to **Admin** → **Groups** → **Customer Groups** (`/admin/customer-groups`).
-2. Click **+ New Customer Group**.
+2. Click **New Customer Group**.
 3. Enter the **Group Name** (e.g. Wholesale Tier 2).
 4. Select the default **Price Scale** (e.g. Scale 3) and **Group Discount %**.
 5. Select the default **Payment Terms** (e.g. Net 30).

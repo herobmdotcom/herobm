@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (447 Endpoints Across 23 Domains)
+## Core Endpoint Catalog (453 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -179,11 +179,20 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `DELETE` | `/settings/cost-centers/{id}` | Delete a cost center |
 | `POST` | `/settings/cost-centers/import` | Bulk import cost centers |
 
-### Invoices
+### Global Notes
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/global-notes` | Find All Global Notes |
+
+### Help
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/help/context` | Get contextual help for the active screen route |
+| `GET` | `/help/topics` | Get all accessible documentation topics |
+| `GET` | `/help/topics/{id}` | Get full topic content by ID |
+| `GET` | `/help/search` | Search documentation topics |
 
 ### Manufacturing / Work Orders
 
@@ -463,6 +472,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/dashboard/search` | Universal Search |
 | `GET` | `/dashboard/timeline` | Get Timeline |
 | `POST` | `/telemetry/client-errors` | Report Client Error |
+| `GET` | `/health` | System Healthcheck |
 | `GET` | `/data-sources` | List all registered data sources |
 | `GET` | `/data-sources/{slug}/sample-report` | Get sample data for Business Reports (fetchData format) |
 | `GET` | `/data-sources/{slug}/sample-record` | Get sample data for PDF Templates (resolveData format) |
@@ -578,6 +588,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/inventory/adjust` | Adjust Stock manually |
 | `GET` | `/sales-orders/picking-queue` | Get Picking Queue |
 | `GET` | `/sales-orders/{id}/picking` | Get Picking Summary |
+| `GET` | `/sales-orders/{id}/picking/barcodes` | Get Picking Barcodes |
 | `POST` | `/sales-orders/{id}/picking/lines/{lineId}` | Pick Order Line |
 | `DELETE` | `/sales-orders/{id}/picking/picks/{pickId}` | Cancel Pick |
 | `GET` | `/sales-orders/shipping-queue` | Get Shipping Queue |

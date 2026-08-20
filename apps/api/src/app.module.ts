@@ -54,13 +54,11 @@ import { HelpModule } from './help/help.module';
 import { extensionModules } from './generated/extension-modules';
 
 import { ReadOnlyGuard } from './common/guards/read-only.guard';
+import { EnvModule } from './common/config/env.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
-    }),
+    EnvModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',

@@ -79,7 +79,7 @@ stateDiagram-v2
 
 ### 1. Creating and Sending a Purchase Order
 1. Go to **Purchasing** → **Purchase Orders** (`/purchase-orders`).
-2. Click **+ New Purchase Order**.
+2. Click **New Purchase Order**.
 3. Select the **Supplier**. Currency and terms fill automatically.
 4. Set the **Expected Delivery Date** and **Receiving Warehouse**.
 5. Add line items, quantities, and agreed unit costs.

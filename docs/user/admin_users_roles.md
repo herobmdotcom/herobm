@@ -56,7 +56,7 @@ flowchart LR
 
 ### 1. Inviting a New User
 1. Go to **Admin** → **Users** (`/admin/users`).
-2. Click **+ Invite User**.
+2. Click **Invite User**.
 3. Enter the **Display Name**, **Email Address**, and **Username**.
 4. Assign one or more **Roles** (e.g. Sales, Warehouse).
 5. Click **Send Invitation**.

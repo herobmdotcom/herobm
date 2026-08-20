@@ -22,6 +22,9 @@ fields:
   state_code:
     title: "Picking Status"
     summary: "Stage of the pick task (Pending, In-Progress, Completed, Shortage)."
+  barcode_payload:
+    title: "Scan-to-Pick Barcode"
+    summary: "Standard Zebra barcode encoding order, line, bin, and quantity for automated pick registration."
 related:
   - "sales-orders"
   - "inventory-shipping"
@@ -43,12 +46,16 @@ stateDiagram-v2
     InProgress --> Completed : All Lines Picked
     InProgress --> Shortage : Partial / Missing Stock
     Completed --> Packing : Transfer to Pack Station
+    Completed --> ScanToDispatch : Direct Barcode Dispatch
 ```
 
 ### 1. Auto-Picking Trigger
 When an order is in `Confirmed` status, picking the first item automatically updates the sales order state to `Picking`.
 
-### 2. Handling Shortages
+### 2. Scan-to-Pick Barcodes & Zebra Label Integration
+Pick sheets and product labels can include canonical scan-to-pick barcodes (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). Scanning these barcodes directly registers picks and seamlessly integrates with the [Scan-to-Dispatch](file:///docs/user/shipping.md) packing station (`/inventory/shipping/scan-to-dispatch`).
+
+### 3. Handling Shortages
 If a bin has less stock than expected:
 - The picker can record a **Partial Pick**.
 - The system flags the shortage, leaving unpicked quantities open for backorder fulfillment or alternate bin picking.
@@ -62,7 +69,7 @@ If a bin has less stock than expected:
 2. Select an assigned sales order.
 3. Follow the sequence to the indicated bins.
 4. Scan or verify the **Bin**, **Product SKU**, and enter the **Quantity Picked**.
-5. Move picked items to the packing station and click **Complete Picking**.
+5. Move picked items to the packing station and click **Complete Picking** (or take items directly to **Scan-to-Dispatch** for one-step packing and carrier dispatch).
 
 ---
 
@@ -74,4 +81,5 @@ If a bin has less stock than expected:
 | **Bin Location** | Shelf/rack location to retrieve items. |
 | **Quantity Required** | Ordered quantity. |
 | **Quantity Picked** | Confirmed picked units. |
+| **Barcode Payload** | Encoded scan string (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). |
 | **Status** | Pick progress (`Pending`, `In-Progress`, `Completed`). |

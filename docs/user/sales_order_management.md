@@ -177,7 +177,7 @@ When confirming an order, the system checks available warehouse stock:
 
 ### 1. Creating a New Sales Order
 1. Go to **Sales** → **Sales Orders** (`/sales-orders`).
-2. Click **+ New Order**.
+2. Click **New Order**.
 3. Select the **Customer**. Currency, terms, addresses, and price scale fill automatically.
 4. (Optional) Enter the customer's **PO Number** and any order notes.
 5. In the **Line Items** section, search for products to add. Enter the quantity, price, and discount.

@@ -70,7 +70,7 @@ Every customer belongs to a **Customer Group**. The group determines:
 
 ### 1. Creating a New Customer
 1. Go to **Sales** → **Customers** (`/customers`).
-2. Click **+ New Customer**.
+2. Click **New Customer**.
 3. Enter the **Company Name**, **Customer Group**, and **Currency**.
 4. Select the **Trading / Payment Terms** and set the **Credit Limit**.
 5. Add the primary **Billing Address** and at least one **Delivery Address**.

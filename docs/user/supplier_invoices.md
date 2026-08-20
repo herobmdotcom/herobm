@@ -68,7 +68,7 @@ Posting a supplier invoice creates a balanced journal entry:
 
 ### 1. Recording and Matching a Supplier Bill
 1. Go to **Purchasing** → **Supplier Invoices** (`/supplier-invoices`).
-2. Click **+ New Supplier Invoice**.
+2. Click **New Supplier Invoice**.
 3. Select the **Supplier** and the linked **Purchase Order**.
 4. Enter the vendor's official **Supplier Invoice Number** and **Bill Date**.
 5. The system pulls lines from the associated Goods Receipt Notes (GRN).

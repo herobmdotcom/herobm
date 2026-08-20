@@ -4,7 +4,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@herobm/shared';
 
@@ -18,8 +17,6 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
   let validLocationId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

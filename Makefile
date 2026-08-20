@@ -122,13 +122,13 @@ DBT_DIR = pipelines/$(SOURCE)_transform
 
 
 
-# Ensure PostgreSQL log directory has correct permissions for rootless podman.
-# Map UID 70 (postgres inside) correctly on host.
+# Ensure log directory has permissive permissions across container runtimes and host.
 # This only runs on Linux/macOS to avoid impacting Windows hosts.
 check-postgres-logs:
 ifneq ($(OS),Windows_NT)
 	@mkdir -p ./logs
-	-@podman unshare chown -R 70:70 ./logs 2>/dev/null || true
+	-@chmod -R 777 ./logs 2>/dev/null || chmod -R a+rwx ./logs 2>/dev/null || true
+	-@podman unshare chmod -R 777 ./logs 2>/dev/null || true
 endif
 
 # --------------------------------------------------------------------------
@@ -518,30 +518,30 @@ else
 endif
 
 build-shared:
-	npm run build -w packages/shared
+	$(NPM) run build -w packages/shared
 
 build-db-schema:
-	npm run build -w packages/db-schema
+	$(NPM) run build -w packages/db-schema
 
 build-sdk:
-	npm run build -w packages/sdk
+	$(NPM) run build -w packages/sdk
 
 # --- Quality Gates & Verification ---
 
 check-types: build-shared build-sdk build-db-schema
-	@npm run typecheck -w apps/api
-	@npm run typecheck -w apps/ops-portal
+	@$(NPM) run typecheck -w apps/api
+	@$(NPM) run typecheck -w apps/ops-portal
 
 check-lint:
-	@npm run lint -w apps/api
-	@npm run lint -w apps/ops-portal
-	@npm run lint:oas -w apps/api
+	@$(NPM) run lint -w apps/api
+	@$(NPM) run lint -w apps/ops-portal
+	@$(NPM) run lint:oas -w apps/api
 
 lint-portal:
-	@npm run lint -w apps/ops-portal
+	@$(NPM) run lint -w apps/ops-portal
 
 verify-i18n:
-	@npm run lint:i18n -w apps/ops-portal
+	@$(NPM) run lint:i18n -w apps/ops-portal
 
 clean-build:
 	$(CLEAN_BUILD_CMD)
@@ -556,7 +556,7 @@ clean-build:
 
 help-install:
 	@echo "HeroBM Installation Sequence:"
-	@echo "  make fast-install        - One-step automated installation"
+	@echo "  make fast-install        - One-step automated installation (Recommended)"
 	@echo "  1. make install-prereqs  - Install OS-level tools"
 	@echo "  2. make init-env         - Create .env and secrets"
 	@echo "  3. make install-npm      - Install npm dependencies"

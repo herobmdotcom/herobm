@@ -64,7 +64,7 @@ Posting a sales invoice creates an automatic balanced journal entry in the Gener
 
 ### 1. Generating a Sales Invoice
 1. Go to **Sales** → **Sales Invoices** (`/sales-invoices`).
-2. Click **+ New Invoice**.
+2. Click **New Invoice**.
 3. Select the **Sales Order** from the search list.
 4. Review the billed quantities, unit prices, discounts, and tax rates.
 5. Verify the **Invoice Date** and calculated **Due Date**.

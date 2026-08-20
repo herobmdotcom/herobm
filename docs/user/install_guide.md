@@ -27,7 +27,9 @@ HeroBM uses a universal automated **Fast Install** sequence to configure prerequ
 
 ---
 
-## 1. Quick Start (Fast Install)
+## 1. Quick Start (Fast Install — Recommended)
+
+The primary and recommended way to install and configure HeroBM on any machine (Linux, macOS, Windows) is using `make fast-install`.
 
 1. Clone the repository and navigate to the project root:
    ```bash
@@ -36,23 +38,22 @@ HeroBM uses a universal automated **Fast Install** sequence to configure prerequ
    ```
 
 2. Run the automated Fast Install command:
-   - **Windows (PowerShell)**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
-     make fast-install
-     ```
-   - **Linux / macOS**:
-     ```bash
-     make fast-install
-     ```
+   ```bash
+   make fast-install
+   ```
 
-The Fast Install script automatically:
-- Installs OS prerequisites (Node.js, Podman/Docker, Python, Typst).
-- Generates a secure `.env` file with random secret keys.
-- Installs all JavaScript and Python dependencies.
-- Starts database containers (PostgreSQL & Redis) and waits for health checks.
-- Runs Drizzle schema migrations and seeds default Chart of Accounts and Admin accounts.
-- Launches the application containers.
+   > [!TIP]
+   > On Windows without `make` pre-installed, you can run `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` once to install Make, then run `make fast-install`.
+
+The Fast Install target automatically:
+1. **Installs OS Prerequisites** (`make install-prereqs`): Checks and installs Node.js (>=20), Podman, Python 3, Typst, and Make.
+2. **Generates Environment Configuration** (`make init-env`): Creates `.env` with secure auto-generated credentials.
+3. **Installs Dependencies** (`make install-npm`): Installs all workspace npm packages and native bindings.
+4. **Starts Database Services** (`make up-db`): Boots PostgreSQL and Redis containers.
+5. **Initializes Database Schemas** (`make init-db`): Waits for PostgreSQL readiness and initializes schemas.
+6. **Applies Migrations** (`make migrate`): Applies all Drizzle SQL database migrations.
+7. **Bootstraps Data & Admin User** (`make bootstrap`): Seeds master data and outputs your secure admin password.
+8. **Launches Applications** (`make up` or selected profile): Starts the Ops Portal and API backend.
 
 ---
 

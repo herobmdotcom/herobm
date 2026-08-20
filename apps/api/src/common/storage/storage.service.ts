@@ -1,6 +1,12 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  Optional,
+} from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { EnvService } from '../config/env.service';
 
 export interface SavedFileMetadata {
   storagePath: string;
@@ -14,12 +20,11 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private readonly storageRoot: string;
 
-  constructor() {
+  constructor(@Optional() private readonly env?: EnvService) {
+    const configuredPath = this.env?.storagePath || process.env.STORAGE_PATH;
     // Priority: Explicit env var -> Container standard path -> Monorepo paths
     const candidates = [
-      process.env.STORAGE_PATH
-        ? path.resolve(process.cwd(), process.env.STORAGE_PATH)
-        : null,
+      configuredPath ? path.resolve(process.cwd(), configuredPath) : null,
       '/app/data/storage',
       path.resolve(process.cwd(), 'data/storage'),
       path.resolve(process.cwd(), '../../data/storage'),

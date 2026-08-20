@@ -182,3 +182,4 @@ export { SystemResource, hasPermission, hasAnyPermission } from './permissions';
 export type { Permission } from './permissions';
 export * from './data-sources';
 export * from './user-preferences';
+export * from './telemetry';

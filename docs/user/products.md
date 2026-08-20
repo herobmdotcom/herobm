@@ -83,7 +83,7 @@ A product can be configured as a **Kit**:
 
 ### 1. Adding a New Product
 1. Go to **Inventory** → **Products** (`/products`).
-2. Click **+ New Product**.
+2. Click **New Product**.
 3. Enter the **Product Code / SKU**, **Name**, and **Product Group**.
 4. Select the **Product Type** (e.g. Stocked Item) and **Base Unit of Measure** (e.g. EA, BOX).
 5. Enter the **Standard Cost** and the four selling price levels (**List Price**, **Trade Price**, etc.).
@@ -93,7 +93,7 @@ A product can be configured as a **Kit**:
 ### 2. Setting Up a Kit / Bundle
 1. Open the product details page.
 2. Set **Structure Type** to **Kit**.
-3. In the **Bill of Materials / Components** tab, click **+ Add Component**.
+3. In the **Bill of Materials / Components** tab, click **Add Component**.
 4. Search for child products and enter the required quantity per kit.
 5. Click **Save Changes**.
 

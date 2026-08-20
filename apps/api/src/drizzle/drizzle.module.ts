@@ -3,18 +3,9 @@ import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as coreSchema from '@herobm/db-schema';
 import { extensionSchemas } from '../generated/extension-schemas';
+import { EnvService } from '../common/config/env.service';
 
 const schema = { ...coreSchema, ...extensionSchemas };
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `FATAL: Required environment variable ${name} is not set. Check your .env file.`,
-    );
-  }
-  return value;
-}
 
 export const DRIZZLE = Symbol('DRIZZLE');
 export const POSTGRES_CLIENT = Symbol('POSTGRES_CLIENT');
@@ -26,15 +17,16 @@ export type DrizzleDB = PostgresJsDatabase<typeof schema>;
   providers: [
     {
       provide: POSTGRES_CLIENT,
-      useFactory: () => {
-        return process.env.DATABASE_URL
-          ? postgres(process.env.DATABASE_URL)
+      inject: [EnvService],
+      useFactory: (env: EnvService) => {
+        return env.databaseUrl
+          ? postgres(env.databaseUrl)
           : postgres({
-              host: process.env.POSTGRES_HOST ?? 'localhost',
-              port: Number(process.env.POSTGRES_PORT ?? 5432),
-              user: requireEnv('POSTGRES_USER'),
-              password: requireEnv('POSTGRES_PASSWORD'),
-              database: process.env.POSTGRES_DB ?? 'herobm',
+              host: env.postgresHost,
+              port: env.postgresPort,
+              user: env.postgresUser || 'postgres',
+              password: env.postgresPassword || '',
+              database: env.postgresDb,
             });
       },
     },

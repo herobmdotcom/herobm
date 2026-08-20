@@ -2,31 +2,27 @@ import { NestFactory } from '@nestjs/core';
 // Force reload 1
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
-import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
 import { ConvertEmptyStringsToNullMiddleware } from './common/middleware/convert-empty-strings-to-null.middleware';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { EnvService } from './common/config/env.service';
 
 async function bootstrap() {
-  // Prometheus default metrics (CPU, memory, event loop)
-  collectDefaultMetrics();
+  const fileLogger = new FileLoggerService();
+  const app = await NestFactory.create(AppModule, {
+    logger: fileLogger,
+  });
+
+  const envService = app.get(EnvService);
 
   // --- Safeguard: Prevent Dev Mode in Production ---
-  if (
-    process.env.DEPLOYMENT_TIER === 'production' &&
-    process.env.NODE_ENV !== 'production'
-  ) {
+  if (envService.deploymentTier === 'production' && !envService.isProduction) {
     Logger.error(
       'FATAL: Attempted to boot in development mode on a production deployment tier. Crashing to prevent security vulnerabilities.',
     );
     process.exit(1);
   }
-
-  const fileLogger = new FileLoggerService();
-  const app = await NestFactory.create(AppModule, {
-    logger: fileLogger,
-  });
 
   // Enable graceful shutdown hooks for SIGTERM / SIGINT signals
   app.enableShutdownHooks();
@@ -47,7 +43,7 @@ async function bootstrap() {
     }),
   );
 
-  if (process.env.ENABLE_SWAGGER !== 'false') {
+  if (envService.enableSwagger) {
     const config = new DocumentBuilder()
       .setTitle('HeroBM API')
       .setDescription('Core API System endpoints')
@@ -75,7 +71,10 @@ async function bootstrap() {
       .addTag('Payments', 'Payment processing and reconciliation')
       .addTag('General Ledger', 'Accounting, charts, and journals')
       .addTag('Tax', 'Tax configuration and mappings')
-      .addTag('Unified Returns', 'Global queries across sales and purchase returns')
+      .addTag(
+        'Unified Returns',
+        'Global queries across sales and purchase returns',
+      )
       .addTag('Global Notes', 'Global cross-domain notes')
       .addTag('Help', 'In-app user documentation and field guides')
       .build();
@@ -84,30 +83,31 @@ async function bootstrap() {
   }
 
   // CORS: restrict to explicit origins (ADV-027 fix)
-  const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-    : [];
+  const corsOrigins = envService.corsOrigins;
   app.enableCors({ origin: corsOrigins, credentials: true });
 
-  // Prometheus metrics endpoint (outside /api prefix)
-  // ARCHITECTURAL EXCEPTION (ADV-027): This endpoint is intentionally outside
-  // the NestJS auth pipeline. Mitigations:
-  //   - Host port bound to 127.0.0.1 only (docker-compose.yml)
-  //   - Prometheus scrapes via internal monitoring-net (custom-api:3001)
-  //   - No credentials or PII are exposed via prom-client default metrics
+  // Observability & metrics endpoint (outside /api prefix)
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get(
     '/metrics',
-    async (
+    (
       _req: unknown,
-      res: { set: (k: string, v: string) => void; end: (data: string) => void },
+      res: {
+        set: (k: string, v: string) => void;
+        json: (data: unknown) => void;
+      },
     ) => {
-      res.set('Content-Type', register.contentType);
-      res.end(await register.metrics());
+      res.set('Content-Type', 'application/json');
+      res.json({
+        telemetry: 'opentelemetry',
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+      });
     },
   );
 
-  const port = process.env.PORT ?? process.env.API_PORT ?? 3001;
+  const port = envService.port;
   await app.listen(port);
   Logger.log(`API running on http://localhost:${port}`, 'Bootstrap');
 }

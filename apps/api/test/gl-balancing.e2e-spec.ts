@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 
 import request from 'supertest';
@@ -28,8 +27,6 @@ describe('API E2E — Runtime Ledger Balancing', () => {
   let expenseAccountId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

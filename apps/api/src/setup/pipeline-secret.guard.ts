@@ -6,14 +6,17 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { EnvService } from '../common/config/env.service';
 
 @Injectable()
 export class PipelineSecretGuard implements CanActivate {
   private readonly logger = new Logger(PipelineSecretGuard.name);
 
+  constructor(private readonly env: EnvService) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    const expectedSecret = process.env.PIPELINE_SECRET;
+    const expectedSecret = this.env.pipelineSecret;
 
     if (!expectedSecret) {
       this.logger.error(

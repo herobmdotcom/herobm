@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
@@ -19,8 +18,6 @@ describe('Audit Events (e2e)', () => {
   let locationId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();

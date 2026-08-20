@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { register } from 'prom-client';
 import request from 'supertest';
 import { eq, sql, and } from 'drizzle-orm';
 import {
@@ -38,8 +37,6 @@ describe('FX Lifecycle (e2e)', () => {
   let salesInvoiceId: string;
 
   beforeAll(async () => {
-    register.clear();
-
     const moduleFixture: TestingModule = await (
       await createE2eModule()
     ).compile();
