@@ -1133,9 +1133,11 @@ export class SetupService {
       const isLocalRunner =
         runnerUrl.includes('127.0.0.1') || runnerUrl.includes('localhost');
       const apiPort = process.env.PORT || process.env.API_PORT || '3001';
-      const defaultWebhookUrl = isLocalRunner
-        ? `http://127.0.0.1:${apiPort}/internal/setup/webhook`
-        : 'http://herobm-api:3001/internal/setup/webhook';
+      const defaultWebhookUrl =
+        process.env.PIPELINE_WEBHOOK_URL ||
+        (isLocalRunner
+          ? `http://127.0.0.1:${apiPort}/internal/setup/webhook`
+          : 'http://herobm-api:3001/internal/setup/webhook');
 
       const envToPass: Record<string, string | undefined> = {
         ...process.env,

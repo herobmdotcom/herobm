@@ -48,8 +48,7 @@ COPY --from=builder --chown=node:node /app/packages/db-schema/package.json ./pac
 COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/dist
 
 # Copy built Worker app
-COPY --from=builder --chown=node:node /app/apps/worker/package.json ./apps/worker/
-COPY --from=builder --chown=node:node /app/apps/worker/dist ./apps/worker/dist
+COPY --from=builder --chown=node:node /app/apps/worker ./apps/worker
 
 # Ensure logs and application directories are owned by non-root node user
 RUN mkdir -p /app/logs /app/apps/worker/logs && chown -R node:node /app

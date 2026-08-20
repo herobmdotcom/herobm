@@ -33,6 +33,7 @@ RUN npm run build -w packages/shared
 RUN npm run build -w packages/db-schema
 
 WORKDIR /app/apps/api
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 # Skip tests during container build for speed and environmental stability
 # RUN npm test
 RUN npm run build
@@ -65,9 +66,7 @@ COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db
 COPY --from=builder --chown=node:node /app/packages/sdk/package.json ./packages/sdk/
 
 # Copy built API app and necessary runtime assets
-COPY --from=builder --chown=node:node /app/apps/api/package.json ./apps/api/
-COPY --from=builder --chown=node:node /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=node:node /app/apps/api/migrations ./apps/api/migrations
+COPY --from=builder --chown=node:node /app/apps/api ./apps/api
 
 # Ensure app directories and runtime temp dirs are owned by non-root node user
 RUN mkdir -p /app/apps/api/tmp && chown -R node:node /app

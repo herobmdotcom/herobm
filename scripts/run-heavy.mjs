@@ -108,9 +108,9 @@ let failed = false;
 
 console.log('\x1b[32mRunning heavy tests...\x1b[0m');
 if (!testName) {
-    if (!run('npx tsx infra/test-utils/run-heavy.ts')) failed = true;
+    if (!run('npx tsx infra/test-utils/run-heavy.ts', dbEnv)) failed = true;
 } else {
-    if (!run(`npx tsx infra/test-utils/run-single.ts ${testName}`)) failed = true;
+    if (!run(`npx tsx infra/test-utils/run-single.ts ${testName}`, dbEnv)) failed = true;
 }
 
 if (!skipUI) {

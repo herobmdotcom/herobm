@@ -273,12 +273,11 @@ export class GlService implements OnModuleInit {
       line.accountId = acct.glAccountId;
     }
 
-    // 3. Generate entry number
-    const entryNumber = await this.generateEntryNumber(queryDb);
     const entryDate = meta.entryDate || new Date().toISOString().slice(0, 10);
 
-    // 4. Insert — either directly on the caller's tx, or in a self-contained transaction
+    // 3. Insert — either directly on the caller's tx, or in a self-contained transaction
     const doInsert = async (db: DrizzleDB) => {
+      const entryNumber = await this.generateEntryNumber(db);
       const [entry] = await db
         .insert(glJournalEntries)
         .values({
@@ -338,7 +337,7 @@ export class GlService implements OnModuleInit {
       : await this.db.transaction(doInsert);
 
     this.logger.debug(
-      `Journal entry ${entryNumber} posted: ${lines.length} lines, ${meta.sourceType}`,
+      `Journal entry ${result.entryNumber} posted: ${lines.length} lines, ${meta.sourceType}`,
     );
 
     return result;
