@@ -71,7 +71,6 @@ ifeq ($(OS),Windows_NT)
   DEV_LOCAL_CMD = node scripts/dev-local.mjs
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
-  FAST_INSTALL_CMD = powershell -ExecutionPolicy Bypass -File scripts/fast-install.ps1
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
@@ -91,7 +90,6 @@ else
   DEV_LOCAL_CMD = node scripts/dev-local.mjs
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
-  FAST_INSTALL_CMD = bash scripts/fast-install.sh
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
@@ -568,14 +566,30 @@ help-install:
 	@echo "  7. make bootstrap        - Seed base data & verify installation"
 	@echo "  8. make up               - Start application containers (UI + API)"
 
-fast-install:
-	$(FAST_INSTALL_CMD)
+fast-install: install-prereqs
+	$(MAKE) init-env
+	$(MAKE) install-npm
+	$(MAKE) up-db
+	$(MAKE) init-db
+	$(MAKE) migrate
+	$(MAKE) bootstrap
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "if (Test-Path '.startup_choice') { $$c = (Get-Content '.startup_choice').Trim(); Remove-Item '.startup_choice'; & make $$c } else { & make up }"
+else
+	@if [ -f .startup_choice ]; then \
+		CHOICE=$$(cat .startup_choice); \
+		rm -f .startup_choice; \
+		$(MAKE) $$CHOICE; \
+	else \
+		$(MAKE) up; \
+	fi
+endif
 
 install-prereqs:
 ifeq ($(OS),Windows_NT)
-	powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+	powershell -ExecutionPolicy Bypass -File scripts/setup.ps1 -SkipRun
 else
-	bash scripts/setup.sh --non-interactive
+	bash scripts/setup.sh
 endif
 
 setup-python:
