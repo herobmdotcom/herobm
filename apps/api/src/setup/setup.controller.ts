@@ -34,6 +34,7 @@ import {
   JobProgressDto,
   SetupValidationDto,
   ActiveJobDto,
+  SuccessResponseDto,
 } from './setup.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -121,7 +122,7 @@ export class SetupController {
     summary: 'Stop Active Job',
     description: 'Forcibly terminates a running background job.',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   async stopJob(@Param('jobId') jobId: string) {
     return this.setupService.stopJob(jobId);
   }
@@ -179,7 +180,7 @@ export class SetupController {
     description: 'Uploads and processes a CSV file for data import.',
   })
   @ApiConsumes('multipart/form-data')
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: JobResultDto })
   @ApiBody({
     schema: {
       type: 'object',
@@ -194,7 +195,6 @@ export class SetupController {
       required: ['tableName', 'strategy', 'file'],
     },
   })
-  @ApiCreatedResponse({ type: JobResultDto })
   async executeCsv(
     @Body() dto: ExecuteCsvDto,
     @UploadedFile() file: Express.Multer.File,

@@ -20,3 +20,8 @@ export class WebhookPayloadDto {
   @MaxLength(255)
   status!: string;
 }
+
+export class SuccessResponseDto {
+  @ApiProperty()
+  success!: boolean;
+}

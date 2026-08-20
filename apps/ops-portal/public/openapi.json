@@ -908,12 +908,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "deleted": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/DeleteCustomerGroupResponseDto"
                 }
               }
             }
@@ -3328,8 +3323,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "$ref": "#/components/schemas/UpdateGlSettingsDto"
               }
             }
           }
@@ -5578,7 +5572,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/BusinessReportResponseDto"
                   }
                 }
               }
@@ -5667,7 +5661,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/RunBusinessReportDto"
               }
             }
           }
@@ -5713,7 +5707,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/BusinessReportResponseDto"
                 }
               }
             }
@@ -5783,7 +5777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/DeleteReportResponseDto"
                 }
               }
             }
@@ -11680,7 +11674,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/EnrichmentResultDto"
                 }
               }
             }
@@ -11728,7 +11722,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/EnrichmentResultDto"
                 }
               }
             }
@@ -11778,7 +11772,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/EnrichmentResultDto"
                 }
               }
             }
@@ -11818,7 +11812,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/EnrichmentResultDto"
                 }
               }
             }
@@ -11853,7 +11847,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/EnrichmentProviderDto"
                   }
                 }
               }
@@ -11886,7 +11880,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "additionalProperties": true
                 }
               }
             }
@@ -11915,7 +11910,8 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "type": "object",
+                "additionalProperties": true
               }
             }
           }
@@ -11926,7 +11922,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "additionalProperties": true
                 }
               }
             }
@@ -13936,7 +13933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/DashboardSummaryDto"
                 }
               }
             }
@@ -13968,10 +13965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "$ref": "#/components/schemas/UniversalSearchResponseDto"
                 }
               }
             }
@@ -14013,7 +14007,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/TimelineEventDto"
                   }
                 }
               }
@@ -16433,7 +16427,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -16587,7 +16581,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/JobResultDto"
                 }
               }
             }
@@ -17789,12 +17783,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "deleted": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/DeleteDiscountMatrixResponseDto"
                 }
               }
             }
@@ -17974,12 +17963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/DeleteWebhookResponseDto"
                 }
               }
             }
@@ -18121,15 +18105,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "outboxId": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/PublishEventResponseDto"
                 }
               }
             }
@@ -18480,7 +18456,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -18981,7 +18957,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19031,7 +19007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19069,7 +19045,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19111,7 +19087,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19257,7 +19233,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ActorNoteResponseDto"
                 }
               }
             }
@@ -19297,7 +19273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19580,7 +19556,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19766,7 +19742,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19808,7 +19784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19848,7 +19824,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19896,7 +19872,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19938,7 +19914,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -19988,7 +19964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -20026,7 +20002,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SuccessResponseDto"
                 }
               }
             }
@@ -21163,6 +21139,17 @@
             "type": "string"
           }
         }
+      },
+      "DeleteCustomerGroupResponseDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
+        ]
       },
       "ProductResponseDto": {
         "type": "object",
@@ -22469,12 +22456,26 @@
             "type": "string"
           },
           "accountMetadataSchema": {
-            "type": "object"
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
           "id"
         ]
+      },
+      "UpdateGlSettingsDto": {
+        "type": "object",
+        "properties": {
+          "accountMetadataSchema": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
       },
       "FxRevalCandidatesResponseDto": {
         "type": "object",
@@ -24172,36 +24173,6 @@
           "licenseHash"
         ]
       },
-      "CreateBusinessReportDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "description": "The unique slug of the report configuration"
-          },
-          "name": {
-            "type": "string",
-            "description": "The name of the report"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of the report"
-          },
-          "dataSourceHook": {
-            "type": "string",
-            "description": "The data source hook"
-          },
-          "uiConfig": {
-            "type": "object",
-            "description": "UI configuration as JSON object"
-          }
-        },
-        "required": [
-          "slug",
-          "name",
-          "dataSourceHook"
-        ]
-      },
       "BusinessReportResponseDto": {
         "type": "object",
         "properties": {
@@ -24235,6 +24206,45 @@
           "isSystem"
         ]
       },
+      "RunBusinessReportDto": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "description": "Filter configuration object"
+          }
+        }
+      },
+      "CreateBusinessReportDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "The unique slug of the report configuration"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the report"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the report"
+          },
+          "dataSourceHook": {
+            "type": "string",
+            "description": "The data source hook"
+          },
+          "uiConfig": {
+            "type": "object",
+            "description": "UI configuration as JSON object"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "dataSourceHook"
+        ]
+      },
       "UpdateBusinessReportDto": {
         "type": "object",
         "properties": {
@@ -24255,6 +24265,17 @@
             "description": "UI configuration as JSON object"
           }
         }
+      },
+      "DeleteReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
       },
       "PickingQueueOrderDto": {
         "type": "object",
@@ -27265,6 +27286,21 @@
           "limit"
         ]
       },
+      "EnrichmentResultDto": {
+        "type": "object",
+        "properties": {
+          "isValid": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "isValid",
+          "data"
+        ]
+      },
       "EnrichmentPayloadDto": {
         "type": "object",
         "properties": {
@@ -27273,6 +27309,32 @@
             "description": "Dynamic payload for the enrichment provider"
           }
         }
+      },
+      "EnrichmentProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "supportedCountries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "schema": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "supportedCountries",
+          "schema"
+        ]
       },
       "PaymentResponseDto": {
         "type": "object",
@@ -28368,6 +28430,106 @@
             "format": "uuid"
           }
         }
+      },
+      "DashboardSummaryDto": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "number"
+          },
+          "products": {
+            "type": "number"
+          },
+          "orderLines": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "customers",
+          "products",
+          "orderLines"
+        ]
+      },
+      "SearchResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "product",
+              "customer",
+              "sales_order",
+              "supplier",
+              "purchase_order"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "subtitle",
+          "href"
+        ]
+      },
+      "UniversalSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResultDto"
+            }
+          }
+        },
+        "required": [
+          "results"
+        ]
+      },
+      "TimelineEventDto": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "entityDisplay": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventId",
+          "eventType",
+          "entityId",
+          "entityDisplay",
+          "actor",
+          "timestamp"
+        ]
       },
       "ClientErrorDto": {
         "type": "object",
@@ -30109,6 +30271,17 @@
           }
         }
       },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
       "JobProgressDto": {
         "type": "object",
         "properties": {
@@ -30769,6 +30942,17 @@
           }
         }
       },
+      "DeleteDiscountMatrixResponseDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
       "WebhookResponseDto": {
         "type": "object",
         "properties": {
@@ -30842,6 +31026,17 @@
             "type": "boolean"
           }
         }
+      },
+      "DeleteWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
       },
       "ApiKeyResponseDto": {
         "type": "object",
@@ -30991,6 +31186,21 @@
         "required": [
           "type",
           "payload"
+        ]
+      },
+      "PublishEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "outboxId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "outboxId"
         ]
       },
       "UserSettingsResponseDto": {

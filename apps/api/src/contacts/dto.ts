@@ -174,3 +174,7 @@ export class ContactResponseDto {
 }
 
 export class EmptyBodyDto {}
+
+export class SuccessResponseDto {
+  success!: boolean;
+}

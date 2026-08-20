@@ -29,4 +29,10 @@ export const RATE_LIMITS = {
     limit: isProd ? 10 : 10000,
     ttl: 60000,
   },
+
+  // Health endpoint
+  HEALTH: {
+    limit: isProd ? 120 : 10000,
+    ttl: 60000,
+  },
 };

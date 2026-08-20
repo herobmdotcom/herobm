@@ -57,3 +57,8 @@ export class WebhookResponseDto {
   @ApiProperty({ format: 'date-time', nullable: true })
   createdOn!: Date | null;
 }
+
+export class DeleteWebhookResponseDto {
+  @ApiProperty()
+  success!: boolean;
+}

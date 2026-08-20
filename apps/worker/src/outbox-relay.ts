@@ -179,15 +179,27 @@ const startServer = (retryCount = 0) => {
 };
 startServer();
 
-// Start Polling
-const pollInterval = setInterval(() => {
-  pollOutbox(db, syncQueue);
-  pollEmailOutbox(db);
-}, 5000);
+// Setup Dedicated Postgres Client for LISTEN/NOTIFY
+const subscriberClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`, {
+  max: 1,
+  idle_timeout: 0,
+});
 
-// Initial poll
-pollOutbox(db, syncQueue);
-pollEmailOutbox(db);
+import { OutboxListener } from './outbox-listener';
+
+const outboxListener = new OutboxListener({
+  subscriberClient,
+  onSweep: async () => {
+    await pollOutbox(db, syncQueue);
+    await pollEmailOutbox(db);
+  },
+  heartbeatIntervalMs: 60000,
+});
+
+// Start OutboxListener
+outboxListener.start().catch((err) => {
+  logger.error({ err }, 'Failed to start OutboxListener');
+});
 
 // Graceful Shutdown
 let isShuttingDown = false;
@@ -195,15 +207,15 @@ async function shutdown(signal: string) {
   if (isShuttingDown) return;
   isShuttingDown = true;
   logger.info({ signal }, 'Shutting down worker gracefully...');
-  
-  clearInterval(pollInterval);
-  
+
   try {
+    await outboxListener.stop();
     server?.close();
     await worker.close();
     await maintenanceWorker.close();
     await syncQueue.close();
     await maintenanceQueue.close();
+    await subscriberClient.end();
     await pgClient.end();
     logger.info('Graceful shutdown complete');
     process.exit(0);

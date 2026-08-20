@@ -15,9 +15,6 @@ import type {
   AppConfigResponseDto,
   BulkImportResultDto,
   BusinessReportResponseDto,
-  BusinessReportsControllerDeleteReport200,
-  BusinessReportsControllerGetReportById200,
-  BusinessReportsControllerGetReports200Item,
   BusinessReportsControllerRunReport200Item,
   ClientErrorDto,
   CreateActivityDto,
@@ -31,14 +28,14 @@ import type {
   CreateUserDto,
   CreateWebhookDto,
   CsvMetadataDto,
-  DashboardControllerGetSummary200,
-  DashboardControllerGetTimeline200Item,
   DashboardControllerGetTimelineParams,
-  DashboardControllerSearch200Item,
   DashboardControllerSearchParams,
+  DashboardSummaryDto,
   DataSourceItemDto,
+  DeleteDiscountMatrixResponseDto,
   DeleteEventsResponseDto,
-  DiscountMatrixControllerDelete200,
+  DeleteReportResponseDto,
+  DeleteWebhookResponseDto,
   DiscountMatrixControllerListParams,
   DiscountMatrixControllerResolveParams,
   DiscountMatrixResponseDto,
@@ -52,25 +49,23 @@ import type {
   EmptyBodyDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
-  EnrichmentControllerGetProviders200Item,
-  EnrichmentControllerLookup200,
   EnrichmentControllerLookupParams,
-  EnrichmentControllerLookupPost200,
   EnrichmentControllerLookupPost201,
   EnrichmentControllerLookupPostParams,
-  EnrichmentControllerTestLookup200,
   EnrichmentControllerTestLookupParams,
-  EnrichmentControllerTestLookupPost200,
   EnrichmentControllerTestLookupPost201,
   EnrichmentControllerTestLookupPostParams,
   EnrichmentControllerUpdateConfig200,
+  EnrichmentControllerUpdateConfigBody,
   EnrichmentControllerUpdateConfigParams,
   EnrichmentPayloadDto,
-  EventsControllerPublish201,
+  EnrichmentProviderDto,
+  EnrichmentResultDto,
   ExecuteEltDto,
   ExternalSyncControllerClearEventsByTypeParams,
   ExternalSyncControllerGetEventsByTypeParams,
   ExternalSyncControllerGetSyncStatusParams,
+  HealthResponseDto,
   HookAssignmentDto,
   HookDto,
   ImportSummaryDto,
@@ -84,26 +79,26 @@ import type {
   MacrosControllerFindAllParams,
   MacrosControllerFindOneParams,
   MeResponseDto,
-  Object,
   OrganizationResponseDto,
   PdfTemplatesControllerRunHookParams,
   PreviewReportDto,
   PublishEventDto,
+  PublishEventResponseDto,
   RandomIdData,
   ReportDto,
   ResolveDiscountRuleDto,
   ResumeStateDto,
   RoleDetailsDto,
   RolesSuccessResponseDto,
+  RunBusinessReportDto,
   RunHookBodyDto,
   SampleRecordDto,
   SampleReportDto,
   SetRolePermissionsDto,
   SettingsSuccessResponseDto,
-  SetupControllerExecuteCsv201,
   SetupControllerExecuteCsvBody,
-  SetupControllerStopJob200,
   SetupValidationDto,
+  SuccessResponseDto,
   SyncEventsResponseDto,
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
@@ -112,8 +107,10 @@ import type {
   TestAbmConnectionDto,
   TestConnectionResultDto,
   TestOdooConnectionDto,
+  TimelineEventDto,
   TradingTermResponseDto,
   TradingTermsControllerFindAllParams,
+  UniversalSearchResponseDto,
   UomDictionaryControllerFindAllParams,
   UomDictionaryControllerFindOneParams,
   UomResponseDto,
@@ -134,8 +131,7 @@ import type {
   UserSettingsResponseDto,
   UsersControllerFindAllParams,
   UsersControllerFindOneParams,
-  WebhookResponseDto,
-  WebhooksControllerRemove200
+  WebhookResponseDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
@@ -1127,7 +1123,7 @@ export const licenseControllerApplyLicense = async (licenseControllerApplyLicens
  * @summary List available business reports
  */
 export type businessReportsControllerGetReportsResponse200 = {
-  data: BusinessReportsControllerGetReports200Item[]
+  data: BusinessReportResponseDto[]
   status: 200
 }
     
@@ -1256,7 +1252,7 @@ export const getBusinessReportsControllerRunReportUrl = (slug: string,) => {
 }
 
 export const businessReportsControllerRunReport = async (slug: string,
-    businessReportsControllerRunReportBody: Object, options?: RequestInit): Promise<businessReportsControllerRunReportResponse> => {
+    runBusinessReportDto: RunBusinessReportDto, options?: RequestInit): Promise<businessReportsControllerRunReportResponse> => {
   
   return customFetch<businessReportsControllerRunReportResponse>(getBusinessReportsControllerRunReportUrl(slug),
   {      
@@ -1264,7 +1260,7 @@ export const businessReportsControllerRunReport = async (slug: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      businessReportsControllerRunReportBody,)
+      runBusinessReportDto,)
   }
 );}
 
@@ -1274,7 +1270,7 @@ export const businessReportsControllerRunReport = async (slug: string,
  * @summary Get a business report by ID
  */
 export type businessReportsControllerGetReportByIdResponse200 = {
-  data: BusinessReportsControllerGetReportById200
+  data: BusinessReportResponseDto
   status: 200
 }
     
@@ -1348,7 +1344,7 @@ export const businessReportsControllerUpdateReport = async (id: string,
  * @summary Delete a business report
  */
 export type businessReportsControllerDeleteReportResponse200 = {
-  data: BusinessReportsControllerDeleteReport200
+  data: DeleteReportResponseDto
   status: 200
 }
     
@@ -1926,7 +1922,7 @@ export const externalSyncControllerClearEventsByType = async (params: ExternalSy
  * @summary Lookup data
  */
 export type enrichmentControllerLookupResponse200 = {
-  data: EnrichmentControllerLookup200
+  data: EnrichmentResultDto
   status: 200
 }
     
@@ -1969,7 +1965,7 @@ export const enrichmentControllerLookup = async (params: EnrichmentControllerLoo
  * @summary Lookup data (POST)
  */
 export type enrichmentControllerLookupPostResponse200 = {
-  data: EnrichmentControllerLookupPost200
+  data: EnrichmentResultDto
   status: 200
 }
 
@@ -2019,7 +2015,7 @@ export const enrichmentControllerLookupPost = async (enrichmentPayloadDto: Enric
  * @summary Test provider
  */
 export type enrichmentControllerTestLookupResponse200 = {
-  data: EnrichmentControllerTestLookup200
+  data: EnrichmentResultDto
   status: 200
 }
     
@@ -2062,7 +2058,7 @@ export const enrichmentControllerTestLookup = async (params: EnrichmentControlle
  * @summary Test provider (POST)
  */
 export type enrichmentControllerTestLookupPostResponse200 = {
-  data: EnrichmentControllerTestLookupPost200
+  data: EnrichmentResultDto
   status: 200
 }
 
@@ -2112,7 +2108,7 @@ export const enrichmentControllerTestLookupPost = async (enrichmentPayloadDto: E
  * @summary Get providers
  */
 export type enrichmentControllerGetProvidersResponse200 = {
-  data: EnrichmentControllerGetProviders200Item[]
+  data: EnrichmentProviderDto[]
   status: 200
 }
     
@@ -2217,7 +2213,7 @@ export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControl
   return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
 }
 
-export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: Object,
+export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: EnrichmentControllerUpdateConfigBody,
     params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
   
   return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
@@ -2391,7 +2387,7 @@ export const emailControllerTestConnection = async ( options?: RequestInit): Pro
  * @summary Get Summary
  */
 export type dashboardControllerGetSummaryResponse200 = {
-  data: DashboardControllerGetSummary200
+  data: DashboardSummaryDto
   status: 200
 }
     
@@ -2427,7 +2423,7 @@ export const dashboardControllerGetSummary = async ( options?: RequestInit): Pro
  * @summary Universal Search
  */
 export type dashboardControllerSearchResponse200 = {
-  data: DashboardControllerSearch200Item[]
+  data: UniversalSearchResponseDto
   status: 200
 }
     
@@ -2470,7 +2466,7 @@ export const dashboardControllerSearch = async (params: DashboardControllerSearc
  * @summary Get Timeline
  */
 export type dashboardControllerGetTimelineResponse200 = {
-  data: DashboardControllerGetTimeline200Item[]
+  data: TimelineEventDto[]
   status: 200
 }
     
@@ -2546,6 +2542,42 @@ export const telemetryControllerReportClientError = async (clientErrorDto: Clien
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       clientErrorDto,)
+  }
+);}
+
+
+/**
+ * Returns operational readiness for container orchestration health checks.
+ * @summary System Healthcheck
+ */
+export type healthControllerGetHealthResponse200 = {
+  data: HealthResponseDto
+  status: 200
+}
+    
+export type healthControllerGetHealthResponseSuccess = (healthControllerGetHealthResponse200) & {
+  headers: Headers;
+};
+;
+
+export type healthControllerGetHealthResponse = (healthControllerGetHealthResponseSuccess)
+
+export const getHealthControllerGetHealthUrl = () => {
+
+
+  
+
+  return `/health`
+}
+
+export const healthControllerGetHealth = async ( options?: RequestInit): Promise<healthControllerGetHealthResponse> => {
+  
+  return customFetch<healthControllerGetHealthResponse>(getHealthControllerGetHealthUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -2961,7 +2993,7 @@ export const setupControllerGetActiveJob = async ( options?: RequestInit): Promi
  * @summary Stop Active Job
  */
 export type setupControllerStopJobResponse200 = {
-  data: SetupControllerStopJob200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -3141,7 +3173,7 @@ export const setupControllerGetCsvMetadata = async ( options?: RequestInit): Pro
  * @summary Execute CSV Import
  */
 export type setupControllerExecuteCsvResponse201 = {
-  data: SetupControllerExecuteCsv201
+  data: JobResultDto
   status: 201
 }
     
@@ -3779,7 +3811,7 @@ export const discountMatrixControllerUpdate = async (id: string,
  * @summary Delete Rule
  */
 export type discountMatrixControllerDeleteResponse200 = {
-  data: DiscountMatrixControllerDelete200
+  data: DeleteDiscountMatrixResponseDto
   status: 200
 }
     
@@ -3962,7 +3994,7 @@ export const webhooksControllerUpdate = async (id: string,
  * @summary Delete Webhook
  */
 export type webhooksControllerRemoveResponse200 = {
-  data: WebhooksControllerRemove200
+  data: DeleteWebhookResponseDto
   status: 200
 }
     
@@ -4107,7 +4139,7 @@ export const apiKeysControllerRevoke = async (id: string, options?: RequestInit)
  * @summary Publish Event
  */
 export type eventsControllerPublishResponse201 = {
-  data: EventsControllerPublish201
+  data: PublishEventResponseDto
   status: 201
 }
     

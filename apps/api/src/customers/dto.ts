@@ -290,3 +290,8 @@ export class CreditAssessmentResponseDto {
   glBalance!: number;
   isOverdue!: boolean;
 }
+
+export class DeleteCustomerGroupResponseDto {
+  @ApiProperty()
+  deleted!: boolean;
+}

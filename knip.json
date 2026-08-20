@@ -29,7 +29,9 @@
         "apps/ops-portal/app/credit-debit-notes/CreditNoteDetailSlideOver.tsx",
         "apps/ops-portal/app/credit-debit-notes/DebitNoteDetailSlideOver.tsx",
         "apps/ops-portal/components/help/HelpTrigger.tsx",
-        "apps/api/src/orders/picking-math.utils.ts"
+        "apps/api/src/orders/picking-math.utils.ts",
+        "packages/sdk/src/endpoints/global-notes/**",
+        "packages/sdk/src/endpoints/help/**"
       ],
       "ignoreDependencies": [
         "@asyncapi/specs",
@@ -49,18 +51,23 @@
         "source-map-support",
         "@nestjs/testing",
         "ts-morph",
-        "fast-check"
+        "fast-check",
+        "mermaid"
       ],
       "ignoreBinaries": [
         "cross-env",
         "make"
       ]
+    },
+    "apps/worker": {
+      "entry": ["src/outbox-relay.ts"]
     }
   },
   "rules": {
     "exports": "off",
     "types": "off",
-    "enumMembers": "off"
+    "enumMembers": "off",
+    "duplicates": "off"
   },
   "jest": false
 }

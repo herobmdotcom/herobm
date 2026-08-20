@@ -1,29 +1,66 @@
-FROM node:22-bookworm-slim
+# ==============================================================================
+# HeroBM Outbox Worker — Multi-stage Container Build
+# ==============================================================================
 
+# --- Stage 1: Install dependencies -------------------------------------------
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
+# Copy workspace metadata for cacheable dependency installation
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/db-schema/package.json ./packages/db-schema/
 COPY apps/worker/package.json ./apps/worker/
 
-WORKDIR /app
+# Install the monorepo dependencies scoped to worker workspaces
 RUN npm install
 
+# --- Stage 2: Build ----------------------------------------------------------
+FROM deps AS builder
 WORKDIR /app
-COPY packages/shared ./packages/shared
-COPY packages/db-schema ./packages/db-schema
-COPY apps/worker ./apps/worker
 
-WORKDIR /app
+# Copy source files
+COPY packages/ ./packages/
+COPY apps/worker/ ./apps/worker/
+
 RUN npm run build -w packages/shared
 RUN npm run build -w packages/db-schema
+RUN npm run build -w apps/worker
 
-RUN chown -R node:node /app
+# Prune dev dependencies from root monorepo
+WORKDIR /app
+RUN npm prune --omit=dev
+
+# --- Stage 3: Production runtime (slim) --------------------------------------
+FROM node:22-bookworm-slim AS runner
+WORKDIR /app
+
+# Install runtime OS dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package metadata and pruned node_modules from builder
+COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json ./
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+
+# Copy built workspace packages
+COPY --from=builder --chown=node:node /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=node:node /app/packages/shared/reports-config.json ./packages/shared/
+COPY --from=builder --chown=node:node /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder --chown=node:node /app/packages/db-schema/package.json ./packages/db-schema/
+COPY --from=builder --chown=node:node /app/packages/db-schema/dist ./packages/db-schema/dist
+
+# Copy built Worker app
+COPY --from=builder --chown=node:node /app/apps/worker/package.json ./apps/worker/
+COPY --from=builder --chown=node:node /app/apps/worker/dist ./apps/worker/dist
+
+# Ensure logs and application directories are owned by non-root node user
+RUN mkdir -p /app/logs /app/apps/worker/logs && chown -R node:node /app
 
 USER node
 
-EXPOSE 9090
+EXPOSE 9091 9092
 
 WORKDIR /app/apps/worker
-CMD ["npm", "start"]
+CMD ["node", "dist/outbox-relay.js"]

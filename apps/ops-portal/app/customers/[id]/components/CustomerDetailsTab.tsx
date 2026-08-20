@@ -25,14 +25,15 @@ import {
   CUSTOMER_STATE,
   getCurrencyForCountry,
 } from "@herobm/shared";
+import type { Customer } from "../useCustomer";
 
 interface CustomerDetailsTabProps {
-  customer: api.AccountResponseDto | null;
-  dto: Partial<api.AccountResponseDto>;
+  customer: Customer | null;
+  dto: Partial<Customer>;
   isEditable: boolean;
   saving: boolean;
-  updateField: (field: keyof api.AccountResponseDto, value: unknown) => void;
-  saveField: (field: keyof api.AccountResponseDto, value: unknown) => Promise<void>;
+  updateField: (field: keyof Customer, value: unknown) => void;
+  saveField: (field: keyof Customer, value: unknown) => Promise<void>;
   canManageCredit: boolean;
   taxPositions: api.TaxPositionResponseDto[];
   tradingTerms: api.TradingTermResponseDto[];
@@ -771,7 +772,7 @@ export function CustomerDetailsTab({
           </div>
         </div>
         {/* Hierarchy Card */}
-        {customer.childAccounts && customer.childAccounts.length > 0 && (
+        {Boolean((customer as Customer)?.childAccounts && (customer as Customer).childAccounts!.length > 0) && (
           <div id="hierarchy-section" className="card h-fit">
             <h3 className="section-heading">
               { }
@@ -785,12 +786,11 @@ export function CustomerDetailsTab({
               <div className="mt-4">
                 <label className="block text-xs font-medium mb-2 text-[var(--text-muted)]">
                   {t("customers.fields.childAccounts", {
-                    count: customer.childAccounts.length,
+                    count: (customer as Customer).childAccounts?.length ?? 0,
                   })}
                 </label>
                 <div className="flex flex-col gap-2">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type missing childAccounts */
-                  customer.childAccounts.map((child: any) => (
+                  {(customer as Customer).childAccounts?.map((child) => (
                     <Link
                       key={child.customerId}
                       href={`/customers/${child.customerId}`}

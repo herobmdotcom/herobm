@@ -5,34 +5,8 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { UpdateGLSettingsDtoAccountMetadataSchema } from './updateGLSettingsDtoAccountMetadataSchema';
+import type { UpdateGlSettingsDtoAccountMetadataSchemaItem } from './updateGlSettingsDtoAccountMetadataSchemaItem';
 
-export interface UpdateGLSettingsDto {
-  accountMetadataSchema?: UpdateGLSettingsDtoAccountMetadataSchema;
-  fiscalYearStartMonth?: number;
-  /** @nullable */
-  defaultArAccountId?: string | null;
-  /** @nullable */
-  defaultApAccountId?: string | null;
-  /** @nullable */
-  defaultRevenueAccountId?: string | null;
-  /** @nullable */
-  defaultCogsAccountId?: string | null;
-  /** @nullable */
-  defaultSalesTaxAccountId?: string | null;
-  defaultPurchaseTaxAccountId?: string | null;
-  /** @nullable */
-  defaultExpenseAccountId?: string | null;
-  /** @nullable */
-  defaultInventoryAccountId?: string | null;
-  /** @nullable */
-  defaultGrniAccountId?: string | null;
-  /** @nullable */
-  defaultShrinkageAccountId?: string | null;
-  /** @nullable */
-  defaultFeeRevenueAccountId?: string | null;
-  baseCurrency?: string;
-  supportedBatchPaymentFormats?: string[];
-  revenueRoutingPrecedence?: string;
-  expenseRoutingPrecedence?: string;
+export interface UpdateGlSettingsDto {
+  accountMetadataSchema?: UpdateGlSettingsDtoAccountMetadataSchemaItem[];
 }

@@ -326,3 +326,9 @@ export class SetupValidationDto {
   @IsObject()
   dataCounts: Record<string, number>;
 }
+
+export class SuccessResponseDto {
+  @ApiProperty()
+  @IsBoolean()
+  success: boolean;
+}

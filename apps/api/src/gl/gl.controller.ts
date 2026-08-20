@@ -29,6 +29,7 @@ import {
   TrialBalanceResponseDto,
   GeneralLedgerResponseDto,
   SettingsResponseDto,
+  UpdateGlSettingsDto,
   SuccessMessageResponseDto,
   ChartFileDto,
   SettingsFileDto,
@@ -295,9 +296,9 @@ export class GlController {
     summary: 'Update Settings',
     description: 'Update the general ledger configuration settings.',
   })
-  @ApiBody({ schema: { type: 'object', additionalProperties: true } })
+  @ApiBody({ type: UpdateGlSettingsDto })
   @ApiOkResponse({ type: SettingsResponseDto })
-  async updateSettings(@Body() body: Record<string, unknown>) {
+  async updateSettings(@Body() body: UpdateGlSettingsDto) {
     const updated = await this.glService.updateSettings(body);
     // Automatically reload app config cache since settings changed
     await this.appConfig.reload();

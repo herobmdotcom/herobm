@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsObject } from 'class-validator';
 
 export class EnrichmentPayloadDto {
@@ -11,4 +11,43 @@ export class EnrichmentPayloadDto {
   // Dynamic payload from unknown downstream providers cannot be strictly typed.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   payload?: Record<string, any>;
+}
+
+export class UpdateEnrichmentConfigDto {
+  @ApiProperty({
+    description: 'Provider configuration JSON key-value pairs',
+    type: Object,
+  })
+  @IsObject()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  config!: Record<string, any>;
+
+  [key: string]: unknown;
+}
+
+export class EnrichmentResultDto {
+  @ApiProperty()
+  isValid!: boolean;
+
+  @ApiProperty({ type: Object })
+  data!: Record<string, unknown>;
+}
+
+export class EnrichmentProviderDto {
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty({ type: [String] })
+  supportedCountries!: string[] | string;
+
+  @ApiProperty({ type: Object })
+  schema!: Record<string, unknown>;
+}
+
+export class EnrichmentConfigResponseDto {
+  @ApiProperty({ type: Object })
+  config!: Record<string, unknown>;
 }

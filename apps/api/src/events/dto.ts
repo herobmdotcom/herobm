@@ -13,3 +13,11 @@ export class PublishEventDto {
   @IsObject()
   payload: Record<string, unknown>;
 }
+
+export class PublishEventResponseDto {
+  @ApiProperty()
+  success!: boolean;
+
+  @ApiProperty()
+  outboxId!: string;
+}

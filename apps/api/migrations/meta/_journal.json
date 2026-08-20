@@ -848,6 +848,13 @@
       "when": 1787002000000,
       "tag": "0120_fix_inventory_committed_and_kits",
       "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1787003000000,
+      "tag": "0121_add_outbox_listen_notify_triggers",
+      "breakpoints": true
     }
   ]
 }

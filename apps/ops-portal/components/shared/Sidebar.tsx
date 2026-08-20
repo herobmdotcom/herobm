@@ -42,7 +42,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
   const tHelp = useTranslations('help');
   const { toggleHelp, contextTopic } = useHelp();
   const { username, displayName } = useAuth();
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isPrefsOpen, setIsPrefsOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -87,6 +87,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
 
       sections.forEach((section, si) => {
         if (!section.label) return;
+        const sectionKey = section.label || `unlabeled-${si}`;
         const allItems = sections.flatMap((s) => s.items);
         const isSectionActive = section.items.some((item) => {
           return item.href === '/'
@@ -106,8 +107,8 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                 );
         });
 
-        if (isSectionActive && !next[si]) {
-          next[si] = true;
+        if (isSectionActive && !next[sectionKey]) {
+          next[sectionKey] = true;
           changed = true;
         }
       });
@@ -140,13 +141,15 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       {/* Navigation Groups */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3 bg-[#F8FAFC]">
         {sections.map((section, si) => {
-          const sectionExpandIcon = expanded[si] ? 'expand_less' : 'expand_more';
+          const sectionKey = section.label || `unlabeled-${si}`;
+          const isExpanded = !section.label || expanded[sectionKey];
+          const sectionExpandIcon = expanded[sectionKey] ? 'expand_less' : 'expand_more';
           return (
-            <div key={si} className="space-y-0.5">
+            <div key={sectionKey} className="space-y-0.5">
               {section.label && (
                 <div
                   className="flex items-center justify-between px-2.5 py-1 cursor-pointer group"
-                  onClick={() => setExpanded((prev) => ({ ...prev, [si]: !prev[si] }))}
+                  onClick={() => setExpanded((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
                 >
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] group-hover:text-[#475569] transition-colors">
                     {section.label}
@@ -156,7 +159,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                   </span>
                 </div>
               )}
-              {(!section.label || expanded[si]) &&
+              {isExpanded &&
                 section.items.map((item) => {
                   const allItems = sections.flatMap((s) => s.items);
                   const isActive =

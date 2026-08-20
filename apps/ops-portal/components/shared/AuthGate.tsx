@@ -42,23 +42,44 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const [password, setPassword] = useState('');
 
   useEffect(() => {
+    let mounted = true;
     if (getToken()) {
       // Don't blindly trust localStorage — verify the token is still valid
-      validateSession().then((res: { valid: boolean; data?: { role: string; username?: string; displayName?: string | null; permissions?: { resource: string; action: string; effect: string }[] } }) => {
+      validateSession().then((res: { valid: boolean; data?: { role: string; username?: string; displayName?: string | null; permissions?: { resource: string; action: string; effect: string }[] }; fromCache?: boolean }) => {
+        if (!mounted) return;
         if (res.valid && res.data) {
           setRole(res.data.role);
           setCurrentUsername(res.data.username || null);
           setDisplayName(res.data.displayName || null);
           setPermissions(res.data.permissions || []);
           setAuthenticated(true);
+
+          if (res.fromCache) {
+            // Background revalidation to refresh permissions as soon as API is reachable
+            setTimeout(() => {
+              validateSession().then((reval) => {
+                if (!mounted) return;
+                if (reval.valid && reval.data && !reval.fromCache) {
+                  setRole(reval.data.role);
+                  setCurrentUsername(reval.data.username || null);
+                  setDisplayName(reval.data.displayName || null);
+                  setPermissions(reval.data.permissions || []);
+                }
+              }).catch(() => {});
+            }, 1000);
+          }
         }
         setLoading(false);
       }).catch(() => {
-        setLoading(false);
+        if (mounted) setLoading(false);
       });
     } else {
       setLoading(false);
     }
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleLogin = async () => {

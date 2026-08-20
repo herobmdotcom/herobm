@@ -20,6 +20,7 @@ const TOKEN_KEY = 'herobm_token';
 const ROLE_KEY = 'herobm_role';
 const USERNAME_KEY = 'herobm_username';
 const DISPLAY_NAME_KEY = 'herobm_display_name';
+const PERMISSIONS_KEY = 'herobm_permissions';
 
 function readStorage(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -77,6 +78,16 @@ export function setToken(t: string) { token = t; writeStorage(TOKEN_KEY, t); }
 export function getRole() { return role; }
 export function getUsername() { return username; }
 export function getDisplayName() { return displayName; }
+export function getPermissions(): { resource: string; action: string; effect: string }[] {
+  const raw = readStorage(PERMISSIONS_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 function clearSession() {
   token = null;
@@ -87,6 +98,7 @@ function clearSession() {
   writeStorage(ROLE_KEY, null);
   writeStorage(USERNAME_KEY, null);
   writeStorage(DISPLAY_NAME_KEY, null);
+  writeStorage(PERMISSIONS_KEY, null);
 }
 
 export function logout() {
@@ -108,7 +120,7 @@ function clearSessionAndReload(): never {
  * Returns true if valid, false if expired/invalid (and clears storage).
  * Used by AuthGate on startup so stale tokens don't skip the login screen.
  */
-export async function validateSession(): Promise<{ valid: boolean; data?: any }> {
+export async function validateSession(): Promise<{ valid: boolean; data?: any; fromCache?: boolean }> {
   if (!token) return { valid: false };
   try {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -130,7 +142,10 @@ export async function validateSession(): Promise<{ valid: boolean; data?: any }>
         displayName = data.displayName;
         writeStorage(DISPLAY_NAME_KEY, displayName);
       }
-      return { valid: true, data };
+      if (Array.isArray(data.permissions)) {
+        writeStorage(PERMISSIONS_KEY, JSON.stringify(data.permissions));
+      }
+      return { valid: true, data, fromCache: false };
     }
     // Only clear session if the backend explicitly rejected the token as invalid/unauthorized
     if (res.status === 401 || res.status === 403) {
@@ -140,11 +155,29 @@ export async function validateSession(): Promise<{ valid: boolean; data?: any }>
     }
     // Server error (e.g. 502/503/504 while API is booting) — preserve cached session
     console.warn(`[validateSession] API unavailable (Status: ${res.status}). Preserving cached session.`);
-    return { valid: true, data: { role: getRole(), username: getUsername(), displayName: getDisplayName() } };
+    return {
+      valid: true,
+      data: {
+        role: getRole(),
+        username: getUsername(),
+        displayName: getDisplayName(),
+        permissions: getPermissions(),
+      },
+      fromCache: true,
+    };
   } catch (err) {
     // Network error or timeout (API starting up) — keep the token, let real API calls handle it
     console.warn('[validateSession] API unreachable or timed out. Preserving cached session.', err);
-    return { valid: true, data: { role: getRole(), username: getUsername(), displayName: getDisplayName() } };
+    return {
+      valid: true,
+      data: {
+        role: getRole(),
+        username: getUsername(),
+        displayName: getDisplayName(),
+        permissions: getPermissions(),
+      },
+      fromCache: true,
+    };
   }
 }
 

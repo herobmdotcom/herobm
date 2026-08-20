@@ -21,7 +21,12 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
-import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
+import {
+  CreateWebhookDto,
+  UpdateWebhookDto,
+  WebhookResponseDto,
+  DeleteWebhookResponseDto,
+} from './dto';
 
 import { WebhooksService } from './webhooks.service';
 
@@ -90,15 +95,7 @@ export class WebhooksController {
     summary: 'Delete Webhook',
     description: 'Removes a webhook subscription.',
   })
-  @ApiOkResponse({
-    // BYPASS-TYPING-TEST
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-      },
-    },
-  })
+  @ApiOkResponse({ type: DeleteWebhookResponseDto })
   async remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'api';
     return this.webhooksService.remove(id, actor);

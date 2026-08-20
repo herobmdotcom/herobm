@@ -53,7 +53,6 @@ export class PdfTemplatesController {
   @ApiBody({ type: RunHookBodyDto })
   @HttpCode(200)
   @ApiOkResponse({
-    // BYPASS-TYPING-TEST
     description: 'PDF Document',
     schema: { type: 'string', format: 'binary' },
   })
@@ -63,7 +62,7 @@ export class PdfTemplatesController {
     @Query('context') context: string,
     @AuthUser() user: JwtUser,
     @Res() res: Response,
-    @Body() body?: Record<string, unknown>,
+    @Body() body?: RunHookBodyDto,
   ) {
     if (!id || !context) {
       throw new UnauthorizedException('Missing id or context parameter');
@@ -221,7 +220,6 @@ export class PdfTemplatesController {
   })
   @HttpCode(200)
   @ApiOkResponse({
-    // BYPASS-TYPING-TEST
     description: 'PDF Document',
     schema: { type: 'string', format: 'binary' },
   })

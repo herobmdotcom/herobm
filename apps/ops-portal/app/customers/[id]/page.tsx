@@ -432,7 +432,7 @@ export default function AccountDetailPage({
               title={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenTitle') : t('customers.creditHold.activeTitle')}
               description={
                 customer.salesBlockReasons?.length
-                  ? customer.salesBlockReasons.map((r, index, array) => {
+                  ? (customer.salesBlockReasons as string[]).map((r: string, index: number, array: string[]) => {
                       const text = t(`customers.creditHold.reasons.${r}` as Parameters<typeof t>[0]);
                       const isLast = index === array.length - 1;
                       

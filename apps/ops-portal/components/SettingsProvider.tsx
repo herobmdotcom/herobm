@@ -63,18 +63,25 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const [glRes, orgRes, appRes] = await Promise.all([
+        const [glResult, orgResult, appResult] = await Promise.allSettled([
           api.glControllerGetSettings(),
           api.organizationControllerGet(),
-          api.appConfigControllerGet().catch(() => null)
+          api.appConfigControllerGet(),
         ]);
-        setGl(glRes.data as unknown as GlSettings);
-        setOrganization(orgRes.data);
-        if (appRes?.data) {
-          console.log('App settings retrieved:', appRes.data);
-          setApp(appRes.data as unknown as AppSettings);
+
+        if (glResult.status === 'fulfilled') {
+          setGl(glResult.value.data as unknown as GlSettings);
+        }
+
+        if (orgResult.status === 'fulfilled') {
+          setOrganization(orgResult.value.data);
+        }
+
+        if (appResult.status === 'fulfilled' && appResult.value?.data) {
+          console.log('App settings retrieved:', appResult.value.data);
+          setApp(appResult.value.data as unknown as AppSettings);
         } else {
-          console.log('App settings failed to load (appRes is null)');
+          console.log('App settings failed to load or returned null');
         }
       } catch (err: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.

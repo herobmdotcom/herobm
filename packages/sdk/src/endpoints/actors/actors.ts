@@ -6,19 +6,15 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  ActorNoteResponseDto,
   ActorResponseDto,
-  ActorsControllerAddContact201,
-  ActorsControllerAddNote201,
   ActorsControllerFindAll200,
   ActorsControllerFindAllParams,
-  ActorsControllerRemove200,
-  ActorsControllerRemoveContact200,
-  ActorsControllerRemoveNote200,
-  ActorsControllerUpdateContact200,
   CreateActorContactDto,
   CreateActorDto,
   CreateActorNoteDto,
   EmptyBodyDto,
+  SuccessResponseDto,
   UpdateActorContactDto,
   UpdateActorDto
 } from '../../model';
@@ -184,7 +180,7 @@ export const actorsControllerUpdate = async (id: string,
  * @summary Delete Actor
  */
 export type actorsControllerRemoveResponse200 = {
-  data: ActorsControllerRemove200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -220,7 +216,7 @@ export const actorsControllerRemove = async (id: string, options?: RequestInit):
  * @summary Update Contact Link on Actor
  */
 export type actorsControllerUpdateContactResponse200 = {
-  data: ActorsControllerUpdateContact200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -260,7 +256,7 @@ export const actorsControllerUpdateContact = async (id: string,
  * @summary Remove Contact Link from Actor
  */
 export type actorsControllerRemoveContactResponse200 = {
-  data: ActorsControllerRemoveContact200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -298,7 +294,7 @@ export const actorsControllerRemoveContact = async (id: string,
  * @summary Link Contact to Actor
  */
 export type actorsControllerAddContactResponse201 = {
-  data: ActorsControllerAddContact201
+  data: SuccessResponseDto
   status: 201
 }
     
@@ -422,7 +418,7 @@ export const actorsControllerUnarchive = async (id: string,
  * @summary Add Note to Actor
  */
 export type actorsControllerAddNoteResponse201 = {
-  data: ActorsControllerAddNote201
+  data: ActorNoteResponseDto
   status: 201
 }
     
@@ -460,7 +456,7 @@ export const actorsControllerAddNote = async (id: string,
  * @summary Remove Note from Actor
  */
 export type actorsControllerRemoveNoteResponse200 = {
-  data: ActorsControllerRemoveNote200
+  data: SuccessResponseDto
   status: 200
 }
     

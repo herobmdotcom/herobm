@@ -13,16 +13,9 @@ import type {
   EmptyBodyDto,
   ProjectNoteResponseDto,
   ProjectResponseDto,
-  ProjectsControllerAddActor201,
-  ProjectsControllerAddContact201,
   ProjectsControllerFindAll200,
   ProjectsControllerFindAllParams,
-  ProjectsControllerRemove200,
-  ProjectsControllerRemoveActor200,
-  ProjectsControllerRemoveContact200,
-  ProjectsControllerRemoveNote200,
-  ProjectsControllerUpdateActor200,
-  ProjectsControllerUpdateContact200,
+  SuccessResponseDto,
   UpdateProjectActorDto,
   UpdateProjectContactDto,
   UpdateProjectDto
@@ -189,7 +182,7 @@ export const projectsControllerUpdate = async (id: string,
  * @summary Delete Project
  */
 export type projectsControllerRemoveResponse200 = {
-  data: ProjectsControllerRemove200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -349,7 +342,7 @@ export const projectsControllerAddNote = async (id: string,
  * @summary Delete Note from Project
  */
 export type projectsControllerRemoveNoteResponse200 = {
-  data: ProjectsControllerRemoveNote200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -387,7 +380,7 @@ export const projectsControllerRemoveNote = async (id: string,
  * @summary Add Contact to Project
  */
 export type projectsControllerAddContactResponse201 = {
-  data: ProjectsControllerAddContact201
+  data: SuccessResponseDto
   status: 201
 }
     
@@ -425,7 +418,7 @@ export const projectsControllerAddContact = async (id: string,
  * @summary Remove Contact from Project
  */
 export type projectsControllerRemoveContactResponse200 = {
-  data: ProjectsControllerRemoveContact200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -463,7 +456,7 @@ export const projectsControllerRemoveContact = async (id: string,
  * @summary Update Contact Role on Project
  */
 export type projectsControllerUpdateContactResponse200 = {
-  data: ProjectsControllerUpdateContact200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -503,7 +496,7 @@ export const projectsControllerUpdateContact = async (id: string,
  * @summary Add Actor to Project
  */
 export type projectsControllerAddActorResponse201 = {
-  data: ProjectsControllerAddActor201
+  data: SuccessResponseDto
   status: 201
 }
     
@@ -541,7 +534,7 @@ export const projectsControllerAddActor = async (id: string,
  * @summary Update Actor Role on Project
  */
 export type projectsControllerUpdateActorResponse200 = {
-  data: ProjectsControllerUpdateActor200
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -581,7 +574,7 @@ export const projectsControllerUpdateActor = async (id: string,
  * @summary Remove Actor from Project
  */
 export type projectsControllerRemoveActorResponse200 = {
-  data: ProjectsControllerRemoveActor200
+  data: SuccessResponseDto
   status: 200
 }
     

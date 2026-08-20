@@ -22,10 +22,12 @@ import {
   CreateActorDto,
   UpdateActorDto,
   ActorResponseDto,
+  ActorNoteResponseDto,
   UpdateActorContactDto,
   CreateActorContactDto,
   CreateActorNoteDto,
   EmptyBodyDto,
+  SuccessResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -84,7 +86,7 @@ export class ActorsController {
     summary: 'Update Contact Link on Actor',
     description: 'Update Contact Link on Actor',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   updateContact(
     @Param('id') id: string,
     @Param('contactId') contactId: string,
@@ -100,7 +102,7 @@ export class ActorsController {
     summary: 'Link Contact to Actor',
     description: 'Link Contact to Actor',
   })
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: SuccessResponseDto })
   addContact(
     @Param('id') id: string,
     @Body() dto: CreateActorContactDto,
@@ -112,7 +114,7 @@ export class ActorsController {
   @Delete(':id')
   @CasbinAction('delete')
   @ApiOperation({ summary: 'Delete Actor', description: 'Delete Actor' })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.actorsService.deleteActor(id, user.userId);
   }
@@ -152,7 +154,7 @@ export class ActorsController {
     summary: 'Add Note to Actor',
     description: 'Add Note to Actor',
   })
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: ActorNoteResponseDto })
   addNote(
     @Param('id') id: string,
     @Body() dto: CreateActorNoteDto,
@@ -167,7 +169,7 @@ export class ActorsController {
     summary: 'Remove Note from Actor',
     description: 'Remove Note from Actor',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   removeNote(
     @Param('id') id: string,
     @Param('noteId') noteId: string,
@@ -182,7 +184,7 @@ export class ActorsController {
     summary: 'Remove Contact Link from Actor',
     description: 'Remove Contact Link from Actor',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   removeContact(
     @Param('id') id: string,
     @Param('contactId') contactId: string,

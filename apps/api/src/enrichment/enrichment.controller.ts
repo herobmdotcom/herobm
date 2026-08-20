@@ -10,9 +10,13 @@ import {
   Body,
 } from '@nestjs/common';
 import { EnrichmentService } from './enrichment.service';
-import { EnrichmentPayloadDto } from './enrichment.dto';
+import {
+  EnrichmentPayloadDto,
+  EnrichmentResultDto,
+  EnrichmentProviderDto,
+} from './enrichment.dto';
 import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
-import { ApiOkResponse, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('System')
@@ -24,7 +28,10 @@ export class EnrichmentController {
   @SkipCasbin()
   @Get('lookup')
   @ApiOperation({ summary: 'Lookup data', description: 'Lookup data by field' })
-  @ApiOkResponse({ description: 'Successful lookup', type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'Successful lookup',
+    type: EnrichmentResultDto,
+  })
   async lookup(
     @Query('field') field: string,
     @Query('country') country: string,
@@ -44,7 +51,10 @@ export class EnrichmentController {
     summary: 'Lookup data (POST)',
     description: 'Lookup data by field using POST',
   })
-  @ApiOkResponse({ description: 'Successful lookup', type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'Successful lookup',
+    type: EnrichmentResultDto,
+  })
   async lookupPost(
     @Query('field') field: string,
     @Query('country') country: string,
@@ -64,7 +74,10 @@ export class EnrichmentController {
     summary: 'Test provider',
     description: 'Test provider lookup',
   })
-  @ApiOkResponse({ description: 'Test provider lookup', type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'Test provider lookup',
+    type: EnrichmentResultDto,
+  })
   async testLookup(
     @Query('provider') provider: string,
     @Query('query') query: string,
@@ -79,7 +92,10 @@ export class EnrichmentController {
     summary: 'Test provider (POST)',
     description: 'Test provider lookup using POST',
   })
-  @ApiOkResponse({ description: 'Test provider lookup', type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'Test provider lookup',
+    type: EnrichmentResultDto,
+  })
   async testLookupPost(
     @Query('provider') provider: string,
     @Body() dto: EnrichmentPayloadDto,
@@ -98,7 +114,10 @@ export class EnrichmentController {
     summary: 'Get providers',
     description: 'List of available enrichment providers',
   })
-  @ApiOkResponse({ description: 'List of providers', type: [Object] }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'List of providers',
+    type: [EnrichmentProviderDto],
+  })
   getProviders() {
     return this.enrichmentService.getProviders();
   }
@@ -110,7 +129,10 @@ export class EnrichmentController {
     summary: 'Get config',
     description: 'Get config for provider',
   })
-  @ApiOkResponse({ description: 'Get config for provider', type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({
+    description: 'Get config for provider',
+    schema: { type: 'object', additionalProperties: true },
+  })
   async getConfig(@Query('provider') provider: string) {
     return this.enrichmentService.getConfig(provider);
   }
@@ -122,13 +144,14 @@ export class EnrichmentController {
     summary: 'Update config',
     description: 'Update config for provider',
   })
-  @ApiOkResponse({ description: 'Update config for provider', type: Object }) // BYPASS-TYPING-TEST
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiBody({ schema: { type: 'object', additionalProperties: true } })
+  @ApiOkResponse({
+    description: 'Update config for provider',
+    schema: { type: 'object', additionalProperties: true },
+  })
   async updateConfig(
     @Query('provider') provider: string,
-    // The config body is an untyped JSON payload whose structure depends on the specific enrichment provider.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    @Body() config: Record<string, any>,
+    @Body() config: Record<string, unknown>,
   ) {
     return this.enrichmentService.updateConfig(provider, config);
   }

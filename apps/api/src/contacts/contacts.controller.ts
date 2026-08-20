@@ -23,6 +23,7 @@ import {
   UpdateContactDto,
   ContactResponseDto,
   EmptyBodyDto,
+  SuccessResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -97,7 +98,7 @@ export class ContactsController {
     summary: 'Delete Contact',
     description: 'Hard delete an existing contact.',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.contactsService.deleteContact(id, user.userId);
   }

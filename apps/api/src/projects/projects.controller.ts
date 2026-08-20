@@ -28,6 +28,7 @@ import {
   CreateProjectActorDto,
   UpdateProjectActorDto,
   EmptyBodyDto,
+  SuccessResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { SystemResource } from '@herobm/shared';
@@ -136,7 +137,7 @@ export class ProjectsController {
     summary: 'Delete Note from Project',
     description: 'Delete Note from Project',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   removeNote(
     @Param('id') id: string,
     @Param('noteId') noteId: string,
@@ -151,7 +152,7 @@ export class ProjectsController {
     summary: 'Add Contact to Project',
     description: 'Add Contact to Project',
   })
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: SuccessResponseDto })
   addContact(
     @Param('id') id: string,
     @Body() dto: CreateProjectContactDto,
@@ -166,7 +167,7 @@ export class ProjectsController {
     summary: 'Remove Contact from Project',
     description: 'Remove Contact from Project',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   removeContact(
     @Param('id') id: string,
     @Param('contactId') contactId: string,
@@ -181,7 +182,7 @@ export class ProjectsController {
     summary: 'Update Contact Role on Project',
     description: 'Update Contact Role on Project',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   updateContact(
     @Param('id') id: string,
     @Param('contactId') contactId: string,
@@ -197,7 +198,7 @@ export class ProjectsController {
     summary: 'Add Actor to Project',
     description: 'Add Actor to Project',
   })
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: SuccessResponseDto })
   addActor(
     @Param('id') id: string,
     @Body() dto: CreateProjectActorDto,
@@ -212,7 +213,7 @@ export class ProjectsController {
     summary: 'Update Actor Role on Project',
     description: 'Update Actor Role on Project',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   updateActor(
     @Param('id') id: string,
     @Param('actorId') actorId: string,
@@ -228,7 +229,7 @@ export class ProjectsController {
     summary: 'Remove Actor from Project',
     description: 'Remove Actor from Project',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   removeActor(
     @Param('id') id: string,
     @Param('actorId') actorId: string,
@@ -240,7 +241,7 @@ export class ProjectsController {
   @Delete(':id')
   @CasbinAction('delete')
   @ApiOperation({ summary: 'Delete Project', description: 'Delete Project' })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: SuccessResponseDto })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.projectsService.deleteProject(id, user.userId);
   }

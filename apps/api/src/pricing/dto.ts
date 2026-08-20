@@ -69,3 +69,8 @@ export class ResolveDiscountRuleDto {
   @ApiProperty()
   discountPercentage!: string;
 }
+
+export class DeleteDiscountMatrixResponseDto {
+  @ApiProperty()
+  deleted!: boolean;
+}

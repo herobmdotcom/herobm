@@ -10,7 +10,7 @@ import { ContactCard } from "@/components/shared/ContactCard";
 import { ContactSlideOver } from "@/components/shared/ContactSlideOver";
 
 interface CustomerContactsTabProps {
-  customer: api.AccountResponseDto | null;
+  customer: api.CustomerResponseDto | null;
   loadAccount: () => void;
 }
 

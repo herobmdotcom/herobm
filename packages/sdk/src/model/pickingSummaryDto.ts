@@ -9,6 +9,7 @@ import type { PickingSummaryLineDto } from './pickingSummaryLineDto';
 import type { PickingSummaryPickDto } from './pickingSummaryPickDto';
 
 export interface PickingSummaryDto {
+  isCreditBlocked?: boolean;
   totalLines: number;
   fullyPickedLines: number;
   isFullyPicked: boolean;

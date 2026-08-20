@@ -72,3 +72,20 @@ export class BusinessReportResponseDto {
   @ApiProperty()
   isSystem!: boolean;
 }
+
+export class RunBusinessReportDto {
+  @ApiPropertyOptional({
+    description: 'Filter configuration object',
+    type: Object,
+  })
+  @IsObject()
+  @IsOptional()
+  filters?: Record<string, unknown>;
+
+  [key: string]: unknown;
+}
+
+export class DeleteReportResponseDto {
+  @ApiProperty()
+  success!: boolean;
+}

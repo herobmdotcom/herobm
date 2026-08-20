@@ -1533,7 +1533,8 @@
       "configureInfo": "Select which business events you want to see in your recent events feed.",
       "empty": "No recent events to display.",
       "errors": {
-        "failedToLoad": "Failed to load timeline."
+        "failedToLoad": "Failed to load timeline.",
+        "retry": "Retry"
       },
       "relativeUnits": {
         "d": "{count}d ago",

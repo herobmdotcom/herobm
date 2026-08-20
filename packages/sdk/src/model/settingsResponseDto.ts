@@ -5,9 +5,9 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { SettingsResponseDtoAccountMetadataSchema } from './settingsResponseDtoAccountMetadataSchema';
+import type { SettingsResponseDtoAccountMetadataSchemaItem } from './settingsResponseDtoAccountMetadataSchemaItem';
 
 export interface SettingsResponseDto {
   id: string;
-  accountMetadataSchema?: SettingsResponseDtoAccountMetadataSchema;
+  accountMetadataSchema?: SettingsResponseDtoAccountMetadataSchemaItem[];
 }

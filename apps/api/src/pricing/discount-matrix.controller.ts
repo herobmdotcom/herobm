@@ -25,6 +25,7 @@ import {
   UpdateDiscountMatrixDto,
   DiscountMatrixResponseDto,
   ResolveDiscountRuleDto,
+  DeleteDiscountMatrixResponseDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -127,15 +128,7 @@ export class DiscountMatrixController {
     summary: 'Delete Rule',
     description: 'Remove a discount rule from the matrix.',
   })
-  @ApiOkResponse({
-    // BYPASS-TYPING-TEST
-    schema: {
-      type: 'object',
-      properties: {
-        deleted: { type: 'boolean' },
-      },
-    },
-  })
+  @ApiOkResponse({ type: DeleteDiscountMatrixResponseDto })
   async delete(@Param('id') id: string) {
     return this.service.delete(id);
   }

@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "generate": "orval",
+    "generate": "orval && node scripts/post-generate.js",
     "test": "jest"
   },
   "devDependencies": {

@@ -53,6 +53,7 @@ describe('email-relay', () => {
     mockTransporter = {
       verify: vi.fn().mockResolvedValue(true),
       sendMail: vi.fn().mockResolvedValue({ messageId: 'test-id' }),
+      close: vi.fn(),
     };
 
     vi.mocked(nodemailer.createTransport).mockReturnValue(mockTransporter as any);
@@ -115,7 +116,13 @@ describe('email-relay', () => {
     // It should verify but NOT sendMail
     expect(mockTransporter.verify).toHaveBeenCalled();
     expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-    expect(mockDb.update).not.toHaveBeenCalled();
+    expect(mockDb.update).toHaveBeenCalledTimes(1);
+    expect(mockDb.set).toHaveBeenCalledWith({
+      retries: '1',
+      status: 'pending',
+      lastError: 'SMTP Connection Failed: Connection refused',
+      nextRetryAt: expect.any(Date),
+    });
   });
 
   it('should increment retry count on send failure', async () => {

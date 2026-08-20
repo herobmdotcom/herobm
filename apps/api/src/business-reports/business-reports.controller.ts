@@ -22,6 +22,8 @@ import {
   CreateBusinessReportDto,
   UpdateBusinessReportDto,
   BusinessReportResponseDto,
+  RunBusinessReportDto,
+  DeleteReportResponseDto,
 } from './business-reports.dto';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { BusinessReportsService } from './business-reports.service';
@@ -38,7 +40,7 @@ export class BusinessReportsController {
     summary: 'List available business reports',
     description: 'Returns a list of available business reports',
   })
-  @ApiOkResponse({ type: [Object] }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: [BusinessReportResponseDto] })
   async getReports(@AuthUser() user: JwtUser) {
     return this.service.getReports(user);
   }
@@ -62,11 +64,11 @@ export class BusinessReportsController {
     summary: 'Fetch data for a business report',
     description: 'Returns data for a specific business report',
   })
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiOkResponse({ type: [Object] }) // BYPASS-TYPING-TEST
+  @ApiBody({ type: RunBusinessReportDto })
+  @ApiOkResponse({ schema: { type: 'array', items: { type: 'object' } } })
   async runReport(
     @Param('slug') slug: string,
-    @Body() filters: Record<string, unknown>,
+    @Body() filters: RunBusinessReportDto,
     @AuthUser() user: JwtUser,
   ) {
     const data = await this.service.runReport(slug, filters, user);
@@ -79,7 +81,7 @@ export class BusinessReportsController {
     summary: 'Get a business report by ID',
     description: 'Returns the configuration for a specific business report',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: BusinessReportResponseDto })
   async getReportById(@Param('id') id: string) {
     return this.service.getReportById(id);
   }
@@ -121,7 +123,7 @@ export class BusinessReportsController {
     summary: 'Delete a business report',
     description: 'Deletes an existing business report configuration',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: DeleteReportResponseDto })
   async deleteReport(@Param('id') id: string) {
     return this.service.deleteReport(id);
   }

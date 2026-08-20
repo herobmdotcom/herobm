@@ -59,6 +59,7 @@ import type {
   PaginatedGoodsReceivedLineDto,
   PendingPutawayResponseDto,
   PickOrderLineDto,
+  PickingBarcodeDto,
   PickingQueueResponseDto,
   PickingSummaryDto,
   PickingSummaryPickDto,
@@ -831,6 +832,42 @@ export const getOrderPickingControllerGetPickingSummaryUrl = (id: string,) => {
 export const orderPickingControllerGetPickingSummary = async (id: string, options?: RequestInit): Promise<orderPickingControllerGetPickingSummaryResponse> => {
   
   return customFetch<orderPickingControllerGetPickingSummaryResponse>(getOrderPickingControllerGetPickingSummaryUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve scan-to-pick barcode payloads for all pickable lines and bins of an order.
+ * @summary Get Picking Barcodes
+ */
+export type orderPickingControllerGetPickingBarcodesResponse200 = {
+  data: PickingBarcodeDto[]
+  status: 200
+}
+    
+export type orderPickingControllerGetPickingBarcodesResponseSuccess = (orderPickingControllerGetPickingBarcodesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type orderPickingControllerGetPickingBarcodesResponse = (orderPickingControllerGetPickingBarcodesResponseSuccess)
+
+export const getOrderPickingControllerGetPickingBarcodesUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/picking/barcodes`
+}
+
+export const orderPickingControllerGetPickingBarcodes = async (id: string, options?: RequestInit): Promise<orderPickingControllerGetPickingBarcodesResponse> => {
+  
+  return customFetch<orderPickingControllerGetPickingBarcodesResponse>(getOrderPickingControllerGetPickingBarcodesUrl(id),
   {      
     ...options,
     method: 'GET'

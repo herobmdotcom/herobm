@@ -10,7 +10,7 @@ import { CUSTOMER_STATE } from '@herobm/shared';
 import type { ValidState } from '@/types/states';
 import { getErrorMessage } from '@herobm/shared';
 
-export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: { customerId: string; name: string }[] };
+export type Customer = api.CustomerResponseDto & { parentCustomerName?: string | null; childAccounts?: { customerId: string; name: string; customerNumber?: string }[] };
 
 /* ── Hook ────────────────────────────────────────────────────────── */
 

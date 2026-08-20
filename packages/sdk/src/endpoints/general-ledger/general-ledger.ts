@@ -46,7 +46,6 @@ import type {
   GlControllerGetGeneralLedgerParams,
   GlControllerGetJournalEntriesParams,
   GlControllerGetTrialBalanceParams,
-  GlControllerUpdateSettingsBody,
   ImportCsvDto,
   ImportCsvResponseDto,
   JournalEntryResponseDto,
@@ -71,6 +70,7 @@ import type {
   UpdateAccountRequestDto,
   UpdateCostCenterDto,
   UpdateExchangeRateDto,
+  UpdateGlSettingsDto,
   UpdateMappingProfileDto,
   UpdateReconciliationRuleDto
 } from '../../model';
@@ -495,7 +495,7 @@ export const getGlControllerUpdateSettingsUrl = () => {
   return `/gl/settings`
 }
 
-export const glControllerUpdateSettings = async (glControllerUpdateSettingsBody: GlControllerUpdateSettingsBody, options?: RequestInit): Promise<glControllerUpdateSettingsResponse> => {
+export const glControllerUpdateSettings = async (updateGlSettingsDto: UpdateGlSettingsDto, options?: RequestInit): Promise<glControllerUpdateSettingsResponse> => {
   
   return customFetch<glControllerUpdateSettingsResponse>(getGlControllerUpdateSettingsUrl(),
   {      
@@ -503,7 +503,7 @@ export const glControllerUpdateSettings = async (glControllerUpdateSettingsBody:
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      glControllerUpdateSettingsBody,)
+      updateGlSettingsDto,)
   }
 );}
 

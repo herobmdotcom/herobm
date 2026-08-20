@@ -130,7 +130,15 @@ export class GeneralLedgerResponseDto {
 }
 export class SettingsResponseDto {
   id: string;
-  accountMetadataSchema?: Record<string, unknown>;
+  accountMetadataSchema?: unknown[];
+}
+export class UpdateGlSettingsDto {
+  @ApiProperty({ required: false, type: [Object] })
+  @IsOptional()
+  @IsArray()
+  accountMetadataSchema?: unknown[];
+
+  [key: string]: unknown;
 }
 export class SuccessMessageResponseDto {
   success: boolean;

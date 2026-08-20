@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline check-all test-deps test-unit test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline check-all test-deps test-unit test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -75,6 +75,7 @@ ifeq ($(OS),Windows_NT)
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
+  NODE ?= node
   NPX ?= npx
   NPM ?= npm
 else
@@ -83,15 +84,16 @@ else
   COMPOSE_OVERRIDE =
   DBT ?= $(shell if [ -x $(CURDIR)/.venv/bin/dbt ]; then echo "$(CURDIR)/.venv/bin/dbt"; else echo "dbt"; fi)
   VENV_PYTHON ?= $(shell if [ -x $(CURDIR)/.venv/bin/python ]; then echo "$(CURDIR)/.venv/bin/python"; else echo "python3"; fi)
+  NODE ?= $(shell which node 2>/dev/null || if [ -x /opt/homebrew/bin/node ]; then echo "/opt/homebrew/bin/node"; else echo "node"; fi)
   NPX ?= $(shell which npx 2>/dev/null || if [ -x /opt/homebrew/bin/npx ]; then echo "/opt/homebrew/bin/npx"; else echo "npx"; fi)
   NPM ?= $(shell which npm 2>/dev/null || if [ -x /opt/homebrew/bin/npm ]; then echo "/opt/homebrew/bin/npm"; else echo "npm"; fi)
   PYTHON_CMD = python3
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
-  DEV_LOCAL_CMD = node scripts/dev-local.mjs
-  PROD_LOCAL_CMD = node scripts/prod-local.mjs
-  CLEAN_BUILD_CMD = node scripts/clean-build.mjs
-  TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
-  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
+  DEV_LOCAL_CMD = $(NODE) scripts/dev-local.mjs
+  PROD_LOCAL_CMD = $(NODE) scripts/prod-local.mjs
+  CLEAN_BUILD_CMD = $(NODE) scripts/clean-build.mjs
+  TEST_PIPELINE_CMD = $(NODE) scripts/test-pipeline.mjs
+  TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif
@@ -331,28 +333,28 @@ dev-docs-schema:
 	"$(VENV_PYTHON)" tools/generate_schema_reference.py
 
 dev-docs-webhooks:
-	npx tsx tools/generate_webhook_docs.ts
+	$(NPX) tsx tools/generate_webhook_docs.ts
 
 dev-docs-api: build-api
 	@echo "Generating OpenAPI spec from source..."
-	node apps/api/dist/scripts/generate-openapi.js
-	npx tsx tools/generate_api_docs.ts
+	$(NODE) apps/api/dist/scripts/generate-openapi.js
+	$(NPX) tsx tools/generate_api_docs.ts
 
 dev-docs-all: dev-docs-schema dev-docs-api dev-docs-webhooks
 
 dev-generate-sdk: dev-docs-api
 	@echo "Generating TypeScript SDK..."
-	npm run generate --workspace=@herobm/sdk
+	$(NPM) run generate --workspace=@herobm/sdk
 	@echo "Building TypeScript SDK..."
-	npm run build --workspace=@herobm/sdk
+	$(NPM) run build --workspace=@herobm/sdk
 
 dev-db-generate:
 	$(if $(NAME),,$(error Error: NAME is required. Usage: make dev-db-generate NAME=migration_name))
-	npx tsx tools/generate_migration.ts $(NAME)
+	$(NPX) tsx tools/generate_migration.ts $(NAME)
 
 generate-extensions:
-	node apps/api/scripts/generate-extensions.mjs
-	node apps/ops-portal/scripts/generate-extensions.mjs
+	$(NODE) apps/api/scripts/generate-extensions.mjs
+	$(NODE) apps/ops-portal/scripts/generate-extensions.mjs
 # --- ELT Pipeline (Container) ---
 
 extract-docker:
@@ -479,7 +481,7 @@ migrate: check-schema-drift
 	$(PYTHON_CMD) tools/migrate.py
 
 check-schema-drift: build-shared
-	npx tsx tools/check_schema_drift.ts
+	$(NPX) tsx tools/check_schema_drift.ts
 
 migrate-status:
 	$(PYTHON_CMD) tools/migrate.py --status
@@ -499,16 +501,16 @@ init: init-db migrate seed
 # --- Typechecks & Builds ---
 
 typecheck-portal: build-shared build-sdk
-	npm run typecheck -w apps/ops-portal
+	$(NPM) run typecheck -w apps/ops-portal
 
 build-api: build-shared build-db-schema
-	npm run build -w apps/api
+	$(NPM) run build -w apps/api
 
 build-mcp:
-	npm run build -w apps/mcp-server
+	$(NPM) run build -w apps/mcp-server
 
 build-portal: build-shared build-sdk
-	npm run build -w apps/ops-portal
+	$(NPM) run build -w apps/ops-portal
 ifeq ($(OS),Windows_NT)
 	if exist apps\ops-portal\public xcopy /E /I /Y apps\ops-portal\public apps\ops-portal\.next\standalone\apps\ops-portal\public
 	if exist apps\ops-portal\.next\static xcopy /E /I /Y apps\ops-portal\.next\static apps\ops-portal\.next\standalone\apps\ops-portal\.next\static
@@ -531,6 +533,7 @@ build-sdk:
 check-types: build-shared build-sdk build-db-schema
 	@$(NPM) run typecheck -w apps/api
 	@$(NPM) run typecheck -w apps/ops-portal
+	@$(NPM) run typecheck -w apps/worker
 
 check-lint:
 	@$(NPM) run lint -w apps/api
@@ -664,10 +667,10 @@ test-structural:
 	@$(NPX) knip
 
 query-drizzle:
-	cd apps/api && npx tsx tools/query_drizzle.ts ../../tmp/test_query.ts
+	cd apps/api && $(NPX) tsx tools/query_drizzle.ts ../../tmp/test_query.ts
 
 query-postgres:
-	cd apps/api && npx tsx tools/query_pg.ts ../../tmp/query.sql
+	cd apps/api && $(NPX) tsx tools/query_pg.ts ../../tmp/query.sql
 
 test-heavy: $(if $(SKIP_STRUCTURAL),,test-structural)
 	@$(TEST_HEAVY_CMD)
@@ -678,7 +681,7 @@ test-data:
 test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
-	npm run build -w apps/api -w apps/ops-portal -w packages/shared -w packages/db-schema -w packages/sdk --if-present
+	npm run build -w apps/api -w apps/ops-portal -w apps/worker -w packages/shared -w packages/db-schema -w packages/sdk --if-present
 	node scripts/run-on-enabled-extensions.mjs build
 
 clean-dev: clean-build

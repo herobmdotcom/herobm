@@ -11,7 +11,7 @@ import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '@herobm/db-schema';
 
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { PublishEventDto } from './dto';
+import { PublishEventDto, PublishEventResponseDto } from './dto';
 import * as crypto from 'crypto';
 
 @ApiTags('System')
@@ -25,15 +25,8 @@ export class EventsController {
   @ApiBody({ type: PublishEventDto })
   @CasbinAction('write')
   @ApiCreatedResponse({
-    // BYPASS-TYPING-TEST
     description: 'The event was successfully published.',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        outboxId: { type: 'string' },
-      },
-    },
+    type: PublishEventResponseDto,
   })
   @ApiOperation({
     summary: 'Publish Event',

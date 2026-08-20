@@ -28,25 +28,43 @@ export default function DashboardContent() {
   const [reports, setReports] = useState<{ slug: string; name: string }[]>([]);
 
   useEffect(() => {
-    Promise.all([
+    let mounted = true;
+
+    Promise.allSettled([
       userSettingsControllerGetSettings(),
       businessReportsControllerGetReports()
-    ]).then(([settingsRes, reportsRes]) => {
-      const settings = settingsRes.data;
-      setUserSettings(settings);
-      setDashboardConfig(settings.dashboardConfig || {});
-      if (settings.dashboardConfig?.timelineEvents) {
-        setEnabledEvents(settings.dashboardConfig?.timelineEvents as EventType[]);
+    ]).then(([settingsResult, reportsResult]) => {
+      if (!mounted) return;
+
+      if (settingsResult.status === 'fulfilled') {
+        const settings = settingsResult.value.data;
+        setUserSettings(settings);
+        setDashboardConfig(settings.dashboardConfig || {});
+        if (settings.dashboardConfig?.timelineEvents) {
+          setEnabledEvents(settings.dashboardConfig?.timelineEvents as EventType[]);
+        } else {
+          setEnabledEvents(DEFAULT_ENABLED_EVENTS);
+        }
       } else {
+        reportError(settingsResult.reason, 'DashboardContent.userSettings');
         setEnabledEvents(DEFAULT_ENABLED_EVENTS);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      setReports(((reportsRes as unknown as Record<string, any>).data as { slug: string; name: string }[]) || (reportsRes as unknown as { slug: string; name: string }[]));
-      setIsLoaded(true);
-    }).catch((err: unknown) => {
-      reportError(err, 'DashboardContent');
+
+      if (reportsResult.status === 'fulfilled') {
+        const reportsRes = reportsResult.value;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        setReports(((reportsRes as unknown as Record<string, any>).data as { slug: string; name: string }[]) || (reportsRes as unknown as { slug: string; name: string }[]));
+      } else {
+        // Expected if user does not have business report access
+        setReports([]);
+      }
+
       setIsLoaded(true);
     });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handlePreferencesChange = (events: EventType[]) => {
@@ -119,22 +137,22 @@ export default function DashboardContent() {
                 {t('quickActions.title')}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link
                   href="/sales-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
+                  className="group p-3.5 sm:p-4 rounded-xl transition-all duration-200 hover:scale-[1.01] hover:border-[var(--accent)]/30 border flex items-center gap-3.5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">request_quote</span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--accent)]">request_quote</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
+                    <div className="font-bold text-[14px] group-hover:text-accent transition-colors text-[var(--text-primary)] leading-snug">
                       {t('quickActions.createQuote')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
+                    <div className="text-[12px] opacity-60 mt-0.5 truncate text-[var(--text-muted)] leading-tight" title={t('quickActions.createQuoteDesc')}>
                       {t('quickActions.createQuoteDesc')}
                     </div>
                   </div>
@@ -142,19 +160,19 @@ export default function DashboardContent() {
 
                 <Link
                   href="/sales-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
+                  className="group p-3.5 sm:p-4 rounded-xl transition-all duration-200 hover:scale-[1.01] hover:border-[var(--accent)]/30 border flex items-center gap-3.5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">receipt_long</span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--accent)]">receipt_long</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
+                    <div className="font-bold text-[14px] group-hover:text-accent transition-colors text-[var(--text-primary)] leading-snug">
                       {t('quickActions.createSalesOrder')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
+                    <div className="text-[12px] opacity-60 mt-0.5 truncate text-[var(--text-muted)] leading-tight" title={t('quickActions.createSalesDesc')}>
                       {t('quickActions.createSalesDesc')}
                     </div>
                   </div>
@@ -162,19 +180,19 @@ export default function DashboardContent() {
 
                 <Link
                   href="/purchase-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] border flex flex-col gap-5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
+                  className="group p-3.5 sm:p-4 rounded-xl transition-all duration-200 hover:scale-[1.01] hover:border-[var(--accent)]/30 border flex items-center gap-3.5 cursor-pointer no-underline bg-[var(--bg-card)] border-[var(--border)]"
                 >
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110 bg-[#006b5c]/[0.08]"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 bg-[#006b5c]/[0.08]"
                   >
                     { }
-                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">local_shipping</span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--accent)]">local_shipping</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] group-hover:text-accent transition-colors text-[var(--text-primary)]">
+                    <div className="font-bold text-[14px] group-hover:text-accent transition-colors text-[var(--text-primary)] leading-snug">
                       {t('quickActions.createPurchaseOrder')}
                     </div>
-                    <div className="text-[13px] opacity-60 mt-0.5 truncate text-[var(--text-muted)]">
+                    <div className="text-[12px] opacity-60 mt-0.5 truncate text-[var(--text-muted)] leading-tight" title={t('quickActions.createPurchaseDesc')}>
                       {t('quickActions.createPurchaseDesc')}
                     </div>
                   </div>

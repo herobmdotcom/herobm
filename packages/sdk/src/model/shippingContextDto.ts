@@ -9,6 +9,7 @@ import type { ShippingContextLineDto } from './shippingContextLineDto';
 import type { ShipmentResponseDto } from './shipmentResponseDto';
 
 export interface ShippingContextDto {
+  isCreditBlocked?: boolean;
   lines: ShippingContextLineDto[];
   shipments: ShipmentResponseDto[];
 }

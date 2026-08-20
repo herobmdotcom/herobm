@@ -7,6 +7,7 @@ export default defineConfig({
       target: 'src/endpoints',
       schemas: 'src/model',
       client: 'fetch',
+      clean: true,
       mock: false,
       override: {
         mutator: {

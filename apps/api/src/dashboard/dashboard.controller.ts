@@ -3,6 +3,11 @@ import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Controller, Get, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  DashboardSummaryDto,
+  UniversalSearchResponseDto,
+  TimelineEventDto,
+} from './dto';
 
 @ApiTags('System')
 @Controller('dashboard')
@@ -16,7 +21,7 @@ export class DashboardController {
     summary: 'Get Summary',
     description: 'Retrieves key metrics and statistics for the dashboard.',
   })
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: DashboardSummaryDto })
   getSummary() {
     return this.dashboardService.getSummary();
   }
@@ -27,7 +32,7 @@ export class DashboardController {
     summary: 'Universal Search',
     description: 'Performs a global search across multiple entity types.',
   })
-  @ApiOkResponse({ schema: { type: 'array', items: { type: 'object' } } }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: UniversalSearchResponseDto })
   search(@Query('q') q: string) {
     return this.dashboardService.universalSearch(q);
   }
@@ -38,7 +43,7 @@ export class DashboardController {
     summary: 'Get Timeline',
     description: 'Retrieves a chronological list of recent system events.',
   })
-  @ApiOkResponse({ schema: { type: 'array', items: { type: 'object' } } }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: [TimelineEventDto] })
   getTimeline(
     @Query('types') typesQuery: string,
     @Query('limit') limitStr: string,

@@ -13,6 +13,7 @@ import type {
 import { customFetch } from '../../mutator';
 
 /**
+ * Retrieves a paginated list of global returns across both sales and purchase domains.
  * @summary Find Global Returns (Sales and Purchase)
  */
 export type unifiedReturnsControllerFindGlobalReturnsResponse200 = {

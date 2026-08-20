@@ -12,7 +12,7 @@ export default function EditReportConfigPage({ params: paramsPromise }: { params
   const t = useTranslations('admin.reporting');
   const tCommon = useTranslations('common.auth');
 
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<api.BusinessReportResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

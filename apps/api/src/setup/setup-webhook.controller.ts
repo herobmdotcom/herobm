@@ -13,7 +13,7 @@ import { SkipCasbin } from '../auth/casbin.guard';
 import { Public as InternalPublic } from '../auth/public.decorator';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
-import { WebhookPayloadDto } from './dto';
+import { WebhookPayloadDto, SuccessResponseDto } from './dto';
 import { PipelineSecretGuard } from './pipeline-secret.guard';
 
 @ApiExcludeController()
@@ -28,7 +28,10 @@ export class SetupWebhookController {
   @Post()
   @SkipThrottle()
   @HttpCode(HttpStatus.OK)
-  @ApiCreatedResponse({ description: 'Webhook received', type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({
+    description: 'Webhook received',
+    type: SuccessResponseDto,
+  })
   async handleWebhook(@Body() payload: WebhookPayloadDto) {
     this.setupService.handleWebhook(payload);
     return { success: true };

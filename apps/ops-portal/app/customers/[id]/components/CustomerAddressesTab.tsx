@@ -11,7 +11,7 @@ import DeliveryAddressSlideOver from "@/components/shared/DeliveryAddressSlideOv
 import { COUNTRIES } from "@herobm/shared";
 
 interface CustomerAddressesTabProps {
-  customer: api.AccountResponseDto | null;
+  customer: api.CustomerResponseDto | null;
   loadAccount: () => void;
 }
 

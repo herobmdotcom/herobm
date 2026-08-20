@@ -4,7 +4,13 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, BusinessReportsControllerGetReports200Item, BusinessReportsControllerRunReport200Item } from '@herobm/sdk';
+import {
+  businessReportsControllerGetReports,
+  businessReportsControllerRunReport,
+  userSettingsControllerGetSettings,
+  userSettingsControllerUpdateSettings,
+  BusinessReportResponseDto,
+} from '@herobm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { AgGridReact } from 'ag-grid-react';
@@ -24,8 +30,8 @@ export default function ReportViewer() {
   const [filters, setFilters] = useState<Record<string, unknown>>({});
   const gridRef = useRef<AgGridReact>(null);
 
-  const [reports, setReports] = useState<BusinessReportsControllerGetReports200Item[]>([]);
-  const [reportData, setReportData] = useState<BusinessReportsControllerRunReport200Item[] | null>(null);
+  const [reports, setReports] = useState<BusinessReportResponseDto[]>([]);
+  const [reportData, setReportData] = useState<Record<string, unknown>[] | null>(null);
    
   const [filteredChartData, setFilteredChartData] = useState<any[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);

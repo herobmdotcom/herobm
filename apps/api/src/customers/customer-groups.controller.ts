@@ -23,6 +23,7 @@ import {
   CreateCustomerGroupDto,
   UpdateCustomerGroupDto,
   CustomerGroupResponseDto,
+  DeleteCustomerGroupResponseDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -92,10 +93,7 @@ export class CustomerGroupsController {
     summary: 'Delete Customer Group',
     description: 'Remove a customer group from the system.',
   })
-  @ApiOkResponse({
-    // BYPASS-TYPING-TEST
-    schema: { type: 'object', properties: { deleted: { type: 'boolean' } } },
-  })
+  @ApiOkResponse({ type: DeleteCustomerGroupResponseDto })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customerGroupsService.delete(id, user?.userId);
   }

@@ -12,13 +12,13 @@ import type {
   CustomerGroupResponseDto,
   CustomerGroupsControllerFindAllParams,
   CustomerGroupsControllerFindOneParams,
-  CustomerGroupsControllerRemove200,
   CustomerResponseDto,
   CustomersControllerFindAll200,
   CustomersControllerFindAllParams,
   CustomersControllerFindOneParams,
   CustomersControllerGetAgedBalances200,
   CustomersControllerGetAgedBalancesParams,
+  DeleteCustomerGroupResponseDto,
   EmptyBodyDto,
   UpdateCustomerDto,
   UpdateCustomerGroupDto
@@ -512,7 +512,7 @@ export const customerGroupsControllerUpdate = async (id: string,
  * @summary Delete Customer Group
  */
 export type customerGroupsControllerRemoveResponse200 = {
-  data: CustomerGroupsControllerRemove200
+  data: DeleteCustomerGroupResponseDto
   status: 200
 }
     

@@ -148,4 +148,42 @@ describe('Sidebar', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
+
+  it('renders sections and expands items when clicking section headers', () => {
+    const testSections = [
+      {
+        label: 'Sales',
+        items: [
+          { href: '/sales-orders', label: 'Sales Orders', icon: 'receipt_long' },
+        ],
+      },
+      {
+        label: 'Finance',
+        items: [
+          { href: '/general-ledger', label: 'General Ledger', icon: 'menu_book' },
+        ],
+      },
+    ];
+
+    render(
+      <Sidebar
+        title="HeroBM"
+        subtitle="Business Management"
+        sections={testSections}
+      />,
+    );
+
+    expect(screen.getByText('Sales')).toBeInTheDocument();
+    expect(screen.getByText('Finance')).toBeInTheDocument();
+
+    // Clicking 'Sales' section header toggles its items
+    const salesHeader = screen.getByText('Sales');
+    fireEvent.click(salesHeader);
+    expect(screen.getByText('Sales Orders')).toBeInTheDocument();
+
+    // Clicking 'Finance' section header expands Finance items independently
+    const financeHeader = screen.getByText('Finance');
+    fireEvent.click(financeHeader);
+    expect(screen.getByText('General Ledger')).toBeInTheDocument();
+  });
 });

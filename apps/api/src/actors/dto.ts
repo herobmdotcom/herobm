@@ -318,3 +318,8 @@ export class CreateActorContactDto {
   primaryFor?: string[];
 }
 export class EmptyBodyDto {}
+
+export class SuccessResponseDto {
+  @SwaggerApiProperty()
+  success!: boolean;
+}

@@ -9,9 +9,9 @@ import type {
   ContactResponseDto,
   ContactsControllerFindAll200,
   ContactsControllerFindAllParams,
-  ContactsControllerRemove200,
   CreateContactDto,
   EmptyBodyDto,
+  SuccessResponseDto,
   UpdateContactDto
 } from '../../model';
 
@@ -176,7 +176,7 @@ export const contactsControllerUpdate = async (id: string,
  * @summary Delete Contact
  */
 export type contactsControllerRemoveResponse200 = {
-  data: ContactsControllerRemove200
+  data: SuccessResponseDto
   status: 200
 }
     

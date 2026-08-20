@@ -130,3 +130,8 @@ export class UpdateProjectContactDto {
   roles?: string[];
 }
 export class EmptyBodyDto {}
+
+export class SuccessResponseDto {
+  @ApiProperty()
+  success!: boolean;
+}

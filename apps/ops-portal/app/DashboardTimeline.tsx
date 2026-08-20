@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { EventType } from './TimelineSettingsSlideOver';
 import Link from 'next/link';
+import { Button } from '@/components/shared/Button';
 
 interface TimelineEvent {
   eventId: string;
@@ -112,6 +113,20 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
     };
   }, [enabledEvents]);
 
+  const handleRetry = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(false);
+    try {
+      const result = await api.dashboardControllerGetTimeline({ types: enabledEvents.join(','), limit: '20' });
+      setData(result.data as unknown as { events: TimelineEvent[] });
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [enabledEvents]);
+
   if (isLoading && !data) {
     return (
       <div className="flex justify-center p-8">
@@ -121,7 +136,20 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
   }
 
   if (error) {
-    return <div className="p-4 text-red-500 rounded-lg bg-[var(--bg-card)]">{t('errors.failedToLoad')}</div>;
+    return (
+      <div className="p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 bg-[var(--bg-card)] border-[var(--border)] text-center">
+        {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol icon name */}
+        <span className="material-symbols-outlined text-[32px] text-red-500">error</span>
+        <p className="text-sm text-[var(--text-secondary)]">{t('errors.failedToLoad' as Parameters<typeof t>[0])}</p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleRetry}
+        >
+          {t('errors.retry' as Parameters<typeof t>[0])}
+        </Button>
+      </div>
+    );
   }
 
   const events = data?.events || [];
