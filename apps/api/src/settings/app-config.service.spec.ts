@@ -121,5 +121,30 @@ describe('AppConfigService', () => {
       expect(service.isSetupComplete()).toBe(true);
       expect(service.defaultFulfillmentLocationId()).toBe(testLocationId);
     });
+
+    it('should persist and load salesAnalysisCodes', async () => {
+      const [created] = await pg.db
+        .insert(appSettings)
+        .values({
+          defaultFulfillmentLocationId: testLocationId,
+          inventoryValuationMethod: 'fifo',
+          inventoryAccountingMode: 'perpetual',
+          setupCompletedAt: new Date(),
+          creditLimitBehavior: 'soft',
+          apiRateLimit: '100',
+          salesAnalysisCodes: [
+            { value: 'EAST', order: 1 },
+            { value: 'WEST', order: 2 },
+          ],
+        })
+        .returning();
+
+      await service.reload();
+      const raw = service.getAppSettingsRaw();
+      expect(raw?.salesAnalysisCodes).toEqual([
+        { value: 'EAST', order: 1 },
+        { value: 'WEST', order: 2 },
+      ]);
+    });
   });
 });

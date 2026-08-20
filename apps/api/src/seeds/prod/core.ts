@@ -1503,6 +1503,19 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       console.log(
         '  Updated existing app_settings with default actorContactRoles.',
       );
+    }
+    if (!row.salesAnalysisCodes || row.salesAnalysisCodes.length === 0) {
+      await db.update(appSettings).set({
+        salesAnalysisCodes: [
+          { value: 'DEFAULT', order: 1 },
+          { value: 'PROMO', order: 2 },
+          { value: 'WHOLESALE', order: 3 },
+          { value: 'RETAIL', order: 4 },
+        ],
+      });
+      console.log(
+        '  Updated existing app_settings with default salesAnalysisCodes.',
+      );
     } else {
       console.log('  SKIP: app_settings record already exists.');
     }
@@ -1525,6 +1538,12 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         { value: 'Sales', order: 1 },
         { value: 'Purchasing', order: 2 },
         { value: 'Billing', order: 3 },
+      ],
+      salesAnalysisCodes: [
+        { value: 'DEFAULT', order: 1 },
+        { value: 'PROMO', order: 2 },
+        { value: 'WHOLESALE', order: 3 },
+        { value: 'RETAIL', order: 4 },
       ],
       apiRateLimit: '100',
     })

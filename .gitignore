@@ -80,10 +80,11 @@ portal-test-out.txt
 index.html
 Makefile.test
 .cursorrules
-# Environment Profiles
+# Environment Profiles & Runtime State
 .active_profile
 .env.*
 .setup-token
+.startup_choice
 
 # PGlite Snapshots
 .pglite-snapshot.bin

@@ -19,14 +19,14 @@ export interface UpdateAppConfigDto {
   defaultSupplierTaxPositionId?: string;
   defaultPurchaseTaxCategoryId?: string;
   defaultSalesTaxCategoryId?: string;
-  apiRateLimit?: string;
-  taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
-  enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
+  smtpFromAddress?: string;
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
   smtpPass?: string;
-  smtpFromAddress?: string;
+  apiRateLimit?: string;
+  taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
+  enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
   actorTags?: OrderedSettingDto[];
   actorContactRoles?: OrderedSettingDto[];
   projectContactRoles?: OrderedSettingDto[];
@@ -34,4 +34,5 @@ export interface UpdateAppConfigDto {
   referralModes?: OrderedSettingDto[];
   projectStatuses?: OrderedSettingDto[];
   projectTypes?: OrderedSettingDto[];
+  salesAnalysisCodes?: OrderedSettingDto[];
 }

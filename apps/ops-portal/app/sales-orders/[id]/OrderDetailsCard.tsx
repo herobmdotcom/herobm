@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { OrderDetail } from './types';
 import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface OrderDetailsCardProps {
     order: OrderDetail;
@@ -43,6 +44,12 @@ export default function OrderDetailsCard({
 }: OrderDetailsCardProps) {
     const tSales = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
+    const { app } = useSettings();
+
+    const configuredAnalysisCodes: api.OrderedSettingDto[] = React.useMemo(() => {
+        const codes = (app?.salesAnalysisCodes as api.OrderedSettingDto[]) || [];
+        return [...codes].sort((a, b) => a.order - b.order);
+    }, [app?.salesAnalysisCodes]);
 
     return (
         <div id="details-section" className="card">
@@ -143,14 +150,39 @@ export default function OrderDetailsCard({
                     <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         Analysis Code
                     </label>
-                    <input
-                        className="input w-full"
-                        disabled={!isOrderDetailsEditable}
-                        value={editAnalysisCode}
-                        onChange={(e) => setEditAnalysisCode(e.target.value)}
-                        onBlur={() => saveHeader()}
-                        placeholder="e.g. Q3_PROMO"
-                    />
+                    {configuredAnalysisCodes.length > 0 ? (
+                        <select
+                            className="input w-full"
+                            disabled={!isOrderDetailsEditable}
+                            value={editAnalysisCode}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setEditAnalysisCode(val);
+                                saveHeader({ customFields: { analysisCode: val || undefined } });
+                            }}
+                        >
+                            <option value="">— None —</option>
+                            {configuredAnalysisCodes.map((c) => (
+                                <option key={c.value} value={c.value}>
+                                    {c.value}
+                                </option>
+                            ))}
+                            {editAnalysisCode && !configuredAnalysisCodes.some((c) => c.value === editAnalysisCode) && (
+                                <option value={editAnalysisCode}>
+                                    {editAnalysisCode} (Custom)
+                                </option>
+                            )}
+                        </select>
+                    ) : (
+                        <input
+                            className="input w-full"
+                            disabled={!isOrderDetailsEditable}
+                            value={editAnalysisCode}
+                            onChange={(e) => setEditAnalysisCode(e.target.value)}
+                            onBlur={() => saveHeader()}
+                            placeholder="e.g. Q3_PROMO"
+                        />
+                    )}
                 </div>
 
                 <div className="min-w-0 col-span-1 md:col-span-2">

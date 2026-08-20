@@ -15,7 +15,7 @@ const parseInitialPhone = (val: string) => {
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { Button } from '@/components/shared/Button';
@@ -115,7 +115,7 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
 }
 
 export default function NewOrderPage() {
-  const { baseCurrency } = useSettings();
+  const { baseCurrency, app } = useSettings();
   useDocumentTitle('New Sales Order');
   const tSales = useTranslations();
   const tCommon = useTranslations('common');
@@ -133,9 +133,15 @@ export default function NewOrderPage() {
   const [taxPositionMappings, setTaxPositionMappings] = useState<TaxPositionMapping[]>([]);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
+  const [analysisCode, setAnalysisCode] = useState('');
   const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
   const [shippingNotes, setShippingNotes] = useState('');
+
+  const configuredAnalysisCodes: api.OrderedSettingDto[] = useMemo(() => {
+    const codes = (app?.salesAnalysisCodes as api.OrderedSettingDto[]) || [];
+    return [...codes].sort((a, b) => a.order - b.order);
+  }, [app?.salesAnalysisCodes]);
   const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
@@ -395,6 +401,7 @@ export default function NewOrderPage() {
         deliveryState: deliveryState || undefined,
         deliveryPostalCode: deliveryPostalCode || undefined,
         deliveryCountry: deliveryCountry || undefined,
+        customFields: analysisCode ? { analysisCode } : undefined,
         lines: lines
           .filter((l) => l.productId)
           .map((l) => ({
@@ -549,6 +556,40 @@ export default function NewOrderPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Analysis Code
+              </label>
+              {configuredAnalysisCodes.length > 0 ? (
+                <select
+                  id="order-analysis-code"
+                  className="input w-full"
+                  value={analysisCode}
+                  onChange={(e) => setAnalysisCode(e.target.value)}
+                >
+                  <option value="">— None —</option>
+                  {configuredAnalysisCodes.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.value}
+                    </option>
+                  ))}
+                  {analysisCode && !configuredAnalysisCodes.some((c) => c.value === analysisCode) && (
+                    <option value={analysisCode}>
+                      {analysisCode} (Custom)
+                    </option>
+                  )}
+                </select>
+              ) : (
+                <input
+                  id="order-analysis-code"
+                  className="input"
+                  placeholder="e.g. Q3_PROMO"
+                  value={analysisCode}
+                  onChange={(e) => setAnalysisCode(e.target.value)}
+                />
+              )}
             </div>
 
 

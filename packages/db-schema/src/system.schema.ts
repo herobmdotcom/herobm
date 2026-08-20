@@ -171,6 +171,8 @@ export const appSettings = herobmCore.table('app_settings', {
     jsonb('project_types').$type<{ value: string; order: number }[]>(),
   referralModes:
     jsonb('referral_modes').$type<{ value: string; order: number }[]>(),
+  salesAnalysisCodes:
+    jsonb('sales_analysis_codes').$type<{ value: string; order: number }[]>(),
   apiRateLimit: numeric('api_rate_limit').notNull(),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
   systemIdentifier: text('system_identifier'), // UUID generated on first boot for hardware locking

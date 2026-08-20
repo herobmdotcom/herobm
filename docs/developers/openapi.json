@@ -24019,6 +24019,12 @@
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
+          },
+          "salesAnalysisCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
           }
         },
         "required": [
@@ -24058,14 +24064,9 @@
           "defaultSalesTaxCategoryId": {
             "type": "string"
           },
-          "apiRateLimit": {
-            "type": "string"
-          },
-          "taxProviderMappings": {
-            "type": "object"
-          },
-          "enrichmentProviderMappings": {
-            "type": "object"
+          "smtpFromAddress": {
+            "type": "string",
+            "format": "email"
           },
           "smtpHost": {
             "type": "string"
@@ -24079,8 +24080,14 @@
           "smtpPass": {
             "type": "string"
           },
-          "smtpFromAddress": {
+          "apiRateLimit": {
             "type": "string"
+          },
+          "taxProviderMappings": {
+            "type": "object"
+          },
+          "enrichmentProviderMappings": {
+            "type": "object"
           },
           "actorTags": {
             "type": "array",
@@ -24119,6 +24126,12 @@
             }
           },
           "projectTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "salesAnalysisCodes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"

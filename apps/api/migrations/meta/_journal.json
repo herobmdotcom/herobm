@@ -855,6 +855,13 @@
       "when": 1787003000000,
       "tag": "0121_add_outbox_listen_notify_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1787228113636,
+      "tag": "0122_add_sales_analysis_codes_to_app_settings",
+      "breakpoints": true
     }
   ]
 }

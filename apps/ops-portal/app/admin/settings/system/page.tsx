@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
+import { OrderedSettingEditor } from '@/components/shared/OrderedSettingEditor';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -256,6 +257,7 @@ export default function SystemSettingsPage() {
     { id: 'org-section', label: tSettings('sections.company'), show: true },
     { id: 'bank-section', label: tSettings('sections.bank'), show: true },
     { id: 'warehouse-settings-section', label: 'Warehouse Settings', show: true },
+    { id: 'sales-analysis-codes-section', label: tSettings('sections.salesAnalysisCodes'), show: true },
     { id: 'uom-section', label: tSettings('sections.uom'), show: true },
     { id: 'macros-section', label: tSettings('sections.macros'), show: true },
   ], [tSettings]);
@@ -573,6 +575,22 @@ export default function SystemSettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Sales Order Analysis Codes ───────────────────────────────────── */}
+        <div id="sales-analysis-codes-section" className="card">
+          <OrderedSettingEditor
+            title={
+              <h3 className="section-heading !mb-0 flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                <span className="material-symbols-outlined">analytics</span>
+                {tSettings('sections.salesAnalysisCodes')}
+              </h3>
+            }
+            columnTitle={tSettings('labels.analysisCode')}
+            items={appForm?.salesAnalysisCodes || []}
+            onChange={(newCodes) => updateAppField('salesAnalysisCodes', newCodes)}
+          />
         </div>
 
         {/* ── UOM Dictionary ─────────────────────────────────────────────── */}

@@ -34,4 +34,5 @@ export interface AppConfigResponseDto {
   projectStatuses?: OrderedSettingDto[];
   projectTypes?: OrderedSettingDto[];
   referralModes?: OrderedSettingDto[];
+  salesAnalysisCodes?: OrderedSettingDto[];
 }

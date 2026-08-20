@@ -277,6 +277,8 @@ export class AppConfigResponseDto {
   projectTypes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   referralModes?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  salesAnalysisCodes?: OrderedSettingDto[];
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
@@ -319,18 +321,10 @@ export class UpdateAppConfigDto {
   @IsString()
   defaultSalesTaxCategoryId?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, type: 'string', format: 'email' })
   @IsOptional()
-  @IsNumberString()
-  apiRateLimit?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  taxProviderMappings?: Record<string, string>;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  enrichmentProviderMappings?: Record<string, Record<string, string>>;
+  @IsEmail()
+  smtpFromAddress?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -354,8 +348,16 @@ export class UpdateAppConfigDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  smtpFromAddress?: string;
+  @IsNumberString()
+  apiRateLimit?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  taxProviderMappings?: Record<string, string>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  enrichmentProviderMappings?: Record<string, Record<string, string>>;
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
@@ -405,6 +407,13 @@ export class UpdateAppConfigDto {
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
   projectTypes?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  salesAnalysisCodes?: OrderedSettingDto[];
 }
 export class TradingTermResponseDto {
   @ApiProperty() tradingTermsId!: string;

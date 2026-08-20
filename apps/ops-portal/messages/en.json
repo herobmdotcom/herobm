@@ -590,6 +590,7 @@
         "active": "Active",
         "address1": "Address Line 1",
         "address2": "Address Line 2",
+        "analysisCode": "Analysis Code",
         "bank": "Bank",
         "bankName": "Bank Name",
         "baseCurrency": "Base Currency",
@@ -704,6 +705,7 @@
         "gl": "General Ledger",
         "macros": "Text Macros",
         "rates": "Currencies",
+        "salesAnalysisCodes": "Sales Order Analysis Codes",
         "tax": "Tax Codes",
         "taxPositions": "Tax Positions",
         "uom": "Units of Measure"
