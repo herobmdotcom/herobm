@@ -71,7 +71,7 @@ ifeq ($(OS),Windows_NT)
   DEV_LOCAL_CMD = node scripts/dev-local.mjs
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
-  FAST_INSTALL_CMD = node scripts/fast-install.mjs
+  FAST_INSTALL_CMD = powershell -ExecutionPolicy Bypass -File scripts/fast-install.ps1
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
@@ -91,7 +91,7 @@ else
   DEV_LOCAL_CMD = node scripts/dev-local.mjs
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
-  FAST_INSTALL_CMD = node scripts/fast-install.mjs
+  FAST_INSTALL_CMD = bash scripts/fast-install.sh
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
   COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)

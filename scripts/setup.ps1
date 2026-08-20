@@ -227,9 +227,7 @@ if ($failed.Count -gt 0) {
 else {
     Write-Host "`n  All prerequisites installed!" -ForegroundColor Green
     if (-not $SkipRun) {
-        Write-Host "  Starting your chosen environment..." -ForegroundColor Green
-        $initCmd = "make init-env " + ($makeTargets -join " ")
-        Write-Host "  Running: $initCmd" -ForegroundColor Cyan
-        Invoke-Expression $initCmd
+        Write-Host "  To complete setup and boot your environment, run:" -ForegroundColor Green
+        Write-Host "  > make fast-install" -ForegroundColor Cyan
     }
 }
