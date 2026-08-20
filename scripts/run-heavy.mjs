@@ -47,7 +47,9 @@ console.log('\x1b[36mBuilding isolated test images...\x1b[0m');
 run('podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .');
 run('podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .');
 run('podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .');
-run('podman build --no-cache --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .');
+if (!skipUI) {
+    run('podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .');
+}
 
 console.log('\x1b[36mEnsuring network exists...\x1b[0m');
 process.env.APP_NETWORK_NAME = 'herobm_app-net';
@@ -90,7 +92,10 @@ if (!run('npm run seed:test -w apps/api', dbEnv)) {
 }
 
 console.log('\x1b[36mBooting up app containers...\x1b[0m');
-if (!run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d custom-api-test worker-test pipeline-runner-test ops-portal-test')) {
+const appContainers = skipUI 
+    ? 'custom-api-test worker-test pipeline-runner-test' 
+    : 'custom-api-test worker-test pipeline-runner-test ops-portal-test';
+if (!run(`podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d ${appContainers}`)) {
     console.error('\x1b[31mFailed to boot test app containers!\x1b[0m');
     process.exit(1);
 }

@@ -29,6 +29,7 @@
     "@asyncapi/specs": "^6.11.1",
     "@nestjs/cli": "^11.0.24",
     "es-abstract": "^1.24.2",
-    "es-aggregate-error": "^1.0.14"
+    "es-aggregate-error": "^1.0.14",
+    "zod": "^3.24.2"
   }
 }

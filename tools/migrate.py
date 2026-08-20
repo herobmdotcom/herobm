@@ -9,6 +9,7 @@ Usage:
     python tools/migrate.py --status     # show migration status
     python tools/migrate.py --dry-run    # show what would be applied
 """
+from __future__ import annotations
 
 import subprocess
 import sys
