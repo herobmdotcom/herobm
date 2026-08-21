@@ -130,8 +130,9 @@ All configuration is via environment variables (no hardcoded secrets per Constit
 BullMQ workers and queues require explicit resilience options to survive idle socket pruning, transient connection drops, and avoid unhandled socket exceptions:
 
 - `maxRetriesPerRequest: null`: Required by BullMQ for blocking commands.
-- `enableReadyCheck: false`: Avoids duplicate readiness checks during reconnect.
+- `enableReadyCheck: true`: Ensures AUTH handshake is confirmed before BullMQ issues Lua script commands.
 - `disableClientInfo: true`: Prevents `CLIENT SETINFO` race conditions upon connection handshake.
+- `family: 4`: Resolves IPv4 to avoid Node.js 18+ IPv6 (`::1`) connection refusals.
 - `keepAlive: 30000`: Keeps TCP sockets alive through NAT/container layers.
 - `connectTimeout: 10000`: Bounded connection timeout.
 - `retryStrategy` and `reconnectOnError`: Exponential backoff reconnect strategy.

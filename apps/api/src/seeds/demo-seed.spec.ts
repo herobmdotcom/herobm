@@ -7,21 +7,52 @@ import {
   bins,
   productGroups,
   products,
+  productComponents,
+  productUoms,
   productDefaultBins,
+  discountMatrix,
   actors,
-  suppliers,
+  contacts,
+  actorContactLinks,
+  actorActorLinks,
+  actorNotes,
+  projects,
+  projectActors,
+  projectNotes,
+  customerGroups,
   customers,
   customerDeliveryAddresses,
+  suppliers,
+  workOrders,
+  workOrderComponents,
+  workOrderPicks,
   purchaseOrders,
   purchaseOrderLineItems,
   goodsReceived,
   goodsReceivedLines,
   purchaseInvoices,
+  purchaseOrderReturns,
+  purchaseOrderReturnLines,
+  purchaseOrderReturnShipments,
+  purchaseDebitNotes,
+  purchaseDebitNoteLines,
+  purchaseDebitNoteShipments,
   salesOrders,
   salesOrderLineItems,
   salesOrderPicks,
   salesOrderShipments,
   salesInvoices,
+  salesOrderReturns,
+  salesOrderReturnLines,
+  salesCreditNotes,
+  salesCreditNoteLines,
+  backorders,
+  paymentEntries,
+  paymentAllocations,
+  paymentLines,
+  glJournalEntries,
+  glJournalLines,
+  exchangeRates,
   inventoryEntries,
   inventoryLedger,
   binContents,
@@ -29,32 +60,48 @@ import {
   procurementEvents,
   salesEvents,
   inventoryEvents,
+  warehouseEvents,
+  financialEvents,
 } from '@herobm/db-schema';
-import { PRODUCT_STATE, SUPPLIER_STATE, CUSTOMER_STATE } from '@herobm/shared';
+import {
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+  CUSTOMER_STATE,
+  WORK_ORDER_STATE,
+  RETURN_STATE,
+  PURCHASE_RETURN_STATE,
+  PURCHASE_DEBIT_NOTE_STATE,
+  SALES_CREDIT_NOTE_STATE,
+} from '@herobm/shared';
 import type { SeedDB } from './run';
 
 describe('Demo Seed Verification Suite', () => {
   const ctx = setupPgliteSuite();
 
-  it('should successfully execute runDemoSeeds and populate valid relational data across all domains', async () => {
+  it('should successfully execute runDemoSeeds and populate valid relational data across all 10 HeroBM capability domains', async () => {
     // 1. Execute Demo Seeding
-    await runDemoSeeds(ctx.db as unknown as SeedDB, false, true);
+    await runDemoSeeds(ctx.db as unknown as SeedDB, false, true, 'us_standard');
 
-    // 2. Assert Master Data
+    // 2. Assert Exchange Rates & FX
+    const seededFx = await ctx.db.select().from(exchangeRates);
+    expect(seededFx.length).toBeGreaterThanOrEqual(5);
+
+    // 3. Assert Master Data (Warehouses, Zones, Bins)
     const seededLocations = await ctx.db.select().from(locations);
     expect(seededLocations.length).toBeGreaterThanOrEqual(3);
 
     const seededZones = await ctx.db.select().from(zones);
-    expect(seededZones.length).toBeGreaterThanOrEqual(3);
+    expect(seededZones.length).toBeGreaterThanOrEqual(6);
 
     const seededBins = await ctx.db.select().from(bins);
-    expect(seededBins.length).toBeGreaterThanOrEqual(3);
+    expect(seededBins.length).toBeGreaterThanOrEqual(18);
 
     const seededProductGroups = await ctx.db.select().from(productGroups);
-    expect(seededProductGroups.length).toBeGreaterThanOrEqual(3);
+    expect(seededProductGroups.length).toBeGreaterThanOrEqual(4);
 
+    // 4. Assert Products, Kits, BOM Components & UOMs
     const seededProducts = await ctx.db.select().from(products);
-    expect(seededProducts.length).toBeGreaterThanOrEqual(9);
+    expect(seededProducts.length).toBeGreaterThanOrEqual(11);
     for (const p of seededProducts) {
       expect(p.stateCode).toBe(PRODUCT_STATE.ACTIVE);
       if (p.productNumber !== 'SYSTEM-CUSTOM-LINE') {
@@ -63,15 +110,27 @@ describe('Demo Seed Verification Suite', () => {
       }
     }
 
+    const seededBoms = await ctx.db.select().from(productComponents);
+    expect(seededBoms.length).toBeGreaterThanOrEqual(9);
+
+    const seededUoms = await ctx.db.select().from(productUoms);
+    expect(seededUoms.length).toBeGreaterThanOrEqual(2);
+
     const defaultBins = await ctx.db.select().from(productDefaultBins);
     expect(defaultBins.length).toBeGreaterThan(0);
 
-    // 3. Assert CRM Actors, Suppliers & Customers
+    // 5. Assert CRM Actors, Groups, Suppliers, Customers & Discounts
+    const seededGroups = await ctx.db.select().from(customerGroups);
+    expect(seededGroups.length).toBeGreaterThanOrEqual(3);
+
+    const seededDiscounts = await ctx.db.select().from(discountMatrix);
+    expect(seededDiscounts.length).toBeGreaterThanOrEqual(3);
+
     const seededActors = await ctx.db.select().from(actors);
-    expect(seededActors.length).toBeGreaterThanOrEqual(9);
+    expect(seededActors.length).toBeGreaterThanOrEqual(10);
 
     const seededSuppliers = await ctx.db.select().from(suppliers);
-    expect(seededSuppliers.length).toBeGreaterThanOrEqual(4);
+    expect(seededSuppliers.length).toBeGreaterThanOrEqual(5);
     for (const s of seededSuppliers) {
       expect(s.actorId).toBeDefined();
       expect(s.stateCode).toBe(SUPPLIER_STATE.ACTIVE);
@@ -90,15 +149,52 @@ describe('Demo Seed Verification Suite', () => {
       .from(customerDeliveryAddresses);
     expect(deliveryAddresses.length).toBeGreaterThanOrEqual(5);
 
-    // 4. Assert Procurement Transactions
+    const seededContacts = await ctx.db.select().from(contacts);
+    expect(seededContacts.length).toBeGreaterThanOrEqual(10);
+
+    const seededContactLinks = await ctx.db.select().from(actorContactLinks);
+    expect(seededContactLinks.length).toBeGreaterThanOrEqual(10);
+
+    const seededActorLinks = await ctx.db.select().from(actorActorLinks);
+    expect(seededActorLinks.length).toBeGreaterThanOrEqual(1);
+
+    const seededActorNotes = await ctx.db.select().from(actorNotes);
+    expect(seededActorNotes.length).toBeGreaterThanOrEqual(1);
+
+    // 6. Assert CRM Projects
+    const seededProjects = await ctx.db.select().from(projects);
+    expect(seededProjects.length).toBeGreaterThanOrEqual(2);
+
+    const seededProjActors = await ctx.db.select().from(projectActors);
+    expect(seededProjActors.length).toBeGreaterThanOrEqual(3);
+
+    const seededProjNotes = await ctx.db.select().from(projectNotes);
+    expect(seededProjNotes.length).toBeGreaterThanOrEqual(1);
+
+    // 7. Assert Manufacturing Work Orders
+    const seededWorkOrders = await ctx.db.select().from(workOrders);
+    expect(seededWorkOrders.length).toBe(6);
+
+    const completedWos = seededWorkOrders.filter(
+      (w) => w.stateCode === WORK_ORDER_STATE.COMPLETED,
+    );
+    expect(completedWos.length).toBe(4);
+
+    const seededWoComponents = await ctx.db.select().from(workOrderComponents);
+    expect(seededWoComponents.length).toBeGreaterThan(0);
+
+    const seededWoPicks = await ctx.db.select().from(workOrderPicks);
+    expect(seededWoPicks.length).toBeGreaterThan(0);
+
+    // 8. Assert Procurement & Supplier Returns / Debits
     const seededPOs = await ctx.db.select().from(purchaseOrders);
-    expect(seededPOs.length).toBe(20);
+    expect(seededPOs.length).toBe(25);
     for (const po of seededPOs) {
       expect(Number(po.baseTotalAmount)).toBeGreaterThan(0);
     }
 
     const seededPOLines = await ctx.db.select().from(purchaseOrderLineItems);
-    expect(seededPOLines.length).toBeGreaterThanOrEqual(40);
+    expect(seededPOLines.length).toBeGreaterThanOrEqual(50);
 
     const seededGRs = await ctx.db.select().from(goodsReceived);
     expect(seededGRs.length).toBeGreaterThan(0);
@@ -109,26 +205,106 @@ describe('Demo Seed Verification Suite', () => {
     const seededAPInvoices = await ctx.db.select().from(purchaseInvoices);
     expect(seededAPInvoices.length).toBeGreaterThan(0);
 
-    // 5. Assert Sales Transactions
+    const seededPoReturns = await ctx.db.select().from(purchaseOrderReturns);
+    expect(seededPoReturns.length).toBe(3);
+    for (const r of seededPoReturns) {
+      expect(r.stateCode).toBe(PURCHASE_RETURN_STATE.SHIPPED);
+    }
+
+    const seededPoReturnLines = await ctx.db
+      .select()
+      .from(purchaseOrderReturnLines);
+    expect(seededPoReturnLines.length).toBe(3);
+
+    const seededPoRetShipments = await ctx.db
+      .select()
+      .from(purchaseOrderReturnShipments);
+    expect(seededPoRetShipments.length).toBe(3);
+
+    const seededDebitNotes = await ctx.db.select().from(purchaseDebitNotes);
+    expect(seededDebitNotes.length).toBe(3);
+    for (const dn of seededDebitNotes) {
+      expect(dn.stateCode).toBe(PURCHASE_DEBIT_NOTE_STATE.POSTED);
+      expect(Number(dn.totalAmount)).toBeGreaterThan(0);
+    }
+
+    const seededDebitLines = await ctx.db.select().from(purchaseDebitNoteLines);
+    expect(seededDebitLines.length).toBe(3);
+
+    const seededDebitShipments = await ctx.db
+      .select()
+      .from(purchaseDebitNoteShipments);
+    expect(seededDebitShipments.length).toBe(3);
+
+    // 9. Assert Sales Orders, Shipments, Returns & Credit Notes
     const seededSOs = await ctx.db.select().from(salesOrders);
-    expect(seededSOs.length).toBe(40);
+    expect(seededSOs.length).toBe(50);
     for (const so of seededSOs) {
       expect(Number(so.baseTotalAmount)).toBeGreaterThan(0);
     }
 
     const seededSOLines = await ctx.db.select().from(salesOrderLineItems);
-    expect(seededSOLines.length).toBeGreaterThanOrEqual(40);
+    expect(seededSOLines.length).toBeGreaterThanOrEqual(50);
 
     const seededPicks = await ctx.db.select().from(salesOrderPicks);
     expect(seededPicks.length).toBeGreaterThan(0);
 
     const seededShipments = await ctx.db.select().from(salesOrderShipments);
     expect(seededShipments.length).toBeGreaterThan(0);
+    for (const shp of seededShipments) {
+      expect(shp.trackingNumber).toBeDefined();
+    }
 
     const seededARInvoices = await ctx.db.select().from(salesInvoices);
     expect(seededARInvoices.length).toBeGreaterThan(0);
 
-    // 6. Assert Double-Entry Inventory Ledger & Bin Stock
+    const seededSoReturns = await ctx.db.select().from(salesOrderReturns);
+    expect(seededSoReturns.length).toBe(4);
+    for (const r of seededSoReturns) {
+      expect(r.stateCode).toBe(RETURN_STATE.RECEIVED);
+    }
+
+    const seededSoReturnLines = await ctx.db
+      .select()
+      .from(salesOrderReturnLines);
+    expect(seededSoReturnLines.length).toBe(4);
+
+    const seededCreditNotes = await ctx.db.select().from(salesCreditNotes);
+    expect(seededCreditNotes.length).toBe(4);
+    for (const cn of seededCreditNotes) {
+      expect(cn.stateCode).toBe(SALES_CREDIT_NOTE_STATE.POSTED);
+      expect(Number(cn.totalAmount)).toBeGreaterThan(0);
+    }
+
+    const seededCreditLines = await ctx.db.select().from(salesCreditNoteLines);
+    expect(seededCreditLines.length).toBe(4);
+
+    // 10. Assert Backorders
+    const seededBackorders = await ctx.db.select().from(backorders);
+    expect(seededBackorders.length).toBe(5);
+
+    // 11. Assert Treasury & Payments
+    const seededPayments = await ctx.db.select().from(paymentEntries);
+    expect(seededPayments.length).toBeGreaterThanOrEqual(16);
+
+    const seededPaymentLines = await ctx.db.select().from(paymentLines);
+    expect(seededPaymentLines.length).toBeGreaterThanOrEqual(16);
+
+    const seededAllocations = await ctx.db.select().from(paymentAllocations);
+    expect(seededAllocations.length).toBeGreaterThanOrEqual(16);
+
+    // 12. Assert GL Journal Entries & Segment Dimensions
+    const seededJournals = await ctx.db.select().from(glJournalEntries);
+    expect(seededJournals.length).toBe(5);
+
+    const seededJournalLines = await ctx.db.select().from(glJournalLines);
+    expect(seededJournalLines.length).toBe(10);
+    for (const jl of seededJournalLines) {
+      expect(jl.costCenterId).toBeDefined();
+      expect(jl.activityId).toBeDefined();
+    }
+
+    // 13. Assert Double-Entry Inventory Ledger & Stock Levels
     const stockEntries = await ctx.db.select().from(inventoryEntries);
     expect(stockEntries.length).toBeGreaterThan(0);
 
@@ -141,7 +317,7 @@ describe('Demo Seed Verification Suite', () => {
       expect(Number(bc.actualQuantity)).toBeGreaterThanOrEqual(0);
     }
 
-    // 7. Assert Domain Audit Events
+    // 14. Assert All 6 Domain Event Streams
     const mdEvents = await ctx.db.select().from(masterDataEvents);
     expect(mdEvents.length).toBeGreaterThan(0);
 
@@ -153,5 +329,11 @@ describe('Demo Seed Verification Suite', () => {
 
     const invEvents = await ctx.db.select().from(inventoryEvents);
     expect(invEvents.length).toBeGreaterThan(0);
+
+    const wEvents = await ctx.db.select().from(warehouseEvents);
+    expect(wEvents.length).toBeGreaterThan(0);
+
+    const finEvents = await ctx.db.select().from(financialEvents);
+    expect(finEvents.length).toBeGreaterThan(0);
   });
 });

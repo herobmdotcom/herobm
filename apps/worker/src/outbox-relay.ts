@@ -1,6 +1,22 @@
 
+import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
-dotenv.config({ path: process.env.ENV_FILE || '.env' });
+
+const envFileName = process.env.ENV_FILE || '.env';
+const candidateEnvPaths = [
+  path.resolve(process.cwd(), envFileName),
+  path.resolve(__dirname, '../../..', envFileName),
+  path.resolve(__dirname, '../..', envFileName),
+  path.resolve(__dirname, '..', envFileName),
+];
+
+for (const p of candidateEnvPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    break;
+  }
+}
 import { Queue, Worker, Job } from 'bullmq';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -32,7 +48,8 @@ const PG_HOST = process.env.POSTGRES_HOST || 'localhost';
 const PG_PORT = process.env.POSTGRES_PORT || '5432';
 const PG_DB = process.env.POSTGRES_DB || 'herobm';
 
-const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
+const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
 const REDIS_PASSWORD = requireEnv('REDIS_PASSWORD');
 
 const PORT = process.env.WORKER_PORT || process.env.PORT || 9092;
@@ -46,7 +63,7 @@ const db = drizzle(pgClient, { schema: { herobmCore, outbox } });
 import { getBullMQConnectionOptions } from './redis.config';
 
 // Setup BullMQ
-const connection = getBullMQConnectionOptions(REDIS_HOST, 6379, REDIS_PASSWORD);
+const connection = getBullMQConnectionOptions(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD);
 
 const syncQueue = new Queue('external-sync', { connection });
 syncQueue.on('error', (err) => {

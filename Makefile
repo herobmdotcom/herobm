@@ -421,9 +421,12 @@ rebuild-worker:
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-outbox
 	$(COMPOSE_CMD) ps
 
+GIT_VERSION ?= $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)
+BUILD_TIMESTAMP ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)
+
 build-images:
-	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.0.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.1.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 

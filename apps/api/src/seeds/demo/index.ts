@@ -5,23 +5,43 @@ import {
   uomDictionary,
   productGroups,
   products,
+  productComponents,
+  productUoms,
   productSuppliers,
   productDefaultBins,
+  discountMatrix,
   locations,
   zones,
   bins,
   actors,
   contacts,
   actorContactLinks,
+  actorActorLinks,
+  actorNotes,
+  projects,
+  projectActors,
+  projectContacts,
+  projectNotes,
+  customerGroups,
   customers,
   customerDeliveryAddresses,
   suppliers,
+  workOrders,
+  workOrderComponents,
+  workOrderPicks,
   purchaseOrders,
   purchaseOrderLineItems,
   goodsReceived,
   goodsReceivedLines,
   purchaseInvoices,
   purchaseInvoiceLines,
+  purchaseOrderReturns,
+  purchaseOrderReturnLines,
+  purchaseOrderReturnShipments,
+  purchaseOrderReturnShipmentLines,
+  purchaseDebitNotes,
+  purchaseDebitNoteLines,
+  purchaseDebitNoteShipments,
   salesOrders,
   salesOrderLineItems,
   salesOrderPicks,
@@ -29,16 +49,32 @@ import {
   salesOrderShipmentLines,
   salesInvoices,
   salesInvoiceLines,
+  salesOrderReturns,
+  salesOrderReturnLines,
+  salesCreditNotes,
+  salesCreditNoteLines,
+  backorders,
+  paymentEntries,
+  paymentAllocations,
+  paymentLines,
   inventoryEntries,
   inventoryLedger,
   binContents,
-  taxCategories,
+  glAccounts,
   glSettings,
+  glJournalEntries,
+  glJournalLines,
+  costCenters,
+  activities,
+  exchangeRates,
+  taxCategories,
   tradingTerms,
   masterDataEvents,
   procurementEvents,
   salesEvents,
   inventoryEvents,
+  warehouseEvents,
+  financialEvents,
 } from '@herobm/db-schema';
 import {
   BIN_TYPE,
@@ -53,11 +89,24 @@ import {
   SALES_ORDER_PICK_STATE,
   SALES_INVOICE_STATE,
   PUTAWAY_STATUS,
+  WORK_ORDER_STATE,
+  WorkOrderState,
+  WORK_ORDER_PICK_STATE,
+  RETURN_STATE,
+  ReturnState,
+  SALES_CREDIT_NOTE_STATE,
+  PURCHASE_RETURN_STATE,
+  PURCHASE_RETURN_SHIPMENT_STATE,
+  PURCHASE_DEBIT_NOTE_STATE,
+  BACKORDER_STATE,
+  PAYMENT_STATE,
+  PAYMENT_TYPE,
   SUPPLIER_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ACTOR_STATE,
   CONTACT_STATE,
+  PROJECT_STATE,
 } from '@herobm/shared';
 
 // Import standard setup functions
@@ -87,7 +136,10 @@ export async function wipeDatabase(db: SeedDB) {
   console.log('Wiping existing database tables (CASCADE)...');
   await db.execute(sql`
     TRUNCATE TABLE 
+      herobm_core.payment_allocations, herobm_core.payment_lines, herobm_core.payment_entries,
+      herobm_core.gl_journal_lines, herobm_core.gl_journal_entries, herobm_core.gl_reconciliations, herobm_core.gl_match_groups,
       herobm_core.inventory_ledger, herobm_core.inventory_entries, herobm_core.bin_contents, herobm_core.product_default_bins,
+      herobm_core.work_order_picks, herobm_core.work_order_components, herobm_core.work_orders,
       herobm_core.sales_credit_note_lines, herobm_core.sales_credit_notes, herobm_core.sales_order_return_lines, herobm_core.sales_order_returns,
       herobm_core.sales_invoice_lines, herobm_core.sales_invoices, herobm_core.sales_order_shipment_lines, herobm_core.sales_order_shipments,
       herobm_core.sales_order_picks, herobm_core.sales_order_lines, herobm_core.sales_orders, herobm_core.backorders,
@@ -103,8 +155,9 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.project_actors, herobm_core.project_contacts, herobm_core.project_notes, herobm_core.projects,
       herobm_core.actors,
       herobm_core.bins, herobm_core.zones, herobm_core.locations,
+      herobm_core.exchange_rates,
       herobm_core.tax_position_mappings, herobm_core.tax_positions, herobm_core.tax_categories, herobm_core.trading_terms,
-      herobm_core.gl_journal_lines, herobm_core.gl_journal_entries, herobm_core.cost_centers, herobm_core.activities, herobm_core.gl_settings, herobm_core.gl_accounts,
+      herobm_core.cost_centers, herobm_core.activities, herobm_core.gl_settings, herobm_core.gl_accounts,
       herobm_core.procurement_events, herobm_core.sales_events, herobm_core.warehouse_events, herobm_core.master_data_events,
       herobm_core.financial_events, herobm_core.inventory_events, herobm_core.system_events, herobm_core.user_events,
       herobm_core.business_report_events, herobm_core.email_events, herobm_core.integration_events, herobm_core.group_events,
@@ -122,6 +175,8 @@ export interface MasterLocation {
   pickBinId: string;
   bulkBinId: string;
   stagingBinId: string;
+  wipBinId: string;
+  quarantineBinId: string;
   mainZoneId: string;
 }
 
@@ -133,6 +188,7 @@ export interface MasterProduct {
   standardCost: number;
   tradePrice: number;
   productGroupId: string;
+  isKit?: boolean;
 }
 
 export interface MasterActorSupplier {
@@ -140,6 +196,7 @@ export interface MasterActorSupplier {
   vendorId: string;
   number: string;
   name: string;
+  currencyCode: string;
 }
 
 export interface MasterActorCustomer {
@@ -147,6 +204,8 @@ export interface MasterActorCustomer {
   customerId: string;
   number: string;
   name: string;
+  customerGroupId: string;
+  currencyCode: string;
 }
 
 export interface MasterData {
@@ -154,24 +213,38 @@ export interface MasterData {
   sups: MasterActorSupplier[];
   custs: MasterActorCustomer[];
   prods: MasterProduct[];
+  kitProds: MasterProduct[];
   taxCategoryId: string;
   baseCurrency: string;
+  bankAccountId: string;
+  arAccountId: string;
+  apAccountId: string;
+  salesAccountId: string;
+  cogsAccountId: string;
+  inventoryAccountId: string;
+  costCenterId: string;
+  activityId: string;
 }
 
-export async function seedMasterData(db: SeedDB): Promise<MasterData> {
+export async function seedMasterData(
+  db: SeedDB,
+  region = 'us_standard',
+): Promise<MasterData> {
   console.log(
-    'Seeding Master Data (Locations, Zones, Bins, Product Groups, Products, CRM Actors, Suppliers, Customers)...',
+    `Seeding Comprehensive Master Data (Region: ${region}) across all domains...`,
   );
 
-  // 1. Resolve Base Currency and Global Reference Data
+  // 1. Resolve Base GL Settings, Dimensions & Accounts
   const glSettingRows = await db.select().from(glSettings).limit(1);
-  const baseCurrency = glSettingRows[0]?.baseCurrency || 'USD';
+  const baseCurrency =
+    glSettingRows[0]?.baseCurrency ||
+    (region === 'au_standard' ? 'AUD' : 'USD'); // baseCurrency fallback
 
   const taxCatRows = await db.select().from(taxCategories).limit(1);
   const taxCatId = taxCatRows[0]?.taxCategoryId;
   if (!taxCatId) {
     throw new Error(
-      'Tax categories must be seeded before running demo master data.',
+      'Tax categories must be seeded before running master data.',
     );
   }
 
@@ -182,7 +255,66 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
     .limit(1);
   const termId = defaultTermRows[0]?.tradingTermsId || null;
 
-  // 2. Locations (Warehouses), Zones, and Bins
+  // Resolve Key GL Accounts for Transactions
+  const allGlAccounts = await db.select().from(glAccounts);
+  const findAccount = (codePrefix: string) =>
+    allGlAccounts.find((a) => a.accountCode.startsWith(codePrefix))
+      ?.glAccountId || allGlAccounts[0]?.glAccountId;
+
+  const bankAccountId = findAccount('1000') || findAccount('1110');
+  const arAccountId =
+    glSettingRows[0]?.defaultArAccountId ||
+    findAccount('1100') ||
+    findAccount('1200');
+  const apAccountId =
+    glSettingRows[0]?.defaultApAccountId ||
+    findAccount('2100') ||
+    findAccount('2000');
+  const salesAccountId =
+    glSettingRows[0]?.defaultRevenueAccountId ||
+    findAccount('4100') ||
+    findAccount('4000');
+  const cogsAccountId =
+    glSettingRows[0]?.defaultCogsAccountId ||
+    findAccount('5100') ||
+    findAccount('5000');
+  const inventoryAccountId =
+    glSettingRows[0]?.defaultInventoryAccountId ||
+    findAccount('1300') ||
+    findAccount('1400');
+
+  // Resolve Financial Dimensions
+  const costCenterRows = await db.select().from(costCenters).limit(1);
+  const costCenterId = costCenterRows[0]?.costCenterId || uuid();
+
+  const activityRows = await db.select().from(activities).limit(1);
+  const activityId = activityRows[0]?.activityId || uuid();
+
+  // 2. Exchange Rates
+  const fxRates = [
+    { code: 'USD', name: 'US Dollar', buy: '1.0000', sell: '1.0000' }, // testData
+    { code: 'EUR', name: 'Euro', buy: '1.0850', sell: '1.0920' }, // testData
+    { code: 'JPY', name: 'Japanese Yen', buy: '0.0068', sell: '0.0070' }, // testData
+    { code: 'AUD', name: 'Australian Dollar', buy: '0.6550', sell: '0.6620' }, // testData
+    { code: 'GBP', name: 'British Pound', buy: '1.2750', sell: '1.2820' }, // testData
+  ];
+
+  for (const fx of fxRates) {
+    await db
+      .insert(exchangeRates)
+      .values({
+        exchangeRateId: uuid(),
+        currencyCode: fx.code,
+        currencyName: fx.name,
+        buyRate: fx.buy,
+        sellRate: fx.sell,
+        effectiveDate: new Date(),
+        updatedOn: new Date(),
+      })
+      .onConflictDoNothing();
+  }
+
+  // 3. Locations (Warehouses), Zones, and Bins
   const locConfigs = [
     {
       id: uuid(),
@@ -239,6 +371,8 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
     const pickZoneId = uuid();
     const bulkZoneId = uuid();
     const stagingZoneId = uuid();
+    const mfgZoneId = uuid();
+    const qcZoneId = uuid();
 
     await db
       .insert(zones)
@@ -275,6 +409,22 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
           source: 'app',
           createdBy: 'system',
         },
+        {
+          zoneId: mfgZoneId,
+          locationId: loc.id,
+          code: 'MFG',
+          name: 'Light Assembly & WIP Staging',
+          source: 'app',
+          createdBy: 'system',
+        },
+        {
+          zoneId: qcZoneId,
+          locationId: loc.id,
+          code: 'QC',
+          name: 'Quality Control & Quarantine',
+          source: 'app',
+          createdBy: 'system',
+        },
       ])
       .onConflictDoNothing();
 
@@ -282,6 +432,8 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
     const pickBinId = uuid();
     const bulkBinId = uuid();
     const stagingBinId = uuid();
+    const wipBinId = uuid();
+    const quarantineBinId = uuid();
 
     await db
       .insert(bins)
@@ -318,6 +470,22 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
           source: 'app',
           createdBy: 'system',
         },
+        {
+          binId: wipBinId,
+          zoneId: mfgZoneId,
+          binNumber: 'WIP-01',
+          binType: BIN_TYPE.WIP,
+          source: 'app',
+          createdBy: 'system',
+        },
+        {
+          binId: quarantineBinId,
+          zoneId: qcZoneId,
+          binNumber: 'QC-01',
+          binType: BIN_TYPE.QUARANTINE,
+          source: 'app',
+          createdBy: 'system',
+        },
       ])
       .onConflictDoNothing();
 
@@ -329,14 +497,17 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       pickBinId,
       bulkBinId,
       stagingBinId,
+      wipBinId,
+      quarantineBinId,
       mainZoneId,
     });
   }
 
-  // 3. Product Groups and UOMs
+  // 4. Product Groups & UOMs
   const powerToolsGroupId = uuid();
   const handToolsGroupId = uuid();
   const accessoriesGroupId = uuid();
+  const kitsGroupId = uuid();
 
   await db
     .insert(productGroups)
@@ -362,19 +533,28 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         salesTaxCategoryId: taxCatId,
         purchaseTaxCategoryId: taxCatId,
       },
+      {
+        productGroupId: kitsGroupId,
+        groupCode: 'KITS-BUNDLES',
+        name: 'Assembled Tool Kits & Contractor Bundles',
+        salesTaxCategoryId: taxCatId,
+        purchaseTaxCategoryId: taxCatId,
+      },
     ])
     .onConflictDoNothing();
 
   await db
     .insert(uomDictionary)
     .values([
-      { uomCode: 'BOX', description: 'Box of 10' },
+      { uomCode: 'BOX', description: 'Box of 10 Units' },
       { uomCode: 'SET', description: 'Complete Tool Set' },
+      { uomCode: 'KIT', description: 'Manufactured Kit' },
+      { uomCode: 'PALLET', description: 'Master Shipping Pallet' },
     ])
     .onConflictDoNothing();
 
-  // 4. Products
-  const prodConfigs = [
+  // 5. Products (Standard + Manufactured Kit BOMs)
+  const baseProdConfigs = [
     {
       id: uuid(),
       number: 'TL-1001',
@@ -460,7 +640,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
 
   const prods: MasterProduct[] = [];
 
-  for (const p of prodConfigs) {
+  for (const p of baseProdConfigs) {
     await db
       .insert(products)
       .values({
@@ -494,10 +674,120 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       })
       .onConflictDoNothing();
 
+    // Add UOM conversions for bulk items
+    if (p.number === 'AC-3001' || p.number === 'AC-3002') {
+      await db
+        .insert(productUoms)
+        .values({
+          productUomId: uuid(),
+          productId: p.id,
+          uomCode: 'BOX',
+          ratio: '10.0000',
+          isSalesDefault: false,
+          isPurchaseDefault: true,
+        })
+        .onConflictDoNothing();
+    }
+
     prods.push(p);
   }
 
-  // 5. CRM Actors & Suppliers
+  // Manufactured BOM / Kit Products
+  const kitProdConfigs = [
+    {
+      id: uuid(),
+      number: 'KIT-100',
+      name: 'Pro Contractor 18V Combo Pack 5-Piece',
+      listPrice: 499.99,
+      standardCost: 290.0,
+      tradePrice: 429.99,
+      productGroupId: kitsGroupId,
+      isKit: true,
+      components: [
+        { prodNumber: 'TL-1001', qty: 1 },
+        { prodNumber: 'TL-1002', qty: 1 },
+        { prodNumber: 'AC-3001', qty: 2 },
+        { prodNumber: 'AC-3002', qty: 1 },
+        { prodNumber: 'AC-3003', qty: 1 },
+      ],
+    },
+    {
+      id: uuid(),
+      number: 'KIT-200',
+      name: 'Master Woodworking Station Bundle 4-Piece',
+      listPrice: 289.99,
+      standardCost: 165.0,
+      tradePrice: 249.99,
+      productGroupId: kitsGroupId,
+      isKit: true,
+      components: [
+        { prodNumber: 'TL-1002', qty: 1 },
+        { prodNumber: 'TL-1003', qty: 1 },
+        { prodNumber: 'HT-2002', qty: 1 },
+        { prodNumber: 'AC-3003', qty: 1 },
+      ],
+    },
+  ];
+
+  const kitProds: MasterProduct[] = [];
+
+  for (const kp of kitProdConfigs) {
+    await db
+      .insert(products)
+      .values({
+        productId: kp.id,
+        productNumber: kp.number,
+        name: kp.name,
+        baseUom: 'KIT',
+        productType: 'inventory',
+        structureType: 'kit',
+        productGroupId: kp.productGroupId,
+        listPrice: kp.listPrice.toFixed(2),
+        standardCost: kp.standardCost.toFixed(2),
+        tradePrice: kp.tradePrice.toFixed(2),
+        salesTaxCategoryId: taxCatId,
+        purchaseTaxCategoryId: taxCatId,
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(productDefaultBins)
+      .values({
+        productDefaultBinId: uuid(),
+        productId: kp.id,
+        locationId: locs[0].id,
+        binId: locs[0].storageBinId,
+        isPrimaryPerLocation: true,
+      })
+      .onConflictDoNothing();
+
+    // Insert BOM Bill of Materials
+    for (let seq = 0; seq < kp.components.length; seq++) {
+      const compItem = kp.components[seq];
+      const child = prods.find((p) => p.number === compItem.prodNumber);
+      if (child) {
+        await db
+          .insert(productComponents)
+          .values({
+            componentId: uuid(),
+            parentProductId: kp.id,
+            childProductId: child.id,
+            parentQuantity: '1.0000',
+            quantity: compItem.qty.toFixed(4),
+            sequenceNumber: seq + 1,
+            fractionalBehavior: 'allow_fractional',
+          })
+          .onConflictDoNothing();
+      }
+    }
+
+    kitProds.push(kp);
+  }
+
+  // 6. CRM Actors & Suppliers (Domestic + International JPY)
   const supConfigs = [
     {
       number: 'SUP-001',
@@ -509,6 +799,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactFirst: 'David',
       contactLast: 'Miller',
       email: 'orders@milwaukeetool-demo.com',
+      currency: baseCurrency,
     },
     {
       number: 'SUP-002',
@@ -520,6 +811,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactFirst: 'Sarah',
       contactLast: 'Jenkins',
       email: 'sales@dewalt-demo.com',
+      currency: baseCurrency,
     },
     {
       number: 'SUP-003',
@@ -531,6 +823,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactFirst: 'Kenji',
       contactLast: 'Takahashi',
       email: 'commercial@makita-demo.com',
+      currency: baseCurrency,
     },
     {
       number: 'SUP-004',
@@ -542,6 +835,19 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactFirst: 'Marcus',
       contactLast: 'Weber',
       email: 'supply@boschtools-demo.com',
+      currency: baseCurrency,
+    },
+    {
+      number: 'SUP-005',
+      name: 'Makita Global Precision Corp (Japan)',
+      address: '3-11-8 Sumiyoshi-cho',
+      city: 'Anjo',
+      state: 'Aichi',
+      zip: '446-8502',
+      contactFirst: 'Hiroshi',
+      contactLast: 'Tanaka',
+      email: 'international@makita-japan-demo.com',
+      currency: 'JPY',
     },
   ];
 
@@ -562,7 +868,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         headquartersCity: s.city,
         headquartersStateOrProvince: s.state,
         headquartersPostalCode: s.zip,
-        headquartersCountry: 'USA',
+        headquartersCountry: s.currency === 'JPY' ? 'JPN' : 'USA',
         email: s.email,
         telephone: '+1-800-555-0199',
         industry: 'Tool & Equipment Manufacturing',
@@ -575,7 +881,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         vendorId,
         actorId,
         vendorNumber: s.number,
-        currencyCode: baseCurrency,
+        currencyCode: s.currency,
         tradingTermsId: termId,
         stateCode: SUPPLIER_STATE.ACTIVE,
         source: 'app',
@@ -593,7 +899,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         firstName: s.contactFirst,
         lastName: s.contactLast,
         fullName: `${s.contactFirst} ${s.contactLast}`,
-        jobTitle: 'Account Representative',
+        jobTitle: 'Commercial Account Executive',
         email: s.email,
         phone: '+1-800-555-0199',
       })
@@ -606,7 +912,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         actorId,
         contactId,
         linkType: 'employee',
-        primaryFor: ['purchasing'],
+        primaryFor: ['purchasing', 'billing'],
       })
       .onConflictDoNothing();
 
@@ -619,7 +925,10 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
           productId: prod.id,
           vendorId,
           supplierPartNumber: `${s.number}-${prod.number}`,
-          costPrice: prod.standardCost.toFixed(2),
+          costPrice:
+            s.currency === 'JPY'
+              ? (prod.standardCost * 150).toFixed(2)
+              : prod.standardCost.toFixed(2),
           isPreferred: true,
           stateCode: SUPPLIER_STATE.ACTIVE,
           source: 'app',
@@ -628,10 +937,78 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         .onConflictDoNothing();
     }
 
-    sups.push({ actorId, vendorId, number: s.number, name: s.name });
+    sups.push({
+      actorId,
+      vendorId,
+      number: s.number,
+      name: s.name,
+      currencyCode: s.currency,
+    });
   }
 
-  // 6. CRM Actors & Customers
+  // 7. Customer Groups & Discount Matrix
+  const vipGroupId = uuid();
+  const govGroupId = uuid();
+  const retailGroupId = uuid();
+
+  await db
+    .insert(customerGroups)
+    .values([
+      {
+        customerGroupId: vipGroupId,
+        groupCode: 'COMMERCIAL-VIP',
+        name: 'Commercial Contractors Tier 1 (15% Off)',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        tradingTermsId: termId,
+        earlyPaymentDiscount: '2.0',
+        earlyPaymentDiscountDays: 10,
+        isOnCreditHold: false,
+      },
+      {
+        customerGroupId: govGroupId,
+        groupCode: 'GOV-INSTITUTIONAL',
+        name: 'Government & Public Utilities (10% Off)',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        tradingTermsId: termId,
+        isOnCreditHold: false,
+      },
+      {
+        customerGroupId: retailGroupId,
+        groupCode: 'RETAIL-STANDARD',
+        name: 'Standard Retail Accounts',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        tradingTermsId: termId,
+        isOnCreditHold: false,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // Tier 1 VIP Discount Matrix (15% on Power Tools, 10% on Hand Tools)
+  await db
+    .insert(discountMatrix)
+    .values([
+      {
+        discountMatrixId: uuid(),
+        customerGroupId: vipGroupId,
+        productGroupId: powerToolsGroupId,
+        discountPercentage: '15.00',
+      },
+      {
+        discountMatrixId: uuid(),
+        customerGroupId: vipGroupId,
+        productGroupId: handToolsGroupId,
+        discountPercentage: '10.00',
+      },
+      {
+        discountMatrixId: uuid(),
+        customerGroupId: govGroupId,
+        productGroupId: powerToolsGroupId,
+        discountPercentage: '10.00',
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 8. CRM Actors & Customers
   const custConfigs = [
     {
       number: 'CUST-001',
@@ -644,6 +1021,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactLast: 'Sterling',
       email: 'purchasing@homehardware-demo.com',
       creditLimit: '75000.00',
+      groupId: vipGroupId,
     },
     {
       number: 'CUST-002',
@@ -656,6 +1034,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactLast: 'Clark',
       email: 'ap@buildit-demo.com',
       creditLimit: '120000.00',
+      groupId: vipGroupId,
     },
     {
       number: 'CUST-003',
@@ -668,6 +1047,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactLast: 'Mendoza',
       email: 'carlos@apexbuilt-demo.com',
       creditLimit: '50000.00',
+      groupId: govGroupId,
     },
     {
       number: 'CUST-004',
@@ -680,6 +1060,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactLast: 'Lee',
       email: 'procurement@txbuilders-demo.com',
       creditLimit: '90000.00',
+      groupId: retailGroupId,
     },
     {
       number: 'CUST-005',
@@ -692,6 +1073,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       contactLast: 'Oster',
       email: 'orders@pnwcontractors-demo.com',
       creditLimit: '60000.00',
+      groupId: retailGroupId,
     },
   ];
 
@@ -725,6 +1107,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         customerId,
         actorId,
         customerNumber: c.number,
+        customerGroupId: c.groupId,
         currencyCode: baseCurrency,
         tradingTermsId: termId,
         creditLimit: c.creditLimit,
@@ -760,7 +1143,7 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
         firstName: c.contactFirst,
         lastName: c.contactLast,
         fullName: `${c.contactFirst} ${c.contactLast}`,
-        jobTitle: 'Purchasing Manager',
+        jobTitle: 'Purchasing Director',
         email: c.email,
         phone: '+1-800-555-0244',
       })
@@ -777,10 +1160,98 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       })
       .onConflictDoNothing();
 
-    custs.push({ actorId, customerId, number: c.number, name: c.name });
+    custs.push({
+      actorId,
+      customerId,
+      number: c.number,
+      name: c.name,
+      customerGroupId: c.groupId,
+      currencyCode: baseCurrency,
+    });
   }
 
-  // Record Master Data Event
+  // 9. B2B Actor Relationships & Notes
+  if (custs.length >= 2) {
+    await db
+      .insert(actorActorLinks)
+      .values({
+        linkId: uuid(),
+        sourceActorId: custs[0].actorId,
+        targetActorId: custs[1].actorId,
+        linkType: 'partner',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(actorNotes)
+      .values({
+        noteId: uuid(),
+        actorId: custs[0].actorId,
+        content:
+          'Enterprise Account: VIP Discount tier applied with Net 30 terms. Preferred delivery yard at Dock 4.',
+      })
+      .onConflictDoNothing();
+  }
+
+  // 10. Major CRM Construction Projects
+  const projectId1 = uuid();
+  const projectId2 = uuid();
+
+  await db
+    .insert(projects)
+    .values([
+      {
+        projectId: projectId1,
+        name: 'Project Metro Rail Expansion 2026',
+        status: 'In Progress',
+        type: 'Commercial Infrastructure',
+        stateCode: PROJECT_STATE.ACTIVE,
+      },
+      {
+        projectId: projectId2,
+        name: 'Downtown Commercial Highrise Tower B',
+        status: 'Planning',
+        type: 'Highrise Construction',
+        stateCode: PROJECT_STATE.ACTIVE,
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(projectActors)
+    .values([
+      {
+        projectActorId: uuid(),
+        projectId: projectId1,
+        actorId: custs[2].actorId, // Apex Construction
+        roles: ['General Contractor', 'Primary Builder'],
+      },
+      {
+        projectActorId: uuid(),
+        projectId: projectId1,
+        actorId: sups[0].actorId, // Milwaukee Tool
+        roles: ['Preferred Tool Supplier'],
+      },
+      {
+        projectActorId: uuid(),
+        projectId: projectId2,
+        actorId: custs[3].actorId, // Texas Builders Group
+        roles: ['Structural Subcontractor'],
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(projectNotes)
+    .values({
+      noteId: uuid(),
+      projectId: projectId1,
+      content:
+        'Phase 1 Tool Deliveries scheduled for West Coast Hub pickup. 20V Max saws and battery packs allocated.',
+    })
+    .onConflictDoNothing();
+
+  // Record Master Data Audit Event
   await db
     .insert(masterDataEvents)
     .values({
@@ -788,24 +1259,41 @@ export async function seedMasterData(db: SeedDB): Promise<MasterData> {
       entityType: 'seed_master_data',
       entityId: locs[0].id,
       eventType: 'master_data.initialized',
-      entityDisplayName: 'Demo Master Data Initialized',
+      entityDisplayName: 'Comprehensive Demo Master Data Initialized',
       payload: {
         locationCount: locs.length,
         supplierCount: sups.length,
         customerCount: custs.length,
-        productCount: prods.length,
+        productCount: prods.length + kitProds.length,
+        projectCount: 2,
       },
       actor: 'system',
     })
     .onConflictDoNothing();
 
-  console.log('Master data successfully seeded.');
-  return { locs, sups, custs, prods, taxCategoryId: taxCatId, baseCurrency };
+  console.log('Comprehensive master data successfully seeded.');
+  return {
+    locs,
+    sups,
+    custs,
+    prods,
+    kitProds,
+    taxCategoryId: taxCatId,
+    baseCurrency,
+    bankAccountId,
+    arAccountId,
+    apAccountId,
+    salesAccountId,
+    cogsAccountId,
+    inventoryAccountId,
+    costCenterId,
+    activityId,
+  };
 }
 
 export async function generateTransactions(db: SeedDB, data: MasterData) {
   console.log(
-    'Generating historical & active transactions (POs, Receipts, AP Invoices, SOs, Picks, Shipments, AR Invoices)...',
+    'Generating end-to-end multi-domain enterprise transactions (BOMs, Work Orders, POs, Returns, Debits, SOs, Credits, Payments, Ledgers, GL Journals)...',
   );
 
   const now = new Date();
@@ -818,31 +1306,62 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   let poCounter = 1000;
   let rcvCounter = 1000;
   let apInvCounter = 1000;
+  let poRetCounter = 1000;
+  let debNoteCounter = 1000;
+
   let soCounter = 5000;
   const pickCounter = 5000;
   let shpCounter = 5000;
   let arInvCounter = 5000;
+  let soRetCounter = 5000;
+  let crNoteCounter = 5000;
 
-  // Track real stock per product per location to prevent negative balance
+  let woCounter = 1000;
+  let pmtCounter = 1000;
+  let jnlCounter = 1000;
+
+  // Track stock levels to enforce positive inventory invariants
   const stockLevels: Record<string, number> = {};
   const getStockKey = (binId: string, productId: string) =>
     `${binId}_${productId}`;
 
   // =========================================================================
-  // 1. PURCHASE ORDERS & INBOUND RECEIPTS (20 POs)
+  // 1. PURCHASE ORDERS & INBOUND RECEIPTS (25 POs)
   // =========================================================================
-  for (let i = 0; i < 20; i++) {
+  const createdPurchaseInvoices: {
+    invoiceId: string;
+    poId: string;
+    vendorId: string;
+    totalAmount: number;
+    currencyCode: string;
+    date: Date;
+    lines: { lineId: string; amount: number; price: number; qty: number }[];
+  }[] = [];
+
+  const createdPurchaseOrders: {
+    poId: string;
+    poNumber: string;
+    vendorId: string;
+    locationId: string;
+    lines: {
+      lineId: string;
+      prod: MasterProduct;
+      qty: number;
+      price: number;
+    }[];
+  }[] = [];
+
+  for (let i = 0; i < 25; i++) {
     const poDate = randomDate(oneYearAgo, now);
     const supplier = randomItem(data.sups);
     const location = randomItem(data.locs);
     const poId = uuid();
     const poNumber = `PO-${poCounter++}`;
 
-    // 14 Received/Invoiced, 4 Ordered/Partially Received, 2 Draft
     let poState: PurchaseOrderState = PURCHASE_ORDER_STATE.RECEIVED;
-    if (i === 18 || i === 19) {
+    if (i === 23 || i === 24) {
       poState = PURCHASE_ORDER_STATE.DRAFT;
-    } else if (i >= 14) {
+    } else if (i >= 20) {
       poState = PURCHASE_ORDER_STATE.ORDERED;
     }
 
@@ -864,8 +1383,11 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     const numLines = randomInt(2, 5);
     for (let j = 0; j < numLines; j++) {
       const prod = randomItem(data.prods);
-      const qty = randomInt(40, 150);
-      const price = prod.standardCost;
+      const qty = randomInt(50, 200);
+      const price =
+        supplier.currencyCode === 'JPY'
+          ? prod.standardCost * 150
+          : prod.standardCost;
       const lineAmount = qty * price;
       const taxAmount = Number((lineAmount * 0.1).toFixed(2));
       const lineTotal = lineAmount + taxAmount;
@@ -883,6 +1405,9 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       });
     }
 
+    const exchangeRate = supplier.currencyCode === 'JPY' ? '0.0068' : '1';
+    const baseTotal = (poTotalAmount * Number(exchangeRate)).toFixed(2);
+
     await db
       .insert(purchaseOrders)
       .values({
@@ -891,9 +1416,9 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         vendorId: supplier.vendorId,
         deliveryLocationId: location.id,
         stateCode: poState,
-        currencyCode: data.baseCurrency,
-        exchangeRate: '1',
-        baseTotalAmount: poTotalAmount.toFixed(2),
+        currencyCode: supplier.currencyCode,
+        exchangeRate,
+        baseTotalAmount: baseTotal,
         createdOn: poDate,
         createdBy: 'system',
       })
@@ -921,7 +1446,15 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         .onConflictDoNothing();
     }
 
-    // If Received, record goods_received, inventory_entries, inventory_ledger, bin_contents
+    createdPurchaseOrders.push({
+      poId,
+      poNumber,
+      vendorId: supplier.vendorId,
+      locationId: location.id,
+      lines: lineInserts,
+    });
+
+    // Inbound Goods Receipt & Stock Ledger
     if (isReceived) {
       const goodsReceivedId = uuid();
       const receiptNumber = `RCV-${rcvCounter++}`;
@@ -971,7 +1504,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           })
           .onConflictDoNothing();
 
-        // Ledger entry (+qty in storage bin)
+        // Ledger Entry (+qty in storage bin)
         await db
           .insert(inventoryLedger)
           .values({
@@ -985,7 +1518,6 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           })
           .onConflictDoNothing();
 
-        // Update in-memory stock tracker and bin_contents
         const key = getStockKey(location.storageBinId, line.prod.id);
         stockLevels[key] = (stockLevels[key] || 0) + line.qty;
 
@@ -1022,7 +1554,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         })
         .onConflictDoNothing();
 
-      // If Invoiced, generate AP purchase_invoices
+      // AP Purchase Invoices
       if (isInvoiced) {
         const invId = uuid();
         const invNumber = `BILL-${apInvCounter++}`;
@@ -1037,13 +1569,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
             purchaseOrderId: poId,
             supplierInvoiceNumber: `INV-${supplier.number}-${poCounter}`,
             totalAmount: poTotalAmount.toFixed(2),
-            outstandingAmount: '0.00',
+            outstandingAmount: poTotalAmount.toFixed(2),
             taxAmount: taxAmount.toFixed(2),
-            baseTotalAmount: poTotalAmount.toFixed(2),
-            baseOutstandingAmount: '0.00',
-            currencyCode: data.baseCurrency,
-            exchangeRate: '1',
-            stateCode: PURCHASE_INVOICE_STATE.PAID,
+            baseTotalAmount: baseTotal,
+            baseOutstandingAmount: baseTotal,
+            currencyCode: supplier.currencyCode,
+            exchangeRate,
+            stateCode: PURCHASE_INVOICE_STATE.INVOICED,
             invoiceDate: poDate,
             dueDate: new Date(poDate.getTime() + 30 * 24 * 60 * 60 * 1000),
             createdBy: 'system',
@@ -1051,11 +1583,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           })
           .onConflictDoNothing();
 
+        const invLines = [];
         for (const line of lineInserts) {
+          const invLineId = uuid();
           await db
             .insert(purchaseInvoiceLines)
             .values({
-              invoiceLineId: uuid(),
+              invoiceLineId: invLineId,
               invoiceId: invId,
               purchaseOrderLineId: line.lineId,
               productId: line.prod.id,
@@ -1065,28 +1599,298 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
               matchStatus: MATCH_STATUS.MATCHED,
             })
             .onConflictDoNothing();
+          invLines.push({
+            lineId: invLineId,
+            amount: line.lineAmount,
+            price: line.price,
+            qty: line.qty,
+          });
         }
+
+        createdPurchaseInvoices.push({
+          invoiceId: invId,
+          poId,
+          vendorId: supplier.vendorId,
+          totalAmount: poTotalAmount,
+          currencyCode: supplier.currencyCode,
+          date: poDate,
+          lines: invLines,
+        });
       }
     }
   }
 
   // =========================================================================
-  // 2. SALES ORDERS, PICKS, SHIPMENTS & AR INVOICES (40 SOs)
+  // 2. SUPPLIER RETURNS & PURCHASE DEBIT NOTES (3 Returns)
   // =========================================================================
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < Math.min(3, createdPurchaseOrders.length); i++) {
+    const po = createdPurchaseOrders[i];
+    if (po.lines.length === 0) continue;
+
+    const retId = uuid();
+    const retNumber = `PO-RET-${poRetCounter++}`;
+    const targetLine = po.lines[0];
+    const returnQty = 5;
+
+    await db
+      .insert(purchaseOrderReturns)
+      .values({
+        returnId: retId,
+        returnNumber: retNumber,
+        purchaseOrderId: po.poId,
+        stateCode: PURCHASE_RETURN_STATE.SHIPPED,
+        notes: 'Defective batch returned to manufacturer for credit memo.',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    const retLineId = uuid();
+    await db
+      .insert(purchaseOrderReturnLines)
+      .values({
+        returnLineId: retLineId,
+        returnId: retId,
+        purchaseOrderLineId: targetLine.lineId,
+        quantityReturned: returnQty.toString(),
+        reason: 'Factory Defect - Housing cracked on batch arrival',
+        returnFee: '0.00',
+      })
+      .onConflictDoNothing();
+
+    // Return Shipment
+    const retShipmentId = uuid();
+    await db
+      .insert(purchaseOrderReturnShipments)
+      .values({
+        shipmentId: retShipmentId,
+        shipmentNumber: `PO-SHP-${poRetCounter}`,
+        returnId: retId,
+        stateCode: PURCHASE_RETURN_SHIPMENT_STATE.DISPATCHED,
+        trackingNumber: `RET-FEDEX-${randomInt(100000, 999999)}`,
+        fulfillmentLocationId: po.locationId,
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    const retShipmentLineId = uuid();
+    await db
+      .insert(purchaseOrderReturnShipmentLines)
+      .values({
+        shipmentLineId: retShipmentLineId,
+        shipmentId: retShipmentId,
+        returnLineId: retLineId,
+        quantityShipped: returnQty.toString(),
+      })
+      .onConflictDoNothing();
+
+    // Purchase Debit Note
+    const debNoteId = uuid();
+    const debAmount = returnQty * targetLine.price;
+    await db
+      .insert(purchaseDebitNotes)
+      .values({
+        debitNoteId: debNoteId,
+        debitNoteNumber: `DN-${debNoteCounter++}`,
+        supplierReferenceNumber: `CR-${po.poNumber}`,
+        returnId: retId,
+        purchaseOrderId: po.poId,
+        vendorId: po.vendorId,
+        totalAmount: debAmount.toFixed(2),
+        outstandingAmount: debAmount.toFixed(2),
+        baseTotalAmount: debAmount.toFixed(2),
+        baseOutstandingAmount: debAmount.toFixed(2),
+        currencyCode: data.baseCurrency,
+        exchangeRate: '1',
+        stateCode: PURCHASE_DEBIT_NOTE_STATE.POSTED,
+        notes: `Debit note generated against Return ${retNumber}`,
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    const debLineId = uuid();
+    await db
+      .insert(purchaseDebitNoteLines)
+      .values({
+        debitNoteLineId: debLineId,
+        debitNoteId: debNoteId,
+        purchaseOrderLineId: targetLine.lineId,
+        quantityInvoiced: returnQty.toString(),
+        pricePerUnit: targetLine.price.toFixed(2),
+        amount: debAmount.toFixed(2),
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(purchaseDebitNoteShipments)
+      .values({
+        debitNoteShipmentId: uuid(),
+        debitNoteLineId: debLineId,
+        shipmentLineId: retShipmentLineId,
+        quantityCredited: returnQty.toString(),
+      })
+      .onConflictDoNothing();
+  }
+
+  // =========================================================================
+  // 3. MANUFACTURING WORK ORDERS & BOM ASSEMBLY (6 Work Orders)
+  // =========================================================================
+  for (let i = 0; i < 6; i++) {
+    const kit = randomItem(data.kitProds);
+    const location = randomItem(data.locs);
+    const woId = uuid();
+    const woNumber = `WO-${woCounter++}`;
+    const targetQty = randomInt(5, 20);
+
+    let woState: WorkOrderState = WORK_ORDER_STATE.COMPLETED;
+    let completedQty = targetQty;
+    if (i === 4) {
+      woState = WORK_ORDER_STATE.IN_PROGRESS;
+      completedQty = Math.floor(targetQty / 2);
+    } else if (i === 5) {
+      woState = WORK_ORDER_STATE.PLANNED;
+      completedQty = 0;
+    }
+
+    const assemblyCost = 15.0;
+    const totalCost = (kit.standardCost + assemblyCost) * targetQty;
+
+    await db
+      .insert(workOrders)
+      .values({
+        workOrderId: woId,
+        orderNumber: woNumber,
+        productId: kit.id,
+        targetQuantity: targetQty.toString(),
+        completedQuantity: completedQty.toString(),
+        locationId: location.id,
+        wipBinId: location.wipBinId,
+        outputBinId: location.storageBinId,
+        stateCode: woState,
+        putawayStatus:
+          woState === WORK_ORDER_STATE.COMPLETED
+            ? PUTAWAY_STATUS.COMPLETED
+            : PUTAWAY_STATUS.PENDING_PUTAWAY,
+        assemblyCostPerUnit: assemblyCost.toFixed(2),
+        additionalCost: '0.00',
+        totalCost: totalCost.toFixed(2),
+        createdBy: 'mfg_supervisor',
+      })
+      .onConflictDoNothing();
+
+    // Query parent components for this kit
+    const compRows = await db
+      .select()
+      .from(productComponents)
+      .where(eq(productComponents.parentProductId, kit.id));
+
+    for (const comp of compRows) {
+      const wocId = uuid();
+      const expectedQty = Number(comp.quantity) * targetQty;
+      await db
+        .insert(workOrderComponents)
+        .values({
+          workOrderComponentId: wocId,
+          workOrderId: woId,
+          productId: comp.childProductId,
+          expectedQuantity: expectedQty.toString(),
+          unitCost: (kit.standardCost * 0.25).toFixed(2),
+        })
+        .onConflictDoNothing();
+
+      await db
+        .insert(workOrderPicks)
+        .values({
+          pickId: uuid(),
+          workOrderId: woId,
+          workOrderComponentId: wocId,
+          binId: location.storageBinId,
+          quantity: expectedQty.toString(),
+          stateCode:
+            woState === WORK_ORDER_STATE.PLANNED
+              ? WORK_ORDER_PICK_STATE.PENDING
+              : WORK_ORDER_PICK_STATE.PICKED,
+        })
+        .onConflictDoNothing();
+
+      // If completed, deduct raw component from stock and add finished kit to output bin
+      if (woState === WORK_ORDER_STATE.COMPLETED) {
+        const rawKey = getStockKey(location.storageBinId, comp.childProductId);
+        stockLevels[rawKey] = Math.max(
+          0,
+          (stockLevels[rawKey] || 0) - expectedQty,
+        );
+      }
+    }
+
+    if (woState === WORK_ORDER_STATE.COMPLETED) {
+      const kitKey = getStockKey(location.storageBinId, kit.id);
+      stockLevels[kitKey] = (stockLevels[kitKey] || 0) + completedQty;
+
+      await db
+        .insert(binContents)
+        .values({
+          binContentId: uuid(),
+          binId: location.storageBinId,
+          productId: kit.id,
+          actualQuantity: stockLevels[kitKey].toString(),
+        })
+        .onConflictDoUpdate({
+          target: [binContents.binId, binContents.productId],
+          set: { actualQuantity: stockLevels[kitKey].toString() },
+        });
+    }
+  }
+
+  // =========================================================================
+  // 4. SALES ORDERS, PICKS, SHIPMENTS & AR INVOICES (50 SOs)
+  // =========================================================================
+  const createdSalesInvoices: {
+    invoiceId: string;
+    soId: string;
+    customerId: string;
+    customerName: string;
+    totalAmount: number;
+    currencyCode: string;
+    date: Date;
+    lines: {
+      lineId: string;
+      amount: number;
+      price: number;
+      qty: number;
+      soLineId: string;
+    }[];
+  }[] = [];
+
+  const createdSalesOrders: {
+    soId: string;
+    soNumber: string;
+    customerId: string;
+    locationId: string;
+    lines: {
+      lineId: string;
+      prod: MasterProduct;
+      qty: number;
+      price: number;
+    }[];
+  }[] = [];
+
+  const allAvailableProducts = [...data.prods, ...data.kitProds];
+
+  for (let i = 0; i < 50; i++) {
     const soDate = randomDate(oneYearAgo, now);
     const customer = randomItem(data.custs);
     const location = randomItem(data.locs);
     const soId = uuid();
     const soNumber = `SO-${soCounter++}`;
 
-    // 26 Shipped/Invoiced, 6 Picking, 5 Confirmed, 3 Draft/Quoted
     let soState: SalesOrderState = SALES_ORDER_STATE.SHIPPED;
-    if (i >= 37) {
+    if (i >= 46) {
       soState = SALES_ORDER_STATE.DRAFT;
-    } else if (i >= 32) {
+    } else if (i >= 42) {
+      soState = SALES_ORDER_STATE.QUOTED;
+    } else if (i >= 36) {
       soState = SALES_ORDER_STATE.CONFIRMED;
-    } else if (i >= 26) {
+    } else if (i >= 30) {
       soState = SALES_ORDER_STATE.PICKING;
     }
 
@@ -1109,12 +1913,11 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
 
     const numLines = randomInt(1, 4);
     for (let j = 0; j < numLines; j++) {
-      const prod = randomItem(data.prods);
+      const prod = randomItem(allAvailableProducts);
       const key = getStockKey(location.storageBinId, prod.id);
       const available = stockLevels[key] || 0;
 
-      // Keep quantities conservative so stock stays strictly positive
-      const maxOrder = Math.max(1, Math.min(15, Math.floor(available * 0.3)));
+      const maxOrder = Math.max(1, Math.min(12, Math.floor(available * 0.25)));
       const qty = randomInt(1, maxOrder);
       const price = prod.listPrice;
       const unitCost = prod.standardCost;
@@ -1172,13 +1975,21 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           taxCategoryId: data.taxCategoryId,
           tax: line.taxAmount.toFixed(2),
           totalAmount: line.lineTotal.toFixed(2),
-          unitOfMeasure: 'EA',
+          unitOfMeasure: line.prod.isKit ? 'KIT' : 'EA',
           quantityPicked: isPicked ? line.qty.toString() : '0',
           fulfillmentLocationId: location.id,
           isPostConfirmation: false,
         })
         .onConflictDoNothing();
     }
+
+    createdSalesOrders.push({
+      soId,
+      soNumber,
+      customerId: customer.customerId,
+      locationId: location.id,
+      lines: soLineInserts,
+    });
 
     // Picks
     if (isPicked) {
@@ -1202,7 +2013,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       }
     }
 
-    // Shipments, Inventory Deductions & AR Invoices
+    // Shipments & AR Invoices
     if (isShipped) {
       const shipmentId = uuid();
       const shipmentNumber = `SH-${shpCounter++}`;
@@ -1214,6 +2025,8 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           shipmentNumber,
           salesOrderId: soId,
           stateCode: SHIPMENT_STATE.DISPATCHED,
+          deliveryCompanyName: 'FedEx Freight Direct',
+          trackingNumber: `FDX-${randomInt(10000000, 99999999)}`,
           fulfillmentLocationId: location.id,
           createdOn: soDate,
           createdBy: 'system',
@@ -1260,7 +2073,6 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           })
           .onConflictDoNothing();
 
-        // Update in-memory stock and bin_contents
         const key = getStockKey(location.storageBinId, line.prod.id);
         stockLevels[key] = Math.max(0, (stockLevels[key] || 0) - line.qty);
 
@@ -1297,7 +2109,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         })
         .onConflictDoNothing();
 
-      // If Invoiced, generate AR sales_invoices
+      // AR Sales Invoices
       if (isInvoiced) {
         const invId = uuid();
         const invNumber = `INV-${arInvCounter++}`;
@@ -1312,13 +2124,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
             customerId: customer.customerId,
             customerNameDisplay: customer.name,
             totalAmount: soTotalAmount.toFixed(2),
-            outstandingAmount: '0.00',
+            outstandingAmount: soTotalAmount.toFixed(2),
             taxAmount: taxAmount.toFixed(2),
             baseTotalAmount: soTotalAmount.toFixed(2),
-            baseOutstandingAmount: '0.00',
+            baseOutstandingAmount: soTotalAmount.toFixed(2),
             currencyCode: data.baseCurrency,
             exchangeRate: '1',
-            stateCode: SALES_INVOICE_STATE.PAID,
+            stateCode: SALES_INVOICE_STATE.INVOICED,
             invoiceDate: soDate,
             dueDate: new Date(soDate.getTime() + 30 * 24 * 60 * 60 * 1000),
             createdBy: 'system',
@@ -1326,11 +2138,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           })
           .onConflictDoNothing();
 
+        const invLines = [];
         for (const line of soLineInserts) {
+          const invLineId = uuid();
           await db
             .insert(salesInvoiceLines)
             .values({
-              invoiceLineId: uuid(),
+              invoiceLineId: invLineId,
               invoiceId: invId,
               salesOrderLineId: line.lineId,
               quantityInvoiced: line.qty.toString(),
@@ -1338,12 +2152,352 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
               amount: line.lineAmount.toFixed(2),
             })
             .onConflictDoNothing();
+          invLines.push({
+            lineId: invLineId,
+            amount: line.lineAmount,
+            price: line.price,
+            qty: line.qty,
+            soLineId: line.lineId,
+          });
         }
+
+        createdSalesInvoices.push({
+          invoiceId: invId,
+          soId,
+          customerId: customer.customerId,
+          customerName: customer.name,
+          totalAmount: soTotalAmount,
+          currencyCode: data.baseCurrency,
+          date: soDate,
+          lines: invLines,
+        });
       }
     }
   }
 
-  // Log inventory event summary
+  // =========================================================================
+  // 5. SALES RETURNS & SALES CREDIT NOTES (4 Returns)
+  // =========================================================================
+  for (let i = 0; i < Math.min(4, createdSalesOrders.length); i++) {
+    const so = createdSalesOrders[i];
+    if (so.lines.length === 0) continue;
+
+    const retId = uuid();
+    const retNumber = `SO-RET-${soRetCounter++}`;
+    const targetLine = so.lines[0];
+    const returnQty = 2;
+
+    await db
+      .insert(salesOrderReturns)
+      .values({
+        returnId: retId,
+        returnNumber: retNumber,
+        salesOrderId: so.soId,
+        stateCode: RETURN_STATE.RECEIVED,
+        locationId: so.locationId,
+        notes: 'Customer returned unopened items due to over-estimate.',
+        createdBy: 'customer_service',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(salesOrderReturnLines)
+      .values({
+        returnLineId: uuid(),
+        returnId: retId,
+        salesOrderLineId: targetLine.lineId,
+        quantityReturned: returnQty.toString(),
+        quantityReceived: returnQty.toString(),
+        reason: 'Over-ordered on project work package',
+        resolution: 'refund',
+        returnFee: '0.00',
+        putawayStatus: PUTAWAY_STATUS.COMPLETED,
+        productNumber: targetLine.prod.number,
+        productName: targetLine.prod.name,
+        pricePerUnit: targetLine.price.toFixed(2),
+        discountPercentage: '0.00',
+        taxCategoryId: data.taxCategoryId,
+      })
+      .onConflictDoNothing();
+
+    // Sales Credit Note
+    const crNoteId = uuid();
+    const crAmount = returnQty * targetLine.price;
+    await db
+      .insert(salesCreditNotes)
+      .values({
+        creditNoteId: crNoteId,
+        creditNoteNumber: `CN-${crNoteCounter++}`,
+        customerId: so.customerId,
+        returnId: retId,
+        salesOrderId: so.soId,
+        totalAmount: crAmount.toFixed(2),
+        outstandingAmount: crAmount.toFixed(2),
+        baseTotalAmount: crAmount.toFixed(2),
+        baseOutstandingAmount: crAmount.toFixed(2),
+        currencyCode: data.baseCurrency,
+        exchangeRate: '1',
+        stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
+        notes: `Credit memo issued for return ${retNumber}`,
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(salesCreditNoteLines)
+      .values({
+        creditNoteLineId: uuid(),
+        creditNoteId: crNoteId,
+        salesOrderLineId: targetLine.lineId,
+        quantityCredited: returnQty.toString(),
+        pricePerUnit: targetLine.price.toFixed(2),
+        amount: crAmount.toFixed(2),
+        productNumber: targetLine.prod.number,
+        productName: targetLine.prod.name,
+      })
+      .onConflictDoNothing();
+  }
+
+  // =========================================================================
+  // 6. BACKORDER ALLOCATIONS (5 Backorders)
+  // =========================================================================
+  for (let i = 0; i < Math.min(5, createdSalesOrders.length); i++) {
+    const so = createdSalesOrders[i];
+    if (so.lines.length === 0) continue;
+    const line = so.lines[0];
+
+    await db
+      .insert(backorders)
+      .values({
+        backorderId: uuid(),
+        salesOrderId: so.soId,
+        salesOrderLineId: line.lineId,
+        productId: line.prod.id,
+        quantity: '5.00',
+        stateCode: BACKORDER_STATE.AWAITING_RECEIPT,
+      })
+      .onConflictDoNothing();
+  }
+
+  // =========================================================================
+  // 7. TREASURY, CASH FLOW & MULTI-ALLOCATION PAYMENTS (AR/AP)
+  // =========================================================================
+  // Customer Receipts against AR Invoices
+  for (let i = 0; i < Math.min(10, createdSalesInvoices.length); i++) {
+    const inv = createdSalesInvoices[i];
+    const pmtId = uuid();
+    const pmtNumber = `RCPT-${pmtCounter++}`;
+    const pmtAmount = inv.totalAmount;
+
+    await db
+      .insert(paymentEntries)
+      .values({
+        paymentId: pmtId,
+        paymentNumber: pmtNumber,
+        paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+        partyId: inv.customerId,
+        paymentDate: inv.date,
+        modeOfPayment: 'Direct Wire / ACH',
+        totalAmount: pmtAmount.toFixed(2),
+        unallocatedAmount: '0.00',
+        glAccountBank: data.bankAccountId,
+        referenceNumber: `ACH-CUST-${pmtCounter}`,
+        stateCode: PAYMENT_STATE.SUBMITTED,
+        baseTotalAmount: pmtAmount.toFixed(2),
+        baseUnallocatedAmount: '0.00',
+        currencyCode: inv.currencyCode,
+        exchangeRate: '1',
+        createdBy: 'finance_ar',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(paymentLines)
+      .values({
+        paymentLineId: uuid(),
+        paymentId: pmtId,
+        glAccountId: data.arAccountId,
+        amount: pmtAmount.toFixed(2),
+        memo: `AR Payment Allocation for ${inv.invoiceId}`,
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(paymentAllocations)
+      .values({
+        allocationId: uuid(),
+        paymentId: pmtId,
+        referenceType: 'sales_invoice',
+        referenceId: inv.invoiceId,
+        allocatedAmount: pmtAmount.toFixed(2),
+        discountAmount: '0.00',
+      })
+      .onConflictDoNothing();
+
+    // Mark invoice as PAID
+    await db
+      .update(salesInvoices)
+      .set({
+        stateCode: SALES_INVOICE_STATE.PAID,
+        outstandingAmount: '0.00',
+        baseOutstandingAmount: '0.00',
+      })
+      .where(eq(salesInvoices.invoiceId, inv.invoiceId));
+  }
+
+  // Supplier Disbursements against AP Invoices
+  for (let i = 0; i < Math.min(6, createdPurchaseInvoices.length); i++) {
+    const inv = createdPurchaseInvoices[i];
+    const pmtId = uuid();
+    const pmtNumber = `PMT-${pmtCounter++}`;
+    const pmtAmount = inv.totalAmount;
+
+    await db
+      .insert(paymentEntries)
+      .values({
+        paymentId: pmtId,
+        paymentNumber: pmtNumber,
+        paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
+        partyId: inv.vendorId,
+        paymentDate: inv.date,
+        modeOfPayment: 'Electronic Bank Transfer',
+        totalAmount: pmtAmount.toFixed(2),
+        unallocatedAmount: '0.00',
+        glAccountBank: data.bankAccountId,
+        referenceNumber: `EFT-SUP-${pmtCounter}`,
+        stateCode: PAYMENT_STATE.SUBMITTED,
+        baseTotalAmount: pmtAmount.toFixed(2),
+        baseUnallocatedAmount: '0.00',
+        currencyCode: inv.currencyCode,
+        exchangeRate: inv.currencyCode === 'JPY' ? '0.0068' : '1',
+        createdBy: 'finance_ap',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(paymentLines)
+      .values({
+        paymentLineId: uuid(),
+        paymentId: pmtId,
+        glAccountId: data.apAccountId,
+        amount: pmtAmount.toFixed(2),
+        memo: `AP Supplier Payment for Invoice ${inv.invoiceId}`,
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(paymentAllocations)
+      .values({
+        allocationId: uuid(),
+        paymentId: pmtId,
+        referenceType: 'purchase_invoice',
+        referenceId: inv.invoiceId,
+        allocatedAmount: pmtAmount.toFixed(2),
+        discountAmount: '0.00',
+      })
+      .onConflictDoNothing();
+
+    // Mark AP invoice as PAID
+    await db
+      .update(purchaseInvoices)
+      .set({
+        stateCode: PURCHASE_INVOICE_STATE.PAID,
+        outstandingAmount: '0.00',
+        baseOutstandingAmount: '0.00',
+      })
+      .where(eq(purchaseInvoices.invoiceId, inv.invoiceId));
+  }
+
+  // =========================================================================
+  // 8. GENERAL LEDGER JOURNALS & DIMENSION POSTINGS (Cost Centers & Activities)
+  // =========================================================================
+  for (let i = 0; i < 5; i++) {
+    const jnlId = uuid();
+    const jnlNumber = `JE-2026-${jnlCounter++}`;
+    const jnlDate = randomDate(oneYearAgo, now);
+    const amount = randomInt(500, 2500);
+
+    await db
+      .insert(glJournalEntries)
+      .values({
+        journalEntryId: jnlId,
+        entryNumber: jnlNumber,
+        entryDate: jnlDate.toISOString().split('T')[0],
+        memo: `Operating Overhead Allocation & Monthly Warehouse Utilities #${jnlCounter}`,
+        sourceType: 'adjustment',
+        isReversed: false,
+        createdBy: 'chief_accountant',
+      })
+      .onConflictDoNothing();
+
+    // Debit Expense / Overhead
+    await db
+      .insert(glJournalLines)
+      .values({
+        journalLineId: uuid(),
+        journalEntryId: jnlId,
+        glAccountId: data.cogsAccountId,
+        debit: amount.toFixed(2),
+        credit: '0.00',
+        foreignDebit: amount.toFixed(2),
+        foreignCredit: '0.00',
+        isReconciled: true,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Facility power & machinery maintenance debit',
+      })
+      .onConflictDoNothing();
+
+    // Credit Cash / Bank
+    await db
+      .insert(glJournalLines)
+      .values({
+        journalLineId: uuid(),
+        journalEntryId: jnlId,
+        glAccountId: data.bankAccountId,
+        debit: '0.00',
+        credit: amount.toFixed(2),
+        foreignDebit: '0.00',
+        foreignCredit: amount.toFixed(2),
+        isReconciled: true,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Operating account payment credit',
+      })
+      .onConflictDoNothing();
+  }
+
+  // Log Financial & Warehouse Audit Events
+  await db
+    .insert(financialEvents)
+    .values({
+      eventId: uuid(),
+      entityType: 'payment_entry',
+      entityId: data.bankAccountId,
+      eventType: 'treasury.payments_processed',
+      entityDisplayName: 'Demo Treasury & Cash Flow Processed',
+      payload: {
+        customerReceipts: 10,
+        supplierPayments: 6,
+        journalAdjustments: 5,
+      },
+      actor: 'finance_treasury',
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(warehouseEvents)
+    .values({
+      eventId: uuid(),
+      entityType: 'work_orders',
+      entityId: data.locs[0].id,
+      eventType: 'manufacturing.work_orders_completed',
+      entityDisplayName: 'Demo Assembly Work Orders Completed',
+      payload: { workOrdersCount: 6 },
+      actor: 'mfg_supervisor',
+    })
+    .onConflictDoNothing();
+
   await db
     .insert(inventoryEvents)
     .values({
@@ -1351,13 +2505,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       entityType: 'inventory_ledger',
       entityId: data.locs[0].id,
       eventType: 'inventory.stock_seeded',
-      entityDisplayName: 'Demo Inventory Ledger Initialized',
+      entityDisplayName: 'Demo Full Inventory Ledger Initialized',
       payload: { stockEntries: Object.keys(stockLevels).length },
       actor: 'system',
     })
     .onConflictDoNothing();
 
-  console.log('Transactions generated successfully.');
+  console.log('Multi-domain enterprise transactions generated successfully.');
 }
 
 async function confirmExecution(): Promise<boolean> {
@@ -1368,7 +2522,7 @@ async function confirmExecution(): Promise<boolean> {
 
   return new Promise((resolve) => {
     rl.question(
-      'WARNING: This will WIPE the database and populate demo data! Are you sure you want to proceed? [y/N] ',
+      'WARNING: This will WIPE the database and populate full enterprise demo data! Are you sure you want to proceed? [y/N] ',
       (answer) => {
         rl.close();
         resolve(answer.trim().toLowerCase() === 'y');
@@ -1377,13 +2531,21 @@ async function confirmExecution(): Promise<boolean> {
   });
 }
 
-export async function runDemoSeeds(db: SeedDB, dryRun = false, force = false) {
+export async function runDemoSeeds(
+  db: SeedDB,
+  dryRun = false,
+  force = false,
+  coaRegion?: string,
+) {
   const args = process.argv.slice(2);
   const isForce =
     force ||
     args.includes('--force') ||
     args.includes('-y') ||
     process.env.NODE_ENV === 'test';
+
+  const coaArg = args.find((a) => a.startsWith('--coa='));
+  const region = coaRegion || (coaArg ? coaArg.split('=')[1] : 'us_standard');
 
   if (!isForce) {
     const confirmed = await confirmExecution();
@@ -1395,16 +2557,16 @@ export async function runDemoSeeds(db: SeedDB, dryRun = false, force = false) {
   try {
     await wipeDatabase(db);
 
-    // Run the framework baseline seeds (Users, App settings, Casbin, Reports)
+    // 1. Run the framework baseline seeds (Users, App settings, Casbin, Reports)
     await runProdSeeds(db, dryRun);
-    await seedCoaAccounts(db, false, 'us_standard');
-    await seedCoaSettings(db, false, 'us_standard');
+    await seedCoaAccounts(db, false, region);
+    await seedCoaSettings(db, false, region);
 
-    // Run custom tool distribution seeds
-    const data = await seedMasterData(db);
+    // 2. Run custom multi-domain distribution seeds
+    const data = await seedMasterData(db, region);
     await generateTransactions(db, data);
 
-    console.log('\nDemo Data Seeding Complete!');
+    console.log(`\nDemo Data Seeding Complete (COA Region: ${region})!`);
   } catch (e) {
     console.error('Seeding failed:', e);
     throw e;

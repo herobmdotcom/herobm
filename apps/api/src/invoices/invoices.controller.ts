@@ -233,8 +233,14 @@ export class InvoiceDetailController {
     @Query('balanceStatus') balanceStatus?: string,
   ) {
     const { limit, cursor, direction, searchTerm } = parsePagination(query);
+    const parsedDays =
+      days !== undefined
+        ? String(days).toLowerCase() === 'mtd'
+          ? 'mtd'
+          : parseInt(String(days), 10)
+        : undefined;
     const data = await this.purchaseInvoiceCoreService.findActiveInvoices({
-      days: days !== undefined ? parseInt(String(days), 10) : undefined,
+      days: parsedDays,
       vendorId,
       invoiceId,
       balanceStatus,

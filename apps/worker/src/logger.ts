@@ -32,7 +32,7 @@ const rootLogger = pino({
   timestamp: pino.stdTimeFunctions.isoTime,
 }, pino.multistream([
   { stream: process.stdout },
-  { stream: pino.destination({ dest: logFile, sync: false }) }
+  { stream: pino.destination({ dest: logFile, sync: true }) }
 ]));
 
 /** Logger scoped to the relay polling loop. */

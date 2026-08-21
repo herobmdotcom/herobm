@@ -429,7 +429,7 @@ export class PurchaseInvoiceCoreService {
    * Useful for the "All Invoices" page and Customer Detail tabs.
    */
   async findActiveInvoices(query: {
-    days?: number;
+    days?: number | string;
     vendorId?: string;
     invoiceId?: string;
     balanceStatus?: string;
@@ -454,9 +454,13 @@ export class PurchaseInvoiceCoreService {
     // When filtering by specific invoiceId, skip the date range filter
     if (invoiceId) {
       conditions.push(eq(purchaseInvoices.invoiceId, invoiceId));
-    } else if (days > 0) {
+    } else if (String(days).toLowerCase() === 'mtd') {
+      conditions.push(
+        sql`${purchaseInvoices.createdOn} >= DATE_TRUNC('month', NOW())`,
+      );
+    } else if (Number(days) > 0) {
       const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
+      cutoffDate.setDate(cutoffDate.getDate() - Number(days));
       conditions.push(gte(purchaseInvoices.createdOn, cutoffDate));
     }
 

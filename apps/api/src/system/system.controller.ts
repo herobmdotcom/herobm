@@ -79,22 +79,30 @@ export class SystemController {
   @ApiOkResponse({ type: SystemVersionResponseDto })
   getSystemVersion(): SystemVersionResponseDto {
     if (!cachedApiVersion) {
-      const packageJsonPath = path.resolve(__dirname, '../../package.json');
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      let gitVersion = '';
-      try {
-        gitVersion = execSync(
-          'git log -1 --format="%cd.%h" --date=format:%Y%m%d',
-          { stdio: 'pipe' },
-        )
-          .toString()
-          .trim();
-      } catch (e) {
-        // Ignore error
+      let gitVersion = process.env.APP_VERSION || '';
+      if (!gitVersion) {
+        const packageJsonPath = path.resolve(__dirname, '../../package.json');
+        const packageJson = JSON.parse(
+          fs.readFileSync(packageJsonPath, 'utf8'),
+        );
+        try {
+          const fromGit = execSync(
+            'git log -1 --format="%cd.%h" --date=format:%Y%m%d',
+            { stdio: 'pipe' },
+          )
+            .toString()
+            .trim();
+          if (fromGit) {
+            gitVersion = `v${packageJson.version}-${fromGit}`;
+          }
+        } catch (e) {
+          // Ignore error
+        }
+        if (!gitVersion) {
+          gitVersion = `v${packageJson.version}`;
+        }
       }
-      cachedApiVersion = gitVersion
-        ? `v${packageJson.version}-${gitVersion}`
-        : `v${packageJson.version}`;
+      cachedApiVersion = gitVersion;
     }
 
     return {
