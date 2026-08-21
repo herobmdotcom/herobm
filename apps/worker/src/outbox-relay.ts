@@ -48,9 +48,26 @@ const connection = {
   host: REDIS_HOST,
   port: 6379,
   password: REDIS_PASSWORD,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  disableClientInfo: true,
+  keepAlive: 30000,
+  connectTimeout: 10000,
+  retryStrategy: (times: number) => {
+    return Math.max(Math.min(Math.exp(times), 20000), 1000);
+  },
+  reconnectOnError: (err: Error) => {
+    const targetErrors = ['READONLY', 'ETIMEDOUT', 'ECONNRESET', 'EPIPE'];
+    return targetErrors.some(
+      (target) => err.message.includes(target) || (err as any).code === target
+    );
+  },
 };
 
 const syncQueue = new Queue('external-sync', { connection });
+syncQueue.on('error', (err) => {
+  logger.warn({ err: err.message }, 'BullMQ syncQueue Redis connection error');
+});
 
 // Setup Metrics via OpenTelemetry Sockets
 const meter = getMeter('herobm-worker');
@@ -78,6 +95,10 @@ import { checkSupplierCompliance } from './check-supplier-compliance.service';
 // Start Worker
 const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
 
+worker.on('error', (err) => {
+  logger.warn({ err: err.message }, 'BullMQ sync worker Redis connection error');
+});
+
 worker.on('failed', (job, err) => {
   const attemptsMade = job?.attemptsMade || 1;
   const maxAttempts = job?.opts.attempts || 1;
@@ -101,6 +122,10 @@ worker.on('failed', (job, err) => {
 
 // Setup System Maintenance Queue and Worker
 const maintenanceQueue = new Queue('system-maintenance', { connection });
+maintenanceQueue.on('error', (err) => {
+  logger.warn({ err: err.message }, 'BullMQ maintenanceQueue Redis connection error');
+});
+
 maintenanceQueue.add(
   'purge-emails',
   {},
@@ -136,6 +161,10 @@ const maintenanceWorker = new Worker(
   },
   { connection, concurrency: 1 }
 );
+
+maintenanceWorker.on('error', (err) => {
+  logger.warn({ err: err.message }, 'BullMQ maintenance worker Redis connection error');
+});
 
 maintenanceWorker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, err: err.message }, 'BullMQ maintenance job failed');

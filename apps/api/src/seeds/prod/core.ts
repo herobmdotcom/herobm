@@ -1777,14 +1777,40 @@ export async function seedCoaSettings(
 
   await seedTaxCategoriesAndTerms(db, settings, dryRun);
 
-  const defaultTaxCatId = uuidv5('GST_CAT_GST', NAMESPACE_COA);
-  const defaultTermId = uuidv5('TERM_NET30', NAMESPACE_COA);
-  await db.update(appSettings).set({
-    defaultSalesTaxCategoryId: defaultTaxCatId,
-    defaultPurchaseTaxCategoryId: defaultTaxCatId,
-    defaultCustomerTermsId: defaultTermId,
-    defaultSupplierTermsId: defaultTermId,
-  });
+  interface CoaCategory {
+    code: string;
+    title: string;
+    type: string;
+    rate: number;
+    is_default?: boolean;
+  }
+
+  interface CoaTerm {
+    code: string;
+    description: string;
+    days: number;
+    type: string;
+  }
+
+  const categories: CoaCategory[] = settings.gst_categories || [];
+  const terms: CoaTerm[] = settings.trading_terms || [];
+  const defaultTaxCat = categories.find((c) => c.is_default) || categories[0];
+  const defaultTaxCatId = defaultTaxCat
+    ? uuidv5('GST_CAT_' + defaultTaxCat.code, NAMESPACE_COA)
+    : null;
+  const defaultTerm = terms.find((t) => t.code === 'NET30') || terms[0];
+  const defaultTermId = defaultTerm
+    ? uuidv5('TERM_' + defaultTerm.code, NAMESPACE_COA)
+    : null;
+
+  if (defaultTaxCatId && defaultTermId) {
+    await db.update(appSettings).set({
+      defaultSalesTaxCategoryId: defaultTaxCatId,
+      defaultPurchaseTaxCategoryId: defaultTaxCatId,
+      defaultCustomerTermsId: defaultTermId,
+      defaultSupplierTermsId: defaultTermId,
+    });
+  }
 
   console.log('  Seeded COA defaults to app_settings');
 

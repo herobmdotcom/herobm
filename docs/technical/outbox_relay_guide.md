@@ -125,6 +125,18 @@ All configuration is via environment variables (no hardcoded secrets per Constit
 | `EXTERNAL_API_KEY` | Yes | — | External API key |
 | `EXTERNAL_API_SECRET` | Yes | — | External API secret |
 
+### Redis & BullMQ Connection Resilience (ADV-160)
+
+BullMQ workers and queues require explicit resilience options to survive idle socket pruning, transient connection drops, and avoid unhandled socket exceptions:
+
+- `maxRetriesPerRequest: null`: Required by BullMQ for blocking commands.
+- `enableReadyCheck: false`: Avoids duplicate readiness checks during reconnect.
+- `disableClientInfo: true`: Prevents `CLIENT SETINFO` race conditions upon connection handshake.
+- `keepAlive: 30000`: Keeps TCP sockets alive through NAT/container layers.
+- `connectTimeout: 10000`: Bounded connection timeout.
+- `retryStrategy` and `reconnectOnError`: Exponential backoff reconnect strategy.
+- **Mandatory Error Handlers**: BullMQ `Worker` and `Queue` instances are `EventEmitter`s. Every instance must register `.on('error', ...)` to prevent unhandled Node exceptions (`write EPIPE`, `ECONNRESET`) from triggering fatal `process.exit()`.
+
 ## Observability
 
 ### Structured logging

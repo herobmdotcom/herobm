@@ -52,8 +52,9 @@ export class PurchasingReportsService implements OnModuleInit {
     dateField: any = purchaseOrders.createdOn,
   ) {
     const conditions = [];
-    if (fromDate) conditions.push(gte(dateField, new Date(fromDate)));
-    if (toDate) conditions.push(lte(dateField, new Date(toDate)));
+    if (fromDate) conditions.push(sql`${dateField} >= ${fromDate}::timestamp`);
+    if (toDate)
+      conditions.push(sql`${dateField} < (${toDate}::date + interval '1 day')`);
     return conditions;
   }
 
@@ -69,12 +70,16 @@ export class PurchasingReportsService implements OnModuleInit {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
-      supplierName: actors.name,
+      supplierName: sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [actors.name];
+    const groupCols: any[] = [
+      suppliers.vendorId,
+      actors.name,
+      suppliers.vendorNumber,
+    ];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -136,8 +141,8 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(actors.name);
+      selectCols.supplierName = sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`;
+      groupCols.push(suppliers.vendorId, actors.name, suppliers.vendorNumber);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
@@ -200,8 +205,8 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(actors.name);
+      selectCols.supplierName = sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`;
+      groupCols.push(suppliers.vendorId, actors.name, suppliers.vendorNumber);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
@@ -246,7 +251,7 @@ export class PurchasingReportsService implements OnModuleInit {
     const expectedDateField = purchaseOrders.expectedDate;
     if (filters.toDate) {
       conditions.push(
-        lte(expectedDateField, new Date(filters.toDate as string)),
+        sql`${expectedDateField} < (${filters.toDate}::date + interval '1 day')`,
       );
     }
 
@@ -256,14 +261,16 @@ export class PurchasingReportsService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       poNumber: purchaseOrders.orderNumber,
-      supplierName: actors.name,
+      supplierName: sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       expectedDate: sql<string>`to_char(${expectedDateField}, 'YYYY-MM-DD')`,
       pendingValue: sql<number>`sum((${purchaseOrderLineItems.quantity} - COALESCE(${purchaseOrderLineItems.quantityReceived}, 0)) * ${purchaseOrderLineItems.pricePerUnit})::numeric`,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [
       purchaseOrders.orderNumber,
+      suppliers.vendorId,
       actors.name,
+      suppliers.vendorNumber,
       expectedDateField,
     ];
 

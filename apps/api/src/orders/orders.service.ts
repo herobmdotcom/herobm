@@ -93,7 +93,7 @@ export class OrdersService implements OnModuleInit {
     }
     if (filters.toDate) {
       conditions.push(
-        sql`${salesOrders.createdOn} <= ${filters.toDate}::timestamp`,
+        sql`${salesOrders.createdOn} < (${filters.toDate}::date + interval '1 day')`,
       );
     }
     conditions.push(
@@ -113,13 +113,17 @@ export class OrdersService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       customerId: coreAccounts.customerId,
-      customerName: actors.name,
+      customerName: sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
-    const groupCols: any[] = [coreAccounts.customerId, actors.name];
+    const groupCols: any[] = [
+      coreAccounts.customerId,
+      actors.name,
+      coreAccounts.customerNumber,
+    ];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -186,8 +190,12 @@ export class OrdersService implements OnModuleInit {
     ];
 
     if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(coreAccounts.customerId, actors.name);
+      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      groupCols.push(
+        coreAccounts.customerId,
+        actors.name,
+        coreAccounts.customerNumber,
+      );
     } else if (drillDown === 'period') {
       const period = getAggregationPeriod(filters);
       selectCols.period = getAggregationSql(salesOrders.createdOn, period);
@@ -230,7 +238,7 @@ export class OrdersService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       productGroupId: productGroups.productGroupId,
-      productGroupName: productGroups.name,
+      productGroupName: sql<string>`coalesce(${productGroups.name}, 'Unassigned')`,
       quantitySold: sql<number>`coalesce(sum(${salesOrderLineItems.quantity}::numeric), 0)::float`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
@@ -242,8 +250,12 @@ export class OrdersService implements OnModuleInit {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
       groupCols.push(products.productId, products.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(coreAccounts.customerId, actors.name);
+      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      groupCols.push(
+        coreAccounts.customerId,
+        actors.name,
+        coreAccounts.customerNumber,
+      );
     } else if (drillDown === 'period') {
       const period = getAggregationPeriod(filters);
       selectCols.period = getAggregationSql(salesOrders.createdOn, period);
@@ -308,8 +320,12 @@ export class OrdersService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.productGroupId, productGroups.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(coreAccounts.customerId, actors.name);
+      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      groupCols.push(
+        coreAccounts.customerId,
+        actors.name,
+        coreAccounts.customerNumber,
+      );
     } else if (drillDown === 'channel') {
       selectCols.source = salesOrders.source;
       groupCols.push(salesOrders.source);
@@ -378,8 +394,12 @@ export class OrdersService implements OnModuleInit {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
       groupCols.push(products.productId, products.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
-      groupCols.push(coreAccounts.customerId, actors.name);
+      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      groupCols.push(
+        coreAccounts.customerId,
+        actors.name,
+        coreAccounts.customerNumber,
+      );
     } else if (drillDown === 'period') {
       const period = getAggregationPeriod(filters);
       selectCols.period = getAggregationSql(salesOrders.createdOn, period);
@@ -530,7 +550,7 @@ export class OrdersService implements OnModuleInit {
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
-        customerName: actors.name,
+        customerName: sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         source: salesOrders.source,

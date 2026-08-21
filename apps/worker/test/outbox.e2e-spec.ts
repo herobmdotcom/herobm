@@ -31,14 +31,24 @@ describe('Worker E2E - Outbox Integration', () => {
 
     const redisHost = process.env.REDIS_HOST || 'localhost';
     const redisPassword = process.env.REDIS_PASSWORD;
-    const connection = { host: redisHost, port: 6379, password: redisPassword };
+    const connection = {
+      host: redisHost,
+      port: 6379,
+      password: redisPassword,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      disableClientInfo: true,
+      keepAlive: 30000,
+    };
 
     queue = new Queue('external-sync-test-2', { connection });
+    queue.on('error', () => {});
     
     // Explicitly pass db to processEvent! (Solves ADV-062)
     worker = new Worker('external-sync-test-2', async (job) => {
       await processEvent(job, db);
     }, { connection });
+    worker.on('error', () => {});
     
     await worker.waitUntilReady();
   });

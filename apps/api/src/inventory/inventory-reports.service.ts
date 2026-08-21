@@ -55,7 +55,7 @@ export class InventoryReportsService implements OnModuleInit {
         unitCost: products.standardCost,
         totalValue: sql<number>`(${inventoryLevels.quantityOnHand} * ${products.standardCost})::numeric`,
         locationName: locations.name,
-        productGroupName: productGroups.name,
+        productGroupName: sql<string>`coalesce(${productGroups.name}, 'Unassigned')`,
       })
       .from(inventoryLevels)
       .innerJoin(products, eq(inventoryLevels.productId, products.productId))
@@ -76,11 +76,11 @@ export class InventoryReportsService implements OnModuleInit {
     const conditions = [];
     if (filters.fromDate)
       conditions.push(
-        gte(inventoryEntries.entryDate, new Date(filters.fromDate as string)),
+        sql`${inventoryEntries.entryDate} >= ${filters.fromDate}::timestamp`,
       );
     if (filters.toDate)
       conditions.push(
-        lte(inventoryEntries.entryDate, new Date(filters.toDate as string)),
+        sql`${inventoryEntries.entryDate} < (${filters.toDate}::date + interval '1 day')`,
       );
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -125,7 +125,7 @@ export class InventoryReportsService implements OnModuleInit {
         minLevel: productDefaultBins.minQuantity,
         deficit: sql<number>`(${productDefaultBins.minQuantity} - ${inventoryLevels.quantityOnHand})::numeric`,
         suggestedOrderQty: sql<number>`(COALESCE(${productDefaultBins.maxQuantity}, ${productDefaultBins.minQuantity} * 2) - ${inventoryLevels.quantityOnHand})::numeric`,
-        productGroupName: productGroups.name,
+        productGroupName: sql<string>`coalesce(${productGroups.name}, 'Unassigned')`,
       })
       .from(productDefaultBins)
       .innerJoin(
