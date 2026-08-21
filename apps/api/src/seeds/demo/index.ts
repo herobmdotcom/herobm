@@ -29,6 +29,13 @@ import {
   workOrders,
   workOrderComponents,
   workOrderPicks,
+  transferOrders,
+  transferOrderLines,
+  transferOrderPicks,
+  transferOrderShipments,
+  transferOrderShipmentLines,
+  transferOrderReceipts,
+  transferOrderReceiptLines,
   purchaseOrders,
   purchaseOrderLineItems,
   goodsReceived,
@@ -92,8 +99,10 @@ import {
   WORK_ORDER_STATE,
   WorkOrderState,
   WORK_ORDER_PICK_STATE,
+  TRANSFER_ORDER_STATE,
+  TransferOrderState,
+  TRANSFER_ORDER_PICK_STATE,
   RETURN_STATE,
-  ReturnState,
   SALES_CREDIT_NOTE_STATE,
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_SHIPMENT_STATE,
@@ -139,6 +148,9 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.payment_allocations, herobm_core.payment_lines, herobm_core.payment_entries,
       herobm_core.gl_journal_lines, herobm_core.gl_journal_entries, herobm_core.gl_reconciliations, herobm_core.gl_match_groups,
       herobm_core.inventory_ledger, herobm_core.inventory_entries, herobm_core.bin_contents, herobm_core.product_default_bins,
+      herobm_core.transfer_order_receipt_lines, herobm_core.transfer_order_receipts,
+      herobm_core.transfer_order_shipment_lines, herobm_core.transfer_order_shipments,
+      herobm_core.transfer_order_picks, herobm_core.transfer_order_lines, herobm_core.transfer_orders,
       herobm_core.work_order_picks, herobm_core.work_order_components, herobm_core.work_orders,
       herobm_core.sales_credit_note_lines, herobm_core.sales_credit_notes, herobm_core.sales_order_return_lines, herobm_core.sales_order_returns,
       herobm_core.sales_invoice_lines, herobm_core.sales_invoices, herobm_core.sales_order_shipment_lines, herobm_core.sales_order_shipments,
@@ -178,6 +190,7 @@ export interface MasterLocation {
   wipBinId: string;
   quarantineBinId: string;
   mainZoneId: string;
+  pickZoneId: string;
 }
 
 export interface MasterProduct {
@@ -441,7 +454,7 @@ export async function seedMasterData(
         {
           binId: storageBinId,
           zoneId: mainZoneId,
-          binNumber: 'A1-01',
+          binNumber: `${loc.code}-STR-01`,
           binType: BIN_TYPE.STORAGE,
           source: 'app',
           createdBy: 'system',
@@ -449,7 +462,7 @@ export async function seedMasterData(
         {
           binId: pickBinId,
           zoneId: pickZoneId,
-          binNumber: 'P1-01',
+          binNumber: `${loc.code}-PCK-01`,
           binType: BIN_TYPE.PICK,
           source: 'app',
           createdBy: 'system',
@@ -457,7 +470,7 @@ export async function seedMasterData(
         {
           binId: bulkBinId,
           zoneId: bulkZoneId,
-          binNumber: 'B1-01',
+          binNumber: `${loc.code}-BLK-01`,
           binType: BIN_TYPE.BULK,
           source: 'app',
           createdBy: 'system',
@@ -465,7 +478,7 @@ export async function seedMasterData(
         {
           binId: stagingBinId,
           zoneId: stagingZoneId,
-          binNumber: 'STAGE-01',
+          binNumber: `${loc.code}-STG-01`,
           binType: BIN_TYPE.STAGING,
           source: 'app',
           createdBy: 'system',
@@ -473,7 +486,7 @@ export async function seedMasterData(
         {
           binId: wipBinId,
           zoneId: mfgZoneId,
-          binNumber: 'WIP-01',
+          binNumber: `${loc.code}-WIP-01`,
           binType: BIN_TYPE.WIP,
           source: 'app',
           createdBy: 'system',
@@ -481,7 +494,7 @@ export async function seedMasterData(
         {
           binId: quarantineBinId,
           zoneId: qcZoneId,
-          binNumber: 'QC-01',
+          binNumber: `${loc.code}-QC-01`,
           binType: BIN_TYPE.QUARANTINE,
           source: 'app',
           createdBy: 'system',
@@ -500,6 +513,7 @@ export async function seedMasterData(
       wipBinId,
       quarantineBinId,
       mainZoneId,
+      pickZoneId,
     });
   }
 
@@ -662,17 +676,19 @@ export async function seedMasterData(
       })
       .onConflictDoNothing();
 
-    // Link default bin for primary location
-    await db
-      .insert(productDefaultBins)
-      .values({
-        productDefaultBinId: uuid(),
-        productId: p.id,
-        locationId: locs[0].id,
-        binId: locs[0].pickBinId,
-        isPrimaryPerLocation: true,
-      })
-      .onConflictDoNothing();
+    // Link default bin for each location
+    for (const loc of locs) {
+      await db
+        .insert(productDefaultBins)
+        .values({
+          productDefaultBinId: uuid(),
+          productId: p.id,
+          locationId: loc.id,
+          binId: loc.pickBinId,
+          isPrimaryPerLocation: true,
+        })
+        .onConflictDoNothing();
+    }
 
     // Add UOM conversions for bulk items
     if (p.number === 'AC-3001' || p.number === 'AC-3002') {
@@ -753,16 +769,18 @@ export async function seedMasterData(
       })
       .onConflictDoNothing();
 
-    await db
-      .insert(productDefaultBins)
-      .values({
-        productDefaultBinId: uuid(),
-        productId: kp.id,
-        locationId: locs[0].id,
-        binId: locs[0].storageBinId,
-        isPrimaryPerLocation: true,
-      })
-      .onConflictDoNothing();
+    for (const loc of locs) {
+      await db
+        .insert(productDefaultBins)
+        .values({
+          productDefaultBinId: uuid(),
+          productId: kp.id,
+          locationId: loc.id,
+          binId: loc.storageBinId,
+          isPrimaryPerLocation: true,
+        })
+        .onConflictDoNothing();
+    }
 
     // Insert BOM Bill of Materials
     for (let seq = 0; seq < kp.components.length; seq++) {
@@ -787,7 +805,7 @@ export async function seedMasterData(
     kitProds.push(kp);
   }
 
-  // 6. CRM Actors & Suppliers (Domestic + International JPY)
+  // 6. CRM Actors & Suppliers
   const supConfigs = [
     {
       number: 'SUP-001',
@@ -1310,11 +1328,14 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   let debNoteCounter = 1000;
 
   let soCounter = 5000;
-  const pickCounter = 5000;
   let shpCounter = 5000;
   let arInvCounter = 5000;
   let soRetCounter = 5000;
   let crNoteCounter = 5000;
+
+  let toCounter = 1000;
+  let toShpCounter = 1000;
+  let toRcvCounter = 1000;
 
   let woCounter = 1000;
   let pmtCounter = 1000;
@@ -1327,6 +1348,10 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
 
   // =========================================================================
   // 1. PURCHASE ORDERS & INBOUND RECEIPTS (25 POs)
+  // Putaway Distribution:
+  // - 15 COMPLETED putaway (in storage bins)
+  // - 7 PENDING_PUTAWAY putaway (on receiving dock/staging bin)
+  // - 3 QUARANTINED putaway (in QC inspection bin)
   // =========================================================================
   const createdPurchaseInvoices: {
     invoiceId: string;
@@ -1354,19 +1379,29 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   for (let i = 0; i < 25; i++) {
     const poDate = randomDate(oneYearAgo, now);
     const supplier = randomItem(data.sups);
-    const location = randomItem(data.locs);
+    // Cycle locations so all warehouses receive inventory
+    const location = data.locs[i % data.locs.length];
     const poId = uuid();
     const poNumber = `PO-${poCounter++}`;
 
-    let poState: PurchaseOrderState = PURCHASE_ORDER_STATE.RECEIVED;
-    if (i === 23 || i === 24) {
-      poState = PURCHASE_ORDER_STATE.DRAFT;
-    } else if (i >= 20) {
-      poState = PURCHASE_ORDER_STATE.ORDERED;
+    const isReceived = true;
+    const poState: PurchaseOrderState = PURCHASE_ORDER_STATE.RECEIVED;
+
+    // Putaway Status Distribution
+    let putawayStatus: (typeof PUTAWAY_STATUS)[keyof typeof PUTAWAY_STATUS] =
+      PUTAWAY_STATUS.COMPLETED;
+    let targetBinId = location.storageBinId;
+
+    if (i >= 15 && i < 22) {
+      putawayStatus = PUTAWAY_STATUS.PENDING_PUTAWAY;
+      targetBinId = location.stagingBinId;
+    } else if (i >= 22) {
+      putawayStatus = PUTAWAY_STATUS.QUARANTINED;
+      targetBinId = location.quarantineBinId;
     }
 
-    const isReceived = poState === PURCHASE_ORDER_STATE.RECEIVED;
-    const isInvoiced = isReceived && i % 2 === 0;
+    const isInvoiced =
+      putawayStatus === PUTAWAY_STATUS.COMPLETED && i % 2 === 0;
 
     let poTotalAmount = 0;
     const lineInserts: {
@@ -1380,10 +1415,11 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       lineTotal: number;
     }[] = [];
 
-    const numLines = randomInt(2, 5);
+    // Ensure all base products get healthy inventory seeded across all warehouses
+    const numLines = randomInt(2, 4);
     for (let j = 0; j < numLines; j++) {
-      const prod = randomItem(data.prods);
-      const qty = randomInt(50, 200);
+      const prod = data.prods[(i * 2 + j) % data.prods.length];
+      const qty = randomInt(80, 250);
       const price =
         supplier.currencyCode === 'JPY'
           ? prod.standardCost * 150
@@ -1441,7 +1477,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           tax: line.taxAmount.toFixed(2),
           totalAmount: line.lineTotal.toFixed(2),
           unitOfMeasure: 'EA',
-          quantityReceived: isReceived ? line.qty.toString() : '0',
+          quantityReceived: line.qty.toString(),
         })
         .onConflictDoNothing();
     }
@@ -1455,168 +1491,170 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     });
 
     // Inbound Goods Receipt & Stock Ledger
-    if (isReceived) {
-      const goodsReceivedId = uuid();
-      const receiptNumber = `RCV-${rcvCounter++}`;
+    const goodsReceivedId = uuid();
+    const receiptNumber = `RCV-${rcvCounter++}`;
 
+    await db
+      .insert(goodsReceived)
+      .values({
+        goodsReceivedId,
+        receiptNumber,
+        vendorId: supplier.vendorId,
+        locationId: location.id,
+        packingSlipNumber: `PS-${poCounter}`,
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
+        createdOn: poDate,
+      })
+      .onConflictDoNothing();
+
+    const entryId = uuid();
+    await db
+      .insert(inventoryEntries)
+      .values({
+        entryId,
+        entryNumber: `STK-IN-${rcvCounter}`,
+        entryDate: poDate,
+        memo: `Receipt for ${poNumber} from ${supplier.name} (${putawayStatus})`,
+        sourceType: 'PO_RECEIPT',
+        sourceId: poId,
+        isReversed: false,
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    for (const line of lineInserts) {
       await db
-        .insert(goodsReceived)
+        .insert(goodsReceivedLines)
         .values({
+          goodsReceivedLineId: uuid(),
           goodsReceivedId,
-          receiptNumber,
-          vendorId: supplier.vendorId,
-          locationId: location.id,
-          packingSlipNumber: `PS-${poCounter}`,
-          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
-          createdBy: 'system',
-          createdOn: poDate,
+          productId: line.prod.id,
+          quantityReceived: line.qty.toString(),
+          unitCost: line.price.toFixed(2),
+          matchStatus: MATCH_STATUS.MATCHED,
+          putawayStatus,
+          purchaseOrderId: poId,
+          purchaseOrderLineId: line.lineId,
         })
         .onConflictDoNothing();
 
-      const entryId = uuid();
+      // Ledger Entry (+qty in target bin)
       await db
-        .insert(inventoryEntries)
+        .insert(inventoryLedger)
         .values({
+          ledgerId: uuid(),
           entryId,
-          entryNumber: `STK-IN-${rcvCounter}`,
-          entryDate: poDate,
-          memo: `Receipt for ${poNumber} from ${supplier.name}`,
-          sourceType: 'PO_RECEIPT',
-          sourceId: poId,
-          isReversed: false,
-          createdBy: 'system',
+          productId: line.prod.id,
+          binId: targetBinId,
+          locationId: location.id,
+          zoneId: location.mainZoneId,
+          quantity: line.qty.toString(),
         })
         .onConflictDoNothing();
 
-      for (const line of lineInserts) {
-        await db
-          .insert(goodsReceivedLines)
-          .values({
-            goodsReceivedLineId: uuid(),
-            goodsReceivedId,
-            productId: line.prod.id,
-            quantityReceived: line.qty.toString(),
-            unitCost: line.price.toFixed(2),
-            matchStatus: MATCH_STATUS.MATCHED,
-            putawayStatus: PUTAWAY_STATUS.COMPLETED,
-            purchaseOrderId: poId,
-            purchaseOrderLineId: line.lineId,
-          })
-          .onConflictDoNothing();
+      const key = getStockKey(targetBinId, line.prod.id);
+      stockLevels[key] = (stockLevels[key] || 0) + line.qty;
 
-        // Ledger Entry (+qty in storage bin)
-        await db
-          .insert(inventoryLedger)
-          .values({
-            ledgerId: uuid(),
-            entryId,
-            productId: line.prod.id,
-            binId: location.storageBinId,
-            locationId: location.id,
-            zoneId: location.mainZoneId,
-            quantity: line.qty.toString(),
-          })
-          .onConflictDoNothing();
-
-        const key = getStockKey(location.storageBinId, line.prod.id);
-        stockLevels[key] = (stockLevels[key] || 0) + line.qty;
-
-        await db
-          .insert(binContents)
-          .values({
-            binContentId: uuid(),
-            binId: location.storageBinId,
-            productId: line.prod.id,
+      await db
+        .insert(binContents)
+        .values({
+          binContentId: uuid(),
+          binId: targetBinId,
+          productId: line.prod.id,
+          actualQuantity: stockLevels[key].toString(),
+          modifiedOn: poDate,
+        })
+        .onConflictDoUpdate({
+          target: [binContents.binId, binContents.productId],
+          set: {
             actualQuantity: stockLevels[key].toString(),
             modifiedOn: poDate,
-          })
-          .onConflictDoUpdate({
-            target: [binContents.binId, binContents.productId],
-            set: {
-              actualQuantity: stockLevels[key].toString(),
-              modifiedOn: poDate,
-            },
-          });
-      }
+          },
+        });
+    }
 
-      // Record Procurement Audit Event
+    // Record Procurement Audit Event
+    await db
+      .insert(procurementEvents)
+      .values({
+        eventId: uuid(),
+        entityType: 'purchase_order',
+        entityId: poId,
+        eventType: 'purchase_order.received',
+        entityDisplayName: `${poNumber} Received`,
+        payload: {
+          orderNumber: poNumber,
+          totalAmount: poTotalAmount,
+          putawayStatus,
+        },
+        actor: 'warehouse',
+        createdOn: poDate,
+      })
+      .onConflictDoNothing();
+
+    // AP Purchase Invoices
+    if (isInvoiced) {
+      const invId = uuid();
+      const invNumber = `BILL-${apInvCounter++}`;
+      const taxAmount = Number((poTotalAmount * 0.0909).toFixed(2));
+
       await db
-        .insert(procurementEvents)
+        .insert(purchaseInvoices)
         .values({
-          eventId: uuid(),
-          entityType: 'purchase_order',
-          entityId: poId,
-          eventType: 'purchase_order.received',
-          entityDisplayName: `${poNumber} Received`,
-          payload: { orderNumber: poNumber, totalAmount: poTotalAmount },
-          actor: 'warehouse',
+          invoiceId: invId,
+          invoiceNumber: invNumber,
+          vendorId: supplier.vendorId,
+          purchaseOrderId: poId,
+          supplierInvoiceNumber: `INV-${supplier.number}-${poCounter}`,
+          totalAmount: poTotalAmount.toFixed(2),
+          outstandingAmount: poTotalAmount.toFixed(2),
+          taxAmount: taxAmount.toFixed(2),
+          baseTotalAmount: baseTotal,
+          baseOutstandingAmount: baseTotal,
+          currencyCode: supplier.currencyCode,
+          exchangeRate,
+          stateCode: PURCHASE_INVOICE_STATE.INVOICED,
+          invoiceDate: poDate,
+          dueDate: new Date(poDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+          createdBy: 'system',
           createdOn: poDate,
         })
         .onConflictDoNothing();
 
-      // AP Purchase Invoices
-      if (isInvoiced) {
-        const invId = uuid();
-        const invNumber = `BILL-${apInvCounter++}`;
-        const taxAmount = Number((poTotalAmount * 0.0909).toFixed(2));
-
+      const invLines = [];
+      for (const line of lineInserts) {
+        const invLineId = uuid();
         await db
-          .insert(purchaseInvoices)
+          .insert(purchaseInvoiceLines)
           .values({
+            invoiceLineId: invLineId,
             invoiceId: invId,
-            invoiceNumber: invNumber,
-            vendorId: supplier.vendorId,
-            purchaseOrderId: poId,
-            supplierInvoiceNumber: `INV-${supplier.number}-${poCounter}`,
-            totalAmount: poTotalAmount.toFixed(2),
-            outstandingAmount: poTotalAmount.toFixed(2),
-            taxAmount: taxAmount.toFixed(2),
-            baseTotalAmount: baseTotal,
-            baseOutstandingAmount: baseTotal,
-            currencyCode: supplier.currencyCode,
-            exchangeRate,
-            stateCode: PURCHASE_INVOICE_STATE.INVOICED,
-            invoiceDate: poDate,
-            dueDate: new Date(poDate.getTime() + 30 * 24 * 60 * 60 * 1000),
-            createdBy: 'system',
-            createdOn: poDate,
+            purchaseOrderLineId: line.lineId,
+            productId: line.prod.id,
+            quantityInvoiced: line.qty.toString(),
+            pricePerUnit: line.price.toFixed(2),
+            amount: line.lineAmount.toFixed(2),
+            matchStatus: MATCH_STATUS.MATCHED,
           })
           .onConflictDoNothing();
-
-        const invLines = [];
-        for (const line of lineInserts) {
-          const invLineId = uuid();
-          await db
-            .insert(purchaseInvoiceLines)
-            .values({
-              invoiceLineId: invLineId,
-              invoiceId: invId,
-              purchaseOrderLineId: line.lineId,
-              productId: line.prod.id,
-              quantityInvoiced: line.qty.toString(),
-              pricePerUnit: line.price.toFixed(2),
-              amount: line.lineAmount.toFixed(2),
-              matchStatus: MATCH_STATUS.MATCHED,
-            })
-            .onConflictDoNothing();
-          invLines.push({
-            lineId: invLineId,
-            amount: line.lineAmount,
-            price: line.price,
-            qty: line.qty,
-          });
-        }
-
-        createdPurchaseInvoices.push({
-          invoiceId: invId,
-          poId,
-          vendorId: supplier.vendorId,
-          totalAmount: poTotalAmount,
-          currencyCode: supplier.currencyCode,
-          date: poDate,
-          lines: invLines,
+        invLines.push({
+          lineId: invLineId,
+          amount: line.lineAmount,
+          price: line.price,
+          qty: line.qty,
         });
       }
+
+      createdPurchaseInvoices.push({
+        invoiceId: invId,
+        poId,
+        vendorId: supplier.vendorId,
+        totalAmount: poTotalAmount,
+        currencyCode: supplier.currencyCode,
+        date: poDate,
+        lines: invLines,
+      });
     }
   }
 
@@ -1733,17 +1771,20 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
 
   // =========================================================================
   // 3. MANUFACTURING WORK ORDERS & BOM ASSEMBLY (6 Work Orders)
+  // - 3 Completed
+  // - 2 In-Progress (Pending picks show in Picking Queue)
+  // - 1 Planned (Pending picks show in Picking Queue)
   // =========================================================================
   for (let i = 0; i < 6; i++) {
-    const kit = randomItem(data.kitProds);
-    const location = randomItem(data.locs);
+    const kit = data.kitProds[i % data.kitProds.length];
+    const location = data.locs[i % data.locs.length];
     const woId = uuid();
     const woNumber = `WO-${woCounter++}`;
-    const targetQty = randomInt(5, 20);
+    const targetQty = randomInt(5, 15);
 
     let woState: WorkOrderState = WORK_ORDER_STATE.COMPLETED;
     let completedQty = targetQty;
-    if (i === 4) {
+    if (i === 3 || i === 4) {
       woState = WORK_ORDER_STATE.IN_PROGRESS;
       completedQty = Math.floor(targetQty / 2);
     } else if (i === 5) {
@@ -1797,6 +1838,10 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         })
         .onConflictDoNothing();
 
+      const isPendingPick =
+        woState === WORK_ORDER_STATE.PLANNED ||
+        woState === WORK_ORDER_STATE.IN_PROGRESS;
+
       await db
         .insert(workOrderPicks)
         .values({
@@ -1805,14 +1850,12 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           workOrderComponentId: wocId,
           binId: location.storageBinId,
           quantity: expectedQty.toString(),
-          stateCode:
-            woState === WORK_ORDER_STATE.PLANNED
-              ? WORK_ORDER_PICK_STATE.PENDING
-              : WORK_ORDER_PICK_STATE.PICKED,
+          stateCode: isPendingPick
+            ? WORK_ORDER_PICK_STATE.PENDING
+            : WORK_ORDER_PICK_STATE.PICKED,
         })
         .onConflictDoNothing();
 
-      // If completed, deduct raw component from stock and add finished kit to output bin
       if (woState === WORK_ORDER_STATE.COMPLETED) {
         const rawKey = getStockKey(location.storageBinId, comp.childProductId);
         stockLevels[rawKey] = Math.max(
@@ -1842,7 +1885,143 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   }
 
   // =========================================================================
-  // 4. SALES ORDERS, PICKS, SHIPMENTS & AR INVOICES (50 SOs)
+  // 4. INTER-WAREHOUSE TRANSFER ORDERS (6 Transfer Orders)
+  // - 2 Confirmed (Shows in Picking Queue!)
+  // - 2 Picking with picked lines (Shows in Shipping Queue!)
+  // - 2 Received with receipts (Shows in Putaway Queue!)
+  // =========================================================================
+  for (let i = 0; i < 6; i++) {
+    const toId = uuid();
+    const toOrderNumber = `TO-${toCounter++}`;
+    const srcLoc = data.locs[i % data.locs.length];
+    const destLoc = data.locs[(i + 1) % data.locs.length];
+    const prod = data.prods[i % data.prods.length];
+    const qty = 10;
+
+    let toState: TransferOrderState = TRANSFER_ORDER_STATE.CONFIRMED;
+    if (i >= 2 && i < 4) {
+      toState = TRANSFER_ORDER_STATE.PICKING;
+    } else if (i >= 4) {
+      toState = TRANSFER_ORDER_STATE.RECEIVED;
+    }
+
+    await db
+      .insert(transferOrders)
+      .values({
+        transferOrderId: toId,
+        orderNumber: toOrderNumber,
+        sourceLocationId: srcLoc.id,
+        destinationLocationId: destLoc.id,
+        stateCode: toState,
+        notes: `Stock balancing transfer between ${srcLoc.code} and ${destLoc.code}`,
+        shippingNotes: 'Standard priority road freight',
+        createdBy: 'logistics_planner',
+      })
+      .onConflictDoNothing();
+
+    const toLineId = uuid();
+    await db
+      .insert(transferOrderLines)
+      .values({
+        transferOrderLineId: toLineId,
+        transferOrderId: toId,
+        productId: prod.id,
+        quantity: qty.toString(),
+        quantityShipped:
+          toState === TRANSFER_ORDER_STATE.RECEIVED ? qty.toString() : '0',
+        quantityReceived:
+          toState === TRANSFER_ORDER_STATE.RECEIVED ? qty.toString() : '0',
+      })
+      .onConflictDoNothing();
+
+    // If picking or received, insert transfer pick
+    if (
+      toState === TRANSFER_ORDER_STATE.PICKING ||
+      toState === TRANSFER_ORDER_STATE.RECEIVED
+    ) {
+      const pickId = uuid();
+      await db
+        .insert(transferOrderPicks)
+        .values({
+          pickId,
+          transferOrderId: toId,
+          transferOrderLineId: toLineId,
+          productId: prod.id,
+          binId: srcLoc.storageBinId,
+          quantity: qty.toString(),
+          stateCode: TRANSFER_ORDER_PICK_STATE.PICKED,
+          createdBy: 'warehouse_picker',
+        })
+        .onConflictDoNothing();
+
+      if (toState === TRANSFER_ORDER_STATE.RECEIVED) {
+        const toShpId = uuid();
+        await db
+          .insert(transferOrderShipments)
+          .values({
+            shipmentId: toShpId,
+            transferOrderId: toId,
+            shipmentNumber: `TO-SHP-${toShpCounter++}`,
+            trackingNumber: `TRK-TO-${randomInt(10000, 99999)}`,
+            stateCode: SHIPMENT_STATE.RECEIVED,
+            shippedBy: 'dispatch_lead',
+          })
+          .onConflictDoNothing();
+
+        await db
+          .insert(transferOrderShipmentLines)
+          .values({
+            shipmentLineId: uuid(),
+            shipmentId: toShpId,
+            transferOrderLineId: toLineId,
+            pickId,
+            productId: prod.id,
+            quantity: qty.toString(),
+          })
+          .onConflictDoNothing();
+
+        // Inbound Transfer Receipt (Shows in Putaway Queue!)
+        const toRcvId = uuid();
+        const toPutawayStatus =
+          i === 5 ? PUTAWAY_STATUS.QUARANTINED : PUTAWAY_STATUS.PENDING_PUTAWAY;
+        await db
+          .insert(transferOrderReceipts)
+          .values({
+            receiptId: toRcvId,
+            transferOrderId: toId,
+            receiptNumber: `TO-RCV-${toRcvCounter++}`,
+            stateCode: 'received',
+            receivedBy: 'dock_receiver',
+          })
+          .onConflictDoNothing();
+
+        await db
+          .insert(transferOrderReceiptLines)
+          .values({
+            receiptLineId: uuid(),
+            receiptId: toRcvId,
+            transferOrderLineId: toLineId,
+            productId: prod.id,
+            binId:
+              toPutawayStatus === PUTAWAY_STATUS.QUARANTINED
+                ? destLoc.quarantineBinId
+                : destLoc.stagingBinId,
+            quantity: qty.toString(),
+            putawayStatus: toPutawayStatus,
+          })
+          .onConflictDoNothing();
+      }
+    }
+  }
+
+  // =========================================================================
+  // 5. SALES ORDERS & COMPREHENSIVE QUEUE GENERATION (70 SOs)
+  // - 35 Historical Shipped & Invoiced Orders (Dispatched)
+  // - 12 Picking READY Orders (All items in-stock, unpicked)
+  // - 6 Picking PARTIAL Orders (1 in-stock item, 1 out-of-stock item)
+  // - 4 Picking BLOCKED Orders (0 in-stock items)
+  // - 9 Shipping READY Orders (All lines fully picked, 0 shipped)
+  // - 4 Shipping PARTIAL Orders (1 line picked, 1 line unpicked, 0 shipped)
   // =========================================================================
   const createdSalesInvoices: {
     invoiceId: string;
@@ -1876,27 +2055,119 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
 
   const allAvailableProducts = [...data.prods, ...data.kitProds];
 
-  for (let i = 0; i < 50; i++) {
-    const soDate = randomDate(oneYearAgo, now);
-    const customer = randomItem(data.custs);
-    const location = randomItem(data.locs);
+  // Helper to insert a sales order with controlled queue behavior
+  async function createCustomSalesOrder(options: {
+    scenario:
+      | 'shipped'
+      | 'picking_ready'
+      | 'picking_partial'
+      | 'picking_blocked'
+      | 'shipping_ready'
+      | 'shipping_partial';
+    location: MasterLocation;
+    customer: MasterActorCustomer;
+  }) {
+    const { scenario, location, customer } = options;
     const soId = uuid();
     const soNumber = `SO-${soCounter++}`;
+    const soDate = randomDate(oneYearAgo, now);
 
     let soState: SalesOrderState = SALES_ORDER_STATE.SHIPPED;
-    if (i >= 46) {
-      soState = SALES_ORDER_STATE.DRAFT;
-    } else if (i >= 42) {
-      soState = SALES_ORDER_STATE.QUOTED;
-    } else if (i >= 36) {
+    if (
+      scenario === 'picking_ready' ||
+      scenario === 'picking_partial' ||
+      scenario === 'picking_blocked'
+    ) {
       soState = SALES_ORDER_STATE.CONFIRMED;
-    } else if (i >= 30) {
+    } else if (
+      scenario === 'shipping_ready' ||
+      scenario === 'shipping_partial'
+    ) {
       soState = SALES_ORDER_STATE.PICKING;
     }
 
-    const isShipped = soState === SALES_ORDER_STATE.SHIPPED;
-    const isPicked = isShipped || soState === SALES_ORDER_STATE.PICKING;
-    const isInvoiced = isShipped && i % 2 === 0;
+    // Configure line items based on scenario
+    const linesToInsert: {
+      prod: MasterProduct;
+      qty: number;
+      pickedQty: number;
+      isPicked: boolean;
+    }[] = [];
+
+    if (scenario === 'shipped') {
+      const prod = randomItem(allAvailableProducts);
+      linesToInsert.push({ prod, qty: 5, pickedQty: 5, isPicked: true });
+    } else if (scenario === 'picking_ready') {
+      // 2 lines with stocked items
+      linesToInsert.push({
+        prod: data.prods[0],
+        qty: 3,
+        pickedQty: 0,
+        isPicked: false,
+      });
+      linesToInsert.push({
+        prod: data.prods[1],
+        qty: 2,
+        pickedQty: 0,
+        isPicked: false,
+      });
+    } else if (scenario === 'picking_partial') {
+      // 1 stocked item + 1 high quantity item exceeding available stock
+      linesToInsert.push({
+        prod: data.prods[0],
+        qty: 2,
+        pickedQty: 0,
+        isPicked: false,
+      });
+      linesToInsert.push({
+        prod: data.prods[2],
+        qty: 9999,
+        pickedQty: 0,
+        isPicked: false,
+      });
+    } else if (scenario === 'picking_blocked') {
+      // High quantities on all lines that cannot be satisfied
+      linesToInsert.push({
+        prod: data.prods[1],
+        qty: 8888,
+        pickedQty: 0,
+        isPicked: false,
+      });
+      linesToInsert.push({
+        prod: data.prods[2],
+        qty: 9999,
+        pickedQty: 0,
+        isPicked: false,
+      });
+    } else if (scenario === 'shipping_ready') {
+      // All lines fully picked, ready for dispatch
+      linesToInsert.push({
+        prod: data.prods[0],
+        qty: 4,
+        pickedQty: 4,
+        isPicked: true,
+      });
+      linesToInsert.push({
+        prod: data.prods[3],
+        qty: 6,
+        pickedQty: 6,
+        isPicked: true,
+      });
+    } else if (scenario === 'shipping_partial') {
+      // Line 1 picked, Line 2 not picked
+      linesToInsert.push({
+        prod: data.prods[0],
+        qty: 5,
+        pickedQty: 5,
+        isPicked: true,
+      });
+      linesToInsert.push({
+        prod: data.prods[4],
+        qty: 5,
+        pickedQty: 0,
+        isPicked: false,
+      });
+    }
 
     let soTotalAmount = 0;
     const soLineInserts: {
@@ -1904,6 +2175,8 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       lineNumber: number;
       prod: MasterProduct;
       qty: number;
+      pickedQty: number;
+      isPicked: boolean;
       price: number;
       unitCost: number;
       lineAmount: number;
@@ -1911,17 +2184,11 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       lineTotal: number;
     }[] = [];
 
-    const numLines = randomInt(1, 4);
-    for (let j = 0; j < numLines; j++) {
-      const prod = randomItem(allAvailableProducts);
-      const key = getStockKey(location.storageBinId, prod.id);
-      const available = stockLevels[key] || 0;
-
-      const maxOrder = Math.max(1, Math.min(12, Math.floor(available * 0.25)));
-      const qty = randomInt(1, maxOrder);
-      const price = prod.listPrice;
-      const unitCost = prod.standardCost;
-      const lineAmount = qty * price;
+    for (let j = 0; j < linesToInsert.length; j++) {
+      const item = linesToInsert[j];
+      const price = item.prod.listPrice;
+      const unitCost = item.prod.standardCost;
+      const lineAmount = item.qty * price;
       const taxAmount = Number((lineAmount * 0.1).toFixed(2));
       const lineTotal = lineAmount + taxAmount;
 
@@ -1929,8 +2196,10 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       soLineInserts.push({
         lineId: uuid(),
         lineNumber: j + 1,
-        prod,
-        qty,
+        prod: item.prod,
+        qty: item.qty,
+        pickedQty: item.pickedQty,
+        isPicked: item.isPicked,
         price,
         unitCost,
         lineAmount,
@@ -1954,7 +2223,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         discrepanciesAcknowledged: false,
         source: 'app',
         createdOn: soDate,
-        createdBy: 'system',
+        createdBy: 'sales_rep',
       })
       .onConflictDoNothing();
 
@@ -1976,11 +2245,32 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           tax: line.taxAmount.toFixed(2),
           totalAmount: line.lineTotal.toFixed(2),
           unitOfMeasure: line.prod.isKit ? 'KIT' : 'EA',
-          quantityPicked: isPicked ? line.qty.toString() : '0',
+          quantityPicked: line.pickedQty.toString(),
           fulfillmentLocationId: location.id,
           isPostConfirmation: false,
         })
         .onConflictDoNothing();
+
+      // Insert picks if picked
+      if (line.isPicked && line.pickedQty > 0) {
+        await db
+          .insert(salesOrderPicks)
+          .values({
+            pickId: uuid(),
+            salesOrderId: soId,
+            salesOrderLineId: line.lineId,
+            productId: line.prod.id,
+            binId: location.storageBinId,
+            quantity: line.pickedQty.toString(),
+            stateCode:
+              scenario === 'shipped'
+                ? SALES_ORDER_PICK_STATE.SHIPPED
+                : SALES_ORDER_PICK_STATE.PICKED,
+            createdOn: soDate,
+            createdBy: 'warehouse_picker',
+          })
+          .onConflictDoNothing();
+      }
     }
 
     createdSalesOrders.push({
@@ -1991,30 +2281,8 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       lines: soLineInserts,
     });
 
-    // Picks
-    if (isPicked) {
-      for (const line of soLineInserts) {
-        await db
-          .insert(salesOrderPicks)
-          .values({
-            pickId: uuid(),
-            salesOrderId: soId,
-            salesOrderLineId: line.lineId,
-            productId: line.prod.id,
-            binId: location.storageBinId,
-            quantity: line.qty.toString(),
-            stateCode: isShipped
-              ? SALES_ORDER_PICK_STATE.SHIPPED
-              : SALES_ORDER_PICK_STATE.PICKED,
-            createdOn: soDate,
-            createdBy: 'system',
-          })
-          .onConflictDoNothing();
-      }
-    }
-
-    // Shipments & AR Invoices
-    if (isShipped) {
+    // Shipments & AR Invoices for historical shipped orders
+    if (scenario === 'shipped') {
       const shipmentId = uuid();
       const shipmentNumber = `SH-${shpCounter++}`;
 
@@ -2029,7 +2297,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           trackingNumber: `FDX-${randomInt(10000000, 99999999)}`,
           fulfillmentLocationId: location.id,
           createdOn: soDate,
-          createdBy: 'system',
+          createdBy: 'dispatch_lead',
         })
         .onConflictDoNothing();
 
@@ -2110,73 +2378,127 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         .onConflictDoNothing();
 
       // AR Sales Invoices
-      if (isInvoiced) {
-        const invId = uuid();
-        const invNumber = `INV-${arInvCounter++}`;
-        const taxAmount = Number((soTotalAmount * 0.0909).toFixed(2));
+      const invId = uuid();
+      const invNumber = `INV-${arInvCounter++}`;
+      const taxAmount = Number((soTotalAmount * 0.0909).toFixed(2));
 
+      await db
+        .insert(salesInvoices)
+        .values({
+          invoiceId: invId,
+          invoiceNumber: invNumber,
+          salesOrderId: soId,
+          customerId: customer.customerId,
+          customerNameDisplay: customer.name,
+          totalAmount: soTotalAmount.toFixed(2),
+          outstandingAmount: soTotalAmount.toFixed(2),
+          taxAmount: taxAmount.toFixed(2),
+          baseTotalAmount: soTotalAmount.toFixed(2),
+          baseOutstandingAmount: soTotalAmount.toFixed(2),
+          currencyCode: data.baseCurrency,
+          exchangeRate: '1',
+          stateCode: SALES_INVOICE_STATE.INVOICED,
+          invoiceDate: soDate,
+          dueDate: new Date(soDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+          createdBy: 'billing_clerk',
+          createdOn: soDate,
+        })
+        .onConflictDoNothing();
+
+      const invLines = [];
+      for (const line of soLineInserts) {
+        const invLineId = uuid();
         await db
-          .insert(salesInvoices)
+          .insert(salesInvoiceLines)
           .values({
+            invoiceLineId: invLineId,
             invoiceId: invId,
-            invoiceNumber: invNumber,
-            salesOrderId: soId,
-            customerId: customer.customerId,
-            customerNameDisplay: customer.name,
-            totalAmount: soTotalAmount.toFixed(2),
-            outstandingAmount: soTotalAmount.toFixed(2),
-            taxAmount: taxAmount.toFixed(2),
-            baseTotalAmount: soTotalAmount.toFixed(2),
-            baseOutstandingAmount: soTotalAmount.toFixed(2),
-            currencyCode: data.baseCurrency,
-            exchangeRate: '1',
-            stateCode: SALES_INVOICE_STATE.INVOICED,
-            invoiceDate: soDate,
-            dueDate: new Date(soDate.getTime() + 30 * 24 * 60 * 60 * 1000),
-            createdBy: 'system',
-            createdOn: soDate,
+            salesOrderLineId: line.lineId,
+            quantityInvoiced: line.qty.toString(),
+            pricePerUnit: line.price.toFixed(2),
+            amount: line.lineAmount.toFixed(2),
           })
           .onConflictDoNothing();
-
-        const invLines = [];
-        for (const line of soLineInserts) {
-          const invLineId = uuid();
-          await db
-            .insert(salesInvoiceLines)
-            .values({
-              invoiceLineId: invLineId,
-              invoiceId: invId,
-              salesOrderLineId: line.lineId,
-              quantityInvoiced: line.qty.toString(),
-              pricePerUnit: line.price.toFixed(2),
-              amount: line.lineAmount.toFixed(2),
-            })
-            .onConflictDoNothing();
-          invLines.push({
-            lineId: invLineId,
-            amount: line.lineAmount,
-            price: line.price,
-            qty: line.qty,
-            soLineId: line.lineId,
-          });
-        }
-
-        createdSalesInvoices.push({
-          invoiceId: invId,
-          soId,
-          customerId: customer.customerId,
-          customerName: customer.name,
-          totalAmount: soTotalAmount,
-          currencyCode: data.baseCurrency,
-          date: soDate,
-          lines: invLines,
+        invLines.push({
+          lineId: invLineId,
+          amount: line.lineAmount,
+          price: line.price,
+          qty: line.qty,
+          soLineId: line.lineId,
         });
       }
+
+      createdSalesInvoices.push({
+        invoiceId: invId,
+        soId,
+        customerId: customer.customerId,
+        customerName: customer.name,
+        totalAmount: soTotalAmount,
+        currencyCode: data.baseCurrency,
+        date: soDate,
+        lines: invLines,
+      });
     }
   }
 
+  // 1. Generate 35 Historical Shipped & Invoiced Orders
+  for (let i = 0; i < 35; i++) {
+    await createCustomSalesOrder({
+      scenario: 'shipped',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
+  // 2. Generate 12 Picking Ready Orders (4 per location)
+  for (let i = 0; i < 12; i++) {
+    await createCustomSalesOrder({
+      scenario: 'picking_ready',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
+  // 3. Generate 6 Picking Partial Orders (2 per location)
+  for (let i = 0; i < 6; i++) {
+    await createCustomSalesOrder({
+      scenario: 'picking_partial',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
+  // 4. Generate 4 Picking Blocked Orders
+  for (let i = 0; i < 4; i++) {
+    await createCustomSalesOrder({
+      scenario: 'picking_blocked',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
+  // 5. Generate 9 Shipping Ready Orders (3 per location)
+  for (let i = 0; i < 9; i++) {
+    await createCustomSalesOrder({
+      scenario: 'shipping_ready',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
+  // 6. Generate 4 Shipping Partial Orders
+  for (let i = 0; i < 4; i++) {
+    await createCustomSalesOrder({
+      scenario: 'shipping_partial',
+      location: data.locs[i % data.locs.length],
+      customer: data.custs[i % data.custs.length],
+    });
+  }
+
   // =========================================================================
-  // 5. SALES RETURNS & SALES CREDIT NOTES (4 Returns)
+  // 6. SALES RETURNS & SALES CREDIT NOTES (4 Returns)
+  // - 2 PENDING_PUTAWAY putaway status (Shows in Putaway Queue!)
+  // - 2 QUARANTINED putaway status (Shows in Putaway Queue!)
   // =========================================================================
   for (let i = 0; i < Math.min(4, createdSalesOrders.length); i++) {
     const so = createdSalesOrders[i];
@@ -2186,6 +2508,8 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     const retNumber = `SO-RET-${soRetCounter++}`;
     const targetLine = so.lines[0];
     const returnQty = 2;
+    const putawayStatus =
+      i >= 2 ? PUTAWAY_STATUS.QUARANTINED : PUTAWAY_STATUS.PENDING_PUTAWAY;
 
     await db
       .insert(salesOrderReturns)
@@ -2195,7 +2519,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         salesOrderId: so.soId,
         stateCode: RETURN_STATE.RECEIVED,
         locationId: so.locationId,
-        notes: 'Customer returned unopened items due to over-estimate.',
+        notes: `Customer return (${putawayStatus}) for inspection and restock.`,
         createdBy: 'customer_service',
       })
       .onConflictDoNothing();
@@ -2211,7 +2535,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         reason: 'Over-ordered on project work package',
         resolution: 'refund',
         returnFee: '0.00',
-        putawayStatus: PUTAWAY_STATUS.COMPLETED,
+        putawayStatus,
         productNumber: targetLine.prod.number,
         productName: targetLine.prod.name,
         pricePerUnit: targetLine.price.toFixed(2),
@@ -2259,7 +2583,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   }
 
   // =========================================================================
-  // 6. BACKORDER ALLOCATIONS (5 Backorders)
+  // 7. BACKORDER ALLOCATIONS (5 Backorders)
   // =========================================================================
   for (let i = 0; i < Math.min(5, createdSalesOrders.length); i++) {
     const so = createdSalesOrders[i];
@@ -2280,7 +2604,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   }
 
   // =========================================================================
-  // 7. TREASURY, CASH FLOW & MULTI-ALLOCATION PAYMENTS (AR/AP)
+  // 8. TREASURY, CASH FLOW & MULTI-ALLOCATION PAYMENTS (AR/AP)
   // =========================================================================
   // Customer Receipts against AR Invoices
   for (let i = 0; i < Math.min(10, createdSalesInvoices.length); i++) {
@@ -2409,7 +2733,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   }
 
   // =========================================================================
-  // 8. GENERAL LEDGER JOURNALS & DIMENSION POSTINGS (Cost Centers & Activities)
+  // 9. GENERAL LEDGER JOURNALS & DIMENSION POSTINGS
   // =========================================================================
   for (let i = 0; i < 5; i++) {
     const jnlId = uuid();
