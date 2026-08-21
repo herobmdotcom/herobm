@@ -3,7 +3,7 @@
 import { use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { calculateAvailableQuantity, isStockedProductLine, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
@@ -26,6 +26,14 @@ import { getTaxLabel } from './types';
 
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+
+function isNonTrackedReceivedLine(line: OrderLine): boolean {
+  const isZero = parseFloat(line.quantity || '0') <= 0;
+  const isNonStock = (line.productType && line.productType !== 'inventory') ||
+                     line.productNumber === 'FRT' ||
+                     !isStockedProductLine(line);
+  return isZero || isNonStock;
+}
 
 function TaxLabel({ category }: { category: TaxCategory }) {
   if (!category) return null;
@@ -150,11 +158,17 @@ export default function PurchaseOrderLinesTab({
     {
         id: 'received',
         header: tPurchase('columns.received'), width: 65, align: 'right',
-        render: (line) => (
-            <span className={`text-xs tabular-nums ${parseFloat(line.quantityReceived || '0') > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>
-                {parseFloat(line.quantityReceived || '0')}
-            </span>
-        ),
+        render: (line) => {
+            if (isNonTrackedReceivedLine(line)) {
+                return <span className="text-xs text-[var(--text-muted)] font-normal">—</span>;
+            }
+            const recQty = parseFloat(line.quantityReceived || '0');
+            return (
+                <span className={`text-xs tabular-nums ${recQty > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>
+                    {recQty}
+                </span>
+            );
+        },
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.received')} value={defaultRender} />
     },
     {
@@ -241,7 +255,8 @@ export default function PurchaseOrderLinesTab({
                     key={`disc-${line.purchaseOrderLineId}-${line.discountPercentage}`}
                     onBlur={(e) => {
                         const val = parseFloat(e.target.value);
-                        const nextVal = isNaN(val) ? '0' : String(val);
+                        const clampedVal = isNaN(val) ? 0 : Math.min(Math.max(val, 0), 100);
+                        const nextVal = String(clampedVal);
                         e.target.value = nextVal;
                         if (nextVal !== formattedDisc) {
                             updateLine(line.purchaseOrderLineId, 'discountPercentage', nextVal);
@@ -501,6 +516,7 @@ export default function PurchaseOrderLinesTab({
                   ]}
                   emptyMessage={tPurchase('noLineItemsShort')}
                   renderCustomRow={(line) => {
+                      const isNonTracked = isNonTrackedReceivedLine(line);
                       const ordered = parseFloat(line.quantity || '0');
                       const received = parseFloat(line.quantityReceived || '0');
                       const allocated = allocations.reduce((sum, alloc) => {
@@ -520,13 +536,16 @@ export default function PurchaseOrderLinesTab({
                               <td className="text-xs">{line.productDescription || '—'}</td>
                               <td className="text-right tabular-nums text-xs">{ordered}</td>
                               <td className={`text-right tabular-nums text-xs ${allocated > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{allocated}</td>
-                              <td className={`text-right tabular-nums text-xs ${received >= ordered && ordered > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{received}</td>
+                              <td className={`text-right tabular-nums text-xs ${!isNonTracked && received >= ordered && ordered > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>
+                                  {isNonTracked ? <span className="text-[var(--text-muted)]">—</span> : received}
+                              </td>
                               <td className={`text-right tabular-nums text-xs ${billed >= received && received > 0 ? 'text-[var(--badge-shipped)] font-semibold' : 'font-normal'}`}>{billed}</td>
                               <td className={`text-right tabular-nums text-xs ${remaining === 0 ? 'text-[var(--text-muted)]' : ''}`}>{remaining}</td>
                           </tr>
                       );
                   }}
                   mobileCard={(line) => {
+                      const isNonTracked = isNonTrackedReceivedLine(line);
                       const ordered = parseFloat(line.quantity || '0');
                       const received = parseFloat(line.quantityReceived || '0');
                       const allocated = allocations.reduce((sum, alloc) => {
@@ -558,7 +577,9 @@ export default function PurchaseOrderLinesTab({
                                       <span className={allocated > 0 ? 'font-semibold text-emerald-600' : ''}>{allocated}</span>
                                   } />
                                   <MobileCardField label={tPurchase('columns.received')} value={
-                                      <span className={received >= ordered && ordered > 0 ? 'font-semibold text-emerald-600' : ''}>{received}</span>
+                                      isNonTracked ? <span className="text-slate-400">—</span> : (
+                                          <span className={received >= ordered && ordered > 0 ? 'font-semibold text-emerald-600' : ''}>{received}</span>
+                                      )
                                   } />
                                   <MobileCardField label={tPurchase('columns.billed')} value={
                                       <span className={billed >= received && received > 0 ? 'font-semibold text-emerald-600' : ''}>{billed}</span>

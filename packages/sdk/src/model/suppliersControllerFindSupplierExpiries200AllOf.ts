@@ -8,5 +8,5 @@
 import type { SupplierResponseDto } from './supplierResponseDto';
 
 export type SuppliersControllerFindSupplierExpiries200AllOf = {
-  data?: SupplierResponseDto[];
+  data: SupplierResponseDto[];
 };

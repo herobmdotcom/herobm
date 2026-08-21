@@ -15,11 +15,12 @@ import { formatLocalDate } from '@/lib/date';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { SHIPMENT_STATE } from '@herobm/shared';
+import { SHIPMENT_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 import { DataTable } from '@/components/shared/DataTable';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 interface ShipmentLine {
   shipmentLineId: string;
@@ -64,6 +65,14 @@ export default function EditShipmentClient({ id }: { id: string }) {
   const [shipment, setShipment] = useState<ShipmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [emailDialogConfig, setEmailDialogConfig] = useState<{
+    hookSlug: string;
+    title: string;
+    prefix: string;
+    docName: string;
+    targetId: string;
+    contextSlug: string;
+  } | null>(null);
 
   useDocumentTitle(
     shipment
@@ -164,25 +173,44 @@ export default function EditShipmentClient({ id }: { id: string }) {
               <span className="material-symbols-outlined shrink-0">local_shipping</span>
               <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="flex items-center shrink-0"
-              onClick={async () => {
-                try {
-                  const api = await import('@herobm/sdk');
-                  const res = await api.pdfTemplatesControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
-                  const blob = res.data as Blob;
-                  const url = URL.createObjectURL(blob);
-                  window.open(url, '_blank');
-                } catch (err) {
-                  reportError(err, 'ShipmentDetailPage.generateDocket');
-                  toast.error('Failed to generate shipping docket.');
-                }
-              }}
-            >
-              {t('docketPdf')}
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center shrink-0"
+                onClick={() => {
+                  setEmailDialogConfig({
+                    hookSlug: 'shipping-docket',
+                    title: 'Email Shipping Docket',
+                    prefix: 'Shipping Docket',
+                    docName: 'Shipping Docket',
+                    targetId: id,
+                    contextSlug: DATA_SOURCE_CONTEXT.SHIPMENT,
+                  });
+                }}
+              >
+                {t('emailDocket')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center shrink-0"
+                onClick={async () => {
+                  try {
+                    const api = await import('@herobm/sdk');
+                    const res = await api.pdfTemplatesControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
+                    const blob = res.data as Blob;
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                  } catch (err) {
+                    reportError(err, 'ShipmentDetailPage.generateDocket');
+                    toast.error('Failed to generate shipping docket.');
+                  }
+                }}
+              >
+                {t('docketPdf')}
+              </Button>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -329,6 +357,45 @@ export default function EditShipmentClient({ id }: { id: string }) {
           <ActivityTimeline events={shipment.events} />
         </div>
       </div>
+
+      {emailDialogConfig && (
+        <EmailDocumentDialog
+          isOpen={!!emailDialogConfig}
+          orderId={id}
+          orderNumber={shipment.shipmentNumber}
+          customerReference={shipment.trackingNumber || shipment.orderNumber}
+          customerId={shipment.customerId}
+          hookSlug={emailDialogConfig.hookSlug}
+          title={emailDialogConfig.title}
+          defaultSubjectPrefix={emailDialogConfig.prefix}
+          documentName={emailDialogConfig.docName}
+          targetId={emailDialogConfig.targetId}
+          contextSlug={emailDialogConfig.contextSlug}
+          onPreview={async (customPdfText?: string) => {
+            try {
+              const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
+                id: emailDialogConfig.targetId,
+                context: emailDialogConfig.contextSlug 
+              });
+              const blob = response.data as Blob;
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+            } catch (err) {
+              reportError(err, 'ShipmentDetailPage:previewDocument');
+              toast.error('Failed to generate PDF preview.');
+            }
+          }}
+          onClose={() => setEmailDialogConfig(null)}
+          onSuccess={() => {
+            setEmailDialogConfig(null);
+            toast.success('Document emailed successfully.');
+            loadShipment();
+          }}
+          onSend={async (payload) => {
+            await api.globalShipmentsControllerEmailDocument(id, payload);
+          }}
+        />
+      )}
     </DetailsLayout>
   );
 }

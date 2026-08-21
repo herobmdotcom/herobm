@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (453 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (459 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -141,6 +141,10 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/gl/seed` | Seed Chart of Accounts |
 | `GET` | `/gl/tax-settings-files` | List Tax Settings |
 | `POST` | `/gl/seed-tax` | Seed Tax Settings |
+| `GET` | `/gl/periods` | Get Fiscal Periods |
+| `POST` | `/gl/periods/generate` | Generate Fiscal Periods |
+| `PATCH` | `/gl/periods/{id}/status` | Update Fiscal Period Status |
+| `GET` | `/gl/reconciliation/subledger` | Get Continuous Subledger Reconciliation |
 | `GET` | `/gl/reconciliations` | Get Reconciliations |
 | `POST` | `/gl/reconciliations` | Create Reconciliation |
 | `GET` | `/gl/reconciliations/{id}` | Get Reconciliation |
@@ -303,6 +307,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `DELETE` | `/purchase-orders/{id}/lines/{lineId}` | Remove Order Line |
 | `GET` | `/purchase-orders/{id}` | Get Purchase Order |
 | `PATCH` | `/purchase-orders/{id}` | Update Purchase Order |
+| `POST` | `/purchase-orders/{id}/email-document` | Email Purchase Order Document |
 
 ### Purchase Returns
 
@@ -604,6 +609,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `DELETE` | `/sales-orders/{id}/shipments/{shipmentId}/lines/{lineId}` | Remove Shipment Line |
 | `GET` | `/shipments` | Find All Shipments |
 | `GET` | `/shipments/{id}` | Find Shipment |
+| `POST` | `/shipments/{id}/email-document` | Email Shipment Document |
 | `GET` | `/allocations/open` | Get Open Demands |
 | `GET` | `/allocations/by-po/{poId}` | Get PO Allocations |
 | `GET` | `/allocations/available-po-lines` | Get Available PO Lines |

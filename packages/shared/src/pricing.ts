@@ -33,7 +33,8 @@ export interface LinePricingResult {
 export function computeLinePrice(input: LinePricingInput): LinePricingResult {
   const qty = input.quantity;
   const price = input.pricePerUnit;
-  const disc = input.discountPercentage ?? 0;
+  const rawDisc = input.discountPercentage ?? 0;
+  const disc = isNaN(rawDisc) ? 0 : Math.min(Math.max(rawDisc, 0), 100);
   const taxRate = input.taxRate ?? 0;
 
   const rawAmount = qty * price * (1 - disc / 100);
@@ -210,7 +211,8 @@ export function resolveEffectiveDiscount(
   const parse = (val: unknown): number => {
     if (val == null || val === '') return 0;
     const parsed = Number(val);
-    return isNaN(parsed) ? 0 : parsed;
+    if (isNaN(parsed)) return 0;
+    return Math.min(Math.max(parsed, 0), 100);
   };
 
   // Priority 1: customer × specific product group

@@ -181,13 +181,13 @@ export class InvoiceDetailController {
     description: 'Retrieve all sales invoices across orders',
   })
   @ApiPaginatedResponse(SalesInvoiceResponseDto)
-  @ApiQuery({ name: 'days', required: false })
-  @ApiQuery({ name: 'customerId', required: false })
-  @ApiQuery({ name: 'invoiceId', required: false })
-  @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiQuery({ name: 'days', required: false, type: Number })
+  @ApiQuery({ name: 'customerId', required: false, type: String })
+  @ApiQuery({ name: 'invoiceId', required: false, type: String })
+  @ApiQuery({ name: 'balanceStatus', required: false, type: String })
   async getSalesInvoicesGlobal(
     @Query() query: PaginationQuery,
-    @Query('days') days?: string,
+    @Query('days') days?: number | string,
     @Query('customerId') customerId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('balanceStatus') balanceStatus?: string,
@@ -221,13 +221,13 @@ export class InvoiceDetailController {
     description: 'Retrieve all purchase invoices across orders',
   })
   @ApiPaginatedResponse(PurchaseInvoiceResponseDto)
-  @ApiQuery({ name: 'days', required: false })
-  @ApiQuery({ name: 'vendorId', required: false })
-  @ApiQuery({ name: 'invoiceId', required: false })
-  @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiQuery({ name: 'days', required: false, type: Number })
+  @ApiQuery({ name: 'vendorId', required: false, type: String })
+  @ApiQuery({ name: 'invoiceId', required: false, type: String })
+  @ApiQuery({ name: 'balanceStatus', required: false, type: String })
   async getPurchaseInvoicesGlobal(
     @Query() query: PaginationQuery,
-    @Query('days') days?: string,
+    @Query('days') days?: number | string,
     @Query('vendorId') vendorId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('balanceStatus') balanceStatus?: string,

@@ -27,6 +27,8 @@ export interface ShippingDocketData {
     description: string;
     quantityShipped: number;
   }>;
+  customPdfText?: string;
+  quoteIntroText?: string;
   generatedAt: string;
 }
 
@@ -36,7 +38,10 @@ export class ShippingDocketService {
 
   private readonly logger = new Logger(ShippingDocketService.name);
 
-  async assembleData(shipmentId: string): Promise<ShippingDocketData> {
+  async assembleData(
+    shipmentId: string,
+    options?: Record<string, unknown>,
+  ): Promise<ShippingDocketData> {
     const shipmentRows = await this.db
       .select({
         shipmentNumber: salesOrderShipments.shipmentNumber,
@@ -87,7 +92,7 @@ export class ShippingDocketService {
 
     const customerAddress = shipment.customerAddress || '—';
 
-    return {
+    const result: ShippingDocketData = {
       header: {
         shipmentNumber: shipment.shipmentNumber,
         orderNumber: shipment.orderNumber ?? '',
@@ -112,5 +117,14 @@ export class ShippingDocketService {
           minute: '2-digit',
         }),
     };
+
+    const customText =
+      (options?.customPdfText as string) || (options?.quoteIntroText as string);
+    if (customText) {
+      result.customPdfText = customText;
+      result.quoteIntroText = customText;
+    }
+
+    return result;
   }
 }

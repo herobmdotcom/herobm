@@ -1,9 +1,12 @@
 import { spawnSync, execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { acquireLock } from '../infra/test-utils/mutex-lock.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
+
+const releaseLock = await acquireLock('test-heavy', { logWait: true });
 
 const args = process.argv.slice(2);
 let skipUI = false;
@@ -122,10 +125,12 @@ if (!skipUI) {
 
 if (failed) {
     console.error('\x1b[31mHeavy tests FAILED! Leaving containers up for debugging.\x1b[0m');
+    releaseLock();
     process.exit(1);
 } else {
     console.log('\x1b[33mTearing down test containers to preserve dev-local isolation...\x1b[0m');
     run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
     console.log('\x1b[32mHeavy tests PASSED!\x1b[0m');
+    releaseLock();
     process.exit(0);
 }

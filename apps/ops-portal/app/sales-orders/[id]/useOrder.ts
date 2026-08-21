@@ -76,6 +76,8 @@ export function useOrder(id: string) {
 
     /* ── Delivery Addresses & Shipping Notes ─────────────────────── */
     const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
+    const [customerContacts, setCustomerContacts] = useState<api.ContactResponseDto[]>([]);
+    const [editDispatchContactId, setEditDispatchContactId] = useState<string>('');
     const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
     const [customerName, setCustomerName] = useState<string>('');
     const [editShippingNotes, setEditShippingNotes] = useState('');
@@ -145,6 +147,8 @@ export function useOrder(id: string) {
             setEditDeliveryCountry(orderData?.deliveryCountry || '');
             setDiscrepanciesAcknowledged(orderData?.discrepanciesAcknowledged || false);
             setPickingSummary(pData?.data);
+            const customFields = (orderData?.customFields || {}) as Record<string, unknown>;
+            setEditDispatchContactId((customFields.dispatchContactId as string) || '');
             setHeaderDirty(false);
 
             if (orderData?.customerId) {
@@ -152,11 +156,13 @@ export function useOrder(id: string) {
                     .then((res) => {
                         const customer = res.data;
                         setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
+                        setCustomerContacts((customer.contacts as unknown as api.ContactResponseDto[]) || []);
                         setCustomerCountry(customer.billingAddressCountry || undefined);
                         setCustomerName(customer.name || '');
                     })
                     .catch(() => {
                         setCustomerDeliveryAddresses([]);
+                        setCustomerContacts([]);
                         setCustomerCountry(undefined);
                         setCustomerName('');
                     });
@@ -527,6 +533,8 @@ export function useOrder(id: string) {
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,
         customerDeliveryAddresses,
+        customerContacts,
+        editDispatchContactId, setEditDispatchContactId,
         customerCountry,
         customerName,
         editShippingNotes, setEditShippingNotes,

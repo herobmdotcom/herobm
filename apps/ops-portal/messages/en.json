@@ -658,6 +658,7 @@
         "general": "General",
         "pickingSlip": "Picking Slip",
         "proFormaInvoice": "Pro-forma Invoice",
+        "purchaseOrder": "Purchase Order",
         "returnSlip": "Return Slip",
         "salesInvoice": "Sales Invoice",
         "salesOrderConfirmation": "Sales Order Confirmation",
@@ -2716,6 +2717,7 @@
       "createPO": "Create Purchase Order",
       "createReturn": "Create Return",
       "customLine": "Add Custom Line",
+      "emailPurchaseOrder": "Email Purchase Order",
       "enterSupplierBill": "Enter Invoice",
       "resolveDemands": "Resolve Demands",
       "resolving": "Resolving...",
@@ -3622,6 +3624,7 @@
     },
     "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
     "docketPdf": "Docket PDF",
+    "emailDocket": "Email Shipping Docket",
     "lineItems": "Line Items",
     "notFound": "Shipment not found",
     "placeholders": {

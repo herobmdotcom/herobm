@@ -47,6 +47,7 @@ export function ApiPaginatedResponse<TModel extends Type<unknown>>(
                 items: { $ref: getSchemaPath(model) },
               },
             },
+            required: ['data'],
           },
         ],
       },

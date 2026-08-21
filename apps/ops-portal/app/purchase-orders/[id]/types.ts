@@ -5,6 +5,7 @@ export interface OrderLine {
   lineNumber: number;
   productId: string;
   productNumber?: string;
+  productType?: string;
   productDescription: string;
   quantity: string;
   quantityReceived?: string;

@@ -244,10 +244,16 @@ export class PurchaseOrdersWriteService {
             line.productId,
             line.taxCategoryId,
           );
+          const disc = parseFloat(line.discountPercentage || '0');
+          if (isNaN(disc) || disc < 0 || disc > 100) {
+            throw new BadRequestException(
+              `Line ${index + 1}: Discount percentage must be between 0 and 100`,
+            );
+          }
           const pricing = computeLinePriceForStorage({
             quantity: parseFloat(line.quantity || '0'),
             pricePerUnit: parseFloat(line.pricePerUnit || '0'),
-            discountPercentage: parseFloat(line.discountPercentage || '0'),
+            discountPercentage: disc,
             taxRate: rate,
           });
 
@@ -337,6 +343,11 @@ export class PurchaseOrdersWriteService {
       const qty = parseFloat(lineDto.quantity || '1');
       const price = parseFloat(lineDto.pricePerUnit || '0');
       const disc = parseFloat(lineDto.discountPercentage || '0');
+      if (isNaN(disc) || disc < 0 || disc > 100) {
+        throw new BadRequestException(
+          'Discount percentage must be between 0 and 100',
+        );
+      }
       const { taxCategoryId, rate } = await this.resolveTaxForLine(
         tx,
         existing.vendorId,
@@ -397,6 +408,15 @@ export class PurchaseOrdersWriteService {
         throw new BadRequestException(
           'Can only update lines on draft purchase orders',
         );
+      }
+
+      if (lineDto.discountPercentage !== undefined) {
+        const disc = parseFloat(lineDto.discountPercentage.toString());
+        if (isNaN(disc) || disc < 0 || disc > 100) {
+          throw new BadRequestException(
+            'Discount percentage must be between 0 and 100',
+          );
+        }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.

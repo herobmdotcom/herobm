@@ -291,7 +291,8 @@ export function OrderLinesTable({
                             key={`disc-${line.salesOrderLineId}-${line.discountPercentage}`}
                             onBlur={(e) => {
                                 const val = parseFloat(e.target.value);
-                                const nextVal = isNaN(val) ? '0' : String(val);
+                                const clampedVal = isNaN(val) ? 0 : Math.min(Math.max(val, 0), 100);
+                                const nextVal = String(clampedVal);
                                 e.target.value = nextVal;
                                 if (nextVal !== formattedDisc) {
                                     updateLine(line.salesOrderLineId, 'discountPercentage', nextVal);

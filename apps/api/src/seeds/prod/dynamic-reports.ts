@@ -119,6 +119,14 @@ const SEEDS: SeedData[] = [
     templatePath: '../../../../tools/seeds/reports/theme-internal.typ',
     outputPattern: 'Theme-Internal.pdf',
   },
+  {
+    slug: 'purchase-order',
+    name: 'Standard Purchase Order',
+    contexts: ['purchase-order'],
+    description: 'System default template for generating Purchase Orders.',
+    templatePath: '../../../../tools/seeds/reports/purchase-order.typ',
+    outputPattern: 'PurchaseOrder-${orderNumber}.pdf',
+  },
 ];
 
 export async function seedDynamicReports(db: SeedDB, dryRun = false) {

@@ -37,6 +37,8 @@ import {
 import { setupTestModule } from '../../test/utils/test-module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { CustomersService } from '../customers/customers.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 
 // Shared test data
 const PICKING_ORDER = {
@@ -127,10 +129,32 @@ describe('ShipmentService', () => {
   let glService: GlService;
 
   let mockInventoryService: any;
+  let mockCustomersService: { findOne: jest.Mock };
+  let mockDocumentDispatchService: { emailDocument: jest.Mock };
 
   beforeEach(async () => {
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
+    };
+    mockCustomersService = {
+      findOne: jest.fn().mockResolvedValue({
+        contacts: [
+          {
+            contactId: 'contact-del-1',
+            email: 'delivery@customer.com',
+            primaryFor: ['delivery'],
+          },
+          {
+            contactId: 'contact-purch-1',
+            email: 'purchasing@customer.com',
+            primaryFor: ['purchasing'],
+          },
+        ],
+        emailAddress1: 'info@customer.com',
+      }),
+    };
+    mockDocumentDispatchService = {
+      emailDocument: jest.fn().mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await setupTestModule([
@@ -149,6 +173,14 @@ describe('ShipmentService', () => {
       },
       { provide: InventoryQueryService, useValue: mockInventoryService },
       { provide: InventoryMovementService, useValue: mockInventoryService },
+      {
+        provide: CustomersService,
+        useValue: mockCustomersService,
+      },
+      {
+        provide: DocumentDispatchService,
+        useValue: mockDocumentDispatchService,
+      },
     ])
       .overrideProvider(DRIZZLE)
       .useValue(pg.db)
@@ -506,6 +538,153 @@ describe('ShipmentService', () => {
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    describe('automated dispatch notification', () => {
+      it('should automatically email shipping docket to primary delivery contact by default', async () => {
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        expect(result).toBeDefined();
+
+        // Allow async background dispatch tick to resolve
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(mockCustomersService.findOne).toHaveBeenCalledWith(
+          '00000000-0000-4000-8000-000000000001',
+        );
+        expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
+          expect.objectContaining({
+            targetId: result.shipmentId,
+            hookSlug: 'shipping-docket',
+            contextSlug: 'shipment',
+            entityType: 'shipment',
+            entityId: result.shipmentId,
+            emailAddress: 'delivery@customer.com',
+            subject: 'Shipping Docket: ORD-20260316-0001',
+          }),
+          expect.objectContaining({
+            username: 'admin',
+          }),
+        );
+      });
+
+      it('should email to specific contact when dispatchContactId is configured on sales order', async () => {
+        await pg.db
+          .update(salesOrders)
+          .set({
+            customFields: {
+              dispatchContactId: 'contact-purch-1',
+            },
+          })
+          .where(
+            eq(
+              salesOrders.salesOrderId,
+              '00000000-0000-4000-8000-000000000001',
+            ),
+          );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
+          expect.objectContaining({
+            targetId: result.shipmentId,
+            emailAddress: 'purchasing@customer.com',
+          }),
+          expect.anything(),
+        );
+      });
+
+      it('should NOT email document when dispatchContactId is explicitly set to none', async () => {
+        await pg.db
+          .update(salesOrders)
+          .set({
+            customFields: {
+              dispatchContactId: 'none',
+            },
+          })
+          .where(
+            eq(
+              salesOrders.salesOrderId,
+              '00000000-0000-4000-8000-000000000001',
+            ),
+          );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(
+          mockDocumentDispatchService.emailDocument,
+        ).not.toHaveBeenCalled();
+        expect(result).toBeDefined();
+      });
+
+      it('should not fail or roll back shipment if document dispatch service fails', async () => {
+        mockDocumentDispatchService.emailDocument.mockRejectedValueOnce(
+          new Error('SMTP connection failure'),
+        );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(result).toBeDefined();
+        expect(result.shipmentId).toBeDefined();
+      });
     });
   });
 

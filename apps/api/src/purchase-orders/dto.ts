@@ -6,9 +6,11 @@ import {
   ValidateNested,
   IsNumberString,
   IsUUID,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 // ── PO Line DTOs ──
 
@@ -29,6 +31,7 @@ export class CreatePurchaseOrderLineDto {
 
   @IsOptional()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage?: string;
 
   @IsOptional()
@@ -51,6 +54,7 @@ export class UpdatePurchaseOrderLineDto {
 
   @IsOptional()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage?: string;
 
   @IsOptional()
@@ -219,6 +223,8 @@ export class PurchaseOrderLineResponseDto {
   purchaseOrderId!: string;
   lineNumber!: number;
   productId?: string | null;
+  productNumber?: string | null;
+  productType?: string | null;
   productDescription?: string | null;
   quantity!: string;
   pricePerUnit!: string;
@@ -261,3 +267,5 @@ export class PurchaseReturnResponseDto {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO expansion without typing
   shipmentLines?: any[];
 }
+
+export { EmailDocumentDto } from '../orders/dto';

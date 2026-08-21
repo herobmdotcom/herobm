@@ -158,6 +158,12 @@ export class OrderLinesService {
     const taxRate = isExternalTax ? 0 : lineTax.rate;
 
     const lineDiscount = dto.discountPercentage ?? '0';
+    const parsedDiscount = parseFloat(lineDiscount);
+    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+      throw new BadRequestException(
+        'Discount percentage must be between 0 and 100',
+      );
+    }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // 1. Lock the order to prevent concurrent addLine races
@@ -413,6 +419,12 @@ export class OrderLinesService {
     const taxRate = isExternalTax ? 0 : lineTax.rate;
 
     const lineDiscount = dto.discountPercentage ?? '0';
+    const parsedDiscount = parseFloat(lineDiscount);
+    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+      throw new BadRequestException(
+        'Discount percentage must be between 0 and 100',
+      );
+    }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       let isKit = false;
@@ -641,6 +653,12 @@ export class OrderLinesService {
     const pricePerUnit = dto.pricePerUnit ?? existingLine.pricePerUnit;
     const discountPercentage =
       dto.discountPercentage ?? existingLine.discountPercentage ?? '0';
+    const parsedDiscount = parseFloat(discountPercentage);
+    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+      throw new BadRequestException(
+        'Discount percentage must be between 0 and 100',
+      );
+    }
 
     const computed = this.coreService.computeLineAmount(
       quantity,

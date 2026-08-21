@@ -8,5 +8,5 @@
 import type { InventoryResponseDto } from './inventoryResponseDto';
 
 export type InventoryControllerFindAll200AllOf = {
-  data?: InventoryResponseDto[];
+  data: InventoryResponseDto[];
 };

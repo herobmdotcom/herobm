@@ -8,5 +8,5 @@
 import type { ProjectResponseDto } from './projectResponseDto';
 
 export type ProjectsControllerFindAll200AllOf = {
-  data?: ProjectResponseDto[];
+  data: ProjectResponseDto[];
 };

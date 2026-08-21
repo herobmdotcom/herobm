@@ -367,6 +367,7 @@ export class PurchaseOrdersQueryService {
       return {
         ...lineEntity,
         productNumber: r.products?.productNumber || lineEntity.productId,
+        productType: r.products?.productType,
         baseUom: r.products?.baseUom,
       };
     });

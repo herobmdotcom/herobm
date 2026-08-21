@@ -253,6 +253,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         loadOrder, loadReturns, loadInvoices,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
         customerDeliveryAddresses,
+        customerContacts,
+        editDispatchContactId, setEditDispatchContactId,
         customerCountry,
         customerName,
         editShippingNotes, setEditShippingNotes,
@@ -448,6 +450,9 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     setEditNotes={setEditNotes}
                     editAnalysisCode={editAnalysisCode}
                     setEditAnalysisCode={setEditAnalysisCode}
+                    customerContacts={customerContacts}
+                    editDispatchContactId={editDispatchContactId}
+                    setEditDispatchContactId={setEditDispatchContactId}
                     saveHeader={saveHeader}
                     onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
                     reportError={reportError}

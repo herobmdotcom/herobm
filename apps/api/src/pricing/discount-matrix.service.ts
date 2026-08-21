@@ -103,6 +103,13 @@ export class DiscountMatrixService {
       );
     }
 
+    const discount = parseFloat(dto.discountPercentage);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      throw new BadRequestException(
+        'Discount percentage must be between 0 and 100.',
+      );
+    }
+
     const rows = await this.db
       .insert(discountMatrix)
       .values({
@@ -141,6 +148,15 @@ export class DiscountMatrixService {
    * Update a discount rule's percentage.
    */
   async update(id: string, dto: UpdateDiscountMatrixDto) {
+    if (dto.discountPercentage !== undefined) {
+      const discount = parseFloat(dto.discountPercentage);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        throw new BadRequestException(
+          'Discount percentage must be between 0 and 100.',
+        );
+      }
+    }
+
     const existing = await this.findOne(id);
 
     const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);

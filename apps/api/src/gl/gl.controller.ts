@@ -37,11 +37,15 @@ import {
   SeedRequestDto,
   SeedTaxRequestDto,
   EmptyBodyDto,
-  PaginatedJournalEntriesDto,
   CommitFxRevaluationDto,
   RunFxRevaluationDto,
   FxRevalCandidatesResponseDto,
   FxRevalCommitResponseDto,
+  FiscalPeriodResponseDto,
+  GenerateFiscalPeriodsDto,
+  UpdateFiscalPeriodStatusDto,
+  QueryFiscalPeriodsDto,
+  SubledgerReconciliationResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { SystemResource } from '@herobm/shared';
@@ -132,7 +136,6 @@ export class GlController {
   // -------------------------------------------------------------------------
 
   @Get('journal-entries')
-  @ApiOkResponse({ type: PaginatedJournalEntriesDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Journal Entries',
@@ -392,5 +395,85 @@ export class GlController {
   @ApiCreatedResponse({ type: SuccessMessageResponseDto })
   async seedTaxSettings(@Body() body: SeedTaxRequestDto) {
     return this.coaLoader.loadTaxSettingsFromFile(body.filename);
+  }
+
+  // -------------------------------------------------------------------------
+  // Accounting Period Governance
+  // -------------------------------------------------------------------------
+
+  @Get('periods')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Fiscal Periods',
+    description:
+      'Retrieve all accounting / fiscal periods, optionally filtered by fiscal year and status.',
+  })
+  @ApiOkResponse({ type: [FiscalPeriodResponseDto] })
+  @ApiQuery({ name: 'fiscalYear', required: false, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['open', 'soft_locked', 'hard_closed'],
+  })
+  async getFiscalPeriods(@Query() query: QueryFiscalPeriodsDto) {
+    return this.glService.getFiscalPeriods(query);
+  }
+
+  @Post('periods/generate')
+  @ApiBody({ type: GenerateFiscalPeriodsDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Generate Fiscal Periods',
+    description:
+      'Auto-generate 12 monthly fiscal periods for the specified fiscal year.',
+  })
+  @ApiCreatedResponse({ type: [FiscalPeriodResponseDto] })
+  async generateFiscalPeriods(
+    @Body() body: GenerateFiscalPeriodsDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.glService.generateFiscalYearPeriods(
+      body.fiscalYear,
+      user?.username,
+    );
+  }
+
+  @Patch('periods/:id/status')
+  @ApiBody({ type: UpdateFiscalPeriodStatusDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Fiscal Period Status',
+    description:
+      'Transition a fiscal period between open, soft_locked, and hard_closed.',
+  })
+  @ApiOkResponse({ type: FiscalPeriodResponseDto })
+  async updateFiscalPeriodStatus(
+    @Param('id') id: string,
+    @Body() body: UpdateFiscalPeriodStatusDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.glService.updatePeriodStatus(
+      id,
+      body.status,
+      user?.username,
+      body.notes,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Continuous Subledger Reconciliation
+  // -------------------------------------------------------------------------
+
+  @Get('reconciliation/subledger')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Continuous Subledger Reconciliation',
+    description:
+      'Run real-time automated verification of Trial Balance zero-sum equality and subledger parity for AR, AP, GRNI, and Perpetual Inventory.',
+  })
+  @ApiOkResponse({ type: SubledgerReconciliationResponseDto })
+  @ApiQuery({ name: 'asOfDate', required: false, type: String })
+  async getSubledgerReconciliation(@Query('asOfDate') asOfDate?: string) {
+    return this.glService.getSubledgerReconciliation(asOfDate);
   }
 }

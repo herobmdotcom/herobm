@@ -20,6 +20,9 @@ interface OrderDetailsCardProps {
     setEditNotes: (val: string) => void;
     editAnalysisCode: string;
     setEditAnalysisCode: (val: string) => void;
+    customerContacts?: api.ContactResponseDto[];
+    editDispatchContactId?: string;
+    setEditDispatchContactId?: (val: string) => void;
     saveHeader: (overrides?: Partial<api.UpdateOrderDto>) => void;
     onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
     reportError: (err: unknown, context: string) => void;
@@ -37,6 +40,9 @@ export default function OrderDetailsCard({
     setEditNotes,
     editAnalysisCode,
     setEditAnalysisCode,
+    customerContacts = [],
+    editDispatchContactId = '',
+    setEditDispatchContactId,
     saveHeader,
     onEmailDocumentClick,
     reportError,
@@ -171,6 +177,45 @@ export default function OrderDetailsCard({
                                 {editAnalysisCode} (Custom)
                             </option>
                         )}
+                    </select>
+                </div>
+
+                <div className="min-w-0">
+                    <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                        Dispatch Notification Contact
+                    </label>
+                    <select
+                        className="input w-full"
+                        disabled={!isOrderDetailsEditable}
+                        value={editDispatchContactId || ''}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (setEditDispatchContactId) {
+                                setEditDispatchContactId(val);
+                            }
+                            const existingCustomFields = ((order.customFields as Record<string, unknown>) || {});
+                            saveHeader({
+                                customFields: {
+                                    ...existingCustomFields,
+                                    dispatchContactId: val || undefined
+                                }
+                            });
+                        }}
+                    >
+                        <option value="">— Default (Primary Delivery Contact) —</option>
+                        <option value="none">— None (Do not email on dispatch) —</option>
+                        {customerContacts.map((c) => {
+                            const name = c.fullName || `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.email || '';
+                            const email = c.email || 'no email';
+                            const delivery = c.primaryFor?.includes('delivery') ? ' [Delivery]' : '';
+                            const purchasing = c.primaryFor?.includes('purchasing') ? ' [Purchasing]' : '';
+                            const label = `${name} (${email})${delivery}${purchasing}`;
+                            return (
+                                <option key={c.contactId} value={c.contactId}>
+                                    {label}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
 

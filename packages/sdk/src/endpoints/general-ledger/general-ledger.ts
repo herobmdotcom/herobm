@@ -37,21 +37,25 @@ import type {
   ExchangeRatesControllerFindAllParams,
   ExchangeRatesControllerFindOneParams,
   FileUploadDto,
+  FiscalPeriodResponseDto,
   FxRevalCandidatesResponseDto,
   FxRevalCommitResponseDto,
+  GenerateFiscalPeriodsDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
+  GlControllerGetFiscalPeriodsParams,
   GlControllerGetFxCandidatesParams,
   GlControllerGetGeneralLedger200,
   GlControllerGetGeneralLedgerParams,
+  GlControllerGetJournalEntries200,
   GlControllerGetJournalEntriesParams,
+  GlControllerGetSubledgerReconciliationParams,
   GlControllerGetTrialBalanceParams,
   ImportCsvDto,
   ImportCsvResponseDto,
   JournalEntryResponseDto,
   MappingProfileResponseDto,
   MatchConfirmedResponseDto,
-  PaginatedJournalEntriesDto,
   ParseCsvResponseDto,
   PostReconciliationResponseDto,
   ReconciliationControllerGetLines200Item,
@@ -62,6 +66,7 @@ import type {
   SeedTaxRequestDto,
   SettingsFileDto,
   SettingsResponseDto,
+  SubledgerReconciliationResponseDto,
   SuccessMessageResponseDto,
   ToggleLineDto,
   ToggleLineResponseDto,
@@ -70,6 +75,7 @@ import type {
   UpdateAccountRequestDto,
   UpdateCostCenterDto,
   UpdateExchangeRateDto,
+  UpdateFiscalPeriodStatusDto,
   UpdateGlSettingsDto,
   UpdateMappingProfileDto,
   UpdateReconciliationRuleDto
@@ -200,7 +206,7 @@ export const glControllerUpdateAccount = async (id: string,
  * @summary Get Journal Entries
  */
 export type glControllerGetJournalEntriesResponse200 = {
-  data: PaginatedJournalEntriesDto
+  data: GlControllerGetJournalEntries200
   status: 200
 }
     
@@ -767,6 +773,167 @@ export const glControllerSeedTaxSettings = async (seedTaxRequestDto: SeedTaxRequ
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       seedTaxRequestDto,)
+  }
+);}
+
+
+/**
+ * Retrieve all accounting / fiscal periods, optionally filtered by fiscal year and status.
+ * @summary Get Fiscal Periods
+ */
+export type glControllerGetFiscalPeriodsResponse200 = {
+  data: FiscalPeriodResponseDto[]
+  status: 200
+}
+    
+export type glControllerGetFiscalPeriodsResponseSuccess = (glControllerGetFiscalPeriodsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetFiscalPeriodsResponse = (glControllerGetFiscalPeriodsResponseSuccess)
+
+export const getGlControllerGetFiscalPeriodsUrl = (params?: GlControllerGetFiscalPeriodsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/periods?${stringifiedParams}` : `/gl/periods`
+}
+
+export const glControllerGetFiscalPeriods = async (params?: GlControllerGetFiscalPeriodsParams, options?: RequestInit): Promise<glControllerGetFiscalPeriodsResponse> => {
+  
+  return customFetch<glControllerGetFiscalPeriodsResponse>(getGlControllerGetFiscalPeriodsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Auto-generate 12 monthly fiscal periods for the specified fiscal year.
+ * @summary Generate Fiscal Periods
+ */
+export type glControllerGenerateFiscalPeriodsResponse201 = {
+  data: FiscalPeriodResponseDto[]
+  status: 201
+}
+    
+export type glControllerGenerateFiscalPeriodsResponseSuccess = (glControllerGenerateFiscalPeriodsResponse201) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGenerateFiscalPeriodsResponse = (glControllerGenerateFiscalPeriodsResponseSuccess)
+
+export const getGlControllerGenerateFiscalPeriodsUrl = () => {
+
+
+  
+
+  return `/gl/periods/generate`
+}
+
+export const glControllerGenerateFiscalPeriods = async (generateFiscalPeriodsDto: GenerateFiscalPeriodsDto, options?: RequestInit): Promise<glControllerGenerateFiscalPeriodsResponse> => {
+  
+  return customFetch<glControllerGenerateFiscalPeriodsResponse>(getGlControllerGenerateFiscalPeriodsUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      generateFiscalPeriodsDto,)
+  }
+);}
+
+
+/**
+ * Transition a fiscal period between open, soft_locked, and hard_closed.
+ * @summary Update Fiscal Period Status
+ */
+export type glControllerUpdateFiscalPeriodStatusResponse200 = {
+  data: FiscalPeriodResponseDto
+  status: 200
+}
+    
+export type glControllerUpdateFiscalPeriodStatusResponseSuccess = (glControllerUpdateFiscalPeriodStatusResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerUpdateFiscalPeriodStatusResponse = (glControllerUpdateFiscalPeriodStatusResponseSuccess)
+
+export const getGlControllerUpdateFiscalPeriodStatusUrl = (id: string,) => {
+
+
+  
+
+  return `/gl/periods/${id}/status`
+}
+
+export const glControllerUpdateFiscalPeriodStatus = async (id: string,
+    updateFiscalPeriodStatusDto: UpdateFiscalPeriodStatusDto, options?: RequestInit): Promise<glControllerUpdateFiscalPeriodStatusResponse> => {
+  
+  return customFetch<glControllerUpdateFiscalPeriodStatusResponse>(getGlControllerUpdateFiscalPeriodStatusUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateFiscalPeriodStatusDto,)
+  }
+);}
+
+
+/**
+ * Run real-time automated verification of Trial Balance zero-sum equality and subledger parity for AR, AP, GRNI, and Perpetual Inventory.
+ * @summary Get Continuous Subledger Reconciliation
+ */
+export type glControllerGetSubledgerReconciliationResponse200 = {
+  data: SubledgerReconciliationResponseDto
+  status: 200
+}
+    
+export type glControllerGetSubledgerReconciliationResponseSuccess = (glControllerGetSubledgerReconciliationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetSubledgerReconciliationResponse = (glControllerGetSubledgerReconciliationResponseSuccess)
+
+export const getGlControllerGetSubledgerReconciliationUrl = (params?: GlControllerGetSubledgerReconciliationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/reconciliation/subledger?${stringifiedParams}` : `/gl/reconciliation/subledger`
+}
+
+export const glControllerGetSubledgerReconciliation = async (params?: GlControllerGetSubledgerReconciliationParams, options?: RequestInit): Promise<glControllerGetSubledgerReconciliationResponse> => {
+  
+  return customFetch<glControllerGetSubledgerReconciliationResponse>(getGlControllerGetSubledgerReconciliationUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

@@ -8,5 +8,5 @@
 import type { PurchaseOrderResponseDto } from './purchaseOrderResponseDto';
 
 export type PurchaseOrdersControllerFindAll200AllOf = {
-  data?: PurchaseOrderResponseDto[];
+  data: PurchaseOrderResponseDto[];
 };

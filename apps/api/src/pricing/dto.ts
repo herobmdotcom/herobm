@@ -6,6 +6,7 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class CreateDiscountMatrixDto {
   @ApiProperty({ format: 'uuid', required: false })
@@ -26,6 +27,7 @@ export class CreateDiscountMatrixDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage!: string;
 }
 
@@ -33,6 +35,7 @@ export class UpdateDiscountMatrixDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage?: string;
 }
 
@@ -67,6 +70,7 @@ export class ResolveDiscountRuleDto {
   productGroupId!: string | null;
 
   @ApiProperty()
+  @IsPercentage()
   discountPercentage!: string;
 }
 

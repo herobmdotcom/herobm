@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -18,8 +18,13 @@ import {
   Query,
   UseInterceptors,
   HttpCode,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
+import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EntityType } from '../common/event-types';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
@@ -33,6 +38,7 @@ import {
   PurchaseOrderLineResponseDto,
   EmptyBodyDto,
   ChangeStateDto,
+  EmailDocumentDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -43,7 +49,11 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
 @ApiTags('Purchase Orders')
 export class PurchaseOrdersController {
-  constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
+  constructor(
+    private readonly purchaseOrdersService: PurchaseOrdersService,
+    private readonly purchaseOrdersQueryService: PurchaseOrdersQueryService,
+    private readonly documentDispatchService: DocumentDispatchService,
+  ) {}
 
   @Post()
   @ApiBody({ type: CreatePurchaseOrderDto })
@@ -238,6 +248,47 @@ export class PurchaseOrdersController {
       id,
       updatePurchaseOrderDto,
       user.username,
+    );
+  }
+
+  @Post(':id/email-document')
+  @ApiBody({ type: EmailDocumentDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Purchase Order Document',
+    description:
+      'Generates a Purchase Order PDF and queues it to be emailed to the supplier.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailDocument(
+    @Param('id') id: string,
+    @Body() dto: EmailDocumentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const order = await this.purchaseOrdersQueryService.findOne(id);
+    if (!order) {
+      throw new HttpException('Purchase Order not found', HttpStatus.NOT_FOUND);
+    }
+
+    const hookSlug = dto.hookSlug || 'purchase-order';
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug: dto.contextSlug || DATA_SOURCE_CONTEXT.PURCHASE_ORDER,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName: `PurchaseOrder-${order.orderNumber}.pdf`,
+      },
+      user,
     );
   }
 }

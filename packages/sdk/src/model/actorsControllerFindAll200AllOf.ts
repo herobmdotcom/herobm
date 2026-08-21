@@ -8,5 +8,5 @@
 import type { ActorResponseDto } from './actorResponseDto';
 
 export type ActorsControllerFindAll200AllOf = {
-  data?: ActorResponseDto[];
+  data: ActorResponseDto[];
 };

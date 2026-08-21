@@ -8,5 +8,5 @@
 import type { PaymentResponseDto } from './paymentResponseDto';
 
 export type PaymentsControllerFindAll200AllOf = {
-  data?: PaymentResponseDto[];
+  data: PaymentResponseDto[];
 };

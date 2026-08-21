@@ -3,7 +3,7 @@
 import { use, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { calculateAvailableQuantity, PURCHASE_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
@@ -20,6 +20,10 @@ import PageNav from '@/components/shared/PageNav';
 import { formatLocalDate } from '@/lib/date';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
+import * as api from '@herobm/sdk';
+import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import type { OrderLine, TaxCategory } from './types';
 import type { PurchaseInvoiceLine } from '@/lib/purchase-order-utils';
@@ -54,6 +58,24 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
   const canArchive = hasPermission(permissions, SystemResource.PURCHASE_ORDERS, 'archive');
 
   const o = usePurchaseOrder(id);
+
+  const [emailDialogConfig, setEmailDialogConfig] = useState<{
+    isOpen: boolean;
+    hookSlug: string;
+    title: string;
+    prefix: string;
+    docName: string;
+    targetId: string;
+    contextSlug: string;
+  }>({
+    isOpen: false,
+    hookSlug: '',
+    title: '',
+    prefix: '',
+    docName: '',
+    targetId: '',
+    contextSlug: ''
+  });
 
   const { order, loading, error, saving, copying, latestAutoTransition,
     isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
@@ -204,8 +226,12 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     defaultValue={line.discountPercentage}
                     key={`disc-${line.purchaseOrderLineId}-${line.discountPercentage}`}
                     onBlur={(e) => {
-                        if (e.target.value !== line.discountPercentage) {
-                            updateLine(line.purchaseOrderLineId, 'discountPercentage', e.target.value);
+                        const val = parseFloat(e.target.value);
+                        const clampedVal = isNaN(val) ? 0 : Math.min(Math.max(val, 0), 100);
+                        const formatted = String(clampedVal);
+                        e.target.value = formatted;
+                        if (formatted !== line.discountPercentage) {
+                            updateLine(line.purchaseOrderLineId, 'discountPercentage', formatted);
                         }
                     }}
                 />
@@ -404,14 +430,31 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                 <span className="material-symbols-outlined">receipt_long</span>
                 {tPurchase('orderDetails')}
               </h3>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={copyOrder}
-                disabled={copying}
-              >
-                {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEmailDialogConfig({
+                    isOpen: true,
+                    hookSlug: 'purchase-order',
+                    title: 'Email Purchase Order',
+                    prefix: 'Purchase Order',
+                    docName: 'Purchase Order',
+                    targetId: order.purchaseOrderId!,
+                    contextSlug: DATA_SOURCE_CONTEXT.PURCHASE_ORDER,
+                  })}
+                >
+                  {tPurchase('buttons.emailPurchaseOrder')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={copyOrder}
+                  disabled={copying}
+                >
+                  {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
@@ -578,6 +621,42 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
         </div>
       </div>
       </DetailsLayout>
+
+      {order && (
+        <EmailDocumentDialog
+          isOpen={emailDialogConfig.isOpen}
+          orderId={id}
+          orderNumber={order.orderNumber}
+          customerReference={order.referenceNumber}
+          supplierId={order.vendorId!}
+          hookSlug={emailDialogConfig.hookSlug}
+          title={emailDialogConfig.title}
+          defaultSubjectPrefix={emailDialogConfig.prefix}
+          documentName={emailDialogConfig.docName}
+          targetId={emailDialogConfig.targetId}
+          contextSlug={emailDialogConfig.contextSlug}
+          onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
+          onSuccess={() => {
+            setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
+            toast.success('Email queued successfully!');
+            loadOrder();
+          }}
+          onPreview={async (customPdfText?: string) => {
+            try {
+              const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
+                id: emailDialogConfig.targetId || order.purchaseOrderId!, 
+                context: emailDialogConfig.contextSlug || DATA_SOURCE_CONTEXT.PURCHASE_ORDER
+              });
+              const blob = response.data;
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+            } catch (err) {
+              reportError(err, 'PurchaseOrderDetailPage:generateDocument');
+              setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+            }
+          }}
+        />
+      )}
 
       {/* Global Toast Notification for Auto-Transitions */}
       <div

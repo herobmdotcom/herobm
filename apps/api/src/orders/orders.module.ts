@@ -61,6 +61,7 @@ import { SalesReturnCreditService } from '../pdf-templates/sales-return-credit.s
 import { ShippingDocketService } from '../pdf-templates/shipping-docket.service';
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
 import { EmailModule } from '../email/email.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { EmailModule } from '../email/email.module';
     EnrichmentModule,
     BusinessReportsModule,
     EmailModule,
+    NotificationsModule,
   ],
   controllers: [
     OrderPickingController,
@@ -231,9 +233,14 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SHIPMENT, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
-      resolveData: async (id: string, user: Record<string, unknown>) => {
+      resolveData: async (
+        id: string,
+        user: Record<string, unknown>,
+        options?: Record<string, unknown>,
+      ) => {
         return (await this.shippingDocketService.assembleData(
           id,
+          options,
         )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {

@@ -44,6 +44,11 @@ import {
 
 // ---------------------------------------------------------------------------
 // sales_orders  (CDM: SalesOrder)
+// Architecture Note: Follows standard ERP Common Data Model (CDM) design.
+// Delivery details are stored directly on the header as point-in-time snapshot
+// attributes to prevent historical drift when customer records update.
+// Fulfillment lifecycles (picks, shipments, returns, invoices, credit notes)
+// are fully normalized into dedicated child tables.
 // ---------------------------------------------------------------------------
 export const salesOrders = herobmCore.table(
   'sales_orders',

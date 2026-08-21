@@ -9,6 +9,7 @@
     "start:prod": "node dist/outbox-relay.js",
     "dev": "nodemon -w src -e ts --exec ts-node src/outbox-relay.ts",
     "test": "vitest run src/",
+    "test:unit": "vitest run src/",
     "test:e2e": "vitest run test/"
   },
   "dependencies": {

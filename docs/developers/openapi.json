@@ -267,7 +267,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -330,7 +330,10 @@
                             "$ref": "#/components/schemas/CustomerResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -457,7 +460,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -531,7 +534,10 @@
                             "$ref": "#/components/schemas/AgedBalanceResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -1036,7 +1042,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -1099,7 +1105,10 @@
                             "$ref": "#/components/schemas/ProductResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -1587,7 +1596,10 @@
                             "$ref": "#/components/schemas/ProductResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -1844,7 +1856,10 @@
                             "$ref": "#/components/schemas/ProductGroupResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -2082,7 +2097,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -2153,7 +2168,10 @@
                             "$ref": "#/components/schemas/InventoryResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -2328,7 +2346,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -2406,7 +2424,10 @@
                             "$ref": "#/components/schemas/InventoryBinResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -3056,7 +3077,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedJournalEntriesDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/JournalEntryResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -3278,7 +3316,10 @@
                             "$ref": "#/components/schemas/GeneralLedgerResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -3557,6 +3598,165 @@
           }
         },
         "summary": "Seed Tax Settings",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/periods": {
+      "get": {
+        "description": "Retrieve all accounting / fiscal periods, optionally filtered by fiscal year and status.",
+        "operationId": "GlController_getFiscalPeriods",
+        "parameters": [
+          {
+            "name": "fiscalYear",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "soft_locked",
+                "hard_closed"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FiscalPeriodResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Fiscal Periods",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/periods/generate": {
+      "post": {
+        "description": "Auto-generate 12 monthly fiscal periods for the specified fiscal year.",
+        "operationId": "GlController_generateFiscalPeriods",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateFiscalPeriodsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FiscalPeriodResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Generate Fiscal Periods",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/periods/{id}/status": {
+      "patch": {
+        "description": "Transition a fiscal period between open, soft_locked, and hard_closed.",
+        "operationId": "GlController_updateFiscalPeriodStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFiscalPeriodStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiscalPeriodResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Fiscal Period Status",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/reconciliation/subledger": {
+      "get": {
+        "description": "Run real-time automated verification of Trial Balance zero-sum equality and subledger parity for AR, AP, GRNI, and Perpetual Inventory.",
+        "operationId": "GlController_getSubledgerReconciliation",
+        "parameters": [
+          {
+            "name": "asOfDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubledgerReconciliationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Continuous Subledger Reconciliation",
         "tags": [
           "General Ledger"
         ]
@@ -6162,7 +6362,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -6225,7 +6425,10 @@
                             "$ref": "#/components/schemas/OrderResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -7712,6 +7915,53 @@
         ]
       }
     },
+    "/shipments/{id}/email-document": {
+      "post": {
+        "description": "Generates and sends a shipment document (e.g. shipping docket) as an email attachment.",
+        "operationId": "GlobalShipmentsController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Shipment Document",
+        "tags": [
+          "Warehouse"
+        ]
+      }
+    },
     "/sales-returns": {
       "get": {
         "description": "Retrieve all sales returns across all orders, optionally filtered by state.",
@@ -7794,7 +8044,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -7986,7 +8236,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -8795,7 +9045,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -8866,7 +9116,10 @@
                             "$ref": "#/components/schemas/TransferResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -10453,7 +10706,10 @@
                             "$ref": "#/components/schemas/SalesInvoiceResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -10620,7 +10876,10 @@
                             "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -11332,7 +11591,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -11584,7 +11843,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -12173,7 +12432,10 @@
                             "$ref": "#/components/schemas/PaymentResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -12697,7 +12959,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -12760,7 +13022,10 @@
                             "$ref": "#/components/schemas/SupplierResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -12887,7 +13152,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -12961,7 +13226,10 @@
                             "$ref": "#/components/schemas/SupplierAgedBalanceResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -13065,7 +13333,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -13119,7 +13387,10 @@
                             "$ref": "#/components/schemas/SupplierResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -13304,7 +13575,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -13358,7 +13629,10 @@
                             "$ref": "#/components/schemas/SupplierResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -13546,7 +13820,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -13600,7 +13874,10 @@
                             "$ref": "#/components/schemas/SupplierResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -14190,7 +14467,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -14253,7 +14530,10 @@
                             "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -14668,6 +14948,53 @@
           }
         },
         "summary": "Update Purchase Order",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/email-document": {
+      "post": {
+        "description": "Generates a Purchase Order PDF and queues it to be emailed to the supplier.",
+        "operationId": "PurchaseOrdersController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Purchase Order Document",
         "tags": [
           "Purchase Orders"
         ]
@@ -16704,7 +17031,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -16755,7 +17082,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedGoodsReceivedDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GoodsReceivedResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -16849,7 +17193,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -16907,7 +17251,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedGoodsReceivedLineDto"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GoodsReceivedLineResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -18256,7 +18617,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -18319,7 +18680,10 @@
                             "$ref": "#/components/schemas/ContactResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -18788,7 +19152,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -18851,7 +19215,10 @@
                             "$ref": "#/components/schemas/ActorResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -19396,7 +19763,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -19450,7 +19817,10 @@
                             "$ref": "#/components/schemas/ProjectResponseDto"
                           }
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   ]
                 }
@@ -22287,24 +22657,6 @@
           "entryNumber"
         ]
       },
-      "PaginatedJournalEntriesDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/JournalEntryResponseDto"
-            }
-          },
-          "meta": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
-        ]
-      },
       "JournalLineDto": {
         "type": "object",
         "properties": {
@@ -22802,6 +23154,195 @@
         },
         "required": [
           "filename"
+        ]
+      },
+      "FiscalPeriodResponseDto": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          },
+          "periodName": {
+            "type": "string"
+          },
+          "fiscalYear": {
+            "type": "number"
+          },
+          "periodNumber": {
+            "type": "number"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "soft_locked",
+              "hard_closed"
+            ]
+          },
+          "lockedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "closedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "periodId",
+          "periodName",
+          "fiscalYear",
+          "periodNumber",
+          "startDate",
+          "endDate",
+          "status"
+        ]
+      },
+      "GenerateFiscalPeriodsDto": {
+        "type": "object",
+        "properties": {
+          "fiscalYear": {
+            "type": "number",
+            "description": "Fiscal year e.g. 2026",
+            "example": 2026
+          }
+        },
+        "required": [
+          "fiscalYear"
+        ]
+      },
+      "UpdateFiscalPeriodStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "soft_locked",
+              "hard_closed"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "TrialBalanceZeroSumDto": {
+        "type": "object",
+        "properties": {
+          "totalDebit": {
+            "type": "number"
+          },
+          "totalCredit": {
+            "type": "number"
+          },
+          "netDifference": {
+            "type": "number"
+          },
+          "isBalanced": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totalDebit",
+          "totalCredit",
+          "netDifference",
+          "isBalanced"
+        ]
+      },
+      "SubledgerParityItemDto": {
+        "type": "object",
+        "properties": {
+          "controlAccountCode": {
+            "type": "string"
+          },
+          "controlAccountName": {
+            "type": "string"
+          },
+          "subledgerBalance": {
+            "type": "number"
+          },
+          "glBalance": {
+            "type": "number"
+          },
+          "drift": {
+            "type": "number"
+          },
+          "isMatched": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "controlAccountCode",
+          "controlAccountName",
+          "subledgerBalance",
+          "glBalance",
+          "drift",
+          "isMatched"
+        ]
+      },
+      "SubledgerReconciliationResponseDto": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "isOverallBalanced": {
+            "type": "boolean"
+          },
+          "trialBalanceZeroSum": {
+            "$ref": "#/components/schemas/TrialBalanceZeroSumDto"
+          },
+          "accountsReceivable": {
+            "$ref": "#/components/schemas/SubledgerParityItemDto"
+          },
+          "accountsPayable": {
+            "$ref": "#/components/schemas/SubledgerParityItemDto"
+          },
+          "goodsReceivedNotInvoiced": {
+            "$ref": "#/components/schemas/SubledgerParityItemDto"
+          },
+          "perpetualInventory": {
+            "$ref": "#/components/schemas/SubledgerParityItemDto"
+          }
+        },
+        "required": [
+          "timestamp",
+          "isOverallBalanced",
+          "trialBalanceZeroSum",
+          "accountsReceivable",
+          "accountsPayable",
+          "goodsReceivedNotInvoiced",
+          "perpetualInventory"
         ]
       },
       "CreateReconciliationDto": {
@@ -25203,6 +25744,9 @@
         "type": "object",
         "properties": {
           "analysisCode": {
+            "type": "string"
+          },
+          "dispatchContactId": {
             "type": "string"
           }
         }
@@ -28895,6 +29439,14 @@
             "type": "string",
             "nullable": true
           },
+          "productNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "productType": {
+            "type": "string",
+            "nullable": true
+          },
           "productDescription": {
             "type": "string",
             "nullable": true
@@ -30486,9 +31038,6 @@
           },
           "defaultTaxCategoryCode": {
             "type": "string"
-          },
-          "importInventoryFromLocations": {
-            "type": "boolean"
           }
         }
       },
@@ -30733,24 +31282,6 @@
           "stateCode"
         ]
       },
-      "PaginatedGoodsReceivedDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GoodsReceivedResponseDto"
-            }
-          },
-          "meta": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
-        ]
-      },
       "GoodsReceivedLineResponseDto": {
         "type": "object",
         "properties": {
@@ -30827,24 +31358,6 @@
           "quantityReceived",
           "matchStatus",
           "putawayStatus"
-        ]
-      },
-      "PaginatedGoodsReceivedLineDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GoodsReceivedLineResponseDto"
-            }
-          },
-          "meta": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
         ]
       },
       "UpdateGoodsReceivedDto": {

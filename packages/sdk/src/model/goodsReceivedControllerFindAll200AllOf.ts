@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { GoodsReceivedResponseDto } from './goodsReceivedResponseDto';
-import type { PaginatedGoodsReceivedDtoMeta } from './paginatedGoodsReceivedDtoMeta';
 
-export interface PaginatedGoodsReceivedDto {
+export type GoodsReceivedControllerFindAll200AllOf = {
   data: GoodsReceivedResponseDto[];
-  meta: PaginatedGoodsReceivedDtoMeta;
-}
+};

@@ -8,5 +8,5 @@
 import type { SalesInvoiceResponseDto } from './salesInvoiceResponseDto';
 
 export type InvoiceDetailControllerGetSalesInvoicesGlobal200AllOf = {
-  data?: SalesInvoiceResponseDto[];
+  data: SalesInvoiceResponseDto[];
 };

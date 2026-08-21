@@ -6,8 +6,10 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "generate": "orval && node scripts/post-generate.js",
-    "test": "jest"
+    "test": "jest",
+    "test:unit": "jest"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

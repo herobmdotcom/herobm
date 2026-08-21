@@ -16,11 +16,18 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { RETURN_RESOLUTION, type ReturnResolution } from '@herobm/shared';
+import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class OrderCustomFieldsDto {
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   analysisCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  dispatchContactId?: string;
 }
 
 export class ReturnLineResponseDto {
@@ -73,6 +80,7 @@ export class CreateOrderLineDto {
 
   @IsOptional()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage?: string;
 
   @IsOptional()
@@ -107,6 +115,7 @@ export class UpdateOrderLineDto {
 
   @IsOptional()
   @IsNumberString()
+  @IsPercentage()
   discountPercentage?: string;
 
   @IsOptional()

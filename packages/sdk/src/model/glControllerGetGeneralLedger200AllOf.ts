@@ -8,5 +8,5 @@
 import type { GeneralLedgerResponseDto } from './generalLedgerResponseDto';
 
 export type GlControllerGetGeneralLedger200AllOf = {
-  data?: GeneralLedgerResponseDto[];
+  data: GeneralLedgerResponseDto[];
 };

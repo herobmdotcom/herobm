@@ -18,7 +18,7 @@ state?: string;
 includeArchived?: boolean;
 customerId?: string;
 vendorId?: string;
-days?: number;
+days?: Object;
 purchaseOrderId?: string;
 productId?: string;
 sort?: string;

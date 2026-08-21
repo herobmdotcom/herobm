@@ -8,5 +8,5 @@
 import type { InventoryBinResponseDto } from './inventoryBinResponseDto';
 
 export type InventoryControllerFindBins200AllOf = {
-  data?: InventoryBinResponseDto[];
+  data: InventoryBinResponseDto[];
 };

@@ -391,3 +391,36 @@ export const bankStatementLines = herobmCore.table('bank_statement_lines', {
   ),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// gl_fiscal_periods  (Accounting Period Governance & Hard Close)
+// ---------------------------------------------------------------------------
+export const glFiscalPeriods = herobmCore.table(
+  'gl_fiscal_periods',
+  {
+    periodId: uuid('period_id').primaryKey().defaultRandom(),
+    periodName: text('period_name').unique().notNull(),
+    fiscalYear: integer('fiscal_year').notNull(),
+    periodNumber: integer('period_number').notNull(),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date').notNull(),
+    status: text('status', {
+      enum: ['open', 'soft_locked', 'hard_closed'],
+    }).notNull(),
+    lockedBy: text('locked_by'),
+    lockedAt: timestamp('locked_at', { withTimezone: true }),
+    closedBy: text('closed_by'),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    notes: text('notes'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    yearPeriodIdx: index('idx_gl_fiscal_periods_year_period').on(
+      t.fiscalYear,
+      t.periodNumber,
+    ),
+    datesIdx: index('idx_gl_fiscal_periods_dates').on(t.startDate, t.endDate),
+    statusIdx: index('idx_gl_fiscal_periods_status').on(t.status),
+  }),
+);

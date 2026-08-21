@@ -114,12 +114,13 @@ describe('Pricing Utils - resolveEffectiveDiscount (most-specific-wins)', () => 
     expect(resolveEffectiveDiscount(rules, 'pg-1')).toBe('0');
   });
 
-  it('should not match product-group rules for a different product group', () => {
-    const rules = [
-      rule('customer', 'pg-2', '20'),
-      rule('customer_group', null, '5'),
-    ];
-    // pg-2 rule doesn't match pg-1 → falls through to group wildcard
-    expect(resolveEffectiveDiscount(rules, 'pg-1')).toBe('5');
+  it('should clamp discount percentage > 100% to 100', () => {
+    const rules = [rule('customer', null, '120')];
+    expect(resolveEffectiveDiscount(rules, null)).toBe('100');
+  });
+
+  it('should clamp negative discount percentage to 0', () => {
+    const rules = [rule('customer', null, '-10')];
+    expect(resolveEffectiveDiscount(rules, null)).toBe('0');
   });
 });

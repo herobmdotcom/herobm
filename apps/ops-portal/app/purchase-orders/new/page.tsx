@@ -153,8 +153,16 @@ export default function NewPurchaseOrderPage() {
   };
 
   const updateLine = (idx: number, field: keyof LineItem, value: string) => {
+    let sanitizedValue = value;
+    if (field === 'discountPercentage') {
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        if (num < 0) sanitizedValue = '0';
+        else if (num > 100) sanitizedValue = '100';
+      }
+    }
     setLines((prev) =>
-      prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l)),
+      prev.map((l, i) => (i === idx ? { ...l, [field]: sanitizedValue } : l)),
     );
   };
 
@@ -205,6 +213,15 @@ export default function NewPurchaseOrderPage() {
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
       setError(t('common.errors.pleaseAddLineItem'));
+      return;
+    }
+
+    const hasInvalidDiscount = lines.some((l) => {
+      const d = parseFloat(l.discountPercentage || '0');
+      return isNaN(d) || d < 0 || d > 100;
+    });
+    if (hasInvalidDiscount) {
+      setError('Discount percentage must be between 0 and 100');
       return;
     }
 

@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { JournalEntryResponseDto } from './journalEntryResponseDto';
-import type { PaginatedJournalEntriesDtoMeta } from './paginatedJournalEntriesDtoMeta';
 
-export interface PaginatedJournalEntriesDto {
+export type GlControllerGetJournalEntries200AllOf = {
   data: JournalEntryResponseDto[];
-  meta: PaginatedJournalEntriesDtoMeta;
-}
+};

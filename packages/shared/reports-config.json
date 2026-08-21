@@ -105,6 +105,16 @@
       "output_name_pattern": "PickingLabels-${orderNumber}.pdf",
       "context": "picking-slip",
       "type": "template"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000013",
+      "slug": "purchase-order",
+      "name": "Purchase Order",
+      "filename": "purchase-order.typ",
+      "output_name_pattern": "PurchaseOrder-${orderNumber}.pdf",
+      "hook": "purchase-order",
+      "context": "purchase-order",
+      "type": "hook"
     }
   ]
 }

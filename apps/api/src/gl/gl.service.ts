@@ -19,6 +19,7 @@ import {
   activities,
   outbox,
   actors,
+  glFiscalPeriods,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -274,6 +275,7 @@ export class GlService implements OnModuleInit {
     }
 
     const entryDate = meta.entryDate || new Date().toISOString().slice(0, 10);
+    await this.assertPeriodOpen(entryDate, queryDb);
 
     // 3. Insert — either directly on the caller's tx, or in a self-contained transaction
     const doInsert = async (db: DrizzleDB) => {
@@ -1123,5 +1125,371 @@ export class GlService implements OnModuleInit {
     return Array.isArray(rows)
       ? (rows as Record<string, unknown>[])
       : (rows as { rows: Record<string, unknown>[] }).rows || [];
+  }
+
+  // -------------------------------------------------------------------------
+  // Accounting Period Governance (Fiscal Period Locking & Hard Close)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Verifies that the given entryDate does not fall into a locked or closed accounting period.
+   */
+  async assertPeriodOpen(entryDate: string, tx?: DrizzleDB) {
+    const queryDb = tx || this.db;
+    const [period] = await queryDb
+      .select()
+      .from(glFiscalPeriods)
+      .where(
+        and(
+          sql`${glFiscalPeriods.startDate} <= ${entryDate}`,
+          sql`${glFiscalPeriods.endDate} >= ${entryDate}`,
+        ),
+      )
+      .limit(1);
+
+    if (!period) {
+      return;
+    }
+
+    if (period.status === 'hard_closed') {
+      throw new BadRequestException(
+        `Cannot post to hard-closed accounting period '${period.periodName}' (${period.startDate} to ${period.endDate}). Postings in closed periods are forbidden.`,
+      );
+    }
+
+    if (period.status === 'soft_locked') {
+      throw new BadRequestException(
+        `Cannot post to soft-locked accounting period '${period.periodName}' (${period.startDate} to ${period.endDate}). Period is locked for adjustments.`,
+      );
+    }
+  }
+
+  /**
+   * Retrieves fiscal periods, optionally filtered by year and status.
+   */
+  async getFiscalPeriods(query?: {
+    fiscalYear?: number;
+    status?: 'open' | 'soft_locked' | 'hard_closed';
+  }) {
+    const conditions = [];
+    if (query?.fiscalYear) {
+      conditions.push(eq(glFiscalPeriods.fiscalYear, query.fiscalYear));
+    }
+    if (query?.status) {
+      conditions.push(eq(glFiscalPeriods.status, query.status));
+    }
+
+    return this.db
+      .select()
+      .from(glFiscalPeriods)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(glFiscalPeriods.startDate);
+  }
+
+  /**
+   * Auto-generates 12 monthly fiscal periods for a fiscal year.
+   */
+  async generateFiscalYearPeriods(fiscalYear: number, actor?: string) {
+    const [settings] = await this.db
+      .select({ fiscalYearStartMonth: glSettings.fiscalYearStartMonth })
+      .from(glSettings)
+      .limit(1);
+    const startMonth = settings?.fiscalYearStartMonth || 1;
+
+    for (let i = 0; i < 12; i++) {
+      const periodNumber = i + 1;
+      const monthZeroIndexed = (startMonth - 1 + i) % 12;
+      const yearOffset = Math.floor((startMonth - 1 + i) / 12);
+      const calendarYear = fiscalYear + yearOffset;
+      const monthStr = String(monthZeroIndexed + 1).padStart(2, '0');
+
+      const startDate = `${calendarYear}-${monthStr}-01`;
+      const lastDay = new Date(calendarYear, monthZeroIndexed + 1, 0).getDate();
+      const endDate = `${calendarYear}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
+      const periodName = `${calendarYear}-${monthStr}`;
+
+      const [existing] = await this.db
+        .select()
+        .from(glFiscalPeriods)
+        .where(eq(glFiscalPeriods.periodName, periodName))
+        .limit(1);
+
+      if (!existing) {
+        await this.db.insert(glFiscalPeriods).values({
+          periodName,
+          fiscalYear,
+          periodNumber,
+          startDate,
+          endDate,
+          status: 'open',
+          notes: `Period ${periodNumber} of FY${fiscalYear} (created by ${actor || 'admin'})`,
+        });
+      }
+    }
+
+    return this.getFiscalPeriods({ fiscalYear });
+  }
+
+  /**
+   * Updates the status of an accounting period (open, soft_locked, hard_closed).
+   */
+  async updatePeriodStatus(
+    periodId: string,
+    status: 'open' | 'soft_locked' | 'hard_closed',
+    actor?: string,
+    notes?: string,
+  ) {
+    const [period] = await this.db
+      .select()
+      .from(glFiscalPeriods)
+      .where(eq(glFiscalPeriods.periodId, periodId))
+      .limit(1);
+
+    if (!period) {
+      throw new NotFoundException(`Fiscal period '${periodId}' not found.`);
+    }
+
+    const updates: Record<string, unknown> = {
+      status,
+      modifiedOn: new Date(),
+    };
+
+    if (notes !== undefined) {
+      updates.notes = notes;
+    }
+
+    if (status === 'soft_locked') {
+      updates.lockedBy = actor || 'admin';
+      updates.lockedAt = new Date();
+    } else if (status === 'hard_closed') {
+      updates.closedBy = actor || 'admin';
+      updates.closedAt = new Date();
+    } else if (status === 'open') {
+      updates.lockedBy = null;
+      updates.lockedAt = null;
+      updates.closedBy = null;
+      updates.closedAt = null;
+    }
+
+    const [updated] = await this.db
+      .update(glFiscalPeriods)
+      .set(updates)
+      .where(eq(glFiscalPeriods.periodId, periodId))
+      .returning();
+
+    return updated;
+  }
+
+  // -------------------------------------------------------------------------
+  // Subledger-to-GL Continuous Reconciliation
+  // -------------------------------------------------------------------------
+
+  /**
+   * Performs an automated continuous reconciliation between double-entry GL control accounts
+   * and operational subledgers (Trial Balance Zero-Sum, AR, AP, GRNI, Perpetual Inventory).
+   */
+  async getSubledgerReconciliation(asOfDate?: string) {
+    const [settings] = await this.db
+      .select({
+        defaultArAccountId: glSettings.defaultArAccountId,
+        defaultApAccountId: glSettings.defaultApAccountId,
+        defaultGrniAccountId: glSettings.defaultGrniAccountId,
+        defaultInventoryAccountId: glSettings.defaultInventoryAccountId,
+      })
+      .from(glSettings)
+      .limit(1);
+
+    const dummyUuid = '00000000-0000-0000-0000-000000000000';
+    const arId = settings?.defaultArAccountId || dummyUuid;
+    const apId = settings?.defaultApAccountId || dummyUuid;
+    const grniId = settings?.defaultGrniAccountId || dummyUuid;
+    const invId = settings?.defaultInventoryAccountId || dummyUuid;
+
+    // 1. Trial Balance Zero-Sum
+    const tbRes = await this.db.execute(sql`
+      SELECT
+        COALESCE(SUM(debit), 0)::numeric AS total_debit,
+        COALESCE(SUM(credit), 0)::numeric AS total_credit
+      FROM herobm_core.gl_journal_lines
+    `);
+    const tbRow = (
+      Array.isArray(tbRes)
+        ? tbRes[0]
+        : (tbRes as { rows: unknown[] })?.rows?.[0]
+    ) as { total_debit: string; total_credit: string } | undefined;
+    const tbDebit = parseFloat(tbRow?.total_debit || '0');
+    const tbCredit = parseFloat(tbRow?.total_credit || '0');
+    const tbDiff = Math.round((tbDebit - tbCredit) * 100) / 100;
+    const isTbZeroSum = Math.abs(tbDiff) < 0.005;
+
+    // 2. Accounts Receivable (AR) Parity
+    const arSubledgerRes = await this.db.execute(sql`
+      SELECT
+        (
+          (SELECT COALESCE(SUM(outstanding_amount), 0)::numeric FROM herobm_core.sales_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
+          -
+          (SELECT COALESCE(SUM(outstanding_amount), 0)::numeric FROM herobm_core.sales_credit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
+        )::numeric AS balance
+    `);
+    const arSubledgerRow = (
+      Array.isArray(arSubledgerRes)
+        ? arSubledgerRes[0]
+        : (arSubledgerRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const arSubledger = parseFloat(arSubledgerRow?.balance || '0');
+
+    const arGlRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric AS balance
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
+      WHERE a.account_code = '1200' OR a.gl_account_id = ${arId}
+    `);
+    const arGlRow = (
+      Array.isArray(arGlRes)
+        ? arGlRes[0]
+        : (arGlRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const arGl = parseFloat(arGlRow?.balance || '0');
+    const arDrift = Math.round((arSubledger - arGl) * 100) / 100;
+    const isArMatched = Math.abs(arDrift) < 0.005;
+
+    // 3. Accounts Payable (AP) Parity
+    const apSubledgerRes = await this.db.execute(sql`
+      SELECT
+        (
+          (SELECT COALESCE(SUM(outstanding_amount), 0)::numeric FROM herobm_core.purchase_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
+          -
+          (SELECT COALESCE(SUM(outstanding_amount), 0)::numeric FROM herobm_core.purchase_debit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
+        )::numeric AS balance
+    `);
+    const apSubledgerRow = (
+      Array.isArray(apSubledgerRes)
+        ? apSubledgerRes[0]
+        : (apSubledgerRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const apSubledger = parseFloat(apSubledgerRow?.balance || '0');
+
+    const apGlRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric AS balance
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
+      WHERE a.account_code = '2000' OR a.gl_account_id = ${apId}
+    `);
+    const apGlRow = (
+      Array.isArray(apGlRes)
+        ? apGlRes[0]
+        : (apGlRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const apGl = parseFloat(apGlRow?.balance || '0');
+    const apDrift = Math.round((apSubledger - apGl) * 100) / 100;
+    const isApMatched = Math.abs(apDrift) < 0.005;
+
+    // 4. Goods Received Not Invoiced (GRNI) Parity
+    const grniSubledgerRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(CASE WHEN gr.state_code = 'received' THEN grl.quantity_received * COALESCE(grl.unit_cost, p.standard_cost, p.weighted_average_cost, 0) ELSE 0 END), 0)::numeric AS balance
+      FROM herobm_core.goods_received_lines grl
+      JOIN herobm_core.goods_received gr ON gr.goods_received_id = grl.goods_received_id
+      JOIN herobm_core.products p ON p.product_id = grl.product_id
+      WHERE gr.state_code = 'received'
+    `);
+    const grniSubledgerRow = (
+      Array.isArray(grniSubledgerRes)
+        ? grniSubledgerRes[0]
+        : (grniSubledgerRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const grniSubledger = parseFloat(grniSubledgerRow?.balance || '0');
+
+    const grniGlRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric AS balance
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
+      WHERE a.account_code = '2150' OR a.gl_account_id = ${grniId}
+    `);
+    const grniGlRow = (
+      Array.isArray(grniGlRes)
+        ? grniGlRes[0]
+        : (grniGlRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const grniGl = parseFloat(grniGlRow?.balance || '0');
+    const grniDrift = Math.round((grniSubledger - grniGl) * 100) / 100;
+    const isGrniMatched = Math.abs(grniDrift) < 0.005;
+
+    // 5. Perpetual Inventory Parity
+    const invSubledgerRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.standard_cost, p.weighted_average_cost, 0)), 0)::numeric AS balance
+      FROM herobm_core.bin_contents bc
+      JOIN herobm_core.products p ON p.product_id = bc.product_id
+    `);
+    const invSubledgerRow = (
+      Array.isArray(invSubledgerRes)
+        ? invSubledgerRes[0]
+        : (invSubledgerRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const invSubledger = parseFloat(invSubledgerRow?.balance || '0');
+
+    const invGlRes = await this.db.execute(sql`
+      SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric AS balance
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
+      WHERE a.account_code = '1300' OR a.gl_account_id = ${invId}
+    `);
+    const invGlRow = (
+      Array.isArray(invGlRes)
+        ? invGlRes[0]
+        : (invGlRes as { rows: unknown[] })?.rows?.[0]
+    ) as { balance: string } | undefined;
+    const invGl = parseFloat(invGlRow?.balance || '0');
+    const invDrift = Math.round((invSubledger - invGl) * 100) / 100;
+    const isInvMatched = Math.abs(invDrift) < 0.005;
+
+    const isOverallBalanced =
+      isTbZeroSum &&
+      isArMatched &&
+      isApMatched &&
+      isGrniMatched &&
+      isInvMatched;
+
+    return {
+      timestamp: new Date().toISOString(),
+      isOverallBalanced,
+      trialBalanceZeroSum: {
+        totalDebit: tbDebit,
+        totalCredit: tbCredit,
+        netDifference: tbDiff,
+        isBalanced: isTbZeroSum,
+      },
+      accountsReceivable: {
+        controlAccountCode: '1200',
+        controlAccountName: 'Accounts Receivable',
+        subledgerBalance: arSubledger,
+        glBalance: arGl,
+        drift: arDrift,
+        isMatched: isArMatched,
+      },
+      accountsPayable: {
+        controlAccountCode: '2000',
+        controlAccountName: 'Accounts Payable',
+        subledgerBalance: apSubledger,
+        glBalance: apGl,
+        drift: apDrift,
+        isMatched: isApMatched,
+      },
+      goodsReceivedNotInvoiced: {
+        controlAccountCode: '2150',
+        controlAccountName: 'GRNI Clearing',
+        subledgerBalance: grniSubledger,
+        glBalance: grniGl,
+        drift: grniDrift,
+        isMatched: isGrniMatched,
+      },
+      perpetualInventory: {
+        controlAccountCode: '1300',
+        controlAccountName: 'Inventory on Hand',
+        subledgerBalance: invSubledger,
+        glBalance: invGl,
+        drift: invDrift,
+        isMatched: isInvMatched,
+      },
+    };
   }
 }

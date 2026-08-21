@@ -59,7 +59,7 @@ export default tseslint.config(
             /[A-Z_-]+/,
             /^[\p{Emoji}\p{Emoji_Component}\uFE0E\uFE0F\u200D\s✅🚚❌📦]+$/u,
             /^use client$/,
-            /^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check|settings|tune|close|folder|search|warning)$/,
+            /^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check|settings|tune|close|folder|search|warning|lock|verified)$/,
             /^[—\-\.\+←→·%\$\(\)\"\'\,\s\&×•]+$/,
             /^(&times;|&bull;)$/
           ]

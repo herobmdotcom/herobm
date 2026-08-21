@@ -6,4 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PaginatedGoodsReceivedDtoMeta = { [key: string]: unknown };
+export type GlControllerGetSubledgerReconciliationParams = {
+asOfDate?: string;
+};

@@ -30,6 +30,7 @@ interface EmailDocumentDialogProps {
   orderNumber: string;
   customerReference?: string | null;
   customerId?: string;
+  supplierId?: string;
   hookSlug: string;
   title: string;
   defaultSubjectPrefix: string;
@@ -39,16 +40,36 @@ interface EmailDocumentDialogProps {
   onPreview: (customText?: string) => void;
   onClose: () => void;
   onSuccess: () => void;
+  onSend?: (params: {
+    emailAddress: string;
+    subject: string;
+    body: string;
+    hookSlug: string;
+    customPdfText?: string;
+    targetId: string;
+    contextSlug: string;
+  }) => Promise<void>;
 }
 
-export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, hookSlug, title, defaultSubjectPrefix, documentName, targetId, contextSlug, onPreview, onClose, onSuccess }: EmailDocumentDialogProps) {
+const KNOWN_CUSTOM_TEXT_HOOKS = [
+  'purchase-order',
+  'sales-order-quote',
+  'sales-order-confirmation',
+  'pro-forma-invoice',
+  'sales-invoice',
+  'sales-return-credit',
+];
+
+export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, supplierId, hookSlug, title, defaultSubjectPrefix, documentName, targetId, contextSlug, onPreview, onClose, onSuccess, onSend }: EmailDocumentDialogProps) {
   const t = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
+
+  const isKnownCustomText = KNOWN_CUSTOM_TEXT_HOOKS.includes(hookSlug);
 
   const [macros, setMacros] = useState<Macro[]>([]);
   const [pdfMacros, setPdfMacros] = useState<Macro[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [supportsCustomText, setSupportsCustomText] = useState(false);
+  const [supportsCustomText, setSupportsCustomText] = useState<boolean>(isKnownCustomText || true);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -60,7 +81,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
   const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [subject, setSubject] = useState('');
   const [bodyText, setBodyText] = useState('');
-  const [customerEmail1, setCustomerEmail1] = useState('');
+  const [entityEmail, setEntityEmail] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -68,7 +89,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       setSelectedPdfMacroId('');
       setBodyText('');
       setCustomPdfText('');
-      setSupportsCustomText(false);
+      setSupportsCustomText(isKnownCustomText || true);
       
       const subjectSuffix = customerReference ? ` - ${customerReference}` : '';
       setSubject(`${defaultSubjectPrefix}: ${orderNumber}${subjectSuffix}`);
@@ -78,12 +99,12 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       Promise.all([
         loadTemplateConfig(),
         loadMacros(),
-        loadCustomer(),
+        loadRecipient(),
       ]).catch(err => {
         toast.error(getErrorMessage(err) || 'Failed to load dialog data');
       });
     }
-  }, [isOpen, customerId]);
+  }, [isOpen, customerId, supplierId, hookSlug]);
 
   const loadTemplateConfig = async () => {
     try {
@@ -92,12 +113,15 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       if (assignment?.reportId) {
         const reportRes = await api.pdfTemplatesControllerGetReport(assignment.reportId);
         const report = reportRes.data;
-        if (report?.template?.includes('customPdfText')) {
-          setSupportsCustomText(true);
+        if (report?.template) {
+          const hasCustomText =
+            report.template.includes('customPdfText') ||
+            report.template.includes('quoteIntroText');
+          setSupportsCustomText(hasCustomText);
         }
       }
     } catch (err) {
-      // ignore
+      // Keep default
     }
   };
 
@@ -113,38 +137,75 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
     setPdfMacros(combinedMacros);
   };
 
-  const loadCustomer = async () => {
-    if (!customerId) return;
-    setLoading(true);
-    try {
-      const res = await api.customersControllerFindOne(customerId);
-      const customer = res.data as { emailAddress1?: string; contacts?: Contact[] };
-      
-      const trimmedCustomerEmail = (customer.emailAddress1 || '').trim();
-      setCustomerEmail1(trimmedCustomerEmail);
-      
-      const custContacts = (customer.contacts || []).map(c => ({
-        ...c,
-        email: c.email ? c.email.trim() : c.email
-      })) as Contact[];
-      setContacts(custContacts);
-      
-      // Determine default TO address
-      const primaryContact = custContacts.find(c => c.primaryFor?.includes('purchasing'));
-      const firstContact = custContacts[0];
-      
-      if (primaryContact && primaryContact.email) {
-        setToAddress(primaryContact.email);
-      } else if (firstContact && firstContact.email) {
-        setToAddress(firstContact.email);
-      } else if (trimmedCustomerEmail) {
-        setToAddress(trimmedCustomerEmail);
+  const loadRecipient = async () => {
+    if (supplierId) {
+      setLoading(true);
+      try {
+        const res = await api.suppliersControllerFindOne(supplierId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
+        const supplier = res.data as any;
+        const trimmedEmail = (supplier?.emailAddress1 || '').trim();
+        setEntityEmail(trimmedEmail);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
+        const supContacts = (supplier?.contacts || []).map((c: any) => ({
+          ...c,
+          email: c.email ? c.email.trim() : c.email
+        })) as Contact[];
+        setContacts(supContacts);
+
+        // Determine default TO address: primary contact for sales on the supplier (if available)
+        const primaryContact = supContacts.find(c => c.primaryFor?.includes('sales'));
+        const firstContact = supContacts.find(c => !!c.email);
+
+        if (primaryContact && primaryContact.email) {
+          setToAddress(primaryContact.email);
+        } else if (firstContact && firstContact.email) {
+          setToAddress(firstContact.email);
+        } else if (trimmedEmail) {
+          setToAddress(trimmedEmail);
+        }
+      } catch (err: unknown) {
+        reportError(err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: unknown) {
-      reportError(err);
-      // Non-fatal, just leave TO blank
-    } finally {
-      setLoading(false);
+    } else if (customerId) {
+      setLoading(true);
+      try {
+        const res = await api.customersControllerFindOne(customerId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
+        const customer = res.data as any;
+        
+        const trimmedCustomerEmail = (customer?.emailAddress1 || '').trim();
+        setEntityEmail(trimmedCustomerEmail);
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
+        const custContacts = (customer?.contacts || []).map((c: any) => ({
+          ...c,
+          email: c.email ? c.email.trim() : c.email
+        })) as Contact[];
+        setContacts(custContacts);
+        
+        // Determine default TO address: primary delivery contact for shipping-docket, otherwise purchasing contact
+        const deliveryContact = custContacts.find(c => c.primaryFor?.includes('delivery'));
+        const purchasingContact = custContacts.find(c => c.primaryFor?.includes('purchasing'));
+        const primaryContact = hookSlug === 'shipping-docket' && deliveryContact ? deliveryContact : (purchasingContact || deliveryContact);
+        const firstContact = custContacts.find(c => !!c.email);
+        
+        if (primaryContact && primaryContact.email) {
+          setToAddress(primaryContact.email);
+        } else if (firstContact && firstContact.email) {
+          setToAddress(firstContact.email);
+        } else if (trimmedCustomerEmail) {
+          setToAddress(trimmedCustomerEmail);
+        }
+      } catch (err: unknown) {
+        reportError(err);
+        // Non-fatal, just leave TO blank
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -171,15 +232,47 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
 
     setSending(true);
     try {
-      await api.ordersControllerEmailDocument(orderId, {
-        emailAddress: trimmedAddress,
-        subject,
-        body: bodyText,
-        hookSlug,
-        customPdfText,
-        targetId,
-        contextSlug,
-      });
+      if (onSend) {
+        await onSend({
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (contextSlug === 'shipment' || hookSlug === 'shipping-docket') {
+        await api.globalShipmentsControllerEmailDocument(orderId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (supplierId) {
+        await api.purchaseOrdersControllerEmailDocument(orderId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else {
+        await api.ordersControllerEmailDocument(orderId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      }
       onSuccess();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err) || 'Failed to queue email');
@@ -251,8 +344,8 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
                       {c.firstName || c.lastName ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : tCommon('contact')} ({c.email})
                     </option>
                   ))}
-                  {customerEmail1 && !contacts.some(c => c.email === customerEmail1) && (
-                    <option value={customerEmail1}>Company Email ({customerEmail1})</option>
+                  {entityEmail && !contacts.some(c => c.email === entityEmail) && (
+                    <option value={entityEmail}>Company Email ({entityEmail})</option>
                   )}
                   <option value="OTHER">Other...</option>
                 </select>
@@ -304,7 +397,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
               rows={8}
               value={bodyText}
               onChange={(e) => setBodyText(e.target.value)}
-              placeholder="Enter message for the customer..."
+              placeholder={supplierId ? "Enter message for the supplier..." : "Enter message for the customer..."}
             />
           </div>
 

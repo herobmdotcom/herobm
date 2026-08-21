@@ -31,8 +31,6 @@ import {
   ResolveAllocationDto,
   GoodsReceivedResponseDto,
   GoodsReceivedLineResponseDto,
-  PaginatedGoodsReceivedDto,
-  PaginatedGoodsReceivedLineDto,
   CancelReceptionResponseDto,
   EmptyBodyDto,
   ResolveAllocationResponseDto,
@@ -73,7 +71,6 @@ export class GoodsReceivedController {
   }
 
   @Get()
-  @ApiOkResponse({ type: PaginatedGoodsReceivedDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Goods Receipts',
@@ -86,7 +83,6 @@ export class GoodsReceivedController {
   }
 
   @Get('lines')
-  @ApiOkResponse({ type: PaginatedGoodsReceivedLineDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Received Lines',

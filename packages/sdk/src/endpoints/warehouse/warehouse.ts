@@ -21,6 +21,7 @@ import type {
   CreateLocationDto,
   CreateShipmentDto,
   CreateZoneDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   FindByProductIdsBulkDto,
   GeneratePOsDto,
@@ -28,6 +29,8 @@ import type {
   GlobalShipmentsControllerFindAllParams,
   GlobalShipmentsControllerFindOneParams,
   GoodsReceivedControllerCancelReception200,
+  GoodsReceivedControllerFindAll200,
+  GoodsReceivedControllerFindAllLines200,
   GoodsReceivedControllerFindAllLinesParams,
   GoodsReceivedControllerFindAllParams,
   GoodsReceivedControllerFindOneParams,
@@ -55,8 +58,6 @@ import type {
   OpenDemandDto,
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
-  PaginatedGoodsReceivedDto,
-  PaginatedGoodsReceivedLineDto,
   PendingPutawayResponseDto,
   PickOrderLineDto,
   PickingBarcodeDto,
@@ -1477,6 +1478,44 @@ export const globalShipmentsControllerFindOne = async (id: string,
 
 
 /**
+ * Generates and sends a shipment document (e.g. shipping docket) as an email attachment.
+ * @summary Email Shipment Document
+ */
+export type globalShipmentsControllerEmailDocumentResponse201 = {
+  data: void
+  status: 201
+}
+    
+export type globalShipmentsControllerEmailDocumentResponseSuccess = (globalShipmentsControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type globalShipmentsControllerEmailDocumentResponse = (globalShipmentsControllerEmailDocumentResponseSuccess)
+
+export const getGlobalShipmentsControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/shipments/${id}/email-document`
+}
+
+export const globalShipmentsControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<globalShipmentsControllerEmailDocumentResponse> => {
+  
+  return customFetch<globalShipmentsControllerEmailDocumentResponse>(getGlobalShipmentsControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
+  }
+);}
+
+
+/**
  * Retrieve pending or awaiting-receipt backorders across all sales orders and work orders.
  * @summary Get Open Demands
  */
@@ -2189,7 +2228,7 @@ export const goodsReceivedControllerCreate = async (createGoodsReceivedDto: Crea
  * @summary List Goods Receipts
  */
 export type goodsReceivedControllerFindAllResponse200 = {
-  data: PaginatedGoodsReceivedDto
+  data: GoodsReceivedControllerFindAll200
   status: 200
 }
     
@@ -2232,7 +2271,7 @@ export const goodsReceivedControllerFindAll = async (params?: GoodsReceivedContr
  * @summary List Received Lines
  */
 export type goodsReceivedControllerFindAllLinesResponse200 = {
-  data: PaginatedGoodsReceivedLineDto
+  data: GoodsReceivedControllerFindAllLines200
   status: 200
 }
     

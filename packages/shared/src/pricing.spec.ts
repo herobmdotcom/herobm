@@ -3,6 +3,7 @@ import {
   computeOrderTotals,
   computeReturnCreditSummary,
   getTaxLabel,
+  resolveEffectiveDiscount,
 } from './pricing';
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,30 @@ describe('computeLinePrice', () => {
     expect(result.amount).toBe(0);
     expect(result.tax).toBe(0);
     expect(result.totalAmount).toBe(0);
+  });
+
+  it('clamps discount greater than 100% to 100%', () => {
+    const result = computeLinePrice({
+      quantity: 5,
+      pricePerUnit: 20,
+      discountPercentage: 150,
+      taxRate: 10,
+    });
+    expect(result.amount).toBe(0);
+    expect(result.tax).toBe(0);
+    expect(result.totalAmount).toBe(0);
+  });
+
+  it('clamps negative discount to 0%', () => {
+    const result = computeLinePrice({
+      quantity: 5,
+      pricePerUnit: 20,
+      discountPercentage: -20,
+      taxRate: 10,
+    });
+    expect(result.amount).toBe(100);
+    expect(result.tax).toBe(10);
+    expect(result.totalAmount).toBe(110);
   });
 
   it('rounds amounts to 2 decimal places', () => {
@@ -313,6 +338,30 @@ describe('getTaxLabel', () => {
 
   it('handles null/undefined category', () => {
     expect(getTaxLabel(null)).toBe('—');
+  });
+});
+
+describe('resolveEffectiveDiscount', () => {
+  it('clamps discount percentage > 100% to 100', () => {
+    const rules = [
+      {
+        ownerType: 'customer' as const,
+        productGroupId: 'pg-1',
+        discountPercentage: '150',
+      },
+    ];
+    expect(resolveEffectiveDiscount(rules, 'pg-1')).toBe('100');
+  });
+
+  it('clamps negative discount percentage to 0', () => {
+    const rules = [
+      {
+        ownerType: 'customer' as const,
+        productGroupId: 'pg-1',
+        discountPercentage: '-15',
+      },
+    ];
+    expect(resolveEffectiveDiscount(rules, 'pg-1')).toBe('0');
   });
 });
 

@@ -256,6 +256,16 @@ export class OrderCreationService {
           tx,
         );
         const lineDiscount = line.discountPercentage ?? '0';
+        const parsedDiscount = parseFloat(lineDiscount);
+        if (
+          isNaN(parsedDiscount) ||
+          parsedDiscount < 0 ||
+          parsedDiscount > 100
+        ) {
+          throw new BadRequestException(
+            `Line ${idx + 1}: Discount percentage must be between 0 and 100`,
+          );
+        }
 
         let isKit = false;
         const parentPrice = parseFloat(line.pricePerUnit || '0');

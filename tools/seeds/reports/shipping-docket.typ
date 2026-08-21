@@ -3,7 +3,7 @@
 
 #let data = json(sys.inputs.at("data"))
 
-#set text(size: 10pt)
+#set text(font: "DejaVu Sans", size: 10pt)
 
 // ── Header ──────────────────────────────────────────────────────────────────
 #align(center)[
@@ -23,6 +23,14 @@
 )
 
 #v(0.8cm)
+
+#if "customPdfText" in data and data.customPdfText != "" [
+  #text(9pt)[#data.customPdfText]
+  #v(0.8cm)
+] else if "quoteIntroText" in data and data.quoteIntroText != "" [
+  #text(9pt)[#data.quoteIntroText]
+  #v(0.8cm)
+]
 
 // ── Table: Shipped Items ────────────────────────────────────────────────────
 #text(12pt, weight: "bold")[Shipped Items]

@@ -8,5 +8,5 @@
 import type { AgedBalanceResponseDto } from './agedBalanceResponseDto';
 
 export type CustomersControllerGetAgedBalances200AllOf = {
-  data?: AgedBalanceResponseDto[];
+  data: AgedBalanceResponseDto[];
 };

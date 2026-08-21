@@ -8,5 +8,5 @@
 import type { ContactResponseDto } from './contactResponseDto';
 
 export type ContactsControllerFindAll200AllOf = {
-  data?: ContactResponseDto[];
+  data: ContactResponseDto[];
 };

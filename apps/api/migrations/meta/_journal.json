@@ -869,6 +869,13 @@
       "when": 1787292766798,
       "tag": "0123_add_bin_contents_cascade_on_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1787319893481,
+      "tag": "0124_add_gl_fiscal_periods",
+      "breakpoints": true
     }
   ]
 }

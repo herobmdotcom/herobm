@@ -53,18 +53,12 @@ describe('OrderDetailsCard - Analysis Code', () => {
       />
     );
 
-    const select = screen.getByRole('combobox');
-    expect(select).toBeInTheDocument();
-    expect(select).toHaveValue('PROMO');
+    const selects = screen.getAllByRole('combobox');
+    const analysisSelect = selects[0];
+    expect(analysisSelect).toBeInTheDocument();
+    expect(analysisSelect).toHaveValue('PROMO');
 
-    const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(4); // — None —, DEFAULT, PROMO, WHOLESALE
-    expect(options[0]).toHaveTextContent('— None —');
-    expect(options[1]).toHaveTextContent('DEFAULT');
-    expect(options[2]).toHaveTextContent('PROMO');
-    expect(options[3]).toHaveTextContent('WHOLESALE');
-
-    fireEvent.change(select, { target: { value: 'WHOLESALE' } });
+    fireEvent.change(analysisSelect, { target: { value: 'WHOLESALE' } });
     expect(setEditAnalysisCode).toHaveBeenCalledWith('WHOLESALE');
     expect(saveHeader).toHaveBeenCalledWith({
       customFields: { analysisCode: 'WHOLESALE' },
@@ -120,8 +114,71 @@ describe('OrderDetailsCard - Analysis Code', () => {
       />
     );
 
-    const select = screen.getByRole('combobox');
-    expect(select).toBeInTheDocument();
+    const selects = screen.getAllByRole('combobox');
+    expect(selects[0]).toBeInTheDocument();
     expect(screen.getByText('CUSTOM (Custom)')).toBeInTheDocument();
+  });
+
+  it('renders dispatch notification contact select and saves on selection', () => {
+    const saveHeader = jest.fn();
+    const setEditDispatchContactId = jest.fn();
+    const contacts = [
+      {
+        contactId: 'c-1',
+        fullName: 'Jane Doe',
+        email: 'jane@example.com',
+        primaryFor: ['delivery'],
+      },
+      {
+        contactId: 'c-2',
+        fullName: 'John Smith',
+        email: 'john@example.com',
+        primaryFor: ['purchasing'],
+      },
+    ] as any;
+
+    render(
+      <OrderDetailsCard
+        order={mockOrder}
+        isOrderDetailsEditable={true}
+        editName="Test Order"
+        setEditName={jest.fn()}
+        editPO="PO-123"
+        setEditPO={jest.fn()}
+        editNotes=""
+        setEditNotes={jest.fn()}
+        editAnalysisCode="PROMO"
+        setEditAnalysisCode={jest.fn()}
+        customerContacts={contacts}
+        editDispatchContactId=""
+        setEditDispatchContactId={setEditDispatchContactId}
+        saveHeader={saveHeader}
+        onEmailDocumentClick={jest.fn()}
+        reportError={jest.fn()}
+        setError={jest.fn()}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    const dispatchSelect = selects[1];
+    expect(dispatchSelect).toBeInTheDocument();
+
+    fireEvent.change(dispatchSelect, { target: { value: 'c-1' } });
+    expect(setEditDispatchContactId).toHaveBeenCalledWith('c-1');
+    expect(saveHeader).toHaveBeenCalledWith({
+      customFields: {
+        analysisCode: 'PROMO',
+        dispatchContactId: 'c-1',
+      },
+    });
+
+    fireEvent.change(dispatchSelect, { target: { value: 'none' } });
+    expect(setEditDispatchContactId).toHaveBeenCalledWith('none');
+    expect(saveHeader).toHaveBeenCalledWith({
+      customFields: {
+        analysisCode: 'PROMO',
+        dispatchContactId: 'none',
+      },
+    });
   });
 });

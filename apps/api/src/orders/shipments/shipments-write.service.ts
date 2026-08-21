@@ -48,6 +48,9 @@ import { EntityType, EventType } from '../../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../../common/audit';
 import { evaluateLifecycleRules } from '../order-lifecycle-rules';
 import { GlService } from '../../gl/gl.service';
+import { CustomersService } from '../../customers/customers.service';
+import { DocumentDispatchService } from '../../notifications/document-dispatch.service';
+import type { JwtUser } from '../../auth/auth-user.decorator';
 import {
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -61,6 +64,8 @@ import {
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_PICK_TRANSITIONS,
+  DATA_SOURCE_CONTEXT,
+  getErrorMessage,
   getValidStates,
 } from '@herobm/shared';
 import type { SalesOrderPickState } from '@herobm/shared';
@@ -89,6 +94,10 @@ export class ShipmentsWriteService {
     private readonly inventoryMovementService: InventoryMovementService,
     private readonly shipmentsCoreService: ShipmentsCoreService,
     private readonly shipmentsStateService: ShipmentsStateService,
+    @Inject(CustomersService)
+    private readonly customersService: CustomersService,
+    @Inject(DocumentDispatchService)
+    private readonly documentDispatchService: DocumentDispatchService,
   ) {}
 
   private readonly logger = new Logger(ShipmentsWriteService.name);
@@ -247,7 +256,101 @@ export class ShipmentsWriteService {
     this.logger.log(
       `Shipment created: ${result.shipmentNumber} for order ${salesOrderId} with ${dto.lines.length} lines by ${actor}`,
     );
+
+    // Asynchronously queue automated dispatch notification email if configured
+    this.dispatchNotificationAsync(
+      salesOrderId,
+      result.shipmentId,
+      actor,
+    ).catch((err) => {
+      this.logger.warn(
+        `Failed to dispatch automated shipping notification for shipment ${result.shipmentId}: ${getErrorMessage(err)}`,
+      );
+    });
+
     return result;
+  }
+
+  private async dispatchNotificationAsync(
+    salesOrderId: string,
+    shipmentId: string,
+    actor: string,
+  ) {
+    try {
+      const [order] = await this.db
+        .select({
+          salesOrderId: salesOrders.salesOrderId,
+          orderNumber: salesOrders.orderNumber,
+          customerId: salesOrders.customerId,
+          customFields: salesOrders.customFields,
+        })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, salesOrderId))
+        .limit(1);
+
+      if (!order || !order.customerId) return;
+
+      const customFields = (order.customFields || {}) as Record<
+        string,
+        unknown
+      >;
+      const dispatchContactId = customFields.dispatchContactId as
+        | string
+        | undefined;
+
+      // If explicitly set to 'none', do not send automated notification
+      if (dispatchContactId === 'none') return;
+
+      const customer = await this.customersService.findOne(order.customerId);
+      const contacts = customer.contacts || [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Customer contact type compatibility
+      let targetContact: any;
+
+      if (dispatchContactId) {
+        targetContact = contacts.find((c) => c.contactId === dispatchContactId);
+      } else {
+        // Default to delivery contact, then purchasing contact, then first with email
+        targetContact =
+          contacts.find((c) => c.primaryFor?.includes('delivery')) ||
+          contacts.find((c) => c.primaryFor?.includes('purchasing')) ||
+          contacts.find((c) => !!c.email);
+      }
+
+      const targetEmail =
+        targetContact?.email?.trim() || customer.emailAddress1?.trim();
+      if (!targetEmail) return;
+
+      const systemUser: JwtUser = {
+        userId: '00000000-0000-0000-0000-000000000000',
+        username: actor || 'system',
+        email: actor || 'system@herobm.com',
+        role: 'system',
+      };
+
+      await this.documentDispatchService.emailDocument(
+        {
+          targetId: shipmentId,
+          hookSlug: 'shipping-docket',
+          contextSlug: DATA_SOURCE_CONTEXT.SHIPMENT,
+          entityType: 'shipment',
+          entityId: shipmentId,
+          emailAddress: targetEmail,
+          subject: `Shipping Docket: ${order.orderNumber}`,
+          body: `Dear Customer,\n\nPlease find attached the shipping docket for your order ${order.orderNumber}.\n\nKind regards,\nDispatch Team`,
+          fallbackFileName: `ShippingDocket-${order.orderNumber}.pdf`,
+        },
+        systemUser,
+      );
+
+      this.logger.log(
+        `Automated dispatch notification queued for shipment ${shipmentId} to ${targetEmail}`,
+      );
+    } catch (err: unknown) {
+      this.logger.warn(
+        `Failed to send automated dispatch notification for shipment ${shipmentId}: ${getErrorMessage(err)}`,
+      );
+    }
   }
 
   /**

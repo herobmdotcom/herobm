@@ -13,6 +13,10 @@ export interface PurchaseOrderLineResponseDto {
   /** @nullable */
   productId?: string | null;
   /** @nullable */
+  productNumber?: string | null;
+  /** @nullable */
+  productType?: string | null;
+  /** @nullable */
   productDescription?: string | null;
   quantity: string;
   pricePerUnit: string;

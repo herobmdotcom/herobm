@@ -9,9 +9,11 @@ import type {
   ChangeStateDto,
   CreatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   PurchaseOrderLineResponseDto,
   PurchaseOrderResponseDto,
+  PurchaseOrdersControllerEmailDocument201,
   PurchaseOrdersControllerFindAll200,
   PurchaseOrdersControllerFindAllParams,
   PurchaseOrdersControllerFindPendingLinesParams,
@@ -488,6 +490,44 @@ export const purchaseOrdersControllerUpdate = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updatePurchaseOrderDto,)
+  }
+);}
+
+
+/**
+ * Generates a Purchase Order PDF and queues it to be emailed to the supplier.
+ * @summary Email Purchase Order Document
+ */
+export type purchaseOrdersControllerEmailDocumentResponse201 = {
+  data: PurchaseOrdersControllerEmailDocument201
+  status: 201
+}
+    
+export type purchaseOrdersControllerEmailDocumentResponseSuccess = (purchaseOrdersControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerEmailDocumentResponse = (purchaseOrdersControllerEmailDocumentResponseSuccess)
+
+export const getPurchaseOrdersControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}/email-document`
+}
+
+export const purchaseOrdersControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<purchaseOrdersControllerEmailDocumentResponse> => {
+  
+  return customFetch<purchaseOrdersControllerEmailDocumentResponse>(getPurchaseOrdersControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
   }
 );}
 

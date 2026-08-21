@@ -8,5 +8,5 @@
 import type { CustomerResponseDto } from './customerResponseDto';
 
 export type CustomersControllerFindAll200AllOf = {
-  data?: CustomerResponseDto[];
+  data: CustomerResponseDto[];
 };

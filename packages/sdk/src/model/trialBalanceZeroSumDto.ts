@@ -6,4 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PaginatedGoodsReceivedLineDtoMeta = { [key: string]: unknown };
+export interface TrialBalanceZeroSumDto {
+  totalDebit: number;
+  totalCredit: number;
+  netDifference: number;
+  isBalanced: boolean;
+}

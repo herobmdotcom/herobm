@@ -8,5 +8,5 @@
 import type { TransferResponseDto } from './transferResponseDto';
 
 export type TransfersControllerFindAll200AllOf = {
-  data?: TransferResponseDto[];
+  data: TransferResponseDto[];
 };

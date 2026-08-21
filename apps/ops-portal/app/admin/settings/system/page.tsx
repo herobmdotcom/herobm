@@ -203,7 +203,8 @@ export default function SystemSettingsPage() {
         { value: 'picking-slip', label: tSettings('macroTypes.pickingSlip') },
         { value: 'shipping-docket', label: tSettings('macroTypes.shippingDocket') },
         { value: 'sales-return-credit', label: tSettings('macroTypes.salesReturnCredit') },
-        { value: 'return-slip', label: tSettings('macroTypes.returnSlip') }
+        { value: 'return-slip', label: tSettings('macroTypes.returnSlip') },
+        { value: 'purchase-order', label: tSettings('macroTypes.purchaseOrder') }
       ],
       width: 200,
     },

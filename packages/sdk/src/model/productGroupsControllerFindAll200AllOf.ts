@@ -8,5 +8,5 @@
 import type { ProductGroupResponseDto } from './productGroupResponseDto';
 
 export type ProductGroupsControllerFindAll200AllOf = {
-  data?: ProductGroupResponseDto[];
+  data: ProductGroupResponseDto[];
 };

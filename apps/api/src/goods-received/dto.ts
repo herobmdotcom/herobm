@@ -126,16 +126,6 @@ export class GoodsReceivedLineResponseDto {
   stateCode?: string;
 }
 
-export class PaginatedGoodsReceivedDto {
-  data!: GoodsReceivedResponseDto[];
-  meta!: Record<string, unknown>;
-}
-
-export class PaginatedGoodsReceivedLineDto {
-  data!: GoodsReceivedLineResponseDto[];
-  meta!: Record<string, unknown>;
-}
-
 export class CancelReceptionResponseDto {
   success!: boolean;
 }

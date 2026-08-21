@@ -6,4 +6,6 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PaginatedJournalEntriesDtoMeta = { [key: string]: unknown };
+export type PurchaseOrdersControllerEmailDocument201 = {
+  success?: boolean;
+};

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:unit": "jest"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

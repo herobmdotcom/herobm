@@ -1990,7 +1990,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
             receiptId: toRcvId,
             transferOrderId: toId,
             receiptNumber: `TO-RCV-${toRcvCounter++}`,
-            stateCode: 'received',
+            stateCode: TRANSFER_ORDER_STATE.RECEIVED,
             receivedBy: 'dock_receiver',
           })
           .onConflictDoNothing();

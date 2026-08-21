@@ -8,4 +8,5 @@
 
 export interface OrderCustomFieldsDto {
   analysisCode?: string;
+  dispatchContactId?: string;
 }

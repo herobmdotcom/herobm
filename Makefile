@@ -452,10 +452,10 @@ TEST_API_TARGET = test:pglite
 TEST_E2E_TARGET = test:e2e
 
 test-api-unit:
-	$(NPM) run $(TEST_API_TARGET) -w apps/api
+	@$(NPX) turbo run test:unit --filter=api
 
 test-portal-unit:
-	$(NPM) run test -w apps/ops-portal
+	@$(NPX) turbo run test:unit --filter=ops-portal
 
 test-api-cov:
 	$(NPM) run test:cov -w apps/api
@@ -530,15 +530,11 @@ build-sdk:
 
 # --- Quality Gates & Verification ---
 
-check-types: build-shared build-sdk build-db-schema
-	@$(NPM) run typecheck -w apps/api
-	@$(NPM) run typecheck -w apps/ops-portal
-	@$(NPM) run typecheck -w apps/worker
+check-types:
+	@$(NPX) turbo run typecheck
 
 check-lint:
-	@$(NPM) run lint -w apps/api
-	@$(NPM) run lint -w apps/ops-portal
-	@$(NPM) run lint:oas -w apps/api
+	@$(NPX) turbo run lint lint:oas
 
 lint-portal:
 	@$(NPM) run lint -w apps/ops-portal
@@ -629,7 +625,8 @@ verify-all: build-all check-all verify-db test-all
 verify-fast: generate-extensions check-schema-drift $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-unit) $(if $(SKIP_DEPS),,test-deps)
 
 # Unit Tests (Fast in-memory & PGlite tests, no live Postgres required)
-test-unit: test-api-unit test-portal-unit
+test-unit:
+	@$(NPX) turbo run test:unit
 
 # Tier 2: Subsystem Verification Gates
 verify-api: build-shared build-db-schema
@@ -681,7 +678,7 @@ test-data:
 test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
-	npm run build -w apps/api -w apps/ops-portal -w apps/worker -w packages/shared -w packages/db-schema -w packages/sdk --if-present
+	@$(NPX) turbo run build
 	node scripts/run-on-enabled-extensions.mjs build
 
 clean-dev: clean-build

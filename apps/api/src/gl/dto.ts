@@ -432,16 +432,6 @@ export class MatchConfirmedResponseDto {
   success: boolean;
 }
 
-export class PaginatedJournalEntriesDto {
-  data!: JournalEntryResponseDto[];
-  meta!: Record<string, unknown>;
-}
-
-export class PaginatedGeneralLedgerDto {
-  data!: GeneralLedgerResponseDto[];
-  meta!: Record<string, unknown>;
-}
-
 export class RunFxRevaluationDto {
   @IsString()
   @IsNotEmpty()
@@ -469,4 +459,91 @@ export class FxRevalCommitResponseDto {
   @ApiProperty() success!: boolean;
   @ApiProperty() revaluationDate!: string;
   @ApiProperty() entriesGenerated!: number;
+}
+
+// ---------------------------------------------------------------------------
+// Fiscal Period Governance DTOs
+// ---------------------------------------------------------------------------
+
+export class FiscalPeriodResponseDto {
+  @ApiProperty() periodId!: string;
+  @ApiProperty() periodName!: string;
+  @ApiProperty() fiscalYear!: number;
+  @ApiProperty() periodNumber!: number;
+  @ApiProperty() startDate!: string;
+  @ApiProperty() endDate!: string;
+  @ApiProperty({ enum: ['open', 'soft_locked', 'hard_closed'] })
+  status!: 'open' | 'soft_locked' | 'hard_closed';
+  @ApiPropertyOptional() lockedBy?: string | null;
+  @ApiPropertyOptional() lockedAt?: string | null;
+  @ApiPropertyOptional() closedBy?: string | null;
+  @ApiPropertyOptional() closedAt?: string | null;
+  @ApiPropertyOptional() notes?: string | null;
+  @ApiPropertyOptional() createdOn?: string | null;
+  @ApiPropertyOptional() modifiedOn?: string | null;
+}
+
+export class GenerateFiscalPeriodsDto {
+  @ApiProperty({ description: 'Fiscal year e.g. 2026', example: 2026 })
+  @IsNumber()
+  fiscalYear!: number;
+}
+
+export class UpdateFiscalPeriodStatusDto {
+  @ApiProperty({ enum: ['open', 'soft_locked', 'hard_closed'] })
+  @IsEnum(['open', 'soft_locked', 'hard_closed'])
+  status!: 'open' | 'soft_locked' | 'hard_closed';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class QueryFiscalPeriodsDto {
+  @ApiPropertyOptional({ example: 2026 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  fiscalYear?: number;
+
+  @ApiPropertyOptional({ enum: ['open', 'soft_locked', 'hard_closed'] })
+  @IsOptional()
+  @IsEnum(['open', 'soft_locked', 'hard_closed'])
+  status?: 'open' | 'soft_locked' | 'hard_closed';
+}
+
+// ---------------------------------------------------------------------------
+// Continuous Subledger Reconciliation DTOs
+// ---------------------------------------------------------------------------
+
+export class TrialBalanceZeroSumDto {
+  @ApiProperty() totalDebit!: number;
+  @ApiProperty() totalCredit!: number;
+  @ApiProperty() netDifference!: number;
+  @ApiProperty() isBalanced!: boolean;
+}
+
+export class SubledgerParityItemDto {
+  @ApiProperty() controlAccountCode!: string;
+  @ApiProperty() controlAccountName!: string;
+  @ApiProperty() subledgerBalance!: number;
+  @ApiProperty() glBalance!: number;
+  @ApiProperty() drift!: number;
+  @ApiProperty() isMatched!: boolean;
+}
+
+export class SubledgerReconciliationResponseDto {
+  @ApiProperty() timestamp!: string;
+  @ApiProperty() isOverallBalanced!: boolean;
+  @ApiProperty({ type: TrialBalanceZeroSumDto })
+  trialBalanceZeroSum!: TrialBalanceZeroSumDto;
+  @ApiProperty({ type: SubledgerParityItemDto })
+  accountsReceivable!: SubledgerParityItemDto;
+  @ApiProperty({ type: SubledgerParityItemDto })
+  accountsPayable!: SubledgerParityItemDto;
+  @ApiProperty({ type: SubledgerParityItemDto })
+  goodsReceivedNotInvoiced!: SubledgerParityItemDto;
+  @ApiProperty({ type: SubledgerParityItemDto })
+  perpetualInventory!: SubledgerParityItemDto;
 }
