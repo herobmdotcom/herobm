@@ -109,6 +109,7 @@ tools/license-keys.js
 
 # Generated
 apps/ops-portal/lib/generated/
+docs/technical/schema_reference.md
 
 # Persistent Storage / Uploads
 /data/storage/*
