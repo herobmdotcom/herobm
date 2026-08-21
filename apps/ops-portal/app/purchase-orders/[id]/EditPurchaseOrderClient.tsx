@@ -294,11 +294,11 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     { id: 'details-section', label: tPurchase('tabs.overview') },
     { id: 'lines-section', label: tPurchase('tabs.lines') },
     { id: 'allocations-section', label: tPurchase('tabs.allocations') },
-    ...(order?.createdBy !== 'abm-import' ? [{ id: 'receptions-section', label: tPurchase('tabs.receptions') }] : []),
+    { id: 'receptions-section', label: tPurchase('tabs.receptions') },
     { id: 'returns-section', label: tPurchase('tabs.returns') },
     { id: 'invoices-section', label: tPurchase('tabs.invoices') },
     { id: 'activity-section', label: tPurchase('tabs.activity') },
-  ], [order?.createdBy, tPurchase]);
+  ], [tPurchase]);
 
   if (loading) {
     return (
@@ -552,7 +552,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
           onAllocationsChanged={loadAllocations} 
         />
 
-        {order.createdBy !== 'abm-import' && <ReceptionsSection orderId={id} />}
+        <ReceptionsSection orderId={id} />
 
         <ReturnsSection
           orderId={id}
