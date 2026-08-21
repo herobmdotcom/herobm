@@ -69,9 +69,13 @@ export class GoodsReceivedCoreService {
       );
     }
 
-    if (days && days > 0) {
+    if (String(days).toLowerCase() === 'mtd') {
       conditions.push(
-        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${days}`,
+        sql`date_trunc('month', ${goodsReceived.createdOn}) = date_trunc('month', CURRENT_DATE)`,
+      );
+    } else if (Number(days) > 0) {
+      conditions.push(
+        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${Number(days)}`,
       );
     }
 
@@ -286,9 +290,13 @@ export class GoodsReceivedCoreService {
       );
     }
 
-    if (days && days > 0) {
+    if (String(days).toLowerCase() === 'mtd') {
       conditions.push(
-        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${days}`,
+        sql`date_trunc('month', ${goodsReceived.createdOn}) = date_trunc('month', CURRENT_DATE)`,
+      );
+    } else if (Number(days) > 0) {
+      conditions.push(
+        sql`${goodsReceived.createdOn} >= now() - interval '1 day' * ${Number(days)}`,
       );
     }
 

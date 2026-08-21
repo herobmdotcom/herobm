@@ -153,6 +153,29 @@ describe('OrdersService', () => {
       const result = await service.findAll({ limit: 200_000 });
       expect(result.limit).toBe(100_000);
     });
+
+    it('should filter by month to date (mtd)', async () => {
+      const recentOrderId = '00000000-0000-4000-8000-000000000099';
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: recentOrderId,
+        orderNumber: 'ORD-MTD-0001',
+        name: 'MTD Test Order',
+        customerId: ACCOUNT_ID,
+        customerOrderNumber: 'PO-MTD',
+        stateCode: SALES_ORDER_STATE.DRAFT,
+        source: 'app',
+        createdBy: 'admin',
+        createdOn: new Date(),
+        currencyCode: 'EUR',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+      });
+
+      const result = await service.findAll({ days: 'mtd' });
+      expect(result.data.some((o) => o.id === recentOrderId)).toBe(true);
+    });
   });
 
   describe('getSalesPerformanceByCustomer', () => {

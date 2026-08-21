@@ -43,26 +43,10 @@ const db = drizzle(pgClient, { schema: { herobmCore, outbox } });
 
 // Setup Mock Client (Removed)
 
+import { getBullMQConnectionOptions } from './redis.config';
+
 // Setup BullMQ
-const connection = {
-  host: REDIS_HOST,
-  port: 6379,
-  password: REDIS_PASSWORD,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-  disableClientInfo: true,
-  keepAlive: 30000,
-  connectTimeout: 10000,
-  retryStrategy: (times: number) => {
-    return Math.max(Math.min(Math.exp(times), 20000), 1000);
-  },
-  reconnectOnError: (err: Error) => {
-    const targetErrors = ['READONLY', 'ETIMEDOUT', 'ECONNRESET', 'EPIPE'];
-    return targetErrors.some(
-      (target) => err.message.includes(target) || (err as any).code === target
-    );
-  },
-};
+const connection = getBullMQConnectionOptions(REDIS_HOST, 6379, REDIS_PASSWORD);
 
 const syncQueue = new Queue('external-sync', { connection });
 syncQueue.on('error', (err) => {
@@ -172,12 +156,27 @@ maintenanceWorker.on('failed', (job, err) => {
 
 // Start Express for Health & Metrics
 const app = express();
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const pgCheck = await pgClient`SELECT 1`;
+    const redisClient = await syncQueue.client;
+    const redisPing = await redisClient.ping();
+    const isHealthy = Boolean(pgCheck && redisPing === 'PONG');
+    res.status(isHealthy ? 200 : 503).json({
+      status: isHealthy ? 'ok' : 'degraded',
+      postgres: pgCheck ? 'healthy' : 'unhealthy',
+      redis: redisPing === 'PONG' ? 'healthy' : 'unhealthy',
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(503).json({
+      status: 'degraded',
+      error: err.message,
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 app.get('/metrics', (req, res) => {
   res.json({

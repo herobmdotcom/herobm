@@ -495,9 +495,13 @@ export class OrdersService implements OnModuleInit {
       );
     }
 
-    if (days && days > 0) {
+    if (String(days).toLowerCase() === 'mtd') {
       conditions.push(
-        sql`${salesOrders.createdOn} >= NOW() - INTERVAL '1 day' * ${days}`,
+        sql`${salesOrders.createdOn} >= DATE_TRUNC('month', NOW())`,
+      );
+    } else if (Number(days) > 0) {
+      conditions.push(
+        sql`${salesOrders.createdOn} >= NOW() - INTERVAL '1 day' * ${Number(days)}`,
       );
     }
 

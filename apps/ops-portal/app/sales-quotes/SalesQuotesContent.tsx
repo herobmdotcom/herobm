@@ -104,6 +104,7 @@ export default function SalesQuotesContent() {
           onChange={(e) => setDays(e.target.value)}
           className="input text-sm min-w-[120px]"
         >
+          <option value="mtd">{tCommon('filters.monthToDate')}</option>
           <option value="30">{tCommon('filters.last30Days')}</option>
           <option value="90">{tCommon('filters.last90Days')}</option>
           <option value="365">{tCommon('filters.last1Year')}</option>

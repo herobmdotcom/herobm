@@ -1183,7 +1183,8 @@
       "allTime": "All Time",
       "last1Year": "Last 1 Year",
       "last30Days": "Last 30 Days",
-      "last90Days": "Last 90 Days"
+      "last90Days": "Last 90 Days",
+      "monthToDate": "Month to Date"
     },
     "goBackHome": "Go Back Home",
     "grid": {

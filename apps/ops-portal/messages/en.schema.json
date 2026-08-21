@@ -629,6 +629,7 @@
   "common.filters.last1Year",
   "common.filters.last30Days",
   "common.filters.last90Days",
+  "common.filters.monthToDate",
   "common.grid",
   "common.grid.columns",
   "common.grid.export",

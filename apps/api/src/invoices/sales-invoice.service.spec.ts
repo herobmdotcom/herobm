@@ -519,5 +519,13 @@ describe('SalesInvoiceService', () => {
       expect(invoice?.earlyPaymentDiscount).toBe('2.5');
       expect(invoice?.earlyPaymentDiscountDays).toBe(14);
     });
+
+    it('should filter active invoices by month to date (mtd)', async () => {
+      const result = await service.findActiveInvoices({ days: 'mtd' });
+      const invoice = result.data.find(
+        (i: any) => i.invoiceId === '00000000-0000-4000-8000-000000000101',
+      );
+      expect(invoice).toBeDefined();
+    });
   });
 });

@@ -51,8 +51,13 @@ export class PaginationQuery {
   vendorId?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : undefined))
-  days?: number;
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'string' && value.toLowerCase() === 'mtd') return 'mtd';
+    const num = Number(value);
+    return isNaN(num) ? value : num;
+  })
+  days?: number | string;
 
   /** Optional filter by purchase order ID */
   @IsOptional()
