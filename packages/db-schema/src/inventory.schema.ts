@@ -160,10 +160,10 @@ export const binContents = herobmCore.table(
     binContentId: uuid('bin_content_id').primaryKey().defaultRandom(),
     binId: uuid('bin_id')
       .notNull()
-      .references(() => bins.binId),
+      .references(() => bins.binId, { onDelete: 'cascade' }),
     productId: uuid('product_id')
       .notNull()
-      .references(() => products.productId),
+      .references(() => products.productId, { onDelete: 'cascade' }),
     actualQuantity: numeric('actual_quantity').notNull(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },

@@ -53,7 +53,8 @@ export class PaginationQuery {
   @IsOptional()
   @Transform(({ value }) => {
     if (value === undefined || value === null || value === '') return undefined;
-    if (typeof value === 'string' && value.toLowerCase() === 'mtd') return 'mtd';
+    if (typeof value === 'string' && value.toLowerCase() === 'mtd')
+      return 'mtd';
     const num = Number(value);
     return isNaN(num) ? value : num;
   })

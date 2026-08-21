@@ -17,6 +17,7 @@ import {
   purchaseOrders,
   inventoryLedger,
   appSettings,
+  productDefaultBins,
 } from '@herobm/db-schema';
 import {
   CreateLocationDto,
@@ -286,6 +287,18 @@ export class LocationsService {
         );
       }
 
+      // 2. Check for inventory ledger entries
+      const [ledgerCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.zoneId, id));
+
+      if (Number(ledgerCount.count) > 0) {
+        throw new BadRequestException(
+          `Cannot delete zone with ${Number(ledgerCount.count)} inventory ledger entries`,
+        );
+      }
+
       for (const bin of binList) {
         const stockCount = await tx
           .select({ count: sql<number>`count(*)` })
@@ -415,7 +428,7 @@ export class LocationsService {
       const [bin] = await tx.select().from(bins).where(eq(bins.binId, id));
       if (!bin) throw new NotFoundException(`Bin ${id} not found`);
 
-      // 1. Check for stock (bin_contents)
+      // 1. Check for active stock (bin_contents)
       const stockCount = await tx
         .select({ count: sql`count(*)` })
         .from(binContents)
@@ -424,6 +437,30 @@ export class LocationsService {
       if (Number(stockCount[0].count) > 0) {
         throw new BadRequestException(
           `Cannot delete bin containing ${Number(stockCount[0].count)} active stock records`,
+        );
+      }
+
+      // 2. Check for inventory ledger entries
+      const [ledgerCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.binId, id));
+
+      if (Number(ledgerCount.count) > 0) {
+        throw new BadRequestException(
+          `Cannot delete bin with ${Number(ledgerCount.count)} inventory ledger entries`,
+        );
+      }
+
+      // 3. Check for default bin assignments
+      const [defaultBinCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(productDefaultBins)
+        .where(eq(productDefaultBins.binId, id));
+
+      if (Number(defaultBinCount.count) > 0) {
+        throw new BadRequestException(
+          `Cannot delete bin that is set as default bin for ${Number(defaultBinCount.count)} product(s)`,
         );
       }
 

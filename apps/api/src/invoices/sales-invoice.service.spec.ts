@@ -521,6 +521,35 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should filter active invoices by month to date (mtd)', async () => {
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: '00000000-0000-4000-8000-000000000100',
+        orderNumber: 'SO-TEST-MTD',
+        customerId: CUSTOMER_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        currencyCode: 'AUD',
+        stateCode: SALES_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: '00000000-0000-4000-8000-000000000101',
+        invoiceNumber: 'INV-TEST-MTD',
+        salesOrderId: '00000000-0000-4000-8000-000000000100',
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.DRAFT,
+        totalAmount: '100.00',
+        outstandingAmount: '100.00',
+        taxAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        exchangeRate: '1',
+        createdOn: new Date(),
+        createdBy: 'system',
+      });
+
       const result = await service.findActiveInvoices({ days: 'mtd' });
       const invoice = result.data.find(
         (i: any) => i.invoiceId === '00000000-0000-4000-8000-000000000101',
