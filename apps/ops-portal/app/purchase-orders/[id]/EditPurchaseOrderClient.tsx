@@ -14,6 +14,8 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { useAuth } from '@/components/shared/AuthGate';
+import { SystemResource, hasPermission } from '@herobm/shared';
 import PageNav from '@/components/shared/PageNav';
 import { formatLocalDate } from '@/lib/date';
 import LocationSelect from '@/components/shared/LocationSelect';
@@ -45,10 +47,13 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
+  const tSales = useTranslations('salesOrders');
   const tToast = useTranslations('toast');
 
-  const o = usePurchaseOrder(id);
+  const { permissions } = useAuth();
+  const canArchive = hasPermission(permissions, SystemResource.PURCHASE_ORDERS, 'archive');
 
+  const o = usePurchaseOrder(id);
 
   const { order, loading, error, saving, copying, latestAutoTransition,
     isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
@@ -57,7 +62,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     editNotes, setEditNotes, editLocationId, setEditLocationId, headerDirty,
     taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
     invoices, setInvoicing,
-    clearError, setError, saveHeader, changeState, copyOrder,
+    clearError, setError, saveHeader, changeState, archivePurchaseOrder, unarchivePurchaseOrder, copyOrder,
     updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine,
     loadOrder, loadInvoices, loadAllocations, allocations, allocationsLoading,
   } = o;
@@ -347,7 +352,39 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
             }
           />
         }
+        footerActions={
+          canArchive && order ? (
+            order.stateCode === PURCHASE_ORDER_STATE.ARCHIVED ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={unarchivePurchaseOrder}
+                disabled={saving}
+              >
+                {tSales('buttons.unarchive')}
+              </Button>
+            ) : (order.stateCode === PURCHASE_ORDER_STATE.RECEIVED || order.stateCode === PURCHASE_ORDER_STATE.INVOICED || order.stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT || order.stateCode === PURCHASE_ORDER_STATE.CANCELLED) ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-600"
+                onClick={archivePurchaseOrder}
+                disabled={saving}
+              >
+                {tSales('buttons.archive')}
+              </Button>
+            ) : undefined
+          ) : undefined
+        }
       >
+        {order.stateCode === PURCHASE_ORDER_STATE.ARCHIVED && (
+          <div className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700">
+            <span className="text-xl">📦</span>
+            <div>
+              <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
+            </div>
+          </div>
+        )}
       <div className="flex flex-col gap-3">
 
       {error && (

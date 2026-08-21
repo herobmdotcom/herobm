@@ -215,14 +215,14 @@ describe('useOrder — computed values', () => {
         expect(result.current.allowedTransitions).toEqual(['quoted', 'cancelled']);
     });
 
-    it('allowedTransitions is empty for terminal states', async () => {
+    it('allowedTransitions contains archived for invoiced state', async () => {
         const order = makeOrder({ stateCode: SALES_ORDER_STATE.INVOICED });
         setupMocks(order);
 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
-        expect(result.current.allowedTransitions).toEqual([]);
+        expect(result.current.allowedTransitions).toEqual([SALES_ORDER_STATE.ARCHIVED]);
     });
 });
 

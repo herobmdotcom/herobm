@@ -12,6 +12,7 @@ import {
   backorders,
   purchaseInvoices,
   purchaseInvoiceLines,
+  procurementEvents,
 } from '@herobm/db-schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
@@ -204,10 +205,12 @@ export class PurchaseOrdersStateService {
 
     if (
       existing.stateCode !== PURCHASE_ORDER_STATE.RECEIVED &&
+      existing.stateCode !== PURCHASE_ORDER_STATE.INVOICED &&
+      existing.stateCode !== PURCHASE_ORDER_STATE.CLOSED_SHORT &&
       existing.stateCode !== PURCHASE_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
-        `Purchase Order must be 'received' or 'cancelled' to be archived (current state: '${existing.stateCode}')`,
+        `Purchase Order must be '${PURCHASE_ORDER_STATE.RECEIVED}', '${PURCHASE_ORDER_STATE.INVOICED}', '${PURCHASE_ORDER_STATE.CLOSED_SHORT}', or '${PURCHASE_ORDER_STATE.CANCELLED}' to be archived (current state: '${existing.stateCode}')`,
       );
     }
 
@@ -225,9 +228,22 @@ export class PurchaseOrdersStateService {
       throw new BadRequestException(`Purchase Order is not archived`);
     }
 
+    const lastEvent = await this.db
+      .select()
+      .from(procurementEvents)
+      .where(
+        sql`${procurementEvents.entityId} = ${id} AND ${procurementEvents.eventType} = ${EventType.ARCHIVED}`,
+      )
+      .orderBy(sql`${procurementEvents.createdOn} DESC`)
+      .limit(1);
+
+    const previousState =
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
+      PURCHASE_ORDER_STATE.CANCELLED;
+
     return await this.changePurchaseOrderState(
       id,
-      PURCHASE_ORDER_STATE.CANCELLED,
+      previousState as PurchaseOrderState,
       actor,
     );
   }

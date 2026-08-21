@@ -103,7 +103,7 @@ export function usePurchaseOrder(id: string) {
       (l) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
-      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.INVOICED].some(s => s === state))
+      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.ARCHIVED].some(s => s === state))
       .filter(state => {
         if (state === PURCHASE_ORDER_STATE.CANCELLED && anyReceived) return false;
         if (state === PURCHASE_ORDER_STATE.CLOSED_SHORT && !anyReceived) return false;
@@ -279,6 +279,33 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
+  const archivePurchaseOrder = async () => {
+    if (!confirm(tConfirm('archiveOrder'))) return;
+    setSaving(true);
+    try {
+      await api.purchaseOrdersControllerArchive(id, {});
+      toast.success(tToast('orderArchived'));
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToArchive'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const unarchivePurchaseOrder = async () => {
+    setSaving(true);
+    try {
+      await api.purchaseOrdersControllerUnarchive(id, {});
+      toast.success(tToast('orderUnarchived'));
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToUnarchive'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const copyOrder = async () => {
     if (!order) return;
     setCopying(true);
@@ -442,6 +469,8 @@ export function usePurchaseOrder(id: string) {
     clearError,
     saveHeader,
     changeState,
+    archivePurchaseOrder,
+    unarchivePurchaseOrder,
     copyOrder,
     updateLine,
     updateLineFields,

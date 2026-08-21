@@ -16,6 +16,11 @@ p, viewer, settings, read, allow
 p, viewer, report, read, allow
 p, viewer, payments, read, allow
 p, viewer, external_api, read, allow
+p, viewer, crm, read, allow
+p, viewer, sales-returns, read, allow
+p, viewer, purchase-returns, read, allow
+p, viewer, work-orders, read, allow
+p, viewer, credit-control, read, allow
 
 # admin — full access to everything
 p, admin, report, write, allow
@@ -27,6 +32,11 @@ p, admin, suppliers, write, allow
 p, admin, receptions, write, allow
 p, admin, goods-received, write, allow
 p, admin, inventory, write, allow
+p, admin, crm, write, allow
+p, admin, sales-returns, write, allow
+p, admin, purchase-returns, write, allow
+p, admin, work-orders, write, allow
+p, admin, credit-control, write, allow
 
 # admin — full access to everything
 p, admin, users, read, allow
@@ -39,6 +49,11 @@ p, admin, suppliers, archive, allow
 p, admin, receptions, archive, allow
 p, admin, goods-received, archive, allow
 p, admin, inventory, archive, allow
+p, admin, crm, archive, allow
+p, admin, crm, delete, allow
+p, admin, sales-returns, archive, allow
+p, admin, purchase-returns, archive, allow
+p, admin, work-orders, archive, allow
 p, admin, settings, write, allow
 p, admin, gl, read, allow
 p, admin, gl, write, allow

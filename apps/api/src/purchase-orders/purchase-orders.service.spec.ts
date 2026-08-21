@@ -367,4 +367,67 @@ describe('PurchaseOrdersService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('archive and unarchive', () => {
+    it('should archive a cancelled purchase order and unarchive back to cancelled', async () => {
+      const poId = '00000000-0000-4000-8000-000000000104';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-ARCHIVE-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.CANCELLED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      const archived = await service.archive(poId, 'test-user');
+      expect(archived.stateCode).toBe(PURCHASE_ORDER_STATE.ARCHIVED);
+
+      const unarchived = await service.unarchive(poId, 'test-user');
+      expect(unarchived.stateCode).toBe(PURCHASE_ORDER_STATE.CANCELLED);
+    });
+
+    it('should archive an invoiced purchase order and unarchive back to invoiced', async () => {
+      const poId = '00000000-0000-4000-8000-000000000105';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-ARCHIVE-INV-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.INVOICED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      const archived = await service.archive(poId, 'test-user');
+      expect(archived.stateCode).toBe(PURCHASE_ORDER_STATE.ARCHIVED);
+
+      const unarchived = await service.unarchive(poId, 'test-user');
+      expect(unarchived.stateCode).toBe(PURCHASE_ORDER_STATE.INVOICED);
+    });
+
+    it('should throw BadRequestException if archiving a draft PO', async () => {
+      const poId = '00000000-0000-4000-8000-000000000106';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-ARCHIVE-DRAFT-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      await expect(service.archive(poId, 'test-user')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
 });

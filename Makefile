@@ -64,8 +64,8 @@ help:
 ifeq ($(OS),Windows_NT)
   ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
   COMPOSE_OVERRIDE =
-  DBT ?= $(shell if exist "$(CURDIR)\.venv\Scripts\dbt.exe" (echo $(CURDIR)/.venv/Scripts/dbt) else (echo dbt))
-  VENV_PYTHON ?= $(shell if exist "$(CURDIR)\.venv\Scripts\python.exe" (echo $(CURDIR)/.venv/Scripts/python) else (echo python))
+  DBT := $(shell if exist "$(CURDIR)\.venv\Scripts\dbt.exe" (echo $(CURDIR)/.venv/Scripts/dbt) else (echo dbt))
+  VENV_PYTHON := $(shell if exist "$(CURDIR)\.venv\Scripts\python.exe" (echo $(CURDIR)/.venv/Scripts/python) else (echo python))
   PYTHON_CMD = python
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = node scripts/dev-local.mjs
@@ -78,12 +78,14 @@ ifeq ($(OS),Windows_NT)
   NODE ?= node
   NPX ?= npx
   NPM ?= npm
+  GIT_VERSION := $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>nul)
+  BUILD_TIMESTAMP := $(shell node -e "console.log(new Date().toISOString().replace(/\.[0-9]{3}Z$$/, 'Z'))" 2>nul)
 else
   export PATH := $(PATH):/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE =
-  DBT ?= $(shell if [ -x $(CURDIR)/.venv/bin/dbt ]; then echo "$(CURDIR)/.venv/bin/dbt"; else echo "dbt"; fi)
-  VENV_PYTHON ?= $(shell if [ -x $(CURDIR)/.venv/bin/python ]; then echo "$(CURDIR)/.venv/bin/python"; else echo "python3"; fi)
+  DBT := $(shell if [ -x $(CURDIR)/.venv/bin/dbt ]; then echo "$(CURDIR)/.venv/bin/dbt"; else echo "dbt"; fi)
+  VENV_PYTHON := $(shell if [ -x $(CURDIR)/.venv/bin/python ]; then echo "$(CURDIR)/.venv/bin/python"; else echo "python3"; fi)
   NODE ?= $(shell which node 2>/dev/null || if [ -x /opt/homebrew/bin/node ]; then echo "/opt/homebrew/bin/node"; else echo "node"; fi)
   NPX ?= $(shell which npx 2>/dev/null || if [ -x /opt/homebrew/bin/npx ]; then echo "/opt/homebrew/bin/npx"; else echo "npx"; fi)
   NPM ?= $(shell which npm 2>/dev/null || if [ -x /opt/homebrew/bin/npm ]; then echo "/opt/homebrew/bin/npm"; else echo "npm"; fi)
@@ -94,8 +96,10 @@ else
   CLEAN_BUILD_CMD = $(NODE) scripts/clean-build.mjs
   TEST_PIPELINE_CMD = $(NODE) scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
-  COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
+  COMPOSE_CMD := $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
+  GIT_VERSION := $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)
+  BUILD_TIMESTAMP := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)
 endif
 export BIND_IP
 
@@ -420,9 +424,6 @@ rebuild-worker:
 	-podman rm -f herobm-outbox
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-outbox
 	$(COMPOSE_CMD) ps
-
-GIT_VERSION ?= $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)
-BUILD_TIMESTAMP ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)
 
 build-images:
 	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.0.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .

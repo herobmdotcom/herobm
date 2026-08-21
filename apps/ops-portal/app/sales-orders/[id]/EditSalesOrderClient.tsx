@@ -155,6 +155,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
 
     const { permissions } = useAuth();
     const canManageCredit = hasPermission(permissions, SystemResource.CREDIT_CONTROL, 'write');
+    const canArchive = hasPermission(permissions, SystemResource.SALES_ORDERS, 'archive');
     const [showCreditOverrideModal, setShowCreditOverrideModal] = useState(false);
 
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
@@ -341,7 +342,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
 
 
                                 {[...allowedTransitions]
-                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED && state !== SALES_ORDER_STATE.INVOICED)
+                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED && state !== SALES_ORDER_STATE.INVOICED && state !== SALES_ORDER_STATE.ARCHIVED)
                                     .sort((a, b) => {
                                         const aBack = isBackTransition(order.stateCode, a);
                                         const bBack = isBackTransition(order.stateCode, b);
@@ -370,6 +371,30 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                             </>
                         }
                     />
+                }
+                footerActions={
+                    canArchive && order ? (
+                        order.stateCode === SALES_ORDER_STATE.ARCHIVED ? (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={unarchiveOrder}
+                                disabled={saving}
+                            >
+                                {tSales('buttons.unarchive')}
+                            </Button>
+                        ) : (order.stateCode === SALES_ORDER_STATE.INVOICED || order.stateCode === SALES_ORDER_STATE.CANCELLED) ? (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-600"
+                                onClick={archiveOrder}
+                                disabled={saving}
+                            >
+                                {tSales('buttons.archive')}
+                            </Button>
+                        ) : undefined
+                    ) : undefined
                 }
             >
 
