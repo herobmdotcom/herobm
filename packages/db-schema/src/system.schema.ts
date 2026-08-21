@@ -384,7 +384,6 @@ export const pipelineJobs = herobmCore.table('_pipeline_jobs', {
   type: text('type').notNull(),
   status: text('status').notNull(),
   configJson: jsonb('config_json').$type<{
-    importInventoryFromLocations?: boolean;
     legacyInvoicesPaidBeforeDate?: string;
   }>(),
   progressJson: jsonb('progress_json'),

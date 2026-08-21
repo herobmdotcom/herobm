@@ -32,7 +32,6 @@ export default function AdminImportPage() {
     defaultLocationCode: '',
     baseCurrency: 'AUD',
     defaultTaxCategoryCode: '',
-    importInventoryFromLocations: false,
     enableLegacyInvoicesRule: false,
     legacyInvoicesPaidBeforeDate: ''
   });
@@ -43,7 +42,6 @@ export default function AdminImportPage() {
   const [completedTables, setCompletedTables] = useState<string[] | null>(null);
   const [abmLocations, setAbmLocations] = useState<{ code: string; name: string }[]>([]);
   const [abmTaxCategories, setAbmTaxCategories] = useState<{ code: string; name: string; rate: number }[]>([]);
-  const [hasLocationInventory, setHasLocationInventory] = useState(false);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   const [stopping, setStopping] = useState(false);
   
@@ -137,13 +135,6 @@ export default function AdminImportPage() {
           setConfig(prev => ({ ...prev, defaultTaxCategoryCode: highestTax.code }));
         }
         
-        if (preview?.hasLocationInventory) {
-          setHasLocationInventory(true);
-        } else {
-          setHasLocationInventory(false);
-          setConfig(prev => ({ ...prev, importInventoryFromLocations: false }));
-        }
-
         setStep('preview');
       }
     } catch (err: unknown) {
@@ -169,7 +160,6 @@ export default function AdminImportPage() {
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
-        importInventoryFromLocations: config.importInventoryFromLocations,
         legacyInvoicesPaidBeforeDate: config.enableLegacyInvoicesRule ? config.legacyInvoicesPaidBeforeDate : '',
       };
 
@@ -385,21 +375,6 @@ export default function AdminImportPage() {
                   {abmTaxCategories.map(tax => (
                     <option key={tax.code} value={tax.code}>{t('taxFormat', { name: tax.name, rate: tax.rate, code: tax.code })}</option>
                   ))}
-                </select>
-              </div>
-            )}
-
-            {hasLocationInventory && (
-              <div className="col-span-2 mt-2">
-                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.inventorySourceTitle')}</h2>
-                <p className="text-sm text-slate-500 mb-4">{t('options.inventorySourceDesc')}</p>
-                <select
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
-                  value={config.importInventoryFromLocations ? 'true' : 'false'}
-                  onChange={(e) => setConfig({ ...config, importInventoryFromLocations: e.target.value === 'true' })}
-                >
-                  <option value="false">{t('options.sourceBinTracking')}</option>
-                  <option value="true">{t('options.sourceLocationSummaries')}</option>
                 </select>
               </div>
             )}

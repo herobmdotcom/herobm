@@ -800,7 +800,6 @@ export class SetupService {
       type: dto.source || 'abm',
       status: 'running',
       configJson: {
-        importInventoryFromLocations: dto.importInventoryFromLocations ?? false,
         legacyInvoicesPaidBeforeDate: dto.legacyInvoicesPaidBeforeDate,
       },
       progressJson: [

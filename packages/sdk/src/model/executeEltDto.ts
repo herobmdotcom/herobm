@@ -18,5 +18,4 @@ export interface ExecuteEltDto {
   defaultLocationCode?: string;
   baseCurrency?: string;
   defaultTaxCategoryCode?: string;
-  importInventoryFromLocations?: boolean;
 }
