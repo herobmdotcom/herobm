@@ -89,6 +89,8 @@ Makefile.test
 .env.*
 .setup-token
 .startup_choice
+.test_target
+.test_single
 
 # PGlite Snapshots
 .pglite-snapshot.bin

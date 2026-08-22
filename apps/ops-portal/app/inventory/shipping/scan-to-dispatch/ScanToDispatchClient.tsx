@@ -436,20 +436,15 @@ export default function ScanToDispatchClient() {
                         variant="primary"
                         size="default"
                         onClick={() => handleDispatchOrder(order.orderId)}
-                        disabled={isDispatching || !order.canShip}
+                        disabled={!order.canShip}
+                        loading={isDispatching}
                         className="shrink-0 px-5 py-2 text-sm"
                       >
-                        {isDispatching ? (
-                          <span className="flex items-center gap-2">
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                            <span className="material-symbols-outlined text-base animate-spin">refresh</span>
-                            {t('dispatching')}
-                          </span>
-                        ) : order.isAllAvailablePicked ? (
-                          t('shipOrder')
-                        ) : (
-                          t('shipPartial')
-                        )}
+                        {isDispatching
+                          ? t('dispatching')
+                          : order.isAllAvailablePicked
+                          ? t('shipOrder')
+                          : t('shipPartial')}
                       </Button>
                     </div>
                   </div>

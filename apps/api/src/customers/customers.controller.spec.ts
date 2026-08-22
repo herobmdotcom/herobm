@@ -117,5 +117,39 @@ describe('CustomersController', () => {
         expect.objectContaining({ userId: 'user-1' }),
       );
     });
+
+    it('should queue customer overdue notice document for email dispatch', async () => {
+      const dto = {
+        emailAddress: 'billing@acmecorp.com',
+        subject: 'Overdue Notice: CUST-001',
+        body: 'Please find attached your overdue notice.',
+        hookSlug: 'customer-overdue-notice',
+        contextSlug: 'customer-overdue-notice',
+      };
+
+      const result = await controller.emailDocument('C001', dto, {
+        userId: 'user-1',
+        username: 'user-1',
+        email: 'user1@test.com',
+        role: 'admin',
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
+        {
+          targetId: 'C001',
+          hookSlug: 'customer-overdue-notice',
+          contextSlug: 'customer-overdue-notice',
+          entityType: 'customer',
+          entityId: 'C001',
+          emailAddress: 'billing@acmecorp.com',
+          subject: 'Overdue Notice: CUST-001',
+          body: 'Please find attached your overdue notice.',
+          customPdfText: undefined,
+          fallbackFileName: 'OverdueNotice-C001.pdf',
+        },
+        expect.objectContaining({ userId: 'user-1' }),
+      );
+    });
   });
 });

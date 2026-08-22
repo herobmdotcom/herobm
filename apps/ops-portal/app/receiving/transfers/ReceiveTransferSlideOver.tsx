@@ -96,13 +96,10 @@ export default function ReceiveTransferSlideOver({
                     <Button 
                         onClick={handleConfirm} 
                         variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
-                        disabled={saving || hasInvalidQuantities || hasZeroQuantities || loading}
+                        disabled={hasInvalidQuantities || hasZeroQuantities || loading}
+                        loading={saving}
                     >
-                        {saving ? (
-                            <><span className="loading loading-spinner loading-sm mr-2" />{t('returns.receiving')}</>
-                        ) : (
-                            t('returns.confirmReceipt')
-                        )}
+                        {saving ? t('returns.receiving') : t('returns.confirmReceipt')}
                     </Button>
                 </div>
             }

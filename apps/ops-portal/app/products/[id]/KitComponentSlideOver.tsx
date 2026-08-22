@@ -125,12 +125,8 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
-          <Button type="submit" form="kit-component-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={saving}>
-            {saving ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
-            ) : (
-              tCommon('save')
-            )}
+          <Button type="submit" form="kit-component-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" loading={saving}>
+            {saving ? tCommon('saving') : tCommon('save')}
           </Button>
         </div>
       }

@@ -10,6 +10,7 @@ import {
   salesCreditNotes,
   paymentEntries,
   glAccounts,
+  glSettings,
 } from '@herobm/db-schema';
 import {
   SALES_INVOICE_STATE,
@@ -102,6 +103,12 @@ export class CustomerStatementService {
     if (!cust) {
       throw new NotFoundException(`Customer '${customerId}' not found`);
     }
+
+    const [gl] = await this.db
+      .select({ baseCurrency: glSettings.baseCurrency })
+      .from(glSettings)
+      .limit(1);
+    const baseCurrency = gl?.baseCurrency || 'AUD';
 
     // 1. Fetch Sales Invoices
     const invoices = await this.db
@@ -340,7 +347,7 @@ export class CustomerStatementService {
         statementDate: now.toLocaleDateString('en-IE'),
         paymentTerms: cust.termsDescription || cust.termsCode || '30 Days',
         creditLimit: cust.creditLimit?.toString() || '',
-        currencyCode: cust.currencyCode || 'USD',
+        currencyCode: cust.currencyCode || baseCurrency,
         state: cust.stateCode,
       },
       lines,

@@ -194,7 +194,6 @@
         "./src/orders/orders.module.ts",
         "./src/orders/orders.service.ts",
         "./src/orders/orders.sql.ts",
-        "./src/orders/picking-math.utils.ts",
         "./src/orders/picking.service.ts",
         "./src/orders/returns-math.utils.ts",
         "./src/orders/returns-write.service.ts",
@@ -211,6 +210,7 @@
         "./src/payments/payments.controller.ts",
         "./src/payments/payments.module.ts",
         "./src/payments/payments.service.ts",
+        "./src/pdf-templates/customer-overdue-notice.service.ts",
         "./src/pdf-templates/dto.ts",
         "./src/pdf-templates/pdf-templates.controller.ts",
         "./src/pdf-templates/pdf-templates.module.ts",
@@ -349,7 +349,6 @@
         "test-login.ts",
         "drizzle.config.ts",
         "./tools",
-        "run-migrations.ts",
         "**/*.js"
     ]
 }

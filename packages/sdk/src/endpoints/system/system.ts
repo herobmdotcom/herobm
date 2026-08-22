@@ -36,6 +36,8 @@ import type {
   DeleteEventsResponseDto,
   DeleteReportResponseDto,
   DeleteWebhookResponseDto,
+  Disable2FaDto,
+  Disable2FaResponseDto,
   DiscountMatrixControllerListParams,
   DiscountMatrixControllerResolveParams,
   DiscountMatrixResponseDto,
@@ -47,6 +49,8 @@ import type {
   EmailControllerRetryEmailBody,
   EmailControllerTestConnection200,
   EmptyBodyDto,
+  Enable2FaDto,
+  Enable2FaResponseDto,
   EnrichmentConfigResponseDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
@@ -84,7 +88,10 @@ import type {
   PublishEventDto,
   PublishEventResponseDto,
   RandomIdData,
+  RegenerateBackupCodesDto,
+  RegenerateBackupCodesResponseDto,
   ReportDto,
+  Reset2FaResponseDto,
   ResolveDiscountRuleDto,
   ResumeStateDto,
   RoleDetailsDto,
@@ -109,6 +116,8 @@ import type {
   TimelineEventDto,
   TradingTermResponseDto,
   TradingTermsControllerFindAllParams,
+  TwoFactorSetupResponseDto,
+  TwoFactorStatusDto,
   UniversalSearchResponseDto,
   UomDictionaryControllerFindAllParams,
   UomDictionaryControllerFindOneParams,
@@ -131,13 +140,14 @@ import type {
   UserSettingsResponseDto,
   UsersControllerFindAllParams,
   UsersControllerFindOneParams,
+  Verify2FaLoginDto,
   WebhookResponseDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
 
 /**
- * Authenticates a user and returns a JWT token.
+ * Authenticates a user and returns a JWT token, or a temp token if 2FA is required.
  * @summary Login User
  */
 export type authControllerLoginResponse201 = {
@@ -169,6 +179,227 @@ export const authControllerLogin = async (loginDto: LoginDto, options?: RequestI
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       loginDto,)
+  }
+);}
+
+
+/**
+ * Completes the two-factor authentication login by verifying a TOTP code or backup code.
+ * @summary Verify 2FA Login
+ */
+export type authControllerVerify2FaLoginResponse201 = {
+  data: LoginResponseDto
+  status: 201
+}
+    
+export type authControllerVerify2FaLoginResponseSuccess = (authControllerVerify2FaLoginResponse201) & {
+  headers: Headers;
+};
+;
+
+export type authControllerVerify2FaLoginResponse = (authControllerVerify2FaLoginResponseSuccess)
+
+export const getAuthControllerVerify2FaLoginUrl = () => {
+
+
+  
+
+  return `/auth/2fa/verify-login`
+}
+
+export const authControllerVerify2FaLogin = async (verify2FaLoginDto: Verify2FaLoginDto, options?: RequestInit): Promise<authControllerVerify2FaLoginResponse> => {
+  
+  return customFetch<authControllerVerify2FaLoginResponse>(getAuthControllerVerify2FaLoginUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      verify2FaLoginDto,)
+  }
+);}
+
+
+/**
+ * Generates a TOTP secret, QR code, and backup codes for two-factor authentication setup.
+ * @summary Setup 2FA
+ */
+export type authControllerSetup2FaResponse201 = {
+  data: TwoFactorSetupResponseDto
+  status: 201
+}
+    
+export type authControllerSetup2FaResponseSuccess = (authControllerSetup2FaResponse201) & {
+  headers: Headers;
+};
+;
+
+export type authControllerSetup2FaResponse = (authControllerSetup2FaResponseSuccess)
+
+export const getAuthControllerSetup2FaUrl = () => {
+
+
+  
+
+  return `/auth/2fa/setup`
+}
+
+export const authControllerSetup2Fa = async (emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<authControllerSetup2FaResponse> => {
+  
+  return customFetch<authControllerSetup2FaResponse>(getAuthControllerSetup2FaUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+/**
+ * Enables two-factor authentication after verifying the setup code.
+ * @summary Enable 2FA
+ */
+export type authControllerEnable2FaResponse201 = {
+  data: Enable2FaResponseDto
+  status: 201
+}
+    
+export type authControllerEnable2FaResponseSuccess = (authControllerEnable2FaResponse201) & {
+  headers: Headers;
+};
+;
+
+export type authControllerEnable2FaResponse = (authControllerEnable2FaResponseSuccess)
+
+export const getAuthControllerEnable2FaUrl = () => {
+
+
+  
+
+  return `/auth/2fa/enable`
+}
+
+export const authControllerEnable2Fa = async (enable2FaDto: Enable2FaDto, options?: RequestInit): Promise<authControllerEnable2FaResponse> => {
+  
+  return customFetch<authControllerEnable2FaResponse>(getAuthControllerEnable2FaUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      enable2FaDto,)
+  }
+);}
+
+
+/**
+ * Disables two-factor authentication. Requires password and current TOTP code.
+ * @summary Disable 2FA
+ */
+export type authControllerDisable2FaResponse201 = {
+  data: Disable2FaResponseDto
+  status: 201
+}
+    
+export type authControllerDisable2FaResponseSuccess = (authControllerDisable2FaResponse201) & {
+  headers: Headers;
+};
+;
+
+export type authControllerDisable2FaResponse = (authControllerDisable2FaResponseSuccess)
+
+export const getAuthControllerDisable2FaUrl = () => {
+
+
+  
+
+  return `/auth/2fa/disable`
+}
+
+export const authControllerDisable2Fa = async (disable2FaDto: Disable2FaDto, options?: RequestInit): Promise<authControllerDisable2FaResponse> => {
+  
+  return customFetch<authControllerDisable2FaResponse>(getAuthControllerDisable2FaUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      disable2FaDto,)
+  }
+);}
+
+
+/**
+ * Regenerates two-factor authentication backup codes. Requires password and current TOTP code.
+ * @summary Regenerate Backup Codes
+ */
+export type authControllerRegenerateBackupCodesResponse201 = {
+  data: RegenerateBackupCodesResponseDto
+  status: 201
+}
+    
+export type authControllerRegenerateBackupCodesResponseSuccess = (authControllerRegenerateBackupCodesResponse201) & {
+  headers: Headers;
+};
+;
+
+export type authControllerRegenerateBackupCodesResponse = (authControllerRegenerateBackupCodesResponseSuccess)
+
+export const getAuthControllerRegenerateBackupCodesUrl = () => {
+
+
+  
+
+  return `/auth/2fa/backup-codes/regenerate`
+}
+
+export const authControllerRegenerateBackupCodes = async (regenerateBackupCodesDto: RegenerateBackupCodesDto, options?: RequestInit): Promise<authControllerRegenerateBackupCodesResponse> => {
+  
+  return customFetch<authControllerRegenerateBackupCodesResponse>(getAuthControllerRegenerateBackupCodesUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      regenerateBackupCodesDto,)
+  }
+);}
+
+
+/**
+ * Returns whether two-factor authentication is enabled for the current user.
+ * @summary Get 2FA Status
+ */
+export type authControllerGet2FaStatusResponse200 = {
+  data: TwoFactorStatusDto
+  status: 200
+}
+    
+export type authControllerGet2FaStatusResponseSuccess = (authControllerGet2FaStatusResponse200) & {
+  headers: Headers;
+};
+;
+
+export type authControllerGet2FaStatusResponse = (authControllerGet2FaStatusResponseSuccess)
+
+export const getAuthControllerGet2FaStatusUrl = () => {
+
+
+  
+
+  return `/auth/2fa/status`
+}
+
+export const authControllerGet2FaStatus = async ( options?: RequestInit): Promise<authControllerGet2FaStatusResponse> => {
+  
+  return customFetch<authControllerGet2FaStatusResponse>(getAuthControllerGet2FaStatusUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -3638,6 +3869,44 @@ export const usersControllerToggleActive = async (id: string,
   {      
     ...options,
     method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+/**
+ * Administratively resets two-factor authentication for a user, allowing them to re-enroll.
+ * @summary Reset User 2FA
+ */
+export type usersControllerReset2FaResponse201 = {
+  data: Reset2FaResponseDto
+  status: 201
+}
+    
+export type usersControllerReset2FaResponseSuccess = (usersControllerReset2FaResponse201) & {
+  headers: Headers;
+};
+;
+
+export type usersControllerReset2FaResponse = (usersControllerReset2FaResponseSuccess)
+
+export const getUsersControllerReset2FaUrl = (id: string,) => {
+
+
+  
+
+  return `/users/${id}/2fa/reset`
+}
+
+export const usersControllerReset2Fa = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<usersControllerReset2FaResponse> => {
+  
+  return customFetch<usersControllerReset2FaResponse>(getUsersControllerReset2FaUrl(id),
+  {      
+    ...options,
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emptyBodyDto,)

@@ -23,6 +23,10 @@ export const RATE_LIMITS = {
     limit: isProd ? 30 : isTest ? 100 : 10000,
     ttl: 60000,
   },
+  AUTH_2FA_VERIFY: {
+    limit: isProd ? 5 : isTest ? 100 : 1000,
+    ttl: 60000,
+  },
 
   // Telemetry endpoint
   TELEMETRY: {

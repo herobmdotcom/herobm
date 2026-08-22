@@ -39,6 +39,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
+    // Reject 2FA intermediate tokens — they must only be used
+    // at the POST /auth/2fa/verify-login endpoint, not for API access.
+    if (
+      (payload as JwtPayload & { purpose?: string }).purpose === '2fa_login'
+    ) {
+      throw new UnauthorizedException('2FA verification required');
+    }
+
     const [user] = await this.db
       .select({
         userId: users.userId,

@@ -146,27 +146,43 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const [outstandingInvoices, setOutstandingInvoices] = useState<OutstandingInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
 
-  // Remittance Advice Dialog State & PDF Generator
+  // Document Dialog State & PDF Generator
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
 
-  const handleGenerateRemittancePdf = async (customPdfText?: string) => {
-    if (!paymentId) return;
+  const isSupplierPayment = data?.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT;
+  const isCustomerReceipt = data?.paymentType === PAYMENT_TYPE.CUSTOMER_RECEIPT;
+
+  const handleGeneratePaymentDocumentPdf = async (customPdfText?: string) => {
+    if (!paymentId || !data) return;
     try {
-      const response = await api.pdfTemplatesControllerRunHook(
-        'supplier-remittance-advice',
-        { customPdfText },
-        {
-          id: paymentId,
-          context: DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE,
-        },
-      );
+      const response = isSupplierPayment
+        ? await api.pdfTemplatesControllerRunHook(
+            'supplier-remittance-advice',
+            { customPdfText },
+            {
+              id: paymentId,
+              context: DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE,
+            },
+          )
+        : await api.pdfTemplatesControllerRunHook(
+            'customer-payment-receipt',
+            { customPdfText },
+            {
+              id: paymentId,
+              context: DATA_SOURCE_CONTEXT.CUSTOMER_PAYMENT_RECEIPT,
+            },
+          );
       const blob = response.data;
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
-      reportError(err, 'PaymentManagerSlideOver.generateRemittancePdf');
-      toast.error('Failed to generate Remittance Advice PDF');
+      reportError(err, 'PaymentManagerSlideOver.generatePaymentDocumentPdf');
+      toast.error(
+        isSupplierPayment
+          ? 'Failed to generate Remittance Advice PDF'
+          : 'Failed to generate Payment Receipt PDF',
+      );
     }
   };
 
@@ -588,7 +604,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
       {/* Supplier Remittance Actions */}
       {data?.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
@@ -610,6 +626,34 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             disabled={submitting}
           >
             Email Remittance
+          </Button>
+        </div>
+      )}
+
+      {/* Customer Receipt Actions */}
+      {data?.paymentType === PAYMENT_TYPE.CUSTOMER_RECEIPT && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setEmailDialogMode('print');
+              setIsEmailDialogOpen(true);
+            }}
+            disabled={submitting}
+          >
+            Print Receipt
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setEmailDialogMode('email');
+              setIsEmailDialogOpen(true);
+            }}
+            disabled={submitting}
+          >
+            Email Receipt
           </Button>
         </div>
       )}
@@ -663,12 +707,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           <Button variant="secondary" type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
           </Button>
-          <Button type="submit" form="create-payment-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={submitting}>
-            {submitting ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
-            ) : (
-              t('createEntry')
-            )}
+          <Button type="submit" form="create-payment-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" loading={submitting}>
+            {submitting ? tCommon('saving') : t('createEntry')}
           </Button>
         </div>
       ) : undefined}
@@ -1175,21 +1215,38 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           mode={emailDialogMode}
           orderId={data.paymentId}
           orderNumber={data.paymentNumber}
-          supplierId={data.partyId}
-          hookSlug="supplier-remittance-advice"
-          title={emailDialogMode === 'print' ? 'Print Remittance Advice' : 'Email Remittance Advice'}
-          defaultSubjectPrefix="Remittance Advice"
-          documentName="Remittance Advice"
+          supplierId={isSupplierPayment ? data.partyId : undefined}
+          customerId={isCustomerReceipt ? data.partyId : undefined}
+          hookSlug={isSupplierPayment ? 'supplier-remittance-advice' : 'customer-payment-receipt'}
+          title={
+            emailDialogMode === 'print'
+              ? isSupplierPayment
+                ? 'Print Remittance Advice'
+                : 'Print Payment Receipt'
+              : isSupplierPayment
+                ? 'Email Remittance Advice'
+                : 'Email Payment Receipt'
+          }
+          defaultSubjectPrefix={isSupplierPayment ? 'Remittance Advice' : 'Payment Receipt'}
+          documentName={isSupplierPayment ? 'Remittance Advice' : 'Payment Receipt'}
           targetId={data.paymentId}
-          contextSlug={DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE}
+          contextSlug={
+            isSupplierPayment
+              ? DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE
+              : DATA_SOURCE_CONTEXT.CUSTOMER_PAYMENT_RECEIPT
+          }
           onClose={() => setIsEmailDialogOpen(false)}
           onSuccess={() => {
             setIsEmailDialogOpen(false);
             if (emailDialogMode !== 'print') {
-              toast.success('Remittance advice email queued successfully!');
+              toast.success(
+                isSupplierPayment
+                  ? 'Remittance advice email queued successfully!'
+                  : 'Payment receipt email queued successfully!',
+              );
             }
           }}
-          onPreview={(customText) => handleGenerateRemittancePdf(customText)}
+          onPreview={(customText) => handleGeneratePaymentDocumentPdf(customText)}
         />
       )}
     </SlideOver>

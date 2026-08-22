@@ -8,6 +8,7 @@ export interface PrintButtonProps {
   /** Optional custom title for the print tooltip */
   title?: string;
   className?: string;
+  loading?: boolean;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface PrintButtonProps {
  *
  * The browser print dialog also supports "Save as PDF" on all platforms.
  */
-export default function PrintButton({ title, className }: PrintButtonProps) {
+export default function PrintButton({ title, className, loading }: PrintButtonProps) {
   const label = title || 'Print';
 
   return (
@@ -29,6 +30,7 @@ export default function PrintButton({ title, className }: PrintButtonProps) {
       onClick={() => window.print()}
       title={label}
       aria-label={label}
+      loading={loading}
     >
       {label}
     </Button>

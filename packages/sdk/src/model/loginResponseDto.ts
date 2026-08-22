@@ -7,9 +7,11 @@
  */
 
 export interface LoginResponseDto {
-  access_token: string;
+  access_token?: string;
   username: string;
   /** @nullable */
   displayName?: string | null;
   role: string;
+  twoFactorRequired?: boolean;
+  tempToken?: string;
 }

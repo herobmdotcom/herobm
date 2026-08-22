@@ -11,9 +11,15 @@ jest.mock('@herobm/sdk', () => ({
   suppliersControllerFindAll: jest.fn(),
 }));
 
+const mockTranslations: Record<string, string> = {
+  issueCreditNote: 'Issue Credit Note',
+  issueDebitNote: 'Issue Debit Note',
+  issuing: 'Issuing...',
+};
+
 jest.mock('next-intl', () => ({
   useTranslations: () => {
-    const t = (key: string) => key;
+    const t = (key: string) => mockTranslations[key] || key;
     t.has = () => true;
     return t;
   },

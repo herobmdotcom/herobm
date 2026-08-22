@@ -329,13 +329,13 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
 
         {/* Details Card */}
         <div id="details-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="section-heading mb-0 flex items-center gap-2">
               <span className="material-symbols-outlined shrink-0">info</span>
               <span>{t('returns.returnDetails')}</span>
             </h3>
             {ret.stateCode !== RETURN_STATE.CANCELLED && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -350,7 +350,6 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                     contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
                   })}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                   Print Return Slip
                 </Button>
                 <Button
@@ -367,7 +366,6 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                     contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
                   })}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                   Email Return Slip
                 </Button>
               </div>
@@ -519,42 +517,23 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                     amount={displayAmount > 0 ? formatAmount(displayAmount, ret.currencyCode || 'USD') : undefined}
                     status={cn.stateCode}
                     actions={
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEmailDialogConfig({
-                            isOpen: true,
-                            mode: 'print',
-                            hookSlug: 'sales-return-credit',
-                            title: 'Print Credit Note',
-                            prefix: 'Credit Note',
-                            docName: 'Credit Note',
-                            targetId: ret.returnId,
-                            contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                          })}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">print</span>
-                          <span className="sr-only">Print Credit Note</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEmailDialogConfig({
-                            isOpen: true,
-                            mode: 'email',
-                            hookSlug: 'sales-return-credit',
-                            title: 'Email Credit Note',
-                            prefix: 'Credit Note',
-                            docName: 'Credit Note',
-                            targetId: ret.returnId,
-                            contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                          })}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">mail</span>
-                          <span className="sr-only">Email Credit Note</span>
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEmailDialogConfig({
+                          isOpen: true,
+                          mode: 'email',
+                          hookSlug: 'sales-return-credit',
+                          title: 'Email Credit Note',
+                          prefix: 'Credit Note',
+                          docName: 'Credit Note',
+                          targetId: ret.returnId,
+                          contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                        })}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">mail</span>
+                        <span className="sr-only">Email Credit Note</span>
+                      </Button>
                     }
                   />
                 );

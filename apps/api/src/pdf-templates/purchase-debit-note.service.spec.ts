@@ -90,6 +90,13 @@ describe('PurchaseDebitNoteService', () => {
       }),
     });
 
+    // Mock glSettings query
+    mockDb.select.mockReturnValueOnce({
+      from: jest.fn().mockReturnValue({
+        limit: jest.fn().mockResolvedValue([{ baseCurrency: 'AUD' }]),
+      }),
+    });
+
     // Mock lines query
     mockDb.select.mockReturnValueOnce({
       from: jest.fn().mockReturnValue({

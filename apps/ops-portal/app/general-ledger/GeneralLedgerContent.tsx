@@ -187,8 +187,6 @@ export default function GeneralLedgerContent() {
           onClick={() => setIsCodesOpen(true)}
           className="whitespace-nowrap"
         >
-          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
-          <span className="material-symbols-outlined text-sm">visibility</span>
           {tCodes('button')}
         </Button>
       }

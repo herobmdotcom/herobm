@@ -314,21 +314,39 @@ export class PaymentsController {
       throw new NotFoundException(`Payment '${id}' not found`);
     }
 
-    const hookSlug = dto.hookSlug || 'supplier-remittance-advice';
+    const isCustomerReceipt =
+      dto.hookSlug === 'customer-payment-receipt' ||
+      dto.contextSlug === DATA_SOURCE_CONTEXT.CUSTOMER_PAYMENT_RECEIPT ||
+      payment.paymentType === 'customer_receipt';
+
+    const hookSlug =
+      dto.hookSlug ||
+      (isCustomerReceipt
+        ? 'customer-payment-receipt'
+        : 'supplier-remittance-advice');
+
+    const contextSlug =
+      dto.contextSlug ||
+      (isCustomerReceipt
+        ? DATA_SOURCE_CONTEXT.CUSTOMER_PAYMENT_RECEIPT
+        : DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE);
+
+    const fallbackFileName = isCustomerReceipt
+      ? `Receipt-${payment.paymentNumber || id}.pdf`
+      : `Remittance-${payment.paymentNumber || id}.pdf`;
 
     return this.documentDispatchService.emailDocument(
       {
         targetId: dto.targetId || id,
         hookSlug,
-        contextSlug:
-          dto.contextSlug || DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE,
+        contextSlug,
         entityType: EntityType.PAYMENT,
         entityId: id,
         emailAddress: dto.emailAddress,
         subject: dto.subject,
         body: dto.body,
         customPdfText: dto.customPdfText,
-        fallbackFileName: `Remittance-${payment.paymentNumber || id}.pdf`,
+        fallbackFileName,
       },
       user,
     );

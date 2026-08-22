@@ -11,6 +11,7 @@ import {
   suppliers,
   actors,
   products,
+  glSettings,
 } from '@herobm/db-schema';
 
 export interface PurchaseDebitNoteData {
@@ -101,6 +102,12 @@ export class PurchaseDebitNoteService {
       );
     }
 
+    const [gl] = await this.db
+      .select({ baseCurrency: glSettings.baseCurrency })
+      .from(glSettings)
+      .limit(1);
+    const baseCurrency = gl?.baseCurrency || 'AUD';
+
     const debitNoteLines = await this.db
       .select({
         debitNoteLineId: purchaseDebitNoteLines.debitNoteLineId,
@@ -177,7 +184,7 @@ export class PurchaseDebitNoteService {
         supplierReference: dn.supplierReferenceNumber || '',
         orderNumber: dn.orderNumber || '',
         returnNumber: dn.returnNumber || '',
-        currencyCode: dn.currencyCode || 'USD',
+        currencyCode: dn.currencyCode || baseCurrency,
         supplierName: dn.vendorName || '—',
         supplierAddress: supplierAddressParts.join(', '),
         supplierContact: '',

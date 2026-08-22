@@ -178,6 +178,27 @@ const SEEDS: SeedData[] = [
       '../../../../tools/seeds/reports/supplier-remittance-advice.typ',
     outputPattern: 'Remittance-${paymentNumber}.pdf',
   },
+  {
+    slug: 'customer-payment-receipt',
+    name: 'Customer Payment Receipt',
+    contexts: ['customer-payment-receipt'],
+    hook: 'customer-payment-receipt',
+    description:
+      'System default template for generating Customer Payment Receipts for received funds.',
+    templatePath:
+      '../../../../tools/seeds/reports/customer-payment-receipt.typ',
+    outputPattern: 'Receipt-${paymentNumber}.pdf',
+  },
+  {
+    slug: 'customer-overdue-notice',
+    name: 'Customer Overdue Payment Notice',
+    contexts: ['customer-overdue-notice'],
+    hook: 'customer-overdue-notice',
+    description:
+      'System default template for generating Customer Overdue Payment Notices for overdue balances.',
+    templatePath: '../../../../tools/seeds/reports/customer-overdue-notice.typ',
+    outputPattern: 'OverdueNotice-${customerNumber}.pdf',
+  },
 ];
 
 export async function seedDynamicReports(db: SeedDB, dryRun = false) {

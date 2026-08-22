@@ -165,6 +165,26 @@
       "hook": "supplier-remittance-advice",
       "context": "supplier-remittance-advice",
       "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000019",
+      "slug": "customer-payment-receipt",
+      "name": "Customer Payment Receipt",
+      "filename": "customer-payment-receipt.typ",
+      "output_name_pattern": "Receipt-${paymentNumber}.pdf",
+      "hook": "customer-payment-receipt",
+      "context": "customer-payment-receipt",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000020",
+      "slug": "customer-overdue-notice",
+      "name": "Customer Overdue Payment Notice",
+      "filename": "customer-overdue-notice.typ",
+      "output_name_pattern": "OverdueNotice-${customerNumber}.pdf",
+      "hook": "customer-overdue-notice",
+      "context": "customer-overdue-notice",
+      "type": "hook"
     }
   ]
 }

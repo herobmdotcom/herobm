@@ -887,6 +887,12 @@
         "requiredFieldsError": "Username and password are required",
         "toggled": "User status updated",
         "updated": "User updated"
+      },
+      "twoFactor": {
+        "column": "2FA",
+        "confirmReset": "Are you sure you want to reset 2FA for this user? They will need to re-enroll.",
+        "reset": "Reset 2FA",
+        "resetSuccess": "2FA has been reset"
       }
     },
     "version": {
@@ -954,6 +960,16 @@
       "signIn": "Sign In",
       "signInToContinue": "Sign in to continue",
       "signOut": "Sign Out",
+      "twoFactor": {
+        "backToSignIn": "Back to sign in",
+        "enterCode": "Enter 6-digit code",
+        "enterRecoveryCode": "Enter recovery code",
+        "invalidCode": "Invalid code. Please try again.",
+        "title": "Two-Factor Authentication",
+        "useRecoveryCode": "Use recovery code",
+        "useTotpCode": "Use authenticator code",
+        "verify": "Verify"
+      },
       "username": "Username"
     },
     "auto": "Auto",
@@ -1275,6 +1291,28 @@
       "saved": "Preferences saved",
       "saving": "Saving...",
       "title": "User Preferences",
+      "twoFactor": {
+        "active": "Active",
+        "backupCodes": "Emergency Recovery Codes",
+        "backupCodesConfirm": "I have saved my recovery codes",
+        "backupCodesWarning": "Store these codes in a safe place. Each code can only be used once.",
+        "copyAll": "Copy All",
+        "disable": "Disable 2FA",
+        "disableConfirm": "Are you sure you want to disable two-factor authentication?",
+        "enable": "Enable 2FA",
+        "enabled": "Two-factor authentication is enabled",
+        "enterPassword": "Enter your password",
+        "enterVerificationCode": "Enter the 6-digit code from your authenticator app",
+        "inactive": "Inactive",
+        "manualEntry": "Manual entry key",
+        "regenerateBackupCodes": "Regenerate Backup Codes",
+        "scanQrCode": "Scan this QR code with your authenticator app",
+        "security": "Security",
+        "setupStep1": "Scan QR Code",
+        "setupStep2": "Verify Code",
+        "setupStep3": "Save Recovery Codes",
+        "title": "Two-Factor Authentication"
+      },
       "userProfile": "User Profile",
       "username": "Username"
     },
@@ -2497,6 +2535,7 @@
     "invoice": "Invoice",
     "invoices": "invoices",
     "issueCreditNote": "Issue Credit Note",
+    "issueDebitNote": "Issue Debit Note",
     "issuing": "Issuing...",
     "licenseType": "License Type",
     "licensed": "Licensed",

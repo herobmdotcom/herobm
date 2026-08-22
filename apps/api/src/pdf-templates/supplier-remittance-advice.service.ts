@@ -8,6 +8,7 @@ import {
   purchaseInvoices,
   suppliers,
   actors,
+  glSettings,
 } from '@herobm/db-schema';
 
 export interface SupplierRemittanceAdviceData {
@@ -78,6 +79,12 @@ export class SupplierRemittanceAdviceService {
     if (!pmt) {
       throw new NotFoundException(`Payment '${paymentId}' not found`);
     }
+
+    const [gl] = await this.db
+      .select({ baseCurrency: glSettings.baseCurrency })
+      .from(glSettings)
+      .limit(1);
+    const baseCurrency = gl?.baseCurrency || 'AUD';
 
     // 2. Fetch Supplier & Actor details if partyId is present
     let supplierDetails: {
@@ -200,7 +207,7 @@ export class SupplierRemittanceAdviceService {
         paymentDate: pmtDateStr,
         modeOfPayment: pmt.modeOfPayment || 'EFT',
         referenceNumber: pmt.referenceNumber || '',
-        currencyCode: pmt.currencyCode || 'USD',
+        currencyCode: pmt.currencyCode || baseCurrency,
         state: pmt.stateCode,
         supplierId: supplierDetails.supplierId,
         supplierNumber: supplierDetails.supplierNumber,

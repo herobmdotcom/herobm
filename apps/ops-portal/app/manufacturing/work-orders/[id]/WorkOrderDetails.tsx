@@ -419,12 +419,6 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
     return (
       <div className="flex flex-col items-center justify-center flex-1 p-8 max-w-xl mx-auto">
         <EntityBanner type="error" title={error || 'Work Order not found'} />
-        <Link href="/manufacturing/work-orders">
-          <Button variant="secondary">
-            <span className="material-symbols-outlined mr-1 text-[16px]">arrow_back</span>
-            Back to Work Orders
-          </Button>
-        </Link>
       </div>
     );
   }
@@ -467,9 +461,7 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
 
               {!isCompleted && !isCancelled && (
                 <Button variant="danger" size="sm" onClick={handleCancel} disabled={actionLoading}>
-
-                  <span className="material-symbols-outlined mr-1 text-[16px]">close</span>
-                  Cancel Order
+                  {tCommon('cancel')}
                 </Button>
               )}
             </div>

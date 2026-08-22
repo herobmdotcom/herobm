@@ -182,20 +182,36 @@ export class CustomersController {
       throw new NotFoundException(`Customer '${id}' not found`);
     }
 
-    const hookSlug = dto.hookSlug || 'customer-statement';
+    const isOverdueNotice =
+      dto.hookSlug === 'customer-overdue-notice' ||
+      dto.contextSlug === DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE;
+
+    const hookSlug =
+      dto.hookSlug ||
+      (isOverdueNotice ? 'customer-overdue-notice' : 'customer-statement');
+
+    const contextSlug =
+      dto.contextSlug ||
+      (isOverdueNotice
+        ? DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE
+        : DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT);
+
+    const fallbackFileName = isOverdueNotice
+      ? `OverdueNotice-${cust.customerNumber || id}.pdf`
+      : `Statement-${cust.customerNumber || id}.pdf`;
 
     return this.documentDispatchService.emailDocument(
       {
         targetId: dto.targetId || id,
         hookSlug,
-        contextSlug: dto.contextSlug || DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT,
+        contextSlug,
         entityType: EntityType.CUSTOMER,
         entityId: id,
         emailAddress: dto.emailAddress,
         subject: dto.subject,
         body: dto.body,
         customPdfText: dto.customPdfText,
-        fallbackFileName: `Statement-${cust.customerNumber || id}.pdf`,
+        fallbackFileName,
       },
       user,
     );

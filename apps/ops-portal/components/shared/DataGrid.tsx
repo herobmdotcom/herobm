@@ -1328,7 +1328,7 @@ export default function DataGrid<T>({
                   {(headerFilters || headerActions) && (
                     <div className={`w-full lg:w-auto flex-1 lg:flex-none ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
                       {headerFilters && (
-                        <div className={`transition-all duration-500 rounded-lg ${isCustomView ? 'ring-2 ring-amber-500/40 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`}>
+                        <div className={`flex items-center gap-2 transition-all duration-500 rounded-lg ${isCustomView ? 'ring-2 ring-amber-500/40 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`}>
                           {headerFilters}
                         </div>
                       )}

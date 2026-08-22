@@ -64,7 +64,7 @@
       text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.debitNoteDate,
       text(9pt, weight: "bold", fill: luma(80))[Supplier Ref:], if "supplierReference" in data.header and data.header.supplierReference != "" [#data.header.supplierReference] else [—],
       text(9pt, weight: "bold", fill: luma(80))[PO Number:], if "orderNumber" in data.header and data.header.orderNumber != "" [#data.header.orderNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Return #:], if "returnNumber" in data.header and data.header.returnNumber != "" [#data.header.returnNumber] else [—],
+      text(9pt, weight: "bold", fill: luma(80))[Return No.:], if "returnNumber" in data.header and data.header.returnNumber != "" [#data.header.returnNumber] else [—],
       text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
     )
   ]
@@ -129,9 +129,9 @@
       align: (left, right),
       [Subtotal:], [#data.header.currencyCode #fmt(data.summary.subtotal)],
       [Tax:], [#data.header.currencyCode #fmt(data.summary.totalTax)],
-      if "feeAmount" in data.summary and float(data.summary.feeAmount) != 0.0 [
-        [Return Fees:], [-#data.header.currencyCode #fmt(data.summary.feeAmount)],
-      ],
+      ..(if "feeAmount" in data.summary and float(data.summary.feeAmount) != 0.0 {
+        ([Return Fees:], [-#data.header.currencyCode #fmt(data.summary.feeAmount)])
+      } else { () }),
       
       grid.cell(colspan: 2)[#line(length: 100%, stroke: 1pt + luma(230))],
       

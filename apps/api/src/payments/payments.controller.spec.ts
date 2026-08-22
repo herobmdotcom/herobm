@@ -128,5 +128,45 @@ describe('PaymentsController', () => {
         expect.objectContaining({ userId: 'user-1' }),
       );
     });
+
+    it('should queue customer payment receipt document for email dispatch', async () => {
+      mockPaymentsCoreService.findOne.mockResolvedValue({
+        paymentId: 'pmt-2',
+        paymentNumber: 'REC-002',
+        paymentType: 'customer_receipt',
+      });
+
+      const dto = {
+        emailAddress: 'billing@customer.com',
+        subject: 'Payment Receipt: REC-002',
+        body: 'Thank you for your payment.',
+        hookSlug: 'customer-payment-receipt',
+        contextSlug: 'customer-payment-receipt',
+      };
+
+      const result = await controller.emailDocument('pmt-2', dto, {
+        userId: 'user-1',
+        username: 'admin',
+        email: 'admin@modbm.com',
+        role: 'admin',
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
+        {
+          targetId: 'pmt-2',
+          hookSlug: 'customer-payment-receipt',
+          contextSlug: 'customer-payment-receipt',
+          entityType: 'payment',
+          entityId: 'pmt-2',
+          emailAddress: 'billing@customer.com',
+          subject: 'Payment Receipt: REC-002',
+          body: 'Thank you for your payment.',
+          customPdfText: undefined,
+          fallbackFileName: 'Receipt-REC-002.pdf',
+        },
+        expect.objectContaining({ userId: 'user-1' }),
+      );
+    });
   });
 });

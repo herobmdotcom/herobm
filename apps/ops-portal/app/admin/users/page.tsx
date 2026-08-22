@@ -45,6 +45,7 @@ function getCurrentUserId(): string | null {
 
 export default function UsersPage() {
   const t = useTranslations('admin.users');
+  const t2fa = useTranslations('admin.users.twoFactor');
   const tCommon = useTranslations('admin.settings.actions');
   useDocumentTitle(t('title'));
   const router = useRouter();
@@ -194,6 +195,17 @@ export default function UsersPage() {
     }
   };
 
+  const reset2Fa = async (user: User) => {
+    if (!confirm(t2fa('confirmReset'))) return;
+    try {
+      await api.usersControllerReset2Fa(user.userId, {});
+      toast.success(t2fa('resetSuccess'));
+      loadUsers();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
   // ── Row Renderer ───────────────────────────────────────────────────────────
 
   const isSelf = (userId: string) => currentUserId === userId;
@@ -267,6 +279,13 @@ export default function UsersPage() {
         )}
       </td>
 
+      {/* 2FA */}
+      <td>
+        {!isEdit && (
+          <span className="text-sm text-[var(--text-muted)]">—</span>
+        )}
+      </td>
+
       {/* Password (only in edit mode) */}
       <td>
         {isEdit && (
@@ -302,6 +321,15 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="flex justify-end gap-2">
+            {/* Reset 2FA */}
+            <Button
+              variant="secondary" size="xs"
+              onClick={() => reset2Fa(data)}
+              title={t2fa('reset')}
+            >
+              2FA
+            </Button>
+
             {/* Toggle active */}
             <Button
               variant="secondary" size="xs"
@@ -373,9 +401,10 @@ export default function UsersPage() {
                   <th>{t('columns.email')}</th>
                   <th className="w-[130px]">{t('columns.role')}</th>
                   <th className="w-[90px]">{t('columns.status')}</th>
+                  <th className="w-[80px]">{t2fa('column')}</th>
                   <th className="w-[140px]">{t('labels.password')}</th>
                   <th className="w-[100px]">{t('columns.createdAt')}</th>
-                  <th className="w-[180px] text-right">{tCommon('actions')}</th>
+                  <th className="w-[200px] text-right">{tCommon('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -387,7 +416,7 @@ export default function UsersPage() {
                 )}
                 {users.length === 0 && !creating && (
                   <tr>
-                    <td colSpan={8} className="text-center p-6 text-[var(--text-muted)]">
+                    <td colSpan={9} className="text-center p-6 text-[var(--text-muted)]">
                       {t('noneFound')}
                     </td>
                   </tr>

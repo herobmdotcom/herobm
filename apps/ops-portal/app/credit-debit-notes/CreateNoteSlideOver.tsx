@@ -35,6 +35,7 @@ export default function CreateNoteSlideOver({
   initialType = 'credit',
 }: CreateNoteSlideOverProps) {
   const tCommon = useTranslations('common');
+  const tPortal = useTranslations('portal');
   const { baseCurrency } = useSettings();
 
   const [noteType, setNoteType] = useState<NoteType>(initialType);
@@ -179,18 +180,14 @@ export default function CreateNoteSlideOver({
           <Button
             variant="primary"
             onClick={handleConfirm}
-            disabled={saving || isInvalid}
+            disabled={isInvalid}
+            loading={saving}
           >
-            {saving ? (
-              <>
-                <span className="loading loading-spinner loading-xs mr-2" />
-                Issuing...
-              </>
-            ) : noteType === 'credit' ? (
-              'Issue Credit Note'
-            ) : (
-              'Issue Debit Note'
-            )}
+            {saving
+              ? tPortal('issuing')
+              : noteType === 'credit'
+              ? tPortal('issueCreditNote')
+              : tPortal('issueDebitNote')}
           </Button>
         </div>
       }

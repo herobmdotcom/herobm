@@ -104,7 +104,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
       title={tc('financialDefaults')}
       subtitle={ownerLabel}
       footer={
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>

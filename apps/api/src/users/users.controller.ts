@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { ApiPaginatedResponse } from '../common/pagination';
 import { UsersService } from './users.service';
+import { TwoFactorService } from '../auth/two-factor.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -26,6 +27,7 @@ import {
   UserResponseDto,
   EmptyBodyDto,
 } from './dto';
+import { Reset2FaResponseDto } from '../auth/dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -33,7 +35,10 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('users')
 @CasbinResource(SystemResource.USERS)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly twoFactorService: TwoFactorService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ type: [UserResponseDto] })
@@ -109,5 +114,19 @@ export class UsersController {
   @ApiOkResponse({ type: UserResponseDto })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.usersService.remove(id, user.userId, user.username);
+  }
+
+  @Post(':id/2fa/reset')
+  @CasbinAction('write')
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiCreatedResponse({ type: Reset2FaResponseDto })
+  @ApiOperation({
+    summary: 'Reset User 2FA',
+    description:
+      'Administratively resets two-factor authentication for a user, allowing them to re-enroll.',
+  })
+  async reset2Fa(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    await this.twoFactorService.adminReset(id, user.username);
+    return { reset: true };
   }
 }

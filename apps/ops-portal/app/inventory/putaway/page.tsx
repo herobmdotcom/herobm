@@ -364,22 +364,11 @@ export default function PutawayPage() {
                     <div className="pt-4 mt-auto">
                         <Button variant="primary"
                             type="submit"
-                            disabled={isSubmitting || !selectedBinId || !newTotalQuantity}
+                            disabled={!selectedBinId || !newTotalQuantity}
+                            loading={isSubmitting}
                             className="w-full py-2.5 px-4 bg-[var(--accent)] text-white text-sm font-bold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                         >
-                            {isSubmitting ? (
-                                <>
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                                    <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
-                                    {t('putaway.processing')}
-                                </>
-                            ) : (
-                                <>
-                                    { }
-                                    <span className="material-symbols-outlined text-[18px]">done_all</span>
-                                    {t('putaway.confirmPutaway')}
-                                </>
-                            )}
+                            {isSubmitting ? t('putaway.processing') : t('putaway.confirmPutaway')}
                         </Button>
                     </div>
                 </form>

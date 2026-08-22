@@ -142,8 +142,6 @@ export default function FiscalPeriodsContent() {
                 onClick={handleGeneratePeriods}
                 disabled={loading}
               >
-                {/* eslint-disable-next-line no-restricted-syntax -- UI Icon */}
-                <span className="material-symbols-outlined text-sm">{'add'}</span>
                 Generate 12 Monthly Periods
               </Button>
             )}

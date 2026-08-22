@@ -58,7 +58,7 @@ HeroBM uses a 4-tier verification hierarchy designed for speed, isolation, and c
 ### Individual Fast Test Runners
 - **`make check-all`** — Fast static analysis (typechecking + linting).
 - **`make test-unit`** — Runs all unit tests (API PGlite + Ops Portal).
-- **`make test-single TEST=<name>`** — Runs a single test file by name.
+- **`make test-single`** / **`make test-single TEST=<name>`** — Runs a single test file by name or path. If `TEST` is omitted, reads the test target from `.test_target` (or `tmp/.test_target`).
 - **`make test-structural`** — Runs structural architecture and security invariants.
 
 ## ELT Pipeline Commands

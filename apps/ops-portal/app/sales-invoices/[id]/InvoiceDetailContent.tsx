@@ -223,7 +223,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           title={invoice.invoiceNumber}
           subtitle={`Customer: ${invoice.customerName}`}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
                 <>
                   <Button
@@ -232,7 +232,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     onClick={handlePrintInvoice}
                     disabled={isGeneratingPdf}
                   >
-                    <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                     {isGeneratingPdf ? tCommon('loading') : t('printInvoice')}
                   </Button>
                   <Button
@@ -240,6 +239,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     size="sm"
                     onClick={() => setEmailDialogConfig({
                       isOpen: true,
+                      mode: 'email',
                       hookSlug: 'sales-invoice',
                       title: 'Email Sales Invoice',
                       prefix: 'Invoice',
@@ -248,7 +248,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                       contextSlug: 'sales-invoice'
                     })}
                   >
-                    <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                     {t('emailInvoice')}
                   </Button>
                 </>
@@ -279,21 +278,20 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </div>
         )}
         <div id="details-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="section-heading mb-0 flex items-center gap-2">
               { }
               <span className="material-symbols-outlined shrink-0">receipt_long</span>
               <span>{t('invoiceDetails')}</span>
             </h3>
             {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={handlePrintInvoice}
                   disabled={isGeneratingPdf}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                   {isGeneratingPdf ? tCommon('loading') : t('printInvoice')}
                 </Button>
                 <Button
@@ -301,6 +299,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                   size="sm"
                   onClick={() => setEmailDialogConfig({
                     isOpen: true,
+                    mode: 'email',
                     hookSlug: 'sales-invoice',
                     title: 'Email Sales Invoice',
                     prefix: 'Invoice',
@@ -309,7 +308,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     contextSlug: 'sales-invoice'
                   })}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                   {t('emailInvoice')}
                 </Button>
               </div>

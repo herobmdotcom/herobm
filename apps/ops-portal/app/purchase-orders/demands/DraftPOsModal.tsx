@@ -215,13 +215,9 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
           </Button>
           <Button 
             onClick={handleGenerate}
-            disabled={loading}
+            loading={loading}
             variant="primary" className="flex items-center gap-2"
           >
-            {loading && (
-               
-              <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-            )}
             {t('demands.createDraftPos')}
           </Button>
         </div>

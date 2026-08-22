@@ -226,7 +226,7 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
           subtitle={`${formatLocalDate(data.createdOn)} · Purchase Debit Note`}
           badges={data.stateCode ? <StateBadge state={data.stateCode as ValidState} /> : undefined}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="secondary"
                 size="sm"

@@ -3,7 +3,7 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "description": "Authenticates a user and returns a JWT token.",
+        "description": "Authenticates a user and returns a JWT token, or a temp token if 2FA is required.",
         "operationId": "AuthController_login",
         "parameters": [],
         "requestBody": {
@@ -29,6 +29,194 @@
           }
         },
         "summary": "Login User",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/verify-login": {
+      "post": {
+        "description": "Completes the two-factor authentication login by verifying a TOTP code or backup code.",
+        "operationId": "AuthController_verify2FaLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verify2FaLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Verify 2FA Login",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "description": "Generates a TOTP secret, QR code, and backup codes for two-factor authentication setup.",
+        "operationId": "AuthController_setup2Fa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorSetupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Setup 2FA",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/enable": {
+      "post": {
+        "description": "Enables two-factor authentication after verifying the setup code.",
+        "operationId": "AuthController_enable2Fa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Enable2FaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Enable2FaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Enable 2FA",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/disable": {
+      "post": {
+        "description": "Disables two-factor authentication. Requires password and current TOTP code.",
+        "operationId": "AuthController_disable2Fa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Disable2FaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Disable2FaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Disable 2FA",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/backup-codes/regenerate": {
+      "post": {
+        "description": "Regenerates two-factor authentication backup codes. Requires password and current TOTP code.",
+        "operationId": "AuthController_regenerateBackupCodes",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegenerateBackupCodesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegenerateBackupCodesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Regenerate Backup Codes",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/auth/2fa/status": {
+      "get": {
+        "description": "Returns whether two-factor authentication is enabled for the current user.",
+        "operationId": "AuthController_get2FaStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get 2FA Status",
         "tags": [
           "System"
         ]
@@ -18116,6 +18304,48 @@
         ]
       }
     },
+    "/users/{id}/2fa/reset": {
+      "post": {
+        "description": "Administratively resets two-factor authentication for a user, allowing them to re-enroll.",
+        "operationId": "UsersController_reset2Fa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reset2FaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reset User 2FA",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/discount-matrix": {
       "get": {
         "description": "Retrieve discount rules based on query filters.",
@@ -20892,12 +21122,173 @@
           },
           "role": {
             "type": "string"
+          },
+          "twoFactorRequired": {
+            "type": "boolean"
+          },
+          "tempToken": {
+            "type": "string"
           }
         },
         "required": [
-          "access_token",
           "username",
           "role"
+        ]
+      },
+      "Verify2FaLoginDto": {
+        "type": "object",
+        "properties": {
+          "tempToken": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "tempToken",
+          "code"
+        ]
+      },
+      "EmptyBodyDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TwoFactorSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string"
+          },
+          "otpauthUrl": {
+            "type": "string"
+          },
+          "qrCodeDataUrl": {
+            "type": "string"
+          },
+          "backupCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "secret",
+          "otpauthUrl",
+          "qrCodeDataUrl",
+          "backupCodes"
+        ]
+      },
+      "Enable2FaDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "secret": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "code",
+          "secret"
+        ]
+      },
+      "Enable2FaResponseDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "backupCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "backupCodes"
+        ]
+      },
+      "Disable2FaDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "password",
+          "code"
+        ]
+      },
+      "Disable2FaResponseDto": {
+        "type": "object",
+        "properties": {
+          "disabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "disabled"
+        ]
+      },
+      "RegenerateBackupCodesDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "password",
+          "code"
+        ]
+      },
+      "RegenerateBackupCodesResponseDto": {
+        "type": "object",
+        "properties": {
+          "backupCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "backupCodes"
+        ]
+      },
+      "TwoFactorStatusDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "enabled"
         ]
       },
       "MeResponseDto": {
@@ -21543,10 +21934,6 @@
             "type": "string"
           }
         }
-      },
-      "EmptyBodyDto": {
-        "type": "object",
-        "properties": {}
       },
       "EmailDocumentDto": {
         "type": "object",
@@ -31789,6 +32176,17 @@
             "format": "email"
           }
         }
+      },
+      "Reset2FaResponseDto": {
+        "type": "object",
+        "properties": {
+          "reset": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reset"
+        ]
       },
       "DiscountMatrixResponseDto": {
         "type": "object",

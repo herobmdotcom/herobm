@@ -18,6 +18,7 @@ import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
 import { PaymentRunGeneratorService } from './payment-run-generator.service';
 import { SupplierRemittanceAdviceService } from '../pdf-templates/supplier-remittance-advice.service';
+import { CustomerPaymentReceiptService } from '../pdf-templates/customer-payment-receipt.service';
 
 @Module({
   imports: [DrizzleModule, GlModule, SuppliersModule, NotificationsModule],
@@ -31,6 +32,7 @@ import { SupplierRemittanceAdviceService } from '../pdf-templates/supplier-remit
     NachaGeneratorService,
     PaymentRunGeneratorService,
     SupplierRemittanceAdviceService,
+    CustomerPaymentReceiptService,
   ],
   exports: [
     PaymentsCoreService,
@@ -38,12 +40,14 @@ import { SupplierRemittanceAdviceService } from '../pdf-templates/supplier-remit
     PaymentsAllocationService,
     PaymentsPostingService,
     SupplierRemittanceAdviceService,
+    CustomerPaymentReceiptService,
   ],
 })
 export class PaymentsModule implements OnModuleInit {
   constructor(
     private readonly dataSourcesRegistry: DataSourcesRegistry,
     private readonly supplierRemittanceAdviceService: SupplierRemittanceAdviceService,
+    private readonly customerPaymentReceiptService: CustomerPaymentReceiptService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
@@ -58,6 +62,31 @@ export class PaymentsModule implements OnModuleInit {
           options?: Record<string, unknown>,
         ) => {
           return (await this.supplierRemittanceAdviceService.assembleData(
+            id,
+            options,
+          )) as unknown as Record<string, unknown>;
+        },
+        getRandomId: async () => {
+          const rows = await this.db
+            .select({ id: paymentEntries.paymentId })
+            .from(paymentEntries)
+            .orderBy(sql`RANDOM()`)
+            .limit(1);
+          return rows.length > 0 ? rows[0].id : undefined;
+        },
+      },
+    );
+
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.CUSTOMER_PAYMENT_RECEIPT,
+      {
+        requiredPermissions: [{ resource: 'payments', action: 'read' }],
+        resolveData: async (
+          id: string,
+          _user: Record<string, unknown>,
+          options?: Record<string, unknown>,
+        ) => {
+          return (await this.customerPaymentReceiptService.assembleData(
             id,
             options,
           )) as unknown as Record<string, unknown>;

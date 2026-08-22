@@ -2,7 +2,7 @@
 
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { login, getToken, getRole, validateSession, reportError } from '../../lib/api';
+import { login, getToken, getRole, validateSession, reportError, verify2FaLogin } from '../../lib/api';
 import { Button } from './Button';
 
 const AuthContext = createContext<{
@@ -40,6 +40,10 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  
+  const [twoFactorTempToken, setTwoFactorTempToken] = useState<string | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -85,7 +89,11 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const handleLogin = async () => {
     setError('');
     try {
-      await login(username, password);
+      const data = await login(username, password);
+      if (data && data.twoFactorRequired) {
+        setTwoFactorTempToken(data.tempToken);
+        return;
+      }
       const session = await validateSession();
       if (session.valid && session.data) {
         setRole(session.data.role);
@@ -100,10 +108,85 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
     }
   };
 
+  const handleTwoFactorVerify = async () => {
+    setError('');
+    try {
+      if (!twoFactorTempToken) return;
+      await verify2FaLogin(twoFactorTempToken, twoFactorCode);
+      const session = await validateSession();
+      if (session.valid && session.data) {
+        setRole(session.data.role);
+        setCurrentUsername(session.data.username || username);
+        setDisplayName(session.data.displayName || null);
+        setPermissions(session.data.permissions || []);
+        setAuthenticated(true);
+        setTwoFactorTempToken(null);
+      }
+    } catch (err: unknown) {
+      setError(t('twoFactor.invalidCode'));
+      reportError(err, 'AuthGate');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-lg text-[var(--text-secondary)]">{t('loading')}</div>
+      </div>
+    );
+  }
+
+  if (twoFactorTempToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-80 p-8 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              {t('twoFactor.title')}
+            </h2>
+          </div>
+          <p className="text-sm mb-6 text-[var(--text-muted)]">
+            {isRecoveryMode ? t('twoFactor.enterRecoveryCode') : t('twoFactor.enterCode')}
+          </p>
+          <input
+            id={`${idPrefix}-2fa-code`}
+            className="input mb-4"
+            placeholder={isRecoveryMode ? "XXXXXX-XXXXXX" : "123456"}
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleTwoFactorVerify()}
+            autoFocus
+          />
+          {error && <p className="text-sm mb-3 text-[var(--danger)]">{error}</p>}
+          <Button
+            id={`${idPrefix}-2fa-submit`}
+            onClick={handleTwoFactorVerify}
+            className="w-full justify-center mb-4"
+            variant="primary"
+          >
+            {t('twoFactor.verify')}
+          </Button>
+          <div className="flex flex-col gap-2 items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={() => { setIsRecoveryMode(!isRecoveryMode); setTwoFactorCode(''); }}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            >
+              {isRecoveryMode ? t('twoFactor.useTotpCode') : t('twoFactor.useRecoveryCode')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={() => { setTwoFactorTempToken(null); setTwoFactorCode(''); setError(''); }}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            >
+              {t('twoFactor.backToSignIn')}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

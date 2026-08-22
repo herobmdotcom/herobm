@@ -112,14 +112,14 @@ export default function OrderDetailsCard({
 
     return (
         <div id="details-section" className="card">
-            <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <h3 className="section-heading mb-0">
                     <span className="material-symbols-outlined">
                         receipt_long
                     </span>
                     {tSales('orderDetails')}
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
                         <>
                             <Button
@@ -128,7 +128,6 @@ export default function OrderDetailsCard({
                                 onClick={handlePrintQuote}
                                 disabled={isPrintingQuote}
                             >
-                                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                                 {isPrintingQuote ? tCommon('loading') : tSales('buttons.printQuote')}
                             </Button>
                             <Button
@@ -136,7 +135,6 @@ export default function OrderDetailsCard({
                                 size="sm"
                                 onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                             >
-                                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                                 {tSales('buttons.emailQuote')}
                             </Button>
                         </>
@@ -149,7 +147,6 @@ export default function OrderDetailsCard({
                                 onClick={handlePrintConfirmation}
                                 disabled={isPrintingConfirmation}
                             >
-                                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                                 {isPrintingConfirmation ? tCommon('loading') : tSales('buttons.printConfirmation')}
                             </Button>
                             <Button
@@ -157,7 +154,6 @@ export default function OrderDetailsCard({
                                 size="sm"
                                 onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                             >
-                                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                                 {tSales('buttons.emailConfirmation')}
                             </Button>
                         </>
@@ -166,10 +162,8 @@ export default function OrderDetailsCard({
                         <Button
                             variant="secondary"
                             size="sm"
-                            className="flex items-center gap-1"
                             onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
-                            <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                             {tSales('buttons.emailProForma')}
                         </Button>
                     )}

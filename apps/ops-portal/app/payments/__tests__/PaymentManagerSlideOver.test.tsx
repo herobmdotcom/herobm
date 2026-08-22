@@ -43,6 +43,15 @@ jest.mock('@herobm/sdk', () => ({
       contacts: [],
     },
   }),
+  customersControllerFindOne: jest.fn().mockResolvedValue({
+    data: {
+      customerId: 'cust-1',
+      customerNumber: 'CUST-001',
+      name: 'Acme Commercial Ltd',
+      emailAddress1: 'accounts@acme.com',
+      contacts: [],
+    },
+  }),
   glControllerGetJournalEntryBySource: jest.fn().mockResolvedValue({ data: null }),
   purchasingControllerFindAllInvoices: jest.fn().mockResolvedValue({ data: [] }),
   paymentsControllerEmailDocument: jest.fn().mockResolvedValue({ data: { success: true } }),
@@ -121,6 +130,77 @@ describe('PaymentManagerSlideOver', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Email Remittance Advice')).toBeInTheDocument();
+    });
+  });
+
+  it('renders Print Receipt and Email Receipt buttons for customer payment', async () => {
+    (api.paymentsControllerFindOne as jest.Mock).mockResolvedValue({
+      data: {
+        paymentId: 'pmt-2',
+        paymentNumber: 'REC-20260822-0002',
+        paymentType: 'customer_receipt',
+        partyId: 'cust-1',
+        partyName: 'Acme Commercial Ltd',
+        paymentDate: '2026-08-22T00:00:00Z',
+        modeOfPayment: 'Credit Card',
+        totalAmount: '1450.00',
+        unallocatedAmount: '0.00',
+        stateCode: 'submitted',
+        currencyCode: 'AUD',
+        glAccountBank: 'gl-bank-1',
+        allocations: [],
+      },
+    });
+
+    render(
+      <PaymentManagerSlideOver
+        paymentId="pmt-2"
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Print Receipt')).toBeInTheDocument();
+      expect(screen.getByText('Email Receipt')).toBeInTheDocument();
+    });
+  });
+
+  it('opens email payment receipt dialog when Email Receipt button is clicked', async () => {
+    (api.paymentsControllerFindOne as jest.Mock).mockResolvedValue({
+      data: {
+        paymentId: 'pmt-2',
+        paymentNumber: 'REC-20260822-0002',
+        paymentType: 'customer_receipt',
+        partyId: 'cust-1',
+        partyName: 'Acme Commercial Ltd',
+        paymentDate: '2026-08-22T00:00:00Z',
+        modeOfPayment: 'Credit Card',
+        totalAmount: '1450.00',
+        unallocatedAmount: '0.00',
+        stateCode: 'submitted',
+        currencyCode: 'AUD',
+        glAccountBank: 'gl-bank-1',
+        allocations: [],
+      },
+    });
+
+    render(
+      <PaymentManagerSlideOver
+        paymentId="pmt-2"
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Email Receipt')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Email Receipt'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Email Payment Receipt')).toBeInTheDocument();
     });
   });
 });

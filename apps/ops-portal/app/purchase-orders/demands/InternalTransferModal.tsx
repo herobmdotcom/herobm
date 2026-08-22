@@ -164,18 +164,11 @@ export default function InternalTransferModal({
           </Button>
           <Button variant="primary"
             onClick={handleSubmit}
-            disabled={isSubmitting || options.length === 0}
+            disabled={options.length === 0}
+            loading={isSubmitting}
             className="px-4 py-2 text-sm font-medium bg-[var(--accent)] text-white rounded-md hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-2"
           >
-            {isSubmitting ? (
-              <>
-                { }
-                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                {t('demands.creating')}
-              </>
-            ) : (
-              t('demands.createTransfer')
-            )}
+            {isSubmitting ? t('demands.creating') : t('demands.createTransfer')}
           </Button>
         </div>
       </div>

@@ -243,9 +243,9 @@ export default function AddSupplierModal({
              <Button variant="ghost" className="hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
                {t('buttons.cancel')}
               </Button>
-             <Button type="submit" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={submitting || !vendorId}>
-               {submitting ? <span className="loading loading-spinner loading-sm text-white"></span> : t('buttons.linkProduct')}
-             </Button>
+              <Button type="submit" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={!vendorId} loading={submitting}>
+                {t('buttons.linkProduct')}
+              </Button>
           </div>
         </form>
       </div>

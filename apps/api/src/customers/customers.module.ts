@@ -12,6 +12,7 @@ import { CustomerGroupsController } from './customer-groups.controller';
 import { CustomerGroupsService } from './customer-groups.service';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { CustomerStatementService } from '../pdf-templates/customer-statement.service';
+import { CustomerOverdueNoticeService } from '../pdf-templates/customer-overdue-notice.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -23,6 +24,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     CustomerGroupsService,
     CreditAssessmentService,
     CustomerStatementService,
+    CustomerOverdueNoticeService,
   ],
   exports: [
     CustomersService,
@@ -30,12 +32,14 @@ import { NotificationsModule } from '../notifications/notifications.module';
     CustomerGroupsService,
     CreditAssessmentService,
     CustomerStatementService,
+    CustomerOverdueNoticeService,
   ],
 })
 export class CustomersModule implements OnModuleInit {
   constructor(
     private readonly dataSourcesRegistry: DataSourcesRegistry,
     private readonly customerStatementService: CustomerStatementService,
+    private readonly customerOverdueNoticeService: CustomerOverdueNoticeService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
@@ -61,5 +65,30 @@ export class CustomersModule implements OnModuleInit {
         return rows.length > 0 ? rows[0].id : undefined;
       },
     });
+
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE,
+      {
+        requiredPermissions: [{ resource: 'customers', action: 'read' }],
+        resolveData: async (
+          id: string,
+          _user: Record<string, unknown>,
+          options?: Record<string, unknown>,
+        ) => {
+          return (await this.customerOverdueNoticeService.assembleData(
+            id,
+            options,
+          )) as unknown as Record<string, unknown>;
+        },
+        getRandomId: async () => {
+          const rows = await this.db
+            .select({ id: customers.customerId })
+            .from(customers)
+            .orderBy(sql`RANDOM()`)
+            .limit(1);
+          return rows.length > 0 ? rows[0].id : undefined;
+        },
+      },
+    );
   }
 }

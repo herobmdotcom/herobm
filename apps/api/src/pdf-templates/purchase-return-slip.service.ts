@@ -11,6 +11,7 @@ import {
   suppliers,
   actors,
   products,
+  glSettings,
 } from '@herobm/db-schema';
 
 export interface PurchaseReturnSlipData {
@@ -91,6 +92,12 @@ export class PurchaseReturnSlipService {
       throw new NotFoundException(`Purchase return '${returnId}' not found`);
     }
 
+    const [gl] = await this.db
+      .select({ baseCurrency: glSettings.baseCurrency })
+      .from(glSettings)
+      .limit(1);
+    const baseCurrency = gl?.baseCurrency || 'AUD';
+
     const returnLines = await this.db
       .select({
         returnLineId: purchaseOrderReturnLines.returnLineId,
@@ -168,7 +175,7 @@ export class PurchaseReturnSlipService {
         orderNumber: ret.orderNumber || '—',
         packingSlipNumber: shipment?.shipmentNumber || '',
         trackingNumber: shipment?.trackingNumber || '',
-        currencyCode: ret.currencyCode || 'USD',
+        currencyCode: ret.currencyCode || baseCurrency,
         supplierName: ret.vendorName || '—',
         supplierAddress: supplierAddressParts.join(', '),
         supplierContact: '',

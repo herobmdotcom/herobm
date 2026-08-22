@@ -404,3 +404,22 @@ export const users = herobmCore.table('users', {
     .defaultNow()
     .notNull(),
 });
+
+export const userTwoFactor = herobmCore.table('user_two_factor', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.userId, { onDelete: 'cascade' }),
+  secretEncrypted: text('secret_encrypted').notNull(),
+  isEnabled: boolean('is_enabled').notNull(),
+  backupCodes:
+    jsonb('backup_codes')
+      .$type<{ hash: string; usedAt?: string }[]>()
+      .notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

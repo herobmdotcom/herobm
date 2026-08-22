@@ -468,15 +468,11 @@ export default function PickingPage() {
                                 <div className="flex items-center gap-3 shrink-0">
                                     <Button 
                                         onClick={handlePrintDocket} 
-                                        disabled={isGeneratingPdf}
+                                        loading={isGeneratingPdf}
                                         variant="secondary"
                                         size="sm"
                                         className="flex items-center gap-1.5"
                                     >
-                                        {isGeneratingPdf && (
-                                            /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
-                                            <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
-                                        )}
                                         <span>{t('pickingSlipPdf')}</span>
                                     </Button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">

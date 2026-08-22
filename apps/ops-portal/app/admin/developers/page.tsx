@@ -50,34 +50,17 @@ export default function DevelopersPage() {
         subtitle="Manage API access, webhooks, and rate limits"
         actions={[
           {
-            label: (
-              <span className="flex items-center gap-1.5 text-xs font-semibold">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                <span className="material-symbols-outlined text-[16px]">webhook</span>
-                <span>{tDev('webhooksGuide')}</span>
-              </span>
-            ),
+            label: tDev('webhooksGuide'),
             onClick: () => openHelp('webhooks-api'),
             variant: 'secondary',
           },
           {
-            label: (
-              <span className="flex items-center gap-1.5 text-xs font-semibold">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                <span className="material-symbols-outlined text-[16px]">api</span>
-                <span>{tDev('apiReference')}</span>
-              </span>
-            ),
+            label: tDev('apiReference'),
             onClick: () => openHelp('api-reference'),
             variant: 'secondary',
           },
           {
-            label: (
-              <span className="flex items-center gap-1.5 text-xs font-semibold">
-                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                <span>{tDev('swaggerUi')}</span>
-              </span>
-            ),
+            label: tDev('swaggerUi'),
             onClick: () => window.open('/api/docs', '_blank', 'noopener,noreferrer'),
             variant: 'secondary',
           },

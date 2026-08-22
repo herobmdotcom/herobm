@@ -160,7 +160,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
       onClose={onClose}
       title={addressId ? t('editAddress') : t('addAddress')}
       footer={
-        <div className="flex justify-between items-center w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
           <div>
             {allowUnsaved && !addressId && (
               <label className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -175,7 +175,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
               </label>
             )}
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Button
               variant="secondary"
               onClick={onClose}
@@ -186,13 +186,8 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
             <Button
               variant="primary"
               onClick={handleSave}
-              disabled={saving}
+              loading={saving}
             >
-              {saving ? (
-                <span className="material-symbols-outlined animate-spin text-sm">
-                  progress_activity
-                </span>
-              ) : null}
               {tCommon('save')}
             </Button>
           </div>

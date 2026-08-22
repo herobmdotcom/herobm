@@ -89,6 +89,13 @@ describe('SupplierRemittanceAdviceService', () => {
       }),
     });
 
+    // Mock glSettings query
+    mockDb.select.mockReturnValueOnce({
+      from: jest.fn().mockReturnValue({
+        limit: jest.fn().mockResolvedValue([{ baseCurrency: 'AUD' }]),
+      }),
+    });
+
     // 2. Mock supplier query
     mockDb.select.mockReturnValueOnce({
       from: jest.fn().mockReturnValue({

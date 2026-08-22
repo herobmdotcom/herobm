@@ -221,13 +221,9 @@ export default function ReturnCreditNoteSlideOver({
                     <Button 
                         onClick={handleConfirm} 
                         className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
-                        disabled={saving}
+                        loading={saving}
                     >
-                        {saving ? (
-                            <><span className="loading loading-spinner loading-sm mr-2" />{t('issuing')}</>
-                        ) : (
-                            t('issueCreditNote')
-                        )}
+                        {saving ? t('issuing') : t('issueCreditNote')}
                     </Button>
                 </div>
             }

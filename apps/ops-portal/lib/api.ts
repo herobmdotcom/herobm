@@ -62,9 +62,37 @@ export async function login(user: string, pass: string) {
     throw new ApiError(errData?.message ?? 'Login failed', res.status, errData);
   }
   const data = await res.json();
+  
+  if (data.twoFactorRequired) {
+    return data;
+  }
+
   token = data.access_token;
   role = data.role;
   username = data.username || user;
+  displayName = data.displayName || null;
+  writeStorage(TOKEN_KEY, token);
+  writeStorage(ROLE_KEY, role);
+  writeStorage(USERNAME_KEY, username);
+  writeStorage(DISPLAY_NAME_KEY, displayName);
+  return data;
+}
+
+export async function verify2FaLogin(tempToken: string, code: string) {
+  const res = await fetch('/api/auth/2fa/verify-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tempToken, code }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new ApiError(errData?.message ?? '2FA verification failed', res.status, errData);
+  }
+  const data = await res.json();
+  
+  token = data.access_token;
+  role = data.role;
+  username = data.username;
   displayName = data.displayName || null;
   writeStorage(TOKEN_KEY, token);
   writeStorage(ROLE_KEY, role);

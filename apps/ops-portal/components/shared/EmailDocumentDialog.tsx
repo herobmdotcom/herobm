@@ -63,6 +63,8 @@ const KNOWN_CUSTOM_TEXT_HOOKS = [
   'purchase-return',
   'purchase-debit-note',
   'customer-statement',
+  'customer-payment-receipt',
+  'customer-overdue-notice',
   'supplier-remittance-advice',
   'shipping-docket',
   'shipping-label',
@@ -235,7 +237,11 @@ export default function EmailDocumentDialog({
         const deliveryContact = custContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'delivery'));
         const purchasingContact = custContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'purchasing'));
         
-        const primaryContact = hookSlug === 'customer-statement'
+        const primaryContact = (
+          hookSlug === 'customer-statement' ||
+          hookSlug === 'customer-payment-receipt' ||
+          hookSlug === 'customer-overdue-notice'
+        )
           ? (billingContact || purchasingContact || deliveryContact)
           : hookSlug === 'shipping-docket' && deliveryContact
             ? deliveryContact
@@ -308,7 +314,12 @@ export default function EmailDocumentDialog({
           targetId,
           contextSlug,
         });
-      } else if (contextSlug === 'customer-statement' || hookSlug === 'customer-statement') {
+      } else if (
+        contextSlug === 'customer-statement' ||
+        hookSlug === 'customer-statement' ||
+        contextSlug === 'customer-overdue-notice' ||
+        hookSlug === 'customer-overdue-notice'
+      ) {
         await api.customersControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
@@ -318,7 +329,12 @@ export default function EmailDocumentDialog({
           targetId,
           contextSlug,
         });
-      } else if (contextSlug === 'supplier-remittance-advice' || hookSlug === 'supplier-remittance-advice') {
+      } else if (
+        contextSlug === 'supplier-remittance-advice' ||
+        hookSlug === 'supplier-remittance-advice' ||
+        contextSlug === 'customer-payment-receipt' ||
+        hookSlug === 'customer-payment-receipt'
+      ) {
         await api.paymentsControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
@@ -402,7 +418,7 @@ export default function EmailDocumentDialog({
       onClose={onClose}
       title={resolvedTitle}
       footer={
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             variant="secondary"
             onClick={onClose}
@@ -416,13 +432,8 @@ export default function EmailDocumentDialog({
               form="document-action-form"
               className="flex items-center gap-2"
               variant="primary"
-              disabled={printing}
+              loading={printing}
             >
-              {printing ? (
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              ) : (
-                <span className="material-symbols-outlined text-[16px]">print</span>
-              )}
               {tCommon('buttons.printPdf')}
             </Button>
           ) : (
@@ -431,13 +442,8 @@ export default function EmailDocumentDialog({
               form="document-action-form"
               className="flex items-center gap-2"
               variant="primary"
-              disabled={sending}
+              loading={sending}
             >
-              {sending ? (
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              ) : (
-                <span className="material-symbols-outlined text-[16px]">mail</span>
-              )}
               Send Email
             </Button>
           )}

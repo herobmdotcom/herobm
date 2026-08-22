@@ -64,7 +64,7 @@
       text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.returnDate,
       text(9pt, weight: "bold", fill: luma(80))[PO Number:], data.header.orderNumber,
       text(9pt, weight: "bold", fill: luma(80))[RMA / Ref:], if "packingSlipNumber" in data.header and data.header.packingSlipNumber != "" [#data.header.packingSlipNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Tracking #:], if "trackingNumber" in data.header and data.header.trackingNumber != "" [#data.header.trackingNumber] else [—],
+      text(9pt, weight: "bold", fill: luma(80))[Tracking No.:], if "trackingNumber" in data.header and data.header.trackingNumber != "" [#data.header.trackingNumber] else [—],
       text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
     )
   ]

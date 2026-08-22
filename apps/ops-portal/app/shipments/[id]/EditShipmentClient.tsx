@@ -169,12 +169,12 @@ export default function EditShipmentClient({ id }: { id: string }) {
         
         {/* Shipment Details Card */}
         <div id="details-section" className="card">
-          <div className="flex items-center justify-between mb-4 gap-4">
-            <h3 className="section-heading flex items-center gap-2 truncate">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="section-heading mb-0 flex items-center gap-2 truncate">
               <span className="material-symbols-outlined shrink-0">local_shipping</span>
               <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -191,7 +191,6 @@ export default function EditShipmentClient({ id }: { id: string }) {
                   });
                 }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                 {t('emailDocket')}
               </Button>
               <Button
@@ -210,7 +209,6 @@ export default function EditShipmentClient({ id }: { id: string }) {
                   });
                 }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                 {t('docketPdf')}
               </Button>
               <Button

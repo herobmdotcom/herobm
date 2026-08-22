@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (463 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (470 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -420,6 +420,12 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/auth/login` | Login User |
+| `POST` | `/auth/2fa/verify-login` | Verify 2FA Login |
+| `POST` | `/auth/2fa/setup` | Setup 2FA |
+| `POST` | `/auth/2fa/enable` | Enable 2FA |
+| `POST` | `/auth/2fa/disable` | Disable 2FA |
+| `POST` | `/auth/2fa/backup-codes/regenerate` | Regenerate Backup Codes |
+| `GET` | `/auth/2fa/status` | Get 2FA Status |
 | `GET` | `/auth/me` | Get Current User |
 | `GET` | `/roles` | Find all roles |
 | `GET` | `/roles/{role}` | Get role details |
@@ -510,6 +516,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `PATCH` | `/users/{id}` | Update User |
 | `DELETE` | `/users/{id}` | Delete User |
 | `PATCH` | `/users/{id}/toggle-active` | Toggle User Status |
+| `POST` | `/users/{id}/2fa/reset` | Reset User 2FA |
 | `GET` | `/discount-matrix` | List Rules |
 | `POST` | `/discount-matrix` | Create Rule |
 | `GET` | `/discount-matrix/resolve` | Resolve Rules |

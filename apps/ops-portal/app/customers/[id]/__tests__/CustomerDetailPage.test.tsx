@@ -37,7 +37,11 @@ jest.mock('@/components/SettingsProvider', () => ({
 
 jest.mock('@/components/shared/AuthGate', () => ({
   useAuth: () => ({
-    permissions: [{ resource: 'customers', action: 'read' }, { resource: 'customers', action: 'write' }],
+    permissions: [
+      { resource: 'customers', action: 'read', effect: 'allow' },
+      { resource: 'customers', action: 'write', effect: 'allow' },
+      { resource: 'credit-control', action: 'write', effect: 'allow' },
+    ],
   }),
 }));
 
@@ -103,12 +107,14 @@ describe('AccountDetailPage', () => {
     jest.clearAllMocks();
   });
 
-  it('renders Print Statement and Email Statement buttons in header', async () => {
+  it('renders Print Statement, Email Statement, Print Overdue Notice, and Email Overdue Notice buttons in Credit section', async () => {
     render(<AccountDetailPage params={Promise.resolve({ id: 'cust-1' })} />);
 
     await waitFor(() => {
       expect(screen.getByText('Print Statement')).toBeInTheDocument();
       expect(screen.getByText('Email Statement')).toBeInTheDocument();
+      expect(screen.getByText('Print Overdue Notice')).toBeInTheDocument();
+      expect(screen.getByText('Email Overdue Notice')).toBeInTheDocument();
     });
   });
 
@@ -123,6 +129,26 @@ describe('AccountDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Email Customer Statement')).toBeInTheDocument();
+    });
+  });
+
+  it('opens email overdue notice dialog when Email Overdue Notice button is clicked', async () => {
+    render(<AccountDetailPage params={Promise.resolve({ id: 'cust-1' })} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Email Overdue Notice' }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Email Overdue Notice' }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Email Overdue Notice' }),
+      ).toBeInTheDocument();
     });
   });
 });

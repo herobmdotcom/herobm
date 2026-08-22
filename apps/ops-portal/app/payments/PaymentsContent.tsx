@@ -248,14 +248,34 @@ export default function PaymentsContent() {
       onDataLoaded={setPayments}
       onRowClicked={handleRowClicked}
       pageTitle={t('title')}
-      hideSecondaryHeaderOnMobile={true}
       defaultSortModel={[{ colId: 'paymentDate', sort: 'desc' }]}
-      headerFilters={
-        <>
+      headerActions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setSelectedPaymentId(null);
+              setSlideOverOpen(true);
+            }}
+            className="whitespace-nowrap"
+          >
+            {t('newPayment')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => setGeneratorSlideOverOpen(true)}
+            className="whitespace-nowrap"
+          >
+            {t('generateRun')}
+          </Button>
+        </div>
+      }
+      secondaryHeader={
+        <div className="flex flex-wrap items-center justify-start gap-3">
           <select
             value={allocationFilter}
             onChange={(e) => setAllocationFilter(e.target.value)}
-            className="input text-sm flex-1 min-w-0 max-w-[150px]"
+            className="input text-sm !w-auto min-w-[140px]"
           >
             <option value="all">{t('allAllocations')}</option>
             <option value="unallocated">{t('unallocatedOnly')}</option>
@@ -263,92 +283,13 @@ export default function PaymentsContent() {
           <select
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="input text-sm flex-1 min-w-0 max-w-[150px]"
+            className="input text-sm !w-auto min-w-[130px]"
           >
             <option value="30">{tCommon('filters.last30Days')}</option>
             <option value="90">{tCommon('filters.last90Days')}</option>
             <option value="365">{tCommon('filters.last1Year')}</option>
             <option value="0">{tCommon('filters.allTime')}</option>
           </select>
-        </>
-      }
-      headerActions={
-        <div className="flex lg:hidden flex-nowrap items-center justify-end gap-2">
-          <Button
-            variant="primary"
-            onClick={() => {
-              setSelectedPaymentId(null);
-              setSlideOverOpen(true);
-            }}
-            className="flex-1"
-          >
-            {t('newPayment')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => setGeneratorSlideOverOpen(true)}
-            className="flex-1"
-          >
-            {t('generateRun')}
-          </Button>
-
-          {hasDraftSelected && showAba && (
-            <Button
-              variant="primary"
-              onClick={handleExportAba} 
-              disabled={isProcessingBatch}
-            >
-              {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
-            </Button>
-          )}
-
-          {hasDraftSelected && showNacha && (
-            <Button
-              variant="primary"
-              onClick={handleExportNacha} 
-              disabled={isProcessingBatch}
-            >
-              {isProcessingBatch ? t('processing') : `Export NACHA (${draftSelected.length})`}
-            </Button>
-          )}
-          
-          {hasExportedSelected && (
-            <>
-              <Button
-                variant="primary"
-                onClick={() => handleBatchAction('confirm-exported')} 
-                disabled={isProcessingBatch}
-              >
-                {t('confirmCount', { count: exportedSelected.length })}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => handleBatchAction('reject-exported')} 
-                disabled={isProcessingBatch}
-              >
-                {t('reject')}
-              </Button>
-            </>
-          )}
-        </div>
-      }
-      secondaryHeader={
-        <div className="hidden lg:flex flex-wrap items-center justify-start gap-3">
-          <Button
-            variant="primary"
-            onClick={() => {
-              setSelectedPaymentId(null);
-              setSlideOverOpen(true);
-            }}
-          >
-            {t('newPayment')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => setGeneratorSlideOverOpen(true)}
-          >
-            {t('generateRun')}
-          </Button>
           
           {(hasDraftSelected || hasExportedSelected) && (
             <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>

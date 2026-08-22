@@ -91,7 +91,7 @@
   
   // Header Row
   text(9pt, weight: "bold", fill: luma(50))[Date],
-  text(9pt, weight: "bold", fill: luma(50))[Invoice #],
+  text(9pt, weight: "bold", fill: luma(50))[Invoice No.],
   text(9pt, weight: "bold", fill: luma(50))[Supplier Ref],
   text(9pt, weight: "bold", fill: luma(50))[Due Date],
   text(9pt, weight: "bold", fill: luma(50))[Gross Amount],
@@ -122,11 +122,10 @@
       align: (left, right),
       text(9pt, fill: luma(100))[Total Invoiced:], text(9pt)[#fmt(data.summary.totalGross)],
       text(9pt, fill: luma(100))[Total Discounts Applied:], text(9pt)[#if data.summary.totalDiscount != "0.00" [-#fmt(data.summary.totalDiscount)] else [—]],
-      #if "unallocatedAmount" in data.summary and data.summary.unallocatedAmount != "0.00" [
-        #text(9pt, fill: luma(100))[Unallocated / Prepayment:], #text(9pt)[#fmt(data.summary.unallocatedAmount)]
-      ],
-      line(length: 100%, stroke: 0.5pt + luma(200)),
-      line(length: 100%, stroke: 0.5pt + luma(200)),
+      ..(if "unallocatedAmount" in data.summary and data.summary.unallocatedAmount != "0.00" {
+        (text(9pt, fill: luma(100))[Unallocated / Prepayment:], text(9pt)[#fmt(data.summary.unallocatedAmount)])
+      } else { () }),
+      grid.cell(colspan: 2)[#line(length: 100%, stroke: 0.5pt + luma(200))],
       text(11pt, weight: "bold")[Total Paid (#data.header.currencyCode):],
       text(11pt, weight: "bold")[#data.header.currencyCode #fmt(data.summary.totalPaid)],
     )

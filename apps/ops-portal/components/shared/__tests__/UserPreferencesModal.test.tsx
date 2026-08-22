@@ -48,12 +48,13 @@ describe('UserPreferencesModal', () => {
   });
 
   it('renders correctly and switches density when selected', async () => {
-    render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
+    const { container } = render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText('title')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Admin')).toBeInTheDocument();
+    expect(screen.getByText('admin')).toBeInTheDocument();
 
-    const compactRadio = screen.getByDisplayValue('compact');
+    const compactRadio = document.querySelector('input[value="compact"]') as HTMLInputElement;
+    expect(compactRadio).toBeInTheDocument();
     fireEvent.click(compactRadio);
 
     const saveButton = screen.getByText('save');

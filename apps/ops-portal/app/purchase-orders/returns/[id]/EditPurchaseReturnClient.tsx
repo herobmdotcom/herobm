@@ -374,7 +374,7 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
           subtitle={`PO: ${returnDetails.orderNumber || ''} ${returnDetails.vendorName ? `• ${returnDetails.vendorName}` : ''}`}
           badges={<StateBadge state={returnDetails.stateCode as ValidState} />}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -383,7 +383,6 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
                   setIsEmailDialogOpen(true);
                 }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                 Print Return Slip
               </Button>
               <Button
@@ -394,7 +393,6 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
                   setIsEmailDialogOpen(true);
                 }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                 Email Return Slip
               </Button>
 

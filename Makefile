@@ -43,7 +43,7 @@ Verification & Quality Gates:
   make pre-push       - Pre-push gate (verify-all + build container images)
   make check-all      - Fast static analysis: typecheck and linting across all workspaces
   make test-unit      - Run all fast unit tests (API PGlite + Ops Portal components)
-  make test-single TEST=name - Run a single test file (API, Portal, or Structural)
+  make test-single [TEST=name] - Run a single test file (or target from .test_target)
   make test-api-unit  - Run API unit tests (PGlite)
   make test-portal-unit - Run Ops Portal unit tests
   make test-api-e2e   - Run end-to-end API tests against real Postgres
@@ -660,7 +660,6 @@ test-deps:
 	@"$(PYTHON_CMD)" infra/tests/test_dependency_completeness.py
 
 test-single:
-	$(if $(TEST),,$(error Error: TEST is required. Usage: make test-single TEST=<name>))
 	@$(NPX) tsx infra/test-utils/run-single.ts $(TEST)
 
 test-changed:

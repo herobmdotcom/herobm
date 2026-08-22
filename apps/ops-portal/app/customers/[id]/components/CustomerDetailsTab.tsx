@@ -41,6 +41,10 @@ interface CustomerDetailsTabProps {
   creditAssessment: api.CreditAssessmentResponseDto | null;
   accountGroups: api.CustomerGroupResponseDto[];
   paramsId: string;
+  onPrintStatement?: () => void;
+  onEmailStatement?: () => void;
+  onPrintOverdueNotice?: () => void;
+  onEmailOverdueNotice?: () => void;
 }
 
 export function CustomerDetailsTab({
@@ -56,7 +60,11 @@ export function CustomerDetailsTab({
   hasDiscountRules,
   creditAssessment,
   accountGroups,
-  paramsId
+  paramsId,
+  onPrintStatement,
+  onEmailStatement,
+  onPrintOverdueNotice,
+  onEmailOverdueNotice,
 }: CustomerDetailsTabProps) {
   const t = useTranslations();
   const tCommon = useTranslations("common");
@@ -221,10 +229,54 @@ export function CustomerDetailsTab({
         {/* Credit Overview Card */}
         {canManageCredit && (
           <div id="credit-overview-section" className="card">
-            <h3 className="section-heading flex items-center gap-2">
-              <span className="material-symbols-outlined shrink-0">info</span>
-              <span>{t("salesOrders.creditHold.statusOverview")}</span>
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="section-heading flex items-center gap-2 m-0 p-0 border-0">
+                <span className="material-symbols-outlined shrink-0">credit_card</span>
+                <span>Credit</span>
+              </h3>
+              <div className="flex items-center gap-2">
+                {onPrintStatement && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onPrintStatement}
+                    disabled={saving}
+                  >
+                    Print Statement
+                  </Button>
+                )}
+                {onEmailStatement && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onEmailStatement}
+                    disabled={saving}
+                  >
+                    Email Statement
+                  </Button>
+                )}
+                {onPrintOverdueNotice && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onPrintOverdueNotice}
+                    disabled={saving}
+                  >
+                    Print Overdue Notice
+                  </Button>
+                )}
+                {onEmailOverdueNotice && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onEmailOverdueNotice}
+                    disabled={saving}
+                  >
+                    Email Overdue Notice
+                  </Button>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">

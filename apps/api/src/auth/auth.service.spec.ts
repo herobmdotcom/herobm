@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
+import { TwoFactorService } from './two-factor.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -37,6 +38,12 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: {
             sign: jest.fn().mockReturnValue('mock.jwt.token'),
+          },
+        },
+        {
+          provide: TwoFactorService,
+          useValue: {
+            isEnabled: jest.fn().mockResolvedValue(false),
           },
         },
       ],
@@ -78,6 +85,34 @@ describe('AuthService', () => {
       await expect(service.login('disabled', TEST_PASSWORD)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('should return twoFactorRequired when 2FA is enabled', async () => {
+      // Override mock for this test
+      const twoFactorService = {
+        isEnabled: jest.fn().mockResolvedValue(true),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          AuthService,
+          { provide: DRIZZLE, useValue: pg.db },
+          {
+            provide: JwtService,
+            useValue: {
+              sign: jest.fn().mockReturnValue('mock.temp.token'),
+            },
+          },
+          { provide: TwoFactorService, useValue: twoFactorService },
+        ],
+      }).compile();
+
+      const svc = module.get<AuthService>(AuthService);
+      const result = await svc.login('admin', TEST_PASSWORD);
+
+      expect(result).toHaveProperty('twoFactorRequired', true);
+      expect(result).toHaveProperty('tempToken', 'mock.temp.token');
+      expect(result).not.toHaveProperty('access_token');
     });
   });
 });

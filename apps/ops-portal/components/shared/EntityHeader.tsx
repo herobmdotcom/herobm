@@ -34,7 +34,7 @@ export default function EntityHeader({
             <div className="lg:hidden">
 
             </div>
-            <div className="flex flex-wrap items-center gap-2 justify-end">
+            <div className="flex flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
               {actions}
             </div>
           </div>

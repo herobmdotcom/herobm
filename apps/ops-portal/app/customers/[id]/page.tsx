@@ -101,27 +101,42 @@ export default function AccountDetailPage({
     "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments"
   >(initialTab);
 
-  // Statement Dialog State & PDF Generator
+  // Document Dialog State & PDF Generator
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
+  const [activeDocumentType, setActiveDocumentType] = useState<'statement' | 'overdue-notice'>('statement');
 
-  const handleGenerateStatementPdf = async (customPdfText?: string) => {
+  const handleGenerateDocumentPdf = async (customPdfText?: string) => {
     if (!customer) return;
     try {
-      const response = await api.pdfTemplatesControllerRunHook(
-        'customer-statement',
-        { customPdfText },
-        {
-          id: customer.customerId,
-          context: DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT,
-        },
-      );
+      const isOverdue = activeDocumentType === 'overdue-notice';
+      const response = isOverdue
+        ? await api.pdfTemplatesControllerRunHook(
+            'customer-overdue-notice',
+            { customPdfText },
+            {
+              id: customer.customerId,
+              context: DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE,
+            },
+          )
+        : await api.pdfTemplatesControllerRunHook(
+            'customer-statement',
+            { customPdfText },
+            {
+              id: customer.customerId,
+              context: DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT,
+            },
+          );
       const blob = response.data;
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
-      reportError(err, 'CustomerDetailPage:generateStatementPdf');
-      toast.error('Failed to generate Customer Statement PDF');
+      reportError(err, 'CustomerDetailPage:generateDocumentPdf');
+      toast.error(
+        activeDocumentType === 'overdue-notice'
+          ? 'Failed to generate Overdue Notice PDF'
+          : 'Failed to generate Customer Statement PDF',
+      );
     }
   };
 
@@ -414,30 +429,6 @@ export default function AccountDetailPage({
             subtitle={customer.customerNumber}
             isSaving={saving}
             nav={<PageNav sections={visibleSections} />}
-            actions={
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setEmailDialogMode('print');
-                    setIsEmailDialogOpen(true);
-                  }}
-                >
-                  Print Statement
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setEmailDialogMode('email');
-                    setIsEmailDialogOpen(true);
-                  }}
-                >
-                  Email Statement
-                </Button>
-              </div>
-            }
           />
         }
         footerActions={
@@ -635,6 +626,26 @@ export default function AccountDetailPage({
             creditAssessment={creditAssessment}
             accountGroups={accountGroups}
             paramsId={params.id}
+            onPrintStatement={() => {
+              setActiveDocumentType('statement');
+              setEmailDialogMode('print');
+              setIsEmailDialogOpen(true);
+            }}
+            onEmailStatement={() => {
+              setActiveDocumentType('statement');
+              setEmailDialogMode('email');
+              setIsEmailDialogOpen(true);
+            }}
+            onPrintOverdueNotice={() => {
+              setActiveDocumentType('overdue-notice');
+              setEmailDialogMode('print');
+              setIsEmailDialogOpen(true);
+            }}
+            onEmailOverdueNotice={() => {
+              setActiveDocumentType('overdue-notice');
+              setEmailDialogMode('email');
+              setIsEmailDialogOpen(true);
+            }}
           />
         )}
 
@@ -647,20 +658,36 @@ export default function AccountDetailPage({
             orderId={customer.customerId}
             orderNumber={customer.customerNumber}
             customerId={customer.customerId}
-            hookSlug="customer-statement"
-            title={emailDialogMode === 'print' ? 'Print Customer Statement' : 'Email Customer Statement'}
-            defaultSubjectPrefix="Statement of Account"
-            documentName="Statement"
+            hookSlug={activeDocumentType === 'overdue-notice' ? 'customer-overdue-notice' : 'customer-statement'}
+            title={
+              emailDialogMode === 'print'
+                ? activeDocumentType === 'overdue-notice'
+                  ? 'Print Overdue Notice'
+                  : 'Print Customer Statement'
+                : activeDocumentType === 'overdue-notice'
+                  ? 'Email Overdue Notice'
+                  : 'Email Customer Statement'
+            }
+            defaultSubjectPrefix={activeDocumentType === 'overdue-notice' ? 'Overdue Notice' : 'Statement of Account'}
+            documentName={activeDocumentType === 'overdue-notice' ? 'Overdue Notice' : 'Statement'}
             targetId={customer.customerId}
-            contextSlug={DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT}
+            contextSlug={
+              activeDocumentType === 'overdue-notice'
+                ? DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE
+                : DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT
+            }
             onClose={() => setIsEmailDialogOpen(false)}
             onSuccess={() => {
               setIsEmailDialogOpen(false);
               if (emailDialogMode !== 'print') {
-                toast.success('Statement email queued successfully!');
+                toast.success(
+                  activeDocumentType === 'overdue-notice'
+                    ? 'Overdue notice email queued successfully!'
+                    : 'Statement email queued successfully!',
+                );
               }
             }}
-            onPreview={(customText) => handleGenerateStatementPdf(customText)}
+            onPreview={(customText) => handleGenerateDocumentPdf(customText)}
           />
         )}
       </DetailsLayout>

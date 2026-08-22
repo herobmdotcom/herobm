@@ -196,8 +196,6 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
                   onClick={() => setBrowserOpen(true)}
                   disabled={!formData.dataSourceHook}
                 >
-                  { }
-                  <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </Button>
               </div>

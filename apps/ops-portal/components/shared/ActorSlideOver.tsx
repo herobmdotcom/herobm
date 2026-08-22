@@ -168,7 +168,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
       title={editingActor ? "Edit Actor Link" : "Link Actor"}
       width="max-w-md"
       footer={
-        <div className="flex items-center justify-end gap-3 w-full">
+        <div className="flex flex-wrap items-center justify-end gap-3 w-full">
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
@@ -177,13 +177,9 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
             form="actor-form"
             variant="primary"
             className="bg-[var(--accent)] hover:opacity-90 border-none text-white"
-            disabled={saving}
+            loading={saving}
           >
-            {saving ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
-            ) : (
-              tCommon('save')
-            )}
+            {saving ? tCommon('saving') : tCommon('save')}
           </Button>
         </div>
       }

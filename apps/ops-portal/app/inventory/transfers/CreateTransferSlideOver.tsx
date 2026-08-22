@@ -117,15 +117,12 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !sourceLocationId || !destinationLocationId}
+            disabled={!sourceLocationId || !destinationLocationId}
+            loading={isSubmitting}
             variant="primary"
             className="bg-[#006b5c] hover:bg-[#005246] border-none text-white"
           >
-            {isSubmitting ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
-            ) : (
-              t('buttons.createTransfer')
-            )}
+            {isSubmitting ? tCommon('saving') : t('buttons.createTransfer')}
           </Button>
         </div>
       }
