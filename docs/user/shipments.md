@@ -1,7 +1,7 @@
 ---
 id: shipments
 title: "Shipments & Delivery"
-description: "Manage outbound shipments, packing slips, carrier tracking, and order dispatch."
+description: "Manage outbound shipments, packing slips, shipping labels, carrier tracking, and order dispatch."
 category: "Sales"
 order: 5
 resource: "orders"
@@ -9,7 +9,7 @@ action: "read"
 routes:
   - "/shipments"
   - "/shipments/:id"
-tags: ["shipments", "shipping", "delivery", "tracking", "packing", "dispatch"]
+tags: ["shipments", "shipping", "delivery", "tracking", "packing", "dispatch", "labels", "email"]
 fields:
   shipment_number:
     title: "Shipment Number"
@@ -31,7 +31,7 @@ related:
 
 # Shipments & Delivery
 
-The **Shipments** module tracks the physical packaging and dispatch of goods to customers. It links warehouse picking to carrier tracking numbers and automatically updates sales order fulfillment states.
+The **Shipments** module tracks the physical packaging and dispatch of goods to customers. It links warehouse picking to carrier tracking numbers, generates shipping labels and delivery dockets, supports customer emailing, and automatically updates sales order fulfillment states.
 
 ---
 
@@ -55,6 +55,14 @@ stateDiagram-v2
 
 ---
 
+## Document Generation & Customer Emailing
+
+- **Print Shipping Label**: Generates a standardized Typst carrier dispatch label formatted with customer address, barcode, package counts, and carrier routing info.
+- **Print Shipping Docket**: Generates a packing docket itemizing dispatched SKUs, quantities, and serials for inclusion inside the parcel.
+- **Email Shipping Docket**: Opens the document email dialog to send the dispatch notification and PDF docket directly to the customer's delivery contact.
+
+---
+
 ## Step-by-Step Workflows
 
 ### 1. Creating and Dispatching a Shipment (Manual Workbench)
@@ -62,8 +70,8 @@ stateDiagram-v2
 2. Click **New Shipment** and select the **Sales Order**.
 3. Verify the delivery address and packed line quantities.
 4. Select the **Carrier** and enter the **Tracking Number**.
-5. (Optional) Enter the number of packages and total weight.
-6. Click **Print Packing Slip** to include with the parcel.
+5. Click **Print Shipping Label** to affix to cartons.
+6. Click **Print Shipping Docket** or **Email Docket** to send confirmation to the client.
 7. Click **Mark as Dispatched**.
 
 ### 2. Fast-Track Barcode Dispatch
@@ -80,3 +88,4 @@ stateDiagram-v2
 | **Tracking Number** | Waybill / tracking number for online tracking. |
 | **Status** | Stage in dispatch workflow (`Draft`, `Packing`, `Dispatched`, `Delivered`). |
 | **Delivery Address** | Destination physical address for delivery. |
+| **Shipping Notes** | Special instructions for the delivery driver. |

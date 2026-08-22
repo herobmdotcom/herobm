@@ -1,7 +1,7 @@
 ---
 id: general-ledger
 title: "General Ledger & Chart of Accounts"
-description: "Manage financial accounts, create manual journal entries, and generate the Trial Balance."
+description: "Manage financial accounts, create manual journal entries, monitor fiscal locking, and generate balanced Trial Balances."
 category: "Finance"
 order: 23
 resource: "finance"
@@ -10,7 +10,8 @@ routes:
   - "/general-ledger"
   - "/general-ledger/trial-balance"
   - "/general-ledger/journal-entries"
-tags: ["finance", "general-ledger", "gl", "chart-of-accounts", "journal-entries", "trial-balance", "accounting"]
+  - "/general-ledger/journal-entries/new"
+tags: ["finance", "general-ledger", "gl", "chart-of-accounts", "journal-entries", "trial-balance", "accounting", "fiscal-periods"]
 fields:
   account_code:
     title: "Account Code"
@@ -28,6 +29,7 @@ fields:
     title: "Credit (CR)"
     summary: "Right-side transaction value."
 related:
+  - "fiscal-periods"
   - "balances"
   - "payments"
   - "reconciliations"
@@ -35,7 +37,7 @@ related:
 
 # General Ledger & Chart of Accounts
 
-The **General Ledger (GL)** is the financial backbone of HeroBM. It records all automated postings from operations and allows accountants to enter manual adjusting journals and generate Trial Balances.
+The **General Ledger (GL)** is the financial backbone of HeroBM. It records all automated postings from operations, supports manual adjusting journal entries, enforces fiscal period lock boundaries, and validates Trial Balance mathematical integrity.
 
 ---
 
@@ -53,7 +55,28 @@ $$\sum \text{Debits} = \sum \text{Credits}$$
 | **Supplier Invoice** | Inventory / Expense + Input Tax | Accounts Payable |
 | **Customer Payment** | Bank Account | Accounts Receivable |
 | **Supplier Payment** | Accounts Payable | Bank Account |
+| **Purchase Debit Note** | Accounts Payable | Inventory / Expense + Input Tax |
 | **Stock Loss Adjustment** | Inventory Variance Expense | Inventory Asset |
+
+---
+
+## Fiscal Locking & Balance Integrity
+
+### 1. Fiscal Period Enforcement
+- All manual journal entries and automated operational postings check the active [Fiscal Period](file:///docs/user/fiscal_periods.md).
+- Postings with effective dates falling into a **Hard Closed** period are blocked.
+- Postings in a **Soft Locked** period require explicit user confirmation.
+
+### 2. Trial Balance Zero-Sum Check
+The Trial Balance report incorporates continuous zero-sum verification:
+$$\text{Total Debits} - \text{Total Credits} = 0.00$$
+If any rounding imbalance exceeds $\pm 0.005$, the system highlights an out-of-balance anomaly and prevents closing the period.
+
+### 3. Subledger Parity Verification
+Automated subledger reconciliation checks reconcile:
+- **Accounts Receivable** control account vs **Customer Aged Balances**.
+- **Accounts Payable** control account vs **Supplier Aged Balances**.
+- **Inventory Asset** control account vs **Inventory Valuation Ledger**.
 
 ---
 
@@ -61,16 +84,17 @@ $$\sum \text{Debits} = \sum \text{Credits}$$
 
 ### 1. Creating a Manual Journal Entry
 1. Go to **Finance** → **General Ledger** → **Journal Entries** (`/general-ledger/journal-entries`).
-2. Click **New Journal Entry**.
+2. Click **New Journal Entry** (`/general-ledger/journal-entries/new`).
 3. Enter the **Transaction Date** and a clear **Description / Reference**.
 4. Add line items: select GL accounts and enter Debit and Credit amounts.
-5. Verify that total debits exactly equal total credits.
+5. Verify that total debits exactly equal total credits ($\sum \text{DR} = \sum \text{CR}$).
 6. Click **Post Journal Entry**.
 
 ### 2. Viewing the Trial Balance
 1. Go to **Finance** → **General Ledger** → **Trial Balance** (`/general-ledger/trial-balance`).
 2. Select the financial period or date range.
 3. Review debit/credit balances across all active accounts.
+4. Verify the zero-sum balanced status banner at the top of the report.
 
 ---
 
@@ -83,3 +107,4 @@ $$\sum \text{Debits} = \sum \text{Credits}$$
 | **Account Type** | `Asset`, `Liability`, `Equity`, `Revenue`, or `Expense`. |
 | **Debit / Credit** | Transaction amounts (must balance). |
 | **Period** | Active financial month/year. |
+| **Zero-Sum Variance** | Variance indicator ensuring debits equal credits. |

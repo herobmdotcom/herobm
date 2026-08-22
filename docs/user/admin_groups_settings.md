@@ -1,7 +1,7 @@
 ---
 id: admin-settings
 title: "Master Groups & System Settings"
-description: "Configure customer/supplier/product groups, company profile, default financial accounts, and global settings."
+description: "Configure customer/supplier/product groups, company profile, default financial accounts, email SMTP outbox, and global settings."
 category: "Administration"
 order: 28
 resource: "settings"
@@ -17,7 +17,13 @@ routes:
   - "/admin/settings/license"
   - "/admin/settings/pdf-hooks"
   - "/admin/settings/pdf-templates"
-tags: ["admin", "settings", "groups", "financial-settings", "system", "pdf-hooks", "license"]
+  - "/admin/settings/pdf-templates/new"
+  - "/admin/email/outbox"
+  - "/admin/email/settings"
+  - "/admin/event-queue"
+  - "/admin/system-logs"
+  - "/admin/version"
+tags: ["admin", "settings", "groups", "financial-settings", "system", "pdf-hooks", "license", "email", "outbox", "logs", "version"]
 fields:
   company_name:
     title: "Company Legal Name"
@@ -31,15 +37,22 @@ fields:
   default_accounts:
     title: "Default GL Accounts"
     summary: "System accounts for AR, AP, Inventory Asset, Revenue, and Tax Payable."
+  smtp_host:
+    title: "SMTP Server Host"
+    summary: "Outbound mail server hostname or IP address."
+  analysis_codes:
+    title: "Sales Order Analysis Codes"
+    summary: "Structured custom classification tags available for sales orders."
 related:
   - "admin-users"
   - "general-ledger"
+  - "fiscal-periods"
   - "technical-operations"
 ---
 
 # Master Groups & System Settings
 
-The **Administration: Settings** section configures classification groups, company profile details, default General Ledger accounts, and global application options.
+The **Administration: Settings** section configures classification groups, company profile details, default General Ledger accounts, outbound email services, and global application options.
 
 ---
 
@@ -50,17 +63,32 @@ flowchart TD
     S[System Administration] --> G[Master Groups<br/>Customer, Supplier, Product Groups]
     S --> C[Company Profile & License]
     S --> F[Financial & Tax Settings]
-    S --> P[PDF Hooks & Document Layouts]
+    S --> E[Email SMTP & Outbox Delivery]
+    S --> P[PDF Templates & Typst Hooks]
+    S --> H[System Health, Logs & Version]
 ```
 
 ### 1. Customer, Supplier & Product Groups
-- **Customer Groups**: Set group-level price scales (1–4), default trading terms, and percentage discounts.
-- **Supplier Groups**: Categorize vendors for spend reporting and default expense accounts.
-- **Product Groups**: Group items for inventory accounting, margin analysis, and catalog navigation.
+- **Customer Groups** (`/admin/customer-groups`): Set group-level price scales (1–4), default trading terms, and percentage discounts.
+- **Supplier Groups** (`/admin/supplier-groups`): Categorize vendors for spend reporting, default expense accounts, and tax positions.
+- **Product Groups** (`/admin/product-groups`): Group items for inventory accounting, margin analysis, and catalog navigation.
 
 ### 2. Financial & System Settings
 - **Financial Settings** (`/admin/settings/financial`): Configure standard chart of account linkages (Accounts Receivable, Accounts Payable, Sales Tax Liability, Rounding, Retained Earnings).
-- **System Settings** (`/admin/settings/system`): Manage global defaults, timezones, and number sequence generators for orders, quotes, and invoices.
+- **System Settings** (`/admin/settings/system`): Manage global defaults, timezones, number sequence generators, and structured **Sales Order Analysis Codes**.
+
+### 3. Email Outbox & SMTP Settings
+- **Email Settings** (`/admin/email/settings`): Configure outbound SMTP servers (Host, Port, Secure TLS, Username, Password, Default From Address).
+- **Email Outbox** (`/admin/email/outbox`): Operational queue tracking all sent and pending emails (Invoices, Purchase Orders, Shipping Dockets) with automated retry mechanisms for failed deliveries.
+
+### 4. PDF Templates & Typst Rendering
+- **PDF Templates** (`/admin/settings/pdf-templates`): Manage modern Typst document layouts (Sales Orders, Invoices, Shipping Labels, Packing Slips, Purchase Debit Notes).
+- **PDF Hooks** (`/admin/settings/pdf-hooks`): Connect system event triggers to specific PDF template renderings.
+
+### 5. System Health, Logs & Version
+- **Event Queue** (`/admin/event-queue`): Monitor Redis BullMQ transactional outbox event streams.
+- **System Logs** (`/admin/system-logs`): Filter and search application runtime diagnostics.
+- **Version & Build** (`/admin/version`): View active Git commit hash, container build timestamp, and API version.
 
 ---
 
@@ -70,9 +98,15 @@ flowchart TD
 1. Go to **Admin** → **Groups** → **Customer Groups** (`/admin/customer-groups`).
 2. Click **New Customer Group**.
 3. Enter the **Group Name** (e.g. Wholesale Tier 2).
-4. Select the default **Price Scale** (e.g. Scale 3) and **Group Discount %**.
+4. Select the default **Price Scale** (e.g. Scale 3) and **Group Discount %** (must be between 0% and 100%).
 5. Select the default **Payment Terms** (e.g. Net 30).
 6. Click **Save Group**.
+
+### 2. Configuring Email Delivery
+1. Go to **Admin** → **Email** → **Email Settings** (`/admin/email/settings`).
+2. Enter your mail server details (**SMTP Host**, **Port**, **Sender Email**).
+3. Click **Send Test Email** to verify SMTP connectivity.
+4. Save configuration. All PDF email buttons across orders and shipments will route through this gateway.
 
 ---
 
@@ -84,3 +118,5 @@ flowchart TD
 | **Price Scale** | Default pricing tier (1–4) assigned to customer groups. |
 | **Default AR/AP Accounts** | Control accounts in General Ledger for automated postings. |
 | **System Numbering** | Prefixes and next sequence numbers for invoices and orders. |
+| **SMTP Host / Port** | Outbound mail server connection settings. |
+| **Analysis Codes** | Structured dropdown codes for reporting on sales orders. |

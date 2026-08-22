@@ -61,6 +61,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
 
   const [emailDialogConfig, setEmailDialogConfig] = useState<{
     isOpen: boolean;
+    mode?: 'email' | 'print';
     hookSlug: string;
     title: string;
     prefix: string;
@@ -69,6 +70,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     contextSlug: string;
   }>({
     isOpen: false,
+    mode: 'email',
     hookSlug: '',
     title: '',
     prefix: '',
@@ -437,6 +439,23 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                   size="sm"
                   onClick={() => setEmailDialogConfig({
                     isOpen: true,
+                    mode: 'print',
+                    hookSlug: 'purchase-order',
+                    title: 'Print Purchase Order',
+                    prefix: 'Purchase Order',
+                    docName: 'Purchase Order',
+                    targetId: order.purchaseOrderId!,
+                    contextSlug: DATA_SOURCE_CONTEXT.PURCHASE_ORDER,
+                  })}
+                >
+                  {tPurchase('buttons.printPurchaseOrder')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEmailDialogConfig({
+                    isOpen: true,
+                    mode: 'email',
                     hookSlug: 'purchase-order',
                     title: 'Email Purchase Order',
                     prefix: 'Purchase Order',
@@ -650,6 +669,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
       {order && (
         <EmailDocumentDialog
           isOpen={emailDialogConfig.isOpen}
+          mode={emailDialogConfig.mode || 'email'}
           orderId={id}
           orderNumber={order.orderNumber}
           customerReference={order.referenceNumber}
@@ -663,7 +683,9 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
           onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
           onSuccess={() => {
             setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
-            toast.success('Email queued successfully!');
+            if (emailDialogConfig.mode !== 'print') {
+              toast.success('Email queued successfully!');
+            }
             loadOrder();
           }}
           onPreview={async (customPdfText?: string) => {

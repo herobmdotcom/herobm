@@ -60,6 +60,7 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DebitNoteDetailData | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
 
   const handleGenerateDebitNotePdf = async (customPdfText?: string) => {
     if (!data) return;
@@ -229,17 +230,21 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => handleGenerateDebitNotePdf()}
+                onClick={() => {
+                  setEmailDialogMode('print');
+                  setIsEmailDialogOpen(true);
+                }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                 Print Debit Note
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsEmailDialogOpen(true)}
+                onClick={() => {
+                  setEmailDialogMode('email');
+                  setIsEmailDialogOpen(true);
+                }}
               >
-                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                 Email Debit Note
               </Button>
             </div>
@@ -329,12 +334,13 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
       {data && (
         <EmailDocumentDialog
           isOpen={isEmailDialogOpen}
+          mode={emailDialogMode}
           orderId={data.debitNoteId}
           orderNumber={data.debitNoteNumber}
           customerReference={data.orderNumber}
           supplierId={data.vendorId || undefined}
           hookSlug="purchase-debit-note"
-          title="Email Purchase Debit Note"
+          title={emailDialogMode === 'print' ? 'Print Purchase Debit Note' : 'Email Purchase Debit Note'}
           defaultSubjectPrefix="Debit Note"
           documentName="Debit Note"
           targetId={data.debitNoteId}
@@ -342,7 +348,9 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
           onClose={() => setIsEmailDialogOpen(false)}
           onSuccess={() => {
             setIsEmailDialogOpen(false);
-            toast.success('Email queued successfully!');
+            if (emailDialogMode !== 'print') {
+              toast.success('Email queued successfully!');
+            }
             fetchDebitNote();
           }}
           onPreview={(customText) => handleGenerateDebitNotePdf(customText)}

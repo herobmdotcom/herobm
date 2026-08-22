@@ -166,6 +166,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     /* ── Quote Dialog ──────────────────────────────────────────────────────── */
     const [emailDialogConfig, setEmailDialogConfig] = useState<{
         isOpen: boolean;
+        mode?: 'email' | 'print';
         hookSlug: string;
         title: string;
         prefix: string;
@@ -174,6 +175,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         contextSlug: string;
     }>({
         isOpen: false,
+        mode: 'email',
         hookSlug: '',
         title: '',
         prefix: '',
@@ -436,7 +438,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     editDispatchContactId={editDispatchContactId}
                     setEditDispatchContactId={setEditDispatchContactId}
                     saveHeader={saveHeader}
-                    onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
+                    onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, mode: 'email', hookSlug, title, prefix, docName, targetId, contextSlug })}
+                    onPrintDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, mode: 'print', hookSlug, title, prefix, docName, targetId, contextSlug })}
                     reportError={reportError}
                     setError={setError}
                 />
@@ -549,6 +552,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
             {order && (
                 <EmailDocumentDialog
                     isOpen={emailDialogConfig.isOpen}
+                    mode={emailDialogConfig.mode || 'email'}
                     orderId={id}
                     orderNumber={order.orderNumber}
                     customerReference={order.customerOrderNumber}
@@ -562,7 +566,9 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
                     onSuccess={() => {
                         setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
-                        toast.success('Email queued successfully!');
+                        if (emailDialogConfig.mode !== 'print') {
+                            toast.success('Email queued successfully!');
+                        }
                     }}
                     onPreview={async (customPdfText?: string) => {
                         try {

@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (462 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (463 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -232,6 +232,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/payments/export-nacha` | Export NACHA |
 | `POST` | `/payments/confirm-exported` | Confirm Exported Payments |
 | `POST` | `/payments/reject-exported` | Reject Exported Payments |
+| `POST` | `/payments/{id}/email-document` | Email Payment Document / Remittance Advice |
 
 ### Products
 

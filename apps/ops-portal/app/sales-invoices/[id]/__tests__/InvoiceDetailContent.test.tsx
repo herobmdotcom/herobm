@@ -37,6 +37,8 @@ jest.mock('@herobm/sdk', () => ({
     invoiceDetailControllerChangeSalesInvoiceState: (...args: any[]) => mockInvoiceDetailControllerChangeSalesInvoiceState(...args),
     invoiceDetailControllerAdminMarkSalesInvoicePaid: (...args: any[]) => mockInvoiceDetailControllerAdminMarkSalesInvoicePaid(...args),
     pdfTemplatesControllerRunHook: (...args: any[]) => mockPdfTemplatesControllerRunHook(...args),
+    contactsControllerListContacts: jest.fn().mockResolvedValue({ data: [] }),
+    macroControllerGetMacrosByContext: jest.fn().mockResolvedValue({ data: [] }),
 }));
 
 jest.mock('@/hooks/useDocumentTitle', () => ({
@@ -120,7 +122,7 @@ describe('InvoiceDetailContent', () => {
         expect(mockInvoiceDetailControllerAdminMarkSalesInvoicePaid).toHaveBeenCalledWith('inv-1', {});
     });
 
-    it('allows printing invoice PDF', async () => {
+    it('allows printing invoice PDF via print dialog', async () => {
         const user = userEvent.setup();
 
         render(<InvoiceDetailContent id="inv-1" />);
@@ -128,9 +130,16 @@ describe('InvoiceDetailContent', () => {
         const printBtn = screen.getAllByText('printInvoice')[0];
         await user.click(printBtn);
 
-        expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith('sales-invoice', {}, {
-            id: 'inv-1',
-            context: 'sales-invoice',
+        // Dialog should be open with Print Sales Invoice title and Print PDF button
+        expect(screen.getByText('Print Sales Invoice')).toBeInTheDocument();
+        const submitPrintBtn = screen.getByRole('button', { name: /buttons\.printPdf/i });
+        await user.click(submitPrintBtn);
+
+        await waitFor(() => {
+            expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith('sales-invoice', { customPdfText: '' }, {
+                id: 'inv-1',
+                context: 'sales-invoice',
+            });
         });
         expect(window.open).toHaveBeenCalledWith('blob:http://localhost/blob', '_blank');
     });

@@ -13,6 +13,7 @@ interface SeedData {
   slug: string;
   name: string;
   contexts?: string[];
+  hook?: string;
   description: string;
   outputPattern: string;
   templatePath?: string;
@@ -136,6 +137,47 @@ const SEEDS: SeedData[] = [
     templatePath: '../../../../tools/seeds/reports/purchase-order.typ',
     outputPattern: 'PurchaseOrder-${orderNumber}.pdf',
   },
+  {
+    slug: 'purchase-return-slip',
+    name: 'Purchase Return Slip',
+    contexts: ['purchase-return'],
+    hook: 'purchase-return',
+    description:
+      'System default template for generating Purchase Return slips for suppliers.',
+    templatePath: '../../../../tools/seeds/reports/purchase-return-slip.typ',
+    outputPattern: 'PurchaseReturn-${returnNumber}.pdf',
+  },
+  {
+    slug: 'purchase-debit-note-template',
+    name: 'Purchase Debit Note',
+    contexts: ['purchase-debit-note'],
+    hook: 'purchase-debit-note',
+    description:
+      'System default template for generating Purchase Debit Notes against supplier returns.',
+    templatePath: '../../../../tools/seeds/reports/purchase-debit-note.typ',
+    outputPattern: 'DebitNote-${debitNoteNumber}.pdf',
+  },
+  {
+    slug: 'customer-statement',
+    name: 'Customer Statement of Account',
+    contexts: ['customer-statement'],
+    hook: 'customer-statement',
+    description:
+      'System default template for generating Customer Statements of Account and aged debtor analysis.',
+    templatePath: '../../../../tools/seeds/reports/customer-statement.typ',
+    outputPattern: 'Statement-${customerNumber}.pdf',
+  },
+  {
+    slug: 'supplier-remittance-advice',
+    name: 'Supplier Remittance Advice',
+    contexts: ['supplier-remittance-advice'],
+    hook: 'supplier-remittance-advice',
+    description:
+      'System default template for generating Supplier Remittance Advice slips.',
+    templatePath:
+      '../../../../tools/seeds/reports/supplier-remittance-advice.typ',
+    outputPattern: 'Remittance-${paymentNumber}.pdf',
+  },
 ];
 
 export async function seedDynamicReports(db: SeedDB, dryRun = false) {
@@ -203,7 +245,7 @@ export async function seedDynamicReports(db: SeedDB, dryRun = false) {
             .onConflictDoNothing();
 
           await db.insert(pdfTemplateHooks).values({
-            hookSlug: seedData.slug,
+            hookSlug: seedData.hook || seedData.slug,
             reportId: newTemplateId,
             contextSlug: ctx,
           });

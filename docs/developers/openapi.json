@@ -12924,6 +12924,53 @@
         ]
       }
     },
+    "/payments/{id}/email-document": {
+      "post": {
+        "description": "Generates a Payment Document (e.g. Supplier Remittance Advice) PDF using the active template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "PaymentsController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Payment Document / Remittance Advice",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
     "/suppliers": {
       "get": {
         "description": "Retrieve a paginated list of all suppliers.",

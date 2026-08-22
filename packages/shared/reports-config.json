@@ -155,6 +155,16 @@
       "hook": "customer-statement",
       "context": "customer-statement",
       "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000018",
+      "slug": "supplier-remittance-advice",
+      "name": "Supplier Remittance Advice",
+      "filename": "supplier-remittance-advice.typ",
+      "output_name_pattern": "Remittance-${paymentNumber}.pdf",
+      "hook": "supplier-remittance-advice",
+      "context": "supplier-remittance-advice",
+      "type": "hook"
     }
   ]
 }

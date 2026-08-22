@@ -24,22 +24,24 @@ interface Contact {
   primaryFor?: string[];
 }
 
-interface EmailDocumentDialogProps {
+export interface EmailDocumentDialogProps {
   isOpen: boolean;
-  orderId: string;
-  orderNumber: string;
+  mode?: 'email' | 'print';
+  orderId?: string;
+  orderNumber?: string;
   customerReference?: string | null;
   customerId?: string;
   supplierId?: string;
   hookSlug: string;
-  title: string;
-  defaultSubjectPrefix: string;
-  documentName: string;
+  title?: string;
+  defaultSubjectPrefix?: string;
+  documentName?: string;
   targetId: string;
   contextSlug: string;
-  onPreview: (customText?: string) => void;
+  onPreview: (customText?: string) => void | Promise<void>;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  onPrint?: (customText?: string) => void | Promise<void>;
   onSend?: (params: {
     emailAddress: string;
     subject: string;
@@ -61,13 +63,37 @@ const KNOWN_CUSTOM_TEXT_HOOKS = [
   'purchase-return',
   'purchase-debit-note',
   'customer-statement',
+  'supplier-remittance-advice',
+  'shipping-docket',
+  'shipping-label',
+  'picking-slip',
 ];
 
-export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, supplierId, hookSlug, title, defaultSubjectPrefix, documentName, targetId, contextSlug, onPreview, onClose, onSuccess, onSend }: EmailDocumentDialogProps) {
+export default function EmailDocumentDialog({
+  isOpen,
+  mode = 'email',
+  orderId,
+  orderNumber = '',
+  customerReference,
+  customerId,
+  supplierId,
+  hookSlug,
+  title,
+  defaultSubjectPrefix = '',
+  documentName = 'Document',
+  targetId,
+  contextSlug,
+  onPreview,
+  onClose,
+  onSuccess,
+  onPrint,
+  onSend,
+}: EmailDocumentDialogProps) {
   const t = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
 
   const isKnownCustomText = KNOWN_CUSTOM_TEXT_HOOKS.includes(hookSlug);
+  const isPrintMode = mode === 'print';
 
   const [macros, setMacros] = useState<Macro[]>([]);
   const [pdfMacros, setPdfMacros] = useState<Macro[]>([]);
@@ -75,6 +101,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
   const [supportsCustomText, setSupportsCustomText] = useState<boolean>(isKnownCustomText || true);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   // Form state
   const [selectedMacroId, setSelectedMacroId] = useState<string>('');
@@ -93,21 +120,25 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       setBodyText('');
       setCustomPdfText('');
       setSupportsCustomText(isKnownCustomText || true);
-      
+
       const subjectSuffix = customerReference ? ` - ${customerReference}` : '';
-      setSubject(`${defaultSubjectPrefix}: ${orderNumber}${subjectSuffix}`);
+      setSubject(
+        defaultSubjectPrefix
+          ? `${defaultSubjectPrefix}: ${orderNumber}${subjectSuffix}`
+          : `${documentName}: ${orderNumber}${subjectSuffix}`,
+      );
       setIsOtherSelected(false);
-      
+
       // Load initial data
-      Promise.all([
-        loadTemplateConfig(),
-        loadMacros(),
-        loadRecipient(),
-      ]).catch(err => {
+      const loaders: Promise<unknown>[] = [loadTemplateConfig(), loadMacros()];
+      if (!isPrintMode && (customerId || supplierId)) {
+        loaders.push(loadRecipient());
+      }
+      Promise.all(loaders).catch((err) => {
         toast.error(getErrorMessage(err) || 'Failed to load dialog data');
       });
     }
-  }, [isOpen, customerId, supplierId, hookSlug]);
+  }, [isOpen, customerId, supplierId, hookSlug, isPrintMode]);
 
   const loadTemplateConfig = async () => {
     try {
@@ -158,11 +189,11 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         setContacts(supContacts);
 
         // Determine default TO address:
-        // - purchase-debit-note: primary contact for billing, then sales
+        // - purchase-debit-note / supplier-remittance-advice: primary contact for billing, then sales
         // - purchase-return / purchase-order: primary contact for sales, then billing
         const billingContact = supContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'billing'));
         const salesContact = supContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'sales'));
-        const primaryContact = hookSlug === 'purchase-debit-note'
+        const primaryContact = (hookSlug === 'purchase-debit-note' || hookSlug === 'supplier-remittance-advice')
           ? (billingContact || salesContact)
           : (salesContact || billingContact);
         const firstContact = supContacts.find(c => !!c.email);
@@ -245,6 +276,23 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
     setSelectedPdfMacroId('');
   };
 
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      if (onPrint) {
+        await onPrint(customPdfText);
+      } else {
+        await onPreview(customPdfText);
+      }
+      onSuccess?.();
+      onClose();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to generate PDF');
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const handleSend = async () => {
     const trimmedAddress = toAddress.trim();
 
@@ -261,7 +309,17 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else if (contextSlug === 'customer-statement' || hookSlug === 'customer-statement') {
-        await api.customersControllerEmailDocument(orderId, {
+        await api.customersControllerEmailDocument(orderId || targetId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (contextSlug === 'supplier-remittance-advice' || hookSlug === 'supplier-remittance-advice') {
+        await api.paymentsControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -271,7 +329,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else if (contextSlug === 'purchase-debit-note' || hookSlug === 'purchase-debit-note') {
-        await api.purchaseDebitNotesControllerEmailDocument(orderId, {
+        await api.purchaseDebitNotesControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -281,7 +339,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else if (contextSlug === 'purchase-return' || hookSlug === 'purchase-return') {
-        await api.globalPurchaseReturnsControllerEmailDocument(orderId, {
+        await api.globalPurchaseReturnsControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -291,7 +349,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else if (contextSlug === 'shipment' || hookSlug === 'shipping-docket') {
-        await api.globalShipmentsControllerEmailDocument(orderId, {
+        await api.globalShipmentsControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -301,7 +359,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else if (supplierId) {
-        await api.purchaseOrdersControllerEmailDocument(orderId, {
+        await api.purchaseOrdersControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -311,7 +369,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       } else {
-        await api.ordersControllerEmailDocument(orderId, {
+        await api.ordersControllerEmailDocument(orderId || targetId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,
@@ -321,7 +379,8 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
           contextSlug,
         });
       }
-      onSuccess();
+      onSuccess?.();
+      onClose();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err) || 'Failed to queue email');
     } finally {
@@ -331,166 +390,213 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
 
   if (!isOpen) return null;
 
+  const resolvedTitle =
+    title ||
+    (isPrintMode
+      ? `${tCommon('buttons.print')} ${documentName}`
+      : `Email ${documentName}`);
+
   return (
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title={title}
+      title={resolvedTitle}
       footer={
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary"
             onClick={onClose}
-            disabled={sending}
+            disabled={sending || printing}
           >
             {tCommon('cancel')}
           </Button>
-          <Button
-            type="submit"
-            form="email-form"
-            className="flex items-center gap-2"
-            variant="primary"
-            disabled={sending}
-          >
-            {sending && (
-              <>
+          {isPrintMode ? (
+            <Button
+              type="submit"
+              form="document-action-form"
+              className="flex items-center gap-2"
+              variant="primary"
+              disabled={printing}
+            >
+              {printing ? (
                 <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              </>
-            )}
-            Send Email
-          </Button>
+              ) : (
+                <span className="material-symbols-outlined text-[16px]">print</span>
+              )}
+              {tCommon('buttons.printPdf')}
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              form="document-action-form"
+              className="flex items-center gap-2"
+              variant="primary"
+              disabled={sending}
+            >
+              {sending ? (
+                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              ) : (
+                <span className="material-symbols-outlined text-[16px]">mail</span>
+              )}
+              Send Email
+            </Button>
+          )}
         </div>
       }
     >
-      <form id="email-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex flex-col gap-6 py-2">
-
-          {/* To Address */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              To
-            </label>
-            {loading ? (
-              <div className="text-sm text-gray-500">{tCommon('loading')}</div>
-            ) : (
-              <>
-                <select
-                  className="input w-full"
-                  value={isOtherSelected ? 'OTHER' : toAddress}
-                  onChange={(e) => {
-                    if (e.target.value === 'OTHER') {
-                      setIsOtherSelected(true);
-                      setToAddress('');
-                    } else {
-                      setIsOtherSelected(false);
-                      setToAddress(e.target.value);
-                    }
-                  }}
-                >
-                  <option value="">{tCommon('select')}...</option>
-                  {contacts.map((c, i) => c.email && (
-                    <option key={i} value={c.email}>
-                      {c.firstName || c.lastName ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : tCommon('contact')} ({c.email})
-                    </option>
-                  ))}
-                  {entityEmail && !contacts.some(c => c.email === entityEmail) && (
-                    <option value={entityEmail}>Company Email ({entityEmail})</option>
+      <form
+        id="document-action-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (isPrintMode) {
+            handlePrint();
+          } else {
+            handleSend();
+          }
+        }}
+        className="flex flex-col gap-6 py-2"
+      >
+        {!isPrintMode && (
+          <>
+            {/* To Address */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                To
+              </label>
+              {loading ? (
+                <div className="text-sm text-gray-500">{tCommon('loading')}</div>
+              ) : (
+                <>
+                  <select
+                    className="input w-full"
+                    value={isOtherSelected ? 'OTHER' : toAddress}
+                    onChange={(e) => {
+                      if (e.target.value === 'OTHER') {
+                        setIsOtherSelected(true);
+                        setToAddress('');
+                      } else {
+                        setIsOtherSelected(false);
+                        setToAddress(e.target.value);
+                      }
+                    }}
+                  >
+                    <option value="">{tCommon('select')}...</option>
+                    {contacts.map((c, i) => c.email && (
+                      <option key={i} value={c.email}>
+                        {c.firstName || c.lastName
+                          ? `${c.firstName || ''} ${c.lastName || ''}`.trim()
+                          : tCommon('contact')} ({c.email})
+                      </option>
+                    ))}
+                    {entityEmail && !contacts.some((c) => c.email === entityEmail) && (
+                      <option value={entityEmail}>Company Email ({entityEmail})</option>
+                    )}
+                    <option value="OTHER">Other...</option>
+                  </select>
+                  {isOtherSelected && (
+                    <input
+                      type="email"
+                      className="input w-full mt-2"
+                      placeholder="Enter email address"
+                      value={toAddress}
+                      onChange={(e) => setToAddress(e.target.value)}
+                      required
+                    />
                   )}
-                  <option value="OTHER">Other...</option>
-                </select>
-                {isOtherSelected && (
-                  <input
-                    type="email"
-                    className="input w-full mt-2"
-                    placeholder="Enter email address"
-                    value={toAddress}
-                    onChange={(e) => setToAddress(e.target.value)}
-                    required
-                  />
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Subject */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Subject
-            </label>
-            <input 
-              type="text" 
-              className="input w-full"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Email Body */}
-          <div className="flex flex-col gap-3">
-            <label className="block text-sm font-medium mb-1 text-gray-700">Email Content</label>
-            <select
-              className="input w-full"
-              value={selectedMacroId}
-              onChange={handleMacroChange}
-            >
-              <option value="">{t('placeholders.selectMacro')}</option>
-              {macros.map(m => (
-                <option key={m.macroId} value={m.macroId}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            <textarea
-              className="input w-full font-sans text-sm"
-              rows={8}
-              value={bodyText}
-              onChange={(e) => setBodyText(e.target.value)}
-              placeholder={supplierId ? "Enter message for the supplier..." : "Enter message for the customer..."}
-            />
-          </div>
-
-          {/* Document PDF Content */}
-          <div className="flex flex-col gap-3">
-            <label className="block text-sm font-medium mb-1 text-gray-700">{documentName} PDF Attachment</label>
-            
-            {supportsCustomText && (
-              <>
-                <select
-                  className="input w-full"
-                  value={selectedPdfMacroId}
-                  onChange={handlePdfMacroChange}
-                >
-                  <option value="">{t('placeholders.selectMacro')}</option>
-                  {pdfMacros.map(m => (
-                    <option key={m.macroId} value={m.macroId}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  className="input w-full font-sans text-sm"
-                  rows={6}
-                  value={customPdfText}
-                  onChange={(e) => setCustomPdfText(e.target.value)}
-                  placeholder={`Enter text to display on the ${documentName} PDF...`}
-                />
-              </>
-            )}
-
-            {/* Attachment Preview */}
-            <div className="flex items-center gap-2 mt-1">
-              <span className="material-symbols-outlined text-gray-500 text-[18px]">attach_file</span>
-              <Button
-                type="button"
-                onClick={() => onPreview(customPdfText)}
-                className="text-sm text-[var(--accent)] hover:underline text-left"
-              >
-                {/* eslint-disable-next-line i18next/no-literal-string -- technical filename */}
-                {documentName}-{orderNumber}.pdf
-              </Button>
+                </>
+              )}
             </div>
+
+            {/* Subject */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Subject
+              </label>
+              <input
+                type="text"
+                className="input w-full"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Email Body */}
+            <div className="flex flex-col gap-3">
+              <label className="block text-sm font-medium mb-1 text-gray-700">Email Content</label>
+              <select
+                className="input w-full"
+                value={selectedMacroId}
+                onChange={handleMacroChange}
+              >
+                <option value="">{t('placeholders.selectMacro')}</option>
+                {macros.map((m) => (
+                  <option key={m.macroId} value={m.macroId}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                className="input w-full font-sans text-sm"
+                rows={8}
+                value={bodyText}
+                onChange={(e) => setBodyText(e.target.value)}
+                placeholder={
+                  supplierId
+                    ? 'Enter message for the supplier...'
+                    : 'Enter message for the customer...'
+                }
+              />
+            </div>
+          </>
+        )}
+
+        {/* Document PDF Content */}
+        <div className="flex flex-col gap-3">
+          <label className="block text-sm font-medium mb-1 text-gray-700">
+            {isPrintMode ? `${documentName} PDF Content` : `${documentName} PDF Attachment`}
+          </label>
+
+          {supportsCustomText && (
+            <>
+              <select
+                className="input w-full"
+                value={selectedPdfMacroId}
+                onChange={handlePdfMacroChange}
+              >
+                <option value="">{t('placeholders.selectMacro')}</option>
+                {pdfMacros.map((m) => (
+                  <option key={m.macroId} value={m.macroId}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                className="input w-full font-sans text-sm"
+                rows={6}
+                value={customPdfText}
+                onChange={(e) => setCustomPdfText(e.target.value)}
+                placeholder={`Enter text to display on the ${documentName} PDF...`}
+              />
+            </>
+          )}
+
+          {/* Attachment Preview */}
+          <div className="flex items-center gap-2 mt-1">
+            <span className="material-symbols-outlined text-gray-500 text-[18px]">attach_file</span>
+            <Button
+              type="button"
+              onClick={() => onPreview(customPdfText)}
+              className="text-sm text-[var(--accent)] hover:underline text-left"
+            >
+              {/* eslint-disable-next-line i18next/no-literal-string -- technical filename */}
+              {documentName}{orderNumber ? `-${orderNumber}` : ''}.pdf
+            </Button>
           </div>
+        </div>
       </form>
     </SlideOver>
   );
 }
+
+export { EmailDocumentDialog as DocumentActionDialog };

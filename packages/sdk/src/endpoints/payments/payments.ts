@@ -10,12 +10,14 @@ import type {
   BatchPaymentActionDto,
   ConfirmRejectResponseDto,
   CreatePaymentDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   ExportAbaResponseDto,
   GeneratePaymentRunDto,
   GeneratePaymentRunResponseDto,
   PaymentResponseDto,
   PaymentRunCandidateResponseDto,
+  PaymentsControllerEmailDocument201,
   PaymentsControllerFindAll200,
   PaymentsControllerFindAllParams,
   PaymentsControllerFindOneParams,
@@ -523,6 +525,44 @@ export const paymentsControllerRejectExported = async (batchPaymentActionDto: Ba
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       batchPaymentActionDto,)
+  }
+);}
+
+
+/**
+ * Generates a Payment Document (e.g. Supplier Remittance Advice) PDF using the active template/hook and queues an email outbox message to the specified recipient.
+ * @summary Email Payment Document / Remittance Advice
+ */
+export type paymentsControllerEmailDocumentResponse201 = {
+  data: PaymentsControllerEmailDocument201
+  status: 201
+}
+    
+export type paymentsControllerEmailDocumentResponseSuccess = (paymentsControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type paymentsControllerEmailDocumentResponse = (paymentsControllerEmailDocumentResponseSuccess)
+
+export const getPaymentsControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/payments/${id}/email-document`
+}
+
+export const paymentsControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<paymentsControllerEmailDocumentResponse> => {
+  
+  return customFetch<paymentsControllerEmailDocumentResponse>(getPaymentsControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
   }
 );}
 

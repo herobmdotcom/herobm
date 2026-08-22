@@ -9,6 +9,7 @@ action: "read"
 routes:
   - "/reporting"
   - "/reporting/config"
+  - "/reporting/config/new"
 tags: ["reporting", "analytics", "pdf", "typst", "templates", "exports"]
 fields:
   report_type:
@@ -49,7 +50,7 @@ View, filter, sort, and aggregate live data across:
 - **Finance**: Monthly P&L, Balance Sheet, Aged Receivables & Payables.
 
 ### 2. Typst Document Engine
-All printable documents (Quotes, Invoices, Pick Slips, Statements, Packing Lists) use **Typst** templates. Typst offers high rendering speed and pixel-perfect typographic control.
+All printable documents (Quotes, Invoices, Pick Slips, Shipping Labels, Statements, Packing Lists, Purchase Debit Notes) use **Typst** templates. Typst offers high rendering speed, modern syntax, and pixel-perfect typographic control.
 
 ---
 
@@ -63,7 +64,7 @@ All printable documents (Quotes, Invoices, Pick Slips, Statements, Packing Lists
 
 ### 2. Customizing a PDF Template
 1. Go to **Reporting** → **Configuration** (`/reporting/config`).
-2. Select the template to customize (e.g. `Sales Invoice`).
+2. Click **New Template** (`/reporting/config/new`) or select an existing template to customize (e.g. `Sales Invoice`).
 3. Edit the Typst markup (adjust company logo size, font family, footer legal notices).
 4. The live preview pane renders changes in real time.
 5. Click **Save Template**.

@@ -96,6 +96,7 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
 
   // Email Dialog State
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
 
   const handleGenerateReturnPdf = async (customPdfText?: string) => {
     if (!returnDetails) return;
@@ -377,7 +378,10 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => handleGenerateReturnPdf()}
+                onClick={() => {
+                  setEmailDialogMode('print');
+                  setIsEmailDialogOpen(true);
+                }}
               >
                 <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                 Print Return Slip
@@ -385,7 +389,10 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsEmailDialogOpen(true)}
+                onClick={() => {
+                  setEmailDialogMode('email');
+                  setIsEmailDialogOpen(true);
+                }}
               >
                 <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                 Email Return Slip
@@ -631,12 +638,13 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
       {returnDetails && (
         <EmailDocumentDialog
           isOpen={isEmailDialogOpen}
+          mode={emailDialogMode}
           orderId={returnDetails.returnId}
           orderNumber={returnDetails.returnNumber}
           customerReference={returnDetails.orderNumber}
           supplierId={returnDetails.vendorId}
           hookSlug="purchase-return"
-          title="Email Purchase Return Slip"
+          title={emailDialogMode === 'print' ? 'Print Purchase Return Slip' : 'Email Purchase Return Slip'}
           defaultSubjectPrefix="Return Authorization"
           documentName="Return Slip"
           targetId={returnDetails.returnId}
@@ -644,7 +652,9 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
           onClose={() => setIsEmailDialogOpen(false)}
           onSuccess={() => {
             setIsEmailDialogOpen(false);
-            toast.success('Email queued successfully!');
+            if (emailDialogMode !== 'print') {
+              toast.success('Email queued successfully!');
+            }
             fetchDetails();
           }}
           onPreview={(customText) => handleGenerateReturnPdf(customText)}

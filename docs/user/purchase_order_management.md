@@ -1,7 +1,7 @@
 ---
 id: purchase-orders
 title: "Purchase Orders"
-description: "Manage supplier purchase orders, vendor pricing, delivery schedules, and receiving integration."
+description: "Manage supplier purchase orders, vendor holds, delivery schedules, document emailing, and dock receiving integration."
 category: "Purchasing"
 order: 18
 resource: "orders"
@@ -10,7 +10,7 @@ routes:
   - "/purchase-orders"
   - "/purchase-orders/new"
   - "/purchase-orders/:id"
-tags: ["purchasing", "po", "orders", "suppliers", "procurement", "receiving"]
+tags: ["purchasing", "po", "orders", "suppliers", "procurement", "receiving", "email", "supplier-hold"]
 fields:
   vendor_id:
     title: "Supplier"
@@ -34,12 +34,13 @@ related:
   - "suppliers"
   - "purchase-demands"
   - "receiving"
+  - "purchase-returns"
   - "supplier-invoices"
 ---
 
 # Purchase Orders
 
-The **Purchase Orders** module manages procurement with external vendors. It tracks order placement, expected shipping schedules, and dock receiving.
+The **Purchase Orders** module manages procurement with external vendors. It tracks order placement, supplier purchasing holds, expected shipping schedules, automated document emailing, and dock receiving.
 
 ---
 
@@ -75,21 +76,35 @@ stateDiagram-v2
 
 ---
 
+## Key Purchasing Controls
+
+### 1. Supplier Purchasing Holds
+- If a vendor account is flagged with **Purchasing Hold** in [Suppliers](file:///docs/user/suppliers.md), the system displays a prominent warning on order creation and blocks confirming new orders until authorized management removes the hold.
+
+### 2. Direct Document Emailing
+- Operators can transmit Purchase Orders directly to vendors via the **Email Document** modal.
+- Generates a formatted Typst PDF attachment, pulls the vendor's primary purchasing contact email, and supports live PDF preview.
+
+### 3. Return to Vendor (RTV) Integration
+- For defective or excess received goods, click **Create Return** directly from the Purchase Order view to initiate a linked [Purchase Return](file:///docs/user/purchase_returns_debit_notes.md).
+
+---
+
 ## Step-by-Step Workflows
 
 ### 1. Creating and Sending a Purchase Order
 1. Go to **Purchasing** → **Purchase Orders** (`/purchase-orders`).
-2. Click **New Purchase Order**.
-3. Select the **Supplier**. Currency and terms fill automatically.
+2. Click **New Purchase Order** (`/purchase-orders/new`).
+3. Select the **Supplier**. Currency and payment terms fill automatically.
 4. Set the **Expected Delivery Date** and **Receiving Warehouse**.
 5. Add line items, quantities, and agreed unit costs.
 6. Click **Save as Draft**.
-7. Click **Send Order**, then click **PDF** or **Email** to issue the order to the vendor.
+7. Click **Email Order** to send the purchase order PDF directly to the supplier's procurement desk.
 
 ### 2. Receiving and Completing an Order
-1. When goods arrive at the dock, warehouse staff receive items via **Inventory** → **Receiving**.
+1. When goods arrive at the dock, warehouse staff receive items via **Inventory** → **Receiving** (`/receiving`).
 2. When all items are received, the PO automatically moves to **Received**.
-3. When the supplier bill arrives, match it in **Supplier Invoices** to complete the order.
+3. When the supplier bill arrives, match it in **Supplier Invoices** (`/supplier-invoices`) to complete the order.
 
 ---
 
@@ -103,3 +118,4 @@ stateDiagram-v2
 | **Receiving Warehouse** | Target warehouse facility. |
 | **Unit Cost** | Agreed purchase price per unit in supplier currency. |
 | **Status** | Stage in procurement lifecycle. |
+| **Supplier Hold** | Warning indicator shown if vendor is on operational hold. |

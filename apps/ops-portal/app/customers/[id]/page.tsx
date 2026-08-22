@@ -103,6 +103,7 @@ export default function AccountDetailPage({
 
   // Statement Dialog State & PDF Generator
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
 
   const handleGenerateStatementPdf = async (customPdfText?: string) => {
     if (!customer) return;
@@ -418,17 +419,21 @@ export default function AccountDetailPage({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => handleGenerateStatementPdf()}
+                  onClick={() => {
+                    setEmailDialogMode('print');
+                    setIsEmailDialogOpen(true);
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                   Print Statement
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setIsEmailDialogOpen(true)}
+                  onClick={() => {
+                    setEmailDialogMode('email');
+                    setIsEmailDialogOpen(true);
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                   Email Statement
                 </Button>
               </div>
@@ -638,11 +643,12 @@ export default function AccountDetailPage({
         {customer && (
           <EmailDocumentDialog
             isOpen={isEmailDialogOpen}
+            mode={emailDialogMode}
             orderId={customer.customerId}
             orderNumber={customer.customerNumber}
             customerId={customer.customerId}
             hookSlug="customer-statement"
-            title="Email Customer Statement"
+            title={emailDialogMode === 'print' ? 'Print Customer Statement' : 'Email Customer Statement'}
             defaultSubjectPrefix="Statement of Account"
             documentName="Statement"
             targetId={customer.customerId}
@@ -650,7 +656,9 @@ export default function AccountDetailPage({
             onClose={() => setIsEmailDialogOpen(false)}
             onSuccess={() => {
               setIsEmailDialogOpen(false);
-              toast.success('Statement email queued successfully!');
+              if (emailDialogMode !== 'print') {
+                toast.success('Statement email queued successfully!');
+              }
             }}
             onPreview={(customText) => handleGenerateStatementPdf(customText)}
           />

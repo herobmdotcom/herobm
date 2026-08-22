@@ -202,8 +202,9 @@ describe('OrderDetailsCard - Document Actions', () => {
     jest.clearAllMocks();
   });
 
-  it('renders Print Quote and Email Quote for draft orders and triggers PDF on print', async () => {
+  it('renders Print Quote and Email Quote for draft orders and triggers onPrintDocumentClick', async () => {
     const onEmail = jest.fn();
+    const onPrint = jest.fn();
     render(
       <OrderDetailsCard
         order={{ ...mockOrder, stateCode: SALES_ORDER_STATE.DRAFT }}
@@ -218,6 +219,7 @@ describe('OrderDetailsCard - Document Actions', () => {
         setEditAnalysisCode={jest.fn()}
         saveHeader={jest.fn()}
         onEmailDocumentClick={onEmail}
+        onPrintDocumentClick={onPrint}
         reportError={jest.fn()}
         setError={jest.fn()}
       />
@@ -233,15 +235,19 @@ describe('OrderDetailsCard - Document Actions', () => {
       fireEvent.click(printQuoteBtn);
     });
 
-    expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith(
+    expect(onPrint).toHaveBeenCalledWith(
       'sales-order-quote',
-      {},
-      { id: 'so-123', context: 'sales-order' }
+      'Print Quote',
+      'Quote',
+      'Quote',
+      'so-123',
+      'sales-order'
     );
   });
 
-  it('renders Print Confirmation and Email Confirmation for confirmed orders and triggers PDF on print', async () => {
+  it('renders Print Confirmation and Email Confirmation for confirmed orders and triggers onPrintDocumentClick', async () => {
     const onEmail = jest.fn();
+    const onPrint = jest.fn();
     render(
       <OrderDetailsCard
         order={{ ...mockOrder, stateCode: SALES_ORDER_STATE.CONFIRMED }}
@@ -256,6 +262,7 @@ describe('OrderDetailsCard - Document Actions', () => {
         setEditAnalysisCode={jest.fn()}
         saveHeader={jest.fn()}
         onEmailDocumentClick={onEmail}
+        onPrintDocumentClick={onPrint}
         reportError={jest.fn()}
         setError={jest.fn()}
       />
@@ -274,10 +281,13 @@ describe('OrderDetailsCard - Document Actions', () => {
       fireEvent.click(printConfirmationBtn);
     });
 
-    expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith(
+    expect(onPrint).toHaveBeenCalledWith(
       'sales-order-confirmation',
-      {},
-      { id: 'so-123', context: 'sales-order' }
+      'Print Confirmation',
+      'Order Confirmation',
+      'Confirmation',
+      'so-123',
+      'sales-order'
     );
   });
 });

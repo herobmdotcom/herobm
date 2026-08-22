@@ -35,6 +35,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
   const [emailDialogConfig, setEmailDialogConfig] = React.useState<{
     isOpen: boolean;
+    mode?: 'email' | 'print';
     hookSlug: string;
     title: string;
     prefix: string;
@@ -43,6 +44,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     contextSlug?: string;
   }>({
     isOpen: false,
+    mode: 'email',
     hookSlug: '',
     title: '',
     prefix: '',
@@ -61,22 +63,18 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   if (error) return <div className="p-8 text-red-500">{t('errorLoading', { message: error.message })}</div>;
   if (!invoice) return <div className="p-8 text-red-500">{t('notFound')}</div>;
 
-  const handlePrintInvoice = async () => {
+  const handlePrintInvoice = () => {
     if (!invoice) return;
-    setIsGeneratingPdf(true);
-    try {
-      const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, {
-        id: invoice.invoiceId,
-        context: 'sales-invoice',
-      });
-      const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } catch (err: unknown) {
-      alert(getErrorMessage(err) || tCommon('errors.failedToGenerateReport'));
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+    setEmailDialogConfig({
+      isOpen: true,
+      mode: 'print',
+      hookSlug: 'sales-invoice',
+      title: 'Print Sales Invoice',
+      prefix: 'Invoice',
+      docName: 'Sales Invoice',
+      targetId: invoice.invoiceId,
+      contextSlug: 'sales-invoice',
+    });
   };
 
   const handleCancel = async () => {
@@ -589,6 +587,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       </div>
       <EmailDocumentDialog
         isOpen={emailDialogConfig.isOpen}
+        mode={emailDialogConfig.mode || 'email'}
         orderId={invoice.salesOrderId!}
         orderNumber={invoice.invoiceNumber}
         customerReference={''}
@@ -602,13 +601,15 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
         onSuccess={() => {
           setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
-          alert('Email queued successfully!');
+          if (emailDialogConfig.mode !== 'print') {
+            alert('Email queued successfully!');
+          }
         }}
         onPreview={async (customPdfText?: string) => {
           try {
             const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
               id: invoice.invoiceId, 
-              context: emailDialogConfig.hookSlug
+              context: emailDialogConfig.contextSlug || 'sales-invoice'
             });
             const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);

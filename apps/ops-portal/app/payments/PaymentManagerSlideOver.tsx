@@ -21,13 +21,15 @@ import {
   PURCHASE_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
-  calculateEarlyPaymentDiscount
+  calculateEarlyPaymentDiscount,
+  DATA_SOURCE_CONTEXT,
 } from '@herobm/shared';
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import PartialAllocationModal from './PartialAllocationModal';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 const ToggleCell = (p: ICellRendererParams<OutstandingInvoice>) => {
   const data = p.data;
@@ -143,6 +145,30 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   // Allocation State
   const [outstandingInvoices, setOutstandingInvoices] = useState<OutstandingInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+
+  // Remittance Advice Dialog State & PDF Generator
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
+
+  const handleGenerateRemittancePdf = async (customPdfText?: string) => {
+    if (!paymentId) return;
+    try {
+      const response = await api.pdfTemplatesControllerRunHook(
+        'supplier-remittance-advice',
+        { customPdfText },
+        {
+          id: paymentId,
+          context: DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE,
+        },
+      );
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      reportError(err, 'PaymentManagerSlideOver.generateRemittancePdf');
+      toast.error('Failed to generate Remittance Advice PDF');
+    }
+  };
 
   const loadPayment = useCallback(async () => {
     if (!paymentId) return;
@@ -557,6 +583,34 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             </Button>
           )}
 
+        </div>
+      )}
+
+      {/* Supplier Remittance Actions */}
+      {data?.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setEmailDialogMode('print');
+              setIsEmailDialogOpen(true);
+            }}
+            disabled={submitting}
+          >
+            Print Remittance
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setEmailDialogMode('email');
+              setIsEmailDialogOpen(true);
+            }}
+            disabled={submitting}
+          >
+            Email Remittance
+          </Button>
         </div>
       )}
 
@@ -1115,6 +1169,29 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           setOutstandingInvoices(prev => prev.map(p => p.id === invoiceId ? { ...p, pendingAllocation: amount, pendingDiscountAmount: discountAmount } : p));
         }}
       />
+      {data && (
+        <EmailDocumentDialog
+          isOpen={isEmailDialogOpen}
+          mode={emailDialogMode}
+          orderId={data.paymentId}
+          orderNumber={data.paymentNumber}
+          supplierId={data.partyId}
+          hookSlug="supplier-remittance-advice"
+          title={emailDialogMode === 'print' ? 'Print Remittance Advice' : 'Email Remittance Advice'}
+          defaultSubjectPrefix="Remittance Advice"
+          documentName="Remittance Advice"
+          targetId={data.paymentId}
+          contextSlug={DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE}
+          onClose={() => setIsEmailDialogOpen(false)}
+          onSuccess={() => {
+            setIsEmailDialogOpen(false);
+            if (emailDialogMode !== 'print') {
+              toast.success('Remittance advice email queued successfully!');
+            }
+          }}
+          onPreview={(customText) => handleGenerateRemittancePdf(customText)}
+        />
+      )}
     </SlideOver>
   );
 }

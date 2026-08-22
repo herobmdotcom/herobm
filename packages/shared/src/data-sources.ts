@@ -23,6 +23,7 @@ export const DATA_SOURCE_CONTEXT = {
   PURCHASE_RETURN: 'purchase-return',
   PURCHASE_DEBIT_NOTE: 'purchase-debit-note',
   CUSTOMER_STATEMENT: 'customer-statement',
+  SUPPLIER_REMITTANCE_ADVICE: 'supplier-remittance-advice',
 } as const;
 
 export type DataSourceContext = typeof DATA_SOURCE_CONTEXT[keyof typeof DATA_SOURCE_CONTEXT];

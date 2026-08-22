@@ -1,16 +1,17 @@
 ---
 id: reconciliations
-title: "Bank Reconciliations"
-description: "Import bank statements, match bank feed lines against ledger payments, and resolve discrepancies."
+title: "Bank & Subledger Reconciliations"
+description: "Import bank statements, match bank feed lines against ledger payments, and verify subledger parity."
 category: "Finance"
 order: 26
 resource: "finance"
 action: "read"
 routes:
   - "/reconciliations"
+  - "/reconciliations/new"
   - "/reconciliations/profiles"
   - "/reconciliations/rules"
-tags: ["reconciliations", "bank", "statements", "matching", "finance", "rules"]
+tags: ["reconciliations", "bank", "statements", "matching", "finance", "rules", "subledger"]
 fields:
   statement_date:
     title: "Statement Date"
@@ -30,12 +31,13 @@ fields:
 related:
   - "payments"
   - "general-ledger"
+  - "fiscal-periods"
   - "balances"
 ---
 
-# Bank Reconciliations
+# Bank & Subledger Reconciliations
 
-The **Bank Reconciliations** module matches external bank feed transactions against internal General Ledger entries, verifying that financial accounts accurately reflect cash reality.
+The **Reconciliations** module verifies that internal General Ledger account balances accurately reflect cash reality in bank accounts and transactional parity across operational subledgers (Accounts Receivable, Accounts Payable, and Inventory).
 
 ---
 
@@ -55,10 +57,16 @@ flowchart TD
 ```
 
 ### 1. Automated Matching Rules
-Configurable rules (`/reconciliations/rules`) can automatically detect:
-- Regular direct debits (e.g. utilities, rent).
-- Bank service fees and interest.
+Configurable rules (`/reconciliations/rules`) automatically detect and classify:
+- Recurring direct debits (utilities, software subscriptions, rent).
+- Bank service fees, merchant surcharges, and interest charges.
 - Customer deposits containing invoice reference numbers.
+
+### 2. Subledger Parity Verification
+Ensures subledgers reconcile to GL control accounts:
+- AR control account balance matches the sum of all customer aged balances.
+- AP control account balance matches the sum of all supplier aged balances.
+- Inventory control account matches the perpetual inventory valuation ledger.
 
 ---
 
@@ -66,7 +74,7 @@ Configurable rules (`/reconciliations/rules`) can automatically detect:
 
 ### 1. Reconciling a Bank Statement
 1. Go to **Finance** → **Bank Rec'n** → **Statements** (`/reconciliations`).
-2. Click **Import Statement** and upload the bank CSV/OFX file.
+2. Click **Import Statement** (`/reconciliations/new`) and upload the bank CSV/OFX file.
 3. Review the side-by-side matching screen:
    - Left side: Bank statement lines.
    - Right side: Unmatched GL payments and receipts.

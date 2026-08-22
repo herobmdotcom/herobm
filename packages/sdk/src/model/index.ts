@@ -400,6 +400,7 @@ export * from './paymentRunCandidateResponseDtoDueDate';
 export * from './paymentRunCandidateResponseDtoInvoiceDate';
 export * from './paymentRunCandidateResponseDtoOutstandingAmount';
 export * from './paymentRunCandidateResponseDtoTotalAmount';
+export * from './paymentsControllerEmailDocument201';
 export * from './paymentsControllerFindAll200';
 export * from './paymentsControllerFindAll200AllOf';
 export * from './paymentsControllerFindAllParams';

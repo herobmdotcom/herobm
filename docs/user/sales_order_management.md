@@ -1,7 +1,7 @@
 ---
 id: sales-orders
 title: "Sales Orders"
-description: "Create quotes and orders, check customer credit and stock, fulfill items, and invoice."
+description: "Create quotes and orders, evaluate customer credit and stock availability, email documents, fulfill items, and invoice."
 category: "Sales"
 order: 4
 resource: "orders"
@@ -11,7 +11,7 @@ routes:
   - "/sales-orders/new"
   - "/sales-orders/:id"
   - "/sales-orders/:id/edit"
-tags: ["sales", "orders", "quotes", "credit", "inventory", "shipping", "invoices"]
+tags: ["sales", "orders", "quotes", "credit", "inventory", "shipping", "invoices", "email", "analysis-codes"]
 fields:
   customer_id:
     title: "Customer"
@@ -48,10 +48,13 @@ fields:
     summary: "Price per unit, automatically filled using the customer's Price Scale (1–4)."
   discount_percentage:
     title: "Discount %"
-    summary: "Line discount percentage, pre-filled from customer defaults."
+    summary: "Line discount percentage ($0 \\le \\text{discount} \\le 100$), pre-filled from customer defaults."
   tax_category_id:
     title: "Tax / GST Category"
     summary: "Tax classification based on customer tax status and product category."
+  analysis_codes:
+    title: "Analysis Codes"
+    summary: "Structured reporting tags configured in Admin Settings."
   is_post_confirmation:
     title: "Post-Confirmation Line"
     summary: "Allows adding extra items or freight charges after the order has been confirmed."
@@ -75,7 +78,7 @@ related:
 
 # Sales Orders
 
-The Sales Orders module covers quotes through to cash. Create orders as quotes, view credit standing and inventory availability, follow dispatch, and generate billing.
+The Sales Orders module covers quotes through to cash. Create orders as quotes, view credit standing and inventory availability, email documents directly to clients, follow dispatch, and generate billing.
 
 ---
 
@@ -136,20 +139,28 @@ When moving an order to **Quoted** or **Confirmed**, the system checks the custo
 
 If a customer fails these checks, the order is blocked. Authorized users can apply a **Credit Hold Override** with a mandatory reason to let the order proceed.
 
-### 2. Pricing & Price Scales
+### 2. Pricing, Discounts & Price Scales
 - Each customer belongs to a **Customer Group** with an assigned **Price Scale (1 to 4)**:
   1. **List Price** (Retail)
   2. **Trade Price** (Standard wholesale/trade)
   3. **Tier 3** (Volume trade)
   4. **Tier 4** (Distributor/contract)
-- When adding a product, the starting unit price is set from the customer's price scale. You can override the price manually on any Draft line.
+- **Discount Percentage Bounds**: All discount percentages must strictly stay between $0\%$ and $100\%$ ($0 \le \text{discount} \le 100$). Values outside this boundary are rejected by validation.
 - **Custom Lines**: You can add ad-hoc custom lines for non-catalogue items, delivery fees, or special charges.
 
-### 3. Multi-Currency
+### 3. Structured Analysis Codes
+- Orders can be tagged with standardized **Analysis Codes** (e.g. Sales Territory, Campaign ID, Project Stream) configured in **Admin** → **Settings** → **System**.
+- Analysis codes pass through to sales reporting and financial ledger lines.
+
+### 4. Direct Document Emailing
+- Operators can email Sales Orders, Quotations, and Order Confirmations directly to customers via the **Email Document** dialog.
+- Supports dynamic Typst PDF rendering, custom message bodies, and live PDF preview.
+
+### 5. Multi-Currency
 - Orders use the currency set on the customer account (e.g. `EUR`, `SGD`, `USD`).
 - When creating an order, the current exchange rate is snapshotted to the header. Line prices and totals are entered and shown in the customer's currency.
 
-### 4. Tax (GST / VAT)
+### 6. Tax (GST / VAT)
 Tax is calculated automatically per line:
 - **Exempt Customers**: If a customer is tax-exempt, all lines receive 0% tax.
 - **Taxable Customers**: Tax is calculated using the product's tax category (or the system default rate, e.g. 9% GST).
@@ -160,11 +171,11 @@ Tax is calculated automatically per line:
 - `Tax Amount = Line Amount × (Tax Rate% / 100)`
 - `Total Amount = Line Amount + Tax Amount`
 
-### 5. Kits & Bundles
+### 7. Kits & Bundles
 - Adding a kit product adds a parent line with the bundle price and automatically lists the component parts below it.
 - Stock is reserved and picked for the physical component parts. Changing the kit quantity adjusts component quantities automatically.
 
-### 6. Stock Checks & Backorders
+### 8. Stock Checks & Backorders
 When confirming an order, the system checks available warehouse stock:
 - If all items are in stock, the order is confirmed immediately.
 - If items are out of stock, an **Inventory Gap** dialog appears:
@@ -177,17 +188,17 @@ When confirming an order, the system checks available warehouse stock:
 
 ### 1. Creating a New Sales Order
 1. Go to **Sales** → **Sales Orders** (`/sales-orders`).
-2. Click **New Order**.
+2. Click **New Order** (`/sales-orders/new`).
 3. Select the **Customer**. Currency, terms, addresses, and price scale fill automatically.
-4. (Optional) Enter the customer's **PO Number** and any order notes.
-5. In the **Line Items** section, search for products to add. Enter the quantity, price, and discount.
+4. (Optional) Enter the customer's **PO Number**, select **Analysis Codes**, and enter order notes.
+5. In the **Line Items** section, search for products to add. Enter the quantity, price, and discount ($0-100\%$).
 6. Check the **📦 Availability** tab to see stock levels across warehouses.
 7. Click **Save as Draft**.
 
-### 2. Quoting & Confirming
+### 2. Quoting, Emailing & Confirming
 1. Open the Draft order.
 2. Click **Issue Quote** to lock the pricing and generate a quote.
-3. Click **PDF** or **Email** to send the quotation to the customer.
+3. Click **Email** to open the document dialog, review the PDF preview, and send to the customer's primary billing contact.
 4. When the customer confirms, click **Confirm Order**.
 5. If items are out of stock, choose whether to generate backorders or acknowledge the gap.
 
@@ -221,7 +232,8 @@ When confirming an order, the system checks available warehouse stock:
 | **Currency & FX Rate** | The transaction currency and exchange rate to base currency (EUR). |
 | **Delivery Address Line/City/Postcode** | Destination address broken down into line, city, and postcode. |
 | **Unit Price** | Selling price per unit, pre-filled from customer's price scale (1–4). |
-| **Discount %** | Percentage discount applied to the line. |
+| **Discount %** | Percentage discount applied to the line ($0 \le \text{discount} \le 100$). |
 | **Tax Category** | Tax rate classification (e.g. 9% GST, Exempt). |
+| **Analysis Codes** | Structured custom classification tags for business reporting. |
 | **Post-Confirmation** | Special line added after confirmation for additional freight or packaging. |
 | **Credit Override Details** | Reason, approving user, and timestamp recorded when an authorized user overrides a credit hold. |

@@ -8,6 +8,7 @@ resource: "inventory"
 action: "read"
 routes:
   - "/receiving"
+  - "/receiving/new"
   - "/receiving/returns"
   - "/receiving/transfers"
 tags: ["receiving", "inbound", "suppliers", "receipts", "grn", "returns"]
@@ -60,7 +61,7 @@ Receiving goods immediately updates the physical **On Hand** inventory count, re
 
 ### 1. Receiving a Supplier Purchase Order
 1. Go to **Inventory** → **Receiving** → **Supplier Receipts** (`/receiving`).
-2. Search for the **Purchase Order** or supplier name.
+2. Click **New Receipt** (`/receiving/new`) or search for the **Purchase Order**.
 3. Enter the supplier's **Delivery Note / Packing Slip Number**.
 4. For each line, enter the physical **Received Quantity**.
 5. If items are damaged, enter the damaged count and route them to **Quarantine**.

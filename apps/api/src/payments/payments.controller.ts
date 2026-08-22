@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +19,7 @@ import {
   Delete,
   Inject,
   forwardRef,
+  NotFoundException,
 } from '@nestjs/common';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
@@ -26,6 +27,8 @@ import { PaymentsCoreService } from './payments-core.service';
 import { PaymentsWriteService } from './payments-write.service';
 import { PaymentsAllocationService } from './payments-allocation.service';
 import { PaymentsPostingService } from './payments-posting.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EntityType } from '../common/event-types';
 import {
   CreatePaymentDto,
   AllocatePaymentDto,
@@ -37,9 +40,11 @@ import {
   GeneratePaymentRunDto,
   GeneratePaymentRunResponseDto,
   PaymentRunCandidateResponseDto,
+  EmailDocumentDto,
 } from './dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import { ApiPaginatedResponse } from '../common/pagination';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -60,6 +65,7 @@ export class PaymentsController {
     private readonly paymentsPostingService: PaymentsPostingService,
     @Inject(forwardRef(() => PaymentRunGeneratorService))
     private readonly paymentRunGeneratorService: PaymentRunGeneratorService,
+    private readonly documentDispatchService: DocumentDispatchService,
   ) {}
 
   @Get()
@@ -284,6 +290,47 @@ export class PaymentsController {
     return this.paymentsPostingService.rejectExported(
       dto.paymentIds,
       user.username,
+    );
+  }
+
+  @Post(':id/email-document')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Payment Document / Remittance Advice',
+    description:
+      'Generates a Payment Document (e.g. Supplier Remittance Advice) PDF using the active template/hook and queues an email outbox message to the specified recipient.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailDocument(
+    @Param('id') id: string,
+    @Body() dto: EmailDocumentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const payment = await this.paymentsCoreService.findOne(id);
+    if (!payment) {
+      throw new NotFoundException(`Payment '${id}' not found`);
+    }
+
+    const hookSlug = dto.hookSlug || 'supplier-remittance-advice';
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug:
+          dto.contextSlug || DATA_SOURCE_CONTEXT.SUPPLIER_REMITTANCE_ADVICE,
+        entityType: EntityType.PAYMENT,
+        entityId: id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName: `Remittance-${payment.paymentNumber || id}.pdf`,
+      },
+      user,
     );
   }
 }

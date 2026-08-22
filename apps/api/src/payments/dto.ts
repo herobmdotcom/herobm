@@ -186,3 +186,5 @@ export class GeneratePaymentRunResponseDto {
   totalCashAmount: number;
   totalDiscountAmount: number;
 }
+
+export { EmailDocumentDto } from '../orders/dto';

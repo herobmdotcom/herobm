@@ -66,6 +66,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [emailDialogConfig, setEmailDialogConfig] = useState<{
+    mode?: 'email' | 'print';
     hookSlug: string;
     title: string;
     prefix: string;
@@ -180,6 +181,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 className="flex items-center shrink-0"
                 onClick={() => {
                   setEmailDialogConfig({
+                    mode: 'email',
                     hookSlug: 'shipping-docket',
                     title: 'Email Docket',
                     prefix: 'Shipping Docket',
@@ -189,25 +191,26 @@ export default function EditShipmentClient({ id }: { id: string }) {
                   });
                 }}
               >
+                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                 {t('emailDocket')}
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 className="flex items-center shrink-0"
-                onClick={async () => {
-                  try {
-                    const api = await import('@herobm/sdk');
-                    const res = await api.pdfTemplatesControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
-                    const blob = res.data as Blob;
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, '_blank');
-                  } catch (err) {
-                    reportError(err, 'ShipmentDetailPage.generateDocket');
-                    toast.error('Failed to generate shipping docket.');
-                  }
+                onClick={() => {
+                  setEmailDialogConfig({
+                    mode: 'print',
+                    hookSlug: 'shipping-docket',
+                    title: 'Print Shipping Docket',
+                    prefix: 'Shipping Docket',
+                    docName: 'Shipping Docket',
+                    targetId: id,
+                    contextSlug: DATA_SOURCE_CONTEXT.SHIPMENT,
+                  });
                 }}
               >
+                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                 {t('docketPdf')}
               </Button>
               <Button
@@ -380,6 +383,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
       {emailDialogConfig && (
         <EmailDocumentDialog
           isOpen={!!emailDialogConfig}
+          mode={emailDialogConfig.mode || 'email'}
           orderId={id}
           orderNumber={shipment.shipmentNumber}
           customerReference={shipment.trackingNumber || shipment.orderNumber}
@@ -406,8 +410,11 @@ export default function EditShipmentClient({ id }: { id: string }) {
           }}
           onClose={() => setEmailDialogConfig(null)}
           onSuccess={() => {
+            const wasPrint = emailDialogConfig.mode === 'print';
             setEmailDialogConfig(null);
-            toast.success('Document emailed successfully.');
+            if (!wasPrint) {
+              toast.success('Document emailed successfully.');
+            }
             loadShipment();
           }}
           onSend={async (payload) => {

@@ -25,6 +25,7 @@ interface OrderDetailsCardProps {
     setEditDispatchContactId?: (val: string) => void;
     saveHeader: (overrides?: Partial<api.UpdateOrderDto>) => void;
     onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
+    onPrintDocumentClick?: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
     reportError: (err: unknown, context: string) => void;
     setError: (err: string) => void;
 }
@@ -45,6 +46,7 @@ export default function OrderDetailsCard({
     setEditDispatchContactId,
     saveHeader,
     onEmailDocumentClick,
+    onPrintDocumentClick,
     reportError,
     setError
 }: OrderDetailsCardProps) {
@@ -62,6 +64,10 @@ export default function OrderDetailsCard({
 
     const handlePrintQuote = async () => {
         if (!order.salesOrderId) return;
+        if (onPrintDocumentClick) {
+            onPrintDocumentClick('sales-order-quote', 'Print Quote', 'Quote', 'Quote', order.salesOrderId, DATA_SOURCE_CONTEXT.SALES_ORDER);
+            return;
+        }
         setIsPrintingQuote(true);
         try {
             const response = await api.pdfTemplatesControllerRunHook(
@@ -82,6 +88,10 @@ export default function OrderDetailsCard({
 
     const handlePrintConfirmation = async () => {
         if (!order.salesOrderId) return;
+        if (onPrintDocumentClick) {
+            onPrintDocumentClick('sales-order-confirmation', 'Print Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId, DATA_SOURCE_CONTEXT.SALES_ORDER);
+            return;
+        }
         setIsPrintingConfirmation(true);
         try {
             const response = await api.pdfTemplatesControllerRunHook(

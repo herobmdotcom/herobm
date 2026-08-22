@@ -43,6 +43,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
   const [saving, setSaving] = React.useState(false);
   const [emailDialogConfig, setEmailDialogConfig] = React.useState<{
     isOpen: boolean;
+    mode?: 'email' | 'print';
     hookSlug: string;
     title: string;
     prefix: string;
@@ -51,6 +52,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
     contextSlug?: string;
   }>({
     isOpen: false,
+    mode: 'email',
     hookSlug: '',
     title: '',
     prefix: '',
@@ -333,21 +335,42 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               <span>{t('returns.returnDetails')}</span>
             </h3>
             {ret.stateCode !== RETURN_STATE.CANCELLED && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEmailDialogConfig({
-                  isOpen: true,
-                  hookSlug: 'return-slip',
-                  title: 'Email Return Slip',
-                  prefix: 'Return Slip',
-                  docName: 'Return Slip',
-                  targetId: ret.returnId,
-                  contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                })}
-              >
-                Email Return Slip
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEmailDialogConfig({
+                    isOpen: true,
+                    mode: 'print',
+                    hookSlug: 'return-slip',
+                    title: 'Print Return Slip',
+                    prefix: 'Return Slip',
+                    docName: 'Return Slip',
+                    targetId: ret.returnId,
+                    contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                  })}
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                  Print Return Slip
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEmailDialogConfig({
+                    isOpen: true,
+                    mode: 'email',
+                    hookSlug: 'return-slip',
+                    title: 'Email Return Slip',
+                    prefix: 'Return Slip',
+                    docName: 'Return Slip',
+                    targetId: ret.returnId,
+                    contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                  })}
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                  Email Return Slip
+                </Button>
+              </div>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -496,22 +519,42 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                     amount={displayAmount > 0 ? formatAmount(displayAmount, ret.currencyCode || 'USD') : undefined}
                     status={cn.stateCode}
                     actions={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEmailDialogConfig({
-                          isOpen: true,
-                          hookSlug: 'sales-return-credit',
-                          title: 'Email Credit Note',
-                          prefix: 'Credit Note',
-                          docName: 'Credit Note',
-                          targetId: ret.returnId,
-                          contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
-                        })}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">mail</span>
-                        <span className="sr-only">Email Credit Note</span>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEmailDialogConfig({
+                            isOpen: true,
+                            mode: 'print',
+                            hookSlug: 'sales-return-credit',
+                            title: 'Print Credit Note',
+                            prefix: 'Credit Note',
+                            docName: 'Credit Note',
+                            targetId: ret.returnId,
+                            contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                          })}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">print</span>
+                          <span className="sr-only">Print Credit Note</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEmailDialogConfig({
+                            isOpen: true,
+                            mode: 'email',
+                            hookSlug: 'sales-return-credit',
+                            title: 'Email Credit Note',
+                            prefix: 'Credit Note',
+                            docName: 'Credit Note',
+                            targetId: ret.returnId,
+                            contextSlug: DATA_SOURCE_CONTEXT.SALES_RETURN
+                          })}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">mail</span>
+                          <span className="sr-only">Email Credit Note</span>
+                        </Button>
+                      </div>
                     }
                   />
                 );
@@ -527,6 +570,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       </div>
       <EmailDocumentDialog
         isOpen={emailDialogConfig.isOpen}
+        mode={emailDialogConfig.mode || 'email'}
         orderId={ret.salesOrderId!}
         orderNumber={ret.returnNumber}
         customerReference={''}
@@ -540,7 +584,9 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
         onSuccess={() => {
           setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
-          alert('Email queued successfully!');
+          if (emailDialogConfig.mode !== 'print') {
+            alert('Email queued successfully!');
+          }
         }}
         onPreview={async (customPdfText?: string) => {
           try {
