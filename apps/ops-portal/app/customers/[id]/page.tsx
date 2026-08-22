@@ -36,8 +36,11 @@ import {
   COUNTRIES,
   CUSTOMER_STATE,
   getCurrencyForCountry,
+  DATA_SOURCE_CONTEXT,
 } from "@herobm/shared";
 import { toast } from "react-hot-toast";
+import { reportError } from "@/lib/api";
+import EmailDocumentDialog from "@/components/shared/EmailDocumentDialog";
 
 import { CustomerDetailsTab } from "./components/CustomerDetailsTab";
 import { CustomerContactsTab } from "./components/CustomerContactsTab";
@@ -97,6 +100,29 @@ export default function AccountDetailPage({
   const [activeTab, setActiveTab] = useState<
     "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments"
   >(initialTab);
+
+  // Statement Dialog State & PDF Generator
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
+  const handleGenerateStatementPdf = async (customPdfText?: string) => {
+    if (!customer) return;
+    try {
+      const response = await api.pdfTemplatesControllerRunHook(
+        'customer-statement',
+        { customPdfText },
+        {
+          id: customer.customerId,
+          context: DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT,
+        },
+      );
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      reportError(err, 'CustomerDetailPage:generateStatementPdf');
+      toast.error('Failed to generate Customer Statement PDF');
+    }
+  };
 
 
 
@@ -387,6 +413,26 @@ export default function AccountDetailPage({
             subtitle={customer.customerNumber}
             isSaving={saving}
             nav={<PageNav sections={visibleSections} />}
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleGenerateStatementPdf()}
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                  Print Statement
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsEmailDialogOpen(true)}
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                  Email Statement
+                </Button>
+              </div>
+            }
           />
         }
         footerActions={
@@ -590,10 +636,24 @@ export default function AccountDetailPage({
 
 
         {customer && (
-          <>
-
-
-          </>
+          <EmailDocumentDialog
+            isOpen={isEmailDialogOpen}
+            orderId={customer.customerId}
+            orderNumber={customer.customerNumber}
+            customerId={customer.customerId}
+            hookSlug="customer-statement"
+            title="Email Customer Statement"
+            defaultSubjectPrefix="Statement of Account"
+            documentName="Statement"
+            targetId={customer.customerId}
+            contextSlug={DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT}
+            onClose={() => setIsEmailDialogOpen(false)}
+            onSuccess={() => {
+              setIsEmailDialogOpen(false);
+              toast.success('Statement email queued successfully!');
+            }}
+            onPreview={(customText) => handleGenerateStatementPdf(customText)}
+          />
         )}
       </DetailsLayout>
     </>

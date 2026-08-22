@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@herobm/shared';
+import { getErrorMessage, DEFAULT_ACTOR_CONTACT_ROLES } from '@herobm/shared';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -358,23 +358,47 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
               Actor Roles
             </label>
             <div className="flex flex-col gap-3">
-              {[...(appSettings?.actorContactRoles || [])].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => (
-                <label key={r.value} className="flex items-center gap-3 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    className="checkbox checkbox-sm checkbox-primary"
-                    checked={dto.primaryFor.includes(r.value)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDto({ ...dto, primaryFor: [...dto.primaryFor, r.value] });
-                      } else {
-                        setDto({ ...dto, primaryFor: dto.primaryFor.filter(x => x !== r.value) });
-                      }
-                    }}
-                  />
-                  <span className="text-sm capitalize group-hover:text-gray-900 transition-colors">{r.value}</span>
-                </label>
-              ))}
+              {[
+                ...(appSettings?.actorContactRoles && appSettings.actorContactRoles.length > 0
+                  ? appSettings.actorContactRoles
+                  : DEFAULT_ACTOR_CONTACT_ROLES),
+              ]
+                .sort((a, b) => Number(a.order) - Number(b.order))
+                .map((r) => {
+                  const isChecked = dto.primaryFor.some(
+                    (p) => p.toLowerCase() === r.value.toLowerCase(),
+                  );
+                  return (
+                    <label key={r.value} className="flex items-center gap-3 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="checkbox checkbox-sm checkbox-primary"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setDto({
+                              ...dto,
+                              primaryFor: [
+                                ...dto.primaryFor.filter(
+                                  (p) => p.toLowerCase() !== r.value.toLowerCase(),
+                                ),
+                                r.value.toLowerCase(),
+                              ],
+                            });
+                          } else {
+                            setDto({
+                              ...dto,
+                              primaryFor: dto.primaryFor.filter(
+                                (p) => p.toLowerCase() !== r.value.toLowerCase(),
+                              ),
+                            });
+                          }
+                        }}
+                      />
+                      <span className="text-sm capitalize group-hover:text-gray-900 transition-colors">{r.value}</span>
+                    </label>
+                  );
+                })}
             </div>
           </div>
         )}

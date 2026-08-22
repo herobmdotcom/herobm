@@ -120,20 +120,30 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
               code: row.code.toUpperCase(),
               title: row.title,
             };
-            if (isNew) {
-              await api.taxPositionsControllerCreate(payload);
-              toast.success('Tax Position created');
-            } else {
-              await api.taxPositionsControllerUpdate(row.taxPositionId, payload);
-              toast.success('Tax Position updated');
+            try {
+              if (isNew) {
+                await api.taxPositionsControllerCreate(payload);
+                toast.success('Tax Position created');
+              } else {
+                await api.taxPositionsControllerUpdate(row.taxPositionId, payload);
+                toast.success('Tax Position updated');
+              }
+              loadTaxPositions();
+            } catch (err: unknown) {
+              toast.error(getErrorMessage(err));
+              throw err;
             }
-            loadTaxPositions();
           }}
           onDelete={async (row: api.TaxPositionResponseDto) => {
             if (!confirm('Delete Tax Position?')) return;
-            await api.taxPositionsControllerRemove(row.taxPositionId);
-            toast.success('Tax Position deleted');
-            loadTaxPositions();
+            try {
+              await api.taxPositionsControllerRemove(row.taxPositionId);
+              toast.success('Tax Position deleted');
+              loadTaxPositions();
+            } catch (err: unknown) {
+              toast.error(getErrorMessage(err));
+              throw err;
+            }
           }}
           onAdd={() => ({ code: '', title: '' } as unknown as api.TaxPositionResponseDto)}
           canEdit={() => true}
@@ -196,21 +206,31 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
                 sourceTaxCategoryId: row.sourceTaxCategoryId,
                 destinationTaxCategoryId: row.destinationTaxCategoryId,
               };
-              if (isNew) {
-                await api.taxPositionMappingsControllerCreate(selectedTaxPosition!.taxPositionId, payload);
-                toast.success('Mapping created');
-              } else {
-                await api.taxPositionMappingsControllerRemove(selectedTaxPosition!.taxPositionId, row.sourceTaxCategoryId);
-                await api.taxPositionMappingsControllerCreate(selectedTaxPosition!.taxPositionId, payload);
-                toast.success('Mapping updated');
+              try {
+                if (isNew) {
+                  await api.taxPositionMappingsControllerCreate(selectedTaxPosition!.taxPositionId, payload);
+                  toast.success('Mapping created');
+                } else {
+                  await api.taxPositionMappingsControllerRemove(selectedTaxPosition!.taxPositionId, row.sourceTaxCategoryId);
+                  await api.taxPositionMappingsControllerCreate(selectedTaxPosition!.taxPositionId, payload);
+                  toast.success('Mapping updated');
+                }
+                loadTaxPositions();
+              } catch (err: unknown) {
+                toast.error(getErrorMessage(err));
+                throw err;
               }
-              loadTaxPositions();
             }}
             onDelete={async (row: api.TaxPositionMappingResponseDto) => {
               if (!confirm('Delete mapping?')) return;
-              await api.taxPositionMappingsControllerRemove(selectedTaxPosition!.taxPositionId, row.sourceTaxCategoryId);
-              toast.success('Mapping deleted');
-              loadTaxPositions();
+              try {
+                await api.taxPositionMappingsControllerRemove(selectedTaxPosition!.taxPositionId, row.sourceTaxCategoryId);
+                toast.success('Mapping deleted');
+                loadTaxPositions();
+              } catch (err: unknown) {
+                toast.error(getErrorMessage(err));
+                throw err;
+              }
             }}
             onAdd={() => ({ sourceTaxCategoryId: '', destinationTaxCategoryId: '' } as unknown as api.TaxPositionMappingResponseDto)}
             canEdit={() => true}

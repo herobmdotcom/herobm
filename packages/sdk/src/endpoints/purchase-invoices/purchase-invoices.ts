@@ -7,8 +7,10 @@
  */
 import type {
   CreateDebitNoteDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   PurchaseDebitNoteResponseDto,
+  PurchaseDebitNotesControllerEmailDocument201,
   PurchaseDebitNotesControllerFindAllParams,
   PurchaseInvoiceResponseDto
 } from '../../model';
@@ -201,6 +203,44 @@ export const purchaseDebitNotesControllerPostDebitNote = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emptyBodyDto,)
+  }
+);}
+
+
+/**
+ * Generates a PDF using the active purchase debit note template/hook and queues an email outbox message to the specified recipient.
+ * @summary Email Purchase Debit Note Document
+ */
+export type purchaseDebitNotesControllerEmailDocumentResponse201 = {
+  data: PurchaseDebitNotesControllerEmailDocument201
+  status: 201
+}
+    
+export type purchaseDebitNotesControllerEmailDocumentResponseSuccess = (purchaseDebitNotesControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type purchaseDebitNotesControllerEmailDocumentResponse = (purchaseDebitNotesControllerEmailDocumentResponseSuccess)
+
+export const getPurchaseDebitNotesControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-debit-notes/${id}/email-document`
+}
+
+export const purchaseDebitNotesControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<purchaseDebitNotesControllerEmailDocumentResponse> => {
+  
+  return customFetch<purchaseDebitNotesControllerEmailDocumentResponse>(getPurchaseDebitNotesControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
   }
 );}
 

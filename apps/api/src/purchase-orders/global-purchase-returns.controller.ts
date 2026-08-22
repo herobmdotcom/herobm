@@ -3,12 +3,14 @@ import {
   SystemResource,
   PurchaseReturnState,
   PURCHASE_RETURN_STATE,
+  DATA_SOURCE_CONTEXT,
 } from '@herobm/shared';
 import {
   ApiTags,
   ApiProperty,
   ApiOperation,
   ApiOkResponse,
+  ApiCreatedResponse,
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
@@ -27,6 +29,9 @@ import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EntityType } from '../common/event-types';
 import {
   purchaseOrderReturns,
   purchaseOrders,
@@ -42,7 +47,7 @@ import {
   bins,
 } from '@herobm/db-schema';
 import { eq, desc, inArray, or, sql, isNull, and, ne } from 'drizzle-orm';
-import { PurchaseReturnResponseDto } from './dto';
+import { PurchaseReturnResponseDto, EmailDocumentDto } from './dto';
 import { PurchaseReturnsService } from './purchase-returns.service';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
@@ -85,6 +90,7 @@ export class GlobalPurchaseReturnsController {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private purchaseReturnsService: PurchaseReturnsService,
+    private documentDispatchService: DocumentDispatchService,
   ) {}
 
   @Get()
@@ -356,5 +362,50 @@ export class GlobalPurchaseReturnsController {
     );
 
     return updated;
+  }
+
+  @Post(':id/email-document')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Purchase Return Document',
+    description:
+      'Generates a PDF using the active purchase return template/hook and queues an email outbox message to the specified recipient.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailDocument(
+    @Param('id') id: string,
+    @Body() dto: EmailDocumentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const [ret] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, id))
+      .limit(1);
+
+    if (!ret) {
+      throw new NotFoundException('Purchase Return not found');
+    }
+
+    const hookSlug = dto.hookSlug || 'purchase-return';
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug: dto.contextSlug || DATA_SOURCE_CONTEXT.PURCHASE_RETURN,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: ret.purchaseOrderId || id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName: `PurchaseReturn-${ret.returnNumber}.pdf`,
+      },
+      user,
+    );
   }
 }

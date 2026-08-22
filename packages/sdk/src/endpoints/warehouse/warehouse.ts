@@ -26,6 +26,7 @@ import type {
   FindByProductIdsBulkDto,
   GeneratePOsDto,
   GenerateTransfersDto,
+  GlobalShipmentsControllerEmailDocument201,
   GlobalShipmentsControllerFindAllParams,
   GlobalShipmentsControllerFindOneParams,
   GoodsReceivedControllerCancelReception200,
@@ -1482,7 +1483,7 @@ export const globalShipmentsControllerFindOne = async (id: string,
  * @summary Email Shipment Document
  */
 export type globalShipmentsControllerEmailDocumentResponse201 = {
-  data: void
+  data: GlobalShipmentsControllerEmailDocument201
   status: 201
 }
     

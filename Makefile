@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline check-all test-deps test-unit test-single test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -18,11 +18,12 @@ Containers (Podman):
   make nuke           - Complete teardown (containers, volumes, images)
 
 Database & Migrations:
+  make clean-db       - Drop and rebuild herobm_core while preserving raw extracted data (runs migrate & seed)
   make migrate        - Apply SQL migrations
   make migrate-status - Show migration status
   make seed           - Seed database with application data
   make init           - Full DB initialization (schema, migrate, seed, ELT)
-  make rebuild-db-keep-raw - Rebuild app DB from raw data without re-extracting
+  make rebuild-db-keep-raw - Alias for clean-db
 
 Code Generation:
   make dev-generate-sdk - Regenerate OpenAPI spec and TypeScript SDK client
@@ -222,14 +223,15 @@ endif
 	@echo "Pruning unused podman resources..."
 	-podman system prune -a
 
-rebuild-db-keep-raw:
+clean-db:
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
 	@echo "Resetting herobm_core and dbt transformation schemas..."
 	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_abm_transform CASCADE; DROP SCHEMA IF EXISTS dbt_odoo_transform CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
 
-clean-db-keep-extract: rebuild-db-keep-raw
+rebuild-db-keep-raw: clean-db
+clean-db-keep-extract: clean-db
 
 # Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
 # import source data via ELT, then seed application data (users, inventory).
@@ -655,6 +657,10 @@ test-deps:
 test-single:
 	$(if $(TEST),,$(error Error: TEST is required. Usage: make test-single TEST=<name>))
 	@$(NPX) tsx infra/test-utils/run-single.ts $(TEST)
+
+test-changed:
+	@$(NPM) run test:changed -w apps/api --if-present
+	@$(NPM) run test:changed -w apps/ops-portal --if-present
 
 test-structural:
 	@$(MAKE) build-shared

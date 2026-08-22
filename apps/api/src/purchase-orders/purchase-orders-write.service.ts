@@ -560,6 +560,16 @@ export class PurchaseOrdersWriteService {
         );
       }
 
+      if (
+        existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT &&
+        updateDto.currencyCode &&
+        updateDto.currencyCode !== existing.currencyCode
+      ) {
+        throw new BadRequestException(
+          'Cannot update currency on non-draft purchase orders',
+        );
+      }
+
       await tx
         .update(purchaseOrders)
         .set({

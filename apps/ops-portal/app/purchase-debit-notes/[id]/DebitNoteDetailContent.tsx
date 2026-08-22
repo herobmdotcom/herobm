@@ -17,6 +17,10 @@ import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { routes } from '@/lib/routes';
 import type { ValidState } from '@/types/states';
+import { Button } from '@/components/shared/Button';
+import { toast } from 'react-hot-toast';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 
 interface DebitNoteDetailLine {
   debitNoteLineId: string;
@@ -55,6 +59,27 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
   const { baseCurrency } = useSettings();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DebitNoteDetailData | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
+  const handleGenerateDebitNotePdf = async (customPdfText?: string) => {
+    if (!data) return;
+    try {
+      const response = await api.pdfTemplatesControllerRunHook(
+        'purchase-debit-note',
+        { customPdfText },
+        {
+          id: data.debitNoteId,
+          context: DATA_SOURCE_CONTEXT.PURCHASE_DEBIT_NOTE,
+        },
+      );
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      reportError(err, 'DebitNoteDetailContent:generatePdf');
+      toast.error('Failed to generate Debit Note PDF');
+    }
+  };
 
   const fetchDebitNote = useCallback(() => {
     setLoading(true);
@@ -199,6 +224,26 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
           title={data.debitNoteNumber}
           subtitle={`${formatLocalDate(data.createdOn)} · Purchase Debit Note`}
           badges={data.stateCode ? <StateBadge state={data.stateCode as ValidState} /> : undefined}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleGenerateDebitNotePdf()}
+              >
+                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                Print Debit Note
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsEmailDialogOpen(true)}
+              >
+                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                Email Debit Note
+              </Button>
+            </div>
+          }
         />
       }
     >
@@ -280,6 +325,29 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
           <ActivityTimeline events={data.events || []} />
         </div>
       </div>
+
+      {data && (
+        <EmailDocumentDialog
+          isOpen={isEmailDialogOpen}
+          orderId={data.debitNoteId}
+          orderNumber={data.debitNoteNumber}
+          customerReference={data.orderNumber}
+          supplierId={data.vendorId || undefined}
+          hookSlug="purchase-debit-note"
+          title="Email Purchase Debit Note"
+          defaultSubjectPrefix="Debit Note"
+          documentName="Debit Note"
+          targetId={data.debitNoteId}
+          contextSlug={DATA_SOURCE_CONTEXT.PURCHASE_DEBIT_NOTE}
+          onClose={() => setIsEmailDialogOpen(false)}
+          onSuccess={() => {
+            setIsEmailDialogOpen(false);
+            toast.success('Email queued successfully!');
+            fetchDebitNote();
+          }}
+          onPreview={(customText) => handleGenerateDebitNotePdf(customText)}
+        />
+      )}
     </DetailsLayout>
   );
 }

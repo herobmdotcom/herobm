@@ -98,6 +98,16 @@
       "type": "hook"
     },
     {
+      "id": "a0000000-0000-0000-0000-000000000014",
+      "slug": "shipping-label-template",
+      "name": "Shipping Label",
+      "filename": "shipping-label.typ",
+      "output_name_pattern": "ShippingLabel-${shipmentNumber}.pdf",
+      "hook": "shipping-label",
+      "context": "shipment",
+      "type": "hook"
+    },
+    {
       "id": "a0000000-0000-0000-0000-000000000012",
       "slug": "picking-labels-zebra",
       "name": "Zebra Picking Labels",
@@ -114,6 +124,36 @@
       "output_name_pattern": "PurchaseOrder-${orderNumber}.pdf",
       "hook": "purchase-order",
       "context": "purchase-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000015",
+      "slug": "purchase-return-slip",
+      "name": "Purchase Return Slip",
+      "filename": "purchase-return-slip.typ",
+      "output_name_pattern": "PurchaseReturn-${returnNumber}.pdf",
+      "hook": "purchase-return",
+      "context": "purchase-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000016",
+      "slug": "purchase-debit-note-template",
+      "name": "Purchase Debit Note",
+      "filename": "purchase-debit-note.typ",
+      "output_name_pattern": "DebitNote-${debitNoteNumber}.pdf",
+      "hook": "purchase-debit-note",
+      "context": "purchase-debit-note",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000017",
+      "slug": "customer-statement",
+      "name": "Customer Statement of Account",
+      "filename": "customer-statement.typ",
+      "output_name_pattern": "Statement-${customerNumber}.pdf",
+      "hook": "customer-statement",
+      "context": "customer-statement",
       "type": "hook"
     }
   ]

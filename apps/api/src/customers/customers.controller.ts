@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import {
   Controller,
   Get,
@@ -7,10 +7,13 @@ import {
   Post,
   Patch,
   Body,
+  NotFoundException,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EntityType } from '../common/event-types';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
@@ -22,6 +25,7 @@ import {
   CreditAssessmentResponseDto,
   AgedBalanceResponseDto,
   EmptyBodyDto,
+  EmailDocumentDto,
 } from './dto';
 import {
   ApiTags,
@@ -42,6 +46,7 @@ export class CustomersController {
     private readonly customersService: CustomersService,
     private readonly customersWriteService: CustomersWriteService,
     private readonly creditAssessmentService: CreditAssessmentService,
+    private readonly documentDispatchService: DocumentDispatchService,
   ) {}
 
   @Get()
@@ -154,5 +159,45 @@ export class CustomersController {
   @ApiCreatedResponse({ type: CustomerResponseDto })
   unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.customersWriteService.unarchive(id, user.username);
+  }
+
+  @Post(':id/email-document')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Customer Statement Document',
+    description:
+      'Generates a Customer Statement PDF using the active customer statement template/hook and queues an email outbox message to the specified recipient.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailDocument(
+    @Param('id') id: string,
+    @Body() dto: EmailDocumentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const cust = await this.customersService.findOne(id);
+    if (!cust) {
+      throw new NotFoundException(`Customer '${id}' not found`);
+    }
+
+    const hookSlug = dto.hookSlug || 'customer-statement';
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug: dto.contextSlug || DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT,
+        entityType: EntityType.CUSTOMER,
+        entityId: id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName: `Statement-${cust.customerNumber || id}.pdf`,
+      },
+      user,
+    );
   }
 }

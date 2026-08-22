@@ -156,22 +156,32 @@ export default function SystemSettingsPage() {
   const handleUomSave = async (payload: Partial<UomEntry>, isNew: boolean) => {
     if (!payload.uomCode || !payload.description) { throw new Error(tCommon('errors.typeAndDateRequired')); }
     const codeToSave = payload.uomCode.toUpperCase();
-    if (isNew) {
-      await api.uomDictionaryControllerCreate({ uomCode: codeToSave, description: payload.description });
-      toast.success(tSettings('toasts.uomCreated'));
-    } else {
-      await api.uomDictionaryControllerUpdate(codeToSave, { description: payload.description });
-      toast.success(tSettings('toasts.uomUpdated'));
+    try {
+      if (isNew) {
+        await api.uomDictionaryControllerCreate({ uomCode: codeToSave, description: payload.description });
+        toast.success(tSettings('toasts.uomCreated'));
+      } else {
+        await api.uomDictionaryControllerUpdate(codeToSave, { description: payload.description });
+        toast.success(tSettings('toasts.uomUpdated'));
+      }
+      loadUom();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
     }
-    loadUom();
   };
 
   const handleUomDelete = async (payload: Partial<UomEntry>) => {
     if (!payload.uomCode) return;
     if (!confirm(tSettings('confirmations.deleteUom', { code: payload.uomCode }))) return;
-    await api.uomDictionaryControllerRemove(payload.uomCode);
-    toast.success(tSettings('toasts.uomDeleted'));
-    loadUom();
+    try {
+      await api.uomDictionaryControllerRemove(payload.uomCode);
+      toast.success(tSettings('toasts.uomDeleted'));
+      loadUom();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   // ── Macros data ────────────────────────────────────────────────────────────
@@ -224,23 +234,33 @@ export default function SystemSettingsPage() {
       macroType: payload.macroType || 'general',
       content: payload.content,
     };
-    if (isNew) {
-      await api.macrosControllerCreate(apiPayload);
-      toast.success(tSettings('toasts.macroCreated'));
-    } else {
-      if (!payload.macroId) return;
-      await api.macrosControllerUpdate(payload.macroId, apiPayload);
-      toast.success(tSettings('toasts.macroUpdated'));
+    try {
+      if (isNew) {
+        await api.macrosControllerCreate(apiPayload);
+        toast.success(tSettings('toasts.macroCreated'));
+      } else {
+        if (!payload.macroId) return;
+        await api.macrosControllerUpdate(payload.macroId, apiPayload);
+        toast.success(tSettings('toasts.macroUpdated'));
+      }
+      loadMacros();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
     }
-    loadMacros();
   };
 
   const handleMacroDelete = async (payload: Partial<Macro>) => {
     if (!payload.macroId) return;
     if (!confirm(tSettings('confirmations.deleteMacro'))) return;
-    await api.macrosControllerRemove(payload.macroId);
-    toast.success(tSettings('toasts.macroDeleted'));
-    loadMacros();
+    try {
+      await api.macrosControllerRemove(payload.macroId);
+      toast.success(tSettings('toasts.macroDeleted'));
+      loadMacros();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────

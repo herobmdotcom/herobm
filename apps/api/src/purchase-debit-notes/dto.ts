@@ -120,3 +120,5 @@ export class PurchaseDebitNoteResponseDto {
   modifiedOn?: Date | null;
   lines?: PurchaseDebitNoteLineResponseDto[];
 }
+
+export { EmailDocumentDto } from '../orders/dto';

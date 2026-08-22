@@ -181,7 +181,7 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 onClick={() => {
                   setEmailDialogConfig({
                     hookSlug: 'shipping-docket',
-                    title: 'Email Shipping Docket',
+                    title: 'Email Docket',
                     prefix: 'Shipping Docket',
                     docName: 'Shipping Docket',
                     targetId: id,
@@ -209,6 +209,25 @@ export default function EditShipmentClient({ id }: { id: string }) {
                 }}
               >
                 {t('docketPdf')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center shrink-0"
+                onClick={async () => {
+                  try {
+                    const api = await import('@herobm/sdk');
+                    const res = await api.pdfTemplatesControllerRunHook('shipping-label', {}, { id, context: 'shipment' });
+                    const blob = res.data as Blob;
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                  } catch (err) {
+                    reportError(err, 'ShipmentDetailPage.generateLabel');
+                    toast.error('Failed to generate shipping label.');
+                  }
+                }}
+              >
+                {t('labelPdf')}
               </Button>
             </div>
           </div>

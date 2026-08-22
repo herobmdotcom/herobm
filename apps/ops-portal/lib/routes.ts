@@ -156,6 +156,9 @@ export const routes = {
     profiles: () => '/reconciliations/profiles',
     rules: () => '/reconciliations/rules',
   },
+  fiscalPeriods: {
+    list: () => '/fiscal-periods',
+  },
 
   // Reporting
   reporting: {

@@ -10,6 +10,7 @@ describe('Structural Architecture Tests', () => {
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const fullPath = path.join(dir, file);
+        if (!fs.existsSync(fullPath)) continue;
         if (fs.statSync(fullPath).isDirectory()) {
           scanDir(fullPath);
         } else if (fullPath.endsWith('.ts') && !fullPath.includes('.spec.ts')) {

@@ -29,6 +29,12 @@ describe('State Machines', () => {
       // Sanity check to make sure our dynamic reflection actually found maps
       expect(foundMaps).toBeGreaterThan(5);
     });
+
+    it('should allow Purchase Orders in ORDERED state to transition back to DRAFT', () => {
+      expect(StateMachines.PURCHASE_ORDER_TRANSITIONS[StateMachines.PURCHASE_ORDER_STATE.ORDERED]).toContain(
+        StateMachines.PURCHASE_ORDER_STATE.DRAFT
+      );
+    });
   });
 
   describe('Helper Functions', () => {

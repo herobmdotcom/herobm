@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, CURRENCIES } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals } from '@herobm/shared';
 import { reportError } from '@/lib/api';
@@ -400,13 +400,19 @@ export default function NewPurchaseOrderPage() {
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('common.columns.currency')}
               </label>
-              <input
+              <select
                 id="order-currency"
                 className="input"
-                placeholder={baseCurrency}
                 value={currencyCode}
-                onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-              />
+                onChange={(e) => setCurrencyCode(e.target.value)}
+                disabled={submitting}
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} - {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-2 mt-2">

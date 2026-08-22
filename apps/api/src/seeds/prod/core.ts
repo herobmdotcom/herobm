@@ -4,6 +4,8 @@ import {
   CUSTOMER_STATE,
   SUPPLIER_STATE,
   ACTOR_STATE,
+  DEFAULT_ACTOR_CONTACT_ROLES,
+  ACTOR_CONTACT_ROLE,
 } from '@herobm/shared';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -713,6 +715,20 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'write',
       v3: 'allow',
     },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.FISCAL_PERIODS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.FISCAL_PERIODS,
+      v2: 'write',
+      v3: 'allow',
+    },
 
     {
       ptype: 'p',
@@ -893,6 +909,20 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'finance',
       v1: SystemResource.GL,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.FISCAL_PERIODS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.FISCAL_PERIODS,
       v2: 'write',
       v3: 'allow',
     },
@@ -1492,17 +1522,38 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
   const existing = await db.select().from(appSettings).limit(1);
   if (existing.length > 0) {
     const row = existing[0];
-    if (!row.actorContactRoles || row.actorContactRoles.length === 0) {
+    const currentRoles =
+      (row.actorContactRoles as Array<{ value: string; order: number }>) || [];
+    if (currentRoles.length === 0) {
       await db.update(appSettings).set({
-        actorContactRoles: [
-          { value: 'Sales', order: 1 },
-          { value: 'Purchasing', order: 2 },
-          { value: 'Billing', order: 3 },
-        ],
+        actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
       });
       console.log(
         '  Updated existing app_settings with default actorContactRoles.',
       );
+    } else {
+      // Ensure all canonical actor contact roles exist
+      const missingRoles = DEFAULT_ACTOR_CONTACT_ROLES.filter(
+        (def) =>
+          !currentRoles.some(
+            (r) => r.value.toLowerCase() === def.value.toLowerCase(),
+          ),
+      );
+      if (missingRoles.length > 0) {
+        let maxOrder = currentRoles.reduce(
+          (max, r) => Math.max(max, Number(r.order) || 0),
+          0,
+        );
+        const updatedRoles = [...currentRoles];
+        for (const missing of missingRoles) {
+          maxOrder += 1;
+          updatedRoles.push({ value: missing.value, order: maxOrder });
+        }
+        await db.update(appSettings).set({ actorContactRoles: updatedRoles });
+        console.log(
+          `  Added missing canonical roles (${missingRoles.map((r) => r.value).join(', ')}) to app_settings.actorContactRoles.`,
+        );
+      }
     }
     if (!row.salesAnalysisCodes || row.salesAnalysisCodes.length === 0) {
       await db.update(appSettings).set({
@@ -1534,11 +1585,7 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       creditLimitBehavior: 'soft',
       setupCompletedAt: now,
       systemIdentifier: sid,
-      actorContactRoles: [
-        { value: 'Sales', order: 1 },
-        { value: 'Purchasing', order: 2 },
-        { value: 'Billing', order: 3 },
-      ],
+      actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
       salesAnalysisCodes: [
         { value: 'DEFAULT', order: 1 },
         { value: 'PROMO', order: 2 },

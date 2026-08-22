@@ -112,14 +112,19 @@ export function ExchangeRatesSection({ glSettings, updateGlSetting }: ExchangeRa
               buyRate: String(row.buyRate),
               sellRate: String(row.sellRate)
             };
-            if (isNew) {
-              await api.exchangeRatesControllerCreate(payload);
-              toast.success(tSettings('toasts.rateCreated') || 'Rate created');
-            } else {
-              await api.exchangeRatesControllerCreate(payload);
-              toast.success(tSettings('toasts.rateUpdated') || 'New rate added to history');
+            try {
+              if (isNew) {
+                await api.exchangeRatesControllerCreate(payload);
+                toast.success(tSettings('toasts.rateCreated') || 'Rate created');
+              } else {
+                await api.exchangeRatesControllerCreate(payload);
+                toast.success(tSettings('toasts.rateUpdated') || 'New rate added to history');
+              }
+              loadRates();
+            } catch (err: unknown) {
+              toast.error(getErrorMessage(err));
+              throw err;
             }
-            loadRates();
           }}
           extraActions={(row: ExchangeRate & { isSystemBase?: boolean }) => {
             if (row.isSystemBase) return null;

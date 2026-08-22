@@ -7,8 +7,10 @@
  */
 import type {
   CreatePurchaseReturnDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   GlobalPurchaseReturnDto,
+  GlobalPurchaseReturnsControllerEmailDocument201,
   GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,
   PurchaseReturnResponseDto,
   ResolvePurchaseReturnDto,
@@ -442,6 +444,44 @@ export const globalPurchaseReturnsControllerMarkPurchaseReturnResolved = async (
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       resolvePurchaseReturnDto,)
+  }
+);}
+
+
+/**
+ * Generates a PDF using the active purchase return template/hook and queues an email outbox message to the specified recipient.
+ * @summary Email Purchase Return Document
+ */
+export type globalPurchaseReturnsControllerEmailDocumentResponse201 = {
+  data: GlobalPurchaseReturnsControllerEmailDocument201
+  status: 201
+}
+    
+export type globalPurchaseReturnsControllerEmailDocumentResponseSuccess = (globalPurchaseReturnsControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type globalPurchaseReturnsControllerEmailDocumentResponse = (globalPurchaseReturnsControllerEmailDocumentResponseSuccess)
+
+export const getGlobalPurchaseReturnsControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-returns/${id}/email-document`
+}
+
+export const globalPurchaseReturnsControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<globalPurchaseReturnsControllerEmailDocumentResponse> => {
+  
+  return customFetch<globalPurchaseReturnsControllerEmailDocumentResponse>(getGlobalPurchaseReturnsControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
   }
 );}
 

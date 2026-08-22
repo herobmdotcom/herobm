@@ -21,12 +21,16 @@ jest.mock('@/hooks/useDocumentTitle', () => ({
 
 jest.mock('@herobm/sdk', () => ({
   __esModule: true,
+  setSdkConfig: jest.fn(),
   globalPurchaseReturnsControllerGetPurchaseReturnById: jest.fn(),
   purchaseReturnsControllerStageReturn: jest.fn(),
   purchaseReturnsControllerShipReturn: jest.fn(),
   purchaseReturnsControllerUnstageReturn: jest.fn(),
   purchaseReturnsControllerUnshipReturn: jest.fn(),
   purchaseReturnsControllerCancelReturn: jest.fn(),
+  pdfTemplatesControllerGetAssignments: jest.fn().mockResolvedValue({ data: [] }),
+  macrosControllerFindAll: jest.fn().mockResolvedValue({ data: [] }),
+  suppliersControllerFindOne: jest.fn().mockResolvedValue({ data: { contacts: [] } }),
 }));
 
 describe('EditPurchaseReturnClient — Shipped State & Debit Note Decoupling', () => {
@@ -151,5 +155,31 @@ describe('EditPurchaseReturnClient — Shipped State & Debit Note Decoupling', (
     expect(debitNoteLink).toHaveAttribute('href', '/purchase-debit-notes/dn-1344');
     // Net Debit Total: 3411.65 + 341.16 = 3752.81
     expect(screen.getByText(/3,752\.81/)).toBeInTheDocument();
+  });
+
+  it('renders Print Return Slip and Email Return Slip buttons', async () => {
+    (api.globalPurchaseReturnsControllerGetPurchaseReturnById as jest.Mock).mockResolvedValue({
+      data: {
+        returnId: 'pr-123',
+        returnNumber: 'PRET-001',
+        purchaseOrderId: 'po-123',
+        orderNumber: 'PO-1001',
+        stateCode: 'staged',
+        vendorName: 'Acme Supplies',
+        vendorId: 'vend-1',
+        currencyCode: 'AUD',
+        createdOn: '2026-08-01T00:00:00Z',
+        lines: [],
+      },
+    });
+
+    render(<EditPurchaseReturnClient id="pr-123" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('PRET-001')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /Print Return Slip/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Email Return Slip/i })).toBeInTheDocument();
   });
 });

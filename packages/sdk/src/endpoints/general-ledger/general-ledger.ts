@@ -84,6 +84,396 @@ import type {
 import { customFetch } from '../../mutator';
 
 /**
+ * findAll operation
+ * @summary findAll
+ */
+export type exchangeRatesControllerFindAllResponse200 = {
+  data: ExchangeRateResponseDto[]
+  status: 200
+}
+    
+export type exchangeRatesControllerFindAllResponseSuccess = (exchangeRatesControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type exchangeRatesControllerFindAllResponse = (exchangeRatesControllerFindAllResponseSuccess)
+
+export const getExchangeRatesControllerFindAllUrl = (params?: ExchangeRatesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/settings/exchange-rates?${stringifiedParams}` : `/settings/exchange-rates`
+}
+
+export const exchangeRatesControllerFindAll = async (params?: ExchangeRatesControllerFindAllParams, options?: RequestInit): Promise<exchangeRatesControllerFindAllResponse> => {
+  
+  return customFetch<exchangeRatesControllerFindAllResponse>(getExchangeRatesControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * create operation
+ * @summary create
+ */
+export type exchangeRatesControllerCreateResponse201 = {
+  data: ExchangeRateResponseDto
+  status: 201
+}
+    
+export type exchangeRatesControllerCreateResponseSuccess = (exchangeRatesControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type exchangeRatesControllerCreateResponse = (exchangeRatesControllerCreateResponseSuccess)
+
+export const getExchangeRatesControllerCreateUrl = () => {
+
+
+  
+
+  return `/settings/exchange-rates`
+}
+
+export const exchangeRatesControllerCreate = async (createExchangeRateDto: CreateExchangeRateDto, options?: RequestInit): Promise<exchangeRatesControllerCreateResponse> => {
+  
+  return customFetch<exchangeRatesControllerCreateResponse>(getExchangeRatesControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createExchangeRateDto,)
+  }
+);}
+
+
+/**
+ * findOne operation
+ * @summary findOne
+ */
+export type exchangeRatesControllerFindOneResponse200 = {
+  data: ExchangeRateResponseDto
+  status: 200
+}
+    
+export type exchangeRatesControllerFindOneResponseSuccess = (exchangeRatesControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type exchangeRatesControllerFindOneResponse = (exchangeRatesControllerFindOneResponseSuccess)
+
+export const getExchangeRatesControllerFindOneUrl = (id: string,
+    params?: ExchangeRatesControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/settings/exchange-rates/${id}?${stringifiedParams}` : `/settings/exchange-rates/${id}`
+}
+
+export const exchangeRatesControllerFindOne = async (id: string,
+    params?: ExchangeRatesControllerFindOneParams, options?: RequestInit): Promise<exchangeRatesControllerFindOneResponse> => {
+  
+  return customFetch<exchangeRatesControllerFindOneResponse>(getExchangeRatesControllerFindOneUrl(id,params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * update operation
+ * @summary update
+ */
+export type exchangeRatesControllerUpdateResponse200 = {
+  data: ExchangeRateResponseDto
+  status: 200
+}
+    
+export type exchangeRatesControllerUpdateResponseSuccess = (exchangeRatesControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type exchangeRatesControllerUpdateResponse = (exchangeRatesControllerUpdateResponseSuccess)
+
+export const getExchangeRatesControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/exchange-rates/${id}`
+}
+
+export const exchangeRatesControllerUpdate = async (id: string,
+    updateExchangeRateDto: UpdateExchangeRateDto, options?: RequestInit): Promise<exchangeRatesControllerUpdateResponse> => {
+  
+  return customFetch<exchangeRatesControllerUpdateResponse>(getExchangeRatesControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateExchangeRateDto,)
+  }
+);}
+
+
+/**
+ * remove operation
+ * @summary remove
+ */
+export type exchangeRatesControllerRemoveResponse200 = {
+  data: ExchangeRateResponseDto
+  status: 200
+}
+    
+export type exchangeRatesControllerRemoveResponseSuccess = (exchangeRatesControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type exchangeRatesControllerRemoveResponse = (exchangeRatesControllerRemoveResponseSuccess)
+
+export const getExchangeRatesControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/exchange-rates/${id}`
+}
+
+export const exchangeRatesControllerRemove = async (id: string, options?: RequestInit): Promise<exchangeRatesControllerRemoveResponse> => {
+  
+  return customFetch<exchangeRatesControllerRemoveResponse>(getExchangeRatesControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * List all cost centers
+ * @summary List all cost centers
+ */
+export type costCentersControllerFindAllResponse200 = {
+  data: CostCenterResponseDto[]
+  status: 200
+}
+    
+export type costCentersControllerFindAllResponseSuccess = (costCentersControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type costCentersControllerFindAllResponse = (costCentersControllerFindAllResponseSuccess)
+
+export const getCostCentersControllerFindAllUrl = (params?: CostCentersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/settings/cost-centers?${stringifiedParams}` : `/settings/cost-centers`
+}
+
+export const costCentersControllerFindAll = async (params?: CostCentersControllerFindAllParams, options?: RequestInit): Promise<costCentersControllerFindAllResponse> => {
+  
+  return customFetch<costCentersControllerFindAllResponse>(getCostCentersControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Create a new cost center
+ * @summary Create a new cost center
+ */
+export type costCentersControllerCreateResponse201 = {
+  data: CostCenterResponseDto
+  status: 201
+}
+    
+export type costCentersControllerCreateResponseSuccess = (costCentersControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type costCentersControllerCreateResponse = (costCentersControllerCreateResponseSuccess)
+
+export const getCostCentersControllerCreateUrl = () => {
+
+
+  
+
+  return `/settings/cost-centers`
+}
+
+export const costCentersControllerCreate = async (createCostCenterDto: CreateCostCenterDto, options?: RequestInit): Promise<costCentersControllerCreateResponse> => {
+  
+  return customFetch<costCentersControllerCreateResponse>(getCostCentersControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createCostCenterDto,)
+  }
+);}
+
+
+/**
+ * Update a cost center
+ * @summary Update a cost center
+ */
+export type costCentersControllerUpdateResponse200 = {
+  data: CostCenterResponseDto
+  status: 200
+}
+    
+export type costCentersControllerUpdateResponseSuccess = (costCentersControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type costCentersControllerUpdateResponse = (costCentersControllerUpdateResponseSuccess)
+
+export const getCostCentersControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/cost-centers/${id}`
+}
+
+export const costCentersControllerUpdate = async (id: string,
+    updateCostCenterDto: UpdateCostCenterDto, options?: RequestInit): Promise<costCentersControllerUpdateResponse> => {
+  
+  return customFetch<costCentersControllerUpdateResponse>(getCostCentersControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateCostCenterDto,)
+  }
+);}
+
+
+/**
+ * Delete a cost center
+ * @summary Delete a cost center
+ */
+export type costCentersControllerDeleteResponse200 = {
+  data: CostCenterResponseDto
+  status: 200
+}
+    
+export type costCentersControllerDeleteResponseSuccess = (costCentersControllerDeleteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type costCentersControllerDeleteResponse = (costCentersControllerDeleteResponseSuccess)
+
+export const getCostCentersControllerDeleteUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/cost-centers/${id}`
+}
+
+export const costCentersControllerDelete = async (id: string, options?: RequestInit): Promise<costCentersControllerDeleteResponse> => {
+  
+  return customFetch<costCentersControllerDeleteResponse>(getCostCentersControllerDeleteUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * Bulk import cost centers
+ * @summary Bulk import cost centers
+ */
+export type costCentersControllerImportResponse201 = {
+  data: BulkImportResultDto
+  status: 201
+}
+    
+export type costCentersControllerImportResponseSuccess = (costCentersControllerImportResponse201) & {
+  headers: Headers;
+};
+;
+
+export type costCentersControllerImportResponse = (costCentersControllerImportResponseSuccess)
+
+export const getCostCentersControllerImportUrl = () => {
+
+
+  
+
+  return `/settings/cost-centers/import`
+}
+
+export const costCentersControllerImport = async (createCostCenterDto: CreateCostCenterDto[], options?: RequestInit): Promise<costCentersControllerImportResponse> => {
+  
+  return customFetch<costCentersControllerImportResponse>(getCostCentersControllerImportUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createCostCenterDto,)
+  }
+);}
+
+
+/**
  * Retrieve the chart of accounts or a flat list of accounts.
  * @summary Get Accounts
  */
@@ -1948,396 +2338,6 @@ export const bankStatementControllerGetMatchGroup = async (matchGroupId: string,
     method: 'GET'
     
     
-  }
-);}
-
-
-/**
- * findAll operation
- * @summary findAll
- */
-export type exchangeRatesControllerFindAllResponse200 = {
-  data: ExchangeRateResponseDto[]
-  status: 200
-}
-    
-export type exchangeRatesControllerFindAllResponseSuccess = (exchangeRatesControllerFindAllResponse200) & {
-  headers: Headers;
-};
-;
-
-export type exchangeRatesControllerFindAllResponse = (exchangeRatesControllerFindAllResponseSuccess)
-
-export const getExchangeRatesControllerFindAllUrl = (params?: ExchangeRatesControllerFindAllParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/settings/exchange-rates?${stringifiedParams}` : `/settings/exchange-rates`
-}
-
-export const exchangeRatesControllerFindAll = async (params?: ExchangeRatesControllerFindAllParams, options?: RequestInit): Promise<exchangeRatesControllerFindAllResponse> => {
-  
-  return customFetch<exchangeRatesControllerFindAllResponse>(getExchangeRatesControllerFindAllUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * create operation
- * @summary create
- */
-export type exchangeRatesControllerCreateResponse201 = {
-  data: ExchangeRateResponseDto
-  status: 201
-}
-    
-export type exchangeRatesControllerCreateResponseSuccess = (exchangeRatesControllerCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type exchangeRatesControllerCreateResponse = (exchangeRatesControllerCreateResponseSuccess)
-
-export const getExchangeRatesControllerCreateUrl = () => {
-
-
-  
-
-  return `/settings/exchange-rates`
-}
-
-export const exchangeRatesControllerCreate = async (createExchangeRateDto: CreateExchangeRateDto, options?: RequestInit): Promise<exchangeRatesControllerCreateResponse> => {
-  
-  return customFetch<exchangeRatesControllerCreateResponse>(getExchangeRatesControllerCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createExchangeRateDto,)
-  }
-);}
-
-
-/**
- * findOne operation
- * @summary findOne
- */
-export type exchangeRatesControllerFindOneResponse200 = {
-  data: ExchangeRateResponseDto
-  status: 200
-}
-    
-export type exchangeRatesControllerFindOneResponseSuccess = (exchangeRatesControllerFindOneResponse200) & {
-  headers: Headers;
-};
-;
-
-export type exchangeRatesControllerFindOneResponse = (exchangeRatesControllerFindOneResponseSuccess)
-
-export const getExchangeRatesControllerFindOneUrl = (id: string,
-    params?: ExchangeRatesControllerFindOneParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/settings/exchange-rates/${id}?${stringifiedParams}` : `/settings/exchange-rates/${id}`
-}
-
-export const exchangeRatesControllerFindOne = async (id: string,
-    params?: ExchangeRatesControllerFindOneParams, options?: RequestInit): Promise<exchangeRatesControllerFindOneResponse> => {
-  
-  return customFetch<exchangeRatesControllerFindOneResponse>(getExchangeRatesControllerFindOneUrl(id,params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * update operation
- * @summary update
- */
-export type exchangeRatesControllerUpdateResponse200 = {
-  data: ExchangeRateResponseDto
-  status: 200
-}
-    
-export type exchangeRatesControllerUpdateResponseSuccess = (exchangeRatesControllerUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type exchangeRatesControllerUpdateResponse = (exchangeRatesControllerUpdateResponseSuccess)
-
-export const getExchangeRatesControllerUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/settings/exchange-rates/${id}`
-}
-
-export const exchangeRatesControllerUpdate = async (id: string,
-    updateExchangeRateDto: UpdateExchangeRateDto, options?: RequestInit): Promise<exchangeRatesControllerUpdateResponse> => {
-  
-  return customFetch<exchangeRatesControllerUpdateResponse>(getExchangeRatesControllerUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateExchangeRateDto,)
-  }
-);}
-
-
-/**
- * remove operation
- * @summary remove
- */
-export type exchangeRatesControllerRemoveResponse200 = {
-  data: ExchangeRateResponseDto
-  status: 200
-}
-    
-export type exchangeRatesControllerRemoveResponseSuccess = (exchangeRatesControllerRemoveResponse200) & {
-  headers: Headers;
-};
-;
-
-export type exchangeRatesControllerRemoveResponse = (exchangeRatesControllerRemoveResponseSuccess)
-
-export const getExchangeRatesControllerRemoveUrl = (id: string,) => {
-
-
-  
-
-  return `/settings/exchange-rates/${id}`
-}
-
-export const exchangeRatesControllerRemove = async (id: string, options?: RequestInit): Promise<exchangeRatesControllerRemoveResponse> => {
-  
-  return customFetch<exchangeRatesControllerRemoveResponse>(getExchangeRatesControllerRemoveUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
-  }
-);}
-
-
-/**
- * List all cost centers
- * @summary List all cost centers
- */
-export type costCentersControllerFindAllResponse200 = {
-  data: CostCenterResponseDto[]
-  status: 200
-}
-    
-export type costCentersControllerFindAllResponseSuccess = (costCentersControllerFindAllResponse200) & {
-  headers: Headers;
-};
-;
-
-export type costCentersControllerFindAllResponse = (costCentersControllerFindAllResponseSuccess)
-
-export const getCostCentersControllerFindAllUrl = (params?: CostCentersControllerFindAllParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/settings/cost-centers?${stringifiedParams}` : `/settings/cost-centers`
-}
-
-export const costCentersControllerFindAll = async (params?: CostCentersControllerFindAllParams, options?: RequestInit): Promise<costCentersControllerFindAllResponse> => {
-  
-  return customFetch<costCentersControllerFindAllResponse>(getCostCentersControllerFindAllUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Create a new cost center
- * @summary Create a new cost center
- */
-export type costCentersControllerCreateResponse201 = {
-  data: CostCenterResponseDto
-  status: 201
-}
-    
-export type costCentersControllerCreateResponseSuccess = (costCentersControllerCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type costCentersControllerCreateResponse = (costCentersControllerCreateResponseSuccess)
-
-export const getCostCentersControllerCreateUrl = () => {
-
-
-  
-
-  return `/settings/cost-centers`
-}
-
-export const costCentersControllerCreate = async (createCostCenterDto: CreateCostCenterDto, options?: RequestInit): Promise<costCentersControllerCreateResponse> => {
-  
-  return customFetch<costCentersControllerCreateResponse>(getCostCentersControllerCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createCostCenterDto,)
-  }
-);}
-
-
-/**
- * Update a cost center
- * @summary Update a cost center
- */
-export type costCentersControllerUpdateResponse200 = {
-  data: CostCenterResponseDto
-  status: 200
-}
-    
-export type costCentersControllerUpdateResponseSuccess = (costCentersControllerUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type costCentersControllerUpdateResponse = (costCentersControllerUpdateResponseSuccess)
-
-export const getCostCentersControllerUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/settings/cost-centers/${id}`
-}
-
-export const costCentersControllerUpdate = async (id: string,
-    updateCostCenterDto: UpdateCostCenterDto, options?: RequestInit): Promise<costCentersControllerUpdateResponse> => {
-  
-  return customFetch<costCentersControllerUpdateResponse>(getCostCentersControllerUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateCostCenterDto,)
-  }
-);}
-
-
-/**
- * Delete a cost center
- * @summary Delete a cost center
- */
-export type costCentersControllerDeleteResponse200 = {
-  data: CostCenterResponseDto
-  status: 200
-}
-    
-export type costCentersControllerDeleteResponseSuccess = (costCentersControllerDeleteResponse200) & {
-  headers: Headers;
-};
-;
-
-export type costCentersControllerDeleteResponse = (costCentersControllerDeleteResponseSuccess)
-
-export const getCostCentersControllerDeleteUrl = (id: string,) => {
-
-
-  
-
-  return `/settings/cost-centers/${id}`
-}
-
-export const costCentersControllerDelete = async (id: string, options?: RequestInit): Promise<costCentersControllerDeleteResponse> => {
-  
-  return customFetch<costCentersControllerDeleteResponse>(getCostCentersControllerDeleteUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
-  }
-);}
-
-
-/**
- * Bulk import cost centers
- * @summary Bulk import cost centers
- */
-export type costCentersControllerImportResponse201 = {
-  data: BulkImportResultDto
-  status: 201
-}
-    
-export type costCentersControllerImportResponseSuccess = (costCentersControllerImportResponse201) & {
-  headers: Headers;
-};
-;
-
-export type costCentersControllerImportResponse = (costCentersControllerImportResponseSuccess)
-
-export const getCostCentersControllerImportUrl = () => {
-
-
-  
-
-  return `/settings/cost-centers/import`
-}
-
-export const costCentersControllerImport = async (createCostCenterDto: CreateCostCenterDto[], options?: RequestInit): Promise<costCentersControllerImportResponse> => {
-  
-  return customFetch<costCentersControllerImportResponse>(getCostCentersControllerImportUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createCostCenterDto,)
   }
 );}
 

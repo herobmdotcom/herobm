@@ -295,3 +295,5 @@ export class DeleteCustomerGroupResponseDto {
   @ApiProperty()
   deleted!: boolean;
 }
+
+export { EmailDocumentDto } from '../orders/dto';

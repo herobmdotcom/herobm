@@ -77,17 +77,27 @@ export function useDevelopers() {
   }, []);
 
   const createApiKey = useCallback(async (name: string, role: string) => {
-    const res = await api.apiKeysControllerCreate({ name, role });
-    setNewSecret(res.data.secretKey);
-    toast.success('API Key created');
-    await loadKeys();
+    try {
+      const res = await api.apiKeysControllerCreate({ name, role });
+      setNewSecret(res.data.secretKey);
+      toast.success('API Key created');
+      await loadKeys();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   }, [loadKeys]);
 
   const revokeApiKey = useCallback(async (apiKeyId: string) => {
     if (!confirm('Are you sure you want to revoke this API key?')) return;
-    await api.apiKeysControllerRevoke(apiKeyId);
-    toast.success('API Key revoked');
-    await loadKeys();
+    try {
+      await api.apiKeysControllerRevoke(apiKeyId);
+      toast.success('API Key revoked');
+      await loadKeys();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   }, [loadKeys]);
 
   const loadWebhooks = useCallback(async () => {
@@ -96,27 +106,37 @@ export function useDevelopers() {
       const res = await api.webhooksControllerList();
       setWebhooks((res.data as Webhook[]) || []);
     } catch (err: unknown) {
-      toast.error('Failed to load Webhooks: ' + (err as Error).message);
+      toast.error('Failed to load Webhooks: ' + getErrorMessage(err));
     } finally {
       setWebhooksLoading(false);
     }
   }, []);
 
   const createWebhook = useCallback(async (targetUrl: string, eventTypesString: string) => {
-    const res = await api.webhooksControllerCreate({
-      targetUrl,
-      eventTypes: (eventTypesString || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-    });
-    setNewSecret(res.data.secretKey);
-    toast.success('Webhook created');
-    await loadWebhooks();
+    try {
+      const res = await api.webhooksControllerCreate({
+        targetUrl,
+        eventTypes: (eventTypesString || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+      });
+      setNewSecret(res.data.secretKey);
+      toast.success('Webhook created');
+      await loadWebhooks();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   }, [loadWebhooks]);
 
   const deleteWebhook = useCallback(async (webhookId: string) => {
     if (!confirm('Are you sure you want to delete this webhook?')) return;
-    await api.webhooksControllerRemove(webhookId);
-    toast.success('Webhook deleted');
-    await loadWebhooks();
+    try {
+      await api.webhooksControllerRemove(webhookId);
+      toast.success('Webhook deleted');
+      await loadWebhooks();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   }, [loadWebhooks]);
 
   const loadRoles = useCallback(async () => {

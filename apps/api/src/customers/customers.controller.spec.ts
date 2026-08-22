@@ -3,6 +3,7 @@ import { CustomersController } from './customers.controller';
 import { CustomersService } from './customers.service';
 import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 
 describe('CustomersController', () => {
   let controller: CustomersController;
@@ -30,6 +31,10 @@ describe('CustomersController', () => {
     assessCredit: jest.fn(),
   };
 
+  const mockDocumentDispatchService = {
+    emailDocument: jest.fn().mockResolvedValue({ success: true }),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -40,6 +45,10 @@ describe('CustomersController', () => {
         {
           provide: CreditAssessmentService,
           useValue: mockCreditAssessmentService,
+        },
+        {
+          provide: DocumentDispatchService,
+          useValue: mockDocumentDispatchService,
         },
       ],
     }).compile();
@@ -72,6 +81,41 @@ describe('CustomersController', () => {
       const result = await controller.findOne('C001');
       expect(result).toEqual({ customerId: 'C001', name: 'Acme Corp' });
       expect(mockService.findOne).toHaveBeenCalledWith('C001');
+    });
+  });
+
+  describe('emailDocument', () => {
+    it('should queue customer statement document for email dispatch', async () => {
+      const dto = {
+        emailAddress: 'accounts@acmecorp.com',
+        subject: 'Statement of Account: CUST-001',
+        body: 'Please find attached your monthly statement.',
+        customPdfText: 'Payment due within 30 days.',
+      };
+
+      const result = await controller.emailDocument('C001', dto, {
+        userId: 'user-1',
+        username: 'user-1',
+        email: 'user1@test.com',
+        role: 'admin',
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
+        {
+          targetId: 'C001',
+          hookSlug: 'customer-statement',
+          contextSlug: 'customer-statement',
+          entityType: 'customer',
+          entityId: 'C001',
+          emailAddress: 'accounts@acmecorp.com',
+          subject: 'Statement of Account: CUST-001',
+          body: 'Please find attached your monthly statement.',
+          customPdfText: 'Payment due within 30 days.',
+          fallbackFileName: 'Statement-C001.pdf',
+        },
+        expect.objectContaining({ userId: 'user-1' }),
+      );
     });
   });
 });

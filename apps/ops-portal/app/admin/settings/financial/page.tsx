@@ -15,7 +15,6 @@ import { ActivitiesSection } from './components/ActivitiesSection';
 import { GlSettingsSection } from './components/GlSettingsSection';
 import { CoASettingsSection } from './components/CoASettingsSection';
 import { TradingTermsSection } from './components/TradingTermsSection';
-import { FiscalPeriodsSection } from './components/FiscalPeriodsSection';
 
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
@@ -108,7 +107,6 @@ export default function FinancialSettingsPage() {
       onClick: () => setActiveTab('gl'),
       subtargets: [
         { id: 'gl-section', label: 'Defaults', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('gl-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'periods-section', label: 'Fiscal Periods', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('periods-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'coa-section', label: 'Accounts', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('coa-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'cc-section', label: 'Cost Centers', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('cc-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: 'Activities', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
@@ -189,9 +187,6 @@ export default function FinancialSettingsPage() {
           <>
             {/* ── General Ledger ────────────────────────────────────────── */}
             <GlSettingsSection glSettings={glSettings} updateGlSetting={updateGlSetting} glLoading={glLoading} glAccounts={glAccounts} />
-
-            {/* ── Fiscal Periods & Locking ─────────────────────────────────── */}
-            <FiscalPeriodsSection />
 
             {/* ── Chart of Accounts ────────────────────────────────────────── */}
             <CoASettingsSection glSettings={glSettings} updateGlSetting={updateGlSetting} glAccounts={glAccounts} loadGl={loadGl} />

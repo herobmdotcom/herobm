@@ -3,12 +3,13 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { uomDictionary } from '@herobm/db-schema';
+import { uomDictionary, products, productUoms } from '@herobm/db-schema';
 import { CreateUomDto, UpdateUomDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -97,6 +98,31 @@ export class UomDictionaryService {
 
   async delete(code: string) {
     await this.findOne(code);
+
+    // Check for references in products (base_uom)
+    const [prodDep] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.baseUom, code));
+
+    if (Number(prodDep?.count) > 0) {
+      throw new ConflictException(
+        `Cannot delete UOM '${code}' because it is set as the base unit of measure on ${prodDep.count} product(s).`,
+      );
+    }
+
+    // Check for references in product_uoms
+    const [uomDep] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(productUoms)
+      .where(eq(productUoms.uomCode, code));
+
+    if (Number(uomDep?.count) > 0) {
+      throw new ConflictException(
+        `Cannot delete UOM '${code}' because it is assigned as a unit conversion on ${uomDep.count} product(s).`,
+      );
+    }
+
     await this.db.delete(uomDictionary).where(eq(uomDictionary.uomCode, code));
 
     await emitEvent(this.db, {

@@ -20,6 +20,9 @@ export const DATA_SOURCE_CONTEXT = {
   PURCHASING_TREND: 'purchasing-trend',
   PURCHASING_OUTSTANDING: 'purchasing-outstanding',
   PURCHASE_ORDER: 'purchase-order',
+  PURCHASE_RETURN: 'purchase-return',
+  PURCHASE_DEBIT_NOTE: 'purchase-debit-note',
+  CUSTOMER_STATEMENT: 'customer-statement',
 } as const;
 
 export type DataSourceContext = typeof DATA_SOURCE_CONTEXT[keyof typeof DATA_SOURCE_CONTEXT];

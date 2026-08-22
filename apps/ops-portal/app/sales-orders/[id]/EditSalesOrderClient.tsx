@@ -282,24 +282,6 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         await changeState(state, state === SALES_ORDER_STATE.CONFIRMED, discrepanciesAcknowledged);
     };
 
-    const handleGenerateQuote = async (text: string) => {
-        try {
-            const response = await api.pdfTemplatesControllerRunHook(
-                'sales-order-quote', 
-                { customPdfText: text, quoteIntroText: text }, 
-                { id, context: 'sales-order' }
-            );
-            const blob = response.data ;
-            const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
-            loadOrder(); // Reload to show the new timeline event
-        } catch (err) {
-            reportError(err, 'OrderDetailPage:generateQuote');
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
-            throw err;
-        }
-    };
-
     // Pre-calculate gaps for the Availability tab
     const gaps = calculateInventoryGaps(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary

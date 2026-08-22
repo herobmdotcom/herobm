@@ -114,20 +114,30 @@ export default function IntegrationsSettingsPage() {
       throw new Error("Invalid provider");
     }
     
-    const newRules = isNew ? [...taxRules, { ...row, id: row.country }] : taxRules.map(r => r.id === row.id ? row : r);
-    setTaxRules(newRules);
-    
-    await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
-    toast.success('Tax rule saved');
-    await loadProviders();
+    try {
+      const newRules = isNew ? [...taxRules, { ...row, id: row.country }] : taxRules.map(r => r.id === row.id ? row : r);
+      setTaxRules(newRules);
+      
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
+      toast.success('Tax rule saved');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   const deleteTaxRule = async (row: TaxRule) => {
-    const newRules = taxRules.filter(r => r.id !== row.id);
-    setTaxRules(newRules);
-    await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
-    toast.success('Tax rule deleted');
-    await loadProviders();
+    try {
+      const newRules = taxRules.filter(r => r.id !== row.id);
+      setTaxRules(newRules);
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
+      toast.success('Tax rule deleted');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   const saveEnrichmentRule = async (row: EnrichmentRule, isNew: boolean) => {
@@ -144,20 +154,30 @@ export default function IntegrationsSettingsPage() {
       throw new Error("Invalid provider");
     }
     
-    const newRules = isNew ? [...enrichmentRules, { ...row, id: `${row.field}-${row.country}` }] : enrichmentRules.map(r => r.id === row.id ? row : r);
-    setEnrichmentRules(newRules);
-    
-    await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
-    toast.success('Enrichment rule saved');
-    await loadProviders();
+    try {
+      const newRules = isNew ? [...enrichmentRules, { ...row, id: `${row.field}-${row.country}` }] : enrichmentRules.map(r => r.id === row.id ? row : r);
+      setEnrichmentRules(newRules);
+      
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
+      toast.success('Enrichment rule saved');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   const deleteEnrichmentRule = async (row: EnrichmentRule) => {
-    const newRules = enrichmentRules.filter(r => r.id !== row.id);
-    setEnrichmentRules(newRules);
-    await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
-    toast.success('Enrichment rule deleted');
-    await loadProviders();
+    try {
+      const newRules = enrichmentRules.filter(r => r.id !== row.id);
+      setEnrichmentRules(newRules);
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
+      toast.success('Enrichment rule deleted');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
   };
 
   const toggleProvider = async (provider: ProviderConfig) => {

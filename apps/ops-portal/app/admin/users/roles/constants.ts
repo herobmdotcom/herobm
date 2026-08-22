@@ -33,4 +33,5 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'credit-control': ['read', 'write'],
   'crm': ['read', 'write', 'archive', 'delete'],
   'work-orders': ['read', 'write'],
+  'fiscal-periods': ['read', 'write'],
 };

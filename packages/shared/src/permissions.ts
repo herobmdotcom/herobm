@@ -27,6 +27,7 @@ export enum SystemResource {
   CREDIT_CONTROL = 'credit-control',
   CRM = 'crm',
   WORK_ORDERS = 'work-orders',
+  FISCAL_PERIODS = 'fiscal-periods',
 }
 
 export interface Permission {
@@ -40,7 +41,7 @@ export function hasPermission(
   resource: SystemResource,
   action: string = 'read'
 ): boolean {
-  if (!permissions) return false;
+  if (!permissions || !Array.isArray(permissions)) return false;
   return permissions.some(
     (p) => p.resource === resource && p.action === action && p.effect === 'allow'
   );
@@ -51,7 +52,7 @@ export function hasAnyPermission(
   resources: SystemResource[],
   action: string = 'read'
 ): boolean {
-  if (!permissions) return false;
+  if (!permissions || !Array.isArray(permissions)) return false;
   return permissions.some(
     (p) => resources.includes(p.resource as SystemResource) && p.action === action && p.effect === 'allow'
   );

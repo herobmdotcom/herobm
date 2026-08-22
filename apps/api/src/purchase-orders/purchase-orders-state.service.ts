@@ -92,6 +92,30 @@ export class PurchaseOrdersStateService {
       }
     }
 
+    if (stateCode === PURCHASE_ORDER_STATE.DRAFT) {
+      const anyReceived = existing.lines.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+      );
+      if (anyReceived) {
+        throw new BadRequestException(
+          'Cannot move to Draft: Goods have already been received against this Purchase Order.',
+        );
+      }
+
+      const invoiceLines = await db
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.purchaseOrderId, id))
+        .limit(1);
+
+      if (invoiceLines.length > 0) {
+        throw new BadRequestException(
+          'Cannot move to Draft: Invoices are attached to this Purchase Order.',
+        );
+      }
+    }
+
     if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
       const anyReceived = existing.lines.some(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.

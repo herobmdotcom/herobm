@@ -565,6 +565,27 @@ export default function ShippingPage() {
                                                         >
                                                             <span className="font-medium">{t('docketPdf')}</span>
                                                         </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className="flex items-center"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const { reportError } = await import('@/lib/api');
+                                                                    const api = await import('@herobm/sdk');
+                                                                    const res = await api.pdfTemplatesControllerRunHook('shipping-label', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' });
+                                                                    const blob = res.data as Blob;
+                                                                    const url = URL.createObjectURL(blob);
+                                                                    window.open(url, '_blank');
+                                                                } catch (err) {
+                                                                    reportError(err, 'Failed to generate shipping label');
+                                                                    toast.error(t('errors.failedToGenerateLabelError'));
+                                                                }
+                                                            }}
+                                                        >
+                                                            <span className="font-medium">{t('labelPdf')}</span>
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             ))}

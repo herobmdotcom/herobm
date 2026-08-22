@@ -72,6 +72,10 @@ export class GlobalShipmentsController {
     description:
       'Generates and sends a shipment document (e.g. shipping docket) as an email attachment.',
   })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
   @ApiBody({ type: EmailDocumentDto })
   async emailDocument(
     @Param('id') id: string,

@@ -57,6 +57,49 @@ export default function OrderDetailsCard({
         return [...codes].sort((a, b) => a.order - b.order);
     }, [app?.salesAnalysisCodes]);
 
+    const [isPrintingQuote, setIsPrintingQuote] = React.useState(false);
+    const [isPrintingConfirmation, setIsPrintingConfirmation] = React.useState(false);
+
+    const handlePrintQuote = async () => {
+        if (!order.salesOrderId) return;
+        setIsPrintingQuote(true);
+        try {
+            const response = await api.pdfTemplatesControllerRunHook(
+                'sales-order-quote',
+                {},
+                { id: order.salesOrderId, context: DATA_SOURCE_CONTEXT.SALES_ORDER }
+            );
+            const blob = response.data as Blob;
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (err) {
+            reportError(err, 'OrderDetailsCard:printQuote');
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
+        } finally {
+            setIsPrintingQuote(false);
+        }
+    };
+
+    const handlePrintConfirmation = async () => {
+        if (!order.salesOrderId) return;
+        setIsPrintingConfirmation(true);
+        try {
+            const response = await api.pdfTemplatesControllerRunHook(
+                'sales-order-confirmation',
+                {},
+                { id: order.salesOrderId, context: DATA_SOURCE_CONTEXT.SALES_ORDER }
+            );
+            const blob = response.data as Blob;
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (err) {
+            reportError(err, 'OrderDetailsCard:printConfirmation');
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+        } finally {
+            setIsPrintingConfirmation(false);
+        }
+    };
+
     return (
         <div id="details-section" className="card">
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -68,27 +111,56 @@ export default function OrderDetailsCard({
                 </h3>
                 <div className="flex items-center gap-2">
                     {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
-                        <Button
-                            variant="secondary" size="sm"
-                            onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
-                        >
-                            Email Quote
-                        </Button>
+                        <>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handlePrintQuote}
+                                disabled={isPrintingQuote}
+                            >
+                                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                                {isPrintingQuote ? tCommon('loading') : tSales('buttons.printQuote')}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
+                            >
+                                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                                {tSales('buttons.emailQuote')}
+                            </Button>
+                        </>
                     )}
                     {order.stateCode !== SALES_ORDER_STATE.DRAFT && (
-                        <Button
-                            variant="secondary" size="sm"
-                            onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
-                        >
-                            Email Confirmation
-                        </Button>
+                        <>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handlePrintConfirmation}
+                                disabled={isPrintingConfirmation}
+                            >
+                                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                                {isPrintingConfirmation ? tCommon('loading') : tSales('buttons.printConfirmation')}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
+                            >
+                                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                                {tSales('buttons.emailConfirmation')}
+                            </Button>
+                        </>
                     )}
                     {order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED && (
                         <Button
-                            variant="secondary" size="sm" className="flex items-center gap-1"
+                            variant="secondary"
+                            size="sm"
+                            className="flex items-center gap-1"
                             onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
-                            Email Pro-Forma
+                            <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                            {tSales('buttons.emailProForma')}
                         </Button>
                     )}
                 </div>

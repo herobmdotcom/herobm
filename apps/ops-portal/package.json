@@ -13,8 +13,9 @@
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" && npm run lint:i18n && npm run lint:forms",
     "lint:i18n": "node scripts/lint-i18n.js",
     "lint:forms": "node scripts/lint-forms.js",
-    "test": "jest",
-    "test:unit": "jest",
+    "test": "jest --maxWorkers=50%",
+    "test:unit": "jest --maxWorkers=50%",
+    "test:changed": "jest --onlyChanged --passWithNoTests --maxWorkers=50%",
     "test:e2e": "playwright test",
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"
   },

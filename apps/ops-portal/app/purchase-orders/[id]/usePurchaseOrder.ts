@@ -55,6 +55,7 @@ export function usePurchaseOrder(id: string) {
   const [editExpectedDate, setEditExpectedDate] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editLocationId, setEditLocationId] = useState<string | null>(null);
+  const [editCurrencyCode, setEditCurrencyCode] = useState('');
   const [headerDirty, setHeaderDirty] = useState(false);
 
   /* ── GST categories ──────────────────────────────────────────── */
@@ -105,6 +106,7 @@ export function usePurchaseOrder(id: string) {
     return [...allowedTransitions]
       .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.ARCHIVED].some(s => s === state))
       .filter(state => {
+        if (state === PURCHASE_ORDER_STATE.DRAFT && anyReceived) return false;
         if (state === PURCHASE_ORDER_STATE.CANCELLED && anyReceived) return false;
         if (state === PURCHASE_ORDER_STATE.CLOSED_SHORT && !anyReceived) return false;
         return true;
@@ -150,6 +152,7 @@ export function usePurchaseOrder(id: string) {
       setEditExpectedDate(data.expectedDate ? new Date(data.expectedDate).toISOString().split('T')[0] : '');
       setEditNotes(data.notes || '');
       setEditLocationId(data.deliveryLocationId || null);
+      setEditCurrencyCode(data.currencyCode || '');
       setHeaderDirty(false);
 
       if (autoTransitions && autoTransitions.length > 0) {
@@ -245,9 +248,10 @@ export function usePurchaseOrder(id: string) {
       editReferenceNumber !== (order.referenceNumber || '') ||
       editExpectedDate !== (order.expectedDate ? new Date(order.expectedDate).toISOString().split('T')[0] : '') ||
       editNotes !== (order.notes || '') ||
-      editLocationId !== (order.deliveryLocationId || null);
+      editLocationId !== (order.deliveryLocationId || null) ||
+      editCurrencyCode !== (order.currencyCode || '');
     setHeaderDirty(changed);
-  }, [editName, editReferenceNumber, editExpectedDate, editNotes, editLocationId, order]);
+  }, [editName, editReferenceNumber, editExpectedDate, editNotes, editLocationId, editCurrencyCode, order]);
 
   /* ── Mutations ──────────────────────────────────────────────── */
 
@@ -261,6 +265,7 @@ export function usePurchaseOrder(id: string) {
         expectedDate: editExpectedDate ? new Date(editExpectedDate).toISOString() : undefined,
         notes: editNotes || undefined,
         deliveryLocationId: editLocationId || undefined,
+        currencyCode: editCurrencyCode || undefined,
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -439,6 +444,7 @@ export function usePurchaseOrder(id: string) {
     editExpectedDate, setEditExpectedDate,
     editNotes, setEditNotes,
     editLocationId, setEditLocationId,
+    editCurrencyCode, setEditCurrencyCode,
     headerDirty,
 
     // Tax

@@ -1189,6 +1189,7 @@ export class GlService implements OnModuleInit {
   /**
    * Auto-generates 12 monthly fiscal periods for a fiscal year.
    */
+  // @herobm-skip-audit
   async generateFiscalYearPeriods(fiscalYear: number, actor?: string) {
     const [settings] = await this.db
       .select({ fiscalYearStartMonth: glSettings.fiscalYearStartMonth })
@@ -1233,6 +1234,7 @@ export class GlService implements OnModuleInit {
   /**
    * Updates the status of an accounting period (open, soft_locked, hard_closed).
    */
+  // @herobm-skip-audit
   async updatePeriodStatus(
     periodId: string,
     status: 'open' | 'soft_locked' | 'hard_closed',

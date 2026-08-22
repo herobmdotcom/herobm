@@ -99,10 +99,10 @@ export default function Sidebar() {
   ];
 
   // Finance section
-  if (hasPermission(permissions, SystemResource.GL, 'read')) {
-    sections.push({
-      label: t('groups.finance'),
-      items: [
+  if (hasAnyPermission(permissions, [SystemResource.GL, SystemResource.FISCAL_PERIODS], 'read')) {
+    const financeItems: NavSection['items'] = [];
+    if (hasPermission(permissions, SystemResource.GL, 'read')) {
+      financeItems.push(
         { 
           href: routes.generalLedger.list(), 
           label: t('items.generalLedger'), 
@@ -134,7 +134,18 @@ export default function Sidebar() {
             { href: routes.reconciliations.rules(), label: 'Rules' },
           ]
         },
-      ],
+      );
+    }
+    if (hasPermission(permissions, SystemResource.FISCAL_PERIODS, 'read')) {
+      financeItems.push({
+        href: routes.fiscalPeriods.list(),
+        label: t('items.fiscalPeriods'),
+        icon: 'calendar_month',
+      });
+    }
+    sections.push({
+      label: t('groups.finance'),
+      items: financeItems,
     });
   }
 

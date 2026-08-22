@@ -184,3 +184,4 @@ export type { Permission } from './permissions';
 export * from './data-sources';
 export * from './user-preferences';
 export * from './telemetry';
+export * from './contacts';

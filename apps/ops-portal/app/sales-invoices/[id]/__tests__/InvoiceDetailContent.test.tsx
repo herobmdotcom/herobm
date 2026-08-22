@@ -125,7 +125,7 @@ describe('InvoiceDetailContent', () => {
 
         render(<InvoiceDetailContent id="inv-1" />);
         
-        const printBtn = screen.getByText('printInvoice');
+        const printBtn = screen.getAllByText('printInvoice')[0];
         await user.click(printBtn);
 
         expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith('sales-invoice', {}, {

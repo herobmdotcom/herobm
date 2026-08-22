@@ -110,20 +110,30 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
               rate: String(row.rate),
               exemptionReason: row.exemptionReason ? String(row.exemptionReason) : undefined
             };
-            if (isNew) {
-              await api.taxCategoriesControllerCreate(payload);
-              toast.success(tSettings('toasts.taxCreated') || 'Tax created');
-            } else {
-              await api.taxCategoriesControllerUpdate(row.taxCategoryId, payload);
-              toast.success(tSettings('toasts.taxUpdated') || 'Tax updated');
+            try {
+              if (isNew) {
+                await api.taxCategoriesControllerCreate(payload);
+                toast.success(tSettings('toasts.taxCreated') || 'Tax created');
+              } else {
+                await api.taxCategoriesControllerUpdate(row.taxCategoryId, payload);
+                toast.success(tSettings('toasts.taxUpdated') || 'Tax updated');
+              }
+              loadTax();
+            } catch (err: unknown) {
+              toast.error(getErrorMessage(err));
+              throw err;
             }
-            loadTax();
           }}
           onDelete={async (row: TaxCategory) => {
             if (!confirm(tSettings('confirmations.deleteTax', { title: row.title }) || 'Are you sure you want to delete this tax?')) return;
-            await api.taxCategoriesControllerRemove(row.taxCategoryId);
-            toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
-            loadTax();
+            try {
+              await api.taxCategoriesControllerRemove(row.taxCategoryId);
+              toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
+              loadTax();
+            } catch (err: unknown) {
+              toast.error(getErrorMessage(err));
+              throw err;
+            }
           }}
           onAdd={() => ({ code: '', title: '', type: 'percentage', rate: 0 } as unknown as TaxCategory)}
           canEdit={() => true}

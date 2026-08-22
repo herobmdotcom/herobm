@@ -226,7 +226,35 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           subtitle={`Customer: ${invoice.customerName}`}
           actions={
             <div className="flex items-center gap-2">
-
+              {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handlePrintInvoice}
+                    disabled={isGeneratingPdf}
+                  >
+                    <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                    {isGeneratingPdf ? tCommon('loading') : t('printInvoice')}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEmailDialogConfig({
+                      isOpen: true,
+                      hookSlug: 'sales-invoice',
+                      title: 'Email Sales Invoice',
+                      prefix: 'Invoice',
+                      docName: 'Sales Invoice',
+                      targetId: invoice.invoiceId,
+                      contextSlug: 'sales-invoice'
+                    })}
+                  >
+                    <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                    {t('emailInvoice')}
+                  </Button>
+                </>
+              )}
               {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
                 <Button
                   variant="danger"
@@ -267,6 +295,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                   onClick={handlePrintInvoice}
                   disabled={isGeneratingPdf}
                 >
+                  <span className="material-symbols-outlined text-[16px] mr-1">print</span>
                   {isGeneratingPdf ? tCommon('loading') : t('printInvoice')}
                 </Button>
                 <Button
@@ -282,6 +311,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     contextSlug: 'sales-invoice'
                   })}
                 >
+                  <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
                   {t('emailInvoice')}
                 </Button>
               </div>

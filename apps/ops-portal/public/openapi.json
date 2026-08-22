@@ -748,6 +748,53 @@
         ]
       }
     },
+    "/customers/{id}/email-document": {
+      "post": {
+        "description": "Generates a Customer Statement PDF using the active customer statement template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "CustomersController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Customer Statement Document",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
     "/customer-groups": {
       "get": {
         "description": "Retrieve a list of all customer groups.",
@@ -923,6 +970,1581 @@
         "summary": "Delete Customer Group",
         "tags": [
           "Customers"
+        ]
+      }
+    },
+    "/pdf-templates/hooks/{hookSlug}/run": {
+      "post": {
+        "description": "Execute a specific reporting hook and generate a PDF document.",
+        "operationId": "PdfTemplatesController_runHook",
+        "parameters": [
+          {
+            "name": "hookSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunHookBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF Document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Run Hook",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/hooks": {
+      "get": {
+        "description": "Retrieve a list of available reporting hooks.",
+        "operationId": "PdfTemplatesController_getHooks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HookDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Hooks",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/hook-assignments": {
+      "get": {
+        "description": "Retrieve current template assignments for reporting hooks.",
+        "operationId": "PdfTemplatesController_getAssignments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HookAssignmentDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Hook Assignments",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/hook-assignments/{hook}": {
+      "patch": {
+        "description": "Update the assigned template and context for a reporting hook.",
+        "operationId": "PdfTemplatesController_updateAssignment",
+        "parameters": [
+          {
+            "name": "hook",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHookAssignmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Hook Assignment",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/hooks/{slug}/random-id": {
+      "get": {
+        "description": "Fetch a random valid entity ID for a given reporting context (used for previewing).",
+        "operationId": "PdfTemplatesController_getRandomId",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomIdData"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Random ID",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates": {
+      "get": {
+        "description": "Retrieve a list of all configured report templates.",
+        "operationId": "PdfTemplatesController_getAllReports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get All Reports",
+        "tags": [
+          "System"
+        ]
+      },
+      "post": {
+        "description": "Create a new custom report template.",
+        "operationId": "PdfTemplatesController_createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Report",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/{id}": {
+      "get": {
+        "description": "Retrieve the details and template content of a specific report.",
+        "operationId": "PdfTemplatesController_getReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Report",
+        "tags": [
+          "System"
+        ]
+      },
+      "patch": {
+        "description": "Modify the configuration or content of an existing report template.",
+        "operationId": "PdfTemplatesController_updateReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Report",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "Remove a report template from the system.",
+        "operationId": "PdfTemplatesController_deleteReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Report",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/pdf-templates/preview": {
+      "post": {
+        "description": "Generate a preview PDF of a report template using mock or real entity data.",
+        "operationId": "PdfTemplatesController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF Document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Preview Report",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails": {
+      "get": {
+        "description": "List emails in the outbox queue.",
+        "operationId": "EmailController_listEmails",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of emails",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List emails",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/{id}/retry": {
+      "post": {
+        "description": "Retry sending a failed email.",
+        "operationId": "EmailController_retryEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry a failed email",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/{id}/dismiss": {
+      "post": {
+        "description": "Dismiss a failed email so it is no longer shown as an error.",
+        "operationId": "EmailController_dismissEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email dismissed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dismiss a failed email",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/test-connection": {
+      "get": {
+        "description": "Test SMTP connection",
+        "operationId": "EmailController_testConnection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "test-connection",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/uom-dictionary": {
+      "get": {
+        "description": "findAll operation",
+        "operationId": "UomDictionaryController_findAll",
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UomResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "findAll",
+        "tags": [
+          "System"
+        ]
+      },
+      "post": {
+        "description": "create operation",
+        "operationId": "UomDictionaryController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UomResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "create",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/uom-dictionary/{code}": {
+      "get": {
+        "description": "findOne operation",
+        "operationId": "UomDictionaryController_findOne",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UomResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "findOne",
+        "tags": [
+          "System"
+        ]
+      },
+      "patch": {
+        "description": "update operation",
+        "operationId": "UomDictionaryController_update",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UomResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "update",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "remove operation",
+        "operationId": "UomDictionaryController_remove",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UomResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "remove",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/exchange-rates": {
+      "get": {
+        "description": "findAll operation",
+        "operationId": "ExchangeRatesController_findAll",
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "findAll",
+        "tags": [
+          "General Ledger"
+        ]
+      },
+      "post": {
+        "description": "create operation",
+        "operationId": "ExchangeRatesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExchangeRateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "create",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/settings/exchange-rates/{id}": {
+      "get": {
+        "description": "findOne operation",
+        "operationId": "ExchangeRatesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "findOne",
+        "tags": [
+          "General Ledger"
+        ]
+      },
+      "patch": {
+        "description": "update operation",
+        "operationId": "ExchangeRatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExchangeRateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "update",
+        "tags": [
+          "General Ledger"
+        ]
+      },
+      "delete": {
+        "description": "remove operation",
+        "operationId": "ExchangeRatesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "remove",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/settings/organization": {
+      "get": {
+        "description": "get operation",
+        "operationId": "OrganizationController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get",
+        "tags": [
+          "System"
+        ]
+      },
+      "patch": {
+        "description": "update operation",
+        "operationId": "OrganizationController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "update",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/app": {
+      "get": {
+        "description": "get operation",
+        "operationId": "AppConfigController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get",
+        "tags": [
+          "System"
+        ]
+      },
+      "patch": {
+        "description": "update operation",
+        "operationId": "AppConfigController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "update",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/trading-terms": {
+      "get": {
+        "description": "List all trading terms",
+        "operationId": "TradingTermsController_findAll",
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TradingTermResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List trading terms",
+        "tags": [
+          "System"
+        ]
+      },
+      "post": {
+        "description": "Create a new trading term",
+        "operationId": "TradingTermsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTradingTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradingTermResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create trading term",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/trading-terms/{id}": {
+      "patch": {
+        "description": "Update an existing trading term",
+        "operationId": "TradingTermsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTradingTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradingTermResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update trading term",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "Delete an existing trading term",
+        "operationId": "TradingTermsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsSuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete trading term",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/cost-centers": {
+      "get": {
+        "description": "List all cost centers",
+        "operationId": "CostCentersController_findAll",
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CostCenterResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all cost centers",
+        "tags": [
+          "General Ledger"
+        ]
+      },
+      "post": {
+        "description": "Create a new cost center",
+        "operationId": "CostCentersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCostCenterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostCenterResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new cost center",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/settings/cost-centers/{id}": {
+      "patch": {
+        "description": "Update a cost center",
+        "operationId": "CostCentersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCostCenterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostCenterResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a cost center",
+        "tags": [
+          "General Ledger"
+        ]
+      },
+      "delete": {
+        "description": "Delete a cost center",
+        "operationId": "CostCentersController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostCenterResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a cost center",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/settings/cost-centers/import": {
+      "post": {
+        "description": "Bulk import cost centers",
+        "operationId": "CostCentersController_import",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateCostCenterDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkImportResultDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bulk import cost centers",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/settings/activities": {
+      "get": {
+        "description": "List all activities",
+        "operationId": "ActivitiesController_findAll",
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all activities",
+        "tags": [
+          "System"
+        ]
+      },
+      "post": {
+        "description": "Create a new activity",
+        "operationId": "ActivitiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActivityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new activity",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/activities/{id}": {
+      "patch": {
+        "description": "Update an activity",
+        "operationId": "ActivitiesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActivityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an activity",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "Delete an activity",
+        "operationId": "ActivitiesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete an activity",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/activities/import": {
+      "post": {
+        "description": "Bulk import activities",
+        "operationId": "ActivitiesController_import",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateActivityDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkImportResultDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bulk import activities",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/license-status": {
+      "get": {
+        "description": "Get the current license status.",
+        "operationId": "LicenseController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get License Status",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/license": {
+      "post": {
+        "description": "Apply a new license key.",
+        "operationId": "LicenseController_applyLicense",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "licenseKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Apply License",
+        "tags": [
+          "System"
         ]
       }
     },
@@ -4745,1020 +6367,6 @@
         ]
       }
     },
-    "/settings/uom-dictionary": {
-      "get": {
-        "description": "findAll operation",
-        "operationId": "UomDictionaryController_findAll",
-        "parameters": [
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UomResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "findAll",
-        "tags": [
-          "System"
-        ]
-      },
-      "post": {
-        "description": "create operation",
-        "operationId": "UomDictionaryController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUomDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UomResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "create",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/uom-dictionary/{code}": {
-      "get": {
-        "description": "findOne operation",
-        "operationId": "UomDictionaryController_findOne",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UomResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "findOne",
-        "tags": [
-          "System"
-        ]
-      },
-      "patch": {
-        "description": "update operation",
-        "operationId": "UomDictionaryController_update",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUomDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UomResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "update",
-        "tags": [
-          "System"
-        ]
-      },
-      "delete": {
-        "description": "remove operation",
-        "operationId": "UomDictionaryController_remove",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UomResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "remove",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/exchange-rates": {
-      "get": {
-        "description": "findAll operation",
-        "operationId": "ExchangeRatesController_findAll",
-        "parameters": [
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExchangeRateResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "findAll",
-        "tags": [
-          "General Ledger"
-        ]
-      },
-      "post": {
-        "description": "create operation",
-        "operationId": "ExchangeRatesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateExchangeRateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "create",
-        "tags": [
-          "General Ledger"
-        ]
-      }
-    },
-    "/settings/exchange-rates/{id}": {
-      "get": {
-        "description": "findOne operation",
-        "operationId": "ExchangeRatesController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "findOne",
-        "tags": [
-          "General Ledger"
-        ]
-      },
-      "patch": {
-        "description": "update operation",
-        "operationId": "ExchangeRatesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateExchangeRateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "update",
-        "tags": [
-          "General Ledger"
-        ]
-      },
-      "delete": {
-        "description": "remove operation",
-        "operationId": "ExchangeRatesController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "remove",
-        "tags": [
-          "General Ledger"
-        ]
-      }
-    },
-    "/settings/organization": {
-      "get": {
-        "description": "get operation",
-        "operationId": "OrganizationController_get",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "get",
-        "tags": [
-          "System"
-        ]
-      },
-      "patch": {
-        "description": "update operation",
-        "operationId": "OrganizationController_update",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateOrganizationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "update",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/app": {
-      "get": {
-        "description": "get operation",
-        "operationId": "AppConfigController_get",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppConfigResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "get",
-        "tags": [
-          "System"
-        ]
-      },
-      "patch": {
-        "description": "update operation",
-        "operationId": "AppConfigController_update",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAppConfigDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppConfigResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "update",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/trading-terms": {
-      "get": {
-        "description": "List all trading terms",
-        "operationId": "TradingTermsController_findAll",
-        "parameters": [
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TradingTermResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List trading terms",
-        "tags": [
-          "System"
-        ]
-      },
-      "post": {
-        "description": "Create a new trading term",
-        "operationId": "TradingTermsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTradingTermDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TradingTermResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create trading term",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/trading-terms/{id}": {
-      "patch": {
-        "description": "Update an existing trading term",
-        "operationId": "TradingTermsController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTradingTermDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TradingTermResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update trading term",
-        "tags": [
-          "System"
-        ]
-      },
-      "delete": {
-        "description": "Delete an existing trading term",
-        "operationId": "TradingTermsController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsSuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Delete trading term",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/cost-centers": {
-      "get": {
-        "description": "List all cost centers",
-        "operationId": "CostCentersController_findAll",
-        "parameters": [
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CostCenterResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all cost centers",
-        "tags": [
-          "General Ledger"
-        ]
-      },
-      "post": {
-        "description": "Create a new cost center",
-        "operationId": "CostCentersController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCostCenterDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CostCenterResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create a new cost center",
-        "tags": [
-          "General Ledger"
-        ]
-      }
-    },
-    "/settings/cost-centers/{id}": {
-      "patch": {
-        "description": "Update a cost center",
-        "operationId": "CostCentersController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCostCenterDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CostCenterResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update a cost center",
-        "tags": [
-          "General Ledger"
-        ]
-      },
-      "delete": {
-        "description": "Delete a cost center",
-        "operationId": "CostCentersController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CostCenterResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Delete a cost center",
-        "tags": [
-          "General Ledger"
-        ]
-      }
-    },
-    "/settings/cost-centers/import": {
-      "post": {
-        "description": "Bulk import cost centers",
-        "operationId": "CostCentersController_import",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CreateCostCenterDto"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BulkImportResultDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Bulk import cost centers",
-        "tags": [
-          "General Ledger"
-        ]
-      }
-    },
-    "/settings/activities": {
-      "get": {
-        "description": "List all activities",
-        "operationId": "ActivitiesController_findAll",
-        "parameters": [
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ActivityResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all activities",
-        "tags": [
-          "System"
-        ]
-      },
-      "post": {
-        "description": "Create a new activity",
-        "operationId": "ActivitiesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateActivityDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ActivityResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create a new activity",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/activities/{id}": {
-      "patch": {
-        "description": "Update an activity",
-        "operationId": "ActivitiesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateActivityDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ActivityResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update an activity",
-        "tags": [
-          "System"
-        ]
-      },
-      "delete": {
-        "description": "Delete an activity",
-        "operationId": "ActivitiesController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ActivityResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Delete an activity",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/activities/import": {
-      "post": {
-        "description": "Bulk import activities",
-        "operationId": "ActivitiesController_import",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CreateActivityDto"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BulkImportResultDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Bulk import activities",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/license-status": {
-      "get": {
-        "description": "Get the current license status.",
-        "operationId": "LicenseController_getStatus",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseStatusDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get License Status",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/settings/license": {
-      "post": {
-        "description": "Apply a new license key.",
-        "operationId": "LicenseController_applyLicense",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "licenseKey": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseStatusDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Apply License",
-        "tags": [
-          "System"
-        ]
-      }
-    },
     "/business-reports": {
       "get": {
         "description": "Returns a list of available business reports",
@@ -7941,7 +8549,19 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "summary": "Email Shipment Document",
@@ -9933,384 +10553,6 @@
         ]
       }
     },
-    "/pdf-templates/hooks/{hookSlug}/run": {
-      "post": {
-        "description": "Execute a specific reporting hook and generate a PDF document.",
-        "operationId": "PdfTemplatesController_runHook",
-        "parameters": [
-          {
-            "name": "hookSlug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "context",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RunHookBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PDF Document",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Run Hook",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/hooks": {
-      "get": {
-        "description": "Retrieve a list of available reporting hooks.",
-        "operationId": "PdfTemplatesController_getHooks",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/HookDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Hooks",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/hook-assignments": {
-      "get": {
-        "description": "Retrieve current template assignments for reporting hooks.",
-        "operationId": "PdfTemplatesController_getAssignments",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/HookAssignmentDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Hook Assignments",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/hook-assignments/{hook}": {
-      "patch": {
-        "description": "Update the assigned template and context for a reporting hook.",
-        "operationId": "PdfTemplatesController_updateAssignment",
-        "parameters": [
-          {
-            "name": "hook",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateHookAssignmentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HookAssignmentDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Hook Assignment",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/hooks/{slug}/random-id": {
-      "get": {
-        "description": "Fetch a random valid entity ID for a given reporting context (used for previewing).",
-        "operationId": "PdfTemplatesController_getRandomId",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RandomIdData"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Random ID",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates": {
-      "get": {
-        "description": "Retrieve a list of all configured report templates.",
-        "operationId": "PdfTemplatesController_getAllReports",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReportDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get All Reports",
-        "tags": [
-          "System"
-        ]
-      },
-      "post": {
-        "description": "Create a new custom report template.",
-        "operationId": "PdfTemplatesController_createReport",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReportDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create Report",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/{id}": {
-      "get": {
-        "description": "Retrieve the details and template content of a specific report.",
-        "operationId": "PdfTemplatesController_getReport",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Report",
-        "tags": [
-          "System"
-        ]
-      },
-      "patch": {
-        "description": "Modify the configuration or content of an existing report template.",
-        "operationId": "PdfTemplatesController_updateReport",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateReportDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Report",
-        "tags": [
-          "System"
-        ]
-      },
-      "delete": {
-        "description": "Remove a report template from the system.",
-        "operationId": "PdfTemplatesController_deleteReport",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Delete Report",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/pdf-templates/preview": {
-      "post": {
-        "description": "Generate a preview PDF of a report template using mock or real entity data.",
-        "operationId": "PdfTemplatesController_preview",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PreviewReportDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PDF Document",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Preview Report",
-        "tags": [
-          "System"
-        ]
-      }
-    },
     "/sales-orders/{id}/invoice": {
       "post": {
         "description": "Create an invoice for a sales order",
@@ -12175,189 +12417,6 @@
           }
         },
         "summary": "Update config",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails": {
-      "get": {
-        "description": "List emails in the outbox queue.",
-        "operationId": "EmailController_listEmails",
-        "parameters": [
-          {
-            "name": "entityType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of emails",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List emails",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails/{id}/retry": {
-      "post": {
-        "description": "Retry sending a failed email.",
-        "operationId": "EmailController_retryEmail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {}
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Retry a failed email",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails/{id}/dismiss": {
-      "post": {
-        "description": "Dismiss a failed email so it is no longer shown as an error.",
-        "operationId": "EmailController_dismissEmail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {}
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email dismissed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Dismiss a failed email",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails/test-connection": {
-      "get": {
-        "description": "Test SMTP connection",
-        "operationId": "EmailController_testConnection",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "test-connection",
         "tags": [
           "System"
         ]
@@ -15470,6 +15529,53 @@
         ]
       }
     },
+    "/purchase-returns/{id}/email-document": {
+      "post": {
+        "description": "Generates a PDF using the active purchase return template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "GlobalPurchaseReturnsController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Purchase Return Document",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
     "/purchase-debit-notes": {
       "get": {
         "description": "Retrieve a list of purchase debit notes.",
@@ -15613,6 +15719,53 @@
           }
         },
         "summary": "Post Debit Note",
+        "tags": [
+          "Purchase Invoices"
+        ]
+      }
+    },
+    "/purchase-debit-notes/{id}/email-document": {
+      "post": {
+        "description": "Generates a PDF using the active purchase debit note template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "PurchaseDebitNotesController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Purchase Debit Note Document",
         "tags": [
           "Purchase Invoices"
         ]
@@ -21348,6 +21501,45 @@
         "type": "object",
         "properties": {}
       },
+      "EmailDocumentDto": {
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "description": "The recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "The text body for the email"
+          },
+          "hookSlug": {
+            "type": "string",
+            "description": "The hook slug for the PDF template to use (e.g. sales-order-quote)"
+          },
+          "customPdfText": {
+            "type": "string",
+            "description": "Custom text injected into the generated PDF"
+          },
+          "targetId": {
+            "type": "string",
+            "description": "The target entity ID, if different from the order ID"
+          },
+          "contextSlug": {
+            "type": "string",
+            "description": "The context slug for the report data source"
+          }
+        },
+        "required": [
+          "emailAddress",
+          "subject",
+          "body"
+        ]
+      },
       "CustomerGroupResponseDto": {
         "type": "object",
         "properties": {
@@ -21505,6 +21697,868 @@
         },
         "required": [
           "deleted"
+        ]
+      },
+      "RunHookBodyDto": {
+        "type": "object",
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "description": "Optional shipment ID for shipment/picking hooks"
+          },
+          "customPdfText": {
+            "type": "string"
+          },
+          "quoteIntroText": {
+            "type": "string",
+            "description": "Deprecated legacy alias for customPdfText"
+          }
+        }
+      },
+      "HookDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "description",
+          "contexts"
+        ]
+      },
+      "HookAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "hookSlug": {
+            "type": "string"
+          },
+          "reportId": {
+            "type": "string"
+          },
+          "contextSlug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hookSlug",
+          "reportId",
+          "contextSlug"
+        ]
+      },
+      "UpdateHookAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string"
+          },
+          "contextSlug": {
+            "type": "string"
+          }
+        }
+      },
+      "RandomIdData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "outputNamePattern": {
+            "type": "string"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isSystem": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "template",
+          "isSystem"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "outputNamePattern": {
+            "type": "string"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "template"
+        ]
+      },
+      "UpdateReportDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "outputNamePattern": {
+            "type": "string"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PreviewReportDto": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string"
+          },
+          "mockData": {
+            "type": "object"
+          },
+          "hookSlug": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "template"
+        ]
+      },
+      "UomResponseDto": {
+        "type": "object",
+        "properties": {
+          "uomCode": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uomCode",
+          "description"
+        ]
+      },
+      "CreateUomDto": {
+        "type": "object",
+        "properties": {
+          "uomCode": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uomCode",
+          "description"
+        ]
+      },
+      "UpdateUomDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ExchangeRateResponseDto": {
+        "type": "object",
+        "properties": {
+          "exchangeRateId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "currencyName": {
+            "type": "string"
+          },
+          "buyRate": {
+            "type": "string"
+          },
+          "sellRate": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exchangeRateId",
+          "currencyCode",
+          "currencyName",
+          "buyRate",
+          "sellRate",
+          "effectiveDate"
+        ]
+      },
+      "CreateExchangeRateDto": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          },
+          "currencyName": {
+            "type": "string"
+          },
+          "buyRate": {
+            "type": "string"
+          },
+          "sellRate": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currencyCode",
+          "currencyName",
+          "buyRate",
+          "sellRate"
+        ]
+      },
+      "UpdateExchangeRateDto": {
+        "type": "object",
+        "properties": {
+          "currencyName": {
+            "type": "string"
+          },
+          "buyRate": {
+            "type": "string"
+          },
+          "sellRate": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "organizationId",
+          "name"
+        ]
+      },
+      "UpdateOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postCode": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri"
+          },
+          "companyNumber": {
+            "type": "string"
+          },
+          "taxNumber": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "bankAccountName": {
+            "type": "string"
+          },
+          "bankAccountNumber": {
+            "type": "string"
+          },
+          "bankSwiftBic": {
+            "type": "string"
+          },
+          "bankIban": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "OrderedSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "order"
+        ]
+      },
+      "AppConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "defaultFulfillmentLocationId": {
+            "type": "string"
+          },
+          "apiRateLimit": {
+            "type": "string"
+          },
+          "creditLimitBehavior": {
+            "type": "object"
+          },
+          "taxProviderMappings": {
+            "type": "object"
+          },
+          "enrichmentProviderMappings": {
+            "type": "object"
+          },
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "type": "number"
+          },
+          "smtpUser": {
+            "type": "string"
+          },
+          "smtpPass": {
+            "type": "string"
+          },
+          "smtpFromAddress": {
+            "type": "string"
+          },
+          "defaultPurchaseTaxCategoryId": {
+            "type": "string"
+          },
+          "defaultSalesTaxCategoryId": {
+            "type": "string"
+          },
+          "defaultCustomerTermsId": {
+            "type": "string"
+          },
+          "defaultSupplierTermsId": {
+            "type": "string"
+          },
+          "defaultCustomerTaxPositionId": {
+            "type": "string"
+          },
+          "defaultSupplierTaxPositionId": {
+            "type": "string"
+          },
+          "actorTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "actorContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectStatuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "referralModes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "salesAnalysisCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          }
+        },
+        "required": [
+          "defaultFulfillmentLocationId",
+          "apiRateLimit"
+        ]
+      },
+      "UpdateAppConfigDto": {
+        "type": "object",
+        "properties": {
+          "defaultFulfillmentLocationId": {
+            "type": "string"
+          },
+          "creditLimitBehavior": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "soft",
+              "notify"
+            ]
+          },
+          "defaultCustomerTermsId": {
+            "type": "string"
+          },
+          "defaultSupplierTermsId": {
+            "type": "string"
+          },
+          "defaultCustomerTaxPositionId": {
+            "type": "string"
+          },
+          "defaultSupplierTaxPositionId": {
+            "type": "string"
+          },
+          "defaultPurchaseTaxCategoryId": {
+            "type": "string"
+          },
+          "defaultSalesTaxCategoryId": {
+            "type": "string"
+          },
+          "smtpFromAddress": {
+            "type": "string",
+            "format": "email"
+          },
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "type": "number"
+          },
+          "smtpUser": {
+            "type": "string"
+          },
+          "smtpPass": {
+            "type": "string"
+          },
+          "apiRateLimit": {
+            "type": "string"
+          },
+          "taxProviderMappings": {
+            "type": "object"
+          },
+          "enrichmentProviderMappings": {
+            "type": "object"
+          },
+          "actorTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "actorContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "referralModes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectStatuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "salesAnalysisCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          }
+        }
+      },
+      "TradingTermResponseDto": {
+        "type": "object",
+        "properties": {
+          "tradingTermsId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tradingTermsId",
+          "code",
+          "description",
+          "days",
+          "type"
+        ]
+      },
+      "CreateTradingTermDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "description",
+          "days",
+          "type"
+        ]
+      },
+      "UpdateTradingTermDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "SettingsSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "CostCenterResponseDto": {
+        "type": "object",
+        "properties": {
+          "costCenterId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "costCenterId",
+          "code",
+          "name",
+          "isActive"
+        ]
+      },
+      "CreateCostCenterDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateCostCenterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BulkImportResultDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "updated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count",
+          "updated"
+        ]
+      },
+      "ActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "activityId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "activityId",
+          "code",
+          "name",
+          "isActive"
+        ]
+      },
+      "CreateActivityDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateActivityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LicenseStatusDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "warning",
+              "read_only"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "trial",
+              "perpetual",
+              "none"
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "warningMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "systemId": {
+            "type": "string",
+            "nullable": true
+          },
+          "licenseHash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "state",
+          "type",
+          "expiresAt",
+          "warningMessage",
+          "systemId",
+          "licenseHash"
         ]
       },
       "ProductResponseDto": {
@@ -24248,669 +25302,6 @@
           "createdOn"
         ]
       },
-      "UomResponseDto": {
-        "type": "object",
-        "properties": {
-          "uomCode": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "uomCode",
-          "description"
-        ]
-      },
-      "CreateUomDto": {
-        "type": "object",
-        "properties": {
-          "uomCode": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "uomCode",
-          "description"
-        ]
-      },
-      "UpdateUomDto": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "type": "string"
-          }
-        }
-      },
-      "ExchangeRateResponseDto": {
-        "type": "object",
-        "properties": {
-          "exchangeRateId": {
-            "type": "string"
-          },
-          "currencyCode": {
-            "type": "string"
-          },
-          "currencyName": {
-            "type": "string"
-          },
-          "buyRate": {
-            "type": "string"
-          },
-          "sellRate": {
-            "type": "string"
-          },
-          "effectiveDate": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "exchangeRateId",
-          "currencyCode",
-          "currencyName",
-          "buyRate",
-          "sellRate",
-          "effectiveDate"
-        ]
-      },
-      "CreateExchangeRateDto": {
-        "type": "object",
-        "properties": {
-          "currencyCode": {
-            "type": "string"
-          },
-          "currencyName": {
-            "type": "string"
-          },
-          "buyRate": {
-            "type": "string"
-          },
-          "sellRate": {
-            "type": "string"
-          },
-          "effectiveDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "currencyCode",
-          "currencyName",
-          "buyRate",
-          "sellRate"
-        ]
-      },
-      "UpdateExchangeRateDto": {
-        "type": "object",
-        "properties": {
-          "currencyName": {
-            "type": "string"
-          },
-          "buyRate": {
-            "type": "string"
-          },
-          "sellRate": {
-            "type": "string"
-          },
-          "effectiveDate": {
-            "type": "string"
-          }
-        }
-      },
-      "OrganizationResponseDto": {
-        "type": "object",
-        "properties": {
-          "organizationId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "organizationId",
-          "name"
-        ]
-      },
-      "UpdateOrganizationDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "addressLine1": {
-            "type": "string"
-          },
-          "addressLine2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string"
-          },
-          "postCode": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "website": {
-            "type": "string",
-            "format": "uri"
-          },
-          "companyNumber": {
-            "type": "string"
-          },
-          "taxNumber": {
-            "type": "string"
-          },
-          "logoUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "bankName": {
-            "type": "string"
-          },
-          "bankAccountName": {
-            "type": "string"
-          },
-          "bankAccountNumber": {
-            "type": "string"
-          },
-          "bankSwiftBic": {
-            "type": "string"
-          },
-          "bankIban": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "OrderedSettingDto": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "value",
-          "order"
-        ]
-      },
-      "AppConfigResponseDto": {
-        "type": "object",
-        "properties": {
-          "defaultFulfillmentLocationId": {
-            "type": "string"
-          },
-          "apiRateLimit": {
-            "type": "string"
-          },
-          "creditLimitBehavior": {
-            "type": "object"
-          },
-          "taxProviderMappings": {
-            "type": "object"
-          },
-          "enrichmentProviderMappings": {
-            "type": "object"
-          },
-          "smtpHost": {
-            "type": "string"
-          },
-          "smtpPort": {
-            "type": "number"
-          },
-          "smtpUser": {
-            "type": "string"
-          },
-          "smtpPass": {
-            "type": "string"
-          },
-          "smtpFromAddress": {
-            "type": "string"
-          },
-          "defaultPurchaseTaxCategoryId": {
-            "type": "string"
-          },
-          "defaultSalesTaxCategoryId": {
-            "type": "string"
-          },
-          "defaultCustomerTermsId": {
-            "type": "string"
-          },
-          "defaultSupplierTermsId": {
-            "type": "string"
-          },
-          "defaultCustomerTaxPositionId": {
-            "type": "string"
-          },
-          "defaultSupplierTaxPositionId": {
-            "type": "string"
-          },
-          "actorTags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "actorContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectActorRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectStatuses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "referralModes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "salesAnalysisCodes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          }
-        },
-        "required": [
-          "defaultFulfillmentLocationId",
-          "apiRateLimit"
-        ]
-      },
-      "UpdateAppConfigDto": {
-        "type": "object",
-        "properties": {
-          "defaultFulfillmentLocationId": {
-            "type": "string"
-          },
-          "creditLimitBehavior": {
-            "type": "string",
-            "enum": [
-              "hard",
-              "soft",
-              "notify"
-            ]
-          },
-          "defaultCustomerTermsId": {
-            "type": "string"
-          },
-          "defaultSupplierTermsId": {
-            "type": "string"
-          },
-          "defaultCustomerTaxPositionId": {
-            "type": "string"
-          },
-          "defaultSupplierTaxPositionId": {
-            "type": "string"
-          },
-          "defaultPurchaseTaxCategoryId": {
-            "type": "string"
-          },
-          "defaultSalesTaxCategoryId": {
-            "type": "string"
-          },
-          "smtpFromAddress": {
-            "type": "string",
-            "format": "email"
-          },
-          "smtpHost": {
-            "type": "string"
-          },
-          "smtpPort": {
-            "type": "number"
-          },
-          "smtpUser": {
-            "type": "string"
-          },
-          "smtpPass": {
-            "type": "string"
-          },
-          "apiRateLimit": {
-            "type": "string"
-          },
-          "taxProviderMappings": {
-            "type": "object"
-          },
-          "enrichmentProviderMappings": {
-            "type": "object"
-          },
-          "actorTags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "actorContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectActorRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "referralModes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectStatuses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "salesAnalysisCodes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          }
-        }
-      },
-      "TradingTermResponseDto": {
-        "type": "object",
-        "properties": {
-          "tradingTermsId": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "days": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "tradingTermsId",
-          "code",
-          "description",
-          "days",
-          "type"
-        ]
-      },
-      "CreateTradingTermDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "days": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "description",
-          "days",
-          "type"
-        ]
-      },
-      "UpdateTradingTermDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "days": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string"
-          }
-        }
-      },
-      "SettingsSuccessResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ]
-      },
-      "CostCenterResponseDto": {
-        "type": "object",
-        "properties": {
-          "costCenterId": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "costCenterId",
-          "code",
-          "name",
-          "isActive"
-        ]
-      },
-      "CreateCostCenterDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "code",
-          "name"
-        ]
-      },
-      "UpdateCostCenterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        }
-      },
-      "BulkImportResultDto": {
-        "type": "object",
-        "properties": {
-          "count": {
-            "type": "number"
-          },
-          "updated": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "count",
-          "updated"
-        ]
-      },
-      "ActivityResponseDto": {
-        "type": "object",
-        "properties": {
-          "activityId": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "activityId",
-          "code",
-          "name",
-          "isActive"
-        ]
-      },
-      "CreateActivityDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "code",
-          "name"
-        ]
-      },
-      "UpdateActivityDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        }
-      },
-      "LicenseStatusDto": {
-        "type": "object",
-        "properties": {
-          "state": {
-            "type": "string",
-            "enum": [
-              "active",
-              "warning",
-              "read_only"
-            ]
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "trial",
-              "perpetual",
-              "none"
-            ]
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "warningMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "systemId": {
-            "type": "string",
-            "nullable": true
-          },
-          "licenseHash": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "state",
-          "type",
-          "expiresAt",
-          "warningMessage",
-          "systemId",
-          "licenseHash"
-        ]
-      },
       "BusinessReportResponseDto": {
         "type": "object",
         "properties": {
@@ -25805,45 +26196,6 @@
           "salesOrderId",
           "customerId",
           "lines"
-        ]
-      },
-      "EmailDocumentDto": {
-        "type": "object",
-        "properties": {
-          "emailAddress": {
-            "type": "string",
-            "format": "email",
-            "description": "The recipient email address"
-          },
-          "subject": {
-            "type": "string",
-            "description": "The email subject"
-          },
-          "body": {
-            "type": "string",
-            "description": "The text body for the email"
-          },
-          "hookSlug": {
-            "type": "string",
-            "description": "The hook slug for the PDF template to use (e.g. sales-order-quote)"
-          },
-          "customPdfText": {
-            "type": "string",
-            "description": "Custom text injected into the generated PDF"
-          },
-          "targetId": {
-            "type": "string",
-            "description": "The target entity ID, if different from the order ID"
-          },
-          "contextSlug": {
-            "type": "string",
-            "description": "The context slug for the report data source"
-          }
-        },
-        "required": [
-          "emailAddress",
-          "subject",
-          "body"
         ]
       },
       "ChangeOrderStateDto": {
@@ -27117,205 +27469,6 @@
           "id",
           "description",
           "amount"
-        ]
-      },
-      "RunHookBodyDto": {
-        "type": "object",
-        "properties": {
-          "shipmentId": {
-            "type": "string",
-            "description": "Optional shipment ID for shipment/picking hooks"
-          },
-          "customPdfText": {
-            "type": "string"
-          },
-          "quoteIntroText": {
-            "type": "string",
-            "description": "Deprecated legacy alias for customPdfText"
-          }
-        }
-      },
-      "HookDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "contexts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "slug",
-          "name",
-          "description",
-          "contexts"
-        ]
-      },
-      "HookAssignmentDto": {
-        "type": "object",
-        "properties": {
-          "hookSlug": {
-            "type": "string"
-          },
-          "reportId": {
-            "type": "string"
-          },
-          "contextSlug": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "hookSlug",
-          "reportId",
-          "contextSlug"
-        ]
-      },
-      "UpdateHookAssignmentDto": {
-        "type": "object",
-        "properties": {
-          "reportId": {
-            "type": "string"
-          },
-          "contextSlug": {
-            "type": "string"
-          }
-        }
-      },
-      "RandomIdData": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "ReportDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "template": {
-            "type": "string"
-          },
-          "outputNamePattern": {
-            "type": "string"
-          },
-          "contexts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isSystem": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "template",
-          "isSystem"
-        ]
-      },
-      "CreateReportDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "template": {
-            "type": "string"
-          },
-          "outputNamePattern": {
-            "type": "string"
-          },
-          "contexts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "slug",
-          "template"
-        ]
-      },
-      "UpdateReportDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "template": {
-            "type": "string"
-          },
-          "outputNamePattern": {
-            "type": "string"
-          },
-          "contexts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "PreviewReportDto": {
-        "type": "object",
-        "properties": {
-          "template": {
-            "type": "string"
-          },
-          "mockData": {
-            "type": "object"
-          },
-          "hookSlug": {
-            "type": "string"
-          },
-          "entityId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "template"
         ]
       },
       "CreateSalesInvoiceLineDto": {

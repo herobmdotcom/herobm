@@ -112,7 +112,8 @@ export default function ProductGroupsAdmin() {
         toast.success(t('toasts.created'));
       }
       loadData();
-    } catch (err) {
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'ProductGroupsAdmin_handleSave');
       throw err;
     }

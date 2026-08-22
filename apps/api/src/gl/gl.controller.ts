@@ -402,6 +402,7 @@ export class GlController {
   // -------------------------------------------------------------------------
 
   @Get('periods')
+  @CasbinResource(SystemResource.FISCAL_PERIODS)
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Fiscal Periods',
@@ -421,6 +422,7 @@ export class GlController {
 
   @Post('periods/generate')
   @ApiBody({ type: GenerateFiscalPeriodsDto })
+  @CasbinResource(SystemResource.FISCAL_PERIODS)
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Generate Fiscal Periods',
@@ -440,6 +442,7 @@ export class GlController {
 
   @Patch('periods/:id/status')
   @ApiBody({ type: UpdateFiscalPeriodStatusDto })
+  @CasbinResource(SystemResource.FISCAL_PERIODS)
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Fiscal Period Status',

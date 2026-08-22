@@ -1,7 +1,7 @@
 import { Module, forwardRef, Inject, OnModuleInit } from '@nestjs/common';
 import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { sql } from 'drizzle-orm';
-import { purchaseOrders } from '@herobm/db-schema';
+import { purchaseOrders, purchaseOrderReturns } from '@herobm/db-schema';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
@@ -16,11 +16,13 @@ import { PurchaseReturnsController } from './purchase-returns.controller';
 import { PurchaseReturnsService } from './purchase-returns.service';
 import { GlobalPurchaseReturnsController } from './global-purchase-returns.controller';
 import { PurchasingReportsService } from './purchasing-reports.service';
+import { PurchaseReturnSlipService } from '../pdf-templates/purchase-return-slip.service';
 import { InventoryModule } from '../inventory/inventory.module';
 import { SuppliersModule } from '../suppliers/suppliers.module';
 import { TaxModule } from '../tax/tax.module';
 import { GlModule } from '../gl/gl.module';
 import { OrdersModule } from '../orders/orders.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { OrdersModule } from '../orders/orders.module';
     SuppliersModule,
     TaxModule,
     GlModule,
+    NotificationsModule,
     forwardRef(() => OrdersModule),
   ],
   controllers: [
@@ -42,6 +45,7 @@ import { OrdersModule } from '../orders/orders.module';
     PurchaseOrdersWriteService,
     PurchaseReturnsService,
     PurchasingReportsService,
+    PurchaseReturnSlipService,
   ],
   exports: [
     PurchaseOrdersService,
@@ -49,12 +53,14 @@ import { OrdersModule } from '../orders/orders.module';
     PurchaseOrdersStateService,
     PurchaseOrdersWriteService,
     PurchaseReturnsService,
+    PurchaseReturnSlipService,
   ],
 })
 export class PurchaseOrdersModule implements OnModuleInit {
   constructor(
     private readonly dataSourcesRegistry: DataSourcesRegistry,
     private readonly purchaseOrdersQueryService: PurchaseOrdersQueryService,
+    private readonly purchaseReturnSlipService: PurchaseReturnSlipService,
     private readonly appConfig: AppConfigService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
@@ -105,6 +111,28 @@ export class PurchaseOrdersModule implements OnModuleInit {
         const rows = await this.db
           .select({ id: purchaseOrders.purchaseOrderId })
           .from(purchaseOrders)
+          .orderBy(sql`RANDOM()`)
+          .limit(1);
+        return rows.length > 0 ? rows[0].id : undefined;
+      },
+    });
+
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.PURCHASE_RETURN, {
+      requiredPermissions: [{ resource: 'purchase-orders', action: 'read' }],
+      resolveData: async (
+        id: string,
+        user: Record<string, unknown>,
+        options?: Record<string, unknown>,
+      ) => {
+        return (await this.purchaseReturnSlipService.assembleData(
+          id,
+          options,
+        )) as unknown as Record<string, unknown>;
+      },
+      getRandomId: async () => {
+        const rows = await this.db
+          .select({ id: purchaseOrderReturns.returnId })
+          .from(purchaseOrderReturns)
           .orderBy(sql`RANDOM()`)
           .limit(1);
         return rows.length > 0 ? rows[0].id : undefined;

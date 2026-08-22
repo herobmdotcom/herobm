@@ -84,6 +84,15 @@ const SEEDS: SeedData[] = [
     outputPattern: 'Docket-${shipmentNumber}.pdf',
   },
   {
+    slug: 'shipping-label',
+    name: 'Standard Shipping Label',
+    contexts: ['shipment'],
+    description:
+      'System default template for generating Shipping Labels for dispatched packages.',
+    templatePath: '../../../../tools/seeds/reports/shipping-label.typ',
+    outputPattern: 'Label-${shipmentNumber}.pdf',
+  },
+  {
     slug: 'sales-return-credit',
     name: 'Standard Sales Credit',
     contexts: ['sales-return'],

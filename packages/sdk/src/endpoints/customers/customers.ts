@@ -13,12 +13,14 @@ import type {
   CustomerGroupsControllerFindAllParams,
   CustomerGroupsControllerFindOneParams,
   CustomerResponseDto,
+  CustomersControllerEmailDocument201,
   CustomersControllerFindAll200,
   CustomersControllerFindAllParams,
   CustomersControllerFindOneParams,
   CustomersControllerGetAgedBalances200,
   CustomersControllerGetAgedBalancesParams,
   DeleteCustomerGroupResponseDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   UpdateCustomerDto,
   UpdateCustomerGroupDto
@@ -340,6 +342,44 @@ export const customersControllerUnarchive = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emptyBodyDto,)
+  }
+);}
+
+
+/**
+ * Generates a Customer Statement PDF using the active customer statement template/hook and queues an email outbox message to the specified recipient.
+ * @summary Email Customer Statement Document
+ */
+export type customersControllerEmailDocumentResponse201 = {
+  data: CustomersControllerEmailDocument201
+  status: 201
+}
+    
+export type customersControllerEmailDocumentResponseSuccess = (customersControllerEmailDocumentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type customersControllerEmailDocumentResponse = (customersControllerEmailDocumentResponseSuccess)
+
+export const getCustomersControllerEmailDocumentUrl = (id: string,) => {
+
+
+  
+
+  return `/customers/${id}/email-document`
+}
+
+export const customersControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<customersControllerEmailDocumentResponse> => {
+  
+  return customFetch<customersControllerEmailDocumentResponse>(getCustomersControllerEmailDocumentUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailDocumentDto,)
   }
 );}
 

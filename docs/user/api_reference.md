@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (459 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (462 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -105,6 +105,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/customers/{id}/credit-assessment` | Get Credit Assessment |
 | `POST` | `/customers/{id}/archive` | Archive Customer |
 | `POST` | `/customers/{id}/unarchive` | Unarchive Customer |
+| `POST` | `/customers/{id}/email-document` | Email Customer Statement Document |
 | `GET` | `/customer-groups` | List Customer Groups |
 | `POST` | `/customer-groups` | Create Customer Group |
 | `GET` | `/customer-groups/{id}` | Get Customer Group |
@@ -123,6 +124,16 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/settings/exchange-rates` | findAll |
+| `POST` | `/settings/exchange-rates` | create |
+| `GET` | `/settings/exchange-rates/{id}` | findOne |
+| `PATCH` | `/settings/exchange-rates/{id}` | update |
+| `DELETE` | `/settings/exchange-rates/{id}` | remove |
+| `GET` | `/settings/cost-centers` | List all cost centers |
+| `POST` | `/settings/cost-centers` | Create a new cost center |
+| `PATCH` | `/settings/cost-centers/{id}` | Update a cost center |
+| `DELETE` | `/settings/cost-centers/{id}` | Delete a cost center |
+| `POST` | `/settings/cost-centers/import` | Bulk import cost centers |
 | `GET` | `/gl/accounts` | Get Accounts |
 | `POST` | `/gl/accounts` | Create Account |
 | `PATCH` | `/gl/accounts/{id}` | Update Account |
@@ -172,16 +183,6 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/gl/bank-statement/unmatch` | Unmatch items |
 | `DELETE` | `/gl/bank-statement/lines/{id}` | Delete bank statement line |
 | `GET` | `/gl/bank-statement/match-group/{matchGroupId}` | Get match group |
-| `GET` | `/settings/exchange-rates` | findAll |
-| `POST` | `/settings/exchange-rates` | create |
-| `GET` | `/settings/exchange-rates/{id}` | findOne |
-| `PATCH` | `/settings/exchange-rates/{id}` | update |
-| `DELETE` | `/settings/exchange-rates/{id}` | remove |
-| `GET` | `/settings/cost-centers` | List all cost centers |
-| `POST` | `/settings/cost-centers` | Create a new cost center |
-| `PATCH` | `/settings/cost-centers/{id}` | Update a cost center |
-| `DELETE` | `/settings/cost-centers/{id}` | Delete a cost center |
-| `POST` | `/settings/cost-centers/import` | Bulk import cost centers |
 
 ### Global Notes
 
@@ -290,6 +291,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/purchase-debit-notes` | Create Debit Note |
 | `GET` | `/purchase-debit-notes/{id}` | Get Debit Note |
 | `POST` | `/purchase-debit-notes/{id}/post` | Post Debit Note |
+| `POST` | `/purchase-debit-notes/{id}/email-document` | Email Purchase Debit Note Document |
 
 ### Purchase Orders
 
@@ -324,6 +326,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/purchase-returns` | List Purchase Returns |
 | `GET` | `/purchase-returns/{id}` | Get Purchase Return |
 | `POST` | `/purchase-returns/{id}/mark-resolved` | Mark Purchase Return as Resolved |
+| `POST` | `/purchase-returns/{id}/email-document` | Email Purchase Return Document |
 
 ### Sales Invoices
 
@@ -421,6 +424,21 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/roles/{role}` | Get role details |
 | `POST` | `/roles/{role}` | Set role permissions |
 | `DELETE` | `/roles/{role}` | Delete role |
+| `POST` | `/pdf-templates/hooks/{hookSlug}/run` | Run Hook |
+| `GET` | `/pdf-templates/hooks` | Get Hooks |
+| `GET` | `/pdf-templates/hook-assignments` | Get Hook Assignments |
+| `PATCH` | `/pdf-templates/hook-assignments/{hook}` | Update Hook Assignment |
+| `GET` | `/pdf-templates/hooks/{slug}/random-id` | Get Random ID |
+| `GET` | `/pdf-templates` | Get All Reports |
+| `POST` | `/pdf-templates` | Create Report |
+| `GET` | `/pdf-templates/{id}` | Get Report |
+| `PATCH` | `/pdf-templates/{id}` | Update Report |
+| `DELETE` | `/pdf-templates/{id}` | Delete Report |
+| `POST` | `/pdf-templates/preview` | Preview Report |
+| `GET` | `/emails` | List emails |
+| `POST` | `/emails/{id}/retry` | Retry a failed email |
+| `POST` | `/emails/{id}/dismiss` | Dismiss a failed email |
+| `GET` | `/emails/test-connection` | test-connection |
 | `GET` | `/settings/uom-dictionary` | findAll |
 | `POST` | `/settings/uom-dictionary` | create |
 | `GET` | `/settings/uom-dictionary/{code}` | findOne |
@@ -448,17 +466,6 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/business-reports/{id}` | Get a business report by ID |
 | `PUT` | `/business-reports/{id}` | Update a business report |
 | `DELETE` | `/business-reports/{id}` | Delete a business report |
-| `POST` | `/pdf-templates/hooks/{hookSlug}/run` | Run Hook |
-| `GET` | `/pdf-templates/hooks` | Get Hooks |
-| `GET` | `/pdf-templates/hook-assignments` | Get Hook Assignments |
-| `PATCH` | `/pdf-templates/hook-assignments/{hook}` | Update Hook Assignment |
-| `GET` | `/pdf-templates/hooks/{slug}/random-id` | Get Random ID |
-| `GET` | `/pdf-templates` | Get All Reports |
-| `POST` | `/pdf-templates` | Create Report |
-| `GET` | `/pdf-templates/{id}` | Get Report |
-| `PATCH` | `/pdf-templates/{id}` | Update Report |
-| `DELETE` | `/pdf-templates/{id}` | Delete Report |
-| `POST` | `/pdf-templates/preview` | Preview Report |
 | `GET` | `/settings/external-sync` | Get Sync Status |
 | `GET` | `/settings/external-sync/events` | Get Events By Type |
 | `DELETE` | `/settings/external-sync/events` | Clear Events By Type |
@@ -469,10 +476,6 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/enrichment/providers` | Get providers |
 | `GET` | `/enrichment/config` | Get config |
 | `PUT` | `/enrichment/config` | Update config |
-| `GET` | `/emails` | List emails |
-| `POST` | `/emails/{id}/retry` | Retry a failed email |
-| `POST` | `/emails/{id}/dismiss` | Dismiss a failed email |
-| `GET` | `/emails/test-connection` | test-connection |
 | `GET` | `/dashboard/summary` | Get Summary |
 | `GET` | `/dashboard/search` | Universal Search |
 | `GET` | `/dashboard/timeline` | Get Timeline |

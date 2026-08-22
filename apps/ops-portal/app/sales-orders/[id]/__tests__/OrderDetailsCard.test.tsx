@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import OrderDetailsCard from '../OrderDetailsCard';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 
@@ -19,6 +19,15 @@ jest.mock('next-intl', () => ({
 
 jest.mock('@/components/SettingsProvider', () => ({
   useSettings: () => mockUseSettingsReturn,
+}));
+
+const mockPdfTemplatesControllerRunHook = jest.fn().mockResolvedValue({
+  data: new Blob(['pdf'], { type: 'application/pdf' }),
+});
+jest.mock('@herobm/sdk', () => ({
+  __esModule: true,
+  pdfTemplatesControllerRunHook: (...args: any[]) =>
+    mockPdfTemplatesControllerRunHook(...args),
 }));
 
 const mockOrder = {
@@ -180,5 +189,95 @@ describe('OrderDetailsCard - Analysis Code', () => {
         dispatchContactId: 'none',
       },
     });
+  });
+});
+
+describe('OrderDetailsCard - Document Actions', () => {
+  beforeAll(() => {
+    window.URL.createObjectURL = jest.fn().mockReturnValue('blob:http://localhost/blob');
+    window.open = jest.fn();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders Print Quote and Email Quote for draft orders and triggers PDF on print', async () => {
+    const onEmail = jest.fn();
+    render(
+      <OrderDetailsCard
+        order={{ ...mockOrder, stateCode: SALES_ORDER_STATE.DRAFT }}
+        isOrderDetailsEditable={true}
+        editName="Test Order"
+        setEditName={jest.fn()}
+        editPO="PO-123"
+        setEditPO={jest.fn()}
+        editNotes=""
+        setEditNotes={jest.fn()}
+        editAnalysisCode="PROMO"
+        setEditAnalysisCode={jest.fn()}
+        saveHeader={jest.fn()}
+        onEmailDocumentClick={onEmail}
+        reportError={jest.fn()}
+        setError={jest.fn()}
+      />
+    );
+
+    const printQuoteBtn = screen.getByRole('button', { name: /buttons\.printQuote/i });
+    expect(printQuoteBtn).toBeInTheDocument();
+
+    const emailQuoteBtn = screen.getByRole('button', { name: /buttons\.emailQuote/i });
+    expect(emailQuoteBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(printQuoteBtn);
+    });
+
+    expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith(
+      'sales-order-quote',
+      {},
+      { id: 'so-123', context: 'sales-order' }
+    );
+  });
+
+  it('renders Print Confirmation and Email Confirmation for confirmed orders and triggers PDF on print', async () => {
+    const onEmail = jest.fn();
+    render(
+      <OrderDetailsCard
+        order={{ ...mockOrder, stateCode: SALES_ORDER_STATE.CONFIRMED }}
+        isOrderDetailsEditable={false}
+        editName="Test Order"
+        setEditName={jest.fn()}
+        editPO="PO-123"
+        setEditPO={jest.fn()}
+        editNotes=""
+        setEditNotes={jest.fn()}
+        editAnalysisCode="PROMO"
+        setEditAnalysisCode={jest.fn()}
+        saveHeader={jest.fn()}
+        onEmailDocumentClick={onEmail}
+        reportError={jest.fn()}
+        setError={jest.fn()}
+      />
+    );
+
+    const printConfirmationBtn = screen.getByRole('button', { name: /buttons\.printConfirmation/i });
+    expect(printConfirmationBtn).toBeInTheDocument();
+
+    const emailConfirmationBtn = screen.getByRole('button', { name: /buttons\.emailConfirmation/i });
+    expect(emailConfirmationBtn).toBeInTheDocument();
+
+    const emailProFormaBtn = screen.getByRole('button', { name: /buttons\.emailProForma/i });
+    expect(emailProFormaBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(printConfirmationBtn);
+    });
+
+    expect(mockPdfTemplatesControllerRunHook).toHaveBeenCalledWith(
+      'sales-order-confirmation',
+      {},
+      { id: 'so-123', context: 'sales-order' }
+    );
   });
 });

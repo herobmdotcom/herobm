@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from './Button';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 
 export interface InlineTableColumn<T> {
   key: keyof T | string;
@@ -99,8 +101,8 @@ export function InlineSettingsTable<T extends Record<string, any>>({
       setEditingId(null);
       setEditForm({});
       setIsNew(false);
-    } catch (e) {
-      // Error is usually handled by parent (e.g. toast), but we release the state
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
     } finally {
       setSaving(false);
       setProcessingId(null);
@@ -113,8 +115,8 @@ export function InlineSettingsTable<T extends Record<string, any>>({
     try {
       setProcessingId(id);
       await onDelete(row);
-    } catch (e) {
-      // Handle error
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
     } finally {
       setProcessingId(null);
     }

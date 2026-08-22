@@ -7,7 +7,7 @@ import { calculateAvailableQuantity, PURCHASE_ORDER_STATE, DATA_SOURCE_CONTEXT }
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, CURRENCIES, getCurrency } from '@/lib/currency';
 import { calculateUomPriceAdjustment } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
@@ -81,7 +81,8 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
     editName, setEditName, editReferenceNumber, setEditReferenceNumber,
     editExpectedDate, setEditExpectedDate,
-    editNotes, setEditNotes, editLocationId, setEditLocationId, headerDirty,
+    editNotes, setEditNotes, editLocationId, setEditLocationId,
+    editCurrencyCode, setEditCurrencyCode, headerDirty,
     taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
     invoices, setInvoicing,
     clearError, setError, saveHeader, changeState, archivePurchaseOrder, unarchivePurchaseOrder, copyOrder,
@@ -542,6 +543,30 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                   ) : (
                     <p className="text-sm font-medium pt-1.5">
                       {order.locationName || order.deliveryLocationId || '—'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    {tCommon('columns.currency')}
+                  </label>
+                  {isHeaderEditable && order.stateCode === PURCHASE_ORDER_STATE.DRAFT ? (
+                    <select
+                      id="order-currency"
+                      className="input"
+                      value={editCurrencyCode}
+                      onChange={(e) => setEditCurrencyCode(e.target.value)}
+                      onBlur={saveHeader}
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} - {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm font-medium pt-1.5">
+                      {order.currencyCode ? `${order.currencyCode} - ${getCurrency(order.currencyCode).name}` : '—'}
                     </p>
                   )}
                 </div>

@@ -356,6 +356,574 @@ export const rolesControllerRemove = async (role: string, options?: RequestInit)
 
 
 /**
+ * Execute a specific reporting hook and generate a PDF document.
+ * @summary Run Hook
+ */
+export type pdfTemplatesControllerRunHookResponse200 = {
+  data: Blob
+  status: 200
+}
+    
+export type pdfTemplatesControllerRunHookResponseSuccess = (pdfTemplatesControllerRunHookResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerRunHookResponse = (pdfTemplatesControllerRunHookResponseSuccess)
+
+export const getPdfTemplatesControllerRunHookUrl = (hookSlug: string,
+    params: PdfTemplatesControllerRunHookParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/pdf-templates/hooks/${hookSlug}/run?${stringifiedParams}` : `/pdf-templates/hooks/${hookSlug}/run`
+}
+
+export const pdfTemplatesControllerRunHook = async (hookSlug: string,
+    runHookBodyDto: RunHookBodyDto,
+    params: PdfTemplatesControllerRunHookParams, options?: RequestInit): Promise<pdfTemplatesControllerRunHookResponse> => {
+  
+  return customFetch<pdfTemplatesControllerRunHookResponse>(getPdfTemplatesControllerRunHookUrl(hookSlug,params),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      runHookBodyDto,)
+  }
+);}
+
+
+/**
+ * Retrieve a list of available reporting hooks.
+ * @summary Get Hooks
+ */
+export type pdfTemplatesControllerGetHooksResponse200 = {
+  data: HookDto[]
+  status: 200
+}
+    
+export type pdfTemplatesControllerGetHooksResponseSuccess = (pdfTemplatesControllerGetHooksResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerGetHooksResponse = (pdfTemplatesControllerGetHooksResponseSuccess)
+
+export const getPdfTemplatesControllerGetHooksUrl = () => {
+
+
+  
+
+  return `/pdf-templates/hooks`
+}
+
+export const pdfTemplatesControllerGetHooks = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetHooksResponse> => {
+  
+  return customFetch<pdfTemplatesControllerGetHooksResponse>(getPdfTemplatesControllerGetHooksUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve current template assignments for reporting hooks.
+ * @summary Get Hook Assignments
+ */
+export type pdfTemplatesControllerGetAssignmentsResponse200 = {
+  data: HookAssignmentDto[]
+  status: 200
+}
+    
+export type pdfTemplatesControllerGetAssignmentsResponseSuccess = (pdfTemplatesControllerGetAssignmentsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerGetAssignmentsResponse = (pdfTemplatesControllerGetAssignmentsResponseSuccess)
+
+export const getPdfTemplatesControllerGetAssignmentsUrl = () => {
+
+
+  
+
+  return `/pdf-templates/hook-assignments`
+}
+
+export const pdfTemplatesControllerGetAssignments = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAssignmentsResponse> => {
+  
+  return customFetch<pdfTemplatesControllerGetAssignmentsResponse>(getPdfTemplatesControllerGetAssignmentsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update the assigned template and context for a reporting hook.
+ * @summary Update Hook Assignment
+ */
+export type pdfTemplatesControllerUpdateAssignmentResponse200 = {
+  data: HookAssignmentDto
+  status: 200
+}
+    
+export type pdfTemplatesControllerUpdateAssignmentResponseSuccess = (pdfTemplatesControllerUpdateAssignmentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerUpdateAssignmentResponse = (pdfTemplatesControllerUpdateAssignmentResponseSuccess)
+
+export const getPdfTemplatesControllerUpdateAssignmentUrl = (hook: string,) => {
+
+
+  
+
+  return `/pdf-templates/hook-assignments/${hook}`
+}
+
+export const pdfTemplatesControllerUpdateAssignment = async (hook: string,
+    updateHookAssignmentDto: UpdateHookAssignmentDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateAssignmentResponse> => {
+  
+  return customFetch<pdfTemplatesControllerUpdateAssignmentResponse>(getPdfTemplatesControllerUpdateAssignmentUrl(hook),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateHookAssignmentDto,)
+  }
+);}
+
+
+/**
+ * Fetch a random valid entity ID for a given reporting context (used for previewing).
+ * @summary Get Random ID
+ */
+export type pdfTemplatesControllerGetRandomIdResponse200 = {
+  data: RandomIdData
+  status: 200
+}
+    
+export type pdfTemplatesControllerGetRandomIdResponseSuccess = (pdfTemplatesControllerGetRandomIdResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerGetRandomIdResponse = (pdfTemplatesControllerGetRandomIdResponseSuccess)
+
+export const getPdfTemplatesControllerGetRandomIdUrl = (slug: string,) => {
+
+
+  
+
+  return `/pdf-templates/hooks/${slug}/random-id`
+}
+
+export const pdfTemplatesControllerGetRandomId = async (slug: string, options?: RequestInit): Promise<pdfTemplatesControllerGetRandomIdResponse> => {
+  
+  return customFetch<pdfTemplatesControllerGetRandomIdResponse>(getPdfTemplatesControllerGetRandomIdUrl(slug),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve a list of all configured report templates.
+ * @summary Get All Reports
+ */
+export type pdfTemplatesControllerGetAllReportsResponse200 = {
+  data: ReportDto[]
+  status: 200
+}
+    
+export type pdfTemplatesControllerGetAllReportsResponseSuccess = (pdfTemplatesControllerGetAllReportsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerGetAllReportsResponse = (pdfTemplatesControllerGetAllReportsResponseSuccess)
+
+export const getPdfTemplatesControllerGetAllReportsUrl = () => {
+
+
+  
+
+  return `/pdf-templates`
+}
+
+export const pdfTemplatesControllerGetAllReports = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAllReportsResponse> => {
+  
+  return customFetch<pdfTemplatesControllerGetAllReportsResponse>(getPdfTemplatesControllerGetAllReportsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Create a new custom report template.
+ * @summary Create Report
+ */
+export type pdfTemplatesControllerCreateReportResponse201 = {
+  data: ReportDto
+  status: 201
+}
+    
+export type pdfTemplatesControllerCreateReportResponseSuccess = (pdfTemplatesControllerCreateReportResponse201) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerCreateReportResponse = (pdfTemplatesControllerCreateReportResponseSuccess)
+
+export const getPdfTemplatesControllerCreateReportUrl = () => {
+
+
+  
+
+  return `/pdf-templates`
+}
+
+export const pdfTemplatesControllerCreateReport = async (createReportDto: CreateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerCreateReportResponse> => {
+  
+  return customFetch<pdfTemplatesControllerCreateReportResponse>(getPdfTemplatesControllerCreateReportUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createReportDto,)
+  }
+);}
+
+
+/**
+ * Retrieve the details and template content of a specific report.
+ * @summary Get Report
+ */
+export type pdfTemplatesControllerGetReportResponse200 = {
+  data: ReportDto
+  status: 200
+}
+    
+export type pdfTemplatesControllerGetReportResponseSuccess = (pdfTemplatesControllerGetReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerGetReportResponse = (pdfTemplatesControllerGetReportResponseSuccess)
+
+export const getPdfTemplatesControllerGetReportUrl = (id: string,) => {
+
+
+  
+
+  return `/pdf-templates/${id}`
+}
+
+export const pdfTemplatesControllerGetReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerGetReportResponse> => {
+  
+  return customFetch<pdfTemplatesControllerGetReportResponse>(getPdfTemplatesControllerGetReportUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Modify the configuration or content of an existing report template.
+ * @summary Update Report
+ */
+export type pdfTemplatesControllerUpdateReportResponse200 = {
+  data: ReportDto
+  status: 200
+}
+    
+export type pdfTemplatesControllerUpdateReportResponseSuccess = (pdfTemplatesControllerUpdateReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerUpdateReportResponse = (pdfTemplatesControllerUpdateReportResponseSuccess)
+
+export const getPdfTemplatesControllerUpdateReportUrl = (id: string,) => {
+
+
+  
+
+  return `/pdf-templates/${id}`
+}
+
+export const pdfTemplatesControllerUpdateReport = async (id: string,
+    updateReportDto: UpdateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateReportResponse> => {
+  
+  return customFetch<pdfTemplatesControllerUpdateReportResponse>(getPdfTemplatesControllerUpdateReportUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateReportDto,)
+  }
+);}
+
+
+/**
+ * Remove a report template from the system.
+ * @summary Delete Report
+ */
+export type pdfTemplatesControllerDeleteReportResponse200 = {
+  data: ReportDto
+  status: 200
+}
+    
+export type pdfTemplatesControllerDeleteReportResponseSuccess = (pdfTemplatesControllerDeleteReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerDeleteReportResponse = (pdfTemplatesControllerDeleteReportResponseSuccess)
+
+export const getPdfTemplatesControllerDeleteReportUrl = (id: string,) => {
+
+
+  
+
+  return `/pdf-templates/${id}`
+}
+
+export const pdfTemplatesControllerDeleteReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerDeleteReportResponse> => {
+  
+  return customFetch<pdfTemplatesControllerDeleteReportResponse>(getPdfTemplatesControllerDeleteReportUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * Generate a preview PDF of a report template using mock or real entity data.
+ * @summary Preview Report
+ */
+export type pdfTemplatesControllerPreviewResponse200 = {
+  data: Blob
+  status: 200
+}
+    
+export type pdfTemplatesControllerPreviewResponseSuccess = (pdfTemplatesControllerPreviewResponse200) & {
+  headers: Headers;
+};
+;
+
+export type pdfTemplatesControllerPreviewResponse = (pdfTemplatesControllerPreviewResponseSuccess)
+
+export const getPdfTemplatesControllerPreviewUrl = () => {
+
+
+  
+
+  return `/pdf-templates/preview`
+}
+
+export const pdfTemplatesControllerPreview = async (previewReportDto: PreviewReportDto, options?: RequestInit): Promise<pdfTemplatesControllerPreviewResponse> => {
+  
+  return customFetch<pdfTemplatesControllerPreviewResponse>(getPdfTemplatesControllerPreviewUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      previewReportDto,)
+  }
+);}
+
+
+/**
+ * List emails in the outbox queue.
+ * @summary List emails
+ */
+export type emailControllerListEmailsResponse200 = {
+  data: EmailControllerListEmails200Item[]
+  status: 200
+}
+    
+export type emailControllerListEmailsResponseSuccess = (emailControllerListEmailsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerListEmailsResponse = (emailControllerListEmailsResponseSuccess)
+
+export const getEmailControllerListEmailsUrl = (params?: EmailControllerListEmailsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/emails?${stringifiedParams}` : `/emails`
+}
+
+export const emailControllerListEmails = async (params?: EmailControllerListEmailsParams, options?: RequestInit): Promise<emailControllerListEmailsResponse> => {
+  
+  return customFetch<emailControllerListEmailsResponse>(getEmailControllerListEmailsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retry sending a failed email.
+ * @summary Retry a failed email
+ */
+export type emailControllerRetryEmailResponse201 = {
+  data: EmailControllerRetryEmail201
+  status: 201
+}
+    
+export type emailControllerRetryEmailResponseSuccess = (emailControllerRetryEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerRetryEmailResponse = (emailControllerRetryEmailResponseSuccess)
+
+export const getEmailControllerRetryEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/retry`
+}
+
+export const emailControllerRetryEmail = async (id: string,
+    emailControllerRetryEmailBody?: EmailControllerRetryEmailBody, options?: RequestInit): Promise<emailControllerRetryEmailResponse> => {
+  
+  return customFetch<emailControllerRetryEmailResponse>(getEmailControllerRetryEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerRetryEmailBody,)
+  }
+);}
+
+
+/**
+ * Dismiss a failed email so it is no longer shown as an error.
+ * @summary Dismiss a failed email
+ */
+export type emailControllerDismissEmailResponse201 = {
+  data: EmailControllerDismissEmail201
+  status: 201
+}
+    
+export type emailControllerDismissEmailResponseSuccess = (emailControllerDismissEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerDismissEmailResponse = (emailControllerDismissEmailResponseSuccess)
+
+export const getEmailControllerDismissEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/dismiss`
+}
+
+export const emailControllerDismissEmail = async (id: string,
+    emailControllerDismissEmailBody?: EmailControllerDismissEmailBody, options?: RequestInit): Promise<emailControllerDismissEmailResponse> => {
+  
+  return customFetch<emailControllerDismissEmailResponse>(getEmailControllerDismissEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerDismissEmailBody,)
+  }
+);}
+
+
+/**
+ * Test SMTP connection
+ * @summary test-connection
+ */
+export type emailControllerTestConnectionResponse200 = {
+  data: EmailControllerTestConnection200
+  status: 200
+}
+    
+export type emailControllerTestConnectionResponseSuccess = (emailControllerTestConnectionResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerTestConnectionResponse = (emailControllerTestConnectionResponseSuccess)
+
+export const getEmailControllerTestConnectionUrl = () => {
+
+
+  
+
+  return `/emails/test-connection`
+}
+
+export const emailControllerTestConnection = async ( options?: RequestInit): Promise<emailControllerTestConnectionResponse> => {
+  
+  return customFetch<emailControllerTestConnectionResponse>(getEmailControllerTestConnectionUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
  * findAll operation
  * @summary findAll
  */
@@ -1376,419 +1944,6 @@ export const businessReportsControllerDeleteReport = async (id: string, options?
 
 
 /**
- * Execute a specific reporting hook and generate a PDF document.
- * @summary Run Hook
- */
-export type pdfTemplatesControllerRunHookResponse200 = {
-  data: Blob
-  status: 200
-}
-    
-export type pdfTemplatesControllerRunHookResponseSuccess = (pdfTemplatesControllerRunHookResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerRunHookResponse = (pdfTemplatesControllerRunHookResponseSuccess)
-
-export const getPdfTemplatesControllerRunHookUrl = (hookSlug: string,
-    params: PdfTemplatesControllerRunHookParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/pdf-templates/hooks/${hookSlug}/run?${stringifiedParams}` : `/pdf-templates/hooks/${hookSlug}/run`
-}
-
-export const pdfTemplatesControllerRunHook = async (hookSlug: string,
-    runHookBodyDto: RunHookBodyDto,
-    params: PdfTemplatesControllerRunHookParams, options?: RequestInit): Promise<pdfTemplatesControllerRunHookResponse> => {
-  
-  return customFetch<pdfTemplatesControllerRunHookResponse>(getPdfTemplatesControllerRunHookUrl(hookSlug,params),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      runHookBodyDto,)
-  }
-);}
-
-
-/**
- * Retrieve a list of available reporting hooks.
- * @summary Get Hooks
- */
-export type pdfTemplatesControllerGetHooksResponse200 = {
-  data: HookDto[]
-  status: 200
-}
-    
-export type pdfTemplatesControllerGetHooksResponseSuccess = (pdfTemplatesControllerGetHooksResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerGetHooksResponse = (pdfTemplatesControllerGetHooksResponseSuccess)
-
-export const getPdfTemplatesControllerGetHooksUrl = () => {
-
-
-  
-
-  return `/pdf-templates/hooks`
-}
-
-export const pdfTemplatesControllerGetHooks = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetHooksResponse> => {
-  
-  return customFetch<pdfTemplatesControllerGetHooksResponse>(getPdfTemplatesControllerGetHooksUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Retrieve current template assignments for reporting hooks.
- * @summary Get Hook Assignments
- */
-export type pdfTemplatesControllerGetAssignmentsResponse200 = {
-  data: HookAssignmentDto[]
-  status: 200
-}
-    
-export type pdfTemplatesControllerGetAssignmentsResponseSuccess = (pdfTemplatesControllerGetAssignmentsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerGetAssignmentsResponse = (pdfTemplatesControllerGetAssignmentsResponseSuccess)
-
-export const getPdfTemplatesControllerGetAssignmentsUrl = () => {
-
-
-  
-
-  return `/pdf-templates/hook-assignments`
-}
-
-export const pdfTemplatesControllerGetAssignments = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAssignmentsResponse> => {
-  
-  return customFetch<pdfTemplatesControllerGetAssignmentsResponse>(getPdfTemplatesControllerGetAssignmentsUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Update the assigned template and context for a reporting hook.
- * @summary Update Hook Assignment
- */
-export type pdfTemplatesControllerUpdateAssignmentResponse200 = {
-  data: HookAssignmentDto
-  status: 200
-}
-    
-export type pdfTemplatesControllerUpdateAssignmentResponseSuccess = (pdfTemplatesControllerUpdateAssignmentResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerUpdateAssignmentResponse = (pdfTemplatesControllerUpdateAssignmentResponseSuccess)
-
-export const getPdfTemplatesControllerUpdateAssignmentUrl = (hook: string,) => {
-
-
-  
-
-  return `/pdf-templates/hook-assignments/${hook}`
-}
-
-export const pdfTemplatesControllerUpdateAssignment = async (hook: string,
-    updateHookAssignmentDto: UpdateHookAssignmentDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateAssignmentResponse> => {
-  
-  return customFetch<pdfTemplatesControllerUpdateAssignmentResponse>(getPdfTemplatesControllerUpdateAssignmentUrl(hook),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateHookAssignmentDto,)
-  }
-);}
-
-
-/**
- * Fetch a random valid entity ID for a given reporting context (used for previewing).
- * @summary Get Random ID
- */
-export type pdfTemplatesControllerGetRandomIdResponse200 = {
-  data: RandomIdData
-  status: 200
-}
-    
-export type pdfTemplatesControllerGetRandomIdResponseSuccess = (pdfTemplatesControllerGetRandomIdResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerGetRandomIdResponse = (pdfTemplatesControllerGetRandomIdResponseSuccess)
-
-export const getPdfTemplatesControllerGetRandomIdUrl = (slug: string,) => {
-
-
-  
-
-  return `/pdf-templates/hooks/${slug}/random-id`
-}
-
-export const pdfTemplatesControllerGetRandomId = async (slug: string, options?: RequestInit): Promise<pdfTemplatesControllerGetRandomIdResponse> => {
-  
-  return customFetch<pdfTemplatesControllerGetRandomIdResponse>(getPdfTemplatesControllerGetRandomIdUrl(slug),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Retrieve a list of all configured report templates.
- * @summary Get All Reports
- */
-export type pdfTemplatesControllerGetAllReportsResponse200 = {
-  data: ReportDto[]
-  status: 200
-}
-    
-export type pdfTemplatesControllerGetAllReportsResponseSuccess = (pdfTemplatesControllerGetAllReportsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerGetAllReportsResponse = (pdfTemplatesControllerGetAllReportsResponseSuccess)
-
-export const getPdfTemplatesControllerGetAllReportsUrl = () => {
-
-
-  
-
-  return `/pdf-templates`
-}
-
-export const pdfTemplatesControllerGetAllReports = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAllReportsResponse> => {
-  
-  return customFetch<pdfTemplatesControllerGetAllReportsResponse>(getPdfTemplatesControllerGetAllReportsUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Create a new custom report template.
- * @summary Create Report
- */
-export type pdfTemplatesControllerCreateReportResponse201 = {
-  data: ReportDto
-  status: 201
-}
-    
-export type pdfTemplatesControllerCreateReportResponseSuccess = (pdfTemplatesControllerCreateReportResponse201) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerCreateReportResponse = (pdfTemplatesControllerCreateReportResponseSuccess)
-
-export const getPdfTemplatesControllerCreateReportUrl = () => {
-
-
-  
-
-  return `/pdf-templates`
-}
-
-export const pdfTemplatesControllerCreateReport = async (createReportDto: CreateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerCreateReportResponse> => {
-  
-  return customFetch<pdfTemplatesControllerCreateReportResponse>(getPdfTemplatesControllerCreateReportUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createReportDto,)
-  }
-);}
-
-
-/**
- * Retrieve the details and template content of a specific report.
- * @summary Get Report
- */
-export type pdfTemplatesControllerGetReportResponse200 = {
-  data: ReportDto
-  status: 200
-}
-    
-export type pdfTemplatesControllerGetReportResponseSuccess = (pdfTemplatesControllerGetReportResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerGetReportResponse = (pdfTemplatesControllerGetReportResponseSuccess)
-
-export const getPdfTemplatesControllerGetReportUrl = (id: string,) => {
-
-
-  
-
-  return `/pdf-templates/${id}`
-}
-
-export const pdfTemplatesControllerGetReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerGetReportResponse> => {
-  
-  return customFetch<pdfTemplatesControllerGetReportResponse>(getPdfTemplatesControllerGetReportUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Modify the configuration or content of an existing report template.
- * @summary Update Report
- */
-export type pdfTemplatesControllerUpdateReportResponse200 = {
-  data: ReportDto
-  status: 200
-}
-    
-export type pdfTemplatesControllerUpdateReportResponseSuccess = (pdfTemplatesControllerUpdateReportResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerUpdateReportResponse = (pdfTemplatesControllerUpdateReportResponseSuccess)
-
-export const getPdfTemplatesControllerUpdateReportUrl = (id: string,) => {
-
-
-  
-
-  return `/pdf-templates/${id}`
-}
-
-export const pdfTemplatesControllerUpdateReport = async (id: string,
-    updateReportDto: UpdateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateReportResponse> => {
-  
-  return customFetch<pdfTemplatesControllerUpdateReportResponse>(getPdfTemplatesControllerUpdateReportUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      updateReportDto,)
-  }
-);}
-
-
-/**
- * Remove a report template from the system.
- * @summary Delete Report
- */
-export type pdfTemplatesControllerDeleteReportResponse200 = {
-  data: ReportDto
-  status: 200
-}
-    
-export type pdfTemplatesControllerDeleteReportResponseSuccess = (pdfTemplatesControllerDeleteReportResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerDeleteReportResponse = (pdfTemplatesControllerDeleteReportResponseSuccess)
-
-export const getPdfTemplatesControllerDeleteReportUrl = (id: string,) => {
-
-
-  
-
-  return `/pdf-templates/${id}`
-}
-
-export const pdfTemplatesControllerDeleteReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerDeleteReportResponse> => {
-  
-  return customFetch<pdfTemplatesControllerDeleteReportResponse>(getPdfTemplatesControllerDeleteReportUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
-  }
-);}
-
-
-/**
- * Generate a preview PDF of a report template using mock or real entity data.
- * @summary Preview Report
- */
-export type pdfTemplatesControllerPreviewResponse200 = {
-  data: Blob
-  status: 200
-}
-    
-export type pdfTemplatesControllerPreviewResponseSuccess = (pdfTemplatesControllerPreviewResponse200) & {
-  headers: Headers;
-};
-;
-
-export type pdfTemplatesControllerPreviewResponse = (pdfTemplatesControllerPreviewResponseSuccess)
-
-export const getPdfTemplatesControllerPreviewUrl = () => {
-
-
-  
-
-  return `/pdf-templates/preview`
-}
-
-export const pdfTemplatesControllerPreview = async (previewReportDto: PreviewReportDto, options?: RequestInit): Promise<pdfTemplatesControllerPreviewResponse> => {
-  
-  return customFetch<pdfTemplatesControllerPreviewResponse>(getPdfTemplatesControllerPreviewUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      previewReportDto,)
-  }
-);}
-
-
-/**
  * Retrieve summary counts and recent events for the external sync dashboard.
  * @summary Get Sync Status
  */
@@ -2223,161 +2378,6 @@ export const enrichmentControllerUpdateConfig = async (updateEnrichmentConfigDto
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateEnrichmentConfigDto,)
-  }
-);}
-
-
-/**
- * List emails in the outbox queue.
- * @summary List emails
- */
-export type emailControllerListEmailsResponse200 = {
-  data: EmailControllerListEmails200Item[]
-  status: 200
-}
-    
-export type emailControllerListEmailsResponseSuccess = (emailControllerListEmailsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerListEmailsResponse = (emailControllerListEmailsResponseSuccess)
-
-export const getEmailControllerListEmailsUrl = (params?: EmailControllerListEmailsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/emails?${stringifiedParams}` : `/emails`
-}
-
-export const emailControllerListEmails = async (params?: EmailControllerListEmailsParams, options?: RequestInit): Promise<emailControllerListEmailsResponse> => {
-  
-  return customFetch<emailControllerListEmailsResponse>(getEmailControllerListEmailsUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * Retry sending a failed email.
- * @summary Retry a failed email
- */
-export type emailControllerRetryEmailResponse201 = {
-  data: EmailControllerRetryEmail201
-  status: 201
-}
-    
-export type emailControllerRetryEmailResponseSuccess = (emailControllerRetryEmailResponse201) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerRetryEmailResponse = (emailControllerRetryEmailResponseSuccess)
-
-export const getEmailControllerRetryEmailUrl = (id: string,) => {
-
-
-  
-
-  return `/emails/${id}/retry`
-}
-
-export const emailControllerRetryEmail = async (id: string,
-    emailControllerRetryEmailBody?: EmailControllerRetryEmailBody, options?: RequestInit): Promise<emailControllerRetryEmailResponse> => {
-  
-  return customFetch<emailControllerRetryEmailResponse>(getEmailControllerRetryEmailUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      emailControllerRetryEmailBody,)
-  }
-);}
-
-
-/**
- * Dismiss a failed email so it is no longer shown as an error.
- * @summary Dismiss a failed email
- */
-export type emailControllerDismissEmailResponse201 = {
-  data: EmailControllerDismissEmail201
-  status: 201
-}
-    
-export type emailControllerDismissEmailResponseSuccess = (emailControllerDismissEmailResponse201) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerDismissEmailResponse = (emailControllerDismissEmailResponseSuccess)
-
-export const getEmailControllerDismissEmailUrl = (id: string,) => {
-
-
-  
-
-  return `/emails/${id}/dismiss`
-}
-
-export const emailControllerDismissEmail = async (id: string,
-    emailControllerDismissEmailBody?: EmailControllerDismissEmailBody, options?: RequestInit): Promise<emailControllerDismissEmailResponse> => {
-  
-  return customFetch<emailControllerDismissEmailResponse>(getEmailControllerDismissEmailUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      emailControllerDismissEmailBody,)
-  }
-);}
-
-
-/**
- * Test SMTP connection
- * @summary test-connection
- */
-export type emailControllerTestConnectionResponse200 = {
-  data: EmailControllerTestConnection200
-  status: 200
-}
-    
-export type emailControllerTestConnectionResponseSuccess = (emailControllerTestConnectionResponse200) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerTestConnectionResponse = (emailControllerTestConnectionResponseSuccess)
-
-export const getEmailControllerTestConnectionUrl = () => {
-
-
-  
-
-  return `/emails/test-connection`
-}
-
-export const emailControllerTestConnection = async ( options?: RequestInit): Promise<emailControllerTestConnectionResponse> => {
-  
-  return customFetch<emailControllerTestConnectionResponse>(getEmailControllerTestConnectionUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
   }
 );}
 

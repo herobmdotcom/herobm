@@ -23,6 +23,7 @@ import {
   inventoryEntries,
   inventoryLedger,
   actors,
+  emailOutbox,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -39,6 +40,8 @@ import { InventoryMovementService } from '../inventory/inventory-movement.servic
 import { InventoryQueryService } from '../inventory/inventory-query.service';
 import { CustomersService } from '../customers/customers.service';
 import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EmailService } from '../email/email.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
 
 // Shared test data
 const PICKING_ORDER = {
@@ -130,7 +133,7 @@ describe('ShipmentService', () => {
 
   let mockInventoryService: any;
   let mockCustomersService: { findOne: jest.Mock };
-  let mockDocumentDispatchService: { emailDocument: jest.Mock };
+  let mockPdfTemplatesService: { runHook: jest.Mock };
 
   beforeEach(async () => {
     mockInventoryService = {
@@ -153,14 +156,19 @@ describe('ShipmentService', () => {
         emailAddress1: 'info@customer.com',
       }),
     };
-    mockDocumentDispatchService = {
-      emailDocument: jest.fn().mockResolvedValue({ success: true }),
+    mockPdfTemplatesService = {
+      runHook: jest.fn().mockResolvedValue({
+        pdfBuffer: Buffer.from('%PDF-1.4 Mock Shipping Docket Binary Content'),
+        fileName: 'ShippingDocket-SH-0001.pdf',
+      }),
     };
 
     const module: TestingModule = await setupTestModule([
       ShipmentsCoreService,
       ShipmentsWriteService,
       ShipmentsStateService,
+      EmailService,
+      DocumentDispatchService,
       {
         provide: ShipmentServiceProxy,
         useFactory: (core, write, state) =>
@@ -178,8 +186,8 @@ describe('ShipmentService', () => {
         useValue: mockCustomersService,
       },
       {
-        provide: DocumentDispatchService,
-        useValue: mockDocumentDispatchService,
+        provide: PdfTemplatesService,
+        useValue: mockPdfTemplatesService,
       },
     ])
       .overrideProvider(DRIZZLE)
@@ -191,6 +199,7 @@ describe('ShipmentService', () => {
 
     // Clean only transactional tables
     await pg.client.exec(`
+      TRUNCATE TABLE herobm_core.email_outbox CASCADE;
       TRUNCATE TABLE herobm_core.sales_order_shipment_lines CASCADE;
       TRUNCATE TABLE herobm_core.sales_order_shipments CASCADE;
       TRUNCATE TABLE herobm_core.sales_order_picks CASCADE;
@@ -541,7 +550,7 @@ describe('ShipmentService', () => {
     });
 
     describe('automated dispatch notification', () => {
-      it('should automatically email shipping docket to primary delivery contact by default', async () => {
+      it('should automatically queue email with shipping docket PDF attachment to primary delivery contact by default', async () => {
         const dto = {
           lines: [
             {
@@ -565,23 +574,33 @@ describe('ShipmentService', () => {
         expect(mockCustomersService.findOne).toHaveBeenCalledWith(
           '00000000-0000-4000-8000-000000000001',
         );
-        expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
-          expect.objectContaining({
-            targetId: result.shipmentId,
-            hookSlug: 'shipping-docket',
-            contextSlug: 'shipment',
-            entityType: 'shipment',
-            entityId: result.shipmentId,
-            emailAddress: 'delivery@customer.com',
-            subject: 'Shipping Docket: ORD-20260316-0001',
-          }),
-          expect.objectContaining({
-            username: 'admin',
-          }),
+        expect(mockPdfTemplatesService.runHook).toHaveBeenCalledWith(
+          'shipping-docket',
+          result.shipmentId,
+          'shipment',
+          expect.anything(),
+          expect.anything(),
         );
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(1);
+        expect(outboxEmails[0].toAddress).toBe('delivery@customer.com');
+        expect(outboxEmails[0].subject).toBe(
+          'Shipping Docket: ORD-20260316-0001',
+        );
+        expect(outboxEmails[0].status).toBe('pending');
+        expect(outboxEmails[0].attachments).toEqual([
+          {
+            filename: 'ShippingDocket-SH-0001.pdf',
+            contentType: 'application/pdf',
+            content: Buffer.from(
+              '%PDF-1.4 Mock Shipping Docket Binary Content',
+            ).toString('base64'),
+          },
+        ]);
       });
 
-      it('should email to specific contact when dispatchContactId is configured on sales order', async () => {
+      it('should queue email to specific contact when dispatchContactId is configured on sales order', async () => {
         await pg.db
           .update(salesOrders)
           .set({
@@ -613,16 +632,21 @@ describe('ShipmentService', () => {
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(mockDocumentDispatchService.emailDocument).toHaveBeenCalledWith(
-          expect.objectContaining({
-            targetId: result.shipmentId,
-            emailAddress: 'purchasing@customer.com',
-          }),
-          expect.anything(),
-        );
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(1);
+        expect(outboxEmails[0].toAddress).toBe('purchasing@customer.com');
+        expect(outboxEmails[0].attachments).toEqual([
+          {
+            filename: 'ShippingDocket-SH-0001.pdf',
+            contentType: 'application/pdf',
+            content: Buffer.from(
+              '%PDF-1.4 Mock Shipping Docket Binary Content',
+            ).toString('base64'),
+          },
+        ]);
       });
 
-      it('should NOT email document when dispatchContactId is explicitly set to none', async () => {
+      it('should NOT queue any email when dispatchContactId is explicitly set to none', async () => {
         await pg.db
           .update(salesOrders)
           .set({
@@ -654,15 +678,14 @@ describe('ShipmentService', () => {
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(
-          mockDocumentDispatchService.emailDocument,
-        ).not.toHaveBeenCalled();
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(0);
         expect(result).toBeDefined();
       });
 
       it('should not fail or roll back shipment if document dispatch service fails', async () => {
-        mockDocumentDispatchService.emailDocument.mockRejectedValueOnce(
-          new Error('SMTP connection failure'),
+        mockPdfTemplatesService.runHook.mockRejectedValueOnce(
+          new Error('Typst rendering failure'),
         );
 
         const dto = {
@@ -684,6 +707,9 @@ describe('ShipmentService', () => {
 
         expect(result).toBeDefined();
         expect(result.shipmentId).toBeDefined();
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(0);
       });
     });
   });

@@ -19,9 +19,11 @@ import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
 import * as api from '@herobm/sdk';
-import { PURCHASE_RETURN_STATE, getErrorMessage, computeReturnCreditSummary } from '@herobm/shared';
+import { PURCHASE_RETURN_STATE, DATA_SOURCE_CONTEXT, getErrorMessage, computeReturnCreditSummary } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import { routes } from '@/lib/routes';
+import { toast } from 'react-hot-toast';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 interface ReturnLine {
   returnLineId: string;
@@ -91,6 +93,29 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
   const [isShipModalOpen, setIsShipModalOpen] = useState(false);
   const [shipTrackingNumber, setShipTrackingNumber] = useState('');
   const [shipNotes, setShipNotes] = useState('');
+
+  // Email Dialog State
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
+  const handleGenerateReturnPdf = async (customPdfText?: string) => {
+    if (!returnDetails) return;
+    try {
+      const response = await api.pdfTemplatesControllerRunHook(
+        'purchase-return',
+        { customPdfText },
+        {
+          id: returnDetails.returnId,
+          context: DATA_SOURCE_CONTEXT.PURCHASE_RETURN,
+        },
+      );
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      reportError(err, 'EditPurchaseReturnClient:generatePdf');
+      toast.error('Failed to generate Return Slip PDF');
+    }
+  };
 
   useDocumentTitle(
     returnDetails
@@ -349,6 +374,23 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
           badges={<StateBadge state={returnDetails.stateCode as ValidState} />}
           actions={
             <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleGenerateReturnPdf()}
+              >
+                <span className="material-symbols-outlined text-[16px] mr-1">print</span>
+                Print Return Slip
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsEmailDialogOpen(true)}
+              >
+                <span className="material-symbols-outlined text-[16px] mr-1">mail</span>
+                Email Return Slip
+              </Button>
+
               {isDraft && (
                 <>
                   <Button variant="primary" size="sm" disabled={submitting} onClick={handleStageReturn}>
@@ -585,6 +627,29 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
           </div>
         </div>
       </SlideOver>
+
+      {returnDetails && (
+        <EmailDocumentDialog
+          isOpen={isEmailDialogOpen}
+          orderId={returnDetails.returnId}
+          orderNumber={returnDetails.returnNumber}
+          customerReference={returnDetails.orderNumber}
+          supplierId={returnDetails.vendorId}
+          hookSlug="purchase-return"
+          title="Email Purchase Return Slip"
+          defaultSubjectPrefix="Return Authorization"
+          documentName="Return Slip"
+          targetId={returnDetails.returnId}
+          contextSlug={DATA_SOURCE_CONTEXT.PURCHASE_RETURN}
+          onClose={() => setIsEmailDialogOpen(false)}
+          onSuccess={() => {
+            setIsEmailDialogOpen(false);
+            toast.success('Email queued successfully!');
+            fetchDetails();
+          }}
+          onPreview={(customText) => handleGenerateReturnPdf(customText)}
+        />
+      )}
     </DetailsLayout>
   );
 }

@@ -58,6 +58,9 @@ const KNOWN_CUSTOM_TEXT_HOOKS = [
   'pro-forma-invoice',
   'sales-invoice',
   'sales-return-credit',
+  'purchase-return',
+  'purchase-debit-note',
+  'customer-statement',
 ];
 
 export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, supplierId, hookSlug, title, defaultSubjectPrefix, documentName, targetId, contextSlug, onPreview, onClose, onSuccess, onSend }: EmailDocumentDialogProps) {
@@ -154,8 +157,14 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         })) as Contact[];
         setContacts(supContacts);
 
-        // Determine default TO address: primary contact for sales on the supplier (if available)
-        const primaryContact = supContacts.find(c => c.primaryFor?.includes('sales'));
+        // Determine default TO address:
+        // - purchase-debit-note: primary contact for billing, then sales
+        // - purchase-return / purchase-order: primary contact for sales, then billing
+        const billingContact = supContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'billing'));
+        const salesContact = supContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'sales'));
+        const primaryContact = hookSlug === 'purchase-debit-note'
+          ? (billingContact || salesContact)
+          : (salesContact || billingContact);
         const firstContact = supContacts.find(c => !!c.email);
 
         if (primaryContact && primaryContact.email) {
@@ -187,10 +196,19 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         })) as Contact[];
         setContacts(custContacts);
         
-        // Determine default TO address: primary delivery contact for shipping-docket, otherwise purchasing contact
-        const deliveryContact = custContacts.find(c => c.primaryFor?.includes('delivery'));
-        const purchasingContact = custContacts.find(c => c.primaryFor?.includes('purchasing'));
-        const primaryContact = hookSlug === 'shipping-docket' && deliveryContact ? deliveryContact : (purchasingContact || deliveryContact);
+        // Determine default TO address:
+        // - customer-statement: primary billing contact, then purchasing, then delivery
+        // - shipping-docket: primary delivery contact, then purchasing, then billing
+        // - others: primary purchasing contact, then billing, then delivery
+        const billingContact = custContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'billing'));
+        const deliveryContact = custContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'delivery'));
+        const purchasingContact = custContacts.find(c => c.primaryFor?.some(p => p.toLowerCase() === 'purchasing'));
+        
+        const primaryContact = hookSlug === 'customer-statement'
+          ? (billingContact || purchasingContact || deliveryContact)
+          : hookSlug === 'shipping-docket' && deliveryContact
+            ? deliveryContact
+            : (purchasingContact || billingContact || deliveryContact);
         const firstContact = custContacts.find(c => !!c.email);
         
         if (primaryContact && primaryContact.email) {
@@ -234,6 +252,36 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
     try {
       if (onSend) {
         await onSend({
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (contextSlug === 'customer-statement' || hookSlug === 'customer-statement') {
+        await api.customersControllerEmailDocument(orderId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (contextSlug === 'purchase-debit-note' || hookSlug === 'purchase-debit-note') {
+        await api.purchaseDebitNotesControllerEmailDocument(orderId, {
+          emailAddress: trimmedAddress,
+          subject,
+          body: bodyText,
+          hookSlug,
+          customPdfText,
+          targetId,
+          contextSlug,
+        });
+      } else if (contextSlug === 'purchase-return' || hookSlug === 'purchase-return') {
+        await api.globalPurchaseReturnsControllerEmailDocument(orderId, {
           emailAddress: trimmedAddress,
           subject,
           body: bodyText,

@@ -14,6 +14,10 @@ import {
   locations,
   taxCategories,
   actors,
+  transferOrders,
+  transferOrderLines,
+  transferOrderShipments,
+  transferOrderShipmentLines,
 } from '@herobm/db-schema';
 import {
   SALES_ORDER_STATE,
@@ -21,6 +25,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ACTOR_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
 
 describe('ShippingDocketService', () => {
@@ -33,12 +38,21 @@ describe('ShippingDocketService', () => {
   const PROD_A_ID = '00000000-0000-4000-8000-00000000000a';
   const PROD_B_ID = '00000000-0000-4000-8000-00000000000b';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const LOCATION_DEST_ID = '00000000-0000-4000-8000-00000000000e';
   const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
   const LINE_1_ID = '00000000-0000-4000-8000-000000000011';
   const LINE_2_ID = '00000000-0000-4000-8000-000000000012';
 
+  const TRANSFER_ORDER_ID = '00000000-0000-4000-8000-000000000020';
+  const TRANSFER_SHIPMENT_ID = '00000000-0000-4000-8000-000000000021';
+  const TRANSFER_LINE_ID = '00000000-0000-4000-8000-000000000022';
+
   beforeEach(async () => {
     // Clean data
+    await pg.db.delete(transferOrderShipmentLines);
+    await pg.db.delete(transferOrderShipments);
+    await pg.db.delete(transferOrderLines);
+    await pg.db.delete(transferOrders);
     await pg.db.delete(salesOrderShipmentLines);
     await pg.db.delete(salesOrderShipments);
     await pg.db.delete(salesOrderLineItems);
@@ -63,14 +77,33 @@ describe('ShippingDocketService', () => {
       type: 'tax_applies',
     });
 
-    // Seed Location
-    await pg.db.insert(locations).values({
-      locationId: LOCATION_ID,
-      code: 'MAIN',
-      name: 'Main Warehouse',
-      source: 'app',
-      createdBy: 'system',
-    });
+    // Seed Locations
+    await pg.db.insert(locations).values([
+      {
+        locationId: LOCATION_ID,
+        code: 'MAIN',
+        name: 'Main Warehouse',
+        addressLine1: '100 Logistics Way',
+        city: 'Brisbane',
+        stateOrProvince: 'QLD',
+        postalCode: '4000',
+        country: 'Australia',
+        source: 'app',
+        createdBy: 'system',
+      },
+      {
+        locationId: LOCATION_DEST_ID,
+        code: 'BRANCH',
+        name: 'Branch Warehouse',
+        addressLine1: '200 Commercial Rd',
+        city: 'Sydney',
+        stateOrProvince: 'NSW',
+        postalCode: '2000',
+        country: 'Australia',
+        source: 'app',
+        createdBy: 'system',
+      },
+    ]);
 
     // Seed Customer Actor
     const customerActorId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
@@ -124,12 +157,22 @@ describe('ShippingDocketService', () => {
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
       customerId: CUSTOMER_ID,
+      customerOrderNumber: 'PO-9988',
       stateCode: SALES_ORDER_STATE.CONFIRMED,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
       baseTotalAmount: '0',
       exchangeRate: '1',
       discrepanciesAcknowledged: false,
+      deliveryName: 'Jane Doe',
+      deliveryCompanyName: 'Acme Receiving',
+      deliveryPhone: '0412345678',
+      deliveryAddressLine1: '456 Delivery Lane',
+      deliveryCity: 'Brisbane',
+      deliveryState: 'QLD',
+      deliveryPostalCode: '4001',
+      deliveryCountry: 'Australia',
+      shippingNotes: 'Leave at front desk',
       source: 'app',
       createdBy: 'system',
     });
@@ -195,6 +238,42 @@ describe('ShippingDocketService', () => {
       },
     ]);
 
+    // Seed Transfer Order & Shipment
+    await pg.db.insert(transferOrders).values({
+      transferOrderId: TRANSFER_ORDER_ID,
+      orderNumber: 'TO-100',
+      sourceLocationId: LOCATION_ID,
+      destinationLocationId: LOCATION_DEST_ID,
+      stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
+      shippingNotes: 'Urgent branch transfer',
+      createdBy: 'system',
+    });
+
+    await pg.db.insert(transferOrderLines).values({
+      transferOrderLineId: TRANSFER_LINE_ID,
+      transferOrderId: TRANSFER_ORDER_ID,
+      productId: PROD_A_ID,
+      quantity: '4',
+      quantityShipped: '4',
+      quantityReceived: '0',
+    });
+
+    await pg.db.insert(transferOrderShipments).values({
+      shipmentId: TRANSFER_SHIPMENT_ID,
+      shipmentNumber: 'TSH-001',
+      transferOrderId: TRANSFER_ORDER_ID,
+      trackingNumber: 'TRK-TO-1',
+      stateCode: SHIPMENT_STATE.DISPATCHED,
+      shippedBy: 'system',
+    });
+
+    await pg.db.insert(transferOrderShipmentLines).values({
+      shipmentId: TRANSFER_SHIPMENT_ID,
+      transferOrderLineId: TRANSFER_LINE_ID,
+      productId: PROD_A_ID,
+      quantity: '4',
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [ShippingDocketService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
@@ -209,15 +288,24 @@ describe('ShippingDocketService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should assemble correct header data', async () => {
+    it('should assemble correct header and delivery data for sales order shipment', async () => {
       const data = await service.assembleData(SHIPMENT_ID);
       expect(data.header.shipmentNumber).toBe('SHIP-001');
       expect(data.header.orderNumber).toBe('ORD-001');
       expect(data.header.customerName).toBe('Acme Corp');
+      expect(data.header.customerOrderNumber).toBe('PO-9988');
       expect(data.header.trackingNumber).toBe('TRACK123');
       expect(data.header.notes).toBe('Fragile items');
-      expect(data.header.customerAddress).toContain('123 Fake St');
-      expect(data.header.customerAddress).toContain('Springfield');
+      expect(data.header.deliveryName).toBe('Jane Doe');
+      expect(data.header.deliveryCompanyName).toBe('Acme Receiving');
+      expect(data.header.deliveryPhone).toBe('0412345678');
+      expect(data.header.deliveryAddressLine1).toBe('456 Delivery Lane');
+      expect(data.header.deliveryCity).toBe('Brisbane');
+      expect(data.header.shippingNotes).toBe('Leave at front desk');
+      expect(data.header.customerAddress).toContain('456 Delivery Lane');
+      expect(data.header.customerAddress).toContain('Brisbane');
+      expect(data.totalQuantity).toBe(8);
+      expect(data.totalLines).toBe(2);
     });
 
     it('should assemble correct line data', async () => {
@@ -231,6 +319,22 @@ describe('ShippingDocketService', () => {
       const lineB = data.lines.find((l) => l.productCode === 'PROD-B');
       expect(lineB?.quantityShipped).toBe(5);
       expect(lineB?.description).toBe('Gadget Beta');
+    });
+
+    it('should assemble correct data for transfer order shipment', async () => {
+      const data = await service.assembleData(TRANSFER_SHIPMENT_ID);
+      expect(data.header.shipmentNumber).toBe('TSH-001');
+      expect(data.header.orderNumber).toBe('TO-100');
+      expect(data.header.customerName).toBe('Branch Warehouse');
+      expect(data.header.trackingNumber).toBe('TRK-TO-1');
+      expect(data.header.deliveryAddressLine1).toBe('200 Commercial Rd');
+      expect(data.header.deliveryCity).toBe('Sydney');
+      expect(data.header.shippingNotes).toBe('Urgent branch transfer');
+      expect(data.lines).toHaveLength(1);
+      expect(data.lines[0].productCode).toBe('PROD-A');
+      expect(data.lines[0].quantityShipped).toBe(4);
+      expect(data.totalQuantity).toBe(4);
+      expect(data.totalLines).toBe(1);
     });
   });
 });
