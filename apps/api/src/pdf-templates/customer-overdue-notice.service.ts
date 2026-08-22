@@ -2,6 +2,7 @@ import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
 import { eq, and, notInArray, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 import {
   customers,
   actors,
@@ -62,7 +63,10 @@ export interface CustomerOverdueNoticeData {
 
 @Injectable()
 export class CustomerOverdueNoticeService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
+  ) {}
 
   private readonly logger = new Logger(CustomerOverdueNoticeService.name);
 
@@ -247,7 +251,7 @@ export class CustomerOverdueNoticeService {
         noticeDate: now.toLocaleDateString('en-IE'),
         paymentTerms: cust.termsDescription || cust.termsCode || '30 Days',
         creditLimit: cust.creditLimit?.toString() || '',
-        currencyCode: cust.currencyCode || 'AUD',
+        currencyCode: cust.currencyCode || this.appConfig.homeCurrency(),
         state: cust.stateCode,
         noticeLevel,
         noticeTitle,

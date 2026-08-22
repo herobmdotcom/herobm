@@ -9,6 +9,7 @@ import {
   customers,
   actors,
 } from '@herobm/db-schema';
+import { AppConfigService } from '../settings/app-config.service';
 
 export interface CustomerPaymentReceiptData {
   header: {
@@ -47,7 +48,10 @@ export interface CustomerPaymentReceiptData {
 
 @Injectable()
 export class CustomerPaymentReceiptService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
+  ) {}
 
   private readonly logger = new Logger(CustomerPaymentReceiptService.name);
 
@@ -195,7 +199,7 @@ export class CustomerPaymentReceiptService {
         paymentDate: pmtDateStr,
         modeOfPayment: pmt.modeOfPayment || 'EFT',
         referenceNumber: pmt.referenceNumber || '',
-        currencyCode: pmt.currencyCode || 'AUD',
+        currencyCode: pmt.currencyCode || this.appConfig.homeCurrency(),
         state: pmt.stateCode,
         customerId: customerDetails.customerId,
         customerNumber: customerDetails.customerNumber,
