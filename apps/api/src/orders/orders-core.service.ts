@@ -193,7 +193,10 @@ export class OrdersCoreService {
               .customerGroupTaxPositionId as string | undefined) ||
             this.appConfig.getAppSettingsRaw()?.defaultCustomerTaxPositionId ||
             null,
-          productId: productId || null,
+          productId:
+            productId === '00000000-0000-4000-8000-000000000000'
+              ? null
+              : productId || null,
           productDefaultTaxCategoryId: null,
           manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
         },
@@ -220,12 +223,20 @@ export class OrdersCoreService {
     }
 
     // 4. Fallback: system default
-    const defaultGst = await this.taxService.getDefaultSalesTax(tx);
-    return {
-      taxCategoryId: defaultGst.taxCategoryId,
-      rate: parseFloat(defaultGst.rate ?? '0'),
-      taxProvider,
-    };
+    try {
+      const defaultGst = await this.taxService.getDefaultSalesTax(tx);
+      return {
+        taxCategoryId: defaultGst.taxCategoryId,
+        rate: parseFloat(defaultGst.rate ?? '0'),
+        taxProvider,
+      };
+    } catch {
+      return {
+        taxCategoryId: '',
+        rate: 0,
+        taxProvider,
+      };
+    }
   }
 
   /**

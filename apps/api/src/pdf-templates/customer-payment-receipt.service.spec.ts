@@ -9,7 +9,16 @@ describe('CustomerPaymentReceiptService', () => {
     mockDb = {
       select: jest.fn(),
     };
-    service = new CustomerPaymentReceiptService(mockDb);
+    const mockAppConfig: any = {
+      getRemittanceBankDetails: jest.fn().mockResolvedValue({
+        bankName: 'Test Bank',
+        accountName: 'Test Account',
+        bsb: '123-456',
+        accountNumber: '12345678',
+        remittanceEmail: 'remittance@example.com',
+      }),
+    };
+    service = new CustomerPaymentReceiptService(mockDb, mockAppConfig);
   });
 
   it('should throw NotFoundException if payment does not exist', async () => {

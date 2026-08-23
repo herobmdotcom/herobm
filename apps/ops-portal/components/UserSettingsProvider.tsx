@@ -41,6 +41,12 @@ function applyDensityToDom(density: DisplayDensity): void {
   }
 }
 
+function applyLocaleToDom(): void {
+  if (typeof document !== 'undefined' && typeof navigator !== 'undefined' && navigator.language) {
+    document.documentElement.lang = navigator.language;
+  }
+}
+
 interface UserSettingsContextType {
   settings: api.UserSettingsResponseDto | null;
   preferences: UserPreferences;
@@ -72,8 +78,9 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
   const [preferences, setPreferences] = useState<UserPreferences>(() => readStoredPreferences());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Apply density on initial render immediately
+  // Apply locale and density on initial render immediately
   useEffect(() => {
+    applyLocaleToDom();
     applyDensityToDom(preferences.density || 'comfortable');
   }, [preferences.density]);
 

@@ -206,6 +206,10 @@ export const routes = {
       abm: () => '/admin/import/abm',
       odoo: () => '/admin/import/odoo',
     },
+    export: {
+      csv: (table?: string) => table ? `/admin/export/csv?table=${table}` : '/admin/export/csv',
+      index: () => '/admin/export/csv',
+    },
     eventQueue: () => '/admin/event-queue',
     systemLogs: () => '/admin/system-logs',
     version: () => '/admin/version',

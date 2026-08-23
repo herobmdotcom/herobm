@@ -115,8 +115,16 @@ export class BusinessReportsService {
     if (finalFilters._dateRange) {
       const dateRange = finalFilters._dateRange as DateRangeConfig;
       const { fromDate, toDate } = resolveDateRangeFilter(dateRange);
-      if (fromDate) finalFilters.fromDate = fromDate;
-      if (toDate) finalFilters.toDate = toDate;
+      if (fromDate) {
+        finalFilters.fromDate = fromDate;
+      } else {
+        delete finalFilters.fromDate;
+      }
+      if (toDate) {
+        finalFilters.toDate = toDate;
+      } else {
+        delete finalFilters.toDate;
+      }
       delete finalFilters._dateRange;
     }
 

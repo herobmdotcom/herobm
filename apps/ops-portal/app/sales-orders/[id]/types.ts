@@ -1,7 +1,8 @@
 export interface OrderLine {
     salesOrderLineId: string;
     lineNumber: number;
-    productId: string;
+    lineType?: string | null;
+    productId?: string | null;
     productNumber?: string;
     productType?: string;
     productDescription: string;

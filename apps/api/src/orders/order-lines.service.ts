@@ -8,6 +8,7 @@ import {
   PRODUCT_STATE,
   getErrorMessage,
   normalizeUomCode,
+  LineType,
 } from '@herobm/shared';
 import {
   Injectable,
@@ -125,44 +126,52 @@ export class OrderLinesService {
       );
     }
 
+    const isComment = dto.lineType === LineType.COMMENT;
     const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
-    if (dto.productId) {
-      await this.coreService.validateProduct(dto.productId);
 
-      // Check if product already exists in this order (exempting Custom Lines)
-      if (dto.productId !== CUSTOM_LINE_ID) {
-        const existingLine = await this.db
-          .select({ id: salesOrderLineItems.salesOrderLineId })
-          .from(salesOrderLineItems)
-          .where(
-            sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
-          )
-          .limit(1);
+    let taxCategoryId: string | null = null;
+    let taxRate = 0;
+    let isExternalTax = false;
+    const lineDiscount = dto.discountPercentage ?? '0';
 
-        if (existingLine.length > 0) {
-          throw new BadRequestException(
-            `Product '${dto.productId}' is already present in this order.`,
-          );
+    if (!isComment) {
+      if (dto.productId) {
+        await this.coreService.validateProduct(dto.productId);
+
+        // Check if product already exists in this order (exempting Custom Lines)
+        if (dto.productId !== CUSTOM_LINE_ID) {
+          const existingLine = await this.db
+            .select({ id: salesOrderLineItems.salesOrderLineId })
+            .from(salesOrderLineItems)
+            .where(
+              sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
+            )
+            .limit(1);
+
+          if (existingLine.length > 0) {
+            throw new BadRequestException(
+              `Product '${dto.productId}' is already present in this order.`,
+            );
+          }
         }
       }
-    }
 
-    // Resolve GST: product × customer intersection, with per-line override
-    const lineTax = await this.coreService.resolveTaxForLine(
-      order.customerId ?? '',
-      dto.productId,
-      dto.taxCategoryId,
-    );
-    const taxCategoryId = lineTax.taxCategoryId;
-    const isExternalTax = lineTax.taxProvider !== 'internal';
-    const taxRate = isExternalTax ? 0 : lineTax.rate;
-
-    const lineDiscount = dto.discountPercentage ?? '0';
-    const parsedDiscount = parseFloat(lineDiscount);
-    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
-      throw new BadRequestException(
-        'Discount percentage must be between 0 and 100',
+      // Resolve GST: product × customer intersection, with per-line override
+      const lineTax = await this.coreService.resolveTaxForLine(
+        order.customerId ?? '',
+        dto.productId,
+        dto.taxCategoryId,
       );
+      taxCategoryId = lineTax.taxCategoryId;
+      isExternalTax = lineTax.taxProvider !== 'internal';
+      taxRate = isExternalTax ? 0 : lineTax.rate;
+
+      const parsedDiscount = parseFloat(lineDiscount);
+      if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+        throw new BadRequestException(
+          'Discount percentage must be between 0 and 100',
+        );
+      }
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -202,7 +211,28 @@ export class OrderLinesService {
       const insertValues: (typeof salesOrderLineItems.$inferInsert)[] = [];
       let parentLine: typeof salesOrderLineItems.$inferInsert | null = null;
 
-      if (isKit) {
+      if (isComment) {
+        parentLine = {
+          salesOrderLineId: parentLineId,
+          salesOrderId: orderId,
+          lineNumber: currentLineNumber++,
+          lineType: LineType.COMMENT,
+          productId: null,
+          productDescription: dto.productDescription,
+          quantity: '0',
+          pricePerUnit: '0',
+          unitCost: '0',
+          discountPercentage: '0',
+          taxCategoryId: null,
+          amount: '0',
+          tax: '0',
+          totalAmount: '0',
+          unitOfMeasure: null,
+          fulfillmentLocationId: null,
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+      } else if (isKit) {
         const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
         const parentComputed = this.coreService.computeLineAmount(
           dto.quantity,
@@ -376,25 +406,51 @@ export class OrderLinesService {
       );
     }
 
+    const isComment = dto.lineType === LineType.COMMENT;
     const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
-    if (dto.productId) {
-      await this.coreService.validateProduct(dto.productId);
 
-      // Check if product already exists in this order (exempting Custom Lines)
-      if (dto.productId !== CUSTOM_LINE_ID) {
-        const existingLine = await this.db
-          .select({ id: salesOrderLineItems.salesOrderLineId })
-          .from(salesOrderLineItems)
-          .where(
-            sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
-          )
-          .limit(1);
+    let taxCategoryId: string | null = null;
+    let taxRate = 0;
+    let isExternalTax = false;
+    const lineDiscount = dto.discountPercentage ?? '0';
 
-        if (existingLine.length > 0) {
-          throw new BadRequestException(
-            `Product '${dto.productId}' is already present in this order.`,
-          );
+    if (!isComment) {
+      if (dto.productId) {
+        await this.coreService.validateProduct(dto.productId);
+
+        // Check if product already exists in this order (exempting Custom Lines)
+        if (dto.productId !== CUSTOM_LINE_ID) {
+          const existingLine = await this.db
+            .select({ id: salesOrderLineItems.salesOrderLineId })
+            .from(salesOrderLineItems)
+            .where(
+              sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
+            )
+            .limit(1);
+
+          if (existingLine.length > 0) {
+            throw new BadRequestException(
+              `Product '${dto.productId}' is already present in this order.`,
+            );
+          }
         }
+      }
+
+      // Resolve GST: product × customer intersection, with per-line override
+      const lineTax = await this.coreService.resolveTaxForLine(
+        order.customerId ?? '',
+        dto.productId,
+        dto.taxCategoryId,
+      );
+      taxCategoryId = lineTax.taxCategoryId;
+      isExternalTax = lineTax.taxProvider !== 'internal';
+      taxRate = isExternalTax ? 0 : lineTax.rate;
+
+      const parsedDiscount = parseFloat(lineDiscount);
+      if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+        throw new BadRequestException(
+          'Discount percentage must be between 0 and 100',
+        );
       }
     }
 
@@ -407,25 +463,6 @@ export class OrderLinesService {
       .where(eq(salesOrderLineItems.salesOrderId, orderId));
 
     let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
-
-    // Resolve GST: product × customer intersection, with per-line override
-    const lineTax = await this.coreService.resolveTaxForLine(
-      order.customerId ?? '',
-      dto.productId,
-      dto.taxCategoryId,
-    );
-    const taxCategoryId = lineTax.taxCategoryId;
-    const isExternalTax = lineTax.taxProvider !== 'internal';
-    const taxRate = isExternalTax ? 0 : lineTax.rate;
-
-    const lineDiscount = dto.discountPercentage ?? '0';
-    const parsedDiscount = parseFloat(lineDiscount);
-    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
-      throw new BadRequestException(
-        'Discount percentage must be between 0 and 100',
-      );
-    }
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       let isKit = false;
       const parentPrice = parseFloat(dto.pricePerUnit || '0');
@@ -446,7 +483,29 @@ export class OrderLinesService {
       const insertValues: (typeof salesOrderLineItems.$inferInsert)[] = [];
       let parentLine: typeof salesOrderLineItems.$inferInsert | null = null;
 
-      if (isKit) {
+      if (isComment) {
+        parentLine = {
+          salesOrderLineId: parentLineId,
+          salesOrderId: orderId,
+          lineNumber: currentLineNumber++,
+          lineType: LineType.COMMENT,
+          productId: null,
+          productDescription: dto.productDescription,
+          quantity: '0',
+          pricePerUnit: '0',
+          unitCost: '0',
+          discountPercentage: '0',
+          taxCategoryId: null,
+          amount: '0',
+          tax: '0',
+          totalAmount: '0',
+          unitOfMeasure: null,
+          fulfillmentLocationId: null,
+          isPostConfirmation: true,
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+      } else if (isKit) {
         const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
         const parentComputed = this.coreService.computeLineAmount(
           dto.quantity,
@@ -639,33 +698,50 @@ export class OrderLinesService {
       }
     }
 
-    // Resolve GST: DTO override → existing line category → default product/customer resolution
-    const resolvedTax = await this.coreService.resolveTaxForLine(
-      order.customerId ?? '',
-      existingLine.productId ?? undefined,
-      dto.taxCategoryId ?? existingLine.taxCategoryId ?? undefined,
-    );
-    const taxCategoryId = resolvedTax.taxCategoryId;
-    const isExternalTax = resolvedTax.taxProvider !== 'internal';
-    const taxRate = isExternalTax ? 0 : resolvedTax.rate;
+    const isComment =
+      (dto.lineType ?? existingLine.lineType) === (LineType.COMMENT as string);
 
-    const quantity = dto.quantity ?? existingLine.quantity;
-    const pricePerUnit = dto.pricePerUnit ?? existingLine.pricePerUnit;
-    const discountPercentage =
-      dto.discountPercentage ?? existingLine.discountPercentage ?? '0';
-    const parsedDiscount = parseFloat(discountPercentage);
-    if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
-      throw new BadRequestException(
-        'Discount percentage must be between 0 and 100',
+    let taxCategoryId: string | null = null;
+    let isExternalTax = false;
+    let taxRate = 0;
+
+    if (!isComment) {
+      // Resolve GST: DTO override → existing line category → default product/customer resolution
+      const resolvedTax = await this.coreService.resolveTaxForLine(
+        order.customerId ?? '',
+        existingLine.productId ?? undefined,
+        dto.taxCategoryId ?? existingLine.taxCategoryId ?? undefined,
       );
+      taxCategoryId = resolvedTax.taxCategoryId;
+      isExternalTax = resolvedTax.taxProvider !== 'internal';
+      taxRate = isExternalTax ? 0 : resolvedTax.rate;
     }
 
-    const computed = this.coreService.computeLineAmount(
-      quantity,
-      pricePerUnit,
-      discountPercentage,
-      taxRate,
-    );
+    const quantity = isComment ? '0' : (dto.quantity ?? existingLine.quantity);
+    const pricePerUnit = isComment
+      ? '0'
+      : (dto.pricePerUnit ?? existingLine.pricePerUnit);
+    const discountPercentage = isComment
+      ? '0'
+      : (dto.discountPercentage ?? existingLine.discountPercentage ?? '0');
+
+    if (!isComment) {
+      const parsedDiscount = parseFloat(discountPercentage);
+      if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+        throw new BadRequestException(
+          'Discount percentage must be between 0 and 100',
+        );
+      }
+    }
+
+    const computed = isComment
+      ? { amount: '0', tax: '0', totalAmount: '0' }
+      : this.coreService.computeLineAmount(
+          quantity,
+          pricePerUnit,
+          discountPercentage,
+          taxRate,
+        );
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
@@ -833,13 +909,21 @@ export class OrderLinesService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      const resolvedTax = await this.coreService.resolveTaxForLine(
-        order.customerId ?? '',
-        existingLine.productId ?? undefined,
-        undefined,
-        tx,
-      );
-      const isExternalTax = resolvedTax.taxProvider !== 'internal';
+      const isComment = existingLine.lineType === (LineType.COMMENT as string);
+      let isExternalTax = false;
+      if (!isComment && existingLine.productId) {
+        try {
+          const resolvedTax = await this.coreService.resolveTaxForLine(
+            order.customerId ?? '',
+            existingLine.productId ?? undefined,
+            undefined,
+            tx,
+          );
+          isExternalTax = resolvedTax.taxProvider !== 'internal';
+        } catch {
+          isExternalTax = false;
+        }
+      }
       await this.coreService.setTaxIsStale(orderId, isExternalTax, tx);
 
       const [product] = existingLine.productId

@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { CreateOrderLineDtoLineType } from './createOrderLineDtoLineType';
 
 export interface CreateOrderLineDto {
+  lineType?: CreateOrderLineDtoLineType;
   productId?: string;
   productDescription?: string;
   quantity: string;

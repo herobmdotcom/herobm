@@ -16,6 +16,7 @@ import * as crypto from 'crypto';
 // Load environment from monorepo root .env
 const rootEnv = path.resolve(__dirname, '..', '..', '..', '..', '.env');
 dotenv.config({ path: rootEnv });
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -164,6 +165,13 @@ async function isTemplateValid(
   user: string,
   password?: string,
 ): Promise<boolean> {
+  if (
+    process.argv.includes('--force') ||
+    process.env.FORCE_REBUILD_E2E_TEMPLATE === 'true'
+  ) {
+    return false;
+  }
+
   const [exists] = await adminSql`
     SELECT 1 FROM pg_database WHERE datname = ${TEMPLATE_DB_NAME}
   `;
@@ -184,7 +192,17 @@ async function isTemplateValid(
     const [row] = await templateSql`
       SELECT value FROM herobm_core._e2e_template_meta WHERE key = 'fingerprint'
     `;
-    return row?.value === currentFingerprint;
+    if (row?.value !== currentFingerprint) return false;
+
+    const [adminUser] = await templateSql`
+      SELECT password_hash FROM herobm_core.users WHERE username = 'admin'
+    `;
+    if (!adminUser?.password_hash) return false;
+    const bcrypt = await import('bcrypt');
+    return bcrypt.compareSync(
+      process.env.ADMIN_PASSWORD || 'password',
+      adminUser.password_hash,
+    );
   } catch {
     return false;
   } finally {

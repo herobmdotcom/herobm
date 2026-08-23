@@ -75,7 +75,7 @@ export class TransfersWriteService {
         );
       }
 
-      const destLocationId = lines[0].locationId;
+      const destLocationId = lines[0].locationId!;
       if (!lines.every((l) => l.locationId === destLocationId)) {
         throw new BadRequestException(
           'All demands must be for the same destination location',

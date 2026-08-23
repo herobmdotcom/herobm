@@ -10,7 +10,16 @@ describe('CustomerOverdueNoticeService', () => {
     mockDb = {
       select: jest.fn(),
     };
-    service = new CustomerOverdueNoticeService(mockDb);
+    const mockAppConfig: any = {
+      getRemittanceBankDetails: jest.fn().mockResolvedValue({
+        bankName: 'Test Bank',
+        accountName: 'Test Account',
+        bsb: '123-456',
+        accountNumber: '12345678',
+        remittanceEmail: 'remittance@example.com',
+      }),
+    };
+    service = new CustomerOverdueNoticeService(mockDb, mockAppConfig);
   });
 
   it('should throw NotFoundException if customer does not exist', async () => {

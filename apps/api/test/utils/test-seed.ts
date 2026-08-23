@@ -91,6 +91,21 @@ export async function seedTestUsers(db: SeedDB, dryRun = false) {
     return;
   }
 
+  const adminPass = process.env.ADMIN_PASSWORD || 'password'; // TEST_CREDENTIAL
+  const adminHash = await bcrypt.hash(adminPass, 10);
+  await db
+    .insert(users)
+    .values({
+      username: 'admin',
+      passwordHash: adminHash,
+      role: 'admin',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: adminHash, role: 'admin', isActive: true },
+    });
+
   const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password'; // TEST_CREDENTIAL
   const viewerHash = await bcrypt.hash(viewerPass, 10);
   const salesHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL

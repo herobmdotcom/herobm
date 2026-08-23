@@ -17244,6 +17244,58 @@
         ]
       }
     },
+    "/setup/export-csv/{tableName}": {
+      "get": {
+        "description": "Exports table records as a CSV file compatible with CSV import.",
+        "operationId": "SetupController_exportCsv",
+        "parameters": [
+          {
+            "name": "tableName",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "description": "Whether to include archived/inactive records",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Optional maximum number of records to export",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file download",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export Table as CSV",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/setup/execute-csv": {
       "post": {
         "description": "Uploads and processes a CSV file for data import.",
@@ -22039,6 +22091,9 @@
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
+          "stateCode": {
+            "type": "string"
+          },
           "groupCode": {
             "type": "string"
           },
@@ -22086,6 +22141,9 @@
           },
           "earlyPaymentDiscountDays": {
             "type": "number"
+          },
+          "stateCode": {
+            "type": "string"
           },
           "groupCode": {
             "type": "string"
@@ -26517,6 +26575,13 @@
       "CreateOrderLineDto": {
         "type": "object",
         "properties": {
+          "lineType": {
+            "enum": [
+              "Product",
+              "Comment"
+            ],
+            "type": "string"
+          },
           "productId": {
             "type": "string"
           },
@@ -26664,6 +26729,13 @@
       "UpdateOrderLineDto": {
         "type": "object",
         "properties": {
+          "lineType": {
+            "type": "string",
+            "enum": [
+              "Product",
+              "Comment"
+            ]
+          },
           "quantity": {
             "type": "string"
           },

@@ -86,15 +86,16 @@ export const purchaseOrderLineItems = herobmCore.table(
       .notNull()
       .references(() => purchaseOrders.purchaseOrderId),
     lineNumber: integer('line_number').notNull(),
+    lineType: text('line_type').notNull().default('Product'),
     productId: uuid('product_id').references(() => products.productId),
     productDescription: text('product_description'),
     quantity: numeric('quantity').notNull(),
     pricePerUnit: numeric('price_per_unit').notNull(),
     discountPercentage: numeric('discount_percentage'),
     amount: numeric('amount'),
-    taxCategoryId: uuid('tax_category_id')
-      .notNull()
-      .references(() => taxCategories.taxCategoryId),
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
+    ),
     tax: numeric('tax'),
     totalAmount: numeric('total_amount'),
     unitOfMeasure: text('unit_of_measure'),
@@ -107,6 +108,10 @@ export const purchaseOrderLineItems = herobmCore.table(
       .where(
         sql`${t.purchaseOrderId} != '00000000-0000-4000-8000-000000000001'`,
       ),
+    productLineCheck: check(
+      'purchase_order_lines_product_check',
+      sql`(line_type = 'Product' AND tax_category_id IS NOT NULL) OR line_type = 'Comment'`,
+    ),
   }),
 );
 

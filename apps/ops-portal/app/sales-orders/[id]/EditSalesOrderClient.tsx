@@ -251,7 +251,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
         saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
-        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
+        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
         loadOrder, loadReturns, loadInvoices,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
         customerDeliveryAddresses,
@@ -459,7 +459,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     isPostConfirmationAddingEnabled={isPostConfirmationAddingEnabled}
                     setIsPostConfirmationAddingEnabled={setIsPostConfirmationAddingEnabled}
                     addLineFromProduct={addLineFromProduct}
-                    addBlankLine={addPostConfirmationBlankLine}
+                    addBlankLine={addBlankLine}
+                    addCommentLine={addCommentLine}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
                     updateLine={updateLine as any}
                     updateLineFields={updateLineFields}

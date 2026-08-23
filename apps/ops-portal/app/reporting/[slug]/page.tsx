@@ -164,7 +164,7 @@ export default function ReportViewer() {
     if (!report) return;
     setIsLoadingData(true);
     setFilteredChartData(null);
-    businessReportsControllerRunReport(slug, overrideFilters || filters)
+    businessReportsControllerRunReport(slug, { filters: overrideFilters || filters })
       .then((res) => setReportData(res.data))
       .catch(console.error)
       .finally(() => setIsLoadingData(false));

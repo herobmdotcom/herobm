@@ -9,13 +9,19 @@ import {
   IsEmail,
   IsBoolean,
   IsIn,
+  IsEnum,
   IsInt,
   Min,
   Max,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { RETURN_RESOLUTION, type ReturnResolution } from '@herobm/shared';
+import {
+  RETURN_RESOLUTION,
+  type ReturnResolution,
+  LineType,
+} from '@herobm/shared';
 import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class OrderCustomFieldsDto {
@@ -61,6 +67,10 @@ export class ReturnResponseDto {
 
 export class CreateOrderLineDto {
   @IsOptional()
+  @IsEnum(LineType)
+  lineType?: LineType;
+
+  @IsOptional()
   @IsString()
   productId?: string;
 
@@ -68,9 +78,11 @@ export class CreateOrderLineDto {
   @IsString()
   productDescription?: string;
 
+  @ValidateIf((o) => o.lineType !== LineType.COMMENT)
   @IsNumberString()
   quantity!: string;
 
+  @ValidateIf((o) => o.lineType !== LineType.COMMENT)
   @IsNumberString()
   pricePerUnit!: string;
 
@@ -101,6 +113,10 @@ export class CreateOrderLineDto {
 }
 
 export class UpdateOrderLineDto {
+  @IsOptional()
+  @IsEnum(LineType)
+  lineType?: LineType;
+
   @IsOptional()
   @IsNumberString()
   quantity?: string;

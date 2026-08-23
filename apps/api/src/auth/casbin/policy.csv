@@ -61,6 +61,8 @@ p, admin, payments, write, allow
 p, admin, system_logs, read, allow
 p, admin, setup, execute, allow
 p, admin, setup, read, allow
+p, admin, import, read, allow
+p, admin, import, write, allow
 p, admin, api_keys, read, allow
 p, admin, api_keys, write, allow
 p, admin, webhooks, read, allow

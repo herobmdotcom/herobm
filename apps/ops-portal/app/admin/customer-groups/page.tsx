@@ -216,6 +216,7 @@ export default function AccountGroupsAdmin() {
             earlyPaymentDiscount: '',
             earlyPaymentDiscountDays: undefined,
             customerGroupId: '',
+            stateCode: CUSTOMER_STATE.ACTIVE,
           })}
           addLabel={t('newGroup')}
           emptyLabel={loading ? null : t('noGroups')}

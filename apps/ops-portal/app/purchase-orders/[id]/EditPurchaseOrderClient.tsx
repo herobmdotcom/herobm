@@ -3,12 +3,11 @@
 import { use, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity, PURCHASE_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { calculateAvailableQuantity, PURCHASE_ORDER_STATE, DATA_SOURCE_CONTEXT, calculateUomPriceAdjustment, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount, CURRENCIES, getCurrency } from '@/lib/currency';
-import { calculateUomPriceAdjustment } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -88,7 +87,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
     invoices, setInvoicing,
     clearError, setError, saveHeader, changeState, archivePurchaseOrder, unarchivePurchaseOrder, copyOrder,
-    updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine,
+    updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addCommentLine,
     loadOrder, loadInvoices, loadAllocations, allocations, allocationsLoading,
   } = o;
 
@@ -102,22 +101,37 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     },
     {
         header: tPurchase('columns.product'),
-        render: (line) => (
-            <div className="font-semibold text-sm">
-                {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                    <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
-                        {line.productNumber || line.productId?.substring(0, 8)}
-                    </Link>
-                ) : (
-                    line.productNumber || line.productId?.substring(0, 8) || '—'
-                )}
-            </div>
-        )
+        render: (line) => {
+            const isComment = line.lineType === LineType.COMMENT;
+            if (isComment) {
+                return (
+                    <div className="font-semibold text-xs flex items-center">
+                        <span className="text-[var(--text-muted)] font-medium text-xs">
+                            COMMENT
+                        </span>
+                    </div>
+                );
+            }
+            const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE';
+            return (
+                <div className="font-semibold text-sm">
+                    {!isCustom && line.productId ? (
+                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
+                            {line.productNumber || line.productId?.substring(0, 8)}
+                        </Link>
+                    ) : (
+                        <span className="text-[var(--text-muted)] font-medium text-xs">CUSTOM</span>
+                    )}
+                </div>
+            );
+        }
     },
     {
         header: tPurchase('columns.description'),
-        render: (line) => (
-            (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
+        render: (line) => {
+            const isComment = line.lineType === LineType.COMMENT;
+            const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE';
+            return (isCustom || isComment) && isLinesEditable ? (
                 <input
                     className="input w-full text-sm h-8"
                     defaultValue={line.productDescription || ''}
@@ -127,17 +141,20 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                             updateLine(line.purchaseOrderLineId, 'productDescription', e.target.value);
                         }
                     }}
-                    placeholder="Custom description..."
+                    placeholder={isComment ? 'Enter comment / note…' : 'Custom description...'}
                 />
             ) : (
                 <span className="text-sm">{line.productDescription || '—'}</span>
-            )
-        )
+            );
+        }
     },
     {
         header: tPurchase('columns.qty'), width: 90, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
+            return isLinesEditable ? (
                 <input
                     className="input text-right w-full h-8 text-sm"
                     type="number"
@@ -151,15 +168,18 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         }
                     }}
                 />
-            ) : <span className="text-sm tabular-nums">{parseFloat(line.quantity || '0')}</span>
-        ),
-        mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.qty')} value={
+            ) : <span className="text-sm tabular-nums">{parseFloat(line.quantity || '0')}</span>;
+        },
+        mobileCard: (line, defaultRender) => line.lineType === LineType.COMMENT ? null : <MobileCardField label={tPurchase('columns.qty')} value={
             isLinesEditable ? defaultRender : <span className="text-sm">{parseFloat(line.quantity || '0')} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
     },
     {
         header: tPurchase('columns.uom'), width: 80, align: 'right',
         render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
             if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>;
             const uoms: ProductUom[] = line.productUoms || [];
             const defaultUom = line.baseUom || tCommon('ea');
@@ -194,8 +214,11 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     },
     {
         header: tPurchase('columns.unitPrice'), width: 110, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
+            return isLinesEditable ? (
                 <input
                     className="input text-right w-full h-8 text-sm tabular-nums"
                     type="number"
@@ -212,14 +235,17 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         }
                     }}
                 />
-            ) : <span className="text-sm tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>
-        ),
-        mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
+            ) : <span className="text-sm tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>;
+        },
+        mobileCard: (line, defaultRender) => line.lineType === LineType.COMMENT ? null : <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
     },
     {
         header: tPurchase('columns.discountPct'), width: 80, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
+            return isLinesEditable ? (
                 <input
                     className="input text-right w-full h-8 text-sm tabular-nums"
                     type="number"
@@ -238,18 +264,21 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         }
                     }}
                 />
-            ) : <span className="text-sm tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>
-        ),
+            ) : <span className="text-sm tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>;
+        },
         mobileCard: (line, defaultRender) => (
-            isLinesEditable ? (
+            line.lineType === LineType.COMMENT ? null : isLinesEditable ? (
                 <MobileCardField label={tPurchase('columns.discountPct')} value={defaultRender} />
             ) : null
         )
     },
     {
         header: tPurchase('columns.tax'), width: 110, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
+            return isLinesEditable ? (
                 <select
                     className="input w-full h-8 text-sm text-right"
                     value={line.taxCategoryId || ''}
@@ -280,18 +309,23 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                         return '—';
                     })()}
                 </span>
-            )
-        ),
-        mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.tax')} value={defaultRender} />
+            );
+        },
+        mobileCard: (line, defaultRender) => line.lineType === LineType.COMMENT ? null : <MobileCardField label={tPurchase('columns.tax')} value={defaultRender} />
     },
     {
         header: tPurchase('columns.amount'), width: 110, align: 'right',
-        render: (line) => (
-            <span className="font-medium tabular-nums">
-                {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
-            </span>
-        ),
-        mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.amount')} value={
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-sm text-[var(--text-muted)]">—</span>;
+            }
+            return (
+                <span className="font-medium tabular-nums">
+                    {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
+                </span>
+            );
+        },
+        mobileCard: (line) => line.lineType === LineType.COMMENT ? null : <MobileCardField label={tPurchase('columns.amount')} value={
             <span className="font-bold text-[var(--accent)] text-base">{formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}</span>
         } />
     },
@@ -623,6 +657,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                 removeLine={removeLine}
                 addLineFromProduct={addLineFromProduct}
                 addBlankLine={addBlankLine}
+                addCommentLine={addCommentLine}
                 subtotal={subtotal}
                 totalTax={totalTax}
                 taxCategories={taxCategories}

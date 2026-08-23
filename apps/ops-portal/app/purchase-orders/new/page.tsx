@@ -8,7 +8,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount, CURRENCIES } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
-import { computeLinePrice, computeOrderTotals } from '@herobm/shared';
+import { computeLinePrice, computeOrderTotals, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
@@ -38,6 +38,7 @@ interface Supplier {
 
 interface LineItem {
   key: number;
+  lineType?: string;
   productId: string;
   productNumber: string;
   productDescription: string;
@@ -53,14 +54,30 @@ let lineKey = 0;
 function emptyLine(defaultTaxCategoryId = ''): LineItem {
   return {
     key: ++lineKey,
-    productId: '',
+    lineType: LineType.PRODUCT,
+    productId: CUSTOM_LINE_ID,
     productNumber: '',
     productDescription: '',
     quantity: '1',
-    pricePerUnit: '0',
+    pricePerUnit: '0.00',
     unitOfMeasure: 'EA',
     discountPercentage: '0',
     taxCategoryId: defaultTaxCategoryId || null,
+  };
+}
+
+function emptyCommentLine(): LineItem {
+  return {
+    key: ++lineKey,
+    lineType: LineType.COMMENT,
+    productId: '',
+    productNumber: '',
+    productDescription: '',
+    quantity: '0',
+    pricePerUnit: '0',
+    unitOfMeasure: 'EA',
+    discountPercentage: '0',
+    taxCategoryId: null,
   };
 }
 
@@ -111,6 +128,16 @@ export default function NewPurchaseOrderPage() {
   const [notes, setNotes] = useState('');
 
   const [lines, setLines] = useState<LineItem[]>([]);
+  const prevLineCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (prevLineCountRef.current !== null && lines.length > prevLineCountRef.current) {
+      const el = document.getElementById('new-po-lines-bottom');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+    prevLineCountRef.current = lines.length;
+  }, [lines.length]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -118,7 +145,6 @@ export default function NewPurchaseOrderPage() {
 
 
   const addBlankLine = () => {
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     setLines((prev) => [
       ...prev,
       {
@@ -174,7 +200,12 @@ export default function NewPurchaseOrderPage() {
     setLines((prev) => [...prev, emptyLine(defaultTaxCategoryId)]);
   };
 
+  const addCommentLine = () => {
+    setLines((prev) => [...prev, emptyCommentLine()]);
+  };
+
   const computeTax = (line: LineItem) => {
+    if (line.lineType === LineType.COMMENT) return 0;
     const cat = taxCategories.find(c => c.taxCategoryId === line.taxCategoryId);
     if (!cat) {
       const defaultCat = taxCategories.find(c => c.isDefault);
@@ -195,6 +226,7 @@ export default function NewPurchaseOrderPage() {
   };
 
   const computeAmount = (line: LineItem) => {
+    if (line.lineType === LineType.COMMENT) return 0;
     return computeLinePrice({
       quantity: parseFloat(line.quantity) || 0,
       pricePerUnit: parseFloat(line.pricePerUnit) || 0,
@@ -211,12 +243,13 @@ export default function NewPurchaseOrderPage() {
       setError(t('common.errors.pleaseSelectLocation'));
       return;
     }
-    if (lines.length === 0 || !lines.some((l) => l.productId)) {
+    if (lines.length === 0 || !lines.some((l) => l.productId || l.lineType === LineType.COMMENT)) {
       setError(t('common.errors.pleaseAddLineItem'));
       return;
     }
 
     const hasInvalidDiscount = lines.some((l) => {
+      if (l.lineType === LineType.COMMENT) return false;
       const d = parseFloat(l.discountPercentage || '0');
       return isNaN(d) || d < 0 || d > 100;
     });
@@ -240,15 +273,16 @@ export default function NewPurchaseOrderPage() {
         expectedDate: expectedDate ? new Date(expectedDate).toISOString() : undefined,
         notes: notes || undefined,
         lines: lines
-          .filter((l) => l.productId)
+          .filter((l) => l.productId || l.lineType === LineType.COMMENT)
           .map((l) => ({
-            productId: l.productId,
+            lineType: (l.lineType as api.CreatePurchaseOrderLineDtoLineTypeEnum) || api.CreatePurchaseOrderLineDtoLineTypeEnum.Product,
+            productId: l.lineType === LineType.COMMENT ? undefined : l.productId,
             productDescription: l.productDescription,
-            quantity: String(l.quantity),
-            pricePerUnit: String(l.pricePerUnit),
-            unitOfMeasure: l.unitOfMeasure,
-            discountPercentage: String(l.discountPercentage),
-            taxCategoryId: l.taxCategoryId || undefined,
+            quantity: l.lineType === LineType.COMMENT ? '0' : String(l.quantity),
+            pricePerUnit: l.lineType === LineType.COMMENT ? '0' : String(l.pricePerUnit),
+            unitOfMeasure: l.lineType === LineType.COMMENT ? undefined : l.unitOfMeasure,
+            discountPercentage: l.lineType === LineType.COMMENT ? '0' : String(l.discountPercentage),
+            taxCategoryId: l.lineType === LineType.COMMENT ? undefined : (l.taxCategoryId || undefined),
           })),
       });
       router.push(`/purchase-orders/${res.data.purchaseOrderId}`);
@@ -449,6 +483,9 @@ export default function NewPurchaseOrderPage() {
               <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
                 {t('purchaseOrders.buttons.customLine')}
               </Button>
+              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addCommentLine}>
+                {t('purchaseOrders.buttons.commentLine')}
+              </Button>
             </div>
           </div>
 
@@ -462,16 +499,27 @@ export default function NewPurchaseOrderPage() {
                 <div key={line.key} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                   <div className="flex justify-between items-start gap-2 mb-2">
                     <div className="font-semibold text-sm text-[var(--accent)]">
-                      {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <span>{line.productNumber}</span>
+                      {line.lineType === LineType.COMMENT ? (
+                        <span className="text-[var(--text-muted)] font-medium text-xs">
+                          COMMENT
+                        </span>
+                      ) : !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE' ? (
+                        <span className="text-[var(--text-muted)] font-medium text-xs">CUSTOM</span>
                       ) : (
-                        <span className="text-[var(--text-muted)]">—</span>
+                        <span>{line.productNumber}</span>
                       )}
                     </div>
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
                   </div>
                   <div className="text-sm text-slate-600 font-medium mb-3">
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                    {line.lineType === LineType.COMMENT ? (
+                      <input
+                        className="input w-full text-sm h-8 !py-1"
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder="Enter comment / note…"
+                      />
+                    ) : line.productId && line.productId !== CUSTOM_LINE_ID && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       line.productDescription || '—'
                     ) : (
                       <input
@@ -482,76 +530,78 @@ export default function NewPurchaseOrderPage() {
                       />
                     )}
                   </div>
-                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                    <MobileCardField label={t('purchaseOrders.columns.qty')} value={
-                      <input
-                        className="input text-right w-24 h-8 text-sm !py-1"
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={line.quantity}
-                        onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
-                      />
-                    } />
-                    <MobileCardField label={t('purchaseOrders.columns.uom')} value={
-                      <input
-                        className="input text-right w-24 h-8 text-sm !py-1"
-                        value={line.unitOfMeasure || ''}
-                        onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
-                      />
-                    } />
-                    <MobileCardField label={t('purchaseOrders.columns.unitPrice')} value={
-                      <input
-                        className="input text-right w-24 h-8 text-sm !py-1"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={line.pricePerUnit}
-                        onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
-                        onBlur={(e) => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
-                        }}
-                      />
-                    } />
-                    <MobileCardField label={t('purchaseOrders.columns.discountPct')} value={
-                      <input
-                        className="input text-right w-20 h-8 text-sm !py-1"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={line.discountPercentage}
-                        onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
-                      />
-                    } />
-                    <MobileCardField label={t('purchaseOrders.columns.taxCategory')} value={
-                      <select
-                        className="input text-right w-32 h-8 text-sm !py-1"
-                        value={line.taxCategoryId || ''}
-                        onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
-                      >
-                        {taxCategories.map((c) => (
-                          <option key={c.taxCategoryId} value={c.taxCategoryId}>
-                            {getTaxLabel(c)}
-                          </option>
-                        ))}
-                      </select>
-                    } />
-                    <MobileCardField label={t('purchaseOrders.columns.amount')} value={
-                      <span className="font-bold text-[var(--accent)] text-base">{formatAmount(computeAmount(line), currencyCode)}</span>
-                    } />
-                    {lines.length > 1 && (
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          variant="danger" size="sm"
-                          onClick={() => removeLine(idx)}
+                  {line.lineType !== LineType.COMMENT && (
+                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                      <MobileCardField label={t('purchaseOrders.columns.qty')} value={
+                        <input
+                          className="input text-right w-24 h-8 text-sm !py-1"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={line.quantity}
+                          onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                        />
+                      } />
+                      <MobileCardField label={t('purchaseOrders.columns.uom')} value={
+                        <input
+                          className="input text-right w-24 h-8 text-sm !py-1"
+                          value={line.unitOfMeasure || ''}
+                          onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
+                        />
+                      } />
+                      <MobileCardField label={t('purchaseOrders.columns.unitPrice')} value={
+                        <input
+                          className="input text-right w-24 h-8 text-sm !py-1"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={line.pricePerUnit}
+                          onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
+                          }}
+                        />
+                      } />
+                      <MobileCardField label={t('purchaseOrders.columns.discountPct')} value={
+                        <input
+                          className="input text-right w-20 h-8 text-sm !py-1"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={line.discountPercentage}
+                          onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                        />
+                      } />
+                      <MobileCardField label={t('purchaseOrders.columns.taxCategory')} value={
+                        <select
+                          className="input text-right w-32 h-8 text-sm !py-1"
+                          value={line.taxCategoryId || ''}
+                          onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
                         >
-                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {t('common.buttons.remove')}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                          {taxCategories.map((c) => (
+                            <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                              {getTaxLabel(c)}
+                            </option>
+                          ))}
+                        </select>
+                      } />
+                      <MobileCardField label={t('purchaseOrders.columns.amount')} value={
+                        <span className="font-bold text-[var(--accent)] text-base">{formatAmount(computeAmount(line), currencyCode)}</span>
+                      } />
+                    </div>
+                  )}
+                  {lines.length > 1 && (
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        variant="danger" size="sm"
+                        onClick={() => removeLine(idx)}
+                      >
+                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {t('common.buttons.remove')}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -600,13 +650,19 @@ export default function NewPurchaseOrderPage() {
                 <tr key={line.key}>
                   <td className="text-[var(--text-muted)]">{idx + 1}</td>
                   <td className="text-[var(--accent)] font-semibold text-xs">
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-[var(--text-muted)] font-medium text-xs">
+                        COMMENT
+                      </span>
+                    ) : !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE' ? (
+                      <span className="text-[var(--text-muted)] font-medium text-xs">CUSTOM</span>
+                    ) : (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
                         <Button variant="ghost"
                           className="text-xs cursor-pointer px-1 py-1 h-auto min-h-0 text-[var(--text-muted)]"
                           onClick={() => {
-                            updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
+                            updateLine(idx, 'productId', CUSTOM_LINE_ID);
                             updateLine(idx, 'productNumber', '');
                             updateLine(idx, 'productDescription', '');
                           }}
@@ -614,12 +670,17 @@ export default function NewPurchaseOrderPage() {
                           <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                         </Button>
                       </div>
-                    ) : (
-                      <span className="text-[var(--text-muted)] font-normal">—</span>
                     )}
                   </td>
                   <td>
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                    {line.lineType === LineType.COMMENT ? (
+                      <input
+                        className="input w-full text-[13px]"
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder="Enter comment / note…"
+                      />
+                    ) : line.productId && line.productId !== CUSTOM_LINE_ID && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       line.productDescription || '—'
                     ) : (
                       <input
@@ -631,64 +692,88 @@ export default function NewPurchaseOrderPage() {
                     )}
                   </td>
                   <td className="text-right">
-                    <input
-                      className="input w-full text-right"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={line.quantity}
-                      onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
-                    />
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      <input
+                        className="input w-full text-right"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={line.quantity}
+                        onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                      />
+                    )}
                   </td>
                   <td className="text-right">
-                    <input
-                      className="input w-full text-[13px] text-right"
-                      value={line.unitOfMeasure}
-                      onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
-                    />
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      <input
+                        className="input w-full text-[13px] text-right"
+                        value={line.unitOfMeasure}
+                        onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
+                      />
+                    )}
                   </td>
                   <td className="text-right">
-                    <input
-                      className="input w-full text-right"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={line.pricePerUnit}
-                      onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
-                      onBlur={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
-                      }}
-                    />
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      <input
+                        className="input w-full text-right"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.pricePerUnit}
+                        onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
+                        }}
+                      />
+                    )}
                   </td>
                   <td className="text-right">
-                    <input
-                      className="input w-full text-right"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={line.discountPercentage}
-                      onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
-                    />
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      <input
+                        className="input w-full text-right"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={line.discountPercentage}
+                        onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                      />
+                    )}
                   </td>
                   <td className="text-right">
-                    <select
-                      className="input w-full text-xs text-right"
-                      value={line.taxCategoryId || ''}
-                      onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
-                    >
-                      {taxCategories.map((c) => (
-                        <option key={c.taxCategoryId} value={c.taxCategoryId}>
-                          {getTaxLabel(c)}
-                        </option>
-                      ))}
-                    </select>
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      <select
+                        className="input w-full text-xs text-right"
+                        value={line.taxCategoryId || ''}
+                        onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
+                      >
+                        {taxCategories.map((c) => (
+                          <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                            {getTaxLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                   <td
                     className="text-right font-semibold tabular-nums"
                   >
-                    {formatAmount(computeAmount(line), currencyCode)}
+                    {line.lineType === LineType.COMMENT ? (
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
+                    ) : (
+                      formatAmount(computeAmount(line), currencyCode)
+                    )}
                   </td>
                   <td>
                     {lines.length > 1 && (
@@ -749,6 +834,7 @@ export default function NewPurchaseOrderPage() {
             </tbody>
           </table>
           </div>
+          <div id="new-po-lines-bottom" className="h-px w-full" />
         </div>
         </div>
       </DetailsLayout>

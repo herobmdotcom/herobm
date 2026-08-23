@@ -73,6 +73,11 @@ flowchart TD
 - **Supplier Groups** (`/admin/supplier-groups`): Categorize vendors for spend reporting, default expense accounts, and tax positions.
 - **Product Groups** (`/admin/product-groups`): Group items for inventory accounting, margin analysis, and catalog navigation.
 
+#### Active vs. Inactive Groups
+- **Existing records keep their settings**: Making a group inactive does not deactivate its customers, suppliers, or products. Existing members continue using all group defaults (prices, terms, and accounts).
+- **Prevents new use**: Inactive groups cannot be chosen for new records.
+- **Safe retirement**: Groups linked to records cannot be deleted; set them to Inactive to retire them safely.
+
 ### 2. Financial & System Settings
 - **Financial Settings** (`/admin/settings/financial`): Configure standard chart of account linkages (Accounts Receivable, Accounts Payable, Sales Tax Liability, Rounding, Retained Earnings).
 - **System Settings** (`/admin/settings/system`): Manage global defaults, timezones, number sequence generators, and structured **Sales Order Analysis Codes**.

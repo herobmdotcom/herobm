@@ -176,6 +176,11 @@ export class BaseCustomerGroupDto {
   @IsOptional()
   @Type(() => Number)
   earlyPaymentDiscountDays?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  stateCode?: string;
 }
 
 export class CreateCustomerGroupDto extends BaseCustomerGroupDto {}

@@ -2755,6 +2755,7 @@
     "buttons": {
       "approveInvoice": "Approve Invoice",
       "change": "Change",
+      "commentLine": "Add Comment",
       "copyOrder": "Copy Order",
       "createPO": "Create Purchase Order",
       "createReturn": "Create Return",
@@ -3132,6 +3133,7 @@
       "addPostConfirmationLine": "Add Line",
       "archive": "Archive",
       "calculateTaxes": "Calculate Taxes",
+      "commentLine": "Add Comment",
       "confirmationPdf": "Confirmation PDF",
       "copyOrder": "Copy Order",
       "createCreditNote": "Create Credit Note",
@@ -3423,8 +3425,30 @@
     "untitledField": "Untitled Field"
   },
   "setup": {
+    "dataExport": {
+      "availableEntities": "{count} available entities",
+      "backToDashboard": "Back to Dashboard",
+      "columnsCount": "{count} Columns",
+      "columnsPreview": "Columns included in export",
+      "downloadCsv": "Download CSV Export",
+      "downloading": "Exporting...",
+      "exportFailed": "Failed to export data",
+      "exportSuccess": "Export completed successfully",
+      "includeArchived": "Include Archived / Inactive records",
+      "includeArchivedDesc": "Export all records regardless of status",
+      "limitLabel": "Record Limit (Optional)",
+      "limitPlaceholder": "All records",
+      "options": "Export Options",
+      "searchTables": "Search entities...",
+      "selectEntity": "Select an entity to export",
+      "subtitle": "Download database records as CSV files.",
+      "targetTable": "Target Table",
+      "title": "Export Data (CSV)",
+      "uniqueKey": "Unique Key (for upsert)"
+    },
     "dataImport": {
       "abm": "Back",
+      "availableEntities": "{count} available entities",
       "back": "Back",
       "buttons": {
         "continueToSummary": "Continue to Summary",
@@ -3466,8 +3490,12 @@
       "insertNewOnlyDesc": "Inserts new records and ignores existing ones without failing.",
       "insertOnly": "Insert Only",
       "insertOnlyDesc": "Will fail if duplicate unique keys exist.",
+      "location": "Location",
+      "logs": "Execution Logs",
       "mergeStrategy": "Merge Strategy",
+      "migrationLogs": "Migration Logs",
       "noFileChosen": "No file chosen",
+      "noLogs": "No logs recorded yet.",
       "options": {
         "alreadyStaged": "Already staged: ",
         "enableCustomImports": "Enable custom imports",
@@ -3484,6 +3512,7 @@
       "products": "Products",
       "retryImport": "Retry Import",
       "returnToDashboard": "Return to Dashboard",
+      "searchTables": "Search entities...",
       "sections": {
         "confirmedSettings": "Confirmed Settings",
         "executionOptions": "Execution Options",

@@ -22,7 +22,9 @@ import {
   TestAbmConnectionDto,
   TestOdooConnectionDto,
   ExecuteEltDto,
+  ExportCsvQueryDto,
 } from './setup.dto';
+import type { Response } from 'express';
 import { AppConfigService } from '../settings/app-config.service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -516,35 +518,173 @@ export class SetupService {
       'updated_on',
     ];
 
-    return this.csvRegistry.map((t) => {
-      const cols = getTableColumns(t.table);
-      const columns = Object.keys(cols)
-        .map((k) => {
-          const col = (
-            cols as Record<
-              string,
-              { name: string; notNull: boolean; hasDefault: boolean }
-            >
-          )[k];
-          return {
-            name: col.name,
-            notNull: col.notNull,
-            hasDefault: col.hasDefault,
-          };
-        })
-        .filter((c) => !excludedColumns.includes(c.name))
-        .map((c) => {
-          const isRequired = c.notNull && !c.hasDefault;
-          return isRequired ? `${c.name}*` : c.name;
-        });
+    return this.csvRegistry
+      .map((t) => {
+        const cols = getTableColumns(t.table);
+        const columns = Object.keys(cols)
+          .map((k) => {
+            const col = (
+              cols as Record<
+                string,
+                { name: string; notNull: boolean; hasDefault: boolean }
+              >
+            )[k];
+            return {
+              name: col.name,
+              notNull: col.notNull,
+              hasDefault: col.hasDefault,
+            };
+          })
+          .filter((c) => !excludedColumns.includes(c.name))
+          .map((c) => {
+            const isRequired = c.notNull && !c.hasDefault;
+            return isRequired ? `${c.name}*` : c.name;
+          });
 
-      return {
-        id: t.id,
-        name: t.name,
-        uniqueKey: t.uniqueKey,
-        columns,
-      };
+        return {
+          id: t.id,
+          name: t.name,
+          uniqueKey: t.uniqueKey,
+          columns,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private formatCsvCell(val: unknown): string {
+    if (val === null || val === undefined) {
+      return '';
+    }
+    if (typeof val === 'boolean') {
+      return val ? 'true' : 'false';
+    }
+    if (val instanceof Date) {
+      return val.toISOString();
+    }
+    if (typeof val === 'number' || typeof val === 'bigint') {
+      return val.toString();
+    }
+    if (typeof val === 'string') {
+      if (
+        val.includes(',') ||
+        val.includes('"') ||
+        val.includes('\n') ||
+        val.includes('\r')
+      ) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    }
+    if (typeof val === 'object') {
+      const str = JSON.stringify(val);
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    const str =
+      typeof val === 'string'
+        ? val
+        : typeof val === 'number' || typeof val === 'bigint'
+          ? val.toString()
+          : JSON.stringify(val);
+    if (
+      str.includes(',') ||
+      str.includes('"') ||
+      str.includes('\n') ||
+      str.includes('\r')
+    ) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  // @herobm-skip-audit
+  async exportCsv(
+    tableName: string,
+    options: ExportCsvQueryDto = {},
+    res?: Response,
+    username: string = 'system',
+  ): Promise<string | void> {
+    const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
+    if (!registryEntry) throw new BadRequestException('Unsupported table');
+
+    const excludedColumns = [
+      'created_by',
+      'created_on',
+      'modified_on',
+      'updated_on',
+    ];
+
+    const tableCols = getTableColumns(registryEntry.table);
+    const propToColMap: { prop: string; colName: string }[] = Object.keys(
+      tableCols,
+    )
+      .filter(
+        (k) =>
+          !excludedColumns.includes(
+            (tableCols as Record<string, { name: string }>)[k].name,
+          ),
+      )
+      .map((k) => ({
+        prop: k,
+        colName: (tableCols as Record<string, { name: string }>)[k].name,
+      }));
+
+    const headers = propToColMap.map((m) => m.colName).join(',');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
+    let query: any = this.db.select().from(registryEntry.table);
+    const stateCol = (tableCols as unknown as Record<string, unknown>)[
+      'stateCode'
+    ];
+    if (!options.includeArchived && stateCol) {
+      query = query.where(sql`${stateCol} != 'archived'`);
+    }
+
+    if (options.limit && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const rows = (await query) as Record<string, unknown>[];
+
+    const lines: string[] = [headers];
+    for (const row of rows) {
+      const line = propToColMap
+        .map((m) => this.formatCsvCell(row[m.prop]))
+        .join(',');
+      lines.push(line);
+    }
+    const csvContent = lines.join('\n') + '\n';
+
+    if (res) {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${tableName}_export_${dateStr}.csv"`,
+      );
+      res.write(csvContent);
+      res.end();
+    }
+
+    // Emit audit event
+    const schemaTableName =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic table name
+      (registryEntry.table as any)[Symbol.for('drizzle:Name')] || tableName;
+    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
+      entityType: EntityType.SYSTEM,
+      entityId: '00000000-0000-0000-0000-000000000000',
+      eventType: 'csv_export_generated',
+      entityDisplayName: `CSV Export: ${registryEntry.name}`,
+      payload: {
+        table: schemaTableName,
+        rowCount: rows.length,
+        includeArchived: !!options.includeArchived,
+      },
+      actor: username,
     });
+
+    if (!res) {
+      return csvContent;
+    }
   }
 
   // @herobm-skip-audit
@@ -625,10 +765,18 @@ export class SetupService {
     };
 
     const tableCols = getTableColumns(entry.table);
-    const colNames = Object.keys(tableCols).map((k) => tableCols[k].name);
+    const colMappings = Object.keys(tableCols).map((propKey) => ({
+      propKey,
+      colName: (tableCols as Record<string, { name: string }>)[propKey].name,
+    }));
 
     const tradingTermsMap = new Map<string, string>();
-    if (colNames.includes('termsDescription')) {
+    if (
+      colMappings.some(
+        (m) =>
+          m.colName === 'terms_description' || m.propKey === 'termsDescription',
+      )
+    ) {
       const allTerms = await this.db.select().from(tradingTerms);
       for (const term of allTerms) {
         tradingTermsMap.set(
@@ -653,22 +801,50 @@ export class SetupService {
     for await (const record of parser) {
       // Map back to db columns, stripping unknown columns and casting empty strings to null for text fields
       const dbRecord: Record<string, unknown> = {};
-      for (const col of colNames) {
-        if (record[col] !== undefined) {
-          dbRecord[col] = record[col] === '' ? null : record[col];
-          if (col === 'address1Country' && dbRecord[col]) {
-            dbRecord[col] =
-              getCountryCode(dbRecord[col] as string) || dbRecord[col];
+      for (const { propKey, colName } of colMappings) {
+        const colDef = (
+          tableCols as Record<
+            string,
+            { primary?: boolean; hasDefault?: boolean }
+          >
+        )[propKey];
+        const val =
+          record[colName] !== undefined ? record[colName] : record[propKey];
+        if (val !== undefined) {
+          const isEmpty = val === '' || val === null;
+          if (isEmpty && (colDef?.primary || colDef?.hasDefault)) {
+            // Omit so database default (e.g. defaultRandom()) applies
+            continue;
           }
-          if (col === 'termsDescription' && dbRecord[col]) {
-            const raw = (dbRecord[col] as string).trim();
-            dbRecord[col] = tradingTermsMap.get(raw.toLowerCase()) || raw;
+          dbRecord[propKey] = isEmpty ? null : val;
+          if (
+            (propKey === 'address1Country' || colName === 'address1_country') &&
+            dbRecord[propKey]
+          ) {
+            dbRecord[propKey] =
+              getCountryCode(dbRecord[propKey] as string) || dbRecord[propKey];
           }
-          if (col === 'currencyCode') {
-            dbRecord[col] = mapCurrencyCode(dbRecord[col] as string | null);
+          if (
+            (propKey === 'termsDescription' ||
+              colName === 'terms_description') &&
+            dbRecord[propKey]
+          ) {
+            const raw = (dbRecord[propKey] as string).trim();
+            dbRecord[propKey] = tradingTermsMap.get(raw.toLowerCase()) || raw;
           }
-          if ((col === 'phone' || col === 'mobile') && dbRecord[col]) {
-            dbRecord[col] = parsePhone(dbRecord[col] as string | null);
+          if (propKey === 'currencyCode' || colName === 'currency_code') {
+            dbRecord[propKey] = mapCurrencyCode(
+              dbRecord[propKey] as string | null,
+            );
+          }
+          if (
+            (propKey === 'phone' ||
+              colName === 'phone' ||
+              propKey === 'mobile' ||
+              colName === 'mobile') &&
+            dbRecord[propKey]
+          ) {
+            dbRecord[propKey] = parsePhone(dbRecord[propKey] as string | null);
           }
         }
       }
@@ -691,20 +867,35 @@ export class SetupService {
     for (let i = 0; i < records.length; i += BATCH_SIZE) {
       const batch = records.slice(i, i + BATCH_SIZE);
 
-      if (strategy === 'upsert') {
-        const conflictTarget =
-          entry.table[entry.uniqueKey] ||
-          tableCols[
-            Object.keys(tableCols).find(
-              (k) => tableCols[k].name === entry.uniqueKey,
-            )!
-          ];
+      const uniqueKeyProp =
+        Object.keys(tableCols).find(
+          (k) =>
+            (tableCols as Record<string, { name: string }>)[k].name ===
+              entry.uniqueKey || k === entry.uniqueKey,
+        ) || entry.uniqueKey;
 
+      const conflictTarget =
+        entry.table[uniqueKeyProp] ||
+        (tableCols as Record<string, unknown>)[uniqueKeyProp];
+
+      if (strategy === 'upsert') {
         // Build set object for DO UPDATE
         const updateSet: Record<string, unknown> = {};
-        for (const colName of colNames) {
-          if (colName !== entry.uniqueKey) {
-            updateSet[colName] = sql`EXCLUDED.${sql.identifier(colName)}`;
+        for (const { propKey, colName } of colMappings) {
+          const colDef = (
+            tableCols as Record<
+              string,
+              { primary?: boolean; hasDefault?: boolean }
+            >
+          )[propKey];
+          if (
+            colName !== entry.uniqueKey &&
+            propKey !== entry.uniqueKey &&
+            !colDef?.primary &&
+            colName !== 'created_by' &&
+            colName !== 'created_on'
+          ) {
+            updateSet[propKey] = sql`EXCLUDED.${sql.identifier(colName)}`;
           }
         }
 
@@ -713,13 +904,6 @@ export class SetupService {
           set: updateSet,
         });
       } else if (strategy === 'ignore') {
-        const conflictTarget =
-          entry.table[entry.uniqueKey] ||
-          tableCols[
-            Object.keys(tableCols).find(
-              (k) => tableCols[k].name === entry.uniqueKey,
-            )!
-          ];
         await this.db.insert(entry.table).values(batch).onConflictDoNothing({
           target: conflictTarget,
         });
@@ -741,7 +925,7 @@ export class SetupService {
       entry.table[Symbol.for('drizzle:Name')] || 'unknown_table'; // @sync-ignore
     await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SYSTEM,
-      entityId: 'system_setup',
+      entityId: '00000000-0000-0000-0000-000000000000',
       eventType: 'csv_import_completed',
       entityDisplayName: `CSV Import: ${tableName}`,
       payload: {

@@ -97,15 +97,24 @@ describe('Account Groups (e2e)', () => {
     expect(foundAcc.customerGroupCode).toBe(groupCode);
     expect(foundAcc.customerGroupName).toBe('E2E Test Account Group');
 
-    // 6. Update the group
+    // 6. Update the group (including stateCode to inactive)
     const updateRes = await request(app.getHttpServer())
       .patch(`/api/customer-groups/${groupId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Updated Account Group',
+        stateCode: 'inactive',
       });
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.name).toBe('Updated Account Group');
+    expect(updateRes.body.stateCode).toBe('inactive');
+
+    // 6b. Verify get returns stateCode inactive
+    const getUpdatedRes = await request(app.getHttpServer())
+      .get(`/api/customer-groups/${groupId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(getUpdatedRes.status).toBe(200);
+    expect(getUpdatedRes.body.stateCode).toBe('inactive');
 
     // 7. Delete the group (first cleanly un-assign the account to avoid FK errors)
     await request(app.getHttpServer())

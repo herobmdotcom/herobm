@@ -229,11 +229,12 @@ export default function Sidebar() {
           ]
         },
         { 
-          href: routes.admin.import.csv(), 
-          label: 'Import', 
-          icon: 'cloud_upload',
+          href: routes.admin.export.csv(), 
+          label: 'Data Transfer', 
+          icon: 'swap_horiz',
           subItems: [
-            { href: routes.admin.import.csv(), label: 'CSV Upload' },
+            { href: routes.admin.export.csv(), label: 'CSV Export' },
+            { href: routes.admin.import.csv(), label: 'CSV Import' },
             { href: routes.admin.import.abm(), label: 'ABM Database' },
             { href: routes.admin.import.odoo(), label: 'Odoo Database' },
           ]

@@ -19,8 +19,8 @@ import {
   appSettings,
   actors,
 } from '@herobm/db-schema';
-import { eq, sql, and } from 'drizzle-orm';
-import { getErrorMessage } from '@herobm/shared';
+import { eq, sql, and, inArray } from 'drizzle-orm';
+import { getErrorMessage, LineType } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -125,7 +125,30 @@ export class PurchaseOrdersWriteService {
       }
     }
 
-    throw new NotFoundException('No default purchase tax category configured');
+    const fallbacks = await tx
+      .select()
+      .from(taxCategories)
+      .where(
+        inArray(taxCategories.code, ['GST', 'INPUT', 'STANDARD', 'VAT', 'TAX']),
+      )
+      .limit(1);
+
+    if (fallbacks.length > 0) {
+      return {
+        taxCategoryId: fallbacks[0].taxCategoryId,
+        rate: parseFloat(fallbacks[0].rate ?? '0'),
+      };
+    }
+
+    const anyCat = await tx.select().from(taxCategories).limit(1);
+    if (anyCat.length > 0) {
+      return {
+        taxCategoryId: anyCat[0].taxCategoryId,
+        rate: parseFloat(anyCat[0].rate ?? '0'),
+      };
+    }
+
+    return { taxCategoryId: '', rate: 0 };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -221,21 +244,46 @@ export class PurchaseOrdersWriteService {
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
-          const [product] = await tx
-            .select({ stateCode: products.stateCode })
-            .from(products)
-            .where(eq(products.productId, line.productId))
-            .limit(1);
-
-          if (!product) {
-            throw new BadRequestException(
-              `Product '${line.productId}' not found.`,
-            );
+          const isComment = line.lineType === LineType.COMMENT;
+          if (isComment) {
+            lineValues.push({
+              purchaseOrderId: order.purchaseOrderId,
+              lineNumber: index + 1,
+              lineType: LineType.COMMENT,
+              productId: null,
+              productDescription: line.productDescription,
+              quantity: '0',
+              pricePerUnit: '0',
+              discountPercentage: '0',
+              unitOfMeasure: null,
+              amount: '0',
+              tax: '0',
+              totalAmount: '0',
+              taxCategoryId: null,
+            });
+            index++;
+            continue;
           }
-          if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
-            throw new BadRequestException(
-              `Cannot use product '${line.productId}' as it is not active.`,
-            );
+
+          const isCustom =
+            line.productId === '00000000-0000-4000-8000-000000000000';
+          if (!isCustom && line.productId) {
+            const [product] = await tx
+              .select({ stateCode: products.stateCode })
+              .from(products)
+              .where(eq(products.productId, line.productId))
+              .limit(1);
+
+            if (!product) {
+              throw new BadRequestException(
+                `Product '${line.productId}' not found.`,
+              );
+            }
+            if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
+              throw new BadRequestException(
+                `Cannot use product '${line.productId}' as it is not active.`,
+              );
+            }
           }
 
           const { taxCategoryId, rate } = await this.resolveTaxForLine(
@@ -260,6 +308,7 @@ export class PurchaseOrdersWriteService {
           lineValues.push({
             purchaseOrderId: order.purchaseOrderId,
             lineNumber: index + 1,
+            lineType: LineType.PRODUCT,
             productId: line.productId,
             productDescription: line.productDescription,
             quantity: line.quantity.toString(),
@@ -323,53 +372,80 @@ export class PurchaseOrdersWriteService {
         0,
       );
 
-      const [product] = await tx
-        .select({ name: products.name, stateCode: products.stateCode })
-        .from(products)
-        .where(eq(products.productId, lineDto.productId))
-        .limit(1);
+      const isComment = lineDto.lineType === (LineType.COMMENT as string);
 
-      if (!product) {
-        throw new BadRequestException(
-          `Product '${lineDto.productId}' not found.`,
-        );
-      }
-      if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
-        throw new BadRequestException(
-          `Cannot use product '${lineDto.productId}' as it is not active.`,
-        );
-      }
+      let taxCategoryId: string | null = null;
+      let rate = 0;
+      let qty = 0;
+      let price = 0;
+      let disc = 0;
 
-      const qty = parseFloat(lineDto.quantity || '1');
-      const price = parseFloat(lineDto.pricePerUnit || '0');
-      const disc = parseFloat(lineDto.discountPercentage || '0');
-      if (isNaN(disc) || disc < 0 || disc > 100) {
-        throw new BadRequestException(
-          'Discount percentage must be between 0 and 100',
+      let pricing = {
+        amount: '0',
+        tax: '0',
+        totalAmount: '0',
+      };
+
+      let product: { name: string; stateCode: string } | undefined;
+
+      if (!isComment) {
+        const result = await tx
+          .select({ name: products.name, stateCode: products.stateCode })
+          .from(products)
+          .where(eq(products.productId, lineDto.productId))
+          .limit(1);
+        product = result[0];
+
+        if (!product) {
+          throw new BadRequestException(
+            `Product '${lineDto.productId}' not found.`,
+          );
+        }
+        if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
+          throw new BadRequestException(
+            `Cannot use product '${lineDto.productId}' as it is not active.`,
+          );
+        }
+
+        qty = parseFloat(lineDto.quantity || '1');
+        price = parseFloat(lineDto.pricePerUnit || '0');
+        disc = parseFloat(lineDto.discountPercentage || '0');
+        if (isNaN(disc) || disc < 0 || disc > 100) {
+          throw new BadRequestException(
+            'Discount percentage must be between 0 and 100',
+          );
+        }
+        const resolved = await this.resolveTaxForLine(
+          tx,
+          existing.vendorId,
+          lineDto.productId,
+          lineDto.taxCategoryId,
         );
+        taxCategoryId = resolved.taxCategoryId;
+        rate = resolved.rate;
+
+        pricing = computeLinePriceForStorage({
+          quantity: qty,
+          pricePerUnit: price,
+          discountPercentage: disc,
+          taxRate: rate,
+        });
       }
-      const { taxCategoryId, rate } = await this.resolveTaxForLine(
-        tx,
-        existing.vendorId,
-        lineDto.productId,
-        lineDto.taxCategoryId,
-      );
-      const pricing = computeLinePriceForStorage({
-        quantity: qty,
-        pricePerUnit: price,
-        discountPercentage: disc,
-        taxRate: rate,
-      });
 
       await tx.insert(purchaseOrderLineItems).values({
         purchaseOrderId: orderId,
         lineNumber: maxLine + 1,
-        productId: lineDto.productId,
+        lineType: isComment ? LineType.COMMENT : LineType.PRODUCT,
+        productId: isComment ? null : lineDto.productId,
         productDescription: lineDto.productDescription,
-        quantity: lineDto.quantity?.toString() || '1',
-        pricePerUnit: lineDto.pricePerUnit?.toString() || '0',
-        discountPercentage: lineDto.discountPercentage?.toString() || '0',
-        unitOfMeasure: normalizeUomCode(lineDto.unitOfMeasure),
+        quantity: isComment ? '0' : lineDto.quantity?.toString() || '1',
+        pricePerUnit: isComment ? '0' : lineDto.pricePerUnit?.toString() || '0',
+        discountPercentage: isComment
+          ? '0'
+          : lineDto.discountPercentage?.toString() || '0',
+        unitOfMeasure: isComment
+          ? null
+          : normalizeUomCode(lineDto.unitOfMeasure),
         amount: pricing.amount,
         tax: pricing.tax,
         totalAmount: pricing.totalAmount,
@@ -444,37 +520,52 @@ export class PurchaseOrdersWriteService {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           (l: any) => l.purchaseOrderLineId === lineId,
         );
-        const qty = parseFloat(
-          lineDto.quantity?.toString() || line?.quantity || '0',
-        );
-        const price = parseFloat(
-          lineDto.pricePerUnit?.toString() || line?.pricePerUnit || '0',
-        );
-        const disc = parseFloat(
-          lineDto.discountPercentage?.toString() ||
-            line?.discountPercentage ||
-            '0',
-        );
+        const isComment =
+          (lineDto.lineType ?? line?.lineType) === (LineType.COMMENT as string);
 
-        let targetGst = line.taxCategoryId;
+        const qty = isComment
+          ? 0
+          : parseFloat(lineDto.quantity?.toString() || line?.quantity || '0');
+        const price = isComment
+          ? 0
+          : parseFloat(
+              lineDto.pricePerUnit?.toString() || line?.pricePerUnit || '0',
+            );
+        const disc = isComment
+          ? 0
+          : parseFloat(
+              lineDto.discountPercentage?.toString() ||
+                line?.discountPercentage ||
+                '0',
+            );
+
+        let targetGst = line?.taxCategoryId;
         if (lineDto.taxCategoryId !== undefined) {
           targetGst = lineDto.taxCategoryId;
         }
 
-        const resolved = await this.resolveTaxForLine(
-          tx,
-          existing.vendorId,
-          line.productId,
-          targetGst,
-        );
-        updateFields.taxCategoryId = resolved.taxCategoryId;
+        let rate = 0;
+        if (!isComment) {
+          const resolved = await this.resolveTaxForLine(
+            tx,
+            existing.vendorId,
+            line?.productId,
+            targetGst,
+          );
+          updateFields.taxCategoryId = resolved.taxCategoryId;
+          rate = resolved.rate;
+        } else {
+          updateFields.taxCategoryId = null;
+        }
 
-        const pricing = computeLinePriceForStorage({
-          quantity: qty,
-          pricePerUnit: price,
-          discountPercentage: disc,
-          taxRate: resolved.rate,
-        });
+        const pricing = isComment
+          ? { amount: '0', tax: '0', totalAmount: '0' }
+          : computeLinePriceForStorage({
+              quantity: qty,
+              pricePerUnit: price,
+              discountPercentage: disc,
+              taxRate: rate,
+            });
         updateFields.amount = pricing.amount;
         updateFields.tax = pricing.tax;
         updateFields.totalAmount = pricing.totalAmount;

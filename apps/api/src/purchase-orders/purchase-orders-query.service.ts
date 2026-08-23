@@ -481,6 +481,7 @@ export class PurchaseOrdersQueryService {
         currencyCode: purchaseOrders.currencyCode,
         purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
         lineNumber: purchaseOrderLineItems.lineNumber,
+        lineType: purchaseOrderLineItems.lineType,
         productId: purchaseOrderLineItems.productId,
         productNumber: products.productNumber,
         productDescription: purchaseOrderLineItems.productDescription,

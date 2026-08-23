@@ -883,6 +883,13 @@
       "when": 1787425686363,
       "tag": "0125_sync_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "7",
+      "when": 1787487804822,
+      "tag": "0126_add_line_types",
+      "breakpoints": true
     }
   ]
 }

@@ -12,7 +12,7 @@ import {
   salesInvoiceLines,
   taxCategories,
 } from '@herobm/db-schema';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
+import { SALES_INVOICE_STATE, LineType } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { RunHookOptionsDto } from './dto';
 
@@ -83,8 +83,23 @@ export class SalesInvoiceService {
     );
 
     const filteredLines = orderDetail.lines
-      .filter((l) => invLineMap.has(l.salesOrderLineId))
+      .filter(
+        (l) =>
+          invLineMap.has(l.salesOrderLineId) ||
+          l.lineType === (LineType.COMMENT as string),
+      )
       .map((l) => {
+        if (l.lineType === (LineType.COMMENT as string)) {
+          return {
+            ...l,
+            quantity: '0',
+            pricePerUnit: '0',
+            amount: '0',
+            tax: '0',
+            totalAmount: '0',
+          };
+        }
+
         const inv = invLineMap.get(l.salesOrderLineId)!;
         const originalQty = parseFloat(l.quantity || '1');
         const invoicedQty = parseFloat(inv.quantity);

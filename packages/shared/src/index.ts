@@ -154,6 +154,8 @@ export {
   isPhysicalProductLine,
   isShippableProductLine,
   CUSTOM_LINE_ID,
+  CUSTOM_PRODUCT_ID,
+  SYSTEM_CUSTOM_LINE_ID,
   LEGACY_CUSTOM_LINE_ID,
   formatPickBarcode,
   parsePickBarcode,
@@ -183,5 +185,6 @@ export { SystemResource, hasPermission, hasAnyPermission } from './permissions';
 export type { Permission } from './permissions';
 export * from './data-sources';
 export * from './user-preferences';
+export * from './orders';
 export * from './telemetry';
 export * from './contacts';

@@ -11,7 +11,7 @@ import {
   IsBoolean,
   IsIn,
 } from 'class-validator';
-import { eq, ne, and } from 'drizzle-orm';
+import { eq, ne, and, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories, appSettings } from '@herobm/db-schema';
@@ -69,6 +69,29 @@ export class TaxCategoriesService {
       if (rows.length > 0) {
         return rows[0];
       }
+    }
+
+    const fallbacks = await db
+      .select()
+      .from(taxCategories)
+      .where(
+        inArray(taxCategories.code, [
+          'GST',
+          'OUTPUT',
+          'STANDARD',
+          'VAT',
+          'TAX',
+        ]),
+      )
+      .limit(1);
+
+    if (fallbacks.length > 0) {
+      return fallbacks[0];
+    }
+
+    const anyCat = await db.select().from(taxCategories).limit(1);
+    if (anyCat.length > 0) {
+      return anyCat[0];
     }
 
     throw new NotFoundException('No default sales tax category configured');

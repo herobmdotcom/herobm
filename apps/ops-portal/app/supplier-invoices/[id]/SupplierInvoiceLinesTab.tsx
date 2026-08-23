@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { MATCH_STATUS, PURCHASE_INVOICE_STATE } from '@herobm/shared';
+import { MATCH_STATUS, PURCHASE_INVOICE_STATE, CUSTOM_LINE_ID } from '@herobm/shared';
 import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
@@ -190,13 +190,13 @@ export default function SupplierInvoiceLinesTab({
                   >
                     <td className="text-[var(--text-muted)]">{idx + 1}</td>
                     <td>
-                      {canEditLines && (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') ? (
+                      {canEditLines && (!line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000') ? (
                         <ProductSearchInput
                           onSelect={(p) => handleProductSelect(line.lineId, p)}
                           placeholder="Search product…"
                           className="min-w-[120px]"
                         />
-                      ) : line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                      ) : line.productId && line.productId !== CUSTOM_LINE_ID && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                         <div className="font-semibold text-[var(--accent)]">
                           {line.productNumber || line.productId.substring(0, 8)}
                         </div>
@@ -367,12 +367,12 @@ export default function SupplierInvoiceLinesTab({
                     topRightBadge={`#${idx + 1}`}
                     title={
                       <div className="flex items-center gap-2">
-                        {canEditLines && (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') ? (
+                        {canEditLines && (!line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000') ? (
                           <ProductSearchInput
                             onSelect={(p) => handleProductSelect(line.lineId, p)}
                             placeholder="Search product…"
                           />
-                        ) : line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                        ) : line.productId && line.productId !== CUSTOM_LINE_ID && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                           <span className="font-bold text-[var(--accent)]">
                             {line.productNumber || line.productId.substring(0, 8)}
                           </span>

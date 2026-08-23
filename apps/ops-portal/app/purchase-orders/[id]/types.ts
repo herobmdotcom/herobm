@@ -3,7 +3,8 @@ import type { ProductUom } from '@herobm/shared';
 export interface OrderLine {
   purchaseOrderLineId: string;
   lineNumber: number;
-  productId: string;
+  lineType?: string | null;
+  productId?: string | null;
   productNumber?: string;
   productType?: string;
   productDescription: string;

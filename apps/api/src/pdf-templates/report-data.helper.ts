@@ -1,6 +1,6 @@
 import { OrdersQueryService } from '../orders/orders-query.service';
 import { SalesQuoteData } from './sales-quote.service';
-import { computeOrderTotals } from '@herobm/shared';
+import { computeOrderTotals, LineType } from '@herobm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -39,6 +39,7 @@ interface RawOrderLine {
   amount?: string | null;
   totalAmount?: string | null;
   unitOfMeasure?: string | null;
+  lineType?: string | null;
 }
 
 /**
@@ -73,20 +74,25 @@ export function assembleOrderData(
     }
 
     const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
+    const isComment = l.lineType === (LineType.COMMENT as string);
     const isCustomLine = l.productId === CUSTOM_LINE_ID;
 
     return {
       lineNumber: l.lineNumber,
-      productNumber: isCustomLine ? '' : l.productNumber || l.productId || '—',
+      productNumber: isComment
+        ? ''
+        : isCustomLine
+          ? ''
+          : l.productNumber || l.productId || '—',
       description: l.productDescription || '—',
-      quantity: l.quantity,
-      pricePerUnit: l.pricePerUnit,
-      discountPercentage: disc.toFixed(2),
-      taxRate: `${taxRate.toFixed(1)}%`,
-      tax: parseFloat(l.tax || '0').toFixed(2),
-      amount: parseFloat(l.amount || '0').toFixed(2),
-      totalAmount: parseFloat(l.totalAmount || '0').toFixed(2),
-      unitOfMeasure: l.unitOfMeasure || 'EA',
+      quantity: isComment ? '' : l.quantity,
+      pricePerUnit: isComment ? '' : l.pricePerUnit,
+      discountPercentage: isComment ? '' : disc.toFixed(2),
+      taxRate: isComment ? '' : `${taxRate.toFixed(1)}%`,
+      tax: isComment ? '' : parseFloat(l.tax || '0').toFixed(2),
+      amount: isComment ? '' : parseFloat(l.amount || '0').toFixed(2),
+      totalAmount: isComment ? '' : parseFloat(l.totalAmount || '0').toFixed(2),
+      unitOfMeasure: isComment ? '' : l.unitOfMeasure || 'EA',
     };
   });
 

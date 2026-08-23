@@ -10,6 +10,28 @@ import {
   IsBoolean,
   IsArray,
 } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+
+export class ExportCsvQueryDto {
+  @ApiProperty({
+    required: false,
+    description: 'Whether to include archived/inactive records',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeArchived?: boolean;
+
+  @ApiProperty({
+    required: false,
+    description: 'Optional maximum number of records to export',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  limit?: number;
+}
 
 // ---------------------------------------------------------------------------
 // POST /api/setup/test-abm

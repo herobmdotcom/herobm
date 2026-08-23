@@ -1,14 +1,13 @@
 'use client';
 
-import { use, useMemo } from 'react';
+import { use, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity, isStockedProductLine, PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { calculateAvailableQuantity, isStockedProductLine, PURCHASE_ORDER_STATE, calculateUomPriceAdjustment, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
-import { calculateUomPriceAdjustment } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -59,6 +58,7 @@ interface PurchaseOrderLinesTabProps {
   removeLine: (lineId: string) => void;
   addLineFromProduct: (product: import('@/components/shared/ProductSearchInput').Product) => void;
   addBlankLine: () => void;
+  addCommentLine?: () => void;
   subtotal: number;
   totalTax: number;
   taxCategories: TaxCategory[];
@@ -81,6 +81,7 @@ export default function PurchaseOrderLinesTab({
   removeLine,
   addLineFromProduct,
   addBlankLine,
+  addCommentLine,
   subtotal,
   totalTax,
   taxCategories,
@@ -98,23 +99,38 @@ export default function PurchaseOrderLinesTab({
     {
         id: 'product',
         header: tPurchase('columns.product'), width: 100,
-        render: (line) => (
-            <div className="font-semibold text-xs">
-                {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                    <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
-                        {line.productNumber || line.productId?.substring(0, 8)}
-                    </Link>
-                ) : (
-                    line.productNumber || line.productId?.substring(0, 8) || '—'
-                )}
-            </div>
-        )
+        render: (line) => {
+            const isComment = line.lineType === LineType.COMMENT;
+            if (isComment) {
+                return (
+                    <div className="font-semibold text-xs flex items-center">
+                        <span className="text-[var(--text-muted)] font-medium text-xs">
+                            COMMENT
+                        </span>
+                    </div>
+                );
+            }
+            const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE';
+            return (
+                <div className="font-semibold text-xs">
+                    {!isCustom && line.productId ? (
+                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
+                            {line.productNumber || line.productId?.substring(0, 8)}
+                        </Link>
+                    ) : (
+                        <span className="text-[var(--text-muted)] font-medium text-xs">CUSTOM</span>
+                    )}
+                </div>
+            );
+        }
     },
     {
         id: 'description',
         header: tPurchase('columns.description'),
-        render: (line) => (
-            (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
+        render: (line) => {
+            const isComment = line.lineType === LineType.COMMENT;
+            const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000';
+            return (isCustom || isComment) && isLinesEditable ? (
                 <input
                     className="input w-full !text-xs h-7 py-1"
                     defaultValue={line.productDescription || ''}
@@ -124,33 +140,39 @@ export default function PurchaseOrderLinesTab({
                             updateLine(line.purchaseOrderLineId, 'productDescription', e.target.value);
                         }
                     }}
-                    placeholder="Custom description..."
+                    placeholder={isComment ? 'Enter note or comment...' : 'Custom description...'}
                 />
             ) : (
                 <span className="text-xs">{line.productDescription || '—'}</span>
-            )
-        )
+            );
+        }
     },
     {
         id: 'qty',
         header: tPurchase('columns.qty'), width: 70, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
-                <input
-                    className="input text-right w-full h-7 !text-xs tabular-nums !px-1.5 py-1"
-                    type="number"
-                    min="0"
-                    step="any"
-                    defaultValue={parseFloat(line.quantity || '0')}
-                    key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
-                    onBlur={(e) => {
-                        if (e.target.value !== line.quantity) {
-                            updateLine(line.purchaseOrderLineId, 'quantity', e.target.value);
-                        }
-                    }}
-                />
-            ) : <span className="text-xs tabular-nums">{parseFloat(line.quantity || '0')}</span>
-        ),
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-[var(--text-muted)] text-xs">—</span>;
+            }
+            if (isLinesEditable) {
+                return (
+                    <input
+                        className="input text-right w-full h-7 !text-xs tabular-nums !px-1.5 py-1"
+                        type="number"
+                        min="0"
+                        step="any"
+                        defaultValue={parseFloat(line.quantity || '0')}
+                        key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
+                        onBlur={(e) => {
+                            if (e.target.value !== line.quantity) {
+                                updateLine(line.purchaseOrderLineId, 'quantity', e.target.value);
+                            }
+                        }}
+                    />
+                );
+            }
+            return <span className="text-xs tabular-nums">{parseFloat(line.quantity || '0')}</span>;
+        },
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.qty')} value={
             isLinesEditable ? defaultRender : <span className="text-sm">{parseFloat(line.quantity || '0')} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
@@ -159,6 +181,9 @@ export default function PurchaseOrderLinesTab({
         id: 'received',
         header: tPurchase('columns.received'), width: 65, align: 'right',
         render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-xs text-[var(--text-muted)] font-normal">—</span>;
+            }
             if (isNonTrackedReceivedLine(line)) {
                 return <span className="text-xs text-[var(--text-muted)] font-normal">—</span>;
             }
@@ -175,6 +200,9 @@ export default function PurchaseOrderLinesTab({
         id: 'uom',
         header: tPurchase('columns.uom'), width: 50, align: 'right',
         render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-xs tabular-nums text-[var(--text-muted)]">—</span>;
+            }
             const defaultUom = line.baseUom || tCommon('ea');
             const currentUom = line.unitOfMeasure || defaultUom;
             if (!isLinesEditable) return <span className="text-xs tabular-nums">{currentUom}</span>;
@@ -216,8 +244,11 @@ export default function PurchaseOrderLinesTab({
     {
         id: 'unitPrice',
         header: tPurchase('columns.unitPrice'), width: 80, align: 'right',
-        render: (line) => (
-            isLinesEditable ? (
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-xs tabular-nums text-[var(--text-muted)]">—</span>;
+            }
+            return isLinesEditable ? (
                 <input
                     className="input text-right w-full h-7 !text-xs tabular-nums !px-1.5 py-1"
                     type="number"
@@ -234,14 +265,17 @@ export default function PurchaseOrderLinesTab({
                         }
                     }}
                 />
-            ) : <span className="text-xs tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>
-        ),
+            ) : <span className="text-xs tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>;
+        },
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
     },
     {
         id: 'discountPct',
         header: tPurchase('columns.discountPct'), width: 65, align: 'right',
         render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-xs tabular-nums text-[var(--text-muted)]">—</span>;
+            }
             const discVal = parseFloat(line.discountPercentage || '0');
             const formattedDisc = isNaN(discVal) ? '0' : String(discVal);
             return isLinesEditable ? (
@@ -275,6 +309,9 @@ export default function PurchaseOrderLinesTab({
         id: 'tax',
         header: tPurchase('columns.tax'), width: 65, align: 'right',
         render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="text-xs tabular-nums text-[var(--text-muted)]">—</span>;
+            }
             const selectedCat = taxCategories.find((cat) => cat.taxCategoryId === line.taxCategoryId);
             const formattedPct = selectedCat
                 ? (() => {
@@ -324,11 +361,16 @@ export default function PurchaseOrderLinesTab({
     {
         id: 'amount',
         header: tPurchase('columns.amount'), width: 85, align: 'right',
-        render: (line) => (
-            <span className="font-semibold tabular-nums text-xs">
-                {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
-            </span>
-        ),
+        render: (line) => {
+            if (line.lineType === LineType.COMMENT) {
+                return <span className="font-semibold tabular-nums text-xs text-[var(--text-muted)]">—</span>;
+            }
+            return (
+                <span className="font-semibold tabular-nums text-xs">
+                    {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
+                </span>
+            );
+        },
         mobileCard: (line, defaultRender) => <MobileCardField label={tPurchase('columns.amount')} value={
             <span className="font-bold text-[var(--accent)] text-base">{formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}</span>
         } />
@@ -357,6 +399,18 @@ export default function PurchaseOrderLinesTab({
         )
     }] : [])
   ], [tPurchase, isLinesEditable, order?.currencyCode, taxCategories, updateLine, removeLine, updateLineFields, tCommon]);
+
+  const prevLineCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    const lineCount = (order?.lines || []).length;
+    if (prevLineCountRef.current !== null && lineCount > prevLineCountRef.current) {
+      const el = document.getElementById('po-lines-section-bottom') || document.getElementById('lines-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+    prevLineCountRef.current = lineCount;
+  }, [order?.lines?.length]);
 
   return (
     <>
@@ -391,6 +445,17 @@ export default function PurchaseOrderLinesTab({
                     >
                       {tPurchase('buttons.customLine')}
                     </Button>
+                    {addCommentLine && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="whitespace-nowrap"
+                        onClick={addCommentLine}
+                        disabled={saving}
+                      >
+                        {tPurchase('buttons.commentLine')}
+                      </Button>
+                    )}
                   </>
                 ) : undefined
               }
@@ -594,6 +659,7 @@ export default function PurchaseOrderLinesTab({
               />
             </div>
           ) : null}
+          <div id="po-lines-section-bottom" className="h-px w-full" />
         </div>
 
     </>

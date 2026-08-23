@@ -8,7 +8,6 @@ import {
   isStockedProductLine,
   calculateAvailableQuantity,
   CUSTOM_LINE_ID,
-  LEGACY_CUSTOM_LINE_ID,
 } from '@herobm/shared';
 import { DataTable } from './DataTable';
 
@@ -61,7 +60,7 @@ function isCustomProduct(productId?: string | null): boolean {
   return (
     !productId ||
     productId === CUSTOM_LINE_ID ||
-    productId === LEGACY_CUSTOM_LINE_ID
+    productId === '00000000-0000-0000-0000-000000000000'
   );
 }
 
@@ -191,7 +190,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
               </Link>
             ) : (
               <span className="font-semibold text-xs">
-                {line.productNumber || '—'}
+                {line.productNumber === 'SYSTEM-CUSTOM-LINE' ? 'CUSTOM' : (line.productNumber || '—')}
               </span>
             )}
             {isKitParent && (

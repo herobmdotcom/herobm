@@ -97,6 +97,20 @@ A product can be configured as a **Kit**:
 4. Search for child products and enter the required quantity per kit.
 5. Click **Save Changes**.
 
+## Product Image Storage
+
+HeroBM supports uploading primary images for products, which are displayed on the Ops Portal and synced with integrations.
+
+**Where images are stored:**
+- Product images are saved securely on the host server filesystem rather than inside the database itself.
+- By default, the API container mounts the `./data/storage` directory from your HeroBM installation folder.
+- Manual uploads via the UI are physically stored under `<herobm-root>/data/storage/products/uploads/<product-id>/`.
+- For legacy database imports (such as ABM, Odoo, etc.), image paths are mapped directly to the `products/` folder. You should copy the contents of your legacy images folder directly into `<herobm-root>/data/storage/products/`.
+- If you are running a custom deployment, the root storage path can be overridden by setting the `STORAGE_PATH` environment variable in your `.env` file.
+
+**Uploading Images:**
+Images should be uploaded via the Ops Portal UI on the Product detail page, or via the `POST /products/images/{id}` API endpoint. The system automatically handles resizing, safe file naming, and database path linkage.
+
 ---
 
 ## Field Reference

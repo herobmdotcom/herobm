@@ -51,7 +51,7 @@ export class CustomerGroupsService {
         .values({
           isOnCreditHold: false,
           ...dto,
-          stateCode: CUSTOMER_STATE.ACTIVE,
+          stateCode: (dto.stateCode as CustomerState) || CUSTOMER_STATE.ACTIVE,
         } as typeof customerGroups.$inferInsert)
         .returning();
 
@@ -74,7 +74,11 @@ export class CustomerGroupsService {
 
       const rows = await tx
         .update(customerGroups)
-        .set(buildUpdatePayload(dto))
+        .set(
+          buildUpdatePayload(dto) as Partial<
+            typeof customerGroups.$inferInsert
+          >,
+        )
         .where(eq(customerGroups.customerGroupId, id))
         .returning();
 

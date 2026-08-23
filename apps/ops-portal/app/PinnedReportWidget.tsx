@@ -51,7 +51,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
 
         // Fetch data
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        const dataRes: any = await businessReportsControllerRunReport(slug, config.filters || {});
+        const dataRes: any = await businessReportsControllerRunReport(slug, { filters: config.filters || {} });
         setReportData(dataRes.data || dataRes);
       } catch (err) {
         reportError(err, 'PinnedReportWidget');

@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (470 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (471 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -504,6 +504,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/setup/validation` | Get Validation State |
 | `GET` | `/setup/import-summary` | Get Import Summary |
 | `GET` | `/setup/csv-metadata` | Get CSV Metadata |
+| `GET` | `/setup/export-csv/{tableName}` | Export Table as CSV |
 | `POST` | `/setup/execute-csv` | Execute CSV Import |
 | `POST` | `/macros` | Create Macro |
 | `GET` | `/macros` | List Macros |

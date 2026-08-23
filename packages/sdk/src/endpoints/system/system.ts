@@ -103,6 +103,7 @@ import type {
   SetRolePermissionsDto,
   SettingsSuccessResponseDto,
   SetupControllerExecuteCsvBody,
+  SetupControllerExportCsvParams,
   SetupValidationDto,
   SuccessResponseDto,
   SyncEventsResponseDto,
@@ -3390,6 +3391,51 @@ export const getSetupControllerGetCsvMetadataUrl = () => {
 export const setupControllerGetCsvMetadata = async ( options?: RequestInit): Promise<setupControllerGetCsvMetadataResponse> => {
   
   return customFetch<setupControllerGetCsvMetadataResponse>(getSetupControllerGetCsvMetadataUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Exports table records as a CSV file compatible with CSV import.
+ * @summary Export Table as CSV
+ */
+export type setupControllerExportCsvResponse200 = {
+  data: Blob
+  status: 200
+}
+    
+export type setupControllerExportCsvResponseSuccess = (setupControllerExportCsvResponse200) & {
+  headers: Headers;
+};
+;
+
+export type setupControllerExportCsvResponse = (setupControllerExportCsvResponseSuccess)
+
+export const getSetupControllerExportCsvUrl = (tableName: string,
+    params?: SetupControllerExportCsvParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/setup/export-csv/${tableName}?${stringifiedParams}` : `/setup/export-csv/${tableName}`
+}
+
+export const setupControllerExportCsv = async (tableName: string,
+    params?: SetupControllerExportCsvParams, options?: RequestInit): Promise<setupControllerExportCsvResponse> => {
+  
+  return customFetch<setupControllerExportCsvResponse>(getSetupControllerExportCsvUrl(tableName,params),
   {      
     ...options,
     method: 'GET'

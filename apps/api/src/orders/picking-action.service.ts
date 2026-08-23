@@ -80,7 +80,7 @@ export class PickingActionService {
       .where(
         and(
           eq(bins.binNumber, 'SHIPPING'),
-          eq(zones.locationId, line.fulfillmentLocationId),
+          eq(zones.locationId, line.fulfillmentLocationId!),
         ),
       )
       .limit(1);

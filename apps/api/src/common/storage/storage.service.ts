@@ -35,8 +35,9 @@ export class StorageService {
       candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
 
     this.ensureDirectory(this.storageRoot);
-    this.ensureDirectory(path.join(this.storageRoot, 'products', 'abm'));
+    this.ensureDirectory(path.join(this.storageRoot, 'products'));
     this.ensureDirectory(path.join(this.storageRoot, 'products', 'uploads'));
+    this.ensureDirectory(path.join(this.storageRoot, 'products', 'abm')); // Kept for legacy fallback
   }
 
   public getStorageRoot(): string {
@@ -102,9 +103,9 @@ export class StorageService {
     // Clean leading slashes and normalize
     const cleanPath = relativePath.replace(/^(\/|\\)+/, '').replace(/\\/g, '/');
 
-    // If path starts with 'abm/' or 'uploads/', resolve within 'products/'
+    // Legacy fallback: if path starts with 'abm/', resolve within 'products/'
     let targetRelative = cleanPath;
-    if (cleanPath.startsWith('abm/') || cleanPath.startsWith('uploads/')) {
+    if (cleanPath.startsWith('abm/')) {
       targetRelative = path.join('products', cleanPath);
     }
 

@@ -13,6 +13,8 @@ import {
   isBackTransition as sharedIsBackTransition,
   cap,
   calculateUomPriceAdjustment,
+  CUSTOM_LINE_ID,
+  LineType,
 } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
 
@@ -326,14 +328,16 @@ export function usePurchaseOrder(id: string) {
         currencyCode: order.currencyCode ?? 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
-          productId: l.productId,
+          productId: l.productId || undefined,
+          lineType: l.lineType || undefined,
           productDescription: l.productDescription,
           quantity: String(l.quantity),
           pricePerUnit: String(l.pricePerUnit),
           discountPercentage: String(l.discountPercentage || '0'),
           taxCategoryId: l.taxCategoryId || undefined,
           unitOfMeasure: l.unitOfMeasure || 'EA',
-        })),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO compatibility
+        } as any)),
       });
       router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
     } catch (err) {
@@ -401,7 +405,6 @@ export function usePurchaseOrder(id: string) {
   };
 
   const addBlankLine = async () => {
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     setSaving(true);
     try {
       await api.purchaseOrdersControllerAddLine(id, {
@@ -412,6 +415,25 @@ export function usePurchaseOrder(id: string) {
         discountPercentage: '0',
         unitOfMeasure: 'EA',
       });
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addCommentLine = async () => {
+    setSaving(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LineType DTO compatibility
+      const payload: any = {
+        lineType: LineType.COMMENT,
+        productDescription: '',
+        quantity: '0',
+        pricePerUnit: '0',
+      };
+      await api.purchaseOrdersControllerAddLine(id, payload);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -483,6 +505,7 @@ export function usePurchaseOrder(id: string) {
     removeLine,
     addLineFromProduct,
     addBlankLine,
+    addCommentLine,
     loadOrder,
     loadInvoices,
     loadReturns,

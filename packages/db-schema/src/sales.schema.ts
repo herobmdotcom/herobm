@@ -120,6 +120,7 @@ export const salesOrderLineItems = herobmCore.table(
       .notNull()
       .references(() => salesOrders.salesOrderId),
     lineNumber: integer('line_number').notNull(),
+    lineType: text('line_type').notNull().default('Product'),
     productId: uuid('product_id').references(() => products.productId),
     productDescription: text('product_description'),
     quantity: numeric('quantity').notNull(),
@@ -127,16 +128,16 @@ export const salesOrderLineItems = herobmCore.table(
     unitCost: numeric('unit_cost'),
     discountPercentage: numeric('discount_percentage'),
     amount: numeric('amount'),
-    taxCategoryId: uuid('tax_category_id')
-      .notNull()
-      .references(() => taxCategories.taxCategoryId),
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
+    ),
     tax: numeric('tax'),
     totalAmount: numeric('total_amount'),
     unitOfMeasure: text('unit_of_measure'),
     quantityPicked: numeric('quantity_picked'),
-    fulfillmentLocationId: uuid('fulfillment_location_id')
-      .notNull()
-      .references(() => locations.locationId),
+    fulfillmentLocationId: uuid('fulfillment_location_id').references(
+      () => locations.locationId,
+    ),
     isPostConfirmation: boolean('is_post_confirmation'),
     parentLineId: uuid('parent_line_id'),
   },
@@ -156,6 +157,10 @@ export const salesOrderLineItems = herobmCore.table(
       columns: [t.parentLineId],
       foreignColumns: [t.salesOrderLineId],
     }),
+    productLineCheck: check(
+      'sales_order_lines_product_check',
+      sql`(line_type = 'Product' AND tax_category_id IS NOT NULL AND fulfillment_location_id IS NOT NULL) OR line_type = 'Comment'`,
+    ),
   }),
 );
 

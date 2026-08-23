@@ -37,7 +37,6 @@ import {
   BACKORDER_TRANSITIONS,
   WORK_ORDER_STATE,
   CUSTOM_LINE_ID,
-  LEGACY_CUSTOM_LINE_ID,
   isStockedProductLine,
 } from '@herobm/shared';
 import { calculateInventoryGaps } from '@herobm/shared';

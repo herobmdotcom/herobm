@@ -68,8 +68,15 @@ export interface InventoryGap {
   locationId: string | null;
 }
 
-export const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
-export const LEGACY_CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
+/**
+ * Canonical product ID for ad-hoc / custom non-stocked line items ('SYSTEM-CUSTOM-LINE').
+ * Seeded in herobm_core.products as a valid RFC 4122 UUIDv4.
+ */
+export const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
+export const CUSTOM_PRODUCT_ID = CUSTOM_LINE_ID;
+export const SYSTEM_CUSTOM_LINE_ID = CUSTOM_LINE_ID;
+/** @deprecated Alias for CUSTOM_LINE_ID */
+export const LEGACY_CUSTOM_LINE_ID = CUSTOM_LINE_ID;
 
 /**
  * Check to determine if a line represents a tracked inventory item
@@ -77,7 +84,7 @@ export const LEGACY_CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
  */
 export function isStockedProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
   if (!line) return false;
-  const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === LEGACY_CUSTOM_LINE_ID;
+  const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000';
   if (isCustom) return false;
   
   // Only 'inventory' productType has tracked warehouse bin stock

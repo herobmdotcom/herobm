@@ -23,7 +23,7 @@
     "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --watch",
     "test:cov": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest",
-    "test:e2e": "cross-env ADMIN_PASSWORD=password tsx test/utils/provision-e2e-db.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=false POSTGRES_DB=herobm_e2e_test jest --config ./test/jest-e2e.js --forceExit",
+    "test:e2e": "cross-env ADMIN_PASSWORD=password tsx test/utils/provision-e2e-db.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=false POSTGRES_DB=herobm_e2e_test NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --config ./test/jest-e2e.js --forceExit",
     "test:unit:pglite": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --maxWorkers=50%",
     "test:unit": "npm run test:pglite",
     "test:changed": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --onlyChanged --passWithNoTests --maxWorkers=50%",

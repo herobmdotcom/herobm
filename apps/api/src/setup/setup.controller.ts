@@ -14,15 +14,20 @@ import {
   Delete,
   Body,
   Param,
+  Query,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { SetupService } from './setup.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import {
   ExecuteCsvDto,
+  ExportCsvQueryDto,
   TestAbmConnectionDto,
   TestOdooConnectionDto,
   ExecuteEltDto,
@@ -170,6 +175,31 @@ export class SetupController {
   @ApiOkResponse({ type: [CsvMetadataDto] })
   async getCsvMetadata() {
     return this.setupService.getCsvMetadata();
+  }
+
+  @Get('export-csv/:tableName')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Export Table as CSV',
+    description:
+      'Exports table records as a CSV file compatible with CSV import.',
+  })
+  @ApiOkResponse({
+    description: 'CSV file download',
+    schema: { type: 'string', format: 'binary' },
+  })
+  async exportCsv(
+    @Param('tableName') tableName: string,
+    @Query() dto: ExportCsvQueryDto,
+    @AuthUser() user: JwtUser,
+    @Res() res: Response,
+  ) {
+    return this.setupService.exportCsv(
+      tableName,
+      dto,
+      res,
+      user?.username || 'system',
+    );
   }
 
   @Post('execute-csv')

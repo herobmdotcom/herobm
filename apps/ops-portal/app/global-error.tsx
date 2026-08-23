@@ -47,7 +47,7 @@ export default function GlobalError({
   const tryAgain = 'Try Again';
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="herobm-light">
       <body className="m-0 min-h-screen flex items-center justify-center font-sans bg-[#0a0e1a] text-[#f8fafc]">
         <div className="max-w-[420px] p-8 rounded-2xl bg-[#111827] border border-white/[0.08] text-center">
           <h2 className="text-xl font-bold mb-2">

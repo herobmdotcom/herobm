@@ -116,6 +116,7 @@ export class OrdersQueryService {
         salesOrderLineId: salesOrderLineItems.salesOrderLineId,
         salesOrderId: salesOrderLineItems.salesOrderId,
         lineNumber: salesOrderLineItems.lineNumber,
+        lineType: salesOrderLineItems.lineType,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
         productType: coreProducts.productType,

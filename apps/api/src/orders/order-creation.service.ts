@@ -8,6 +8,7 @@ import {
   PRODUCT_STATE,
   getErrorMessage,
   normalizeUomCode,
+  LineType,
 } from '@herobm/shared';
 import {
   Injectable,
@@ -249,6 +250,30 @@ export class OrderCreationService {
       let currentLineNumber = 1;
       for (let idx = 0; idx < dto.lines.length; idx++) {
         const line = dto.lines[idx];
+        const isComment = line.lineType === LineType.COMMENT;
+
+        if (isComment) {
+          lineValues.push({
+            salesOrderLineId: randomUUID(),
+            salesOrderId: order.salesOrderId,
+            lineNumber: currentLineNumber++,
+            lineType: LineType.COMMENT,
+            productId: null,
+            productDescription: line.productDescription,
+            quantity: '0',
+            pricePerUnit: '0',
+            discountPercentage: '0',
+            taxCategoryId: null,
+            amount: '0',
+            tax: '0',
+            totalAmount: '0',
+            unitOfMeasure: null,
+            fulfillmentLocationId: null,
+            parentLineId: null,
+          });
+          continue;
+        }
+
         const lineTax = await this.coreService.resolveTaxForLine(
           dto.customerId,
           line.productId,
@@ -309,6 +334,7 @@ export class OrderCreationService {
             salesOrderLineId: parentLineId,
             salesOrderId: order.salesOrderId,
             lineNumber: currentLineNumber++,
+            lineType: line.lineType ?? LineType.PRODUCT,
             productId: line.productId,
             productDescription: line.productDescription,
             quantity: line.quantity,
@@ -355,9 +381,6 @@ export class OrderCreationService {
               compTax.rate,
             );
 
-            const providedChildTax =
-              compTax.taxProvider !== 'internal' ? '0' : childComputed.tax; // Enrichment usually computes tax at parent level for kits, or lines are explicit. Assuming '0' to avoid double tax if parent carries it, or wait, if the child was explicit we'd need a way to pass it. Kits are tricky, so we rely on internal for child items unless explicit DTO. Actually, just use internal fallback.
-            // Wait, if it's external tax, child lines should have 0 tax if we don't have explicit inputs for them. Let's just use childComputed but if external, 0.
             const finalChildTax =
               compTax.taxProvider !== 'internal' ? '0' : childComputed.tax;
             const finalChildTotal =
@@ -369,6 +392,7 @@ export class OrderCreationService {
               salesOrderLineId: randomUUID(),
               salesOrderId: order.salesOrderId,
               lineNumber: currentLineNumber++,
+              lineType: LineType.PRODUCT,
               productId: comp.childProductId,
               productDescription: comp.name,
               quantity: childQtyStr,
@@ -406,6 +430,7 @@ export class OrderCreationService {
             salesOrderLineId: parentLineId,
             salesOrderId: order.salesOrderId,
             lineNumber: currentLineNumber++,
+            lineType: line.lineType ?? LineType.PRODUCT,
             productId: line.productId,
             productDescription: line.productDescription,
             quantity: line.quantity,

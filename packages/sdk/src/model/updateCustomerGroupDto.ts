@@ -9,6 +9,7 @@
 export interface UpdateCustomerGroupDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  stateCode?: string;
   groupCode?: string;
   name?: string;
   defaultArAccountId?: string;

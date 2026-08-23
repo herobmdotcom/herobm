@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="herobm-light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -55,6 +55,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
           rel="stylesheet"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try { if (navigator.language) { document.documentElement.lang = navigator.language; } } catch (_) {}`,
+          }}
         />
       </head>
       <body className="antialiased">

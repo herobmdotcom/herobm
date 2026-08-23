@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
-import { calculateUomPriceAdjustment } from '@herobm/shared';
+import { calculateUomPriceAdjustment, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
 import type { OrderDetail, OrderLine, TaxCategory } from '../types';
 import { getTaxLabel } from '../types';
 import type { ProductUom } from '@herobm/shared';
@@ -66,27 +66,46 @@ export function OrderLinesTable({
             id: 'product',
             header: tSales('columns.product'),
             width: 100,
-            render: (line: OrderLine) => (
-                <span className="font-semibold text-xs">
-                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
-                            {line.productNumber || line.productId?.substring(0, 8)}
-                        </Link>
-                    ) : (
-                        line.productNumber || line.productId?.substring(0, 8) || '—'
-                    )}
-                    {line.isPostConfirmation && (
-                        <span className="ml-2 badge badge-sm badge-accent">
-                            {tSales('columns.postConfirmation')}
+            render: (line: OrderLine) => {
+                const isComment = line.lineType === LineType.COMMENT;
+                if (isComment) {
+                    return (
+                        <span className="font-semibold text-xs flex items-center">
+                            <span className="text-[var(--text-muted)] font-medium text-xs">
+                                COMMENT
+                            </span>
+                            {line.isPostConfirmation && (
+                                <span className="ml-2 badge badge-sm badge-accent">
+                                    {tSales('columns.postConfirmation')}
+                                </span>
+                            )}
                         </span>
-                    )}
-                </span>
-            )
+                    );
+                }
+                const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === '00000000-0000-0000-0000-000000000000' || line.productNumber === 'SYSTEM-CUSTOM-LINE';
+                return (
+                    <span className="font-semibold text-xs flex items-center">
+                        {!isCustom && line.productId ? (
+                            <Link href={`/products/${line.productId}`} className="text-[var(--accent)] no-underline hover:underline">
+                                {line.productNumber || line.productId?.substring(0, 8)}
+                            </Link>
+                        ) : (
+                            <span className="text-[var(--text-muted)] font-medium text-xs">CUSTOM</span>
+                        )}
+                        {line.isPostConfirmation && (
+                            <span className="ml-2 badge badge-sm badge-accent">
+                                {tSales('columns.postConfirmation')}
+                            </span>
+                        )}
+                    </span>
+                );
+            }
         },
         {
             id: 'description',
             header: tSales('columns.description'),
             render: (line: OrderLine) => {
+                const isComment = line.lineType === LineType.COMMENT;
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return isEditable ? (
                     <input
@@ -98,7 +117,7 @@ export function OrderLinesTable({
                                 updateLine(line.salesOrderLineId, 'productDescription', e.target.value);
                             }
                         }}
-                        placeholder="Custom description..."
+                        placeholder={isComment ? 'Enter note or comment...' : 'Custom description...'}
                     />
                 ) : (
                     <span className="text-xs">{line.productDescription || '—'}</span>
@@ -111,6 +130,9 @@ export function OrderLinesTable({
             width: 70,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 
                 const hasGap = isPreConfirmation && gapMap[line.salesOrderLineId] !== undefined;
@@ -163,6 +185,9 @@ export function OrderLinesTable({
             width: 50,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 const defaultUom = line.baseUom || 'EA';
                 const currentUom = line.unitOfMeasure || defaultUom;
@@ -208,6 +233,9 @@ export function OrderLinesTable({
             width: 80,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 if (isEditable) {
                     return (
@@ -238,6 +266,9 @@ export function OrderLinesTable({
             width: 80,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 if (isEditable) {
                     return (
@@ -276,6 +307,9 @@ export function OrderLinesTable({
             width: 65,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 const discVal = parseFloat(line.discountPercentage || '0');
                 const formattedDisc = isNaN(discVal) ? '0' : String(discVal);
@@ -326,6 +360,9 @@ export function OrderLinesTable({
             width: 65,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 const isExternalTax = !!order.taxProvider && order.taxProvider !== 'internal';
 
@@ -392,6 +429,9 @@ export function OrderLinesTable({
             width: 85,
             align: 'right',
             render: (line: OrderLine) => {
+                if (line.lineType === LineType.COMMENT) {
+                    return <span className="text-[var(--text-muted)] text-xs">—</span>;
+                }
                 const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                 return (
                     <span className={`font-semibold tabular-nums text-xs ${isEditable ? 'text-[var(--text-primary)]' : ''}`}>

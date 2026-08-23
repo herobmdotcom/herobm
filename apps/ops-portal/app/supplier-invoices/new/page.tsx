@@ -85,7 +85,7 @@ export default function NewPurchaseInvoicePage() {
           return {
             key: ++lineKey,
             productId: poLine?.productId || '',
-            productNumber: poLine ? poLine.productNumber || poLine.productId.substring(0,8) : '',
+            productNumber: poLine ? poLine.productNumber || poLine.productId?.substring(0,8) || '' : '',
             productDescription: poLine?.productDescription || '',
             quantityInvoiced: lti.defaultQty,
             pricePerUnit: poLine?.pricePerUnit || '0',

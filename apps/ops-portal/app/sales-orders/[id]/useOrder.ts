@@ -8,7 +8,9 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { 
     SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
-    SALES_ORDER_STATE
+    SALES_ORDER_STATE,
+    CUSTOM_LINE_ID,
+    LineType
 } from '@herobm/shared';
 
 import type {
@@ -228,7 +230,7 @@ export function useOrder(id: string) {
     useEffect(() => {
         if (!order || order.lines.length === 0) return;
         
-        const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
+        const productIds = [...new Set(order.lines.map((l) => l.productId).filter((id): id is string => Boolean(id)))];
         if (productIds.length === 0) return;
         
         setInventoryLoading(true);
@@ -436,7 +438,6 @@ export function useOrder(id: string) {
     };
 
     const addBlankLine = async () => {
-        const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
@@ -461,7 +462,6 @@ export function useOrder(id: string) {
     };
 
     const addPostConfirmationBlankLine = async () => {
-        const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
         setSaving(true);
         try {
             await api.ordersControllerAddPostConfirmationLine(id, {
@@ -472,6 +472,30 @@ export function useOrder(id: string) {
                 discountPercentage: '0',
                 unitOfMeasure: 'EA',
             });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const addCommentLine = async () => {
+        setSaving(true);
+        try {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LineType DTO compatibility
+            const payload: any = {
+                lineType: LineType.COMMENT,
+                productDescription: '',
+                quantity: '0',
+                pricePerUnit: '0',
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
+            } else {
+                await api.ordersControllerAddLine(id, payload);
+            }
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -529,7 +553,7 @@ export function useOrder(id: string) {
 
         // Mutations
         saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
-        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
+        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,
         customerDeliveryAddresses,
