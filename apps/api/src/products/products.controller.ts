@@ -26,6 +26,7 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
@@ -59,6 +60,8 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('products')
 @CasbinResource(SystemResource.PRODUCTS)
 export class ProductsController {
+  private readonly logger = new Logger(ProductsController.name);
+
   constructor(
     private readonly productsService: ProductsService,
     private readonly productsWriteService: ProductsWriteService,
@@ -100,6 +103,9 @@ export class ProductsController {
 
     const { fullPath, exists } = this.storageService.resolveFilePath(imagePath);
     if (!exists || !fullPath) {
+      this.logger.warn(
+        `Product image not found for relative path: "${imagePath}" (storageRoot: "${this.storageService.getStorageRoot()}", attempted fullPath: "${fullPath}")`,
+      );
       throw new NotFoundException('Image not found');
     }
 

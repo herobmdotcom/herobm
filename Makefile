@@ -127,13 +127,15 @@ DBT_DIR = pipelines/$(SOURCE)_transform
 
 
 
-# Ensure log directory has permissive permissions across container runtimes and host.
+# Ensure log and storage directories have permissive permissions across container runtimes and host.
 # This only runs on Linux/macOS to avoid impacting Windows hosts.
 check-postgres-logs:
 ifneq ($(OS),Windows_NT)
-	@mkdir -p ./logs
+	@mkdir -p ./logs ./data/storage/products/uploads
 	-@chmod -R 777 ./logs 2>/dev/null || chmod -R a+rwx ./logs 2>/dev/null || true
+	-@chmod -R a+rX ./data/storage 2>/dev/null || true
 	-@podman unshare chmod -R 777 ./logs 2>/dev/null || true
+	-@podman unshare chmod -R a+rX ./data/storage 2>/dev/null || true
 endif
 
 # --------------------------------------------------------------------------
@@ -292,7 +294,7 @@ sync-table:
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select +$(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-transform:
+transform: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=<source>))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -313,7 +315,7 @@ transform-dry:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-dry SOURCE=<source>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-transform-select:
+transform-select: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
@@ -321,19 +323,19 @@ transform-select-dry:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select-dry SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-transform-refresh:
+transform-refresh: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt: extract transform import-legacy dev-docs-schema
+elt: check-postgres-logs extract transform import-legacy dev-docs-schema
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
-elt-no-extract: transform import-legacy dev-docs-schema
+elt-no-extract: check-postgres-logs transform import-legacy dev-docs-schema
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
-import-legacy:
+import-legacy: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy SOURCE=<source>))
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
