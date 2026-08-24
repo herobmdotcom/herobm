@@ -18,6 +18,8 @@ fields:
     title: "Keyboard Shortcuts"
     summary: "Press '?' anywhere to toggle Help. Press 'Esc' to close drawers and modals."
 related:
+  - "install-guide"
+  - "architecture"
   - "dashboard"
   - "sales-orders"
   - "inventory"

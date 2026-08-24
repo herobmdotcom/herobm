@@ -4,6 +4,17 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-08-24] - System Architecture Help Topic
+
+**Topics Updated:**
+- **`docs/user/architecture.md` (NEW)**:
+  - Created dedicated Architecture overview guide under the Overview category.
+  - Documented high-level system topology (Mermaid diagram), monorepo components (`apps/*`, `packages/*`), Tri-Schema database model (`public_staging`, `public_marts`, `herobm_core`), double-entry General Ledger engine, double-entry perpetual inventory engine, deterministic state machines, transactional outbox relay, Casbin RBAC security model, Typst document compilation, and local IT operations / tiered verification hierarchy.
+- **`docs/user/overview.md`**:
+  - Linked new `architecture` topic in the `related` topics metadata.
+
+---
+
 ## [2026-08-22] - Comprehensive Feature Sync & Checkpoint Baseline
 
 **Audited Range:** `66706a03..fb61ff05` (and working tree changes)  
