@@ -16,6 +16,7 @@ import {
   glAccounts,
   pipelineJobs,
   tradingTerms,
+  systemEvents,
 } from '@herobm/db-schema';
 import {
   ExecuteSetupDto,
@@ -664,6 +665,23 @@ export class SetupService {
       res.write(csvContent);
       res.end();
     }
+
+    // Direct audit recording for CSV export downloads
+    const schemaTableName =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic table name
+      (registryEntry.table as any)[Symbol.for('drizzle:Name')] || tableName;
+    await this.db.insert(systemEvents).values({
+      entityType: 'system',
+      entityId: '00000000-0000-0000-0000-000000000000',
+      eventType: 'csv_export_generated',
+      entityDisplayName: `CSV Export: ${registryEntry.name}`,
+      payload: {
+        table: schemaTableName,
+        rowCount: rows.length,
+        includeArchived: !!options.includeArchived,
+      },
+      actor: username || 'system',
+    });
 
     if (!res) {
       return csvContent;

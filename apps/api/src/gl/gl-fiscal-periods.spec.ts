@@ -153,7 +153,9 @@ describe('GL Fiscal Periods & Period Governance', () => {
 
       // Verify timeline events retrieved through getFiscalPeriods
       const periods = await service.getFiscalPeriods({ fiscalYear: 2026 });
-      const updatedPeriod = periods.find((p) => p.periodId === period.periodId)!;
+      const updatedPeriod = periods.find(
+        (p) => p.periodId === period.periodId,
+      )!;
       expect(updatedPeriod.events).toBeDefined();
       // Should have 1 created + 3 status_changed events = 4 events
       expect(updatedPeriod.events?.length).toBe(4);
@@ -164,7 +166,9 @@ describe('GL Fiscal Periods & Period Governance', () => {
         .from(outbox)
         .where(eq(outbox.entityId, period.periodId));
       expect(
-        outboxRows.filter((r) => r.eventType === 'fiscal_period.status_changed'),
+        outboxRows.filter(
+          (r) => r.eventType === 'fiscal_period.status_changed',
+        ),
       ).toHaveLength(3);
     });
 

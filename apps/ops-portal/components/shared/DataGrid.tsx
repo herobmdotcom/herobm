@@ -1117,7 +1117,7 @@ export default function DataGrid<T>({
           )}
         </div>
         {secondaryHeader && (
-          <div className={`items-center overflow-x-auto whitespace-nowrap w-full lg:w-auto ${hideSecondaryHeaderOnMobile ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`items-center w-full lg:w-auto ${hideSecondaryHeaderOnMobile ? 'hidden lg:flex' : 'flex'}`}>
             {secondaryHeader}
           </div>
         )}

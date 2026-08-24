@@ -16,6 +16,7 @@ try {
     fs.rmSync(metaBackupDir, { recursive: true, force: true });
   }
   if (fs.existsSync(metaDir)) {
+    fs.mkdirSync(metaBackupDir, { recursive: true });
     fs.cpSync(metaDir, metaBackupDir, { recursive: true });
   }
 
@@ -47,7 +48,7 @@ try {
 } finally {
   // Restore meta directory safely
   if (fs.existsSync(metaBackupDir)) {
-    fs.rmSync(metaDir, { recursive: true, force: true });
+    fs.rmSync(metaDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     fs.renameSync(metaBackupDir, metaDir);
   }
 }

@@ -1,33 +1,52 @@
 export enum SystemResource {
+  // Dashboard
+  DASHBOARD = 'dashboard',
+
+  // Sales
   CUSTOMERS = 'customers',
-  PRODUCTS = 'products',
-  INVENTORY = 'inventory',
   SALES_ORDERS = 'sales-orders',
   SALES_RETURNS = 'sales-returns',
   SALES_CREDIT_NOTES = 'sales-credit-notes',
+
+  // Inventory
+  PRODUCTS = 'products',
+  INVENTORY = 'inventory',
+  GOODS_RECEIVED = 'goods-received',
+
+  // Purchasing
+  SUPPLIERS = 'suppliers',
   PURCHASE_ORDERS = 'purchase-orders',
   PURCHASE_RETURNS = 'purchase-returns',
   PURCHASE_DEBIT_NOTES = 'purchase-debit-notes',
-  SUPPLIERS = 'suppliers',
-  GOODS_RECEIVED = 'goods-received',
-  DASHBOARD = 'dashboard',
-  SETTINGS = 'settings',
+
+  // Manufacturing
+  WORK_ORDERS = 'work-orders',
+
+  // CRM
+  CRM = 'crm',
+
+  // Finance
+  GL = 'gl',
+  CREDIT_CONTROL = 'credit-control',
+  PAYMENTS = 'payments',
+  FISCAL_PERIODS = 'fiscal-periods',
+
+  // Reporting
   REPORT = 'report',
   BUSINESS_REPORT = 'business_report',
-  PAYMENTS = 'payments',
-  SYSTEM_LOGS = 'system_logs',
-  IMPORT = 'import',
+
+  // Admin
+  SETTINGS = 'settings',
+  USERS = 'users',
+  ROLES = 'roles',
+
+  // Technical
   API_KEYS = 'api_keys',
   WEBHOOKS = 'webhooks',
-  EVENTS = 'events',
-  ROLES = 'roles',
-  USERS = 'users',
-  GL = 'gl',
   DATA_EXPORT = 'data-export',
-  CREDIT_CONTROL = 'credit-control',
-  CRM = 'crm',
-  WORK_ORDERS = 'work-orders',
-  FISCAL_PERIODS = 'fiscal-periods',
+  IMPORT = 'import',
+  EVENTS = 'events',
+  SYSTEM_LOGS = 'system_logs',
 }
 
 export interface Permission {

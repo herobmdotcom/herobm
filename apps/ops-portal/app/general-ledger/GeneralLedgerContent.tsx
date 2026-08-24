@@ -191,11 +191,11 @@ export default function GeneralLedgerContent() {
         </Button>
       }
       secondaryHeader={
-        <div className="flex flex-wrap items-center justify-start gap-4">
+        <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-4 w-full">
           <select
             value={accountCode}
             onChange={(e) => setAccountCode(e.target.value)}
-            className="input text-xs h-9 border-gray-200 !w-auto min-w-[240px] bg-white rounded-lg"
+            className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[240px] bg-white rounded-lg"
           >
             <option value="">{t('allAccounts')}</option>
             {accounts.map((a) => (
@@ -204,20 +204,20 @@ export default function GeneralLedgerContent() {
               </option>
             ))}
           </select>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+              className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
               title={t('fromDate')}
             />
-            <span className="text-gray-300 font-bold">→</span>
+            <span className="text-gray-300 font-bold shrink-0">→</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+              className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
               title={t('toDate')}
             />
           </div>

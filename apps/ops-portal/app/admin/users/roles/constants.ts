@@ -5,33 +5,52 @@ export const RESOURCES = Object.values(SystemResource);
 export const ACTIONS = ['read', 'write', 'archive', 'handle', 'invoice', 'delete'];
 
 export const VALID_ACTIONS: Record<string, string[]> = {
+  // Dashboard
+  'dashboard': ['read'],
+
+  // Sales
   'customers': ['read', 'write', 'archive'],
-  'products': ['read', 'write', 'archive'],
-  'inventory': ['read', 'write'],
   'sales-orders': ['read', 'write', 'archive', 'handle', 'invoice'],
   'sales-returns': ['read', 'write', 'handle'],
   'sales-credit-notes': ['read', 'invoice'],
+
+  // Inventory
+  'products': ['read', 'write', 'archive'],
+  'inventory': ['read', 'write'],
+  'goods-received': ['read', 'write', 'handle'],
+
+  // Purchasing
+  'suppliers': ['read', 'write', 'archive'],
   'purchase-orders': ['read', 'write', 'archive', 'invoice'],
   'purchase-returns': ['read', 'write', 'handle'],
   'purchase-debit-notes': ['read', 'write'],
-  'suppliers': ['read', 'write', 'archive'],
-  'goods-received': ['read', 'write', 'handle'],
-  'dashboard': ['read'],
-  'settings': ['read', 'write'],
+
+  // Manufacturing
+  'work-orders': ['read', 'write'],
+
+  // CRM
+  'crm': ['read', 'write', 'archive', 'delete'],
+
+  // Finance
+  'gl': ['read', 'write'],
+  'credit-control': ['read', 'write'],
+  'payments': ['read', 'write'],
+  'fiscal-periods': ['read', 'write'],
+
+  // Reporting
   'report': ['read', 'write'],
   'business_report': ['read', 'write', 'archive'],
-  'payments': ['read', 'write'],
-  'system_logs': ['read'],
-  'import': ['read', 'write'],
+
+  // Admin
+  'settings': ['read', 'write'],
+  'users': ['read', 'write'],
+  'roles': ['read', 'write'],
+
+  // Technical
   'api_keys': ['read', 'write'],
   'webhooks': ['read', 'write'],
-  'events': ['write'],
-  'roles': ['read', 'write'],
-  'users': ['read', 'write'],
-  'gl': ['read', 'write'],
   'data-export': ['read'],
-  'credit-control': ['read', 'write'],
-  'crm': ['read', 'write', 'archive', 'delete'],
-  'work-orders': ['read', 'write'],
-  'fiscal-periods': ['read', 'write'],
+  'import': ['read', 'write'],
+  'events': ['write'],
+  'system_logs': ['read'],
 };
