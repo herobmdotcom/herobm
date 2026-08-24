@@ -255,14 +255,6 @@ export class GoodsReceivedWriteService {
                 ? openPoLines[0].unitOfMeasure || product.baseUom
                 : product.baseUom,
           });
-          console.log(
-            '[DEBUG] GoodsReceived - Line:',
-            line.productId,
-            'MatchStatus:',
-            matchStatus,
-            'openPoLines:',
-            openPoLines.length,
-          );
         }
 
         await tx
@@ -367,17 +359,6 @@ export class GoodsReceivedWriteService {
             product.qoh,
             qty,
             unitCost,
-          );
-
-          console.log(
-            '[DEBUG] GoodsReceived - Product:',
-            lv.productId,
-            'Qty:',
-            qty,
-            'UnitCost:',
-            unitCost,
-            'Added:',
-            valuation.inventoryValueAdded,
           );
 
           totalInventoryValueAdded += parseFloat(valuation.inventoryValueAdded);

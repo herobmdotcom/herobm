@@ -55,11 +55,4 @@ export default defineConfig({
       testIgnore: /auth\.setup\.ts/,
     },
   ],
-
-  /* Run your local dev server before starting the tests (Optional) */
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:4301',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });

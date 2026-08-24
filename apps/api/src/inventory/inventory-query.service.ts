@@ -328,8 +328,7 @@ export class InventoryQueryService {
           .where(and(...filters))
           .orderBy(products.name, locations.code);
       } catch (err) {
-        console.error('>>> CAUGHT ERROR IN findByProductIds <<<');
-        console.error(err);
+        this.logger.error('Error in findByProductIds:', err);
         throw err;
       }
     }

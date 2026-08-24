@@ -323,7 +323,10 @@ export class CustomerStatementService {
         (bankMeta.routingNumber as string) ||
         '000-000',
       accountNumber: (bankMeta.accountNumber as string) || '12345678',
-      remittanceEmail: 'accounts@modbm.internal',
+      remittanceEmail:
+        (bankMeta.remittanceEmail as string) ||
+        (bankMeta.email as string) ||
+        '',
     };
 
     const billingAddressParts = [

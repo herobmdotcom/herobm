@@ -49,7 +49,7 @@ dirsToScan.forEach(dir => {
           
           // Frontend specific: ignore the ones we are currently fixing in Phase 6
           if (filePath.includes('ops-portal')) {
-             if (line.match(/as\s+any/)) return; // The swarm is deleting these right now
+             if (line.match(/as\s+any/)) return; // Phase 6 cleanup in progress
           }
 
           // If we got here, it's potentially an unacceptable use

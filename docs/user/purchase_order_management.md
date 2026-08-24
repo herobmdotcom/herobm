@@ -79,14 +79,14 @@ stateDiagram-v2
 ## Key Purchasing Controls
 
 ### 1. Supplier Purchasing Holds
-- If a vendor account is flagged with **Purchasing Hold** in [Suppliers](file:///docs/user/suppliers.md), the system displays a prominent warning on order creation and blocks confirming new orders until authorized management removes the hold.
+- If a vendor account is flagged with **Purchasing Hold** in [Suppliers](./suppliers.md), the system displays a prominent warning on order creation and blocks confirming new orders until authorized management removes the hold.
 
 ### 2. Direct Document Emailing
 - Operators can transmit Purchase Orders directly to vendors via the **Email Document** modal.
 - Generates a formatted Typst PDF attachment, pulls the vendor's primary purchasing contact email, and supports live PDF preview.
 
 ### 3. Return to Vendor (RTV) Integration
-- For defective or excess received goods, click **Create Return** directly from the Purchase Order view to initiate a linked [Purchase Return](file:///docs/user/purchase_returns_debit_notes.md).
+- For defective or excess received goods, click **Create Return** directly from the Purchase Order view to initiate a linked [Purchase Return](./purchase_returns_debit_notes.md).
 
 ---
 

@@ -105,7 +105,7 @@ def get_dbt_results(source):
 
 def main():
     parser = argparse.ArgumentParser(description="ELT Pipeline Summary Report")
-    parser.add_argument("--profile", type=str, help="Environment profile to use (e.g. volzsg)", default=None)
+    parser.add_argument("--profile", type=str, help="Environment profile to use (e.g. production)", default=None)
     parser.add_argument("--source", type=str, required=True, help="Data source pipeline (e.g. abm, odoo)")
     args = parser.parse_args()
 

@@ -9,7 +9,7 @@ async function run() {
   const pass = process.env.POSTGRES_PASSWORD || '';
   const host = process.env.POSTGRES_HOST || 'localhost';
   const port = process.env.POSTGRES_PORT || '5432';
-  const db = process.env.POSTGRES_DB || 'herobm_hfp';
+  const db = process.env.POSTGRES_DB || 'herobm';
   
   const connectionString = `postgres://${user}:${pass}@${host}:${port}/${db}`;
 

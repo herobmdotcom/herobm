@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
 import {
   ThrottlerGuard,
   InjectThrottlerOptions,
@@ -16,6 +16,8 @@ import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class ApiThrottlerGuard extends ThrottlerGuard {
+  private readonly logger = new Logger(ApiThrottlerGuard.name);
+
   constructor(
     @InjectThrottlerOptions() options: ThrottlerModuleOptions,
     @InjectThrottlerStorage() storageService: ThrottlerStorage,
@@ -51,7 +53,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
       if (settings.length > 0 && settings[0].limit) {
         requestProps.limit = Number(settings[0].limit);
         throttler.limit = Number(settings[0].limit);
-        console.log(
+        this.logger.debug(
           `[ThrottlerGuard] Override limit to ${throttler.limit} for IP ${req.ip} URL ${req.url}`,
         );
       }

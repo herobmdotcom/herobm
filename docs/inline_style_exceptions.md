@@ -4,7 +4,7 @@
 
 As part of the UI consistency and style hygiene initiative (**ADV-124**), inline `style={{...}}` blocks across `apps/ops-portal` have been audited, systematically refactored, and ratcheted down from **977** occurrences to **2** remaining occurrences.
 
-The structural test in [infra/tests/test_adv_124_no_unannotated_inline_styles.ts](file:///c:/Users/Marcel/volz/modbm/modbm/infra/tests/test_adv_124_no_unannotated_inline_styles.ts) enforces **zero unannotated inline styles**. Any inline style must have an explicit dynamic justification comment directly above it (`{/* inline-style-allowed: <reason> */}`).
+The structural test in [`infra/tests/test_adv_124_no_unannotated_inline_styles.ts`](../infra/tests/test_adv_124_no_unannotated_inline_styles.ts) enforces **zero unannotated inline styles**. Any inline style must have an explicit dynamic justification comment directly above it (`{/* inline-style-allowed: <reason> */}`).
 
 ---
 
@@ -13,7 +13,7 @@ The structural test in [infra/tests/test_adv_124_no_unannotated_inline_styles.ts
 The remaining 2 inline styles are strictly runtime-computed dynamic indentation values for recursive tree structures that cannot be statically modeled via Tailwind utility classes without generating an arbitrary finite set of hardcoded level classes:
 
 ### Exception 1: Chart of Accounts Depth Indentation
-- **File:** [apps/ops-portal/app/admin/settings/financial/components/CoASettingsSection.tsx](file:///c:/Users/Marcel/volz/modbm/modbm/apps/ops-portal/app/admin/settings/financial/components/CoASettingsSection.tsx#L113)
+- **File:** [`apps/ops-portal/app/admin/settings/financial/components/CoASettingsSection.tsx`](../apps/ops-portal/app/admin/settings/financial/components/CoASettingsSection.tsx#L113)
 - **Code:**
   ```tsx
   <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
@@ -21,7 +21,7 @@ The remaining 2 inline styles are strictly runtime-computed dynamic indentation 
 - **Rationale:** Computes the visual indentation of arbitrary recursive Chart of Accounts categories and accounts. Depth can theoretically be nested to $N$ levels based on the user's customized chart structure.
 
 ### Exception 2: General Ledger Account Codes Modal Tree Depth
-- **File:** [apps/ops-portal/app/general-ledger/CodesModal.tsx](file:///c:/Users/Marcel/volz/modbm/modbm/apps/ops-portal/app/general-ledger/CodesModal.tsx#L165)
+- **File:** [`apps/ops-portal/app/general-ledger/CodesModal.tsx`](../apps/ops-portal/app/general-ledger/CodesModal.tsx#L165)
 - **Code:**
   ```tsx
   <td

@@ -78,10 +78,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (appResult.status === 'fulfilled' && appResult.value?.data) {
-          console.log('App settings retrieved:', appResult.value.data);
           setApp(appResult.value.data as unknown as AppSettings);
-        } else {
-          console.log('App settings failed to load or returned null');
         }
       } catch (err: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.

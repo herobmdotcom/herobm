@@ -63,7 +63,7 @@ Every posted transaction in the system must obey the double-entry equation:
 ## Fiscal Locking & Balance Integrity
 
 ### 1. Fiscal Period Enforcement
-- All manual journal entries and automated operational postings check the active [Fiscal Period](file:///docs/user/fiscal_periods.md).
+- All manual journal entries and automated operational postings check the active [Fiscal Period](./fiscal_periods.md).
 - Postings with effective dates falling into a **Hard Closed** period are blocked.
 - Postings in a **Soft Locked** period require explicit user confirmation.
 

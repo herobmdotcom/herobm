@@ -15,8 +15,8 @@ jest.mock('../AuthGate', () => ({
   useAuth: () => ({
     authenticated: true,
     role: 'admin',
-    username: 'marcel.volz',
-    displayName: 'Marcel Volz',
+    username: 'john.doe',
+    displayName: 'John Doe',
     permissions: [],
   }),
 }));

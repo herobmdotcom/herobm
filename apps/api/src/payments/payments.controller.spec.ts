@@ -84,7 +84,7 @@ describe('PaymentsController', () => {
           {
             userId: 'user-1',
             username: 'admin',
-            email: 'admin@modbm.com',
+            email: 'admin@herobm.com',
             role: 'admin',
           },
         ),
@@ -107,7 +107,7 @@ describe('PaymentsController', () => {
       const result = await controller.emailDocument('pmt-1', dto, {
         userId: 'user-1',
         username: 'admin',
-        email: 'admin@modbm.com',
+        email: 'admin@herobm.com',
         role: 'admin',
       });
 
@@ -147,7 +147,7 @@ describe('PaymentsController', () => {
       const result = await controller.emailDocument('pmt-2', dto, {
         userId: 'user-1',
         username: 'admin',
-        email: 'admin@modbm.com',
+        email: 'admin@herobm.com',
         role: 'admin',
       });
 

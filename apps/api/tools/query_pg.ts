@@ -12,8 +12,6 @@ if (fs.existsSync(path.resolve(rootDir, '.active_profile'))) {
 const possibleEnvFiles = [
   activeProfile ? `.env.${activeProfile}` : '',
   '.env',
-  '.env.volzau',
-  '.env.hfp',
   '.env.local'
 ].filter(Boolean);
 for (const envFile of possibleEnvFiles) {
@@ -45,8 +43,6 @@ if ((input.includes('query.sql') || input.includes('tmp')) && fs.existsSync(quer
 }
 
 // Security: Prevent agents from bypassing make migrate or corrupting data natively
-// Bypass checking for this run
-/*
 const isSafeQuery = /^\s*(SELECT|WITH|EXPLAIN|SHOW)\b/i.test(sql);
 if (!isSafeQuery) {
   console.error("ERROR: The tools/query_pg.ts utility is strictly for READ-ONLY queries (SELECT, WITH, EXPLAIN).");
@@ -54,7 +50,6 @@ if (!isSafeQuery) {
   console.error("MANDATED: You must use Drizzle schema updates and 'make migrate', or 'tools/seed.py' for data testing.");
   process.exit(1);
 }
-*/
 
 const sqlClient = process.env.DATABASE_URL
   ? postgres(process.env.DATABASE_URL, { max: 1 })

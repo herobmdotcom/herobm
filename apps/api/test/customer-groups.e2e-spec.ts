@@ -2,6 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 import request from 'supertest';
 
@@ -103,18 +104,18 @@ describe('Account Groups (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Updated Account Group',
-        stateCode: 'inactive',
+        stateCode: CUSTOMER_STATE.INACTIVE,
       });
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.name).toBe('Updated Account Group');
-    expect(updateRes.body.stateCode).toBe('inactive');
+    expect(updateRes.body.stateCode).toBe(CUSTOMER_STATE.INACTIVE);
 
     // 6b. Verify get returns stateCode inactive
     const getUpdatedRes = await request(app.getHttpServer())
       .get(`/api/customer-groups/${groupId}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(getUpdatedRes.status).toBe(200);
-    expect(getUpdatedRes.body.stateCode).toBe('inactive');
+    expect(getUpdatedRes.body.stateCode).toBe(CUSTOMER_STATE.INACTIVE);
 
     // 7. Delete the group (first cleanly un-assign the account to avoid FK errors)
     await request(app.getHttpServer())

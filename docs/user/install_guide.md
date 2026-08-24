@@ -6,8 +6,11 @@ category: "Overview"
 order: 1
 routes:
   - "/admin/version"
-tags: ["installation", "setup", "fast-install", "deployment", "prerequisites", "startup-options", "firewall", "networking", "ports"]
+tags: ["installation", "setup", "fast-install", "deployment", "prerequisites", "startup-options", "firewall", "networking", "ports", "system-requirements", "hardware"]
 fields:
+  requirements:
+    title: "Machine & System Requirements"
+    summary: "Hardware specifications, supported operating systems, and container/software prerequisites."
   fast_install:
     title: "Fast Install"
     summary: "One-step automated setup target: `make fast-install`."
@@ -32,7 +35,38 @@ HeroBM uses a universal automated **Fast Install** sequence to configure prerequ
 
 ---
 
-## 1. Quick Start (Fast Install — Recommended)
+## 1. Machine & System Requirements
+
+Before running the installer, ensure your host machine or virtual server meets the following specifications:
+
+### Hardware Specifications
+
+| Component | Minimum (Evaluation / Development) | Recommended (Production / 10+ Concurrent Users) |
+| :--- | :--- | :--- |
+| **CPU** | 2 vCPUs / Cores (x86_64 or ARM64) | 4+ vCPUs / Cores (x86_64 or ARM64) |
+| **Memory (RAM)** | 4 GB RAM | 8 GB – 16 GB RAM |
+| **Disk Storage** | 10 GB available SSD space | 50+ GB high-speed SSD / NVMe |
+| **Architecture** | 64-bit (`x86_64` / `amd64` or `aarch64` / `arm64`) | 64-bit (`x86_64` or `arm64`) |
+
+### Supported Operating Systems
+
+- **Linux**: Ubuntu 22.04 LTS+, Debian 12+, RHEL 9+, Rocky Linux, Arch Linux.
+- **macOS**: macOS 13+ (Ventura, Sonoma, Sequoia) on Apple Silicon (M1/M2/M3/M4) or Intel.
+- **Windows**: Windows 10/11 (via WSL2 or Native PowerShell 7+).
+- **Cloud / VPS**: Works seamlessly on [exe.dev](https://exe.dev), AWS, GCP, DigitalOcean, Hetzner, or bare-metal servers.
+
+### Container & Software Prerequisites
+
+The automated installer (`make fast-install`) will automatically detect, install, and configure missing prerequisites. If configuring in an offline or air-gapped environment:
+- **Container Engine**: [Podman](https://podman.io) 4.5+ (recommended, rootless) or [Docker](https://docker.com) 24+ / Docker Compose v2.
+- **Node.js**: `v20.12.0` or higher (Active LTS).
+- **Python**: Python `3.10`+ (for data ingestion pipelines).
+- **Typst**: `v0.11.0`+ (for high-speed PDF rendering).
+- **Make**: GNU Make 4.0+ (standard on Linux/macOS, installed via `scripts\setup.ps1` on Windows).
+
+---
+
+## 2. Quick Start (Fast Install — Recommended)
 
 The primary and recommended way to install and configure HeroBM on any machine (Linux, macOS, Windows) is using `make fast-install`.
 
@@ -65,7 +99,7 @@ The Fast Install target automatically:
 
 ---
 
-## 2. Step-by-Step Manual Sequence
+## 3. Step-by-Step Manual Sequence
 
 If you prefer executing each step individually or are configuring a custom CI/CD runner:
 
@@ -83,7 +117,7 @@ If you prefer executing each step individually or are configuring a custom CI/CD
 
 ---
 
-## 3. Startup Profiles & Run Options
+## 4. Startup Profiles & Run Options
 
 HeroBM provides **three distinct startup profiles** tailored for different stages of the development lifecycle, evaluation, and production deployment:
 
@@ -150,7 +184,7 @@ HeroBM provides **three distinct startup profiles** tailored for different stage
 
 ---
 
-## 4. Network Access & Firewall Configuration
+## 5. Network Access & Firewall Configuration
 
 When hosting HeroBM on a server or workstation that needs to be accessed by other devices across your local area network (LAN) or intranet:
 
@@ -217,10 +251,16 @@ sudo firewall-cmd --reload
 
 ---
 
-## 5. Daily Operations & Verification
+## 6. Daily Operations & Verification
 
 - **Start Services**: `make up` (or `make prod-local` for standalone testing)
 - **Stop Services**: `make down`
+- **Update Code & Rebuild**: Pull the latest changes and cleanly rebuild application containers:
+  ```bash
+  git pull
+  make rebuild-apps
+  ```
+  *(Takes the application containers down, runs pending database migrations via `make migrate`, and rebuilds with the latest code).*
 - **View Container Logs**: `make logs`
 - **Run Fast Test Verification**: `make verify-fast`
 - **Access Ops Portal**: `http://localhost:8000` (Option 2) or `http://localhost:8080` (Option 3) or `http://localhost:4301` (Option 1)

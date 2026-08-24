@@ -9,18 +9,19 @@ export class EncryptionService {
 
   constructor(private readonly configService: ConfigService) {
     const rawKey = this.configService.get<string>('ENCRYPTION_KEY');
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
 
-    if (!rawKey) {
+    if (rawKey) {
+      this.key = deriveEncryptionKey(rawKey);
+    } else if (jwtSecret) {
       this.logger.warn(
         'ENCRYPTION_KEY is not set. Falling back to JWT_SECRET hash for development.',
       );
-      const jwtSecret = this.configService.get<string>(
-        'JWT_SECRET',
-        'fallback_secret',
-      );
       this.key = deriveEncryptionKey(jwtSecret);
     } else {
-      this.key = deriveEncryptionKey(rawKey);
+      throw new Error(
+        'Neither ENCRYPTION_KEY nor JWT_SECRET is configured. Cannot initialize EncryptionService.',
+      );
     }
   }
 

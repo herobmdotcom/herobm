@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load .env.volzau from root
+// Load environment variables
 dotenv.config({
   path: path.join(__dirname, '../../../../' + (process.env.ENV_FILE || '.env')),
 });

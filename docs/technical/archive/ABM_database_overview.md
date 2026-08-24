@@ -176,4 +176,4 @@ Sales, Purchasing, and Journals utilize a two-tier mechanism. Header-level detai
   - `ZPURCHASE_CREDITS`, `ZPURCHASE_DELIVERIES`, `ZPURCHASE_INVOICES`, `ZPURCHASE_ORDERS`, `ZPURCHASE_REQUISITIONS`, `ZPURCHASE_RETURNS`
   - `ZSALES_CREDITS`, `ZSALES_DELIVERIES`, `ZSALES_INVOICES`, `ZSALES_ORDERS`, `ZSALES_QUOTES`, `ZSALES_RETURNS`
 
-*Note: For complete table column layout, utilize the `get_links.sql` and `get_pks.sql` scripts located in `C:\Users\mpg\volz`, or review the full `.csv` extracts mapping exact column footprints.*
+*Note: For complete table column layout, utilize the `get_links.sql` and `get_pks.sql` scripts located in the project tools directory, or review the full `.csv` extracts mapping exact column footprints.*

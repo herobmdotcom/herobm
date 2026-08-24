@@ -73,7 +73,6 @@ export class PurchaseOrdersController {
     @Body() createPurchaseOrderDto: CreatePurchaseOrderDto,
     @AuthUser() user: JwtUser,
   ) {
-    console.log('[DEBUG] Controller - received create PO request');
     return this.purchaseOrdersService.create(
       createPurchaseOrderDto,
       user.username,

@@ -111,7 +111,7 @@ services:
 
 networks:
   app-net:
-    name: ${APP_NETWORK_NAME:-modbm_app-net}
+    name: ${APP_NETWORK_NAME:-herobm_app-net}
     external: true
 
 volumes:

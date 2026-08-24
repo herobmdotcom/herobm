@@ -45,11 +45,7 @@ export class ProductsWriteService {
   private readonly logger = new Logger(ProductsWriteService.name);
 
   async create(dto: CreateProductDto, actor: string) {
-    console.log('[DEBUG] ProductsWriteService.create starting transaction');
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      console.log(
-        '[DEBUG] ProductsWriteService.create inside transaction, inserting product',
-      );
       const [product] = await tx
         .insert(coreProducts)
         .values({
@@ -63,7 +59,6 @@ export class ProductsWriteService {
         })
         .returning();
 
-      console.log('[DEBUG] ProductsWriteService.create emitting event');
       await emitEvent(tx, {
         entityType: EntityType.PRODUCT,
         entityId: product.productId,
@@ -73,7 +68,6 @@ export class ProductsWriteService {
         actor,
       });
 
-      console.log('[DEBUG] ProductsWriteService.create returning product');
       return product;
     });
 

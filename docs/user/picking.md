@@ -53,7 +53,7 @@ stateDiagram-v2
 When an order is in `Confirmed` status, picking the first item automatically updates the sales order state to `Picking`.
 
 ### 2. Scan-to-Pick Barcodes & Zebra Label Integration
-Pick sheets and product labels can include canonical scan-to-pick barcodes (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). Scanning these barcodes directly registers picks and seamlessly integrates with the [Scan-to-Dispatch](file:///docs/user/shipping.md) packing station (`/inventory/shipping/scan-to-dispatch`).
+Pick sheets and product labels can include canonical scan-to-pick barcodes (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). Scanning these barcodes directly registers picks and seamlessly integrates with the [Scan-to-Dispatch](./shipping.md) packing station (`/inventory/shipping/scan-to-dispatch`).
 
 ### 3. Handling Shortages
 If a bin has less stock than expected:

@@ -132,22 +132,7 @@ export class PurchaseInvoiceDraftService {
         : new Date();
       let dueDate = new Date();
       if (vendorTermType && vendorTermDays !== null) {
-        console.log(
-          'Calculating due date for vendor',
-          dto.vendorId,
-          'type',
-          vendorTermType,
-          'days',
-          vendorTermDays,
-        );
         dueDate = calculateDueDate(invoiceDate, vendorTermType, vendorTermDays);
-      } else {
-        console.log(
-          'Falling back to new Date for vendor',
-          dto.vendorId,
-          'vendorTermType',
-          vendorTermType,
-        );
       }
 
       const piCurrencyCode = dto.currencyCode || this.appConfig.homeCurrency();
