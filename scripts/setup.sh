@@ -208,9 +208,17 @@ fi
 if [ "$NON_INTERACTIVE" = false ]; then
     echo -e "\n\033[36m--- Installation Profile Selection ---\033[0m"
     echo "Please select how you want to run the application code:"
-    echo "  1) Local native Node.js (Recommended for fullstack developers)"
-    echo "  2) Full Containerization (Recommended for pure evaluation/ops)"
-    read -p "Enter option [1 or 2]: " pathChoice
+    echo "  1) Local Development (Recommended for active code development)"
+    echo "     - Runs databases & brokers in containers (PostgreSQL, Redis)"
+    echo "     - Runs Next.js UI (port 4301/8000) and NestJS API (port 3001/3002) locally with hot reload"
+    echo "  2) Full Containerization (Recommended for standard evaluation & ops)"
+    echo "     - Runs all services in containers (API, UI, Database, Redis, Outbox, Pipeline)"
+    echo "     - Direct access to the Next.js UI at http://localhost:8000"
+    echo "  3) Full Containerization + Nginx Reverse Proxy (Recommended for staging/edge setups)"
+    echo "     - Runs all services in containers like Option 2"
+    echo "     - Adds an Nginx reverse proxy container in front of the UI on http://localhost:8080 (or port 80)"
+    read -p "Enter option [1, 2, or 3] (Default: 1): " pathChoice
+    pathChoice="${pathChoice:-1}"
 else
     pathChoice="1"
 fi
@@ -218,6 +226,8 @@ fi
 makeTargets=()
 if [ "$pathChoice" == "1" ]; then
     makeTargets+=("up-db")
+elif [ "$pathChoice" == "3" ]; then
+    makeTargets+=("up-portal-api-nginx")
 else
     makeTargets+=("up-portal-api")
 fi

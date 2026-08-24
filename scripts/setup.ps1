@@ -177,14 +177,26 @@ if ($podmanCmd) {
 # --- Setup Auto-Start ---
 Write-Host "`n--- Installation Profile Selection ---" -ForegroundColor Cyan
 Write-Host "Please select how you want to run the application code:"
-Write-Host "  1) Local native Node.js (Recommended for fullstack developers)"
-Write-Host "  2) Full Containerization (Recommended for pure evaluation/ops)"
-$pathChoice = Read-Host "Enter option [1 or 2]"
+Write-Host "  1) Local Development (Recommended for active code development)"
+Write-Host "     - Runs databases & brokers in containers (PostgreSQL, Redis)"
+Write-Host "     - Runs Next.js UI (port 4301/8000) and NestJS API (port 3001/3002) locally with hot reload"
+Write-Host "  2) Full Containerization (Recommended for standard evaluation & ops)"
+Write-Host "     - Runs all services in containers (API, UI, Database, Redis, Outbox, Pipeline)"
+Write-Host "     - Direct access to the Next.js UI at http://localhost:8000"
+Write-Host "  3) Full Containerization + Nginx Reverse Proxy (Recommended for staging/edge setups)"
+Write-Host "     - Runs all services in containers like Option 2"
+Write-Host "     - Adds an Nginx reverse proxy container in front of the UI on http://localhost:8080 (or port 80)"
+$pathChoice = Read-Host "Enter option [1, 2, or 3] (Default: 1)"
+if (-not $pathChoice) { $pathChoice = "1" }
 
 $makeTargets = @()
 if ($pathChoice -eq "1") {
     $makeTargets += "up-db"
     Write-Host "  -> Selected Local Dev path (DBs containerized, FE/API local)" -ForegroundColor Gray
+}
+elseif ($pathChoice -eq "3") {
+    $makeTargets += "up-portal-api-nginx"
+    Write-Host "  -> Selected Full Containerization with Nginx Proxy path (UI via Nginx proxy)" -ForegroundColor Gray
 }
 else {
     $makeTargets += "up-portal-api"

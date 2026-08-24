@@ -10,6 +10,20 @@ services:
       API_URL: "http://custom-api-test:3000"
       PORT: "3000"
     networks:
-      - app-net
+      app-net:
+        aliases:
+          - herobm-ui
     depends_on:
       - custom-api-test
+
+  nginx-test:
+    image: docker.io/library/nginx:alpine
+    container_name: nginx-test
+    ports:
+      - "8085:80"
+    volumes:
+      - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-net
+    depends_on:
+      - ops-portal-test

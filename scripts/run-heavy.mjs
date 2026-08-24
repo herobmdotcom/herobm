@@ -97,7 +97,7 @@ if (!run('npm run seed:test -w apps/api', dbEnv)) {
 console.log('\x1b[36mBooting up app containers...\x1b[0m');
 const appContainers = skipUI 
     ? 'custom-api-test worker-test pipeline-runner-test' 
-    : 'custom-api-test worker-test pipeline-runner-test ops-portal-test';
+    : 'custom-api-test worker-test pipeline-runner-test ops-portal-test nginx-test';
 if (!run(`podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d ${appContainers}`)) {
     console.error('\x1b[31mFailed to boot test app containers!\x1b[0m');
     process.exit(1);
