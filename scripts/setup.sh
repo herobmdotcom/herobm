@@ -228,6 +228,56 @@ if [ "$pathChoice" == "1" ]; then
     makeTargets+=("up-db")
 elif [ "$pathChoice" == "3" ]; then
     makeTargets+=("up-portal-api-nginx")
+    if [ "$NON_INTERACTIVE" = false ]; then
+        read -p "  Enable HTTPS / SSL on ports 80 & 443? [y/N] (Default: N): " enableHttps
+        if [[ "$enableHttps" =~ ^[Yy]$ ]]; then
+            DETECTED_IP=$(curl -s -m 3 https://ifconfig.me 2>/dev/null || curl -s -m 3 https://api.ipify.org 2>/dev/null || true)
+            if [ -n "$DETECTED_IP" ]; then
+                read -p "  Enter Domain or Public IP (Default: $DETECTED_IP): " domainInput
+                domainInput="${domainInput:-$DETECTED_IP}"
+            else
+                read -p "  Enter Domain or Public IP: " domainInput
+            fi
+
+            if [[ "$domainInput" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                DOMAIN="$domainInput.sslip.io"
+                echo -e "  \033[32m-> Auto-configured Magic Domain: $DOMAIN\033[0m"
+            else
+                DOMAIN="$domainInput"
+            fi
+
+            read -p "  Enter Email for Let's Encrypt renewal notices (optional): " acmeEmail
+
+            if ! command -v certbot >/dev/null 2>&1; then
+                echo "  Installing certbot..."
+                if command -v apt-get >/dev/null 2>&1; then
+                    sudo apt-get update && sudo apt-get install -y certbot || true
+                elif command -v dnf >/dev/null 2>&1; then
+                    sudo dnf install -y certbot || true
+                fi
+            fi
+
+            mkdir -p ./certs
+            if command -v certbot >/dev/null 2>&1 && [ -n "$DOMAIN" ] && [ "$DOMAIN" != "localhost" ]; then
+                echo "  Requesting Let's Encrypt TLS certificate for $DOMAIN..."
+                EMAIL_ARG="--register-unsafely-without-email"
+                if [ -n "$acmeEmail" ]; then
+                    EMAIL_ARG="-m $acmeEmail"
+                fi
+                sudo certbot certonly --standalone -d "$DOMAIN" $EMAIL_ARG --agree-tos --non-interactive || true
+                if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+                    sudo cp -L "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ./certs/fullchain.pem 2>/dev/null || true
+                    sudo cp -L "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ./certs/privkey.pem 2>/dev/null || true
+                    sudo chmod 644 ./certs/fullchain.pem ./certs/privkey.pem 2>/dev/null || true
+                fi
+            fi
+
+            if [ -f "./configs/nginx/conf.d/ssl.conf.template" ] && [ -f "./certs/fullchain.pem" ]; then
+                cp ./configs/nginx/conf.d/ssl.conf.template ./configs/nginx/conf.d/ssl.conf
+                echo -e "  \033[32m[OK] Activated Nginx HTTPS configuration (ssl.conf)\033[0m"
+            fi
+        fi
+    fi
 else
     makeTargets+=("up-portal-api")
 fi

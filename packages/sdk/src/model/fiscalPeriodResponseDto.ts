@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { FiscalPeriodResponseDtoStatus } from './fiscalPeriodResponseDtoStatus';
+import type { FiscalPeriodResponseDtoEventsItem } from './fiscalPeriodResponseDtoEventsItem';
 
 export interface FiscalPeriodResponseDto {
   periodId: string;
@@ -29,4 +30,5 @@ export interface FiscalPeriodResponseDto {
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;
+  events?: FiscalPeriodResponseDtoEventsItem[];
 }

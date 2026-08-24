@@ -273,4 +273,110 @@ describe('GL Import Parity & Opening Balances', () => {
     expect(recon.trialBalanceZeroSum.totalDebit).toBe(12500);
     expect(recon.trialBalanceZeroSum.totalCredit).toBe(12500);
   });
+
+  it('correctly imports and queries historical manual journals (LA / LJ)', async () => {
+    const [revAcct] = await pg.db
+      .insert(glAccounts)
+      .values({
+        accountCode: '4000',
+        name: 'Sales Revenue',
+        accountType: 'revenue',
+        isGroup: false,
+        isSystem: true,
+        isBankAccount: false,
+        currencyCode: 'EUR',
+        isActive: true,
+      })
+      .returning();
+
+    const [expAcct] = await pg.db
+      .insert(glAccounts)
+      .values({
+        accountCode: '6200',
+        name: 'Rent Expense',
+        accountType: 'expense',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'EUR',
+        isActive: true,
+      })
+      .returning();
+
+    const [bankAcct] = await pg.db
+      .insert(glAccounts)
+      .values({
+        accountCode: '1020',
+        name: 'Operating Bank Account',
+        accountType: 'asset',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: true,
+        currencyCode: 'EUR',
+        isActive: true,
+      })
+      .returning();
+
+    // Historical manual adjustment (LA)
+    const [historicalEntry] = await pg.db
+      .insert(glJournalEntries)
+      .values({
+        journalEntryId: randomUUID(),
+        entryNumber: 'JE-LA-100234',
+        entryDate: '2026-07-15',
+        memo: 'ABM Adjustment: Month-end rent reallocation',
+        sourceType: 'adjustment',
+        isReversed: false,
+        createdBy: 'abm-import',
+      })
+      .returning();
+
+    await pg.db.insert(glJournalLines).values([
+      {
+        journalLineId: randomUUID(),
+        journalEntryId: historicalEntry.journalEntryId,
+        glAccountId: expAcct.glAccountId,
+        debit: '3200.00',
+        credit: '0.00',
+        foreignDebit: '3200.00',
+        foreignCredit: '0.00',
+        foreignCurrencyCode: 'EUR',
+        exchangeRate: '1.0',
+        memo: 'Rent expense adjustment',
+        isReconciled: false,
+      },
+      {
+        journalLineId: randomUUID(),
+        journalEntryId: historicalEntry.journalEntryId,
+        glAccountId: bankAcct.glAccountId,
+        debit: '0.00',
+        credit: '3200.00',
+        foreignDebit: '0.00',
+        foreignCredit: '3200.00',
+        foreignCurrencyCode: 'EUR',
+        exchangeRate: '1.0',
+        memo: 'Direct bank transfer',
+        isReconciled: false,
+      },
+    ]);
+
+    // Query journal entries via service
+    const res = await service.getJournalEntries({
+      sourceType: 'adjustment',
+    });
+
+    expect(res.total).toBe(1);
+    expect(res.data[0].entryNumber).toBe('JE-LA-100234');
+    expect(res.data[0].memo).toBe(
+      'ABM Adjustment: Month-end rent reallocation',
+    );
+
+    // Verify General Ledger query
+    const glRes = await service.getGeneralLedger({
+      accountCode: '6200',
+    });
+    expect(glRes.total).toBe(1);
+    expect(glRes.data[0].debit).toBe('3200.00');
+    expect(glRes.data[0].accountCode).toBe('6200');
+  });
 });

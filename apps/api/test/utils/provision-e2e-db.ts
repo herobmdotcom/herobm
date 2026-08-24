@@ -16,7 +16,7 @@ import * as crypto from 'crypto';
 // Load environment from monorepo root .env
 const rootEnv = path.resolve(__dirname, '..', '..', '..', '..', '.env');
 dotenv.config({ path: rootEnv });
-process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password'; // TEST_CREDENTIAL
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -200,7 +200,7 @@ async function isTemplateValid(
     if (!adminUser?.password_hash) return false;
     const bcrypt = await import('bcrypt');
     return bcrypt.compareSync(
-      process.env.ADMIN_PASSWORD || 'password',
+      process.env.ADMIN_PASSWORD || 'password', // TEST_CREDENTIAL
       adminUser.password_hash,
     );
   } catch {

@@ -518,6 +518,7 @@ export class OrderLinesService {
           salesOrderLineId: parentLineId,
           salesOrderId: orderId,
           lineNumber: currentLineNumber++,
+          lineType: LineType.PRODUCT,
           productId: dto.productId,
           productDescription: dto.productDescription,
           quantity: dto.quantity,
@@ -571,6 +572,7 @@ export class OrderLinesService {
             salesOrderLineId: randomUUID(),
             salesOrderId: orderId,
             lineNumber: currentLineNumber++,
+            lineType: LineType.PRODUCT,
             productId: comp.childProductId,
             productDescription: comp.name,
             quantity: childQtyStr,
@@ -598,6 +600,7 @@ export class OrderLinesService {
           salesOrderLineId: parentLineId,
           salesOrderId: orderId,
           lineNumber: currentLineNumber++,
+          lineType: LineType.PRODUCT,
           productId: dto.productId,
           productDescription: dto.productDescription,
           quantity: dto.quantity,
@@ -613,7 +616,9 @@ export class OrderLinesService {
           isPostConfirmation: true,
           parentLineId: null,
         };
-        insertValues.push(parentLine);
+        if (parentLine) {
+          insertValues.push(parentLine);
+        }
       }
 
       await tx.insert(salesOrderLineItems).values(insertValues);

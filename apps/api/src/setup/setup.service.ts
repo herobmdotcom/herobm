@@ -665,23 +665,6 @@ export class SetupService {
       res.end();
     }
 
-    // Emit audit event
-    const schemaTableName =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic table name
-      (registryEntry.table as any)[Symbol.for('drizzle:Name')] || tableName;
-    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
-      entityType: EntityType.SYSTEM,
-      entityId: '00000000-0000-0000-0000-000000000000',
-      eventType: 'csv_export_generated',
-      entityDisplayName: `CSV Export: ${registryEntry.name}`,
-      payload: {
-        table: schemaTableName,
-        rowCount: rows.length,
-        includeArchived: !!options.includeArchived,
-      },
-      actor: username,
-    });
-
     if (!res) {
       return csvContent;
     }

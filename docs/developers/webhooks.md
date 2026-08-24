@@ -9,7 +9,7 @@ Webhooks allow external applications to receive real-time HTTP POST notification
 To create and manage webhook endpoints:
 1. Navigate to **Technical** → **Developers** (`/admin/developers`).
 2. Scroll to the **Webhooks** section.
-3. Click **Add Webhook**.
+3. Click **+ Add Webhook**.
 4. Enter your destination **Target URL** (e.g. `https://api.yourdomain.com/webhooks/herobm`).
 5. Select the event types to subscribe to (e.g. `sales_order.*`, `payment.allocated`, or `*` for all events).
 6. Copy and store the generated **Secret Key** (`whsec_...`) for HMAC signature validation.
@@ -79,7 +79,7 @@ function verifyWebhookSignature(
 
 ## Supported Events Matrix
 
-The following 177 event types are actively supported across 49 domain entity types:
+The following 181 event types are actively supported across 50 domain entity types:
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
@@ -97,6 +97,7 @@ The following 177 event types are actively supported across 49 domain entity typ
 | `customer_group` | `created`, `deleted`, `updated` |
 | `email` | `dismissed`, `queued` |
 | `exchange_rate` | `created`, `deleted`, `updated` |
+| `fiscal_period` | `created`, `status_changed`, `updated` |
 | `general_ledger` | `entry_posted` |
 | `gl_account` | `created`, `updated` |
 | `gl_match_group` | `created`, `deleted` |
@@ -127,7 +128,7 @@ The following 177 event types are actively supported across 49 domain entity typ
 | `tax_position_mapping` | `created`, `deleted` |
 | `transfer_order` | `created`, `status_changed`, `stock_dispatched`, `updated` |
 | `user` | `created`, `deleted`, `status_changed`, `updated` |
-| `warehouse` | `pick_cancelled`, `pick_created`, `putaway_completed`, `receipt_created`, `receipt_status_changed`, `shipment_dispatched`, `shipment_status_changed`, `stock_moved` |
+| `warehouse` | `pick_cancelled`, `pick_created`, `putaway_completed`, `receipt_created`, `receipt_status_changed`, `shipment_dispatched`, `shipment_status_changed`, `stock_moved`, `updated` |
 | `webhook` | `created`, `deleted`, `updated` |
 | `work_order` | `created`, `demand_allocated`, `status_changed`, `updated` |
 | `work_order_pick` | `created`, `pick_cancelled`, `status_changed` |

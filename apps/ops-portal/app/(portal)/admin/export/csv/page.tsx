@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Button } from '@/components/shared/Button';
 import { useSearchParams } from 'next/navigation';
 import * as api from '@herobm/sdk';
-import { apiFetchBlob, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
@@ -62,16 +62,15 @@ function CsvExportContent() {
     if (!selectedTable) return;
     try {
       setIsExporting(true);
-      const params = new URLSearchParams();
-      if (includeArchived) params.set('includeArchived', 'true');
-      if (limit.trim() && !isNaN(Number(limit)) && Number(limit) > 0) {
-        params.set('limit', limit.trim());
-      }
+      const parsedLimit = limit.trim() && !isNaN(Number(limit)) && Number(limit) > 0 ? Number(limit.trim()) : undefined;
 
-      const queryStr = params.toString() ? `?${params.toString()}` : '';
-      const endpoint = `/api/setup/export-csv/${selectedTable}${queryStr}`;
+      const res = await api.setupControllerExportCsv(selectedTable, {
+        includeArchived: includeArchived || undefined,
+        limit: parsedLimit,
+      });
 
-      const blob = await apiFetchBlob(endpoint);
+      const csvData = typeof res.data === 'string' ? res.data : String(res.data || '');
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

@@ -88,6 +88,7 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.COST_CENTER]: financialEvents,
   [EntityType.ACTIVITY]: financialEvents,
   [EntityType.GL_ACCOUNT]: financialEvents,
+  [EntityType.FISCAL_PERIOD]: financialEvents,
 
   [EntityType.LOCATION]: warehouseEvents,
   [EntityType.ZONE]: warehouseEvents,

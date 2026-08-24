@@ -123,3 +123,9 @@ docs/technical/schema_reference.md
 
 # Agent Rules
 .agents/rules/windows_commands.md
+
+# TLS / SSL Certificates
+certs/
+*.pem
+*.key
+*.crt

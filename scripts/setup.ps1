@@ -196,7 +196,21 @@ if ($pathChoice -eq "1") {
 }
 elseif ($pathChoice -eq "3") {
     $makeTargets += "up-portal-api-nginx"
-    Write-Host "  -> Selected Full Containerization with Nginx Proxy path (UI via Nginx proxy)" -ForegroundColor Gray
+    Write-Host "  -> Selected Full Containerization with Nginx Proxy path" -ForegroundColor Gray
+    $enableHttps = Read-Host "  Enable HTTPS / SSL on ports 80 & 443? [y/N] (Default: N)"
+    if ($enableHttps -eq "y" -or $enableHttps -eq "Y") {
+        $domain = Read-Host "  Enter Domain or Public IP (e.g. herobm.example.com or 123.45.67.89)"
+        if ($domain -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$") {
+            $domain = "$domain.sslip.io"
+            Write-Host "  -> Auto-configured Magic Domain: $domain" -ForegroundColor Green
+        }
+        $sslTemplate = Join-Path $PSScriptRoot "..\configs\nginx\conf.d\ssl.conf.template"
+        $sslConf = Join-Path $PSScriptRoot "..\configs\nginx\conf.d\ssl.conf"
+        if (Test-Path $sslTemplate) {
+            Copy-Item $sslTemplate $sslConf -Force
+            Write-Host "  [OK] Activated Nginx HTTPS configuration (ssl.conf)" -ForegroundColor Green
+        }
+    }
 }
 else {
     $makeTargets += "up-portal-api"

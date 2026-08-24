@@ -24746,6 +24746,12 @@
           "modifiedOn": {
             "type": "string",
             "nullable": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [

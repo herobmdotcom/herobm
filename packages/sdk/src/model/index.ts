@@ -258,6 +258,7 @@ export * from './externalSyncControllerGetSyncStatusParams';
 export * from './fileUploadDto';
 export * from './findByProductIdsBulkDto';
 export * from './fiscalPeriodResponseDto';
+export * from './fiscalPeriodResponseDtoEventsItem';
 export * from './fiscalPeriodResponseDtoStatus';
 export * from './fxRevalCandidatesResponseDto';
 export * from './fxRevalCommitResponseDto';

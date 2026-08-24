@@ -13,6 +13,8 @@ import {
   glSettings,
   costCenters,
   activities,
+  financialEvents,
+  outbox,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -22,6 +24,8 @@ describe('GL Fiscal Periods & Period Governance', () => {
   let service: GlService;
 
   beforeEach(async () => {
+    await pg.db.delete(outbox);
+    await pg.db.delete(financialEvents);
     await pg.db.delete(glFiscalPeriods);
     await pg.db.delete(glJournalLines);
     await pg.db.delete(glJournalEntries);
@@ -75,7 +79,7 @@ describe('GL Fiscal Periods & Period Governance', () => {
   });
 
   describe('generateFiscalYearPeriods', () => {
-    it('generates 12 monthly periods for a calendar fiscal year', async () => {
+    it('generates 12 monthly periods for a calendar fiscal year and emits events', async () => {
       const periods = await service.generateFiscalYearPeriods(2026, 'admin');
 
       expect(periods).toHaveLength(12);
@@ -83,11 +87,25 @@ describe('GL Fiscal Periods & Period Governance', () => {
       expect(periods[0].startDate).toBe('2026-01-01');
       expect(periods[0].endDate).toBe('2026-01-31');
       expect(periods[0].status).toBe('open');
+      expect(periods[0].events).toBeDefined();
+      expect(periods[0].events?.length).toBeGreaterThan(0);
 
       expect(periods[11].periodName).toBe('2026-12');
       expect(periods[11].startDate).toBe('2026-12-01');
       expect(periods[11].endDate).toBe('2026-12-31');
       expect(periods[11].status).toBe('open');
+
+      // Verify audit events recorded in financialEvents
+      const auditRows = await pg.db.select().from(financialEvents);
+      expect(auditRows).toHaveLength(12);
+      expect(auditRows[0].entityType).toBe('fiscal_period');
+      expect(auditRows[0].eventType).toBe('created');
+      expect(auditRows[0].actor).toBe('admin');
+
+      // Verify integration outbox rows created
+      const outboxRows = await pg.db.select().from(outbox);
+      expect(outboxRows).toHaveLength(12);
+      expect(outboxRows[0].eventType).toBe('fiscal_period.created');
     });
 
     it('idempotently avoids duplicating existing periods', async () => {
@@ -98,7 +116,7 @@ describe('GL Fiscal Periods & Period Governance', () => {
   });
 
   describe('updatePeriodStatus', () => {
-    it('transitions period between open, soft_locked, and hard_closed', async () => {
+    it('transitions period between open, soft_locked, and hard_closed and emits events', async () => {
       const [period] = await service.generateFiscalYearPeriods(2026, 'admin');
 
       // Soft lock
@@ -132,6 +150,22 @@ describe('GL Fiscal Periods & Period Governance', () => {
       expect(reopened.status).toBe('open');
       expect(reopened.lockedBy).toBeNull();
       expect(reopened.closedBy).toBeNull();
+
+      // Verify timeline events retrieved through getFiscalPeriods
+      const periods = await service.getFiscalPeriods({ fiscalYear: 2026 });
+      const updatedPeriod = periods.find((p) => p.periodId === period.periodId)!;
+      expect(updatedPeriod.events).toBeDefined();
+      // Should have 1 created + 3 status_changed events = 4 events
+      expect(updatedPeriod.events?.length).toBe(4);
+
+      // Verify outbox has status_changed events
+      const outboxRows = await pg.db
+        .select()
+        .from(outbox)
+        .where(eq(outbox.entityId, period.periodId));
+      expect(
+        outboxRows.filter((r) => r.eventType === 'fiscal_period.status_changed'),
+      ).toHaveLength(3);
     });
 
     it('throws NotFoundException for non-existent periodId', async () => {

@@ -86,7 +86,7 @@ export const purchaseOrderLineItems = herobmCore.table(
       .notNull()
       .references(() => purchaseOrders.purchaseOrderId),
     lineNumber: integer('line_number').notNull(),
-    lineType: text('line_type').notNull().default('Product'),
+    lineType: text('line_type'),
     productId: uuid('product_id').references(() => products.productId),
     productDescription: text('product_description'),
     quantity: numeric('quantity').notNull(),

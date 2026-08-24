@@ -481,6 +481,7 @@ export class FiscalPeriodResponseDto {
   @ApiPropertyOptional() notes?: string | null;
   @ApiPropertyOptional() createdOn?: string | null;
   @ApiPropertyOptional() modifiedOn?: string | null;
+  @ApiPropertyOptional({ type: [Object] }) events?: unknown[];
 }
 
 export class GenerateFiscalPeriodsDto {
