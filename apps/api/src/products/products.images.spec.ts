@@ -57,6 +57,22 @@ describe('ProductImages', () => {
       expect(result.exists).toBe(false);
     });
 
+    it('should resolve files placed directly inside products/ directory without products/ prefix', async () => {
+      const root = storageService.getStorageRoot();
+      const testFile = path.join(root, 'products', 'test_unprefixed.jpg');
+      fs.writeFileSync(testFile, 'test-image-bytes');
+
+      try {
+        const resolved = storageService.resolveFilePath('test_unprefixed.jpg');
+        expect(resolved.exists).toBe(true);
+        expect(resolved.fullPath).toBe(testFile);
+      } finally {
+        if (fs.existsSync(testFile)) {
+          fs.unlinkSync(testFile);
+        }
+      }
+    });
+
     it('should save and resolve uploaded product image correctly', async () => {
       const mockFile: Express.Multer.File = {
         fieldname: 'file',

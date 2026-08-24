@@ -103,37 +103,48 @@ export class StorageService {
     // Clean leading slashes and normalize
     const cleanPath = relativePath.replace(/^(\/|\\)+/, '').replace(/\\/g, '/');
 
-    // Legacy fallback: if path starts with 'abm/', resolve within 'products/'
-    let targetRelative = cleanPath;
+    // Build candidate paths to check:
+    // 1. As provided (e.g. 'products/uploads/uuid/img.jpg' or 'products/img.jpg')
+    // 2. Resolved within 'products/' if not already starting with 'products/' (e.g. 'img.jpg' -> 'products/img.jpg')
+    // 3. Legacy fallback for 'abm/' -> 'products/abm/'
+    const targetRelatives: string[] = [cleanPath];
+    if (!cleanPath.startsWith('products/')) {
+      targetRelatives.push(path.join('products', cleanPath));
+    }
     if (cleanPath.startsWith('abm/')) {
-      targetRelative = path.join('products', cleanPath);
+      targetRelatives.push(path.join('products', cleanPath));
     }
 
-    const resolvedPath = path.resolve(this.storageRoot, targetRelative);
+    for (const targetRelative of targetRelatives) {
+      const resolvedPath = path.resolve(this.storageRoot, targetRelative);
 
-    // Prevent directory traversal attacks
-    if (!resolvedPath.startsWith(this.storageRoot)) {
-      throw new BadRequestException('Invalid file path');
-    }
+      // Prevent directory traversal attacks
+      if (!resolvedPath.startsWith(this.storageRoot)) {
+        throw new BadRequestException('Invalid file path');
+      }
 
-    // 1. Direct file check
-    if (fs.existsSync(resolvedPath)) {
-      const stat = fs.statSync(resolvedPath);
-      if (stat.isFile()) {
-        return { fullPath: resolvedPath, exists: true };
+      // 1. Direct file check
+      if (fs.existsSync(resolvedPath)) {
+        const stat = fs.statSync(resolvedPath);
+        if (stat.isFile()) {
+          return { fullPath: resolvedPath, exists: true };
+        }
+      }
+
+      // 2. Case-insensitive fallback lookup for Linux container environments
+      const fallbackPath = this.findFileCaseInsensitive(
+        this.storageRoot,
+        targetRelative,
+      );
+      if (fallbackPath) {
+        return { fullPath: fallbackPath, exists: true };
       }
     }
 
-    // 2. Case-insensitive fallback lookup for Linux container environments
-    const fallbackPath = this.findFileCaseInsensitive(
-      this.storageRoot,
-      targetRelative,
-    );
-    if (fallbackPath) {
-      return { fullPath: fallbackPath, exists: true };
-    }
-
-    return { fullPath: resolvedPath, exists: false };
+    return {
+      fullPath: path.resolve(this.storageRoot, targetRelatives[0]),
+      exists: false,
+    };
   }
 
   /**
