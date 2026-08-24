@@ -62,8 +62,8 @@ describe('Sidebar', () => {
       />,
     );
 
-    // Initial 'M' and help '?' button
-    expect(screen.getByText('M')).toBeInTheDocument();
+    // Initial 'J' and help '?' button
+    expect(screen.getByText('J')).toBeInTheDocument();
     expect(screen.getByText('?')).toBeInTheDocument();
   });
 
@@ -78,7 +78,7 @@ describe('Sidebar', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
-    const userButton = screen.getByText('M').closest('button');
+    const userButton = screen.getByText('J').closest('button');
     expect(userButton).toBeInTheDocument();
     fireEvent.click(userButton!);
 
@@ -101,7 +101,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('M').closest('button');
+    const userButton = screen.getByText('J').closest('button');
     fireEvent.click(userButton!);
 
     const settingsItem = screen.getByText('Settings');
@@ -121,7 +121,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('M').closest('button');
+    const userButton = screen.getByText('J').closest('button');
     fireEvent.click(userButton!);
 
     const signOutItem = screen.getByText('Sign Out');
@@ -140,7 +140,7 @@ describe('Sidebar', () => {
       />,
     );
 
-    const userButton = screen.getByText('M').closest('button');
+    const userButton = screen.getByText('J').closest('button');
     fireEvent.click(userButton!);
 
     expect(screen.getByRole('menu')).toBeInTheDocument();

@@ -62,13 +62,16 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
           return <MermaidDiagram key={index} chart={chunk.content} />;
         }
 
+        // Normalize CRLF to LF for consistent regex parsing across platforms
+        const normalized = chunk.content.replace(/\r\n/g, '\n');
+
         // Pre-process GitHub alerts with nested markdown parsing
-        const preprocessed = chunk.content.replace(
-          />\s*\[!(NOTE|IMPORTANT|WARNING|TIP|CAUTION)\]\s*\n((?:>.*(?:\n|$))*)/gi,
+        const preprocessed = normalized.replace(
+          /^[ \t]*>[ \t]*\[!(NOTE|IMPORTANT|WARNING|TIP|CAUTION|INFO|DANGER)\][^\n]*\n((?:[ \t]*>.*(?:\n|$))*)/gim,
           (match, type, body) => {
             const cleanBody = body
               .split('\n')
-              .map((l: string) => l.replace(/^>\s?/, ''))
+              .map((l: string) => l.replace(/^[ \t]*>[ \t]?/, ''))
               .join('\n')
               .trim();
 
@@ -79,17 +82,19 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
             let icon = 'info';
             let badgeClass = 'text-[#0F766E]';
 
-            if (typeUpper === 'IMPORTANT' || typeUpper === 'WARNING' || typeUpper === 'CAUTION') {
-              borderClass = 'border-[#FDE68A] bg-[#FEFCE8] text-[#713F12]';
-              icon = 'warning';
-              badgeClass = 'text-[#854D0E]';
+            if (typeUpper === 'IMPORTANT' || typeUpper === 'WARNING' || typeUpper === 'CAUTION' || typeUpper === 'DANGER') {
+              borderClass = typeUpper === 'DANGER'
+                ? 'border-[#FECDD3] bg-[#FFF1F2] text-[#881337]'
+                : 'border-[#FDE68A] bg-[#FEFCE8] text-[#713F12]';
+              icon = typeUpper === 'DANGER' ? 'error' : 'warning';
+              badgeClass = typeUpper === 'DANGER' ? 'text-[#BE123C]' : 'text-[#854D0E]';
             } else if (typeUpper === 'TIP') {
               borderClass = 'border-[#BBF7D0] bg-[#F0FDF4] text-[#14532D]';
               icon = 'lightbulb';
               badgeClass = 'text-[#15803D]';
             }
 
-            return `\n\n<div class="my-4 p-3.5 rounded-xl border ${borderClass} text-xs leading-relaxed">
+            return `\n\n<div class="my-4 p-3.5 rounded-xl border ${borderClass} text-xs leading-relaxed not-italic">
   <div class="font-bold uppercase tracking-wider text-[11px] mb-2 flex items-center gap-1.5 ${badgeClass}">
     <span class="material-symbols-outlined text-[16px]">${icon}</span> ${typeUpper}
   </div>

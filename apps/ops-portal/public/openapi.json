@@ -26582,11 +26582,7 @@
         "type": "object",
         "properties": {
           "lineType": {
-            "enum": [
-              "Product",
-              "Comment"
-            ],
-            "type": "string"
+            "type": "object"
           },
           "productId": {
             "type": "string"
@@ -26736,11 +26732,7 @@
         "type": "object",
         "properties": {
           "lineType": {
-            "type": "string",
-            "enum": [
-              "Product",
-              "Comment"
-            ]
+            "type": "object"
           },
           "quantity": {
             "type": "string"

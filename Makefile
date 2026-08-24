@@ -350,7 +350,7 @@ import-legacy-shipments:
 # --- Schema Reference & Docs ---
 
 dev-docs-schema:
-	"$(VENV_PYTHON)" tools/generate_schema_reference.py
+	$(NPX) tsx tools/generate_schema_docs.ts
 
 dev-docs-webhooks:
 	$(NPX) tsx tools/generate_webhook_docs.ts
