@@ -101,6 +101,21 @@ describe('TwoFactorService', () => {
       expect(status.verifiedAt).toBeDefined();
     });
 
+    it('should reject an invalid 6-digit numeric verification code (ADV-168)', async () => {
+      const storedSecret = generateSecret();
+
+      // Use a numeric 6-digit code that is not valid for this secret
+      await expect(
+        service.enable(
+          TEST_USER_ID,
+          '000000',
+          storedSecret,
+          ['abcd-1234'],
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should reject a non-numeric verification code', async () => {
       const storedSecret = generateSecret();
 
@@ -141,6 +156,19 @@ describe('TwoFactorService', () => {
       expect(isValid).toBe(true);
     });
 
+    it('should reject an invalid 6-digit numeric code (ADV-168)', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      const verifier = await service.verifyCode(TEST_USER_ID);
+      // Valid-format 6-digit code that does not match the secret
+      const isValid1 = await verifier.verify('000000');
+      expect(isValid1).toBe(false);
+
+      const isValid2 = await verifier.verify('123456');
+      expect(isValid2).toBe(false);
+    });
+
     it('should reject an invalid non-numeric code', async () => {
       const secret = generateSecret();
       await enable2FaForUser(service, secret);
@@ -171,6 +199,58 @@ describe('TwoFactorService', () => {
       await expect(service.verifyCode(TEST_USER_ID)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('disable', () => {
+    it('should disable 2FA with valid password and TOTP code', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      const freshCode = await generateValidCode(secret);
+      await service.disable(TEST_USER_ID, TEST_PASSWORD, freshCode, 'admin');
+
+      expect(await service.isEnabled(TEST_USER_ID)).toBe(false);
+    });
+
+    it('should reject disable with invalid 6-digit TOTP code (ADV-168)', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      await expect(
+        service.disable(TEST_USER_ID, TEST_PASSWORD, '000000', 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('regenerateBackupCodes', () => {
+    it('should regenerate backup codes with valid password and TOTP code', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      const freshCode = await generateValidCode(secret);
+      const result = await service.regenerateBackupCodes(
+        TEST_USER_ID,
+        TEST_PASSWORD,
+        freshCode,
+        'admin',
+      );
+
+      expect(result.backupCodes).toHaveLength(8);
+    });
+
+    it('should reject regeneration with invalid 6-digit TOTP code (ADV-168)', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      await expect(
+        service.regenerateBackupCodes(
+          TEST_USER_ID,
+          TEST_PASSWORD,
+          '000000',
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

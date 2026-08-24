@@ -34,6 +34,7 @@ import {
   computeLinePriceForStorage,
   PURCHASE_INVOICE_STATE,
   MATCH_STATUS,
+  LineType,
 } from '@herobm/shared';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
@@ -794,6 +795,10 @@ export class PurchaseInvoicePostingService {
       let addedCount = 0;
 
       for (const poLine of poLines) {
+        if (poLine.lineType === (LineType.COMMENT as string)) {
+          continue;
+        }
+
         // Find if we already have an unmatched invoice line for this product
         const match = invLines.find(
           (l) =>

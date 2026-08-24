@@ -18,14 +18,8 @@ interface UserPreferencesModalProps {
 export default function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalProps) {
   const t = useTranslations('common.preferences');
   const t2fa = useTranslations('common.preferences.twoFactor');
-  const tCommon = useTranslations('common');
   const { role, username, displayName } = useAuth();
-  const { preferences, updatePreferences } = useUserSettings();
-
-  const [selectedDensity, setSelectedDensity] = useState<DisplayDensity>(
-    preferences.density === 'compact' ? 'compact' : 'comfortable',
-  );
-  const [isSaving, setIsSaving] = useState(false);
+  const { density, updatePreferences } = useUserSettings();
 
   // 2FA State
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -52,16 +46,13 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
     }
   }, [isOpen]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleDensityChange = async (newDensity: DisplayDensity) => {
+    if (newDensity === density) return;
     try {
-      await updatePreferences({ density: selectedDensity });
+      await updatePreferences({ density: newDensity });
       toast.success(t('saved'));
-      onClose();
     } catch {
       toast.error(t('saveFailed'));
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -71,7 +62,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       const d = res.data;
       if (d) setSetupData({ secret: d.secret, qrCodeDataUrl: d.qrCodeDataUrl, backupCodes: d.backupCodes });
       setSetupStep(1);
-    } catch (err) {
+    } catch {
       toast.error('Failed to initialize 2FA setup');
     }
   };
@@ -82,7 +73,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       await api.authControllerEnable2Fa({ code: setupCode, secret: setupData.secret });
       setSetupStep(3);
       setTwoFactorEnabled(true);
-    } catch (err) {
+    } catch {
       toast.error('Invalid code');
     }
   };
@@ -98,7 +89,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       await api.authControllerDisable2Fa({ password, code });
       setTwoFactorEnabled(false);
       toast.success('2FA Disabled');
-    } catch (err) {
+    } catch {
       toast.error('Failed to disable 2FA');
     }
   };
@@ -114,7 +105,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       const d = res.data;
       if (d) setSetupData({ secret: '', qrCodeDataUrl: '', backupCodes: d.backupCodes });
       setSetupStep(3);
-    } catch (err) {
+    } catch {
       toast.error('Failed to regenerate backup codes');
     }
   };
@@ -125,24 +116,6 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       onClose={onClose}
       title={t('title')}
       width="max-w-md"
-      footer={
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            {tCommon('cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? t('saving') : t('save')}
-          </Button>
-        </div>
-      }
     >
       <div className="flex flex-col gap-6">
         {/* User Identity Info */}
@@ -151,27 +124,25 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
             {t('userProfile')}
           </label>
           <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--text-muted)]">{t('username')}</span>
-              <span className="text-sm font-medium text-[var(--text-primary)]">{username}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[var(--text-muted)]">{t('username')}</span>
+              <span className="font-medium text-[var(--text-primary)]">{username}</span>
             </div>
             {displayName && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-muted)]">Display Name</span>
-                <span className="text-sm font-medium text-[var(--text-primary)]">{displayName}</span>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--text-muted)]">{t('displayName')}</span>
+                <span className="font-medium text-[var(--text-primary)]">{displayName}</span>
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--text-muted)]">{t('role')}</span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--primary)]/10 text-[var(--primary)] capitalize">
-                {role}
-              </span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[var(--text-muted)]">{t('role')}</span>
+              <span className="font-medium text-[var(--text-primary)] capitalize">{role}</span>
             </div>
           </div>
         </div>
 
         {/* Display Density */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6">
           <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             {t('density')}
           </label>
@@ -179,8 +150,8 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
             {/* Comfortable */}
             <label
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
-                selectedDensity === 'comfortable'
-                  ? 'border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]'
+                density === 'comfortable'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5 ring-1 ring-[var(--accent)]'
                   : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]'
               }`}
             >
@@ -188,9 +159,9 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                 type="radio"
                 name="display-density"
                 value="comfortable"
-                checked={selectedDensity === 'comfortable'}
-                onChange={() => setSelectedDensity('comfortable')}
-                className="mt-0.5 text-[var(--primary)] focus:ring-[var(--primary)]"
+                checked={density === 'comfortable'}
+                onChange={() => handleDensityChange('comfortable')}
+                className="mt-0.5 accent-[var(--accent)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
               />
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-medium text-[var(--text-primary)]">
@@ -205,8 +176,8 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
             {/* Compact */}
             <label
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
-                selectedDensity === 'compact'
-                  ? 'border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]'
+                density === 'compact'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5 ring-1 ring-[var(--accent)]'
                   : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]'
               }`}
             >
@@ -214,9 +185,9 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                 type="radio"
                 name="display-density"
                 value="compact"
-                checked={selectedDensity === 'compact'}
-                onChange={() => setSelectedDensity('compact')}
-                className="mt-0.5 text-[var(--primary)] focus:ring-[var(--primary)]"
+                checked={density === 'compact'}
+                onChange={() => handleDensityChange('compact')}
+                className="mt-0.5 accent-[var(--accent)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
               />
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-medium text-[var(--text-primary)]">
@@ -238,36 +209,29 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
           {!loading2Fa && (
             <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-[var(--text-primary)]">
-                    {t2fa('title')}
-                  </h4>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">
-                    {/* eslint-disable-next-line no-restricted-syntax -- i18n translation key name matches state name */}
-                    {twoFactorEnabled ? t2fa('enabled') : t2fa('inactive')}
-                  </p>
-                </div>
-                {twoFactorEnabled && (
-                  <span className="px-2 py-1 text-xs font-semibold rounded bg-green-500/10 text-green-500 border border-green-500/20">
-                    {/* eslint-disable-next-line no-restricted-syntax -- i18n translation key name matches state name */}
-                    {t2fa('active')}
-                  </span>
-                )}
+                <h4 className="text-sm font-semibold text-[var(--text-primary)]">
+                  {t2fa('title')}
+                </h4>
+                <label className="switch" title={t2fa('title')}>
+                  <input
+                    type="checkbox"
+                    checked={twoFactorEnabled}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        handleStart2FaSetup();
+                      } else {
+                        handleDisable2Fa();
+                      }
+                    }}
+                  />
+                  <span className="switch-slider"></span>
+                </label>
               </div>
 
-              {setupStep === 0 && !twoFactorEnabled && (
-                <Button variant="primary" onClick={handleStart2FaSetup}>
-                  {t2fa('enable')}
-                </Button>
-              )}
-
               {setupStep === 0 && twoFactorEnabled && (
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={handleRegenerateBackupCodes}>
+                <div className="flex">
+                  <Button variant="secondary" size="sm" onClick={handleRegenerateBackupCodes}>
                     {t2fa('regenerateBackupCodes')}
-                  </Button>
-                  <Button variant="danger" onClick={handleDisable2Fa}>
-                    {t2fa('disable')}
                   </Button>
                 </div>
               )}
@@ -345,66 +309,6 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
               )}
             </div>
           )}
-        </div>
-
-        {/* Display Density Preference */}
-        <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6">
-          <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            {t('density')}
-          </label>
-          <div className="grid grid-cols-1 gap-3">
-            {/* Comfortable */}
-            <label
-              className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                selectedDensity === 'comfortable'
-                  ? 'border-[var(--accent)] bg-[var(--accent-glow)]'
-                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-secondary)]'
-              }`}
-            >
-              <input
-                type="radio"
-                name="density"
-                value="comfortable"
-                checked={selectedDensity === 'comfortable'}
-                onChange={() => setSelectedDensity('comfortable')}
-                className="mt-1 accent-[var(--accent)] cursor-pointer"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-[var(--text-primary)]">
-                  {t('densityComfortable')}
-                </span>
-                <span className="text-xs text-[var(--text-muted)] mt-0.5">
-                  {t('densityComfortableDesc')}
-                </span>
-              </div>
-            </label>
-
-            {/* Compact */}
-            <label
-              className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                selectedDensity === 'compact'
-                  ? 'border-[var(--accent)] bg-[var(--accent-glow)]'
-                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-secondary)]'
-              }`}
-            >
-              <input
-                type="radio"
-                name="density"
-                value="compact"
-                checked={selectedDensity === 'compact'}
-                onChange={() => setSelectedDensity('compact')}
-                className="mt-1 accent-[var(--accent)] cursor-pointer"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-[var(--text-primary)]">
-                  {t('densityCompact')}
-                </span>
-                <span className="text-xs text-[var(--text-muted)] mt-0.5">
-                  {t('densityCompactDesc')}
-                </span>
-              </div>
-            </label>
-          </div>
         </div>
       </div>
     </SlideOver>

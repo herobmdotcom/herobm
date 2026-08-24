@@ -174,6 +174,8 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
         const gap = gapMap[lineId];
         const canFulfil = context === 'purchase' ? totalAvail >= orderedQty : !gap;
 
+        const customProductCode = line.productNumber === 'SYSTEM-CUSTOM-LINE' ? 'CUSTOM' : (line.productNumber || '—');
+
         const productCellContent = (
           <div className="flex items-center gap-1.5 flex-wrap">
             {isComponent && (
@@ -190,7 +192,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
               </Link>
             ) : (
               <span className="font-semibold text-xs">
-                {line.productNumber === 'SYSTEM-CUSTOM-LINE' ? 'CUSTOM' : (line.productNumber || '—')}
+                {customProductCode}
               </span>
             )}
             {isKitParent && (

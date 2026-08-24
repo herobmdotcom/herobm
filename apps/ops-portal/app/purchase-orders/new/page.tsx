@@ -275,7 +275,7 @@ export default function NewPurchaseOrderPage() {
         lines: lines
           .filter((l) => l.productId || l.lineType === LineType.COMMENT)
           .map((l) => ({
-            lineType: (l.lineType as api.CreatePurchaseOrderLineDtoLineTypeEnum) || api.CreatePurchaseOrderLineDtoLineTypeEnum.Product,
+            lineType: (l.lineType as api.CreateOrderLineDtoLineType) || api.CreateOrderLineDtoLineType.Product,
             productId: l.lineType === LineType.COMMENT ? undefined : l.productId,
             productDescription: l.productDescription,
             quantity: l.lineType === LineType.COMMENT ? '0' : String(l.quantity),

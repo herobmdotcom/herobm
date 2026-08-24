@@ -66,8 +66,8 @@ export class TwoFactorService {
     actor: string,
   ) {
     // Verify the code against the raw secret before storing
-    const isValid = verifySync({ token: code, secret: rawSecret });
-    if (!isValid) {
+    const result = verifySync({ token: code, secret: rawSecret });
+    if (!result.valid) {
       throw new BadRequestException(
         'Invalid verification code. Please try again.',
       );
@@ -141,8 +141,11 @@ export class TwoFactorService {
       verify: async (code: string) => {
         // First try TOTP verification (only works for 6-digit codes)
         try {
-          const isTotp = verifySync({ token: code, secret: decryptedSecret });
-          if (isTotp) return true;
+          const totpResult = verifySync({
+            token: code,
+            secret: decryptedSecret,
+          });
+          if (totpResult.valid) return true;
         } catch {
           // Non-6-digit codes (e.g. backup codes) will throw TokenLengthError — expected
         }

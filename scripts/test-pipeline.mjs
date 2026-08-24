@@ -22,7 +22,7 @@ while (Date.now() - start < waitTime) {
 }
 
 console.log('Running pipeline tests...');
-const result = run('npx tsx infra/pipeline_tests/test_pipeline_cancellation.ts');
+const result = run('npx tsx infra/heavy_tests/test_pipeline_cancellation.ts');
 const exitCode = result.status;
 
 console.log('Tearing down containers to preserve dev-local isolation...');

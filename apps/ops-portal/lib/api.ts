@@ -64,6 +64,7 @@ export async function login(user: string, pass: string) {
   const data = await res.json();
   
   if (data.twoFactorRequired) {
+    clearSession();
     return data;
   }
 

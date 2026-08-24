@@ -1285,6 +1285,7 @@
       "densityComfortableDesc": "Default spacing and touch target sizing",
       "densityCompact": "Compact",
       "densityCompactDesc": "Reduced padding, more data visible on screen",
+      "displayName": "Display Name",
       "role": "Role",
       "save": "Save Preferences",
       "saveFailed": "Failed to save preferences",

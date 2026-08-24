@@ -20,6 +20,14 @@ jest.mock('@/components/UserSettingsProvider', () => ({
   }),
 }));
 
+jest.mock('@herobm/sdk', () => ({
+  authControllerGet2FaStatus: jest.fn().mockResolvedValue({ data: { enabled: false } }),
+  authControllerSetup2Fa: jest.fn().mockResolvedValue({ data: { secret: 'SEC', qrCodeDataUrl: 'data:img', backupCodes: ['c1', 'c2'] } }),
+  authControllerEnable2Fa: jest.fn().mockResolvedValue({ data: { success: true } }),
+  authControllerDisable2Fa: jest.fn().mockResolvedValue({ data: { success: true } }),
+  authControllerRegenerateBackupCodes: jest.fn().mockResolvedValue({ data: { backupCodes: ['c3', 'c4'] } }),
+}));
+
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -47,8 +55,8 @@ describe('UserPreferencesModal', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders correctly and switches density when selected', async () => {
-    const { container } = render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
+  it('renders correctly and switches density with auto-save', async () => {
+    render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText('title')).toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();
@@ -57,14 +65,29 @@ describe('UserPreferencesModal', () => {
     expect(compactRadio).toBeInTheDocument();
     fireEvent.click(compactRadio);
 
-    const saveButton = screen.getByText('save');
-    fireEvent.click(saveButton);
-
     await waitFor(() => {
       expect(mockUpdatePreferences).toHaveBeenCalledWith({
         density: 'compact',
       });
-      expect(mockOnClose).toHaveBeenCalled();
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+  });
+
+  it('renders 2FA switch and triggers setup on toggle', async () => {
+    render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
+
+    await waitFor(() => {
+      const switchInput = document.querySelector('label.switch input') as HTMLInputElement;
+      expect(switchInput).toBeInTheDocument();
+      expect(switchInput.checked).toBe(false);
+    });
+
+    const switchInput = document.querySelector('label.switch input') as HTMLInputElement;
+    fireEvent.click(switchInput);
+
+    await waitFor(() => {
+      expect(screen.getByText('setupStep1')).toBeInTheDocument();
     });
   });
 });
+

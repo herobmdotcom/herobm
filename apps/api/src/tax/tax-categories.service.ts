@@ -71,29 +71,6 @@ export class TaxCategoriesService {
       }
     }
 
-    const fallbacks = await db
-      .select()
-      .from(taxCategories)
-      .where(
-        inArray(taxCategories.code, [
-          'GST',
-          'OUTPUT',
-          'STANDARD',
-          'VAT',
-          'TAX',
-        ]),
-      )
-      .limit(1);
-
-    if (fallbacks.length > 0) {
-      return fallbacks[0];
-    }
-
-    const anyCat = await db.select().from(taxCategories).limit(1);
-    if (anyCat.length > 0) {
-      return anyCat[0];
-    }
-
     throw new NotFoundException('No default sales tax category configured');
   }
 
