@@ -36,7 +36,7 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 - **`docs/user/sales_order_management.md`**:
   - Documented direct document emailing via the `EmailDocumentDialog`.
   - Documented structured Sales Order Analysis Codes and custom fields.
-  - Documented discount percentage bounds enforcement ($0 \le \text{discount} \le 100$).
+  - Documented discount percentage bounds enforcement (0% to 100%).
 - **`docs/user/purchase_order_management.md`**:
   - Documented supplier purchasing hold warnings and confirmation restrictions.
   - Documented direct document emailing for POs.

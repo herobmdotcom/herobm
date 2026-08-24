@@ -130,9 +130,12 @@ flowchart LR
     end
 
     subgraph S3 ["3. Operational Core"]
-        Marts -.->|Initial Import Pipeline| Core["herobm_core"]
-        API["NestJS API"] <-->|Drizzle ORM (Read/Write)| Core
+        Core[("herobm_core")]
+        API["NestJS API"]
     end
+
+    Marts -->|"Initial Import Pipeline"| Core
+    API <-->|"Drizzle ORM (Read/Write)"| Core
 ```
 
 ### 1. `public_staging` (Ingestion & Cleansing)
@@ -174,7 +177,7 @@ flowchart TD
     InvariantCheck -->|Fail| Abort["Abort Transaction (400 Bad Request)"]
 ```
 
-- **Mathematical Balance Invariant:** Every journal entry must have $\ge 2$ lines and satisfy $\sum \text{Debits} = \sum \text{Credits}$ within a strict $0.005$ tolerance.
+- **Mathematical Balance Invariant:** Every journal entry must have at least 2 lines and satisfy **Total Debits = Total Credits** within a strict `0.005` tolerance.
 - **Leaf-Node Posting Only:** Transactions can only post to leaf accounts (`is_group = false`). Posting to parent summary accounts is blocked.
 - **Atomic Subledger Integration:** When subledgers post financial events (such as Sales Invoices, Goods Received, or Payments), they pass their active database transaction (`tx`) to `GlService.postJournalEntry(lines, meta, tx)`. If the GL entry fails, the entire business operation rolls back atomically.
 - **Immutable Ledger & Reversals:** Financial postings are immutable. Corrections are performed exclusively by posting linked reversal entries, maintaining complete audit continuity.
@@ -204,9 +207,9 @@ sequenceDiagram
 
 - **Ledger Invariant:** Every movement creates an `inventory_entries` header and matching `inventory_ledger` lines recording changes against exact bin IDs and location numbers.
 - **Valuation Cache (`quantityOnHand`):** While real-time stock balances are aggregated from the immutable ledger via database views (`inventory_levels`, `bin_contents`), `products.quantityOnHand` serves as a dedicated valuation cache updated during goods receipt to compute the Weighted Average Cost (WAC):
-  $$\text{New WAC} = \frac{(\text{Old Qty} \times \text{Old WAC}) + (\text{Receipt Qty} \times \text{Unit Cost})}{\text{Old Qty} + \text{Receipt Qty}}$$
+  `New WAC = ((Old Qty × Old WAC) + (Receipt Qty × Unit Cost)) / (Old Qty + Receipt Qty)`
 - **Available Stock Formula:** Stock availability is computed uniformly across frontend and backend using the canonical shared formula:
-  $$\text{Available} = \text{On Hand} - \text{Committed} - \text{Reserved}$$
+  `Available = On Hand - Committed - Reserved`
 
 ---
 
@@ -243,10 +246,10 @@ To prevent dual-write anomalies when notifying external systems, Webhooks, or em
 
 ```mermaid
 flowchart LR
-    API["API Mutation"] -->|Same DB Transaction| DB[("herobm_core.sales_orders<br/>+ herobm_core.outbox")]
-    DB -.->|Poll Unprocessed (5s)| Worker["Worker Process (BullMQ)"]
-    Worker -->|Job Dispatch| Redis[("Redis Queue")]
-    Redis -->|Execute| Handler["Event Handlers"]
+    API["API Mutation"] -->|"Same DB Transaction"| DB[("herobm_core.sales_orders<br/>+ herobm_core.outbox")]
+    DB -->|"Poll Unprocessed (5s)"| Worker["Worker Process (BullMQ)"]
+    Worker -->|"Job Dispatch"| Redis[("Redis Queue")]
+    Redis -->|"Execute"| Handler["Event Handlers"]
     Handler --> Webhook["Webhooks (HTTPS)"]
     Handler --> Email["Email Outbox (SMTP)"]
     Handler --> ERP["External Systems"]
@@ -290,31 +293,93 @@ HeroBM replaces sluggish headless-browser PDF generators with **Typst**, an ultr
 
 ## 5. Deployment, Observability & IT Operations
 
-Designed specifically for predictable, low-maintenance deployment in on-premises or cloud environments:
+Designed specifically for predictable, low-maintenance deployment in on-premises or cloud environments using standard container orchestration:
 
-### Container Orchestration
-The entire platform is orchestrated via `podman compose` or `docker compose`:
+### Container Infrastructure Topology
 
-```text
-┌────────────────────────────────────────────────────────┐
-│                   Host Machine                         │
-│                                                        │
-│   ┌──────────────┐   ┌──────────────┐   ┌──────────┐   │
-│   │  Ops Portal  │   │   Core API   │   │  Worker  │   │
-│   │ (Next.js:3000│   │ (NestJS:3001)│   │  (:9091) │   │
-│   └──────┬───────┘   └──────┬───────┘   └────┬─────┘   │
-│          │                  │                │         │
-│          ▼                  ▼                ▼         │
-│   ┌────────────────────────────────────────────────┐   │
-│   │       PostgreSQL 16 (:5432) & Redis (:6379)    │   │
-│   └────────────────────────────────────────────────┘   │
-│                                                        │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Client ["External Clients & Browsers"]
+        Browser["User Browser"]
+        ExtAPI["External API Client"]
+    end
+
+    subgraph Host ["Host Machine (Docker / Podman Compose)"]
+        subgraph Ingress ["Edge & Ingress Layer"]
+            Nginx["herobm-nginx<br/>(Nginx Alpine :8080 / :8443)"]
+        end
+
+        subgraph AppTier ["Application Tier (app-net)"]
+            UI["herobm-ui<br/>(Next.js 15 Ops Portal :3000)"]
+            API["herobm-api<br/>(NestJS 11 Core API :3001)"]
+            Worker["herobm-outbox<br/>(BullMQ Worker :9091)"]
+            Pipeline["herobm-pipeline<br/>(dbt ETL Runner :8001)"]
+        end
+
+        subgraph DataTier ["Data & State Tier"]
+            Postgres[("postgres-custom<br/>(PostgreSQL 16 :5432)")]
+            Redis[("redis-broker<br/>(Redis 7 Alpine :6379)")]
+        end
+    end
+
+    Browser -->|"HTTP :8080 / HTTPS :8443"| Nginx
+    ExtAPI -->|"REST API :3001"| API
+
+    Nginx -->|"Proxy UI Traffic (/)"| UI
+    Nginx -->|"Proxy API Traffic (/api)"| API
+
+    UI -->|"Internal REST / JSON"| API
+    API -->|"Read / Write / Pool"| Postgres
+    API -->|"Trigger ETL Jobs"| Pipeline
+    Pipeline -->|"Transform & Seed"| Postgres
+
+    Worker -->|"Poll Outbox Table (5s)"| Postgres
+    Worker -->|"Queue & Deduplicate Jobs"| Redis
+    API -->|"Enqueue Outbox Events"| Postgres
 ```
 
-### Logging & Diagnostics
-- **Dual Structured Logging:** Applications emit structured JSON to `stdout` (captured with Docker's `json-file` driver bounded to `20MB` max per file) and persist formatted operational logs to a mounted volume (`/app/logs/api.log`, `worker.log`, `postgres.log`).
-- **In-Portal Log Viewer:** System administrators can inspect live server logs securely at **Technical** → **System Logs** (`/admin/system-logs`) without requiring SSH access to the host.
+### Production Container Services & Workloads
+
+The platform runs as a coordinated set of containerized services defined in `docker-compose.yml`:
+
+| Container Name | Base Image / Dockerfile | Exposed Ports | Network | Application & Responsibility |
+| :--- | :--- | :--- | :--- | :--- |
+| **`herobm-nginx`** | `nginx:alpine` | `8080:80`, `8443:443` | `app-net` | **Reverse Proxy & Ingress**: Routes web traffic to `herobm-ui` (`/`) and API requests to `herobm-api` (`/api`), terminates SSL/TLS certificates, and enforces connection rate-limiting. |
+| **`herobm-ui`** | `Dockerfile.portal` | `8000:3000` | `app-net` | **Ops Portal Web Application**: Next.js 15 (App Router), React 19 administrative portal with high-density AG Grid tables, client-side data fetching, and contextual help drawers. |
+| **`herobm-api`** | `Dockerfile.api` | `3001:3001` | `app-net`, `monitoring-net` | **Core Transactional REST API**: NestJS 11 backend managing business logic, Passport JWT authentication, Casbin RBAC authorization, Drizzle ORM transactions, Typst PDF compilation, and transactional outbox event creation. |
+| **`herobm-outbox`** | `Dockerfile.worker` | `9092:9091` | `app-net`, `monitoring-net` | **Asynchronous Background Worker**: Node.js background processor running BullMQ job queues, polling `herobm_core.outbox` every 5 seconds, dispatching HTTPS webhooks, syncing external ERP integrations, and processing SMTP email queues. |
+| **`herobm-pipeline`** | `Dockerfile.pipeline` | `8001:8001` | `app-net` | **ETL & Data Pipeline Runner**: Isolated dbt + Python 3 service executing data extraction, cleansing into `public_staging`, analytical transformations into `public_marts`, and legacy migration import scripts. |
+| **`postgres-custom`** | `postgres:16-alpine` | `5432:5432` | `app-net` | **Relational Database Engine**: PostgreSQL 16 server tuned with custom memory and WAL parameters (`shared_buffers=512MB`, `work_mem=32MB`, `max_wal_size=4GB`), hosting the Tri-Schema architecture (`public_staging`, `public_marts`, `herobm_core`). |
+| **`redis-broker`** | `redis:7-alpine` | `6379:6379` | `app-net` | **In-Memory Cache & Message Broker**: Redis 7 service providing job queue persistence, deduplication, retry backoff state for BullMQ, and transient cache. |
+| **`maildev`** *(Dev Profile)* | `maildev/maildev` | `1080:1080`, `1025:1025` | `app-net` | **Local SMTP & Webmail Inspector**: Development-only mock SMTP server and web interface (`http://localhost:1080`) for testing and previewing outgoing transactional emails without external relays. |
+
+### Container Networking & Storage Volumes
+
+- **`app-net`**: High-speed internal bridge network connecting application services (`herobm-ui`, `herobm-api`, `herobm-outbox`, `herobm-pipeline`) with data stores (`postgres-custom`, `redis-broker`).
+- **`monitoring-net`**: Isolated network for metrics collection, health inspections, and log aggregation.
+- **Persistent Volumes**:
+  - `postgres_data`: Persistent storage for PostgreSQL data clusters (`/var/lib/postgresql/data`).
+  - `redis_data`: Append-only file persistence for Redis queues (`/data`).
+  - `./logs`: Shared host directory mounted to `/app/logs` across containers for structured audit and operational logs.
+  - `./data/storage`: Document attachment and compiled report cache volume.
+
+### Observability, Telemetry & Logging
+
+HeroBM implements a multi-layered observability strategy designed for zero-overhead operation with instant pluggability into standard monitoring stacks (Prometheus, Grafana, OpenTelemetry Collector):
+
+1. **OpenTelemetry Instrumentation (OTel)**:
+   - Built-in `@opentelemetry/api` metrics and tracing sockets exported centrally via `@herobm/shared` (`getMeter()`, `getTracer()`).
+   - **API Metrics**: `MetricsInterceptor` automatically records HTTP request counts (`http_requests_total`) and latency distribution histograms (`http_request_duration_seconds`) tagged by HTTP method, route pattern, and status code.
+   - **Worker Metrics**: Tracks outbox polling cycles, relay latency, and BullMQ job processing rates (`herobm-worker`).
+   - **Zero Overhead**: Operates as zero-overhead No-Op instruments by default; seamlessly exports metrics and spans when an external OpenTelemetry collector or exporter is configured.
+
+2. **Client-Side Error Telemetry**:
+   - The Next.js Ops Portal automatically captures unhandled exceptions, component crash stacks, and rejected promises, forwarding them asynchronously to `POST /api/telemetry/client-errors`.
+   - The endpoint operates unauthenticated (`@Public()`, `@SkipCasbin()`) under strict rate-limiting (`TELEMETRY` tier) so diagnostic events are reliably collected even during session expiration or authentication outages.
+
+3. **Structured Logging & Live In-Portal Diagnostics**:
+   - **Dual Structured Logging**: Applications emit structured JSON to `stdout` (captured with Docker's `json-file` driver bounded to `20MB` max per file) and persist formatted operational logs to a mounted volume (`/app/logs/api.log`, `worker.log`, `postgres.log`).
+   - **In-Portal Log Viewer**: System administrators can inspect live server logs securely at **Technical** → **System Logs** (`/admin/system-logs`) without requiring direct SSH access to the host.
 
 ### Database Migrations & The Drizzle Gate
 Database schema evolution is strictly automated:
@@ -327,8 +392,8 @@ Developers and CI/CD pipelines enforce code health through a strict tiered hiera
 
 | Tier | Make Target | Execution Time | Scope |
 | :--- | :--- | :--- | :--- |
-| **Tier 0** | `make check-types`, `make check-lint`, `make test-single` | $< 5\text{s}$ | Active inner-loop feedback during development. |
-| **Tier 1** | `make verify-fast` | $< 25\text{s}$ | Fast pre-commit gate: static types, lints, in-memory PGlite unit tests, and schema drift checks. |
-| **Tier 2** | `make verify-api`, `make verify-portal`, `make verify-pipeline` | $30\text{--}60\text{s}$ | Subsystem validation including PostgreSQL integration tests and Next.js production builds. |
-| **Tier 3** | `make pre-push`, `make verify-all` | $2\text{--}3\text{m}$ | Full repository verification and container image build validation. |
-| **Tier 4** | `make test-heavy` | $5\text{--}10\text{m}$ | Full isolated stack boot with end-to-end browser regression and fuzzing suites. |
+| **Tier 0** | `make check-types`, `make check-lint`, `make test-single` | < 5s | Active inner-loop feedback during development. |
+| **Tier 1** | `make verify-fast` | < 25s | Fast pre-commit gate: static types, lints, in-memory PGlite unit tests, and schema drift checks. |
+| **Tier 2** | `make verify-api`, `make verify-portal`, `make verify-pipeline` | 30–60s | Subsystem validation including PostgreSQL integration tests and Next.js production builds. |
+| **Tier 3** | `make pre-push`, `make verify-all` | 2–3 min | Full repository verification and container image build validation. |
+| **Tier 4** | `make test-heavy` | 5–10 min | Full isolated stack boot with end-to-end browser regression and fuzzing suites. |

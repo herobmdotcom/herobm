@@ -60,6 +60,9 @@ The Fast Install target automatically:
 7. **Bootstraps Data & Admin User** (`make bootstrap`): Seeds master data and outputs your secure admin password.
 8. **Launches Applications** (`make up` or selected profile): Starts the Ops Portal and API backend.
 
+> [!NOTE]
+> We recommend installing HeroBM on a self-service VM provider like [exe.dev](https://exe.dev). We work on exe.dev daily, and `make fast-install` will get you up and running without issues. In particular, the firewall is already configured to allow traffic to the HeroBM UI for users who you share the VM with.
+
 ---
 
 ## 2. Step-by-Step Manual Sequence

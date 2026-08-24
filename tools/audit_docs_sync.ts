@@ -168,7 +168,38 @@ export function runAudit(options: { updateCheckpoint?: boolean } = {}) {
     unmappedPortalRoutes.forEach((r) => console.log(`   ❌ ${r}`));
   }
 
-  // 4. Update checkpoint if requested
+  // 4. Content Quality & Math Noise Scan
+  console.log('\n-----------------------------------------------------');
+  console.log('   Content Quality & Special Characters Audit');
+  console.log('-----------------------------------------------------');
+
+  const mathNoiseViolations: string[] = [];
+  for (const file of fs.readdirSync(docsUserDir).filter((f) => f.endsWith('.md'))) {
+    const raw = fs.readFileSync(path.join(docsUserDir, file), 'utf-8');
+    const stripped = raw.replace(/```[\s\S]*?```/g, '');
+    const lines = stripped.split('\n');
+    lines.forEach((line, idx) => {
+      const mathDelimMatch = line.match(/\$\$|\$[^$\n]+\$/);
+      const latexCmdMatch = line.match(
+        /\\(text|frac|times|sum|ge|le|pm|cdot|sqrt|approx|ne|alpha|beta|sigma|infty|left|right|begin|end)\b/,
+      );
+      if (mathDelimMatch || latexCmdMatch) {
+        mathNoiseViolations.push(`${file}:${idx + 1}: ${line.trim()}`);
+      }
+    });
+  }
+
+  if (mathNoiseViolations.length === 0) {
+    console.log('✅ All documentation files are clean of raw LaTeX/math noise.');
+  } else {
+    console.log(`❌ Found ${mathNoiseViolations.length} instances of raw LaTeX/math noise:`);
+    mathNoiseViolations.forEach((v) => console.log(`   • ${v}`));
+    if (!options.updateCheckpoint) {
+      throw new Error(`Documentation quality audit failed: ${mathNoiseViolations.length} LaTeX/math noise violations found.`);
+    }
+  }
+
+  // 5. Update checkpoint if requested
   if (options.updateCheckpoint) {
     const newCheckpoint: CheckpointData = {
       last_synced_commit: currentHead.slice(0, 8),

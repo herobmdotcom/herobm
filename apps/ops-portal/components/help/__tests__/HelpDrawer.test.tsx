@@ -63,7 +63,54 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('Workflow')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Details below.')).toBeInTheDocument();
+      expect(screen.getByTestId('mermaid-test-output')).toBeInTheDocument();
     });
+  });
+
+  it('opens enlarged modal on click and supports zoom in, zoom out, reset, and close', async () => {
+    const markdown = `\`\`\`mermaid\nstateDiagram-v2\n[*] --> Draft\n\`\`\``;
+    render(<MarkdownRenderer content={markdown} />);
+
+    const diagramButton = screen.getByRole('button', { name: /enlargeDiagram/i });
+    expect(diagramButton).toBeInTheDocument();
+
+    // Click to enlarge
+    fireEvent.click(diagramButton);
+
+    expect(screen.getByRole('dialog', { name: /diagramView/i })).toBeInTheDocument();
+    expect(screen.getByTestId('zoom-level-badge')).toHaveTextContent('100%');
+
+    // Zoom In
+    const zoomInBtn = screen.getByRole('button', { name: /zoomIn/i });
+    fireEvent.click(zoomInBtn);
+    expect(screen.getByTestId('zoom-level-badge')).toHaveTextContent('125%');
+
+    // Zoom Out
+    const zoomOutBtn = screen.getByRole('button', { name: /zoomOut/i });
+    fireEvent.click(zoomOutBtn);
+    expect(screen.getByTestId('zoom-level-badge')).toHaveTextContent('100%');
+
+    // Zoom In and Reset Zoom
+    fireEvent.click(zoomInBtn);
+    expect(screen.getByTestId('zoom-level-badge')).toHaveTextContent('125%');
+    const resetZoomBtn = screen.getByRole('button', { name: /resetZoom/i });
+    fireEvent.click(resetZoomBtn);
+    expect(screen.getByTestId('zoom-level-badge')).toHaveTextContent('100%');
+
+    // Test Fit to Screen button
+    const fitBtn = screen.getByRole('button', { name: /fitToScreen/i });
+    expect(fitBtn).toBeInTheDocument();
+
+    // Close Modal via close button
+    const closeBtn = screen.getByRole('button', { name: /closeDiagram/i });
+    fireEvent.click(closeBtn);
+    expect(screen.queryByRole('dialog', { name: /diagramView/i })).not.toBeInTheDocument();
+
+    // Reopen and test Escape key to close
+    fireEvent.click(diagramButton);
+    expect(screen.getByRole('dialog', { name: /diagramView/i })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: /diagramView/i })).not.toBeInTheDocument();
   });
 });
 

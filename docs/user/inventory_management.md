@@ -49,7 +49,7 @@ The **Inventory** module tracks stock levels in real time across warehouse facil
 ### 1. The Stock Balance Equation
 For any product and location, stock availability is computed in real time:
 
-$$\text{Available Stock} = \text{On Hand} - \text{Committed} - \text{Reserved}$$
+**Available Stock = On Hand - Committed - Reserved**
 
 - **On Hand**: Physical items present in the building.
 - **Committed**: Items allocated to confirmed sales orders awaiting picking or dispatch.

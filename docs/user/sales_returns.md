@@ -76,7 +76,7 @@ stateDiagram-v2
 | **Return Number** | Unique RMA identifier. |
 | **Sales Order** | Invoiced order reference. |
 | **Customer** | Customer requesting return. |
-| **Quantity Returned** | Units authorized for return (must be $\le$ invoiced quantity). |
+| **Quantity Returned** | Units authorized for return (must be ≤ invoiced quantity). |
 | **Return Reason** | Quality/commercial justification code (Line-level). |
 | **Restocking Fee** | Deducted handling fee (Line-level). |
 | **Status** | Stage (`Draft`, `Confirmed`, `Processed`, `Cancelled`). |

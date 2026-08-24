@@ -48,7 +48,7 @@ fields:
     summary: "Price per unit, automatically filled using the customer's Price Scale (1–4)."
   discount_percentage:
     title: "Discount %"
-    summary: "Line discount percentage ($0 \\le \\text{discount} \\le 100$), pre-filled from customer defaults."
+    summary: "Line discount percentage (0% to 100%), pre-filled from customer defaults."
   tax_category_id:
     title: "Tax / GST Category"
     summary: "Tax classification based on customer tax status and product category."
@@ -145,7 +145,7 @@ If a customer fails these checks, the order is blocked. Authorized users can app
   2. **Trade Price** (Standard wholesale/trade)
   3. **Tier 3** (Volume trade)
   4. **Tier 4** (Distributor/contract)
-- **Discount Percentage Bounds**: All discount percentages must strictly stay between $0\%$ and $100\%$ ($0 \le \text{discount} \le 100$). Values outside this boundary are rejected by validation.
+- **Discount Percentage Bounds**: All discount percentages must strictly stay between 0% and 100% (0% to 100%). Values outside this boundary are rejected by validation.
 - **Custom Lines**: You can add ad-hoc custom lines for non-catalogue items, delivery fees, or special charges.
 
 ### 3. Structured Analysis Codes
@@ -191,7 +191,7 @@ When confirming an order, the system checks available warehouse stock:
 2. Click **New Order** (`/sales-orders/new`).
 3. Select the **Customer**. Currency, terms, addresses, and price scale fill automatically.
 4. (Optional) Enter the customer's **PO Number**, select **Analysis Codes**, and enter order notes.
-5. In the **Line Items** section, search for products to add. Enter the quantity, price, and discount ($0-100\%$).
+5. In the **Line Items** section, search for products to add. Enter the quantity, price, and discount (0%–100%).
 6. Check the **📦 Availability** tab to see stock levels across warehouses.
 7. Click **Save as Draft**.
 
@@ -232,7 +232,7 @@ When confirming an order, the system checks available warehouse stock:
 | **Currency & FX Rate** | The transaction currency and exchange rate to base currency (EUR). |
 | **Delivery Address Line/City/Postcode** | Destination address broken down into line, city, and postcode. |
 | **Unit Price** | Selling price per unit, pre-filled from customer's price scale (1–4). |
-| **Discount %** | Percentage discount applied to the line ($0 \le \text{discount} \le 100$). |
+| **Discount %** | Percentage discount applied to the line (0% to 100%). |
 | **Tax Category** | Tax rate classification (e.g. 9% GST, Exempt). |
 | **Analysis Codes** | Structured custom classification tags for business reporting. |
 | **Post-Confirmation** | Special line added after confirmation for additional freight or packaging. |

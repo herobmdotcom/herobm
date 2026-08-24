@@ -2131,10 +2131,15 @@
     "back": "Back",
     "backToScreen": "Back to screen context",
     "categories": "Categories",
+    "clickToEnlarge": "Click to enlarge",
+    "closeDiagram": "Close diagram",
     "contextTab": "Active Screen",
+    "diagramView": "Diagram View",
     "emptySearch": "No documentation matching your search.",
+    "enlargeDiagram": "Enlarge diagram",
     "fieldGuide": "Field Reference",
     "filterTopics": "Filter topics...",
+    "fitToScreen": "Fit to screen",
     "fullManual": "Full Manual",
     "loadingDocs": "Loading documentation...",
     "manual": "User Manual",
@@ -2145,6 +2150,7 @@
     "openManual": "Open Manual",
     "quickActions": "Quick Workflows",
     "relatedTopics": "Related Topics",
+    "resetZoom": "Reset Zoom",
     "search": "Search manual...",
     "searchPrompt": "Type keywords to search documentation.",
     "searchPromptSub": "Matches headings, tags, field definitions, and workflows.",
@@ -2153,7 +2159,9 @@
     "shortcut": "Press ? or F1 for help",
     "title": "Help & Documentation",
     "tocTab": "Table of Contents",
-    "topicsAvailable": "topics available"
+    "topicsAvailable": "topics available",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out"
   },
   "inventory": {
     "columns": {

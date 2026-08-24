@@ -243,5 +243,40 @@ Admin only doc.
         );
       }
     });
+
+    it('should ensure all user documentation files are free of raw LaTeX/KaTeX math noise', () => {
+      const realDocsDir = path.resolve(__dirname, '../../../../docs/user');
+      if (!fs.existsSync(realDocsDir)) return;
+
+      const files = fs
+        .readdirSync(realDocsDir)
+        .filter((f) => f.endsWith('.md'));
+
+      const violations: string[] = [];
+
+      for (const file of files) {
+        const filePath = path.join(realDocsDir, file);
+        const rawContent = fs.readFileSync(filePath, 'utf-8');
+
+        // Remove fenced code blocks (```...```) to avoid false positives on programming code
+        const strippedContent = rawContent.replace(/```[\s\S]*?```/g, '');
+
+        const lines = strippedContent.split('\n');
+        lines.forEach((line, index) => {
+          // Check for LaTeX tokens like $$, \text, \frac, \times, \sum, \ge, \le, \pm, etc.
+          // or math expressions enclosed in $...$
+          const mathDelimMatch = line.match(/\$\$|\$[^$\n]+\$/);
+          const latexCmdMatch = line.match(
+            /\\(text|frac|times|sum|ge|le|pm|cdot|sqrt|approx|ne|alpha|beta|sigma|infty|left|right|begin|end)\b/,
+          );
+
+          if (mathDelimMatch || latexCmdMatch) {
+            violations.push(`${file}:${index + 1}: "${line.trim()}"`);
+          }
+        });
+      }
+
+      expect(violations).toEqual([]);
+    });
   });
 });

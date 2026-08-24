@@ -45,7 +45,7 @@ The **General Ledger (GL)** is the financial backbone of HeroBM. It records all 
 
 Every posted transaction in the system must obey the double-entry equation:
 
-$$\sum \text{Debits} = \sum \text{Credits}$$
+**Total Debits = Total Credits**
 
 ### Standard Automatic Postings
 
@@ -69,8 +69,10 @@ $$\sum \text{Debits} = \sum \text{Credits}$$
 
 ### 2. Trial Balance Zero-Sum Check
 The Trial Balance report incorporates continuous zero-sum verification:
-$$\text{Total Debits} - \text{Total Credits} = 0.00$$
-If any rounding imbalance exceeds $\pm 0.005$, the system highlights an out-of-balance anomaly and prevents closing the period.
+
+**Total Debits - Total Credits = 0.00**
+
+If any rounding imbalance exceeds `±0.005`, the system highlights an out-of-balance anomaly and prevents closing the period.
 
 ### 3. Subledger Parity Verification
 Automated subledger reconciliation checks reconcile:
@@ -87,7 +89,7 @@ Automated subledger reconciliation checks reconcile:
 2. Click **New Journal Entry** (`/general-ledger/journal-entries/new`).
 3. Enter the **Transaction Date** and a clear **Description / Reference**.
 4. Add line items: select GL accounts and enter Debit and Credit amounts.
-5. Verify that total debits exactly equal total credits ($\sum \text{DR} = \sum \text{CR}$).
+5. Verify that total debits exactly equal total credits (**Total Debits = Total Credits**).
 6. Click **Post Journal Entry**.
 
 ### 2. Viewing the Trial Balance
