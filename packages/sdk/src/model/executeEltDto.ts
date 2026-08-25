@@ -5,12 +5,15 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { ExecuteEltDtoGlCutoffMode } from './executeEltDtoGlCutoffMode';
 import type { DbConfigDto } from './dbConfigDto';
 import type { ExecuteEltDtoSource } from './executeEltDtoSource';
 
 export interface ExecuteEltDto {
   /** If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid. */
   legacyInvoicesPaidBeforeDate?: string;
+  /** Cut-off date mode for General Ledger opening balances take-on (start_of_month or current_date). */
+  glCutoffMode?: ExecuteEltDtoGlCutoffMode;
   dbConfig?: DbConfigDto;
   source?: ExecuteEltDtoSource;
   resumeExtraction?: boolean;

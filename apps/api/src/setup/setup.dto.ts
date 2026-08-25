@@ -142,6 +142,17 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsString()
   legacyInvoicesPaidBeforeDate?: string;
+
+  @ApiProperty({
+    description:
+      'Cut-off date mode for General Ledger opening balances take-on (start_of_month or current_date).',
+    enum: ['start_of_month', 'current_date'],
+    required: false,
+    default: 'start_of_month',
+  })
+  @IsOptional()
+  @IsIn(['start_of_month', 'current_date'])
+  glCutoffMode?: 'start_of_month' | 'current_date';
 }
 
 // ---------------------------------------------------------------------------

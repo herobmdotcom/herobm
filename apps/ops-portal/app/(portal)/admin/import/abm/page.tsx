@@ -33,7 +33,8 @@ export default function AdminImportPage() {
     baseCurrency: 'AUD',
     defaultTaxCategoryCode: '',
     enableLegacyInvoicesRule: false,
-    legacyInvoicesPaidBeforeDate: ''
+    legacyInvoicesPaidBeforeDate: '',
+    glCutoffMode: 'start_of_month' as 'start_of_month' | 'current_date'
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -161,6 +162,7 @@ export default function AdminImportPage() {
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
         legacyInvoicesPaidBeforeDate: config.enableLegacyInvoicesRule ? config.legacyInvoicesPaidBeforeDate : '',
+        glCutoffMode: config.glCutoffMode,
       };
 
       setStep('executing');
@@ -402,6 +404,41 @@ export default function AdminImportPage() {
                     onChange={(e) => setConfig({ ...config, legacyInvoicesPaidBeforeDate: e.target.value })}
                   />
                 )}
+              </div>
+            </div>
+
+            <div className="col-span-2 mt-2">
+              <h2 className="text-xl font-bold text-slate-800 mb-2">{t('options.glCutoffTitle')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('options.glCutoffDesc')}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.glCutoffMode === 'start_of_month'}>
+                  <input 
+                    type="radio" 
+                    name="glCutoffMode" 
+                    checked={config.glCutoffMode === 'start_of_month'}
+                    onChange={() => setConfig({ ...config, glCutoffMode: 'start_of_month' })}
+                    className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                  />
+                  <div>
+                    <div className="font-bold text-slate-800">{t('options.glCutoffStartOfMonthTitle')}</div>
+                    <div className="text-sm text-slate-500">{t('options.glCutoffStartOfMonthDesc')}</div>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.glCutoffMode === 'current_date'}>
+                  <input 
+                    type="radio" 
+                    name="glCutoffMode" 
+                    checked={config.glCutoffMode === 'current_date'}
+                    onChange={() => setConfig({ ...config, glCutoffMode: 'current_date' })}
+                    className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                  />
+                  <div>
+                    <div className="font-bold text-slate-800">{t('options.glCutoffCurrentDateTitle')}</div>
+                    <div className="text-sm text-slate-500">{t('options.glCutoffCurrentDateDesc')}</div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>

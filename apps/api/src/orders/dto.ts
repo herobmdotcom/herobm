@@ -66,6 +66,10 @@ export class ReturnResponseDto {
 // ── Order Line DTOs ──
 
 export class CreateOrderLineDto {
+  @ApiPropertyOptional({
+    enum: LineType,
+    enumName: 'CreateOrderLineDtoLineType',
+  })
   @IsOptional()
   @IsEnum(LineType)
   lineType?: LineType;
@@ -113,6 +117,14 @@ export class CreateOrderLineDto {
 }
 
 export class UpdateOrderLineDto {
+  @IsOptional()
+  @IsUUID()
+  orderLineId?: string;
+
+  @ApiPropertyOptional({
+    enum: LineType,
+    enumName: 'UpdateOrderLineDtoLineType',
+  })
   @IsOptional()
   @IsEnum(LineType)
   lineType?: LineType;

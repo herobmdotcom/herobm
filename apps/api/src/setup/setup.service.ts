@@ -986,6 +986,7 @@ export class SetupService {
       status: 'running',
       configJson: {
         legacyInvoicesPaidBeforeDate: dto.legacyInvoicesPaidBeforeDate,
+        glCutoffMode: dto.glCutoffMode,
       },
       progressJson: [
         { step: 1, name: 'Importing Data (ELT)', status: 'running' },

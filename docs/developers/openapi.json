@@ -26578,11 +26578,22 @@
           "source"
         ]
       },
+      "CreateOrderLineDtoLineType": {
+        "type": "string",
+        "enum": [
+          "Product",
+          "Comment"
+        ]
+      },
       "CreateOrderLineDto": {
         "type": "object",
         "properties": {
           "lineType": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateOrderLineDtoLineType"
+              }
+            ]
           },
           "productId": {
             "type": "string"
@@ -26728,11 +26739,26 @@
           "reason"
         ]
       },
+      "UpdateOrderLineDtoLineType": {
+        "type": "string",
+        "enum": [
+          "Product",
+          "Comment"
+        ]
+      },
       "UpdateOrderLineDto": {
         "type": "object",
         "properties": {
           "lineType": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateOrderLineDtoLineType"
+              }
+            ]
+          },
+          "orderLineId": {
+            "type": "string",
+            "format": "uuid"
           },
           "quantity": {
             "type": "string"
@@ -31658,6 +31684,15 @@
           "legacyInvoicesPaidBeforeDate": {
             "type": "string",
             "description": "If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid."
+          },
+          "glCutoffMode": {
+            "type": "string",
+            "enum": [
+              "start_of_month",
+              "current_date"
+            ],
+            "description": "Cut-off date mode for General Ledger opening balances take-on (start_of_month or current_date).",
+            "default": "start_of_month"
           },
           "dbConfig": {
             "$ref": "#/components/schemas/DbConfigDto"

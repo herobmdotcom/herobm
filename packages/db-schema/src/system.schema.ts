@@ -385,6 +385,7 @@ export const pipelineJobs = herobmCore.table('_pipeline_jobs', {
   status: text('status').notNull(),
   configJson: jsonb('config_json').$type<{
     legacyInvoicesPaidBeforeDate?: string;
+    glCutoffMode?: 'start_of_month' | 'current_date';
   }>(),
   progressJson: jsonb('progress_json'),
   logsJson: jsonb('logs_json'),

@@ -9,6 +9,7 @@ import type { UpdateOrderLineDtoLineType } from './updateOrderLineDtoLineType';
 
 export interface UpdateOrderLineDto {
   lineType?: UpdateOrderLineDtoLineType;
+  orderLineId?: string;
   quantity?: string;
   pricePerUnit?: string;
   unitCost?: string;
