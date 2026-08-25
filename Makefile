@@ -327,11 +327,11 @@ transform-refresh: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt: check-postgres-logs extract transform import-legacy dev-docs-schema
+elt: check-postgres-logs extract transform import-legacy
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
-elt-no-extract: check-postgres-logs transform import-legacy dev-docs-schema
+elt-no-extract: check-postgres-logs transform import-legacy
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
