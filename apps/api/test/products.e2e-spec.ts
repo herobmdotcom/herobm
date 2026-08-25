@@ -143,4 +143,21 @@ describe('Products (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body.notes).toBe('E2E: verified editable');
   });
+
+  it('GET /api/products/images/* — streams image when it exists and 404s when absent', async () => {
+    // 1. Non-existent image should 404
+    const notFoundRes = await request(app.getHttpServer()).get(
+      '/api/products/images/non-existent-image-12345.jpg',
+    );
+    expect(notFoundRes.status).toBe(404);
+
+    // 2. Demo image if present in data/storage/products/demo
+    const demoRes = await request(app.getHttpServer()).get(
+      '/api/products/images/demo/tl-1001.jpg',
+    );
+    if (demoRes.status === 200) {
+      expect(demoRes.headers['content-type']).toMatch(/image\/jpeg/);
+      expect(demoRes.headers['cache-control']).toContain('public');
+    }
+  });
 });

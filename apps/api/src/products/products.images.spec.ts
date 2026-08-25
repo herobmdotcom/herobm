@@ -116,6 +116,38 @@ describe('ProductImages', () => {
         NotFoundException,
       );
     });
+
+    it('should set Content-Type, Cache-Control, and pipe file when image exists', async () => {
+      const root = storageService.getStorageRoot();
+      const testFile = path.join(root, 'products', 'test_stream.jpg');
+      fs.writeFileSync(testFile, 'image-binary-data');
+
+      const { PassThrough } = await import('stream');
+      const mockRes = new PassThrough() as any;
+      mockRes.setHeader = jest.fn();
+
+      const mockReq = { url: '/api/products/images/test_stream.jpg' } as any;
+
+      try {
+        const streamFinished = new Promise((resolve) =>
+          mockRes.on('finish', resolve),
+        );
+        controller.streamImage(mockReq, mockRes);
+        expect(mockRes.setHeader).toHaveBeenCalledWith(
+          'Content-Type',
+          'image/jpeg',
+        );
+        expect(mockRes.setHeader).toHaveBeenCalledWith(
+          'Cache-Control',
+          'public, max-age=86400, immutable',
+        );
+        await streamFinished;
+      } finally {
+        if (fs.existsSync(testFile)) {
+          fs.unlinkSync(testFile);
+        }
+      }
+    });
   });
 
   describe('ProductsController.uploadImage', () => {
