@@ -115,6 +115,8 @@ The test script `infra/tests/test_data_counts.py` validates staging↔core parit
 
 **Products has +1.** The core products table includes 1 seeded system record (`SYSTEM-CUSTOM-LINE`, UUID `00000000-...`) not in ABM.
 
+**Degenerate Invoice Invariant.** Post-import verification asserts that imported sales invoices must not consist exclusively of `SYSTEM-CUSTOM-LINE` fallback products with description `"Custom Line Product"`, ensuring any line mapping failure is caught immediately.
+
 ## Constraint Integrity
 
 The `herobm_core` schema has **115 constraints** across 42 tables:
