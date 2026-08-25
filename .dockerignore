@@ -16,20 +16,34 @@ pipelines/abm_extract/.dlt
 
 # Environment (secrets — never send to build context)
 .env
+.env.*
 .env.local
 .env.*.local
+.setup-token
+
+# TLS / SSL Certificates
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
 
 # Logs
 logs/
 **/*.log
 
-# Temp files
+# Temp files & agents
 /tmp/
 **/test-results/
 **/playwright-report/
 **/.playwright/
 .venv/
 scratch/
+brain/
+.agents/
+apps/tmp/
+apps/api/tmp/
 
 # Large data/backup files
 *.tar.gz

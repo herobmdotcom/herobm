@@ -45,6 +45,9 @@ pipelines/abm_transform/logs/
 /tmp/
 *.tsbuildinfo
 /scratch/
+brain/
+apps/tmp/
+apps/api/tmp/
 
 # Next.js
 .next/
