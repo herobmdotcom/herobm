@@ -168,6 +168,9 @@ if ($podmanCmd) {
     try {
         podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
     }
+    catch {
+        # Ignore errors if volume already exists
+    }
     # Pre-create logs directory
     $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
     $logsDir = Join-Path $projectDir "logs"
@@ -247,7 +250,7 @@ if ($shouldAutostart) {
         $shortcut.TargetPath = "powershell.exe"
         $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
         $logFile = Join-Path $projectDir "logs\autostart.log"
-        $psCommand = "Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; `$retries = 30; while (`$retries -gt 0 -and !(podman info 2>`$null)) { Start-Sleep -Seconds 1; `$retries-- }; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append"
+        $psCommand = "Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile -Encoding utf8; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; `$retries = 30; while (`$retries -gt 0 -and !(podman info 2>`$null)) { Start-Sleep -Seconds 1; `$retries-- }; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append -Encoding utf8"
         $shortcut.Arguments = "-WindowStyle Hidden -Command `"$psCommand`""
         $shortcut.WorkingDirectory = $projectDir
         $shortcut.Description = "Starts Podman machine and HeroBM containers ($makeCmdString) on boot"
