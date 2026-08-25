@@ -149,6 +149,18 @@ dbt handles this automatically via its DAG, and the sync macros run after import
 | FK violation on full-refresh | dbt renamed table, orphaning FK refs | Never use `--full-refresh` on aliased models |
 | Empty core tables after transform | Missing `alias` in config | Add `alias = '<drizzle_table>'` |
 
+## Pipeline Testing Architecture
+
+The ELT pipeline tests are organized into two distinct layers:
+
+1. **ABM Pipeline Specific Test Suite (`pipelines/abm_transform/test/` and `pipelines/abm_transform/tests/`):**
+   - **Static & Structural Guards (`pipelines/abm_transform/test/`):** Validates transaction code mapping disjointness, SQL model invariant filters, purchase order sync logic, reception sync, and anchor UUID consistency. Run via `make test-abm`.
+   - **dbt Data Assertions (`pipelines/abm_transform/tests/`):** Validates that transformation outputs comply with relational integrity (e.g. `assert_no_custom_line_only_sales_invoices.sql`, `assert_invoice_lines_mapped.sql`). Run via `make test-transform SOURCE=abm`.
+   - **Post-Import Live Data Audit (`infra/tests/test_data_counts.py`):** Live database quality gate run after import (`make test-data` / `tools/elt_report.py`).
+
+2. **Generic Monorepo Pipeline Structural Guards (`infra/tests/`):**
+   - Cross-cutting structural tests that protect overall monorepo architecture, runner security (`server.py`), logging resilience, pinned dependencies, no weak defaults, and no hardcoded currencies. Run via `make test-structural`.
+
 ## Related Documentation
 
 - [Convention §23: dbt Import Models](../conventions.md#23-dbt-import-models-targeting-drizzle-tables) — the checklist
