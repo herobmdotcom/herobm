@@ -115,10 +115,12 @@ redis*.tar.gz
 
 # Tools
 tools/license-keys.js
+tools/demo/
 
 # Generated
 apps/ops-portal/lib/generated/
 docs/technical/schema_reference.md
+docs/reports/
 
 # Persistent Storage / Uploads
 /data/storage/*

@@ -69,3 +69,4 @@ The pipeline orchestrating data integration from legacy MSSQL systems into the `
 - **`make transform`** — Executes `dbt run` locally to build the data marts.
 - **`make elt`** — Runs full extraction, transformation, and schema generation chronologically.
 - **`make elt-no-extract`** — Runs transformation and schema generation only, bypassing the Python extraction step.
+- **`make elt-report SOURCE=<source>`** — Executes the data verification audit, checks all 22 data quality invariants, evaluates subledger vs GL parity, and automatically writes the formatted reconciliation summary report to `docs/reports/reconciliation_summary.md`.

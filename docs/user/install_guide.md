@@ -1,12 +1,12 @@
 ---
 id: install-guide
 title: "Installation & Setup Guide"
-description: "Universal fast-install setup guide, startup run profiles, and network configuration for Windows, Linux, and macOS."
+description: "Universal fast-install setup guide, startup run profiles, autostart resilience, and network configuration for Windows, Linux, and macOS."
 category: "Overview"
 order: 1
 routes:
   - "/admin/version"
-tags: ["installation", "setup", "fast-install", "deployment", "prerequisites", "startup-options", "firewall", "networking", "ports", "system-requirements", "hardware"]
+tags: ["installation", "setup", "fast-install", "deployment", "prerequisites", "startup-options", "autostart", "systemd", "firewall", "networking", "ports", "system-requirements", "hardware"]
 fields:
   requirements:
     title: "Machine & System Requirements"
@@ -20,6 +20,9 @@ fields:
   firewall_config:
     title: "Firewall & Network Configuration"
     summary: "Host network binding (`BIND_IP`) and port rules for LAN/external access."
+  autostart_config:
+    title: "Autostart & Reboot Resilience"
+    summary: "Automatic startup management, systemd user service with linger, Windows startup shortcuts, and macOS LaunchAgents."
   env_config:
     title: "Environment Configuration"
     summary: "Local credentials and secrets configured in `.env`."
@@ -264,3 +267,57 @@ sudo firewall-cmd --reload
 - **View Container Logs**: `make logs`
 - **Run Fast Test Verification**: `make verify-fast`
 - **Access Ops Portal**: `http://localhost:8000` (Option 2) or `http://localhost:8080` (Option 3) or `http://localhost:4301` (Option 1)
+
+---
+
+## 7. Autostart & Server Reboot Resilience
+
+HeroBM provides built-in system-level startup automation to ensure that if the host machine or virtual server reboots, the Podman machine and application container stack automatically initialize and recover without requiring manual intervention.
+
+### Configuration During Installation
+During `make fast-install` or `make install-prereqs`, the installer prompts:
+```text
+Enable automatic startup on system reboot/login? [Y/n] (Default: Y)
+```
+- Choosing **Yes** (or pressing Enter) configures native OS startup services.
+- Choosing **No** disables autostart and cleans up any existing startup service definitions.
+
+### Platform-Specific Startup Architecture
+
+#### Linux (Systemd User Service + Lingering)
+- **Service Unit**: Created at `~/.config/systemd/user/herobm.service`.
+- **Target**: Bound to `network-online.target` and executes `make <chosen-profile>`.
+- **Headless & Cloud Server Reboot (Lingering)**:
+  On headless cloud VPS instances (e.g. Ubuntu, Debian, RHEL, exe.dev) where the server reboots without an interactive GUI login, user services require lingering to run at boot. The installer automatically activates lingering:
+  ```bash
+  loginctl enable-linger $USER
+  ```
+- **Service Management Commands**:
+  ```bash
+  # Check status of the autostart service:
+  systemctl --user status herobm.service
+
+  # View startup logs:
+  journalctl --user -u herobm.service -b
+
+  # Disable autostart:
+  systemctl --user disable herobm.service
+
+  # Re-enable autostart:
+  systemctl --user enable herobm.service
+  ```
+
+#### Windows (Startup Automation with Engine Readiness Polling)
+- **Startup Shortcut**: Created in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\HeroBM Podman Autostart.lnk`.
+- **Startup Sequence**:
+  1. Boots the Podman virtual machine (`podman machine start`).
+  2. Polls `podman info` until the WSL2 Podman engine socket is responsive (up to 30 retries).
+  3. Launches the selected application stack (`make up`, `make up-portal-api-nginx`, or `make up-db`).
+  4. Writes startup timestamps and logs to `logs\autostart.log`.
+- **Headless Windows Server Consideration**: The Startup shortcut triggers on user logon. For dedicated Windows servers running unattended, configure auto-logon or create a Windows Scheduled Task triggered "At system startup".
+
+#### macOS (LaunchAgent)
+- **LaunchAgent Plist**: Generated at `~/Library/LaunchAgents/com.herobm.autostart.plist`.
+- **Behavior**: Automatically starts the Podman machine, polls for engine readiness, and executes the configured Make target on login.
+- **Log Destination**: `logs/autostart.log`.
+

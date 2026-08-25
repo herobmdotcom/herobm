@@ -9,7 +9,9 @@
 
 [CmdletBinding()]
 param(
-    [switch]$SkipRun
+    [switch]$SkipRun,
+    [switch]$EnableAutostart,
+    [switch]$DisableAutostart
 )
 
 $ErrorActionPreference = "Stop"
@@ -221,24 +223,47 @@ $makeTargets -join " " | Out-File -FilePath ".startup_choice" -Encoding ascii
 $makeCmdString = "make " + ($makeTargets -join " ")
 
 Write-Host "`n--- Startup Automation ---" -ForegroundColor Cyan
-try {
-    $startupFolder = [Environment]::GetFolderPath('Startup')
-    $shortcutPath = Join-Path $startupFolder "HeroBM Podman Autostart.lnk"
-    $wshShell = New-Object -ComObject WScript.Shell
-    $shortcut = $wshShell.CreateShortcut($shortcutPath)
-    
-    # Target powershell to run hidden, start the machine, and run the constructed make command
-    $shortcut.TargetPath = "powershell.exe"
-    $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
-    $logFile = Join-Path $projectDir "logs\autostart.log"
-    $shortcut.Arguments = "-WindowStyle Hidden -Command `"Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append`""
-    $shortcut.WorkingDirectory = $projectDir
-    $shortcut.Description = "Starts Podman machine and HeroBM containers ($makeCmdString) on boot"
-    $shortcut.Save()
-    Write-Host "  [OK] Created Windows Startup shortcut: $makeCmdString" -ForegroundColor Green
+$shouldAutostart = $true
+if ($EnableAutostart) {
+    $shouldAutostart = $true
+} elseif ($DisableAutostart) {
+    $shouldAutostart = $false
+} else {
+    $autostartChoice = Read-Host "Enable automatic startup on system reboot/login? [Y/n] (Default: Y)"
+    if ($autostartChoice -ne "" -and $autostartChoice -notmatch "^[Yy]") {
+        $shouldAutostart = $false
+    }
 }
-catch {
-    Write-Host "  [WARNING] Could not create startup shortcut: $($_.Exception.Message)" -ForegroundColor Yellow
+
+$startupFolder = [Environment]::GetFolderPath('Startup')
+$shortcutPath = Join-Path $startupFolder "HeroBM Podman Autostart.lnk"
+
+if ($shouldAutostart) {
+    try {
+        $wshShell = New-Object -ComObject WScript.Shell
+        $shortcut = $wshShell.CreateShortcut($shortcutPath)
+        
+        # Target powershell to run hidden, start the machine, poll readiness, and run the constructed make command
+        $shortcut.TargetPath = "powershell.exe"
+        $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
+        $logFile = Join-Path $projectDir "logs\autostart.log"
+        $psCommand = "Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; `$retries = 30; while (`$retries -gt 0 -and !(podman info 2>`$null)) { Start-Sleep -Seconds 1; `$retries-- }; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append"
+        $shortcut.Arguments = "-WindowStyle Hidden -Command `"$psCommand`""
+        $shortcut.WorkingDirectory = $projectDir
+        $shortcut.Description = "Starts Podman machine and HeroBM containers ($makeCmdString) on boot"
+        $shortcut.Save()
+        Write-Host "  [OK] Created Windows Startup shortcut: $makeCmdString" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "  [WARNING] Could not create startup shortcut: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+} else {
+    if (Test-Path $shortcutPath) {
+        Remove-Item -Path $shortcutPath -Force -ErrorAction SilentlyContinue
+        Write-Host "  [OK] Removed existing Windows Startup shortcut" -ForegroundColor Green
+    } else {
+        Write-Host "  [INFO] Autostart disabled (no startup shortcut created)" -ForegroundColor Gray
+    }
 }
 
 # --- Summary ---

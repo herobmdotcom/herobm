@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-auth demo-sales-order demo-video
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-auth demo-sales-order demo-video
 
 
 define HELP_TEXT
@@ -36,6 +36,11 @@ Code Generation:
 Cleanup & Rebuild:
   make clean-dev      - Wipe node_modules, caches, reinstall, and build shared
   make clean-build    - Full deep clean, reinstall, and build all workspaces
+
+Data Pipeline & ELT:
+  make elt SOURCE=abm        - Full pipeline: extract, transform, import & audit report
+  make elt-no-extract SOURCE=abm - Fast pipeline: transform, import & audit report
+  make elt-report SOURCE=abm - Run data verification audit and output reconciliation summary
 
 Verification & Quality Gates:
   make verify-fast    - Fast pre-commit gate (<25s): types, lint, unit tests, deps, schema drift
@@ -330,11 +335,17 @@ transform-refresh: check-postgres-logs
 
 elt: check-postgres-logs extract transform import-legacy
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=<source>))
-	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
+	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
 
 elt-no-extract: check-postgres-logs transform import-legacy
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=<source>))
-	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
+	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+
+elt-report: check-postgres-logs
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-report SOURCE=<source>))
+	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+
+report: elt-report
 
 import-legacy: check-postgres-logs
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy SOURCE=<source>))

@@ -10,9 +10,14 @@
 set -e
 
 NON_INTERACTIVE=false
-if [[ "$1" == "--non-interactive" ]]; then
-    NON_INTERACTIVE=true
-fi
+ENABLE_AUTOSTART=""
+for arg in "$@"; do
+    case "$arg" in
+        --non-interactive) NON_INTERACTIVE=true ;;
+        --enable-autostart) ENABLE_AUTOSTART=true ;;
+        --disable-autostart) ENABLE_AUTOSTART=false ;;
+    esac
+done
 
 # Change to repo root
 cd "$(dirname "$0")/.."
@@ -285,20 +290,35 @@ echo "${makeTargets[*]}" > .startup_choice
 
 MAKE_CMD_STRING="make ${makeTargets[*]}"
 
+echo -e "\n\033[36m--- Startup Automation ---\033[0m"
+SHOULD_AUTOSTART=true
+if [ -n "$ENABLE_AUTOSTART" ]; then
+    SHOULD_AUTOSTART="$ENABLE_AUTOSTART"
+elif [ "$NON_INTERACTIVE" = false ]; then
+    read -p "Enable automatic startup on system reboot/login? [Y/n] (Default: Y): " autostartChoice
+    if [[ -n "$autostartChoice" && ! "$autostartChoice" =~ ^[Yy] ]]; then
+        SHOULD_AUTOSTART=false
+    fi
+else
+    SHOULD_AUTOSTART=false
+fi
+
 if [ "$(uname -s)" = "Linux" ] && command -v systemctl >/dev/null 2>&1; then
-    echo -e "\n\033[36m--- Startup Automation ---\033[0m"
     SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
-    mkdir -p "$SYSTEMD_USER_DIR"
     SERVICE_FILE="$SYSTEMD_USER_DIR/herobm.service"
 
-    cat <<EOF > "$SERVICE_FILE"
+    if [ "$SHOULD_AUTOSTART" = true ]; then
+        mkdir -p "$SYSTEMD_USER_DIR"
+        cat <<EOF > "$SERVICE_FILE"
 [Unit]
 Description=HeroBM Platform Application Autostart
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
 WorkingDirectory=$PROJECT_DIR
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin"
 ExecStart=/usr/bin/env make ${makeTargets[*]}
 RemainAfterExit=yes
 
@@ -306,9 +326,66 @@ RemainAfterExit=yes
 WantedBy=default.target
 EOF
 
-    systemctl --user daemon-reload || true
-    systemctl --user enable herobm.service || true
-    echo -e "  \033[32m[OK]\033[0m Created systemd user config: herobm.service"
+        systemctl --user daemon-reload || true
+        systemctl --user enable herobm.service || true
+        echo -e "  \033[32m[OK]\033[0m Created and enabled systemd user service: herobm.service"
+
+        if command -v loginctl >/dev/null 2>&1; then
+            if loginctl enable-linger "$USER" 2>/dev/null; then
+                echo -e "  \033[32m[OK]\033[0m Enabled user lingering (services start on headless boot without login)"
+            else
+                echo -e "  \033[33m[NOTE]\033[0m Run 'sudo loginctl enable-linger $USER' to ensure background startup on headless boot without interactive login."
+            fi
+        fi
+    else
+        if [ -f "$SERVICE_FILE" ]; then
+            systemctl --user disable herobm.service 2>/dev/null || true
+            rm -f "$SERVICE_FILE"
+            systemctl --user daemon-reload 2>/dev/null || true
+            echo -e "  \033[32m[OK]\033[0m Removed systemd user autostart service"
+        else
+            echo -e "  \033[90m[INFO]\033[0m Autostart disabled (no systemd service created)"
+        fi
+    fi
+elif [ "$(uname -s)" = "Darwin" ]; then
+    LAUNCH_AGENT_DIR="$HOME/Library/LaunchAgents"
+    PLIST_FILE="$LAUNCH_AGENT_DIR/com.herobm.autostart.plist"
+    if [ "$SHOULD_AUTOSTART" = true ]; then
+        mkdir -p "$LAUNCH_AGENT_DIR"
+        cat <<EOF > "$PLIST_FILE"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.herobm.autostart</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>podman machine start 2>/dev/null; retries=30; while [ \$retries -gt 0 ] &amp;&amp; ! podman info >/dev/null 2>&1; do sleep 1; retries=\$((retries-1)); done; cd "$PROJECT_DIR" &amp;&amp; make ${makeTargets[*]}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>$PROJECT_DIR/logs/autostart.log</string>
+    <key>StandardErrorPath</key>
+    <string>$PROJECT_DIR/logs/autostart.log</string>
+</dict>
+</plist>
+EOF
+        launchctl unload "$PLIST_FILE" 2>/dev/null || true
+        launchctl load "$PLIST_FILE" 2>/dev/null || true
+        echo -e "  \033[32m[OK]\033[0m Created macOS LaunchAgent: com.herobm.autostart.plist"
+    else
+        if [ -f "$PLIST_FILE" ]; then
+            launchctl unload "$PLIST_FILE" 2>/dev/null || true
+            rm -f "$PLIST_FILE"
+            echo -e "  \033[32m[OK]\033[0m Removed macOS LaunchAgent"
+        else
+            echo -e "  \033[90m[INFO]\033[0m Autostart disabled"
+        fi
+    fi
 fi
 
 echo -e "\n\033[36m=== Summary ===\033[0m"

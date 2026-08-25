@@ -994,6 +994,7 @@ export async function seedMasterData(
         tradingTermsId: termId,
         earlyPaymentDiscount: '2.0',
         earlyPaymentDiscountDays: 10,
+        creditLimit: '150000.00',
         isOnCreditHold: false,
       },
       {
@@ -1002,6 +1003,7 @@ export async function seedMasterData(
         name: 'Government & Public Utilities (10% Off)',
         stateCode: CUSTOMER_STATE.ACTIVE,
         tradingTermsId: termId,
+        creditLimit: '250000.00',
         isOnCreditHold: false,
       },
       {
@@ -1010,6 +1012,7 @@ export async function seedMasterData(
         name: 'Standard Retail Accounts',
         stateCode: CUSTOMER_STATE.ACTIVE,
         tradingTermsId: termId,
+        creditLimit: '75000.00',
         isOnCreditHold: false,
       },
     ])
@@ -1143,6 +1146,7 @@ export async function seedMasterData(
         currencyCode: baseCurrency,
         tradingTermsId: termId,
         creditLimit: c.creditLimit,
+        isOnCreditHold: false,
         stateCode: CUSTOMER_STATE.ACTIVE,
         source: 'app',
         createdBy: 'system',
@@ -2622,8 +2626,8 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   // =========================================================================
   // 8. TREASURY, CASH FLOW & MULTI-ALLOCATION PAYMENTS (AR/AP)
   // =========================================================================
-  // Customer Receipts against AR Invoices
-  for (let i = 0; i < Math.min(10, createdSalesInvoices.length); i++) {
+  // Customer Receipts against AR Invoices (pay historical AR invoices so demo customers are in clean credit standing)
+  for (let i = 0; i < createdSalesInvoices.length; i++) {
     const inv = createdSalesInvoices[i];
     const pmtId = uuid();
     const pmtNumber = `RCPT-${pmtCounter++}`;
