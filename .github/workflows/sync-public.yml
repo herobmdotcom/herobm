@@ -1,0 +1,55 @@
+name: Sync to Public
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install git-filter-repo
+        run: pip install git-filter-repo
+
+      - name: Filter and push to public
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
+        run: |
+          git clone --bare . /tmp/herobm-filtered
+          cd /tmp/herobm-filtered
+
+          git-filter-repo --invert-paths \
+            --path infra/ \
+            --path pipelines/ \
+            --path Dockerfile.pipeline \
+            --path docs/continuous_improvement/ \
+            --path docs/CONSTITUTION.md \
+            --path docs/CONSTITUTION.MD \
+            --path docs/conventions.md \
+            --path .agents/ \
+            --path extensions/ma/ \
+            --path Makefile.partner \
+            --path docker-compose.partner.yml \
+            --path .env.example.partner \
+            --path .env.hfp \
+            --path .env.vgw \
+            --path .env.volzau \
+            --path .env.volzsg \
+            --path .active_profile \
+            --path .startup_choice \
+            --path .setup-token \
+            --path nul \
+            --force
+
+          git remote add public https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/herobmdotcom/herobm.git
+          git push public --force --all
+          git push public --force --tags
