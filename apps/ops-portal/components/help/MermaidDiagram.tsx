@@ -281,7 +281,6 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   title={t('zoomOut')}
                   aria-label={t('zoomOut')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[18px]">zoom_out</span>
                 </Button>
 
@@ -302,7 +301,6 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   title={t('zoomIn')}
                   aria-label={t('zoomIn')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[18px]">zoom_in</span>
                 </Button>
 
@@ -316,7 +314,6 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   title={t('fitToScreen')}
                   aria-label={t('fitToScreen')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[16px]">fit_screen</span>
                   <span className="hidden sm:inline">{t('fitToScreen')}</span>
                 </Button>
@@ -331,7 +328,6 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   title={t('resetZoom')}
                   aria-label={t('resetZoom')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[16px]">restart_alt</span>
                   <span className="hidden sm:inline">100%</span>
                 </Button>
@@ -347,7 +343,6 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   title={t('closeDiagram')}
                   aria-label={t('closeDiagram')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[20px]">close</span>
                 </Button>
               </div>

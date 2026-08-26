@@ -865,4 +865,161 @@ describe('GlService', () => {
       expect(updated.defaultRevenueAccountId).toBe(revAccountId);
     });
   });
+
+  describe('getGeneralLedger — running balance & summary', () => {
+    let bankAccountId: string;
+    let revAccountId: string;
+
+    beforeEach(async () => {
+      bankAccountId = randomUUID();
+      revAccountId = randomUUID();
+
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: bankAccountId,
+          accountCode: '1000',
+          name: 'Operating Bank Account',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: true,
+        },
+        {
+          glAccountId: revAccountId,
+          accountCode: '4000',
+          name: 'Sales Revenue',
+          accountType: 'revenue',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+          isSystem: false,
+          isBankAccount: false,
+        },
+      ]);
+    });
+
+    it('should return runningBalance: null and no accountSummary when account is not specified (All Accounts)', async () => {
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 500, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 500 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-10' },
+      );
+
+      const result = await service.getGeneralLedger({});
+
+      expect(result.data.length).toBe(2);
+      expect(result.accountSummary).toBeNull();
+      expect(result.data[0].runningBalance).toBeNull();
+      expect(result.data[1].runningBalance).toBeNull();
+    });
+
+    it('should compute running balances and account summary for a specific account without date filters', async () => {
+      // Day 1: Deposit $1,000
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 1000, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 1000 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-05' },
+      );
+
+      // Day 2: Payment $200 (credit to bank)
+      await service.postJournalEntry(
+        [
+          { accountCode: '4000', debit: 200, credit: 0 },
+          { accountCode: '1000', debit: 0, credit: 200 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-10' },
+      );
+
+      // Day 3: Deposit $350
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 350, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 350 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-15' },
+      );
+
+      const result = await service.getGeneralLedger({ accountCode: '1000' });
+
+      expect(result.data.length).toBe(3);
+      expect(result.accountSummary).toEqual({
+        accountCode: '1000',
+        accountName: 'Operating Bank Account',
+        accountType: 'asset',
+        openingBalance: 0,
+        periodDebit: 1350,
+        periodCredit: 200,
+        netMovement: 1150,
+        closingBalance: 1150,
+      });
+
+      // Data is returned newest first (DESC by date):
+      // Jan 15: +350 -> running balance 1150
+      // Jan 10: -200 -> running balance 800
+      // Jan 05: +1000 -> running balance 1000
+      const jan15 = result.data.find((e) => e.entryDate === '2026-01-15');
+      const jan10 = result.data.find((e) => e.entryDate === '2026-01-10');
+      const jan05 = result.data.find((e) => e.entryDate === '2026-01-05');
+
+      expect(jan15?.runningBalance).toBe(1150);
+      expect(jan10?.runningBalance).toBe(800);
+      expect(jan05?.runningBalance).toBe(1000);
+    });
+
+    it('should correctly calculate openingBalance from prior transactions when fromDate is applied', async () => {
+      // Prior period: Jan 01: Deposit $2,000
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 2000, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 2000 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-01' },
+      );
+
+      // Prior period: Jan 15: Withdrawal $500
+      await service.postJournalEntry(
+        [
+          { accountCode: '4000', debit: 500, credit: 0 },
+          { accountCode: '1000', debit: 0, credit: 500 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-01-15' },
+      );
+
+      // Within period (Feb): Feb 05: Deposit $300
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 300, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 300 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-02-05' },
+      );
+
+      // Query Feb 01 to Feb 28
+      const result = await service.getGeneralLedger({
+        accountCode: '1000',
+        fromDate: '2026-02-01',
+        toDate: '2026-02-28',
+      });
+
+      expect(result.data.length).toBe(1);
+      expect(result.accountSummary).toEqual({
+        accountCode: '1000',
+        accountName: 'Operating Bank Account',
+        accountType: 'asset',
+        openingBalance: 1500, // 2000 - 500
+        periodDebit: 300,
+        periodCredit: 0,
+        netMovement: 300,
+        closingBalance: 1800, // 1500 + 300
+      });
+
+      expect(result.data[0].runningBalance).toBe(1800);
+    });
+  });
 });

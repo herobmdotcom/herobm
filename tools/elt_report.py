@@ -223,7 +223,7 @@ def main():
         sys.stdout = TeeOutput(old_stdout, audit_output)
         failed = False
         try:
-            test_data_counts.main(active_profile)
+            test_data_counts.main(active_profile, source=args.source)
         except SystemExit as e:
             if e.code != 0:
                 failed = True

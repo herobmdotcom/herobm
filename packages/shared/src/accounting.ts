@@ -62,3 +62,87 @@ export function calculateAgedTotals(balances: AgedBalanceRow[]): AgedTotals {
     totalOutstanding,
   };
 }
+
+/**
+ * Determines if an account type is debit-normal (Asset, Expense) or credit-normal (Liability, Equity, Revenue).
+ */
+export function isDebitNormalAccount(accountType?: string | null): boolean {
+  if (!accountType) return true;
+  const normalized = accountType.toLowerCase();
+  return normalized === GL_ACCOUNT_TYPE.ASSET || normalized === GL_ACCOUNT_TYPE.EXPENSE;
+}
+
+/**
+ * Computes net signed balance for an account based on debit/credit activity.
+ * Returns standard debit-positive (debit - credit) by default.
+ */
+export function computeAccountNetBalance(
+  debit: number | string | null | undefined,
+  credit: number | string | null | undefined,
+): number {
+  const d = Math.round(Number(debit || 0) * 100) / 100;
+  const c = Math.round(Number(credit || 0) * 100) / 100;
+  return Math.round((d - c) * 100) / 100;
+}
+
+export interface RunningBalanceInputLine {
+  debit?: number | string | null;
+  credit?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface AccountPeriodSummary {
+  openingBalance: number;
+  periodDebit: number;
+  periodCredit: number;
+  netMovement: number;
+  closingBalance: number;
+}
+
+/**
+ * Computes chronological row-by-row running balance and period summary.
+ * Inputs are processed chronologically (oldest to newest).
+ * Precision is anchored at 2 decimal places per step to prevent IEEE-754 floating point drift.
+ */
+export function computeRunningBalances<T extends RunningBalanceInputLine>(
+  openingBalance: number | string = 0,
+  lines: T[] = [],
+): {
+  lines: (T & { runningBalance: number })[];
+  summary: AccountPeriodSummary;
+} {
+  const initial = Math.round(Number(openingBalance || 0) * 100) / 100;
+  let running = initial;
+  let periodDebit = 0;
+  let periodCredit = 0;
+
+  const resultLines = lines.map((line) => {
+    const d = Math.round(Number(line.debit || 0) * 100) / 100;
+    const c = Math.round(Number(line.credit || 0) * 100) / 100;
+    periodDebit += d;
+    periodCredit += c;
+    running = Math.round((running + d - c) * 100) / 100;
+
+    return {
+      ...line,
+      runningBalance: running,
+    };
+  });
+
+  const roundedPeriodDebit = Math.round(periodDebit * 100) / 100;
+  const roundedPeriodCredit = Math.round(periodCredit * 100) / 100;
+  const netMovement = Math.round((roundedPeriodDebit - roundedPeriodCredit) * 100) / 100;
+  const closingBalance = Math.round((initial + netMovement) * 100) / 100;
+
+  return {
+    lines: resultLines,
+    summary: {
+      openingBalance: initial,
+      periodDebit: roundedPeriodDebit,
+      periodCredit: roundedPeriodCredit,
+      netMovement,
+      closingBalance,
+    },
+  };
+}
+

@@ -5062,6 +5062,88 @@
         ]
       }
     },
+    "/gl/cash-flow": {
+      "get": {
+        "description": "Calculate Operating, Investing, and Financing cash flows for a date range or fiscal period.",
+        "operationId": "GlController_getCashFlow",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodName",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fiscalYear",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "periodNumber",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "comparativeStartDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "comparativeEndDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashFlowStatementResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Statement of Cash Flows",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
     "/gl/general-ledger": {
       "get": {
         "description": "Retrieve the general ledger line items for specific accounts and date ranges.",
@@ -24322,16 +24404,264 @@
           "ytdBalance"
         ]
       },
-      "GeneralLedgerResponseDto": {
+      "CashFlowPeriodDto": {
         "type": "object",
         "properties": {
-          "glEntryId": {
+          "startDate": {
             "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "periodName": {
+            "type": "string"
+          },
+          "fiscalYear": {
+            "type": "number"
+          },
+          "periodNumber": {
+            "type": "number"
           }
         },
         "required": [
-          "glEntryId"
+          "startDate",
+          "endDate"
         ]
+      },
+      "CashFlowLineItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "operating",
+              "investing",
+              "financing"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "accountCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "amount"
+        ]
+      },
+      "CashFlowSectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CashFlowLineItemDto"
+            }
+          },
+          "netCash": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "lines",
+          "netCash"
+        ]
+      },
+      "CashFlowReconciliationDto": {
+        "type": "object",
+        "properties": {
+          "beginningCash": {
+            "type": "number"
+          },
+          "netChangeInCash": {
+            "type": "number"
+          },
+          "endingCash": {
+            "type": "number"
+          },
+          "glCashBalance": {
+            "type": "number"
+          },
+          "drift": {
+            "type": "number"
+          },
+          "isReconciled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "beginningCash",
+          "netChangeInCash",
+          "endingCash",
+          "glCashBalance",
+          "drift",
+          "isReconciled"
+        ]
+      },
+      "CashFlowStatementResponseDto": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/CashFlowPeriodDto"
+          },
+          "operatingActivities": {
+            "$ref": "#/components/schemas/CashFlowSectionDto"
+          },
+          "investingActivities": {
+            "$ref": "#/components/schemas/CashFlowSectionDto"
+          },
+          "financingActivities": {
+            "$ref": "#/components/schemas/CashFlowSectionDto"
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/CashFlowReconciliationDto"
+          },
+          "comparativePeriod": {
+            "$ref": "#/components/schemas/CashFlowStatementResponseDto"
+          }
+        },
+        "required": [
+          "period",
+          "operatingActivities",
+          "investingActivities",
+          "financingActivities",
+          "reconciliation"
+        ]
+      },
+      "GlEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "journalEntryId": {
+            "type": "string"
+          },
+          "entryNumber": {
+            "type": "string"
+          },
+          "entryDate": {
+            "type": "string"
+          },
+          "entryMemo": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountCode": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "partyType": {
+            "type": "string",
+            "nullable": true
+          },
+          "partyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "debit": {
+            "type": "string"
+          },
+          "credit": {
+            "type": "string"
+          },
+          "lineMemo": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "object"
+          },
+          "runningBalance": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "GlAccountSummaryDto": {
+        "type": "object",
+        "properties": {
+          "accountCode": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "periodDebit": {
+            "type": "number"
+          },
+          "periodCredit": {
+            "type": "number"
+          },
+          "netMovement": {
+            "type": "number"
+          },
+          "closingBalance": {
+            "type": "number"
+          }
+        }
+      },
+      "GeneralLedgerResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlEntryResponseDto"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "accountSummary": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GlAccountSummaryDto"
+              }
+            ]
+          }
+        }
       },
       "SettingsResponseDto": {
         "type": "object",

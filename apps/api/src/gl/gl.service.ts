@@ -33,6 +33,12 @@ import {
 } from '@herobm/shared';
 import { JournalLineDto } from './dto';
 import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
+import {
+  fetchTrialBalance,
+  fetchGeneralLedger,
+  fetchBusinessReportData,
+  GeneralLedgerFilters,
+} from './gl-ledger.utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -543,206 +549,11 @@ export class GlService implements OnModuleInit {
   // -------------------------------------------------------------------------
 
   async getTrialBalance(asOfDate?: string, periodStart?: string) {
-    // Determine the fiscal year start month
-    const [settings] = await this.db
-      .select({ fiscalYearStartMonth: glSettings.fiscalYearStartMonth })
-      .from(glSettings)
-      .limit(1);
-    const fysm = settings?.fiscalYearStartMonth || 1;
-
-    // Use current date if asOfDate is not provided
-    const targetDateStr = asOfDate || new Date().toISOString().slice(0, 10);
-    const targetDate = new Date(targetDateStr);
-
-    let fyYear = targetDate.getFullYear();
-    if (targetDate.getMonth() + 1 < fysm) {
-      fyYear -= 1;
-    }
-    const financialYearStart = `${fyYear}-${String(fysm).padStart(2, '0')}-01`;
-
-    const asOfDateSql = asOfDate ? sql`${asOfDate}` : sql`CURRENT_DATE`;
-    const periodStartSql = periodStart
-      ? sql`${periodStart}`
-      : sql`'1970-01-01'`;
-    const financialYearStartSql = sql`${financialYearStart}`;
-
-    const query = sql`
-      SELECT
-        a.account_code,
-        a.name,
-        a.account_type,
-        a.is_group,
-        COALESCE(SUM(CASE WHEN je.entry_date < ${periodStartSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS opening_balance,
-        COALESCE(SUM(CASE WHEN je.entry_date >= ${periodStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit ELSE 0 END), 0)::numeric AS period_debit,
-        COALESCE(SUM(CASE WHEN je.entry_date >= ${periodStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.credit ELSE 0 END), 0)::numeric AS period_credit,
-        COALESCE(SUM(CASE WHEN je.entry_date <= ${asOfDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS closing_balance,
-        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit ELSE 0 END), 0)::numeric AS ytd_debit,
-        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.credit ELSE 0 END), 0)::numeric AS ytd_credit,
-        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS ytd_balance
-      FROM herobm_core.gl_accounts a
-      LEFT JOIN herobm_core.gl_journal_lines jl ON jl.gl_account_id = a.gl_account_id
-      LEFT JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
-      WHERE a.is_group = false
-      GROUP BY a.gl_account_id, a.account_code, a.name, a.account_type, a.is_group
-      ORDER BY a.account_code
-    `;
-
-    const rows = await this.db.execute(query);
-    const resultRows = Array.isArray(rows)
-      ? rows
-      : (rows as { rows: unknown[] }).rows || [];
-
-    return resultRows.map(
-      (r: {
-        account_code: string;
-        name: string;
-        account_type: string;
-        is_group: boolean;
-        opening_balance?: string;
-        period_debit?: string;
-        period_credit?: string;
-        closing_balance?: string;
-        ytd_debit?: string;
-        ytd_credit?: string;
-        ytd_balance?: string;
-      }) => ({
-        accountCode: r.account_code,
-        name: r.name,
-        accountType: r.account_type,
-        isGroup: r.is_group,
-        openingBalance: parseFloat(r.opening_balance || '0'),
-        periodDebit: parseFloat(r.period_debit || '0'),
-        periodCredit: parseFloat(r.period_credit || '0'),
-        closingBalance: parseFloat(r.closing_balance || '0'),
-        ytdDebit: parseFloat(r.ytd_debit || '0'),
-        ytdCredit: parseFloat(r.ytd_credit || '0'),
-        ytdBalance: parseFloat(r.ytd_balance || '0'),
-      }),
-    );
+    return fetchTrialBalance(this.db, asOfDate, periodStart);
   }
 
-  async getGeneralLedger(filters: {
-    accountCode?: string;
-    fromDate?: string;
-    toDate?: string;
-    limit?: number;
-    page?: number;
-  }) {
-    const conditions: import('drizzle-orm').SQL[] = [];
-
-    if (filters.accountCode) {
-      conditions.push(sql`a.account_code = ${filters.accountCode}`);
-    }
-    if (filters.fromDate) {
-      conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
-    }
-    if (filters.toDate) {
-      conditions.push(sql`je.entry_date <= ${filters.toDate}`);
-    }
-
-    const whereClause =
-      conditions.length > 0
-        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-        : sql``;
-
-    const page = filters.page ?? 1;
-    const limit = Math.min(filters.limit || 50, 200);
-    const offset = (page - 1) * limit;
-
-    const entriesQuery = sql`
-      SELECT
-        je.journal_entry_id AS journal_entry_id,
-        je.entry_number,
-        je.entry_date,
-        je.memo AS entry_memo,
-        je.source_type,
-        je.source_id,
-        a.account_code,
-        a.name AS account_name,
-        jl.party_type,
-        jl.party_id,
-        jl.debit,
-        jl.credit,
-        jl.memo AS line_memo,
-        je.created_by,
-        je.created_on
-      FROM herobm_core.gl_journal_lines jl
-      JOIN herobm_core.gl_journal_entries je
-        ON je.journal_entry_id = jl.journal_entry_id
-      JOIN herobm_core.gl_accounts a
-        ON a.gl_account_id = jl.gl_account_id
-      ${whereClause}
-      ORDER BY je.entry_date DESC, je.entry_number DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-
-    const countQuery = sql`
-      SELECT count(*)::int as count 
-      FROM herobm_core.gl_journal_lines jl
-      JOIN herobm_core.gl_journal_entries je
-        ON je.journal_entry_id = jl.journal_entry_id
-      JOIN herobm_core.gl_accounts a
-        ON a.gl_account_id = jl.gl_account_id
-      ${whereClause}
-    `;
-
-    const [entriesResult, countResult] = await Promise.all([
-      this.db.execute(entriesQuery),
-      this.db.execute(countQuery),
-    ]);
-
-    const rawRows = (
-      Array.isArray(entriesResult)
-        ? entriesResult
-        : (entriesResult as { rows: unknown[] }).rows || []
-    ) as {
-      journal_entry_id: string;
-      entry_number: string;
-      entry_date: string;
-      entry_memo?: string;
-      source_type?: string;
-      source_id?: string;
-      account_code: string;
-      account_name: string;
-      party_type?: string;
-      party_id?: string;
-      debit?: string;
-      credit?: string;
-      line_memo?: string;
-      created_by: string;
-      created_on: Date;
-    }[];
-    const countRows = (
-      Array.isArray(countResult)
-        ? countResult
-        : (countResult as { rows: unknown[] }).rows || []
-    ) as { count: number }[];
-
-    // Map raw DB rows to camelCase for the frontend DataGrid
-    const entries = rawRows.map((row) => ({
-      journalEntryId: row.journal_entry_id,
-      entryNumber: row.entry_number,
-      entryDate: row.entry_date,
-      entryMemo: row.entry_memo,
-      sourceType: row.source_type,
-      sourceId: row.source_id,
-      accountCode: row.account_code,
-      accountName: row.account_name,
-      partyType: row.party_type,
-      partyId: row.party_id,
-      debit: row.debit,
-      credit: row.credit,
-      lineMemo: row.line_memo,
-      createdBy: row.created_by,
-      createdOn: row.created_on,
-    }));
-
-    return {
-      data: entries,
-      page,
-      limit,
-      total: countRows[0]?.count ?? 0,
-    };
+  async getGeneralLedger(filters: GeneralLedgerFilters) {
+    return fetchGeneralLedger(this.db, filters);
   }
 
   async getJournalEntries(filters: {
@@ -1091,42 +902,7 @@ export class GlService implements OnModuleInit {
   async getBusinessReportData(
     filters: Record<string, unknown>,
   ): Promise<Record<string, unknown>[]> {
-    const conditions: import('drizzle-orm').SQL[] = [];
-    if (filters.fromDate) {
-      conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
-    }
-    if (filters.toDate) {
-      conditions.push(sql`je.entry_date <= ${filters.toDate}`);
-    }
-
-    const whereClause =
-      conditions.length > 0
-        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-        : sql``;
-
-    const rows = await this.db.execute(sql`
-      SELECT
-        a.account_code AS "accountCode",
-        a.name AS "accountName",
-        a.account_type AS "accountType",
-        COALESCE(SUM(activity.debit), 0)::numeric  AS "totalDebit",
-        COALESCE(SUM(activity.credit), 0)::numeric AS "totalCredit",
-        COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS "balance"
-      FROM herobm_core.gl_accounts a
-      JOIN (
-        SELECT jl.gl_account_id, jl.debit, jl.credit
-        FROM herobm_core.gl_journal_lines jl
-        JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
-        ${whereClause}
-      ) activity ON activity.gl_account_id = a.gl_account_id
-      WHERE a.is_group = false
-      GROUP BY a.gl_account_id, a.account_code, a.name, a.account_type, a.is_group
-      ORDER BY a.account_code
-    `);
-
-    return Array.isArray(rows)
-      ? (rows as Record<string, unknown>[])
-      : (rows as { rows: Record<string, unknown>[] }).rows || [];
+    return fetchBusinessReportData(this.db, filters);
   }
 
   // -------------------------------------------------------------------------

@@ -125,8 +125,97 @@ export class TrialBalanceResponseDto {
   ytdCredit: number;
   ytdBalance: number;
 }
+export class GlEntryResponseDto {
+  @ApiPropertyOptional()
+  journalEntryId: string;
+
+  @ApiPropertyOptional()
+  entryNumber: string;
+
+  @ApiPropertyOptional()
+  entryDate: string;
+
+  @ApiPropertyOptional()
+  entryMemo?: string | null;
+
+  @ApiPropertyOptional()
+  sourceType?: string | null;
+
+  @ApiPropertyOptional()
+  sourceId?: string | null;
+
+  @ApiPropertyOptional()
+  accountCode: string;
+
+  @ApiPropertyOptional()
+  accountName: string;
+
+  @ApiPropertyOptional()
+  partyType?: string | null;
+
+  @ApiPropertyOptional()
+  partyId?: string | null;
+
+  @ApiPropertyOptional()
+  debit: string;
+
+  @ApiPropertyOptional()
+  credit: string;
+
+  @ApiPropertyOptional()
+  lineMemo?: string | null;
+
+  @ApiPropertyOptional()
+  createdBy?: string | null;
+
+  @ApiPropertyOptional()
+  createdOn?: Date | string | null;
+
+  @ApiPropertyOptional()
+  runningBalance?: number | null;
+}
+
+export class GlAccountSummaryDto {
+  @ApiPropertyOptional()
+  accountCode: string;
+
+  @ApiPropertyOptional()
+  accountName: string;
+
+  @ApiPropertyOptional()
+  accountType: string;
+
+  @ApiPropertyOptional()
+  openingBalance: number;
+
+  @ApiPropertyOptional()
+  periodDebit: number;
+
+  @ApiPropertyOptional()
+  periodCredit: number;
+
+  @ApiPropertyOptional()
+  netMovement: number;
+
+  @ApiPropertyOptional()
+  closingBalance: number;
+}
+
 export class GeneralLedgerResponseDto {
-  glEntryId: string;
+  @ApiPropertyOptional({ type: [GlEntryResponseDto] })
+  data: GlEntryResponseDto[];
+
+  @ApiPropertyOptional()
+  page: number;
+
+  @ApiPropertyOptional()
+  limit: number;
+
+  @ApiPropertyOptional()
+  total: number;
+
+  @ApiPropertyOptional({ type: GlAccountSummaryDto })
+  accountSummary?: GlAccountSummaryDto | null;
 }
 export class SettingsResponseDto {
   @ApiPropertyOptional()
@@ -547,4 +636,54 @@ export class SubledgerReconciliationResponseDto {
   goodsReceivedNotInvoiced!: SubledgerParityItemDto;
   @ApiProperty({ type: SubledgerParityItemDto })
   perpetualInventory!: SubledgerParityItemDto;
+}
+
+// ---------------------------------------------------------------------------
+// Statement of Cash Flows DTOs
+// ---------------------------------------------------------------------------
+
+export class CashFlowLineItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ enum: ['operating', 'investing', 'financing'] })
+  category!: 'operating' | 'investing' | 'financing';
+  @ApiProperty() amount!: number;
+  @ApiPropertyOptional({ type: [String] }) accountCodes?: string[];
+}
+
+export class CashFlowSectionDto {
+  @ApiProperty() title!: string;
+  @ApiProperty({ type: [CashFlowLineItemDto] }) lines!: CashFlowLineItemDto[];
+  @ApiProperty() netCash!: number;
+}
+
+export class CashFlowReconciliationDto {
+  @ApiProperty() beginningCash!: number;
+  @ApiProperty() netChangeInCash!: number;
+  @ApiProperty() endingCash!: number;
+  @ApiProperty() glCashBalance!: number;
+  @ApiProperty() drift!: number;
+  @ApiProperty() isReconciled!: boolean;
+}
+
+export class CashFlowPeriodDto {
+  @ApiProperty() startDate!: string;
+  @ApiProperty() endDate!: string;
+  @ApiPropertyOptional() periodName?: string;
+  @ApiPropertyOptional() fiscalYear?: number;
+  @ApiPropertyOptional() periodNumber?: number;
+}
+
+export class CashFlowStatementResponseDto {
+  @ApiProperty({ type: CashFlowPeriodDto }) period!: CashFlowPeriodDto;
+  @ApiProperty({ type: CashFlowSectionDto })
+  operatingActivities!: CashFlowSectionDto;
+  @ApiProperty({ type: CashFlowSectionDto })
+  investingActivities!: CashFlowSectionDto;
+  @ApiProperty({ type: CashFlowSectionDto })
+  financingActivities!: CashFlowSectionDto;
+  @ApiProperty({ type: CashFlowReconciliationDto })
+  reconciliation!: CashFlowReconciliationDto;
+  @ApiPropertyOptional({ type: () => CashFlowStatementResponseDto })
+  comparativePeriod?: CashFlowStatementResponseDto;
 }

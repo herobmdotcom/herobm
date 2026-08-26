@@ -151,12 +151,16 @@ dbt handles this automatically via its DAG, and the sync macros run after import
 
 ## Pipeline Testing Architecture
 
-The ELT pipeline tests are organized into two distinct layers:
+The ELT pipeline tests are organized into distinct layers across supported source systems:
 
-1. **ABM Pipeline Specific Test Suite (`pipelines/abm_transform/test/` and `pipelines/abm_transform/tests/`):**
-   - **Static & Structural Guards (`pipelines/abm_transform/test/`):** Validates transaction code mapping disjointness, SQL model invariant filters, purchase order sync logic, reception sync, and anchor UUID consistency. Run via `make test-abm`.
-   - **dbt Data Assertions (`pipelines/abm_transform/tests/`):** Validates that transformation outputs comply with relational integrity (e.g. `assert_no_custom_line_only_sales_invoices.sql`, `assert_invoice_lines_mapped.sql`). Run via `make test-transform SOURCE=abm`.
-   - **Post-Import Live Data Audit (`infra/tests/test_data_counts.py`):** Live database quality gate run after import (`make test-data` / `tools/elt_report.py`).
+1. **Source Specific Test Suites**:
+   - **ABM Pipeline Suite (`pipelines/abm_transform/test/` and `pipelines/abm_transform/tests/`):**
+     - **Static & Structural Guards:** Validates transaction code mapping disjointness, SQL model invariant filters, purchase order sync logic, reception sync, and anchor UUID consistency. Run via `make test-abm`.
+     - **dbt Data Assertions:** Validates that transformation outputs comply with relational integrity (e.g. `assert_no_custom_line_only_sales_invoices.sql`, `assert_invoice_lines_mapped.sql`). Run via `make test-transform SOURCE=abm`.
+   - **Odoo Pipeline Suite (`pipelines/odoo_transform/test/` and `pipelines/odoo_transform/tests/`):**
+     - **Static & Structural Guards:** Validates model schemas, incremental merge strategies, deterministic/preserved PK generation (`coalesce(dest.<pk>, gen_random_uuid())`), source tagging (`source = 'odoo'`), partner filtering, and anchor UUID integrity. Run via `make test-odoo`.
+     - **dbt Data Assertions:** Validates source integrity (`assert_customer_source_integrity.sql`), foreign key consistency on trading terms (`assert_customer_trading_terms_valid.sql`), and parameter validity (`assert_trading_terms_days_positive.sql`). Run via `make test-transform SOURCE=odoo`.
+   - **Post-Import Live Data Audit (`infra/tests/test_data_counts.py`):** Live database quality gate run after import (`make test-data [SOURCE=odoo|abm]` / `tools/elt_report.py`). Validates master data reconciliation, physical stock reconciliation, 22 core business invariants (violations = 0), continuous subledger reconciliation (AR/AP/GRNI/Perpetual Inventory), and operational volumes.
 
 2. **Generic Monorepo Pipeline Structural Guards (`infra/tests/`):**
    - Cross-cutting structural tests that protect overall monorepo architecture, runner security (`server.py`), logging resilience, pinned dependencies, no weak defaults, and no hardcoded currencies. Run via `make test-structural`.

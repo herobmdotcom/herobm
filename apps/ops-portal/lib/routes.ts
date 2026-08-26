@@ -134,6 +134,7 @@ export const routes = {
     list: () => '/general-ledger',
     detail: (id: string) => `/general-ledger/${id}`,
     trialBalance: () => '/general-ledger/trial-balance',
+    cashFlow: () => '/general-ledger/cash-flow',
     journalEntries: {
       list: () => '/general-ledger/journal-entries',
       new: () => '/general-ledger/journal-entries/new',

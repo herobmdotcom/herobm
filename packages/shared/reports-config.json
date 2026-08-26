@@ -185,6 +185,26 @@
       "hook": "customer-overdue-notice",
       "context": "customer-overdue-notice",
       "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000021",
+      "slug": "period-close-audit",
+      "name": "Formal Period Close / Audit Snapshot",
+      "filename": "period-close-audit.typ",
+      "output_name_pattern": "PeriodClose-${period.periodName}.pdf",
+      "hook": "period-close-audit",
+      "context": "period-close-audit",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000022",
+      "slug": "cash-flow-statement",
+      "name": "Statement of Cash Flows",
+      "filename": "cash-flow-statement.typ",
+      "output_name_pattern": "CashFlowStatement-${period.startDate}-to-${period.endDate}.pdf",
+      "hook": "cash-flow-statement",
+      "context": "cash-flow-statement",
+      "type": "hook"
     }
   ]
 }

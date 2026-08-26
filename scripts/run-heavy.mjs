@@ -47,11 +47,27 @@ console.log('\x1b[33mTearing down any existing test containers to ensure a clean
 run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
 
 console.log('\x1b[36mBuilding isolated test images...\x1b[0m');
-run('podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .');
-run('podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .');
-run('podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .');
+if (!run('podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .')) {
+    console.error('\x1b[31mFailed to build API test image!\x1b[0m');
+    releaseLock();
+    process.exit(1);
+}
+if (!run('podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .')) {
+    console.error('\x1b[31mFailed to build Pipeline test image!\x1b[0m');
+    releaseLock();
+    process.exit(1);
+}
+if (!run('podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .')) {
+    console.error('\x1b[31mFailed to build Worker test image!\x1b[0m');
+    releaseLock();
+    process.exit(1);
+}
 if (!skipUI) {
-    run('podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .');
+    if (!run('podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .')) {
+        console.error('\x1b[31mFailed to build Portal test image!\x1b[0m');
+        releaseLock();
+        process.exit(1);
+    }
 }
 
 console.log('\x1b[36mEnsuring network exists...\x1b[0m');
@@ -77,7 +93,9 @@ const dbEnv = {
     POSTGRES_HOST: "127.0.0.1",
     POSTGRES_PORT: "5434",
     REDIS_HOST: "127.0.0.1",
-    REDIS_PORT: "6380"
+    REDIS_PORT: "6380",
+    TEST_RUNNER_URL: "http://127.0.0.1:8005",
+    TEST_API_URL: "http://127.0.0.1:3005"
 };
 
 const pyCmd = process.platform === 'win32' ? 'python' : 'python3';

@@ -46,12 +46,14 @@ import {
   UpdateFiscalPeriodStatusDto,
   QueryFiscalPeriodsDto,
   SubledgerReconciliationResponseDto,
+  CashFlowStatementResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { SystemResource } from '@herobm/shared';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { ApiPaginatedResponse } from '../common/pagination';
+import { CashFlowService } from './cash-flow.service';
 
 @ApiTags('General Ledger')
 @Controller('gl')
@@ -62,6 +64,7 @@ export class GlController {
     private readonly coaLoader: CoaLoaderService,
     private readonly appConfig: AppConfigService,
     private readonly fxRevalService: FxRevaluationService,
+    private readonly cashFlowService: CashFlowService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -244,6 +247,45 @@ export class GlController {
     @Query('periodStart') periodStart?: string,
   ) {
     return this.glService.getTrialBalance(asOfDate, periodStart);
+  }
+
+  @Get('cash-flow')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Statement of Cash Flows',
+    description:
+      'Calculate Operating, Investing, and Financing cash flows for a date range or fiscal period.',
+  })
+  @ApiOkResponse({ type: CashFlowStatementResponseDto })
+  @ApiQuery({ name: 'startDate', required: true, example: '2026-08-01' })
+  @ApiQuery({ name: 'endDate', required: true, example: '2026-08-31' })
+  @ApiQuery({ name: 'periodName', required: false })
+  @ApiQuery({ name: 'fiscalYear', required: false, type: Number })
+  @ApiQuery({ name: 'periodNumber', required: false, type: Number })
+  @ApiQuery({ name: 'comparativeStartDate', required: false })
+  @ApiQuery({ name: 'comparativeEndDate', required: false })
+  async getCashFlow(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('periodName') periodName?: string,
+    @Query('fiscalYear') fiscalYearStr?: string,
+    @Query('periodNumber') periodNumberStr?: string,
+    @Query('comparativeStartDate') comparativeStartDate?: string,
+    @Query('comparativeEndDate') comparativeEndDate?: string,
+  ) {
+    const fiscalYear = fiscalYearStr ? parseInt(fiscalYearStr, 10) : undefined;
+    const periodNumber = periodNumberStr
+      ? parseInt(periodNumberStr, 10)
+      : undefined;
+    return this.cashFlowService.getCashFlowStatement({
+      startDate,
+      endDate,
+      periodName,
+      fiscalYear,
+      periodNumber,
+      comparativeStartDate,
+      comparativeEndDate,
+    });
   }
 
   @Get('general-ledger')

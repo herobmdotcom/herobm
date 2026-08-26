@@ -199,6 +199,27 @@ const SEEDS: SeedData[] = [
     templatePath: '../../../../tools/seeds/reports/customer-overdue-notice.typ',
     outputPattern: 'OverdueNotice-${customerNumber}.pdf',
   },
+  {
+    slug: 'period-close-audit',
+    name: 'Formal Period Close / Audit Snapshot',
+    contexts: ['period-close-audit'],
+    hook: 'period-close-audit',
+    description:
+      'System default template for generating Formal Period Close and Audit PDF Snapshots of the Trial Balance and Balance Sheet.',
+    templatePath: '../../../../tools/seeds/reports/period-close-audit.typ',
+    outputPattern: 'PeriodClose-${period.periodName}.pdf',
+  },
+  {
+    slug: 'cash-flow-statement',
+    name: 'Statement of Cash Flows',
+    contexts: ['cash-flow-statement'],
+    hook: 'cash-flow-statement',
+    description:
+      'System default template for generating formal Statement of Cash Flows (Operating, Investing, and Financing activities).',
+    templatePath: '../../../../tools/seeds/reports/cash-flow-statement.typ',
+    outputPattern:
+      'CashFlowStatement-${period.startDate}-to-${period.endDate}.pdf',
+  },
 ];
 
 export async function seedDynamicReports(db: SeedDB, dryRun = false) {

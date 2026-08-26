@@ -13,6 +13,31 @@ import { getErrorMessage } from '@herobm/shared';
 
 type Step = 'config' | 'preview' | 'executing' | 'finalisation';
 
+function cleanTranslation(val: unknown): string {
+  if (!val) return '';
+  if (typeof val === 'object') {
+    const obj = val as Record<string, string>;
+    return obj['en_US'] || obj['en_GB'] || obj['en_AU'] || Object.values(obj)[0] || '';
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const jsonStr = trimmed.replace(/'/g, '"');
+        const parsed = JSON.parse(jsonStr);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return cleanTranslation(parsed);
+        }
+      } catch {
+        const match = trimmed.match(/:\s*['"]([^'"]+)['"]/);
+        if (match) return match[1];
+      }
+    }
+    return trimmed;
+  }
+  return String(val);
+}
+
 export default function OdooImportPage() {
   const router = useRouter();
   const t = useTranslations('setup.dataImport');
@@ -105,17 +130,23 @@ export default function OdooImportPage() {
       } else {
         toast.success(result.message || tExt('toasts.connectionVerified'));
         const preview = result.preview as Record<string, unknown> | undefined;
-        const locs = (preview?.locations || []) as { code: string; name: string }[];
+        const locs = ((preview?.locations || []) as { code: string; name: string }[]).map(l => ({
+          ...l,
+          name: cleanTranslation(l.name),
+        }));
         setOdooLocations(locs);
         if (locs.length > 0) {
            setConfig(prev => ({ ...prev, defaultLocationCode: locs[0].code }));
         }
         const mappedCurr = getCurrencyByAbmCode(preview?.baseCurrencyAbmCode as number);
         if (mappedCurr !== undefined && preview?.baseCurrencyCode !== undefined) {
-           setConfig(prev => ({ ...prev, baseCurrency: preview!.baseCurrencyCode as string }));
+           setConfig(prev => ({ ...prev, baseCurrency: cleanTranslation(preview!.baseCurrencyCode) }));
         }
         
-        const taxes = (preview?.taxCategories || []) as { code: string; name: string; rate: number }[];
+        const taxes = ((preview?.taxCategories || []) as { code: string; name: string; rate: number }[]).map(t => ({
+          ...t,
+          name: cleanTranslation(t.name),
+        }));
         setOdooTaxCategories(taxes);
         if (taxes.length > 0) {
           // Find tax category with highest rate > 0

@@ -16,6 +16,7 @@ import type {
   BankStatementMatchGroupResponseDto,
   BankStatementSuccessResponseDto,
   BulkImportResultDto,
+  CashFlowStatementResponseDto,
   ChartFileDto,
   CommitFxRevaluationDto,
   CostCenterResponseDto,
@@ -43,6 +44,7 @@ import type {
   GenerateFiscalPeriodsDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
+  GlControllerGetCashFlowParams,
   GlControllerGetFiscalPeriodsParams,
   GlControllerGetFxCandidatesParams,
   GlControllerGetGeneralLedger200,
@@ -779,6 +781,49 @@ export const getGlControllerGetTrialBalanceUrl = (params?: GlControllerGetTrialB
 export const glControllerGetTrialBalance = async (params?: GlControllerGetTrialBalanceParams, options?: RequestInit): Promise<glControllerGetTrialBalanceResponse> => {
   
   return customFetch<glControllerGetTrialBalanceResponse>(getGlControllerGetTrialBalanceUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Calculate Operating, Investing, and Financing cash flows for a date range or fiscal period.
+ * @summary Get Statement of Cash Flows
+ */
+export type glControllerGetCashFlowResponse200 = {
+  data: CashFlowStatementResponseDto
+  status: 200
+}
+    
+export type glControllerGetCashFlowResponseSuccess = (glControllerGetCashFlowResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetCashFlowResponse = (glControllerGetCashFlowResponseSuccess)
+
+export const getGlControllerGetCashFlowUrl = (params: GlControllerGetCashFlowParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/cash-flow?${stringifiedParams}` : `/gl/cash-flow`
+}
+
+export const glControllerGetCashFlow = async (params: GlControllerGetCashFlowParams, options?: RequestInit): Promise<glControllerGetCashFlowResponse> => {
+  
+  return customFetch<glControllerGetCashFlowResponse>(getGlControllerGetCashFlowUrl(params),
   {      
     ...options,
     method: 'GET'

@@ -7,7 +7,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage, SystemResource, hasPermission } from '@herobm/shared';
+import { getErrorMessage, SystemResource, hasPermission, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { useAuth } from '@/components/AuthGate';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
@@ -102,6 +102,27 @@ export default function FiscalPeriodsContent() {
     }
   };
 
+  const handleDownloadAuditReport = async (periodId: string) => {
+    try {
+      setActionLoading(periodId);
+      const res = await api.pdfTemplatesControllerRunHook(
+        'period-close-audit',
+        {},
+        {
+          id: periodId,
+          context: DATA_SOURCE_CONTEXT.PERIOD_CLOSE_AUDIT,
+        },
+      );
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <DetailsLayout
       header={
@@ -186,77 +207,85 @@ export default function FiscalPeriodsContent() {
                         {p.status === 'open' && <span>—</span>}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {canWrite ? (
-                          <div className="inline-flex items-center gap-2">
-                            {p.status === 'open' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="!py-1 !text-xs !bg-amber-50 !text-amber-700 !border-amber-200 hover:!bg-amber-100"
-                                  onClick={() =>
-                                    handleUpdateStatus(p.periodId, 'soft_locked')
-                                  }
-                                  disabled={actionLoading === p.periodId}
-                                >
-                                  Soft Lock
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  className="!py-1 !text-xs"
-                                  onClick={() =>
-                                    handleUpdateStatus(p.periodId, 'hard_closed')
-                                  }
-                                  disabled={actionLoading === p.periodId}
-                                >
-                                  Hard Close
-                                </Button>
-                              </>
-                            )}
+                        <div className="inline-flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="!py-1 !text-xs !px-2"
+                            title="Download Audit Report"
+                            onClick={() => handleDownloadAuditReport(p.periodId)}
+                            disabled={actionLoading === p.periodId}
+                          >
+                            <span className="material-symbols-outlined text-xs mr-1">picture_as_pdf</span>
+                            Audit Report
+                          </Button>
 
-                            {p.status === 'soft_locked' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="!py-1 !text-xs"
-                                  onClick={() =>
-                                    handleUpdateStatus(p.periodId, 'open')
-                                  }
-                                  disabled={actionLoading === p.periodId}
-                                >
-                                  Re-open
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  className="!py-1 !text-xs"
-                                  onClick={() =>
-                                    handleUpdateStatus(p.periodId, 'hard_closed')
-                                  }
-                                  disabled={actionLoading === p.periodId}
-                                >
-                                  Hard Close
-                                </Button>
-                              </>
-                            )}
+                          {canWrite && p.status === 'open' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="!py-1 !text-xs !bg-amber-50 !text-amber-700 !border-amber-200 hover:!bg-amber-100"
+                                onClick={() =>
+                                  handleUpdateStatus(p.periodId, 'soft_locked')
+                                }
+                                disabled={actionLoading === p.periodId}
+                              >
+                                Soft Lock
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                className="!py-1 !text-xs"
+                                onClick={() =>
+                                  handleUpdateStatus(p.periodId, 'hard_closed')
+                                }
+                                disabled={actionLoading === p.periodId}
+                              >
+                                Hard Close
+                              </Button>
+                            </>
+                          )}
 
-                            {p.status === 'hard_closed' && (
+                          {canWrite && p.status === 'soft_locked' && (
+                            <>
                               <Button
                                 size="sm"
                                 variant="secondary"
                                 className="!py-1 !text-xs"
-                                onClick={() => handleUpdateStatus(p.periodId, 'open')}
+                                onClick={() =>
+                                  handleUpdateStatus(p.periodId, 'open')
+                                }
                                 disabled={actionLoading === p.periodId}
                               >
-                                Re-open Period
+                                Re-open
                               </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-[var(--text-muted)]">—</span>
-                        )}
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                className="!py-1 !text-xs"
+                                onClick={() =>
+                                  handleUpdateStatus(p.periodId, 'hard_closed')
+                                }
+                                disabled={actionLoading === p.periodId}
+                              >
+                                Hard Close
+                              </Button>
+                            </>
+                          )}
+
+                          {canWrite && p.status === 'hard_closed' && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="!py-1 !text-xs"
+                              onClick={() => handleUpdateStatus(p.periodId, 'open')}
+                              disabled={actionLoading === p.periodId}
+                            >
+                              Re-open Period
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

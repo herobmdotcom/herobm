@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (471 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (472 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -142,6 +142,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/gl/journal-entries/{id}` | Get Journal Entry |
 | `GET` | `/gl/journal-entries/source/{type}/{id}` | Get Source Entry |
 | `GET` | `/gl/trial-balance` | Get Trial Balance |
+| `GET` | `/gl/cash-flow` | Get Statement of Cash Flows |
 | `GET` | `/gl/general-ledger` | Get General Ledger |
 | `GET` | `/gl/settings` | Get Settings |
 | `PATCH` | `/gl/settings` | Update Settings |

@@ -174,8 +174,17 @@ export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from
 export {
   GL_ACCOUNT_TYPE,
   calculateAgedTotals,
+  isDebitNormalAccount,
+  computeAccountNetBalance,
+  computeRunningBalances,
 } from './accounting';
-export type { GLAccountType, AgedBalanceRow, AgedTotals } from './accounting';
+export type {
+  GLAccountType,
+  AgedBalanceRow,
+  AgedTotals,
+  RunningBalanceInputLine,
+  AccountPeriodSummary,
+} from './accounting';
 
 export * from './errors';
 export * from './invoice-discounts';

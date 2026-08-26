@@ -110,6 +110,7 @@ export default function Sidebar() {
           subItems: [
             { href: routes.generalLedger.list(), label: t('items.generalLedger') },
             { href: routes.generalLedger.trialBalance(), label: t('items.trialBalance') },
+            { href: routes.generalLedger.cashFlow(), label: 'Cash Flow' },
             { href: routes.generalLedger.journalEntries.list(), label: t('items.journalEntries') },
           ]
         },

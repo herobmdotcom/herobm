@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
@@ -32,20 +33,18 @@ interface GlEntry {
   lineMemo: string | null;
   createdBy: string | null;
   createdOn: string | null;
+  runningBalance?: number | null;
 }
-
-const PAGE_SIZE = 200;
 
 export default function GeneralLedgerContent() {
   const t = useTranslations('gl.generalLedger');
   const tCodes = useTranslations('gl.codes');
   const tCommon = useTranslations('common');
-  const tGrid = useTranslations('common.grid');
 
   function fmt(v: string | number | null | undefined) {
-    if (!v) return tCommon('na');
+    if (v === null || v === undefined || v === '') return tCommon('na');
     const n = typeof v === 'string' ? parseFloat(v) : v;
-    if (!n || n === 0) return tCommon('na');
+    if (isNaN(n) || n === 0) return '0.00';
     return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
@@ -54,176 +53,220 @@ export default function GeneralLedgerContent() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-
-  // Manual pagination state (so we control it from the header, not the DataGrid overlay)
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [rows, setRows] = useState<GlEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isCodesOpen, setIsCodesOpen] = useState(false);
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
     api.glControllerGetAccounts({ format: 'flat' })
       .then(res => {
         const data = res.data || [];
         const leafAccounts = data.filter((a: unknown) => !(a as { isGroup: boolean }).isGroup);
-        setAccounts(leafAccounts.map((a: unknown) => ({ accountCode: (a as { accountCode: string }).accountCode, name: (a as { name: string }).name })));
+        setAccounts(leafAccounts.map((a: unknown) => ({
+          accountCode: (a as { accountCode: string }).accountCode,
+          name: (a as { name: string }).name,
+        })));
       })
       .catch((err) => reportError(err, 'GeneralLedgerPage'));
   }, []);
 
-  // Reset page to 1 when filters change
-  useEffect(() => { setPage(1); }, [accountCode, fromDate, toDate]);
-
-  // Fetch GL data
-  const fetchData = useCallback(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (accountCode) params.set('account', accountCode);
-    if (fromDate) params.set('fromDate', fromDate);
-    if (toDate) params.set('toDate', toDate);
-    params.set('page', String(page));
-    params.set('limit', String(PAGE_SIZE));
-    const qs = params.toString() ? `?${params}` : '';
-    api.glControllerGetGeneralLedger({ 
-      account: accountCode, 
-      fromDate: fromDate, 
-      toDate: toDate, 
-      page: page.toString(), 
-      limit: PAGE_SIZE.toString() 
-    })
-      .then((res) => {
-        const payload = res.data;
-        setRows((payload as unknown as { data: GlEntry[] }).data || []);
-        setTotal((payload as unknown as { total: number }).total || 0);
-      })
-      .catch((err) => reportError(err, 'GeneralLedgerContent'))
-      .finally(() => setLoading(false));
-  }, [accountCode, fromDate, toDate, page]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const columns = useMemo<ColDef[]>(() => [
-    { 
-      field: 'entryDate', 
-      headerName: t('columns.date'), 
-      width: 120,
-      valueFormatter: (p: ValueFormatterParams<GlEntry>) => formatLocalDate(p.value as string, undefined, '')
-    },
-    { 
-      field: 'entryNumber', 
-      headerName: t('columns.entryNumber'), 
-      width: 140, 
-      pinned: 'left',
-      cellStyle: { fontWeight: 'bold', color: 'var(--accent)', cursor: 'pointer' }
+  // Fetch account summary KPI banner when a single account is selected
+  const { data: accountSummary } = useSWR(
+    accountCode ? ['gl-account-summary', accountCode, fromDate, toDate] : null,
+    async () => {
+      const res = await api.glControllerGetGeneralLedger({
+        account: accountCode,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        page: '1',
+        limit: '1',
+      });
+      const payload = res.data as { accountSummary?: api.GlAccountSummaryDto | null };
+      return payload?.accountSummary || null;
     },
     {
-      field: 'accountCode',
-      headerName: t('columns.glAccount'),
-      width: 250,
-      cellRenderer: (p: ICellRendererParams<GlEntry>) => {
-        return (
-          <span>
-            <span className="font-mono text-gray-400 mr-2">{p.value}</span>
-            {p.data?.accountName}
-          </span>
-        );
-      }
-    },
-    { 
-      field: 'lineMemo', 
-      headerName: t('columns.memo'), 
-      flex: 1, 
-      minWidth: 200,
-      valueGetter: (p: ValueGetterParams<GlEntry>) => p.data?.lineMemo || p.data?.entryMemo || ''
-    },
-    { 
-      field: 'debit', 
-      headerName: t('columns.debit'), 
-      width: 120,
-      cellClass: 'text-right font-mono',
-      valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
-    },
-    { 
-      field: 'credit', 
-      headerName: t('columns.credit'), 
-      width: 120,
-      cellClass: 'text-right font-mono',
-      valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
+      keepPreviousData: true,
+      onError: (err) => reportError(err, 'GeneralLedgerSummary'),
     }
-  ], [t, tCommon]);
+  );
 
-  // We manage data externally, so we feed it directly to DataGrid via fetchAll + a dummy endpoint
-  // Actually, we'll bypass DataGrid's own fetching by providing the data externally.
-  // Since DataGrid always fetches, we'll use its renderHeader but handle data ourselves.
+  const columns = useMemo<ColDef[]>(() => {
+    const cols: ColDef[] = [
+      { 
+        field: 'entryDate', 
+        headerName: t('columns.date'), 
+        width: 120,
+        valueFormatter: (p: ValueFormatterParams<GlEntry>) => formatLocalDate(p.value as string, undefined, '')
+      },
+      { 
+        field: 'entryNumber', 
+        headerName: t('columns.entryNumber'), 
+        width: 140, 
+        pinned: 'left',
+        cellStyle: { fontWeight: 'bold', color: 'var(--accent)', cursor: 'pointer' }
+      },
+      {
+        field: 'accountCode',
+        headerName: t('columns.glAccount'),
+        width: 250,
+        cellRenderer: (p: ICellRendererParams<GlEntry>) => {
+          return (
+            <span>
+              <span className="font-mono text-gray-400 mr-2">{p.value}</span>
+              {p.data?.accountName}
+            </span>
+          );
+        }
+      },
+      { 
+        field: 'lineMemo', 
+        headerName: t('columns.memo'), 
+        flex: 1, 
+        minWidth: 200,
+        valueGetter: (p: ValueGetterParams<GlEntry>) => p.data?.lineMemo || p.data?.entryMemo || ''
+      },
+      { 
+        field: 'debit', 
+        headerName: t('columns.debit'), 
+        width: 120,
+        cellClass: 'text-right font-mono',
+        valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
+      },
+      { 
+        field: 'credit', 
+        headerName: t('columns.credit'), 
+        width: 120,
+        cellClass: 'text-right font-mono',
+        valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
+      }
+    ];
+
+    if (accountCode) {
+      cols.push({
+        field: 'runningBalance',
+        headerName: t('columns.runningBalance'),
+        width: 150,
+        cellClass: (p: ValueFormatterParams<GlEntry>) => {
+          const val = typeof p.value === 'string' ? parseFloat(p.value) : (p.value as number);
+          return `text-right font-mono font-semibold ${val < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`;
+        },
+        valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
+      });
+    }
+
+    return cols;
+  }, [t, tCommon, accountCode]);
 
   return (
     <>
-    <DataGrid<GlEntry>
-      endpoint={`/api/gl/general-ledger?account=${accountCode}&fromDate=${fromDate}&toDate=${toDate}`}
-      columns={columns}
-      gridKey="gl-general-ledger"
-      exportFileName="general-ledger"
-      fetchAll={true}
-      defaultSortModel={[{ colId: 'entryDate', sort: 'desc' }]}
-      onRowClicked={(row) => {
-        setSelectedEntry({
-          journalEntryId: row.journalEntryId,
-          entryNumber: row.entryNumber,
-          entryDate: row.entryDate,
-          memo: row.entryMemo,
-          sourceType: row.sourceType || 'manual',
-          sourceId: row.sourceId || null,
-          createdBy: row.createdBy || null,
-        });
-      }}
-      pageTitle={t('title')}
-      headerActions={
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setIsCodesOpen(true)}
-          className="whitespace-nowrap"
-        >
-          {tCodes('button')}
-        </Button>
-      }
-      secondaryHeader={
-        <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-4 w-full">
-          <select
-            value={accountCode}
-            onChange={(e) => setAccountCode(e.target.value)}
-            className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[240px] bg-white rounded-lg"
+      <DataGrid<GlEntry>
+        endpoint={`/api/gl/general-ledger?account=${accountCode}&fromDate=${fromDate}&toDate=${toDate}`}
+        columns={columns}
+        gridKey="gl-general-ledger"
+        exportFileName={accountCode ? `general-ledger-${accountCode}` : 'general-ledger'}
+        fetchAll={true}
+        defaultSortModel={[{ colId: 'entryDate', sort: 'desc' }]}
+        onRowClicked={(row) => {
+          setSelectedEntry({
+            journalEntryId: row.journalEntryId,
+            entryNumber: row.entryNumber,
+            entryDate: row.entryDate,
+            memo: row.entryMemo,
+            sourceType: row.sourceType || 'manual',
+            sourceId: row.sourceId || null,
+            createdBy: row.createdBy || null,
+          });
+        }}
+        pageTitle={t('title')}
+        headerActions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsCodesOpen(true)}
+            className="whitespace-nowrap"
           >
-            <option value="">{t('allAccounts')}</option>
-            {accounts.map((a) => (
-              <option key={a.accountCode} value={a.accountCode}>
-                {a.accountCode} — {a.name}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
-              title={t('fromDate')}
-            />
-            <span className="text-gray-300 font-bold shrink-0">→</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
-              title={t('toDate')}
-            />
+            {tCodes('button')}
+          </Button>
+        }
+        secondaryHeader={
+          <div className="flex flex-col gap-3 w-full">
+            <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-4 w-full">
+              <select
+                value={accountCode}
+                onChange={(e) => setAccountCode(e.target.value)}
+                className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[260px] bg-white rounded-lg"
+              >
+                <option value="">{t('allAccounts')}</option>
+                {accounts.map((a) => (
+                  <option key={a.accountCode} value={a.accountCode}>
+                    {a.accountCode} — {a.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                  title={t('fromDate')}
+                />
+                <span className="text-gray-300 font-bold shrink-0">→</span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                  title={t('toDate')}
+                />
+              </div>
+            </div>
+
+            {accountCode && accountSummary && (
+              <div className="flex flex-wrap items-center gap-6 py-2.5 px-4 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] w-full">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('openingBalance')}
+                  </span>
+                  <span className={`text-sm font-mono font-bold ${(accountSummary.openingBalance ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                    ${fmt(accountSummary.openingBalance)}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('periodDebits')}
+                  </span>
+                  <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
+                    ${fmt(accountSummary.periodDebit)}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('periodCredits')}
+                  </span>
+                  <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
+                    ${fmt(accountSummary.periodCredit)}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('netMovement')}
+                  </span>
+                  <span className={`text-sm font-mono font-bold ${(accountSummary.netMovement ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
+                    ${fmt(accountSummary.netMovement)}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('closingBalance')}
+                  </span>
+                  <span className={`text-sm font-mono font-bold ${(accountSummary.closingBalance ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-emerald-600'}`}>
+                    ${fmt(accountSummary.closingBalance)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      }
-    />
+        }
+      />
 
       <JournalEntrySlideOver
         entry={selectedEntry}
@@ -237,3 +280,4 @@ export default function GeneralLedgerContent() {
     </>
   );
 }
+

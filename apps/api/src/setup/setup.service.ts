@@ -1321,7 +1321,10 @@ export class SetupService {
         FORCE_COLOR: '0',
         DBT_USE_COLORS: 'False',
         TERM: 'dumb',
-        WEBHOOK_URL: process.env.WEBHOOK_URL || defaultWebhookUrl,
+        WEBHOOK_URL:
+          process.env.PIPELINE_WEBHOOK_URL ||
+          process.env.WEBHOOK_URL ||
+          defaultWebhookUrl,
         ...envOverride,
       };
 

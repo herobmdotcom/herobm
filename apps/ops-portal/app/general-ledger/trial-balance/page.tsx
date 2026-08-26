@@ -5,6 +5,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { toast } from 'react-hot-toast';
+import { Button } from '@/components/shared/Button';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 
@@ -107,6 +110,62 @@ export default function TrialBalancePage() {
     useState<api.SubledgerReconciliationResponseDto | null>(null);
   const [periods, setPeriods] = useState<api.FiscalPeriodResponseDto[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingCashFlowPdf, setExportingCashFlowPdf] = useState(false);
+
+  const handleExportPeriodClosePdf = async () => {
+    const targetPeriodId = selectedPeriodId || periods[0]?.periodId;
+    if (!targetPeriodId) {
+      toast.error('No fiscal period available for audit export');
+      return;
+    }
+    try {
+      setExportingPdf(true);
+      const res = await api.pdfTemplatesControllerRunHook(
+        'period-close-audit',
+        {},
+        {
+          id: targetPeriodId,
+          context: DATA_SOURCE_CONTEXT.PERIOD_CLOSE_AUDIT,
+        },
+      );
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: unknown) {
+      reportError(err, 'TrialBalancePage:exportAuditPdf');
+      toast.error('Failed to generate Period Close Audit PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportCashFlowPdf = async () => {
+    const targetPeriodId = selectedPeriodId || periods[0]?.periodId;
+    if (!targetPeriodId) {
+      toast.error('No fiscal period available for cash flow export');
+      return;
+    }
+    try {
+      setExportingCashFlowPdf(true);
+      const res = await api.pdfTemplatesControllerRunHook(
+        'cash-flow-statement',
+        {},
+        {
+          id: targetPeriodId,
+          context: DATA_SOURCE_CONTEXT.CASH_FLOW_STATEMENT,
+        },
+      );
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: unknown) {
+      reportError(err, 'TrialBalancePage:exportCashFlowPdf');
+      toast.error('Failed to generate Cash Flow Statement PDF');
+    } finally {
+      setExportingCashFlowPdf(false);
+    }
+  };
 
   const [reportMode, setReportMode] = useState<
     'point_in_time' | 'periodic' | 'fiscal_period'
@@ -253,6 +312,28 @@ export default function TrialBalancePage() {
                   />
                 </div>
               )}
+
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleExportCashFlowPdf}
+                disabled={exportingCashFlowPdf}
+                className="!py-1.5 !text-xs whitespace-nowrap flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm">payments</span>
+                {exportingCashFlowPdf ? t('exporting') : t('exportCashFlowPdf')}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleExportPeriodClosePdf}
+                disabled={exportingPdf}
+                className="!py-1.5 !text-xs whitespace-nowrap flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                {exportingPdf ? t('exporting') : t('exportAuditPdf')}
+              </Button>
             </div>
           }
         />

@@ -3,6 +3,7 @@ import { GlController } from './gl.controller';
 import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { FxRevaluationService } from './fx-revaluation.service';
+import { CashFlowService } from './cash-flow.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@herobm/shared';
 import { JwtUser } from '../auth/auth-user.decorator';
@@ -60,6 +61,37 @@ describe('GlController', () => {
           useValue: {
             generateCandidates: jest.fn(),
             commitRevaluation: jest.fn(),
+          },
+        },
+        {
+          provide: CashFlowService,
+          useValue: {
+            getCashFlowStatement: jest.fn().mockResolvedValue({
+              period: { startDate: '2026-08-01', endDate: '2026-08-31' },
+              operatingActivities: {
+                title: 'Operating',
+                lines: [],
+                netCash: 1000,
+              },
+              investingActivities: {
+                title: 'Investing',
+                lines: [],
+                netCash: 0,
+              },
+              financingActivities: {
+                title: 'Financing',
+                lines: [],
+                netCash: 0,
+              },
+              reconciliation: {
+                beginningCash: 10000,
+                netChangeInCash: 1000,
+                endingCash: 11000,
+                glCashBalance: 11000,
+                drift: 0,
+                isReconciled: true,
+              },
+            }),
           },
         },
       ],
@@ -327,6 +359,22 @@ describe('GlController', () => {
         toDate: '2026-12-31',
         limit: 50,
       });
+    });
+  });
+
+  describe('GET /gl/cash-flow', () => {
+    it('should delegate to cashFlowService with parsed parameters', async () => {
+      const res = await controller.getCashFlow(
+        '2026-08-01',
+        '2026-08-31',
+        '2026-08',
+        '2026',
+        '8',
+        '2026-07-01',
+        '2026-07-31',
+      );
+      expect(res).toBeDefined();
+      expect(res.reconciliation.isReconciled).toBe(true);
     });
   });
 

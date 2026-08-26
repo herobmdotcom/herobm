@@ -4,6 +4,8 @@ services:
     image: localhost/herobm_pipeline-test:latest
     container_name: pipeline-runner-test
     env_file: .env
+    ports:
+      - "${BIND_IP:-127.0.0.1}:8005:8001"
     environment:
       POSTGRES_HOST: postgres-test
       POSTGRES_PORT: "5432"
@@ -34,6 +36,7 @@ services:
       PIPELINE_SECRET: ${PIPELINE_SECRET}
       PIPELINE_RUNNER_URL: http://pipeline-runner-test:8001
       PIPELINE_WEBHOOK_URL: http://custom-api-test:3000/internal/setup/webhook
+      WEBHOOK_URL: http://custom-api-test:3000/internal/setup/webhook
     networks:
       - app-net
 

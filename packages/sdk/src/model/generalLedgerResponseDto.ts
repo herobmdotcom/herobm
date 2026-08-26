@@ -5,7 +5,14 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { GlEntryResponseDto } from './glEntryResponseDto';
+import type { GeneralLedgerResponseDtoAccountSummary } from './generalLedgerResponseDtoAccountSummary';
 
 export interface GeneralLedgerResponseDto {
-  glEntryId: string;
+  data?: GlEntryResponseDto[];
+  page?: number;
+  limit?: number;
+  total?: number;
+  /** @nullable */
+  accountSummary?: GeneralLedgerResponseDtoAccountSummary;
 }
