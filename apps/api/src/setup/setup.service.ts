@@ -1094,6 +1094,20 @@ export class SetupService {
         this.log(jobId, `Skipping ${source.toUpperCase()} Extraction...`);
       }
 
+      if (jobId) {
+        const [currentJob] = await this.db
+          .select({ status: pipelineJobs.status })
+          .from(pipelineJobs)
+          .where(eq(pipelineJobs.jobId, jobId))
+          .limit(1);
+        if (
+          currentJob?.status === 'cancelling' ||
+          currentJob?.status === 'failed'
+        ) {
+          throw new Error('Job was stopped by user.');
+        }
+      }
+
       this.log(jobId, 'Running Transformations & Report...');
 
       const extraDbtVars = jobId ? `{"job_id": "${jobId}"}` : undefined;
