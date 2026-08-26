@@ -27,6 +27,7 @@ export const envSchema = z
       .default('development_jwt_secret_must_be_overridden_in_prod'),
     ENCRYPTION_KEY: z.string().optional(),
     PIPELINE_SECRET: z.string().optional(),
+    PIPELINE_RUNNER_URL: z.string().optional(),
     CORS_ORIGINS: z.string().optional(),
     ADMIN_PASSWORD: z.string().optional(),
     DEV_ADMIN_PASSWORD: z.string().optional(),

@@ -7,7 +7,7 @@ import { useAuth } from '@/components/AuthGate';
 import { useUserSettings } from '@/components/UserSettingsProvider';
 import SlideOver from './SlideOver';
 import { Button } from './Button';
-import type { DisplayDensity } from '@herobm/shared';
+import { getErrorMessage, type DisplayDensity } from '@herobm/shared';
 import * as api from '@herobm/sdk';
 
 interface UserPreferencesModalProps {
@@ -24,10 +24,13 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
   // 2FA State
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [loading2Fa, setLoading2Fa] = useState(true);
-  const [setupStep, setSetupStep] = useState<0 | 1 | 2 | 3>(0);
+  const [setupStep, setSetupStep] = useState<0 | 1 | 2 | 3 | 'disable' | 'regenerate'>(0);
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUrl: string; backupCodes: string[] } | null>(null);
   const [setupCode, setSetupCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [backupCodesConfirmed, setBackupCodesConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,7 +45,10 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       setSetupStep(0);
       setSetupData(null);
       setSetupCode('');
+      setPassword('');
+      setSetupError(null);
       setBackupCodesConfirmed(false);
+      setSubmitting(false);
     }
   }, [isOpen]);
 
@@ -61,52 +67,78 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
       const res = await api.authControllerSetup2Fa({});
       const d = res.data;
       if (d) setSetupData({ secret: d.secret, qrCodeDataUrl: d.qrCodeDataUrl, backupCodes: d.backupCodes });
+      setSetupError(null);
+      setSetupCode('');
+      setPassword('');
       setSetupStep(1);
-    } catch {
-      toast.error('Failed to initialize 2FA setup');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to initialize 2FA setup');
     }
   };
 
   const handleVerify2FaSetup = async () => {
     if (!setupCode || setupCode.length < 6 || !setupData) return;
+    setSetupError(null);
+    setSubmitting(true);
     try {
       await api.authControllerEnable2Fa({ code: setupCode, secret: setupData.secret });
       setSetupStep(3);
       setTwoFactorEnabled(true);
-    } catch {
-      toast.error('Invalid code');
+    } catch (err: unknown) {
+      setSetupError(getErrorMessage(err) || t2fa('invalidCode'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleDisable2Fa = async () => {
-    if (!window.confirm(t2fa('disableConfirm'))) return;
-    const password = window.prompt(t2fa('enterPassword'));
-    if (!password) return;
-    const code = window.prompt(t2fa('enterVerificationCode'));
-    if (!code) return;
-    
+  const handleStartDisable2Fa = () => {
+    setSetupStep('disable');
+    setPassword('');
+    setSetupCode('');
+    setSetupError(null);
+  };
+
+  const handleConfirmDisable2Fa = async () => {
+    if (!password || !setupCode || setupCode.length < 6) return;
+    setSetupError(null);
+    setSubmitting(true);
     try {
-      await api.authControllerDisable2Fa({ password, code });
+      await api.authControllerDisable2Fa({ password, code: setupCode });
       setTwoFactorEnabled(false);
-      toast.success('2FA Disabled');
-    } catch {
-      toast.error('Failed to disable 2FA');
+      setSetupStep(0);
+      setPassword('');
+      setSetupCode('');
+      toast.success(t2fa('disableSuccess'));
+    } catch (err: unknown) {
+      setSetupError(getErrorMessage(err) || t2fa('invalidCode'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleRegenerateBackupCodes = async () => {
-    const password = window.prompt(t2fa('enterPassword'));
-    if (!password) return;
-    const code = window.prompt(t2fa('enterVerificationCode'));
-    if (!code) return;
-    
+  const handleStartRegenerateBackupCodes = () => {
+    setSetupStep('regenerate');
+    setPassword('');
+    setSetupCode('');
+    setSetupError(null);
+  };
+
+  const handleConfirmRegenerateBackupCodes = async () => {
+    if (!password || !setupCode || setupCode.length < 6) return;
+    setSetupError(null);
+    setSubmitting(true);
     try {
-      const res = await api.authControllerRegenerateBackupCodes({ password, code });
+      const res = await api.authControllerRegenerateBackupCodes({ password, code: setupCode });
       const d = res.data;
       if (d) setSetupData({ secret: '', qrCodeDataUrl: '', backupCodes: d.backupCodes });
       setSetupStep(3);
-    } catch {
-      toast.error('Failed to regenerate backup codes');
+      setPassword('');
+      setSetupCode('');
+      setBackupCodesConfirmed(false);
+    } catch (err: unknown) {
+      setSetupError(getErrorMessage(err) || t2fa('invalidCode'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -215,12 +247,17 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                 <label className="switch" title={t2fa('title')}>
                   <input
                     type="checkbox"
-                    checked={twoFactorEnabled}
+                    checked={twoFactorEnabled || setupStep === 1 || setupStep === 2 || setupStep === 3 || setupStep === 'regenerate'}
                     onChange={(e) => {
                       if (e.target.checked) {
                         handleStart2FaSetup();
                       } else {
-                        handleDisable2Fa();
+                        if (twoFactorEnabled) {
+                          handleStartDisable2Fa();
+                        } else {
+                          setSetupStep(0);
+                          setSetupData(null);
+                        }
                       }
                     }}
                   />
@@ -229,10 +266,15 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
               </div>
 
               {setupStep === 0 && twoFactorEnabled && (
-                <div className="flex">
-                  <Button variant="secondary" size="sm" onClick={handleRegenerateBackupCodes}>
-                    {t2fa('regenerateBackupCodes')}
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {t2fa('enabled')}
+                  </p>
+                  <div className="flex">
+                    <Button variant="secondary" size="sm" onClick={handleStartRegenerateBackupCodes}>
+                      {t2fa('regenerateBackupCodes')}
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -247,9 +289,20 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                     <p className="text-xs text-[var(--text-muted)] mb-1">{t2fa('manualEntry')}</p>
                     <code className="text-xs bg-[var(--bg-secondary)] p-1 rounded font-mono">{setupData.secret}</code>
                   </div>
-                  <Button variant="primary" onClick={() => setSetupStep(2)}>
-                    Next
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSetupStep(0);
+                        setSetupData(null);
+                      }}
+                    >
+                      {t('cancel')}
+                    </Button>
+                    <Button variant="primary" onClick={() => { setSetupStep(2); setSetupError(null); }}>
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -261,15 +314,29 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                     type="text"
                     className="input"
                     value={setupCode}
-                    onChange={(e) => setSetupCode(e.target.value)}
+                    onChange={(e) => {
+                      setSetupCode(e.target.value);
+                      if (setupError) setSetupError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && setupCode.length >= 6 && !submitting) {
+                        handleVerify2FaSetup();
+                      }
+                    }}
                     placeholder="123456"
+                    autoFocus
                   />
+                  {setupError && (
+                    <p className="text-xs text-[var(--danger,#ef4444)] font-medium">
+                      {setupError}
+                    </p>
+                  )}
                   <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setSetupStep(1)}>
+                    <Button variant="secondary" onClick={() => { setSetupStep(1); setSetupError(null); }}>
                       Back
                     </Button>
-                    <Button variant="primary" onClick={handleVerify2FaSetup} disabled={setupCode.length < 6}>
-                      {t2fa('enable')}
+                    <Button variant="primary" onClick={handleVerify2FaSetup} disabled={setupCode.length < 6 || submitting}>
+                      {submitting ? '...' : t2fa('enable')}
                     </Button>
                   </div>
                 </div>
@@ -302,9 +369,153 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                     />
                     <span className="text-sm text-[var(--text-primary)]">{t2fa('backupCodesConfirm')}</span>
                   </label>
-                  <Button variant="primary" disabled={!backupCodesConfirmed} onClick={() => setSetupStep(0)}>
+                  <Button
+                    variant="primary"
+                    disabled={!backupCodesConfirmed}
+                    onClick={() => {
+                      setSetupStep(0);
+                      setSetupData(null);
+                      setBackupCodesConfirmed(false);
+                    }}
+                  >
                     Done
                   </Button>
+                </div>
+              )}
+
+              {setupStep === 'disable' && (
+                <div className="flex flex-col gap-4">
+                  <h5 className="text-sm font-medium text-[var(--danger,#ef4444)]">{t2fa('disable')}</h5>
+                  <p className="text-xs text-[var(--text-muted)]">{t2fa('disableConfirm')}</p>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      {t2fa('enterPassword')}
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (setupError) setSetupError(null);
+                      }}
+                      placeholder="••••••••"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      {t2fa('enterVerificationCode')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={setupCode}
+                      onChange={(e) => {
+                        setSetupCode(e.target.value);
+                        if (setupError) setSetupError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && password && setupCode.length >= 6 && !submitting) {
+                          handleConfirmDisable2Fa();
+                        }
+                      }}
+                      placeholder="123456"
+                    />
+                  </div>
+                  {setupError && (
+                    <p className="text-xs text-[var(--danger,#ef4444)] font-medium">
+                      {setupError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSetupStep(0);
+                        setPassword('');
+                        setSetupCode('');
+                        setSetupError(null);
+                      }}
+                    >
+                      {t('cancel')}
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={handleConfirmDisable2Fa}
+                      disabled={!password || setupCode.length < 6 || submitting}
+                    >
+                      {submitting ? '...' : t2fa('disable')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 'regenerate' && (
+                <div className="flex flex-col gap-4">
+                  <h5 className="text-sm font-medium">{t2fa('regenerateBackupCodes')}</h5>
+                  <p className="text-xs text-[var(--text-muted)]">{t2fa('regenerateDesc')}</p>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      {t2fa('enterPassword')}
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (setupError) setSetupError(null);
+                      }}
+                      placeholder="••••••••"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      {t2fa('enterVerificationCode')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={setupCode}
+                      onChange={(e) => {
+                        setSetupCode(e.target.value);
+                        if (setupError) setSetupError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && password && setupCode.length >= 6 && !submitting) {
+                          handleConfirmRegenerateBackupCodes();
+                        }
+                      }}
+                      placeholder="123456"
+                    />
+                  </div>
+                  {setupError && (
+                    <p className="text-xs text-[var(--danger,#ef4444)] font-medium">
+                      {setupError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSetupStep(0);
+                        setPassword('');
+                        setSetupCode('');
+                        setSetupError(null);
+                      }}
+                    >
+                      {t('cancel')}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleConfirmRegenerateBackupCodes}
+                      disabled={!password || setupCode.length < 6 || submitting}
+                    >
+                      {submitting ? '...' : t2fa('regenerate')}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

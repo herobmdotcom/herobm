@@ -213,6 +213,16 @@ describe('TwoFactorService', () => {
       expect(await service.isEnabled(TEST_USER_ID)).toBe(false);
     });
 
+    it('should reject disable with invalid password', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      const freshCode = await generateValidCode(secret);
+      await expect(
+        service.disable(TEST_USER_ID, 'WrongPassword!', freshCode, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should reject disable with invalid 6-digit TOTP code (ADV-168)', async () => {
       const secret = generateSecret();
       await enable2FaForUser(service, secret);
@@ -237,6 +247,21 @@ describe('TwoFactorService', () => {
       );
 
       expect(result.backupCodes).toHaveLength(8);
+    });
+
+    it('should reject regeneration with invalid password', async () => {
+      const secret = generateSecret();
+      await enable2FaForUser(service, secret);
+
+      const freshCode = await generateValidCode(secret);
+      await expect(
+        service.regenerateBackupCodes(
+          TEST_USER_ID,
+          'WrongPassword!',
+          freshCode,
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject regeneration with invalid 6-digit TOTP code (ADV-168)', async () => {

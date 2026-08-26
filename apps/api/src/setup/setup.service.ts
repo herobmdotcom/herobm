@@ -29,7 +29,6 @@ import type { Response } from 'express';
 import { AppConfigService } from '../settings/app-config.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawn } from 'child_process';
 import { eq, getTableColumns, isNotNull, and, lt } from 'drizzle-orm';
 import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
@@ -198,8 +197,8 @@ export class SetupService {
           ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
         },
         body: JSON.stringify({
-          command: 'python',
-          args: ['pipelines/abm_extract/preview.py'],
+          source: 'abm',
+          stage: 'preview',
           env: envOverride,
         }),
       });
@@ -276,8 +275,8 @@ export class SetupService {
           ...(secret ? { 'X-Pipeline-Secret': secret } : {}),
         },
         body: JSON.stringify({
-          command: 'python',
-          args: ['pipelines/odoo_extract/preview.py'],
+          source: 'odoo',
+          stage: 'preview',
           env: envOverride,
         }),
       });
@@ -1085,15 +1084,10 @@ export class SetupService {
       envOverride['SOURCE_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
 
       if (!dto.skipExtraction) {
-        const venvPython = process.env.VENV_PYTHON || 'python';
-        this.log(
-          jobId,
-          `Running ${source.toUpperCase()} Extraction (bypassing make to preserve passwords)...`,
-        );
+        this.log(jobId, `Running ${source.toUpperCase()} Extraction...`);
         await this.runCommandStream(
           jobId,
-          venvPython,
-          [`pipelines/${source}_extract/pipeline.py`],
+          { source, stage: 'extract' },
           envOverride,
         );
       } else {
@@ -1102,11 +1096,12 @@ export class SetupService {
 
       this.log(jobId, 'Running Transformations & Report...');
 
-      const extraDbtVars = jobId ? `EXTRA_DBT_VARS={"job_id": "${jobId}"}` : '';
-      const makeArgs = ['elt-no-extract', `SOURCE=${source}`];
-      if (extraDbtVars) makeArgs.push(extraDbtVars);
-
-      await this.runCommandStream(jobId, 'make', makeArgs, envOverride);
+      const extraDbtVars = jobId ? `{"job_id": "${jobId}"}` : undefined;
+      await this.runCommandStream(
+        jobId,
+        { source, stage: 'transform', extraDbtVars },
+        envOverride,
+      );
 
       if (dto.defaultLocationCode) {
         const [loc] = await this.db
@@ -1287,19 +1282,11 @@ export class SetupService {
     }
   }
 
-  private getWorkspaceRoot(): string {
-    let currentDir = __dirname;
-    while (currentDir !== path.parse(currentDir).root) {
-      if (fs.existsSync(path.join(currentDir, 'Makefile'))) return currentDir;
-      currentDir = path.dirname(currentDir);
-    }
-    return process.cwd();
-  }
-
   private runCommandStream(
     jobId: string | undefined,
-    cmd: string,
-    args: string[],
+    requestPayload:
+      | { source: string; stage: string; extraDbtVars?: string }
+      | { command: string; args: string[] },
     envOverride?: Record<string, string>,
   ): Promise<void> {
     if (!jobId) {
@@ -1309,8 +1296,12 @@ export class SetupService {
     return new Promise((resolve, reject) => {
       this.jobResolvers[jobId] = { resolve, reject };
 
+      const desc =
+        'source' in requestPayload
+          ? `${requestPayload.source}:${requestPayload.stage}`
+          : requestPayload.command;
       console.log(
-        `[Job ${jobId}] Sending POST to pipeline-runner/run with command ${cmd}...`,
+        `[Job ${jobId}] Sending POST to pipeline-runner/run for ${desc}...`,
       );
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
@@ -1342,8 +1333,7 @@ export class SetupService {
         },
         body: JSON.stringify({
           jobId,
-          command: cmd,
-          args: args,
+          ...requestPayload,
           env: envToPass,
         }),
       })

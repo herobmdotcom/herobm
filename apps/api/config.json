@@ -257,7 +257,6 @@
         "./src/scripts/env-loader.ts",
         "./src/scripts/export-openapi.ts",
         "./src/scripts/fix-countries-currencies.ts",
-        "./src/scripts/generate-dial-codes.ts",
         "./src/scripts/generate-openapi.ts",
         "./src/scripts/run-migrations.ts",
         "./src/scripts/sync-migration-names.ts",

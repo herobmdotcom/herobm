@@ -2,7 +2,6 @@ import {
   Injectable,
   Inject,
   BadRequestException,
-  UnauthorizedException,
   NotFoundException,
   Logger,
 } from '@nestjs/common';
@@ -207,7 +206,7 @@ export class TwoFactorService {
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new BadRequestException('Invalid password');
     }
 
     // Verify TOTP code
@@ -255,7 +254,7 @@ export class TwoFactorService {
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new BadRequestException('Invalid password');
     }
 
     // Verify TOTP code

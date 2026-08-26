@@ -277,30 +277,52 @@ init-db:
 init-env:
 	$(INIT_ENV_CMD) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
 
+PIPELINES_EXIST := $(if $(wildcard pipelines/*),1,0)
+INFRA_EXIST := $(if $(wildcard infra/tests/*),1,0)
+
 # --- ELT Pipeline ---
 
 extract:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract SOURCE=<source>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py
+endif
 
 extract-dry:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-dry SOURCE=<source>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --dry-run
+endif
 
 # Extract a single table: make extract-table SOURCE=<source> TABLE=<name>
 extract-table:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-table SOURCE=<source> TABLE=<name>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
+endif
 
 # Extract and transform a single table: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>
 sync-table:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
 	$(if $(TABLE),,$(error Error: TABLE is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
 	$(if $(MODEL),,$(error Error: MODEL is required. Usage: make sync-table SOURCE=<source> TABLE=<name> MODEL=<name>))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select +$(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform: check-postgres-logs
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=<source>))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -308,42 +330,79 @@ transform: check-postgres-logs
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_order_shipments --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform-seed:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-seed SOURCE=<source>))
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 test-transform:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=<source>))
 	"$(DBT)" test $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform-dry:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-dry SOURCE=<source>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform-select: check-postgres-logs
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform-select-dry:
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select-dry SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --empty --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 transform-refresh: check-postgres-logs
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=<source> MODEL=<name>))
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+endif
 
 elt: check-postgres-logs extract transform import-legacy
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+endif
 
 elt-no-extract: check-postgres-logs transform import-legacy
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+endif
 
 elt-report: check-postgres-logs
+ifeq ($(PIPELINES_EXIST),0)
+	@echo "Pipeline targets require the herobm-ext repository. See documentation."
+else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-report SOURCE=<source>))
 	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+endif
 
 report: elt-report
 
@@ -700,11 +759,15 @@ test-changed:
 	@$(NPM) run test:changed -w apps/ops-portal --if-present
 
 test-structural:
+ifeq ($(INFRA_EXIST),0)
+	@echo "Structural tests require the herobm-pro repository. See documentation."
+else
 	@$(MAKE) build-shared
 	@$(MAKE) build-db-schema
 	@"$(PYTHON_CMD)" infra/tests/test_docker_env_alignment.py
 	@$(NPX) tsx infra/test-utils/run-structural.ts
 	@$(NPX) knip
+endif
 
 query-drizzle:
 	cd apps/api && $(NPX) tsx tools/query_drizzle.ts ../tmp/test_query.ts

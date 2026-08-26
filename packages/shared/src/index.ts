@@ -188,3 +188,4 @@ export * from './user-preferences';
 export * from './orders';
 export * from './telemetry';
 export * from './contacts';
+export * from './event-types';
