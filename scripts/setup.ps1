@@ -132,12 +132,40 @@ else {
 Write-Host "`n--- Podman Machine ---" -ForegroundColor Cyan
 $podmanCmd = Get-Command podman -ErrorAction SilentlyContinue
 if ($podmanCmd) {
+    # Windows/WSL2: prevent WSL from killing the Podman VM on idle.
+    # By default, WSL2 terminates distro instances after ~8s of inactivity,
+    # which kills sshd and the Podman socket. Setting instanceIdleTimeout=-1
+    # and vmIdleTimeout=-1 keeps both the distro and the VM alive.
+    $wslConfigPath = Join-Path $env:USERPROFILE ".wslconfig"
+    $wslConfigNeeded = $true
+    if (Test-Path $wslConfigPath) {
+        $existing = Get-Content $wslConfigPath -Raw
+        if ($existing -match "instanceIdleTimeout" -and $existing -match "vmIdleTimeout") {
+            $wslConfigNeeded = $false
+        }
+    }
+    if ($wslConfigNeeded) {
+        Write-Host "  Configuring WSL2 idle timeouts (.wslconfig)..." -ForegroundColor Yellow
+        @"
+[general]
+instanceIdleTimeout=-1
+
+[wsl2]
+vmIdleTimeout=-1
+memory=8GB
+"@ | Set-Content -Path $wslConfigPath -Encoding UTF8
+        Write-Host "  [OK] Created $wslConfigPath (WSL restart required)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  [OK] .wslconfig already configured" -ForegroundColor Green
+    }
+
     $machineList = podman machine list --format "{{.Name}}" 2>$null
     if (-not $machineList) {
         Write-Host "  No Podman machine found. Initialising..." -ForegroundColor Yellow
-        podman machine init --now
+        podman machine init
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "  [OK] Podman machine initialised and started" -ForegroundColor Green
+            Write-Host "  [OK] Podman machine initialised" -ForegroundColor Green
         }
         else {
             Write-Host "  [FAILED] Podman machine init failed" -ForegroundColor Red
@@ -145,28 +173,38 @@ if ($podmanCmd) {
     }
     else {
         Write-Host "  [OK] Podman machine exists: $machineList" -ForegroundColor Green
-        Write-Host "  Ensuring Podman machine is running..." -ForegroundColor Yellow
-        try {
-            podman machine start 2>&1 | Out-Null
-        }
-        catch {
-            # Ignore "already running" errors
-        }
     }
 
-    # Configure global k8s-file log driver inside the VM
+    # Windows/WSL2: switch to rootful mode.
+    # In rootless mode, the SSH tunnel between win-sshproxy and the WSL VM
+    # drops whenever systemd-logind tears down the user session, killing the
+    # socket at /run/user/1000/podman/podman.sock. Rootful mode uses the
+    # system socket (/run/podman/podman.sock) which is not subject to session
+    # teardown. This is safe because the WSL2 VM itself provides isolation.
+    Write-Host "  Setting rootful mode (required for stable Windows/WSL2 operation)..." -ForegroundColor Yellow
+    podman machine set --rootful 2>&1 | Out-Null
+
+    Write-Host "  Ensuring Podman machine is running..." -ForegroundColor Yellow
+    try {
+        podman machine start 2>&1 | Out-Null
+    }
+    catch {
+        # Ignore "already running" errors
+    }
+
+    # Configure global k8s-file log driver inside the VM (rootful: root home)
     Write-Host "  Configuring Podman log driver (k8s-file)..." -ForegroundColor Yellow
     try {
-        podman machine ssh 'mkdir -p ~/.config/containers && printf "[containers]\nlog_driver = \"k8s-file\"\n" > ~/.config/containers/containers.conf' 2>&1 | Out-Null
+        podman machine ssh "sudo mkdir -p /root/.config/containers && echo '[containers]' | sudo tee /root/.config/containers/containers.conf > /dev/null && echo 'log_driver = ""k8s-file""' | sudo tee -a /root/.config/containers/containers.conf > /dev/null" 2>&1 | Out-Null
     }
     catch {
         # Ignore errors if already configured or SSH fails sporadically
     }
     
-    # Pre-create the named volume for Promtail log scraping
+    # Pre-create the named volume for Promtail log scraping (rootful storage path)
     Write-Host "  Creating podman_logs shared volume..." -ForegroundColor Yellow
     try {
-        podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
+        podman volume create --opt type=none --opt o=bind --opt device=/var/lib/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
     }
     catch {
         # Ignore errors if volume already exists
