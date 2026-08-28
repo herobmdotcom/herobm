@@ -7,6 +7,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { toast } from 'react-hot-toast';
 import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import EventPayloadSlideOver from './EventPayloadSlideOver';
@@ -78,6 +79,7 @@ export default function EventQueueDashboard() {
       setDrawerEvents((page?.events as OutboxEvent[]) || []);
     } catch (err: unknown) {
       setDrawerEvents([]);
+      toast.error('Failed to load events: ' + getErrorMessage(err));
       reportError(err, 'EventQueueDashboard_handleViewEvents');
     } finally {
       setDrawerLoading(false);
@@ -94,9 +96,12 @@ export default function EventQueueDashboard() {
         setDrawerType(null);
         setDrawerEvents([]);
       }
+      toast.success(t('clearSuccess'));
       await loadData();
     } catch (err: unknown) {
-      setError(err instanceof Error ? getErrorMessage(err) : t('errors.clearFailed'));
+      const msg = getErrorMessage(err) || t('errors.clearFailed');
+      setError(msg);
+      toast.error(msg);
       reportError(err, 'EventQueueDashboard_handleClearEvents');
     } finally {
       setClearing(null);

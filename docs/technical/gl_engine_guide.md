@@ -85,15 +85,40 @@ The system favors hard failure (consistency) over partial success (resilience wi
 ### Outbox Integration
 The system maintains the Outbox pattern. When an invoice succeeds, it emits an integration event. The event type has been updated from `invoice_created` to the more generic `gl_posted` to indicate that a financial transaction has occurred and is ready for downstream synchronization if required.
 
-## Chart of Accounts Auto-Seeding
+## Chart of Accounts Auto-Seeding & Template Formats
 
 To ensure a seamless developer experience and reliable CI/CD pipelines, the GL module implements NestJS's `OnModuleInit` lifecycle hook.
+
+HeroBM natively supports the ERPNext JSON Chart of Accounts format. Predefined regional templates (such as `au_standard.json` and `us_standard.json`) are stored in `apps/api/src/gl/charts/`. Additional country-specific templates can be obtained directly from the official [ERPNext Verified Chart of Accounts](https://github.com/frappe/erpnext/tree/develop/erpnext/accounts/doctype/account/chart_of_accounts/verified) repository and community templates in the [ERPNext Unverified Chart of Accounts](https://github.com/frappe/erpnext/tree/develop/erpnext/accounts/doctype/account/chart_of_accounts/unverified) directory.
 
 Upon API startup:
 1. The `CoaLoaderService` reads the default JSON file (`apps/api/src/gl/charts/au_standard.json`).
 2. It checks if any accounts currently exist in the database.
 3. **If empty:** It recursively parses the JSON, translates ERPNext `root_type` concepts into standard account types, auto-generates missing account codes, and persists the tree to the database. Essential system accounts (Accounts Receivable, Revenue, Tax) are explicitly flagged with `is_system = true` to protect them from deletion.
 4. **If populated:** It silently skips the seeding process to preserve existing data.
+
+## Statement of Cash Flows & Cash Parity Proof Engine
+
+The Statement of Cash Flows engine (`apps/api/src/gl/gl-cash-flow.utils.ts` and `apps/api/src/gl/cash-flow.service.ts`) provides direct method cash flow classification paired with an independent control account parity proof.
+
+### 1. Schema-Native Account Identification
+Cash and bank accounts are identified using the schema flag:
+```sql
+SELECT gl_account_id, account_code, name, account_type, is_bank_account
+FROM herobm_core.gl_accounts
+WHERE is_group = false AND is_bank_account = true
+```
+This guarantees support across all Chart of Accounts formats (Anglo-Saxon 4-digit, French PCG Class 5, German DATEV SKR03/SKR04, and custom alphanumeric codes) without relying on hardcoded prefix heuristics.
+
+### 2. Dual-Verification & Drift Calculation
+The engine independently executes:
+1. **Control Account Proof**: Sums $\sum (\text{debit} - \text{credit})$ across all bank accounts to derive `beginningCash` and `endingCash`, calculating $\Delta \text{Cash}_{\text{expected}} = \text{endingCash} - \text{beginningCash}$.
+2. **Direct Decomposition**: Allocates journal entry lines touching cash accounts across Operating, Investing, and Financing activities.
+3. **Parity Proof Invariant**:
+   $$\text{drift} = (\text{Net Operating} + \text{Net Investing} + \text{Net Financing}) - \Delta \text{Cash}_{\text{expected}}$$
+   If $|\text{drift}| < \$0.05$, the system verifies parity (`isReconciled = true`).
+
+---
 
 ## Authentication & Authorization
 
@@ -109,6 +134,7 @@ All GL endpoints are protected by JWT and Casbin RBAC.
 
 The GL engine requires absolute mathematical perfection. It is tested rigorously:
 
-1.  **Mocked Database Proxy:** Unit tests (`gl.service.spec.ts`) utilize a programmable mock DB wrapped in a JS Proxy to accurately simulate Drizzle ORM's chainable interface without hitting a real Postgres instance.
-2.  **Coverage:** The GL engine maintains near total coverage (> 95% Lines, 100% Functions), with extensive parameterized tests dedicated specifically to breaking the Balance Invariant.
-3.  **Boundary Value Analysis:** Tests specifically probe zero-value entries, tiny floating-point discrepancies, and multiple line-item aggregations.
+1.  **Mocked Database Proxy:** Unit tests (`gl.service.spec.ts`, `gl-cash-flow.utils.spec.ts`) utilize programmable mock databases to accurately simulate Drizzle ORM queries without hitting real Postgres.
+2.  **Coverage:** The GL engine maintains near total coverage (> 95% Lines, 100% Functions), with extensive parameterized tests dedicated specifically to breaking the Balance Invariant and verifying zero drift across randomized transaction sequences.
+3.  **Boundary Value Analysis:** Tests specifically probe zero-value entries, compound split payments, inter-bank transfers, and international Chart of Accounts structures (PCG, SKR04, Alphanumeric).
+

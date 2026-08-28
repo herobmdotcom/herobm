@@ -23,7 +23,7 @@ import {
   actors,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 describe('GlService', () => {
@@ -790,6 +790,43 @@ describe('GlService', () => {
       );
       expect(cnEntry?.sourceNumber).toBe('CN-20260815-0001');
       expect(cnEntry?.partyName).toBe('Test Party');
+    });
+
+    it('sanitizes legacy [object Object] createdBy and properly stores string actor', async () => {
+      // Post with object actor
+      const posted = await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 50, credit: 0 },
+          { accountCode: '2000', debit: 0, credit: 50 },
+        ],
+        {
+          sourceType: 'manual',
+          memo: 'Actor Object Test',
+          actor: { username: 'testuser', userId: 'user-1' } as any,
+        },
+      );
+
+      expect(posted.createdBy).toBe('testuser');
+
+      // Query entry
+      const detail = await service.getJournalEntry(posted.journalEntryId);
+      expect(detail.createdBy).toBe('testuser');
+
+      // Test raw [object Object] in DB
+      await pg.db.execute(
+        sql`UPDATE herobm_core.gl_journal_entries SET created_by = '[object Object]' WHERE journal_entry_id = ${posted.journalEntryId}::uuid`,
+      );
+
+      const sanitizedDetail = await service.getJournalEntry(
+        posted.journalEntryId,
+      );
+      expect(sanitizedDetail.createdBy).toBe('admin');
+
+      const listResult = await service.getJournalEntries({});
+      const item = listResult.data.find(
+        (e) => e.journalEntryId === posted.journalEntryId,
+      );
+      expect(item?.createdBy).toBe('admin');
     });
   });
 

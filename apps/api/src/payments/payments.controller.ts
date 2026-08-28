@@ -112,12 +112,16 @@ export class PaymentsController {
   @ApiCreatedResponse({ type: GeneratePaymentRunResponseDto })
   async generatePaymentRun(
     @Body() dto: GeneratePaymentRunDto,
-    @AuthUser('userId') userId: string,
+    @AuthUser() user?: JwtUser,
   ) {
+    const actor =
+      user?.username ||
+      user?.userId ||
+      (typeof user === 'string' ? user : 'system');
     return await this.paymentRunGeneratorService.generatePaymentRun(
       dto.targetDate,
       dto.glAccountBank,
-      userId,
+      actor,
       dto.invoiceIds,
     );
   }

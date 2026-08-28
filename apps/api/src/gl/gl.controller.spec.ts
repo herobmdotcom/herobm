@@ -7,6 +7,9 @@ import { CashFlowService } from './cash-flow.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@herobm/shared';
 import { JwtUser } from '../auth/auth-user.decorator';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CreateJournalEntryDto } from './dto';
 
 /**
  * Unit tests for the GL Controller.
@@ -91,6 +94,13 @@ describe('GlController', () => {
                 drift: 0,
                 isReconciled: true,
               },
+            }),
+            getCashFlowDrilldown: jest.fn().mockResolvedValue({
+              lineId: 'op-customers',
+              lineName: 'Cash Receipts from Customers',
+              category: 'operating',
+              totalAmount: 1000,
+              transactions: [],
             }),
           },
         },
@@ -275,7 +285,7 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
-        'admin',
+        { username: 'admin', userId: 'user-1' } as JwtUser,
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
@@ -287,7 +297,7 @@ describe('GlController', () => {
       });
     });
 
-    it('should set sourceType to manual regardless of what body contains', async () => {
+    it('should set sourceType to manual and actor to system if no user provided', async () => {
       const body = {
         journalEntryId: 'je-uuid-2',
         lines: [
@@ -300,15 +310,42 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
-        undefined as any,
+        undefined,
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
         sourceType: 'manual',
         memo: undefined,
         entryDate: undefined,
-        actor: undefined,
+        actor: 'system',
         journalEntryId: 'je-uuid-2',
+      });
+    });
+
+    it('should forward custom user-selectable sourceType (opening_balance, adjustment, payroll, tax_settlement)', async () => {
+      const body = {
+        journalEntryId: 'je-uuid-3',
+        sourceType: 'opening_balance',
+        lines: [
+          { accountCode: '1100', debit: 50000, credit: 0 },
+          { accountCode: '3999', debit: 0, credit: 50000 },
+        ],
+        memo: 'Opening Take-On',
+      };
+
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+        { username: 'cfo', userId: 'user-2' } as JwtUser,
+      );
+
+      expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
+        sourceType: 'opening_balance',
+        memo: 'Opening Take-On',
+        entryDate: undefined,
+        actor: 'cfo',
+        journalEntryId: 'je-uuid-3',
       });
     });
   });
@@ -378,6 +415,18 @@ describe('GlController', () => {
     });
   });
 
+  describe('GET /gl/cash-flow/drilldown', () => {
+    it('should delegate to cashFlowService with lineId and dates', async () => {
+      const res = await controller.getCashFlowDrilldown(
+        'op-customers',
+        '2026-08-01',
+        '2026-08-31',
+      );
+      expect(res).toBeDefined();
+      expect(res.lineId).toBe('op-customers');
+    });
+  });
+
   // =========================================================================
   // Settings & Seed
   // =========================================================================
@@ -422,6 +471,53 @@ describe('GlController', () => {
         {} as unknown as Parameters<typeof controller.seedChartOfAccounts>[0],
       );
       expect(result).toEqual({ created: 30, skipped: false });
+    });
+  });
+
+  describe('CreateJournalEntryDto validation', () => {
+    it('should pass validation with valid user-selectable sourceTypes', async () => {
+      const validTypes = [
+        'manual',
+        'opening_balance',
+        'adjustment',
+        'payroll',
+        'tax_settlement',
+      ];
+      for (const type of validTypes) {
+        const dto = plainToInstance(CreateJournalEntryDto, {
+          lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+          sourceType: type,
+        });
+        const errors = await validate(dto);
+        const sourceErrors = errors.filter(
+          (e: any) => e.property === 'sourceType',
+        );
+        expect(sourceErrors).toHaveLength(0);
+      }
+    });
+
+    it('should pass validation when sourceType is omitted (optional field)', async () => {
+      const dto = plainToInstance(CreateJournalEntryDto, {
+        lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+      });
+      const errors = await validate(dto);
+      const sourceErrors = errors.filter(
+        (e: any) => e.property === 'sourceType',
+      );
+      expect(sourceErrors).toHaveLength(0);
+    });
+
+    it('should fail validation when an invalid sourceType is supplied', async () => {
+      const dto = plainToInstance(CreateJournalEntryDto, {
+        lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+        sourceType: 'sales_invoice', // System-automated type, not user-creatable
+      });
+      const errors = await validate(dto);
+      const sourceErrors = errors.filter(
+        (e: any) => e.property === 'sourceType',
+      );
+      expect(sourceErrors.length).toBeGreaterThan(0);
+      expect(sourceErrors[0].constraints?.isIn).toBeDefined();
     });
   });
 });

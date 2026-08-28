@@ -298,6 +298,19 @@ export class ImportSummaryDto {
   orders: number;
 }
 
+export interface ActiveJob {
+  status: string;
+  type: string;
+  progress: { step: number; name: string; status: string }[];
+  logs: string[];
+  lastActivityAt: number;
+}
+
+export interface MetadataSchema {
+  type?: string;
+  properties?: Record<string, unknown>;
+}
+
 export class ActiveJobDto {
   @ApiProperty({ required: false, nullable: true })
   jobId: string | null;

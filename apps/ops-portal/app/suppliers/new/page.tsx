@@ -63,9 +63,9 @@ export default function NewSupplierPage() {
   const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   useEffect(() => {
-    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
-    api.supplierGroupsControllerFindAll().then((res: unknown) => setSupplierGroups((res as { data: unknown[] }).data as unknown as api.SupplierGroupResponseDto[])).catch(console.error);
-    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
+    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
+    api.supplierGroupsControllerFindAll().then((res: unknown) => setSupplierGroups((res as { data: unknown[] }).data as unknown as api.SupplierGroupResponseDto[])).catch((err) => toast.error('Failed to load supplier groups: ' + getErrorMessage(err)));
+    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
   }, []);
   const selectedGroup = useGroup(supplierGroups, dto.supplierGroupId);
 

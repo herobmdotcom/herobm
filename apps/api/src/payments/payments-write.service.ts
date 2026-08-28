@@ -31,7 +31,7 @@ import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-li
 import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
 import { CreatePaymentDto } from './dto';
 import { JournalLineDto } from '../gl/dto';
-import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';
+import { PAYMENT_STATE, PAYMENT_TYPE, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { PaymentsCoreService } from './payments-core.service';
 import { PaymentsPostingService } from './payments-posting.service';
 
@@ -422,7 +422,7 @@ export class PaymentsWriteService {
         reversalLines,
         {
           sourceId: payment.paymentId,
-          sourceType: 'payment_entry',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PAYMENT_ENTRY,
           memo: `Cancellation of ${payment.paymentNumber}`,
           entryDate: new Date().toISOString().slice(0, 10),
           actor,

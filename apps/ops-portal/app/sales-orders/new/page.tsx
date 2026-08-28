@@ -24,12 +24,13 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
-import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount, getTaxLabel, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
+import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount, getTaxLabel, CUSTOM_LINE_ID, LineType, getErrorMessage } from '@herobm/shared';
 import type { DiscountRule } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useSettings } from '@/components/SettingsProvider';
@@ -283,6 +284,7 @@ export default function NewOrderPage() {
       rules = res.data as unknown as DiscountRule[];
       setDiscountRules(rules);
     } catch (err) {
+      toast.error('Failed to load customer discount matrix: ' + getErrorMessage(err));
       reportError(err, 'NewOrderPage_Rules');
     }
 

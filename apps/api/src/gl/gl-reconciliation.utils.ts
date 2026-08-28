@@ -1,6 +1,6 @@
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { glSettings, glAccounts } from '@herobm/db-schema';
-import { sql, eq, or } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 
 /**
  * Performs an automated continuous reconciliation between double-entry GL control accounts
@@ -20,59 +20,42 @@ export async function calculateSubledgerReconciliation(
     .from(glSettings)
     .limit(1);
 
-  const dummyUuid = '00000000-0000-0000-0000-000000000000';
-  const arId = settings?.defaultArAccountId || dummyUuid;
-  const apId = settings?.defaultApAccountId || dummyUuid;
-  const grniId = settings?.defaultGrniAccountId || dummyUuid;
-  const invId = settings?.defaultInventoryAccountId || dummyUuid;
+  const arId = settings?.defaultArAccountId;
+  const apId = settings?.defaultApAccountId;
+  const grniId = settings?.defaultGrniAccountId;
+  const invId = settings?.defaultInventoryAccountId;
 
-  const [arAcct] = await db
-    .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
-    .from(glAccounts)
-    .where(
-      or(
-        eq(glAccounts.glAccountId, arId),
-        eq(glAccounts.accountCode, '1200'),
-        eq(glAccounts.accountCode, '0510'),
-      ),
-    )
-    .limit(1);
+  const [arAcct] = arId
+    ? await db
+        .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, arId))
+        .limit(1)
+    : [];
 
-  const [apAcct] = await db
-    .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
-    .from(glAccounts)
-    .where(
-      or(
-        eq(glAccounts.glAccountId, apId),
-        eq(glAccounts.accountCode, '2000'),
-        eq(glAccounts.accountCode, '0600'),
-      ),
-    )
-    .limit(1);
+  const [apAcct] = apId
+    ? await db
+        .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, apId))
+        .limit(1)
+    : [];
 
-  const [grniAcct] = await db
-    .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
-    .from(glAccounts)
-    .where(
-      or(
-        eq(glAccounts.glAccountId, grniId),
-        eq(glAccounts.accountCode, '2150'),
-        eq(glAccounts.accountCode, '0535'),
-      ),
-    )
-    .limit(1);
+  const [grniAcct] = grniId
+    ? await db
+        .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, grniId))
+        .limit(1)
+    : [];
 
-  const [invAcct] = await db
-    .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
-    .from(glAccounts)
-    .where(
-      or(
-        eq(glAccounts.glAccountId, invId),
-        eq(glAccounts.accountCode, '1300'),
-        eq(glAccounts.accountCode, '0530'),
-      ),
-    )
-    .limit(1);
+  const [invAcct] = invId
+    ? await db
+        .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, invId))
+        .limit(1)
+    : [];
 
   const execScalar = async (
     query: import('drizzle-orm').SQL,
@@ -104,11 +87,13 @@ export async function calculateSubledgerReconciliation(
           - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.sales_credit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
           - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'customer_receipt' AND state_code NOT IN ('draft', 'cancelled')))::numeric
   `);
-  const arGl = await execScalar(sql`
-    SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric FROM herobm_core.gl_journal_lines jl
-    JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
-    WHERE a.account_code = ${arAcct?.accountCode || '1200'} OR a.gl_account_id = ${arId}
-  `);
+  const arGl = arId
+    ? await execScalar(sql`
+        SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric
+        FROM herobm_core.gl_journal_lines jl
+        WHERE jl.gl_account_id = ${arId}::uuid
+      `)
+    : 0;
   const arDrift = Math.round((arSubledger - arGl) * 100) / 100;
   const isArMatched = Math.abs(arDrift) < 0.005;
 
@@ -118,11 +103,13 @@ export async function calculateSubledgerReconciliation(
           - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.purchase_debit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
           - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'supplier_payment' AND state_code NOT IN ('draft', 'cancelled')))::numeric
   `);
-  const apGl = await execScalar(sql`
-    SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric FROM herobm_core.gl_journal_lines jl
-    JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
-    WHERE a.account_code = ${apAcct?.accountCode || '2000'} OR a.gl_account_id = ${apId}
-  `);
+  const apGl = apId
+    ? await execScalar(sql`
+        SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric
+        FROM herobm_core.gl_journal_lines jl
+        WHERE jl.gl_account_id = ${apId}::uuid
+      `)
+    : 0;
   const apDrift = Math.round((apSubledger - apGl) * 100) / 100;
   const isApMatched = Math.abs(apDrift) < 0.005;
 
@@ -134,11 +121,13 @@ export async function calculateSubledgerReconciliation(
     JOIN herobm_core.products p ON p.product_id = grl.product_id
     WHERE gr.state_code = 'received'
   `);
-  const grniGl = await execScalar(sql`
-    SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric FROM herobm_core.gl_journal_lines jl
-    JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
-    WHERE a.account_code = ${grniAcct?.accountCode || '2150'} OR a.gl_account_id = ${grniId}
-  `);
+  const grniGl = grniId
+    ? await execScalar(sql`
+        SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric
+        FROM herobm_core.gl_journal_lines jl
+        WHERE jl.gl_account_id = ${grniId}::uuid
+      `)
+    : 0;
   const grniDrift = Math.round((grniSubledger - grniGl) * 100) / 100;
   const isGrniMatched = Math.abs(grniDrift) < 0.005;
 
@@ -148,11 +137,13 @@ export async function calculateSubledgerReconciliation(
     FROM herobm_core.bin_contents bc
     JOIN herobm_core.products p ON p.product_id = bc.product_id
   `);
-  const invGl = await execScalar(sql`
-    SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric FROM herobm_core.gl_journal_lines jl
-    JOIN herobm_core.gl_accounts a ON a.gl_account_id = jl.gl_account_id
-    WHERE a.account_code = ${invAcct?.accountCode || '1300'} OR a.gl_account_id = ${invId}
-  `);
+  const invGl = invId
+    ? await execScalar(sql`
+        SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric
+        FROM herobm_core.gl_journal_lines jl
+        WHERE jl.gl_account_id = ${invId}::uuid
+      `)
+    : 0;
   const invDrift = Math.round((invSubledger - invGl) * 100) / 100;
   const isInvMatched = Math.abs(invDrift) < 0.005;
 
@@ -169,32 +160,32 @@ export async function calculateSubledgerReconciliation(
       isBalanced: isTbZeroSum,
     },
     accountsReceivable: {
-      controlAccountCode: arAcct?.accountCode || '1200',
-      controlAccountName: arAcct?.name || 'Accounts Receivable',
+      controlAccountCode: arAcct?.accountCode || '',
+      controlAccountName: arAcct?.name || 'Accounts Receivable (Unconfigured)',
       subledgerBalance: arSubledger,
       glBalance: arGl,
       drift: arDrift,
       isMatched: isArMatched,
     },
     accountsPayable: {
-      controlAccountCode: apAcct?.accountCode || '2000',
-      controlAccountName: apAcct?.name || 'Accounts Payable',
+      controlAccountCode: apAcct?.accountCode || '',
+      controlAccountName: apAcct?.name || 'Accounts Payable (Unconfigured)',
       subledgerBalance: apSubledger,
       glBalance: apGl,
       drift: apDrift,
       isMatched: isApMatched,
     },
     goodsReceivedNotInvoiced: {
-      controlAccountCode: grniAcct?.accountCode || '2150',
-      controlAccountName: grniAcct?.name || 'GRNI Clearing',
+      controlAccountCode: grniAcct?.accountCode || '',
+      controlAccountName: grniAcct?.name || 'GRNI Clearing (Unconfigured)',
       subledgerBalance: grniSubledger,
       glBalance: grniGl,
       drift: grniDrift,
       isMatched: isGrniMatched,
     },
     perpetualInventory: {
-      controlAccountCode: invAcct?.accountCode || '1300',
-      controlAccountName: invAcct?.name || 'Inventory on Hand',
+      controlAccountCode: invAcct?.accountCode || '',
+      controlAccountName: invAcct?.name || 'Inventory on Hand (Unconfigured)',
       subledgerBalance: invSubledger,
       glBalance: invGl,
       drift: invDrift,

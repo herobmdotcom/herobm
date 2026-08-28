@@ -21,6 +21,7 @@ import {
 } from './dto/bank-feeds.dto';
 import { parse } from 'csv-parse/sync';
 import { GlService } from './gl.service';
+import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -575,7 +576,7 @@ export class BankFeedsService {
             ];
 
             const meta = {
-              sourceType: 'manual' as const, // Uses 'manual' because 'auto_rule' isn't in schema, but memo flags it
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
               memo: `Auto-reconciled: ${desc}`,
               entryDate: dateIso,
               actor: 'system',

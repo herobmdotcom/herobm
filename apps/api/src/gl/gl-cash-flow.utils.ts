@@ -9,6 +9,7 @@
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 import { roundCurrency } from './gl-financial-statements.utils';
+import { TAKE_ON_JOURNAL_SOURCE_TYPES } from '@herobm/shared';
 
 export interface CashFlowLineItem {
   id: string;
@@ -56,6 +57,284 @@ export interface CalculateCashFlowOptions {
   periodNumber?: number;
   comparativeStartDate?: string;
   comparativeEndDate?: string;
+  glSettings?: {
+    defaultArAccountId?: string | null;
+    defaultApAccountId?: string | null;
+    defaultRevenueAccountId?: string | null;
+    defaultCogsAccountId?: string | null;
+    defaultSalesTaxAccountId?: string | null;
+    defaultPurchaseTaxAccountId?: string | null;
+    defaultInventoryAccountId?: string | null;
+    defaultExpenseAccountId?: string | null;
+  };
+}
+
+export interface CashFlowCounterpartClassification {
+  lineId: string;
+  lineName: string;
+  category: 'operating' | 'investing' | 'financing';
+}
+
+export interface CashFlowDrilldownTransaction {
+  journalEntryId: string;
+  entryNumber: string;
+  entryDate: string;
+  sourceType: string;
+  memo: string;
+  partyType?: string;
+  partyName?: string;
+  accountCode: string;
+  accountName: string;
+  allocatedCash: number;
+}
+
+export interface CashFlowDrilldownStatementResult {
+  lineId: string;
+  lineName: string;
+  category: 'operating' | 'investing' | 'financing';
+  totalAmount: number;
+  transactions: CashFlowDrilldownTransaction[];
+}
+
+export function classifyCashFlowCounterpart(
+  nl: {
+    acc: {
+      glAccountId: string;
+      accountCode?: string | null;
+      name?: string | null;
+      accountType?: string | null;
+    };
+    partyType?: string | null;
+  },
+  allocatedCash: number,
+  entrySourceType: string,
+  glSettings?: CalculateCashFlowOptions['glSettings'],
+): CashFlowCounterpartClassification {
+  const type = (nl.acc.accountType || '').toLowerCase();
+  const rawName = (nl.acc.name || '').toLowerCase();
+  // Remove diacritics / accents for universal language matching (e.g. matériel -> materiel)
+  const name = rawName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const party = (nl.partyType || '').toLowerCase();
+  const source = entrySourceType.toLowerCase();
+
+  // Control account mappings (if provided in options)
+  const isArAccount = glSettings?.defaultArAccountId === nl.acc.glAccountId;
+  const isApAccount = glSettings?.defaultApAccountId === nl.acc.glAccountId;
+  const isTaxAccount =
+    glSettings?.defaultSalesTaxAccountId === nl.acc.glAccountId ||
+    glSettings?.defaultPurchaseTaxAccountId === nl.acc.glAccountId;
+  const isRevenueAccount =
+    glSettings?.defaultRevenueAccountId === nl.acc.glAccountId;
+  const isCogsOrInvAccount =
+    glSettings?.defaultCogsAccountId === nl.acc.glAccountId ||
+    glSettings?.defaultInventoryAccountId === nl.acc.glAccountId;
+
+  // 1. Operating Activities: Customer & Sales Receipts
+  if (
+    isArAccount ||
+    isRevenueAccount ||
+    party === 'customer' ||
+    source === 'sales_invoice' ||
+    source === 'customer_receipt' ||
+    source === 'receipt' ||
+    (source === 'payment_entry' &&
+      (allocatedCash > 0 || party === 'customer')) ||
+    type === 'receivable' ||
+    type === 'revenue' ||
+    type === 'income' ||
+    name.includes('customer') ||
+    name.includes('client') ||
+    name.includes('receivable') ||
+    name.includes('forder') ||
+    name.includes('creance') ||
+    name.includes('sales') ||
+    name.includes('erlos') ||
+    name.includes('vente')
+  ) {
+    return {
+      lineId: 'op-customers',
+      lineName: 'Cash Receipts from Customers & Sales',
+      category: 'operating',
+    };
+  }
+
+  // 2. Operating Activities: Tax & GST Payments
+  if (
+    isTaxAccount ||
+    type === 'tax' ||
+    name.includes('tax') ||
+    name.includes('gst') ||
+    name.includes('vat') ||
+    name.includes('steuer') ||
+    name.includes('tva') ||
+    name.includes('clearing')
+  ) {
+    return {
+      lineId: 'op-tax',
+      lineName: 'Income Tax & GST Payments (Net)',
+      category: 'operating',
+    };
+  }
+
+  // 3. Operating Activities: Employee Wages & Payroll
+  if (
+    name.includes('wage') ||
+    name.includes('payroll') ||
+    name.includes('salary') ||
+    name.includes('gehalt') ||
+    name.includes('lohn') ||
+    name.includes('salaire') ||
+    name.includes('superannuation') ||
+    name.includes('pension')
+  ) {
+    return {
+      lineId: 'op-employees',
+      lineName: 'Cash Paid to Employees & Payroll',
+      category: 'operating',
+    };
+  }
+
+  // 4. Operating Activities: Interest & Finance Costs
+  if (
+    name.includes('interest') ||
+    name.includes('zins') ||
+    name.includes('interet') ||
+    name.includes('finance charge') ||
+    name.includes('bank fee')
+  ) {
+    return {
+      lineId: 'op-interest',
+      lineName: 'Interest & Finance Charges Paid',
+      category: 'operating',
+    };
+  }
+
+  // 5. Operating Activities: Supplier & Inventory Payments
+  if (
+    isApAccount ||
+    isCogsOrInvAccount ||
+    party === 'supplier' ||
+    party === 'vendor' ||
+    source === 'purchase_invoice' ||
+    source === 'supplier_payment' ||
+    type === 'payable' ||
+    type === 'stock' ||
+    type === 'cogs' ||
+    type === 'expense' ||
+    name.includes('supplier') ||
+    name.includes('vendor') ||
+    name.includes('fournisseur') ||
+    name.includes('verbindlich') ||
+    name.includes('payable') ||
+    name.includes('inventory') ||
+    name.includes('stock') ||
+    name.includes('wareneingang') ||
+    name.includes('cogs') ||
+    name.includes('material') ||
+    name.includes('direct cost')
+  ) {
+    return {
+      lineId: 'op-suppliers',
+      lineName: 'Cash Paid to Suppliers & Inventory',
+      category: 'operating',
+    };
+  }
+
+  // 6. Investing Activities: Capex & Fixed Asset Movements
+  if (
+    type.includes('depreciation') ||
+    (type === 'asset' &&
+      !isArAccount &&
+      !isCogsOrInvAccount &&
+      !name.includes('receivable') &&
+      !name.includes('inventory') &&
+      !name.includes('prepaid') &&
+      !name.includes('deposit')) ||
+    name.includes('machinery') ||
+    name.includes('equipment') ||
+    name.includes('property') ||
+    name.includes('plant') ||
+    name.includes('sachanlage') ||
+    name.includes('materiel') ||
+    name.includes('immobilis') ||
+    name.includes('vehicle') ||
+    name.includes('capex')
+  ) {
+    if (allocatedCash < 0) {
+      return {
+        lineId: 'inv-capex',
+        lineName: 'Purchase of Property, Plant & Equipment (Capex)',
+        category: 'investing',
+      };
+    }
+    return {
+      lineId: 'inv-disposals',
+      lineName: 'Proceeds from Sale of Fixed Assets',
+      category: 'investing',
+    };
+  }
+
+  // 7. Financing Activities: Loans & Borrowings
+  if (
+    (type === 'liability' &&
+      !isApAccount &&
+      !isTaxAccount &&
+      !name.includes('payable') &&
+      !name.includes('tax') &&
+      !name.includes('gst') &&
+      !name.includes('accru')) ||
+    name.includes('loan') ||
+    name.includes('borrowing') ||
+    name.includes('darlehen') ||
+    name.includes('kredit') ||
+    name.includes('emprunt') ||
+    name.includes('debt') ||
+    name.includes('facility')
+  ) {
+    if (allocatedCash > 0) {
+      return {
+        lineId: 'fin-loans',
+        lineName: 'Proceeds from Borrowings & Bank Facilities',
+        category: 'financing',
+      };
+    }
+    return {
+      lineId: 'fin-repayments',
+      lineName: 'Repayment of Borrowings & Leases',
+      category: 'financing',
+    };
+  }
+
+  // 8. Financing Activities: Equity & Distributions
+  if (
+    type === 'equity' ||
+    name.includes('capital') ||
+    name.includes('equity') ||
+    name.includes('drawing') ||
+    name.includes('dividend') ||
+    name.includes('stammkapital') ||
+    name.includes('eigenkapital')
+  ) {
+    if (allocatedCash > 0) {
+      return {
+        lineId: 'fin-equity',
+        lineName: 'Proceeds from Issuance of Share Capital',
+        category: 'financing',
+      };
+    }
+    return {
+      lineId: 'fin-dividends',
+      lineName: 'Dividends & Capital Distributions Paid',
+      category: 'financing',
+    };
+  }
+
+  // 9. Default: Other Operating Cash
+  return {
+    lineId: 'op-other',
+    lineName: 'Other Operating Cash Movements',
+    category: 'operating',
+  };
 }
 
 /**
@@ -74,7 +353,8 @@ export async function calculateCashFlowStatement(
       account_code AS "accountCode",
       name,
       account_type AS "accountType",
-      is_group AS "isGroup"
+      is_group AS "isGroup",
+      is_bank_account AS "isBankAccount"
     FROM herobm_core.gl_accounts
     WHERE is_group = false
     ORDER BY account_code ASC
@@ -85,6 +365,7 @@ export async function calculateCashFlowStatement(
     name: string;
     accountType: string;
     isGroup: boolean;
+    isBankAccount?: boolean;
   }>;
 
   const accountsList = Array.isArray(rawAccounts)
@@ -97,15 +378,11 @@ export async function calculateCashFlowStatement(
   for (const acc of accountsList) {
     accountMap.set(acc.glAccountId, acc);
     const typeLower = (acc.accountType || '').toLowerCase();
-    const code = acc.accountCode || '';
 
     if (
+      acc.isBankAccount === true ||
       typeLower === 'cash' ||
-      typeLower === 'bank' ||
-      code.startsWith('101') ||
-      code.startsWith('102') ||
-      code.startsWith('100') ||
-      (code >= '1000' && code <= '1099')
+      typeLower === 'bank'
     ) {
       cashAccountIds.add(acc.glAccountId);
     }
@@ -126,11 +403,23 @@ export async function calculateCashFlowStatement(
 
     const cashBalancesQuery = sql`
       SELECT
-        COALESCE(SUM(CASE WHEN je.entry_date < ${startDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS "openingCash",
-        COALESCE(SUM(CASE WHEN je.entry_date <= ${endDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS "closingCash"
+        COALESCE(SUM(CASE 
+          WHEN je.entry_date < ${startDateSql} 
+            OR LOWER(je.source_type) IN ('initial_import', 'opening_balance')
+            OR UPPER(je.source_type) IN ('INITIAL_IMPORT', 'OPENING_BALANCE')
+            OR je.entry_number LIKE 'JE-OPENING-%'
+          THEN jl.debit - jl.credit 
+          ELSE 0 
+        END), 0)::numeric AS "openingCash",
+        COALESCE(SUM(CASE 
+          WHEN je.entry_date <= ${endDateSql} 
+          THEN jl.debit - jl.credit 
+          ELSE 0 
+        END), 0)::numeric AS "closingCash"
       FROM herobm_core.gl_journal_lines jl
       JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
       WHERE jl.gl_account_id IN (${cashIdsSql})
+        AND je.is_reversed = false
     `;
 
     const cashBalRes = await db.execute(cashBalancesQuery);
@@ -161,7 +450,7 @@ export async function calculateCashFlowStatement(
 
   const expectedCashDelta = roundCurrency(endingCash - beginningCash);
 
-  // 3. Direct Activity Decomposition: Fetch all journal lines touching Cash in the window
+  // 3. Direct Activity Decomposition: Fetch all operational journal lines touching Cash in the window
   const journalActivityQuery = sql`
     SELECT
       je.journal_entry_id AS "journalEntryId",
@@ -182,6 +471,9 @@ export async function calculateCashFlowStatement(
       JOIN herobm_core.gl_journal_lines jl_inner ON jl_inner.journal_entry_id = je_inner.journal_entry_id
       WHERE je_inner.entry_date >= ${startDateSql}
         AND je_inner.entry_date <= ${endDateSql}
+        AND je_inner.is_reversed = false
+        AND UPPER(je_inner.source_type) NOT IN ('INITIAL_IMPORT', 'OPENING_BALANCE')
+        AND je_inner.entry_number NOT LIKE 'JE-OPENING-%'
         AND jl_inner.gl_account_id IN (${
           cashAccountIds.size > 0
             ? sql.join(
@@ -244,9 +536,11 @@ export async function calculateCashFlowStatement(
   // Decompose each journal entry touching cash
   for (const [, lines] of entriesMap.entries()) {
     let entryNetCash = 0;
+    const entrySourceType = lines[0]?.sourceType || '';
     const nonCashLines: Array<{
       acc: (typeof accountsList)[0];
       netLine: number;
+      partyType?: string;
     }> = [];
 
     for (const line of lines) {
@@ -260,7 +554,11 @@ export async function calculateCashFlowStatement(
       } else {
         const acc = accountMap.get(line.glAccountId);
         if (acc) {
-          nonCashLines.push({ acc, netLine: netMovement });
+          nonCashLines.push({
+            acc,
+            netLine: netMovement,
+            partyType: line.partyType,
+          });
         }
       }
     }
@@ -278,110 +576,57 @@ export async function calculateCashFlowStatement(
 
     if (totalOpposing === 0) {
       // Direct cash adjustment without opposing non-cash line
-      if (entryNetCash > 0) {
-        otherOperatingCash += entryNetCash;
-      } else {
-        otherOperatingCash += entryNetCash;
-      }
+      otherOperatingCash += entryNetCash;
       continue;
     }
 
     for (const nl of nonCashLines) {
       const weight = Math.abs(nl.netLine) / totalOpposing;
       const allocatedCash = entryNetCash * weight;
-      const code = nl.acc.accountCode || '';
-      const type = (nl.acc.accountType || '').toLowerCase();
+      const classification = classifyCashFlowCounterpart(
+        nl,
+        allocatedCash,
+        entrySourceType,
+        options.glSettings,
+      );
 
-      // ── Classification Logic ───────────────────────────────────────────
-      // 1. Operating Activities
-      if (
-        type === 'receivable' ||
-        type === 'revenue' ||
-        type === 'income' ||
-        code.startsWith('11') ||
-        code.startsWith('4')
-      ) {
-        cashFromCustomers += allocatedCash;
-      } else if (
-        type === 'payable' ||
-        type === 'stock' ||
-        type === 'cogs' ||
-        code.startsWith('20') ||
-        code.startsWith('21') ||
-        code.startsWith('13') ||
-        code.startsWith('5')
-      ) {
-        cashPaidToSuppliers += allocatedCash;
-      } else if (
-        code.startsWith('60') ||
-        code.startsWith('61') ||
-        nl.acc.name.toLowerCase().includes('wage') ||
-        nl.acc.name.toLowerCase().includes('payroll')
-      ) {
-        cashPaidToEmployees += allocatedCash;
-      } else if (
-        type === 'tax' ||
-        code.startsWith('12') ||
-        code.startsWith('22') ||
-        code.startsWith('80') ||
-        nl.acc.name.toLowerCase().includes('tax') ||
-        nl.acc.name.toLowerCase().includes('gst')
-      ) {
-        cashPaidForTaxes += allocatedCash;
-      } else if (
-        nl.acc.name.toLowerCase().includes('interest') ||
-        nl.acc.name.toLowerCase().includes('finance') ||
-        code.startsWith('7')
-      ) {
-        cashPaidForInterest += allocatedCash;
-      }
-      // 2. Investing Activities
-      else if (
-        code.startsWith('15') ||
-        code.startsWith('16') ||
-        code.startsWith('17') ||
-        code.startsWith('18') ||
-        code.startsWith('19') ||
-        type.includes('depreciation')
-      ) {
-        if (allocatedCash < 0) {
+      switch (classification.lineId) {
+        case 'op-customers':
+          cashFromCustomers += allocatedCash;
+          break;
+        case 'op-tax':
+          cashPaidForTaxes += allocatedCash;
+          break;
+        case 'op-employees':
+          cashPaidToEmployees += allocatedCash;
+          break;
+        case 'op-interest':
+          cashPaidForInterest += allocatedCash;
+          break;
+        case 'op-suppliers':
+          cashPaidToSuppliers += allocatedCash;
+          break;
+        case 'inv-capex':
           capexPurchases += allocatedCash;
-        } else {
+          break;
+        case 'inv-disposals':
           assetDisposalProceeds += allocatedCash;
-        }
-      }
-      // 3. Financing Activities
-      else if (
-        code.startsWith('25') ||
-        code.startsWith('26') ||
-        code.startsWith('27') ||
-        code.startsWith('28') ||
-        code.startsWith('29') ||
-        nl.acc.name.toLowerCase().includes('loan') ||
-        nl.acc.name.toLowerCase().includes('borrowing')
-      ) {
-        if (allocatedCash > 0) {
+          break;
+        case 'fin-loans':
           loanDrawdowns += allocatedCash;
-        } else {
+          break;
+        case 'fin-repayments':
           debtRepayments += allocatedCash;
-        }
-      } else if (
-        type === 'equity' ||
-        code.startsWith('3') ||
-        nl.acc.name.toLowerCase().includes('capital') ||
-        nl.acc.name.toLowerCase().includes('equity') ||
-        nl.acc.name.toLowerCase().includes('drawing') ||
-        nl.acc.name.toLowerCase().includes('dividend')
-      ) {
-        if (allocatedCash > 0) {
+          break;
+        case 'fin-equity':
           equityProceeds += allocatedCash;
-        } else {
+          break;
+        case 'fin-dividends':
           dividendDistributions += allocatedCash;
-        }
-      }
-      // Default: Operating
-      else {
-        otherOperatingCash += allocatedCash;
+          break;
+        default:
+          otherOperatingCash += allocatedCash;
+          break;
       }
     }
   }
@@ -543,4 +788,223 @@ export async function calculateCashFlowStatement(
   }
 
   return currentResult;
+}
+
+/**
+ * Lazy-loaded drilldown engine for a single Cash Flow line item.
+ * Resolves all decomposed journal lines that contributed to the target line bucket.
+ */
+export async function calculateCashFlowLineDrilldown(
+  db: DrizzleDB,
+  options: CalculateCashFlowOptions,
+  targetLineId: string,
+): Promise<CashFlowDrilldownStatementResult> {
+  const { startDate, endDate } = options;
+
+  // 1. Fetch active accounts to map cash accounts and opposing details
+  const accountsQuery = sql`
+    SELECT
+      gl_account_id AS "glAccountId",
+      account_code AS "accountCode",
+      name,
+      account_type AS "accountType",
+      is_group AS "isGroup",
+      is_bank_account AS "isBankAccount"
+    FROM herobm_core.gl_accounts
+    WHERE is_group = false
+  `;
+
+  const rawAccounts = await db.execute(accountsQuery);
+  const accountRows = (
+    Array.isArray(rawAccounts)
+      ? rawAccounts
+      : (rawAccounts as unknown as { rows: unknown[] }).rows || []
+  ) as Array<{
+    glAccountId: string;
+    accountCode: string;
+    name: string;
+    accountType: string;
+    isGroup: boolean;
+    isBankAccount: boolean;
+  }>;
+
+  const cashAccountIds = new Set<string>();
+  const accountMap = new Map<string, (typeof accountRows)[0]>();
+
+  for (const acc of accountRows) {
+    accountMap.set(acc.glAccountId, acc);
+    const typeLower = (acc.accountType || '').toLowerCase();
+    if (
+      acc.isBankAccount === true ||
+      typeLower === 'cash' ||
+      typeLower === 'bank'
+    ) {
+      cashAccountIds.add(acc.glAccountId);
+    }
+  }
+
+  // 2. Fetch journal entries touching bank accounts in this window
+  const journalActivityQuery = sql`
+    WITH relevant_entries AS (
+      SELECT DISTINCT journal_entry_id
+      FROM herobm_core.gl_journal_lines
+      WHERE gl_account_id IN (
+        SELECT gl_account_id FROM herobm_core.gl_accounts
+        WHERE is_group = false AND is_bank_account = true
+      )
+    )
+    SELECT
+      je.journal_entry_id AS "journalEntryId",
+      je.entry_number AS "entryNumber",
+      je.entry_date AS "entryDate",
+      je.source_type AS "sourceType",
+      je.memo AS "entryMemo",
+      jl.journal_line_id AS "journalLineId",
+      jl.gl_account_id AS "glAccountId",
+      jl.debit::text AS "debit",
+      jl.credit::text AS "credit",
+      jl.party_type AS "partyType"
+    FROM herobm_core.gl_journal_entries je
+    JOIN herobm_core.gl_journal_lines jl ON jl.journal_entry_id = je.journal_entry_id
+    WHERE je.journal_entry_id IN (SELECT journal_entry_id FROM relevant_entries)
+      AND je.entry_date >= ${startDate}::date
+      AND je.entry_date <= ${endDate}::date
+      AND je.is_reversed = false
+      AND LOWER(je.source_type) NOT IN ('initial_import', 'opening_balance')
+      AND UPPER(je.source_type) NOT IN ('INITIAL_IMPORT', 'OPENING_BALANCE')
+      AND je.entry_number NOT LIKE 'JE-OPENING-%'
+    ORDER BY je.entry_date ASC, je.journal_entry_id ASC
+  `;
+
+  const rawEntries = await db.execute(journalActivityQuery);
+  const entryRows = (
+    Array.isArray(rawEntries)
+      ? rawEntries
+      : (rawEntries as unknown as { rows: unknown[] }).rows || []
+  ) as Array<{
+    journalEntryId: string;
+    entryNumber: string;
+    entryDate: string;
+    sourceType: string;
+    entryMemo: string;
+    journalLineId: string;
+    glAccountId: string;
+    debit: string;
+    credit: string;
+    partyType: string;
+  }>;
+
+  const entriesMap = new Map<string, typeof entryRows>();
+  for (const row of entryRows) {
+    if (!entriesMap.has(row.journalEntryId)) {
+      entriesMap.set(row.journalEntryId, []);
+    }
+    entriesMap.get(row.journalEntryId)!.push(row);
+  }
+
+  let lineName = targetLineId;
+  let category: 'operating' | 'investing' | 'financing' = 'operating';
+  const transactions: CashFlowDrilldownTransaction[] = [];
+
+  for (const [, lines] of entriesMap) {
+    let entryNetCash = 0;
+    const nonCashLines: Array<{
+      acc: (typeof accountRows)[0];
+      netLine: number;
+      partyType?: string | null;
+    }> = [];
+    const entrySourceType = lines[0]?.sourceType || 'manual';
+    const entryNumber = lines[0]?.entryNumber || '';
+    const rawDate = lines[0]?.entryDate;
+    const entryDate =
+      typeof rawDate === 'string'
+        ? rawDate.slice(0, 10)
+        : rawDate
+          ? new Date(rawDate).toISOString().slice(0, 10)
+          : '';
+    const entryMemo = lines[0]?.entryMemo || '';
+
+    for (const line of lines) {
+      const debit = parseFloat(line.debit || '0') || 0;
+      const credit = parseFloat(line.credit || '0') || 0;
+      const netMovement = debit - credit;
+
+      if (cashAccountIds.has(line.glAccountId)) {
+        entryNetCash += netMovement;
+      } else {
+        const acc = accountMap.get(line.glAccountId);
+        if (acc) {
+          nonCashLines.push({
+            acc,
+            netLine: netMovement,
+            partyType: line.partyType,
+          });
+        }
+      }
+    }
+
+    if (Math.abs(entryNetCash) < 0.001) continue;
+
+    const totalOpposing = nonCashLines.reduce(
+      (sum, l) => sum + Math.abs(l.netLine),
+      0,
+    );
+
+    if (totalOpposing === 0) {
+      if (targetLineId === 'op-other') {
+        lineName = 'Other Operating Cash Movements';
+        category = 'operating';
+        transactions.push({
+          journalEntryId: lines[0].journalEntryId,
+          entryNumber,
+          entryDate,
+          sourceType: entrySourceType,
+          memo: entryMemo || 'Direct Cash Adjustment',
+          accountCode: '',
+          accountName: 'Direct Cash Adjustment',
+          allocatedCash: roundCurrency(entryNetCash),
+        });
+      }
+      continue;
+    }
+
+    for (const nl of nonCashLines) {
+      const weight = Math.abs(nl.netLine) / totalOpposing;
+      const allocatedCash = entryNetCash * weight;
+      const classification = classifyCashFlowCounterpart(
+        nl,
+        allocatedCash,
+        entrySourceType,
+        options.glSettings,
+      );
+
+      if (classification.lineId === targetLineId) {
+        lineName = classification.lineName;
+        category = classification.category;
+        transactions.push({
+          journalEntryId: lines[0].journalEntryId,
+          entryNumber,
+          entryDate,
+          sourceType: entrySourceType,
+          memo: entryMemo || nl.acc.name || '',
+          partyType: nl.partyType || undefined,
+          accountCode: nl.acc.accountCode || '',
+          accountName: nl.acc.name || '',
+          allocatedCash: roundCurrency(allocatedCash),
+        });
+      }
+    }
+  }
+
+  const totalAmount = roundCurrency(
+    transactions.reduce((sum, t) => sum + t.allocatedCash, 0),
+  );
+
+  return {
+    lineId: targetLineId,
+    lineName,
+    category,
+    totalAmount,
+    transactions,
+  };
 }

@@ -208,7 +208,8 @@ export default function EmailDocumentDialog({
           setToAddress(trimmedEmail);
         }
       } catch (err: unknown) {
-        reportError(err);
+        toast.error('Failed to load supplier contacts: ' + getErrorMessage(err));
+        reportError(err, 'EmailDocumentDialog.fetchSupplierContacts');
       } finally {
         setLoading(false);
       }
@@ -256,7 +257,8 @@ export default function EmailDocumentDialog({
           setToAddress(trimmedCustomerEmail);
         }
       } catch (err: unknown) {
-        reportError(err);
+        toast.error('Failed to load customer contacts: ' + getErrorMessage(err));
+        reportError(err, 'EmailDocumentDialog.fetchCustomerContacts');
         // Non-fatal, just leave TO blank
       } finally {
         setLoading(false);

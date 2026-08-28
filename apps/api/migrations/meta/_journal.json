@@ -904,6 +904,13 @@
       "when": 1787573879596,
       "tag": "0128_make_line_type_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1787574000000,
+      "tag": "0129_grant_admin_all_permissions",
+      "breakpoints": true
     }
   ]
 }

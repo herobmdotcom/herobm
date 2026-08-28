@@ -10,61 +10,92 @@ routes:
   - "/balances/customers"
   - "/balances/suppliers"
   - "/balances/tax"
-tags: ["balances", "aging", "ar", "ap", "statements", "tax", "finance"]
+tags: ["balances", "aging", "ar", "ap", "statements", "tax", "finance", "credit-control"]
 fields:
   current_balance:
     title: "Current Balance"
-    summary: "Invoices within standard trading terms (not overdue)."
+    summary: "Invoices within standard trading terms (due date >= as-of date)."
   aging_30_days:
     title: "1–30 Days Overdue"
-    summary: "Invoices overdue by up to 30 days."
+    summary: "Invoices overdue by 1 to 30 calendar days."
   aging_60_days:
     title: "31–60 Days Overdue"
-    summary: "Invoices overdue by 31 to 60 days."
+    summary: "Invoices overdue by 31 to 60 calendar days."
+  aging_90_days:
+    title: "61–90 Days Overdue"
+    summary: "Invoices overdue by 61 to 90 calendar days."
   aging_90_plus:
     title: "90+ Days Overdue"
-    summary: "Seriously delinquent invoices requiring immediate collection."
+    summary: "Delinquent invoices overdue by more than 90 calendar days."
+  unallocated_credits:
+    title: "Unallocated Credits"
+    summary: "Unapplied customer payments and open credit notes reducing total ledger exposure."
 related:
   - "customers"
   - "suppliers"
   - "payments"
   - "general-ledger"
+  - "reconciliations"
 ---
 
 # Customer, Supplier & Tax Balances
 
-The **Balances** module provides debtor and creditor aging reports, allowing credit controllers and finance teams to track cash flow, overdue balances, and net tax liabilities.
+The **Balances** module provides debtor and creditor aging reports, allowing credit controllers and finance teams to audit cash flow, overdue balances, and net statutory tax liabilities.
 
 ---
 
-## Aging Buckets & Tax Summaries
+## Aging Buckets & Tax Position Calculations
 
 ```mermaid
 flowchart LR
-    A[Total Ledger Balance] --> B[Current < 30 Days]
-    A --> C[30-60 Days Overdue]
-    A --> D[60-90 Days Overdue]
+    A[Total Open Subledger Balance] --> B[Current: Due Date >= As-Of Date]
+    A --> C[1-30 Days Overdue]
+    A --> C2[31-60 Days Overdue]
+    A --> D[61-90 Days Overdue]
     A --> E[90+ Days Overdue]
+    U[Unallocated Credits / Payments] -.->|Offset Oldest Buckets| A
 ```
 
-### 1. Customer Aging (Accounts Receivable)
-Breaks down all unpaid customer invoices into standard 30-day buckets based on invoice due dates. Helps credit teams identify delinquent accounts before issuing new orders.
+### 1. The Aging Bucket Classification Algorithm
+For every open invoice in Accounts Receivable and Accounts Payable:
 
-### 2. Supplier Aging (Accounts Payable)
-Displays upcoming payment commitments owed to vendors, helping finance plan weekly cash disbursements.
+```
+Days Overdue = max(0, asOfDate - invoiceDueDate)
+```
 
-### 3. Tax Balances
-Summarizes output tax (GST/VAT collected on sales) against input tax (GST/VAT paid on purchases) to calculate the net tax payment or refund due for the period.
+* **Current**: `invoiceDueDate >= asOfDate` (within agreed commercial payment terms).
+* **1–30 Days**: `1 <= Days Overdue <= 30`
+* **31–60 Days**: `31 <= Days Overdue <= 60`
+* **61–90 Days**: `61 <= Days Overdue <= 90`
+* **90+ Days**: `Days Overdue > 90` (triggers strict credit hold warnings).
+
+### 2. Treatment of Unallocated Credits & Prepayments
+* Unapplied customer payment deposits and unallocated credit notes are credited against the account's total exposure.
+* In standard aged debtors reports, unallocated credits offset the **oldest aging buckets first**, ensuring overdue flags reflect genuine delinquency.
+
+### 3. Net Tax Liability Equation
+The tax balance summary aggregates all posted GST / VAT tax groups over the active reporting period:
+
+```
+Net Tax Payable / (Refund) = Total Output Tax (Sales Invoices) - Total Input Tax (Supplier Bills)
+```
+
+* If `Output Tax > Input Tax`, a net liability is owed to the revenue authority.
+* If `Input Tax > Output Tax`, a net refund is claimable.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Generating a Customer Statement
+### 1. Generating and Emailing a Customer Statement
 1. Go to **Finance** → **Balances** → **Customers** (`/balances/customers`).
-2. Search for the customer name.
-3. Review their aging breakdown and total outstanding exposure.
-4. Click **Export Statement PDF** or **Email Statement** to send a formal statement of account to the debtor.
+2. Search for the debtor account.
+3. Review their aging breakdown, open invoices, and unallocated credits.
+4. Click **Statement PDF** to generate an official branded PDF statement or click **Email Statement** to send it directly to the customer's billing contact.
+
+### 2. Auditing Supplier Aging
+1. Go to **Finance** → **Balances** → **Suppliers** (`/balances/suppliers`).
+2. Review upcoming payment obligations by due date bucket to schedule weekly payment batches.
 
 ---
 
@@ -72,7 +103,9 @@ Summarizes output tax (GST/VAT collected on sales) against input tax (GST/VAT pa
 
 | Field | Description |
 | :--- | :--- |
-| **Total Balance** | Total unpaid ledger balance. |
-| **Current** | Within agreed payment terms. |
-| **30 / 60 / 90+ Days** | Overdue aging buckets. |
-| **Net Tax Position** | Output Tax minus Input Tax. |
+| **Total Balance** | Total net ledger balance across all open documents. |
+| **Current** | Unpaid balance within agreed payment terms. |
+| **1–30 / 31–60 / 61–90 / 90+ Days** | Standard overdue aging columns. |
+| **Unallocated Credits** | Open credit notes and prepayments not yet allocated to specific bills. |
+| **Net Tax Position** | Statutory tax liability (`Output Tax - Input Tax`). |
+

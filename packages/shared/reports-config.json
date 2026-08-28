@@ -205,6 +205,16 @@
       "hook": "cash-flow-statement",
       "context": "cash-flow-statement",
       "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000023",
+      "slug": "accounting-codes",
+      "name": "Accounting Codes Cheat Sheet",
+      "filename": "accounting-codes.typ",
+      "output_name_pattern": "AccountingCodes-${generatedAt}.pdf",
+      "hook": "accounting-codes",
+      "context": "accounting-codes",
+      "type": "hook"
     }
   ]
 }

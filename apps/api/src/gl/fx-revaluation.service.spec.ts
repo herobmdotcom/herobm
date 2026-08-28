@@ -35,6 +35,7 @@ import {
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   PUTAWAY_STATUS,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 
 describe('FxRevaluationService', () => {
@@ -306,7 +307,7 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, 'adjustment'));
+        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
       expect(revals.length).toBe(2); // One adjustment, one reversal
 
       const adj = revals.find(
@@ -396,7 +397,7 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, 'adjustment'));
+        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
       const adj = revals.find(
         (r) => r.memo && r.memo.includes('Reversal') === false,
       );
@@ -487,7 +488,7 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, 'adjustment'));
+        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
       const adj = revals.find(
         (r) => r.memo && r.memo.includes('Reversal') === false,
       );
@@ -571,7 +572,7 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, 'adjustment'));
+        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
       expect(revals.length).toBe(0); // No journals posted
     });
   });

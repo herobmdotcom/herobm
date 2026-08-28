@@ -33,7 +33,7 @@ export default function NewProductPage() {
   useEffect(() => {
     api.uomDictionaryControllerFindAll()
       .then((res: unknown) => setUomDictionary((res as { data: api.UomResponseDto[] }).data || []))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load UOM dictionary: ' + getErrorMessage(err)));
   }, []);
 
   const handleSubmit = async () => {

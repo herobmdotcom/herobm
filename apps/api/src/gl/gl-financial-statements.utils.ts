@@ -92,7 +92,7 @@ export function classifyAndAggregateTrialBalance(
     }
   > = {
     asset: {
-      categoryName: 'Assets (1000 - 1999)',
+      categoryName: 'Assets',
       accounts: [],
       subtotal: {
         openingBalance: 0,
@@ -103,7 +103,7 @@ export function classifyAndAggregateTrialBalance(
       },
     },
     liability: {
-      categoryName: 'Liabilities (2000 - 2999)',
+      categoryName: 'Liabilities',
       accounts: [],
       subtotal: {
         openingBalance: 0,
@@ -114,7 +114,7 @@ export function classifyAndAggregateTrialBalance(
       },
     },
     equity: {
-      categoryName: 'Equity (3000 - 3999)',
+      categoryName: 'Equity',
       accounts: [],
       subtotal: {
         openingBalance: 0,
@@ -125,7 +125,7 @@ export function classifyAndAggregateTrialBalance(
       },
     },
     revenue: {
-      categoryName: 'Revenue & Income (4000 - 4999)',
+      categoryName: 'Revenue & Income',
       accounts: [],
       subtotal: {
         openingBalance: 0,
@@ -136,7 +136,7 @@ export function classifyAndAggregateTrialBalance(
       },
     },
     expense: {
-      categoryName: 'Expenses & COGS (5000 - 6999)',
+      categoryName: 'Expenses & Cost of Goods Sold',
       accounts: [],
       subtotal: {
         openingBalance: 0,

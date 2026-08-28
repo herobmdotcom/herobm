@@ -70,7 +70,9 @@ export default function CreateNoteSlideOver({
           const accs = Array.isArray(res.data) ? res.data : [];
           setAccounts(accs.filter((a) => !a.isGroup && a.isActive));
         })
-        .catch(console.error);
+        .catch((err: unknown) => {
+          toast.error('Failed to load accounts: ' + getErrorMessage(err));
+        });
     }
   }, [isOpen, initialType]);
 

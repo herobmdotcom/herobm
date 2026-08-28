@@ -58,12 +58,7 @@
 
 #v(1cm)
 
-#if data.header.notes != "" {
-  [*Notes:*]
-  v(0.1cm)
-  data.header.notes
-  v(1cm)
-}
+
 
 // ── Signature Line ──────────────────────────────────────────────────────────
 #v(2cm)

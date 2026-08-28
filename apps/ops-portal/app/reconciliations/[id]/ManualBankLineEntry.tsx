@@ -5,6 +5,7 @@ import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 
 interface LineEntry {
@@ -81,6 +82,7 @@ export default function ManualBankLineEntry({
       toast.success(t('linesCreated'));
       onSuccess();
     } catch (e) {
+      toast.error('Failed to create bank lines: ' + getErrorMessage(e));
       reportError(e, 'CreateBankLines');
     } finally {
       setSaving(false);

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
 
 export type Supplier = api.SupplierResponseDto;
@@ -38,13 +40,13 @@ export function useSupplier(id: string) {
   useEffect(() => {
     api.tradingTermsControllerFindAll()
       .then((res: unknown) => setAvailableTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[]))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
     api.taxPositionsControllerFindAll()
       .then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[]))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
     api.supplierGroupsControllerFindAll()
       .then((res: unknown) => setSupplierGroups((res as { data: unknown[] }).data as unknown as api.SupplierGroupResponseDto[]))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load supplier groups: ' + getErrorMessage(err)));
   }, []);
 
   return {

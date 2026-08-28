@@ -31,6 +31,7 @@ import {
   PURCHASE_DEBIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_TRANSITIONS,
   getValidStates,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
@@ -525,7 +526,7 @@ export class PurchaseDebitNotesService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL journal lines
         glLines as any,
         {
-          sourceType: 'purchase_debit_note',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_DEBIT_NOTE,
           sourceId: dn.debitNoteId,
           memo: `Ad-hoc debit note ${debitNoteNumber}`,
           actor,
@@ -668,7 +669,7 @@ export class PurchaseDebitNotesService {
           {
             actor,
             entryDate: new Date().toISOString().slice(0, 10),
-            sourceType: 'purchase_debit_note',
+            sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_DEBIT_NOTE,
             sourceId: debitNoteId,
             memo: `Supplier Debit Note ${dn.debitNoteNumber}`,
           },
@@ -806,7 +807,7 @@ export class PurchaseDebitNotesService {
             reversedLines as any,
             {
               sourceId: debitNoteId,
-              sourceType: 'purchase_debit_note',
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_DEBIT_NOTE,
               memo: `Reversal of Supplier Debit Note ${existing.debitNoteNumber}`,
               entryDate: new Date().toISOString().slice(0, 10),
               actor,

@@ -47,7 +47,12 @@ describe('CustomersService', () => {
             }),
           },
         },
-        { provide: AppConfigService, useValue: {} },
+        {
+          provide: AppConfigService,
+          useValue: {
+            creditLimitBehavior: jest.fn().mockReturnValue('hard'),
+          },
+        },
       ],
     }).compile();
 
@@ -241,6 +246,103 @@ describe('CustomersService', () => {
         includeArchived: true,
       });
       expect(resultWithArchived.data).toHaveLength(2);
+    });
+
+    it('should resolve isSalesBlocked: true when customer is on manual credit hold', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Hold Customer',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      await pg.db.insert(customers).values({
+        actorId: act.actorId,
+        customerNumber: 'HOLD-01',
+        currencyCode: 'USD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        isOnCreditHold: true,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].isSalesBlocked).toBe(true);
+      expect(result.data[0].salesBlockReasons).toContain(
+        'customer_credit_hold',
+      );
+    });
+
+    it('should resolve isSalesBlocked: true when customer group is on credit hold', async () => {
+      const [ag] = await pg.db
+        .insert(customerGroups)
+        .values({
+          name: 'Blocked Group',
+          groupCode: 'BLK01',
+          isOnCreditHold: true,
+          stateCode: CUSTOMER_STATE.ACTIVE,
+        })
+        .returning();
+
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Group Hold Customer',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      await pg.db.insert(customers).values({
+        actorId: act.actorId,
+        customerNumber: 'GHOLD-01',
+        currencyCode: 'USD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        customerGroupId: ag.customerGroupId,
+        isOnCreditHold: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].isSalesBlocked).toBe(true);
+      expect(result.data[0].salesBlockReasons).toContain('group_credit_hold');
+    });
+
+    it('should resolve isSalesBlocked: false when customer has a valid future override', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Override Customer',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      await pg.db.insert(customers).values({
+        actorId: act.actorId,
+        customerNumber: 'OVR-01',
+        currencyCode: 'USD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        isOnCreditHold: true,
+        overrideCreditHoldUntil: futureDate,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].isSalesBlocked).toBe(false);
     });
   });
 

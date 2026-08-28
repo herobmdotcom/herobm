@@ -9,7 +9,7 @@ action: "read"
 routes:
   - "/sales-credit-notes"
   - "/sales-credit-notes/:id"
-tags: ["credit-notes", "sales", "adjustments", "refunds", "ar"]
+tags: ["credit-notes", "sales", "adjustments", "refunds", "ar", "allocations"]
 fields:
   credit_note_number:
     title: "Credit Note Number"
@@ -25,7 +25,7 @@ fields:
     summary: "Total amount credited including tax."
   outstanding_amount:
     title: "Outstanding Amount"
-    summary: "Remaining credit available to offset future orders or issue cash refunds. Allocations are computed dynamically."
+    summary: "Remaining unallocated credit available to offset future invoices or issue cash refunds."
 related:
   - "sales-invoices"
   - "sales-returns"
@@ -39,34 +39,53 @@ The **Credit Notes** module handles negative customer balances resulting from sa
 
 ---
 
-## Accounting & Allocation Rules
+## Business Logic & Allocation Mechanics
 
-### 1. General Ledger Impact
-Posting a credit note creates an automatic reversing entry in the General Ledger:
-- **Debit**: Sales Revenue or Returns Expense
-- **Debit**: Tax / GST Payable (reversing output tax)
-- **Credit**: Accounts Receivable (reducing customer balance)
+### 1. General Ledger Postings
+Posting a Sales Credit Note immediately creates a balanced double-entry transaction in the General Ledger:
 
-### 2. Credit Allocation
-- A credit note can be **allocated directly** to open, unpaid sales invoices for that customer.
-- If unallocated, the credit remains on the customer's account as an available credit balance, which can be applied to future invoices or refunded via bank payout.
+```
+Debit:  Sales Revenue / Sales Returns Account   (Reduces reported revenue)
+Debit:  Output Tax Liability (Tax Payable)      (Reverses previously recognized tax)
+Credit: Accounts Receivable Control Account     (Reduces customer outstanding balance)
+```
+
+### 2. Credit Allocation Equation & Subledger Balance
+Credit notes can either be linked to a specific originating invoice or created standalone:
+
+```
+Invoice Outstanding Balance = Invoice Gross Total - Allocated Payments - Allocated Credit Notes
+Credit Note Unallocated Amount = Credit Note Gross Total - Sum(Allocated Amounts to Invoices)
+```
+
+* **Allocation Impact**: Allocating a credit note to an open invoice is an operational subledger matching action. Because Accounts Receivable was already credited at the moment of credit note posting, **no second GL entry is generated** upon allocation; the allocation simply links the subledger records and decrements both outstanding balances.
+* **Customer Balance & Aged AR**: Credit notes immediately reduce the customer's total open balance. In aged receivable reports, unallocated credit notes are applied against the oldest aging buckets (or displayed in the unallocated credit column).
+
+### 3. Payout via Cash Refund
+If a customer requests a cash payout rather than carrying forward account credit:
+1. An operator creates a **Payment Entry** of type `customer_refund`.
+2. The refund entry matches against the unallocated credit note, posting:
+   ```
+   Debit:  Accounts Receivable Control Account
+   Credit: Bank Account
+   ```
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Creating a Standalone Credit Note
+### 1. Creating a Credit Note
 1. Go to **Sales** → **Credit Notes** (`/sales-credit-notes`).
 2. Click **New Credit Note**.
 3. Select the **Customer** and (optional) linked **Sales Invoice**.
-4. Add line descriptions, credited amounts, and tax classifications.
-5. Click **Post Credit Note**.
+4. Add line items, credited amounts, and tax classifications.
+5. Click **Post Credit Note** to post to Accounts Receivable and the General Ledger.
 
 ### 2. Allocating Credit to an Open Invoice
-1. Open the posted credit note.
-2. Click **Allocate to Invoice**.
-3. Select the target open invoice and enter the amount to apply.
-4. Click **Confirm Allocation**. The open invoice balance is immediately reduced.
+1. Open the posted credit note (`/sales-credit-notes/:id`).
+2. In the **Allocations** panel, click **Allocate to Invoice**.
+3. Select the target unpaid invoice and enter the allocation amount.
+4. Click **Confirm Allocation**. Both the credit note and invoice outstanding balances update immediately.
 
 ---
 
@@ -74,7 +93,9 @@ Posting a credit note creates an automatic reversing entry in the General Ledger
 
 | Field | Description |
 | :--- | :--- |
-| **Credit Note Number** | Legal credit note document reference. |
+| **Credit Note Number** | Legal credit note document reference (e.g. `CRN-2026-00054`). |
 | **Customer** | Credited customer account. |
-| **Total Amount** | Total credit value. |
-| **Outstanding Amount** | Unmatched credit remaining on account. Allocations are computed dynamically. |
+| **Associated Invoice** | Linked sales invoice if raised for a specific bill correction. |
+| **Total Amount** | Total gross credit value including tax. |
+| **Outstanding Amount** | Unallocated credit balance remaining on the account. |
+

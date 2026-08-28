@@ -79,7 +79,7 @@ flowchart TD
 - **Safe retirement**: Groups linked to records cannot be deleted; set them to Inactive to retire them safely.
 
 ### 2. Financial & System Settings
-- **Financial Settings** (`/admin/settings/financial`): Configure standard chart of account linkages (Accounts Receivable, Accounts Payable, Sales Tax Liability, Rounding, Retained Earnings).
+- **Financial Settings** (`/admin/settings/financial`): Configure standard chart of account linkages (Accounts Receivable, Accounts Payable, Sales Tax Liability, Rounding, Retained Earnings), manage the hierarchical Chart of Accounts tree, and import Chart of Accounts templates using the ERPNext JSON format (with pre-packaged presets or official [ERPNext Verified Chart of Accounts](https://github.com/frappe/erpnext/tree/develop/erpnext/accounts/doctype/account/chart_of_accounts/verified) files).
 - **System Settings** (`/admin/settings/system`): Manage global defaults, timezones, number sequence generators, and structured **Sales Order Analysis Codes**.
 
 ### 3. Email Outbox & SMTP Settings
@@ -112,6 +112,13 @@ flowchart TD
 2. Enter your mail server details (**SMTP Host**, **Port**, **Sender Email**).
 3. Click **Send Test Email** to verify SMTP connectivity.
 4. Save configuration. All PDF email buttons across orders and shipments will route through this gateway.
+
+### 3. Importing a Chart of Accounts Preset
+1. Go to **Admin** → **Settings** → **Financial Settings** (`/admin/settings/financial`).
+2. Scroll to the **Chart of Accounts** section.
+3. Click **Import Preset**.
+4. Select the desired template preset (e.g. Australia Standard or US Standard) or an ERPNext-compatible JSON file.
+5. Click **Import** to populate the chart of accounts tree.
 
 ---
 

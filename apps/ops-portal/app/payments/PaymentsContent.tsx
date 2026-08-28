@@ -14,7 +14,8 @@ import type { ColDef } from 'ag-grid-community';
 import { useSettings } from '@/components/SettingsProvider';
 import PaymentManagerSlideOver from './PaymentManagerSlideOver';
 import { PaymentRunGeneratorSlideOver } from './PaymentRunGeneratorSlideOver';
-import { PAYMENT_STATE } from '@herobm/shared';
+import { PAYMENT_STATE, getErrorMessage } from '@herobm/shared';
+import { toast } from 'react-hot-toast';
 import { reportError } from '@/lib/api';
 import { ValidState } from '@/types/states';
 
@@ -156,7 +157,17 @@ export default function PaymentsContent() {
         return formatLocalDate(params.value as string);
       },
     },
-    { field: 'createdBy', headerName: 'Created By', width: 120 },
+    { 
+      field: 'createdBy', 
+      headerName: 'Created By', 
+      width: 120,
+      valueGetter: (params) => {
+        const val = params.data?.createdBy;
+        if (!val || val === '[object Object]') return 'admin';
+        if (typeof val === 'object') return (val as { username?: string; userId?: string }).username || (val as { username?: string; userId?: string }).userId || 'admin';
+        return val;
+      }
+    },
   ], [baseCurrency]);
 
   const handleRowClicked = useCallback((payment: UnifiedPayment) => {
@@ -182,6 +193,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'PaymentsContent_handleExportAba');
     } finally {
       setIsProcessingBatch(false);
@@ -205,6 +217,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'PaymentsContent_handleExportNacha');
     } finally {
       setIsProcessingBatch(false);
@@ -223,6 +236,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'PaymentsContent_handleSetState');
     } finally {
       setIsProcessingBatch(false);

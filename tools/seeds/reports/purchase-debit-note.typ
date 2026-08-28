@@ -114,13 +114,7 @@
 // ── Summary / Totals ────────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 0.45fr),
-  [
-    #if "notes" in data.header and data.header.notes != "" [
-      #text(9pt, weight: "bold", fill: luma(80))[Notes:] \
-      #v(0.1cm)
-      #text(9pt, fill: luma(100))[#data.header.notes]
-    ]
-  ],
+  [],
   [
     #grid(
       columns: (1fr, auto),

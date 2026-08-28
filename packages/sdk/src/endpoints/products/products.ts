@@ -13,6 +13,7 @@ import type {
   CreateProductGroupDto,
   EmptyBodyDto,
   LinkBinDto,
+  ProductCostSummaryResponseDto,
   ProductGroupResponseDto,
   ProductGroupsControllerFindAll200,
   ProductGroupsControllerFindAllParams,
@@ -22,6 +23,7 @@ import type {
   ProductsControllerFindAllParams,
   ProductsControllerFindOneParams,
   ProductsControllerGetComponents200,
+  ProductsControllerGetCostSummaryParams,
   ProductsControllerUploadImageBody,
   UpdateProductComponentDto,
   UpdateProductDto,
@@ -225,6 +227,51 @@ export const productsControllerUpdate = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateProductDto,)
+  }
+);}
+
+
+/**
+ * Retrieve aggregated cost metrics, supplier costs, purchasing stats, and inventory valuation for a product.
+ * @summary Get Product Cost Summary
+ */
+export type productsControllerGetCostSummaryResponse200 = {
+  data: ProductCostSummaryResponseDto
+  status: 200
+}
+    
+export type productsControllerGetCostSummaryResponseSuccess = (productsControllerGetCostSummaryResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerGetCostSummaryResponse = (productsControllerGetCostSummaryResponseSuccess)
+
+export const getProductsControllerGetCostSummaryUrl = (id: string,
+    params?: ProductsControllerGetCostSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/products/${id}/cost-summary?${stringifiedParams}` : `/products/${id}/cost-summary`
+}
+
+export const productsControllerGetCostSummary = async (id: string,
+    params?: ProductsControllerGetCostSummaryParams, options?: RequestInit): Promise<productsControllerGetCostSummaryResponse> => {
+  
+  return customFetch<productsControllerGetCostSummaryResponse>(getProductsControllerGetCostSummaryUrl(id,params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

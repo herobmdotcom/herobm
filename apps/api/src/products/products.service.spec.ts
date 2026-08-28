@@ -122,4 +122,47 @@ describe('ProductsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('getCostSummary', () => {
+    const targetId = '11111111-1111-1111-1111-111111111111';
+
+    beforeEach(async () => {
+      await pg.db.insert(products).values({
+        productId: targetId,
+        productNumber: 'BOLT-M8',
+        name: 'M8 Hex Bolt',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        baseUom: 'EA',
+        productType: 'inventory',
+        source: 'app',
+        structureType: 'standard',
+        standardCost: '12.50',
+        weightedAverageCost: '11.85',
+        listPrice: '20.00',
+        tradePrice: '16.00',
+        createdBy: 'system',
+      });
+    });
+
+    it('should return cost summary for existing product', async () => {
+      const result = await service.getCostSummary(targetId);
+      expect(result.productId).toBe(targetId);
+      expect(result.standardCost).toBe('12.50');
+      expect(result.weightedAverageCost).toBe('11.85');
+      expect(result.listPrice).toBe('20.00');
+      expect(result.tradePrice).toBe('16.00');
+    });
+
+    it('should throw NotFoundException for non-existent product', async () => {
+      await expect(
+        service.getCostSummary('99999999-9999-9999-9999-999999999999'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for invalid non-UUID', async () => {
+      await expect(service.getCostSummary('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
 });

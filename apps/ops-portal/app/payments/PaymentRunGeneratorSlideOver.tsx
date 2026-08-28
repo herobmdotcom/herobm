@@ -51,8 +51,8 @@ export function PaymentRunGeneratorSlideOver({
           const banks = res.data || [];
           setBankAccounts(banks.map((a) => ({ id: a.glAccountId, name: `${a.accountCode} - ${a.name}` })));
         })
-        .catch(() => {
-          // ignore
+        .catch((err: unknown) => {
+          toast.error('Failed to load bank accounts: ' + getErrorMessage(err));
         });
     }
   }, [open]);

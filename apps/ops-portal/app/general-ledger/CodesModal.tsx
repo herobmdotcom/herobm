@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import toast from 'react-hot-toast';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -42,6 +44,29 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const exportToPdf = async () => {
+    try {
+      setExportingPdf(true);
+      const res = await api.pdfTemplatesControllerRunHook(
+        'accounting-codes',
+        {},
+        {
+          id: 'default',
+          context: DATA_SOURCE_CONTEXT.ACCOUNTING_CODES,
+        },
+      );
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: unknown) {
+      reportError(err, 'CodesModal:exportPdf');
+      toast.error('Failed to generate Accounting Codes PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const exportToCsv = () => {
     const rows: string[][] = [];
@@ -213,14 +238,22 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
             </Button>
           </div>
 
-          {/* Right: Close Button */}
+          {/* Right: Actions & Close Button */}
           <div className="flex justify-end items-center gap-3">
+            <Button variant="ghost" 
+              onClick={exportToPdf}
+              disabled={exportingPdf}
+              className="flex items-center justify-center p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
+              title={exportingPdf ? t('exporting') : t('exportPdf')}
+            >
+              <span className="material-symbols-outlined text-xl !leading-none">picture_as_pdf</span>
+            </Button>
             <Button variant="ghost" 
               onClick={exportToCsv}
               className="flex items-center justify-center p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title={t('exportCsv')}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbol icon name */}
               <span className="material-symbols-outlined text-xl !leading-none">download</span>
             </Button>
             <Button variant="ghost" 

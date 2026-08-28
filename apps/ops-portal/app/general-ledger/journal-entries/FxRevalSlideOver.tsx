@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 
 interface FxRevalSlideOverProps {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
           setBaseCurrency(settings.baseCurrency);
         }
       } catch (e) {
+        toast.error('Failed to load accounts: ' + getErrorMessage(e));
         reportError(e, 'FxRevalSlideOver');
       }
     };
@@ -91,6 +93,7 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
       setCandidates(data.candidates || []);
       setHasGenerated(true);
     } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'FxRevalSlideOver');
     } finally {
       setLoading(false);
@@ -114,6 +117,7 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
       onSuccess();
       onClose();
     } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'FxRevalSlideOver');
     } finally {
       setLoading(false);

@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (472 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (474 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -143,6 +143,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/gl/journal-entries/source/{type}/{id}` | Get Source Entry |
 | `GET` | `/gl/trial-balance` | Get Trial Balance |
 | `GET` | `/gl/cash-flow` | Get Statement of Cash Flows |
+| `GET` | `/gl/cash-flow/drilldown` | Get Statement of Cash Flows Line Drilldown |
 | `GET` | `/gl/general-ledger` | Get General Ledger |
 | `GET` | `/gl/settings` | Get Settings |
 | `PATCH` | `/gl/settings` | Update Settings |
@@ -244,6 +245,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/products` | Create Product |
 | `GET` | `/products/{id}` | Get Product |
 | `PATCH` | `/products/{id}` | Update Product |
+| `GET` | `/products/{id}/cost-summary` | Get Product Cost Summary |
 | `POST` | `/products/{id}/archive` | Archive Product |
 | `POST` | `/products/{id}/unarchive` | Unarchive Product |
 | `POST` | `/products/{id}/suppliers` | Add Product Supplier |

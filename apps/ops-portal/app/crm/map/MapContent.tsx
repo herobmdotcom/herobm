@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Temporary workaround for ReactFlow typing complexity */
 'use client';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
+import * as api from '@herobm/sdk';
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import useSWR from 'swr';
@@ -209,7 +212,6 @@ const nodeTypes = {
 };
 
 import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
-import * as api from '@herobm/sdk';
 
 export default function MapContent() {
   const [focalNodeId, setFocalNodeId] = useState<string>('');
@@ -348,6 +350,7 @@ export default function MapContent() {
         setEdges(layoutedEdges);
       }
     } catch (err) {
+      toast.error('Failed to expand node: ' + getErrorMessage(err));
       reportError(err, 'MapContent.tsx - Error expanding node');
     } finally {
       setIsExpanding(false);

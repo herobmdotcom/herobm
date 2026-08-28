@@ -6,7 +6,7 @@ import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
-import { formatAmount } from '@herobm/shared';
+import { formatAmount, getErrorMessage } from '@herobm/shared';
 
 export default function MatchDetailsModal({ 
   matchGroupId, 
@@ -64,6 +64,7 @@ export default function MatchDetailsModal({
       setBankLines(bLines);
       setLedgerLines(jLines);
     } catch (e) {
+      toast.error('Failed to load match details: ' + getErrorMessage(e));
       reportError(e, 'MatchDetailsLoad');
     } finally {
       setLoading(false);
@@ -80,6 +81,7 @@ export default function MatchDetailsModal({
       onUnmatchSuccess();
       onClose();
     } catch (e) {
+      toast.error('Failed to undo match: ' + getErrorMessage(e));
       reportError(e, 'Unmatch');
     } finally {
       setUnmatching(false);

@@ -29,7 +29,7 @@ import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
 import { PaymentsCoreService } from './payments-core.service';
 import { PaymentsAllocationService } from './payments-allocation.service';
-import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';
+import { PAYMENT_STATE, PAYMENT_TYPE, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 
 @Injectable()
 export class PaymentsPostingService {
@@ -402,7 +402,7 @@ export class PaymentsPostingService {
         lines,
         {
           sourceId: payment.paymentId,
-          sourceType: 'payment_entry',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PAYMENT_ENTRY,
           memo: `Payment ${payment.paymentNumber}`,
           entryDate: payment.paymentDate.toISOString().split('T')[0],
           actor,

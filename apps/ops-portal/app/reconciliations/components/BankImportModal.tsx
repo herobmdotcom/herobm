@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 // eslint-disable-next-line no-restricted-imports -- External API integration boundaries where exact types are unknown.
 import { getToken, apiFetch, reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 function getExcelColumnName(colIndex: string): string {
@@ -57,7 +59,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
         // fetch bank accounts
         api.glControllerGetAccounts({ isBankAccount: 'true' })
           .then(res => setBankAccounts(Array.isArray(res.data) ? (res.data as unknown as api.GlAccountResponseDto[]) : (((res.data as unknown as { items: unknown[] }).items as unknown as api.GlAccountResponseDto[]) || [])))
-          .catch(console.error);
+          .catch((err) => toast.error('Failed to load bank accounts: ' + getErrorMessage(err)));
       }
     } else {
       // reset state when closed
@@ -70,7 +72,9 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
   }, [isOpen, fixedGlAccountId]);
 
   useEffect(() => {
-    api.bankFeedsControllerGetProfiles().then(res => setProfiles(res.data)).catch(console.error);
+    api.bankFeedsControllerGetProfiles()
+      .then(res => setProfiles(res.data))
+      .catch((err) => toast.error('Failed to load bank feed profiles: ' + getErrorMessage(err)));
   }, []);
 
   if (!isOpen) return null;
@@ -96,7 +100,8 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       setHeaders(Object.keys(res.headers));
       setStep(2);
     } catch (err) {
-      reportError(err);
+      toast.error('Failed to parse bank statement: ' + getErrorMessage(err));
+      reportError(err, 'BankImportModal.parse');
     } finally {
       setLoading(false);
     }
@@ -132,7 +137,8 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       setResults(res);
       setStep(3);
     } catch (err) {
-      reportError(err);
+      toast.error('Failed to import bank statement: ' + getErrorMessage(err));
+      reportError(err, 'BankImportModal.import');
     } finally {
       setLoading(false);
     }

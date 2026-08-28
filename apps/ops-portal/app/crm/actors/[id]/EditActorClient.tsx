@@ -19,7 +19,7 @@ import { ContactCard } from '@/components/shared/ContactCard';
 import { ContactListTab } from '@/components/shared/ContactListTab';
 import { ProjectsTab } from '@/components/shared/ProjectsTab';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
-import { COUNTRIES } from '@herobm/shared';
+import { COUNTRIES, getErrorMessage } from '@herobm/shared';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useSettings } from '@/components/SettingsProvider';
 import { ACTOR_STATE, SystemResource, hasPermission } from '@herobm/shared';
@@ -505,6 +505,7 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       toast.success('Actor archived');
       loadActor();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Archive Actor');
     }
   };
@@ -515,6 +516,7 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       toast.success('Actor unarchived');
       loadActor();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Unarchive Actor');
     }
   };

@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
-import { compareBinNumbers } from '@herobm/shared';
+import { compareBinNumbers, getErrorMessage } from '@herobm/shared';
+import { toast } from 'react-hot-toast';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
@@ -78,7 +79,10 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
             }
           }
         })
-        .catch((err) => reportError(err, 'MoveStockModal.fetchBins'))
+        .catch((err) => {
+          toast.error('Failed to load destination bins: ' + getErrorMessage(err));
+          reportError(err, 'MoveStockModal.fetchBins');
+        })
         .finally(() => setLoading(false));
     }
   }, [isOpen]);
@@ -98,6 +102,9 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
 
       await onSubmit(payloadLines, reason);
       onClose();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      reportError(err, 'MoveStockModal');
     } finally {
       setSubmitting(false);
     }

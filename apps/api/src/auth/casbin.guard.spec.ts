@@ -242,6 +242,48 @@ describe('CasbinGuard', () => {
       expect(result).toBe(true);
     });
 
+    it('should allow admin to read and write fiscal-periods', async () => {
+      for (const action of ['read', 'write']) {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'fiscal-periods',
+            [CASBIN_ACTION]: action,
+          },
+          user: { userId: '1', username: 'admin', role: 'admin' },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return ctx.__metadata[key];
+          });
+
+        const result = await guard.canActivate(ctx);
+        expect(result).toBe(true);
+      }
+    });
+
+    it('should allow finance to read and write fiscal-periods', async () => {
+      for (const action of ['read', 'write']) {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'fiscal-periods',
+            [CASBIN_ACTION]: action,
+          },
+          user: { userId: '4', username: 'finance', role: 'finance' },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return ctx.__metadata[key];
+          });
+
+        const result = await guard.canActivate(ctx);
+        expect(result).toBe(true);
+      }
+    });
+
     it('should deny viewer from writing sales-orders', async () => {
       const ctx = createMockContext({
         metadata: {

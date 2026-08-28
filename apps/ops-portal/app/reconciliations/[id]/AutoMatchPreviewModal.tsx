@@ -8,7 +8,7 @@ import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
-import { formatAmount } from '@herobm/shared';
+import { formatAmount, getErrorMessage } from '@herobm/shared';
 
 export default function AutoMatchPreviewModal({
   isOpen,
@@ -78,6 +78,7 @@ export default function AutoMatchPreviewModal({
       }
       onClose();
     } catch (e) {
+      toast.error('Failed to confirm auto-match: ' + getErrorMessage(e));
       reportError(e, 'AutoMatchConfirm');
     } finally {
       setConfirming(false);

@@ -419,7 +419,7 @@ export class PeriodCloseAuditService {
       trialBalance: {
         categories: [
           {
-            categoryName: 'Assets (1000 - 1999)',
+            categoryName: 'Assets',
             accounts: [
               {
                 accountCode: '1000',

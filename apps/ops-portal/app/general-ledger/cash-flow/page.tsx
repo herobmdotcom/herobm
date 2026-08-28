@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import * as api from '@herobm/sdk';
@@ -21,6 +22,157 @@ function fmt(amount: number): string {
   return isNeg ? `(${formatted})` : formatted;
 }
 
+interface CashFlowSectionTableProps {
+  title: string;
+  netCash: number;
+  lines: api.CashFlowLineItemDto[];
+  emptyMessage: string;
+  netLabel: string;
+  expandedLines: Record<string, boolean>;
+  drilldownCache: Record<string, api.CashFlowDrilldownResponseDto>;
+  drilldownLoading: Record<string, boolean>;
+  onToggleLine: (lineId: string) => void;
+}
+
+function CashFlowSectionTable({
+  title,
+  netCash,
+  lines,
+  emptyMessage,
+  netLabel,
+  expandedLines,
+  drilldownCache,
+  drilldownLoading,
+  onToggleLine,
+}: CashFlowSectionTableProps) {
+  const t = useTranslations('gl.cashFlow');
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
+      <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-between">
+        <span>{title}</span>
+        <span className="font-mono font-bold text-sm">
+          ${fmt(netCash)}
+        </span>
+      </div>
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-[var(--border)]">
+          {lines.length === 0 ? (
+            <tr>
+              <td className="px-4 py-3 text-xs text-[var(--text-muted)] italic" colSpan={2}>
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            lines.map((line: api.CashFlowLineItemDto) => {
+              const isExpanded = !!expandedLines[line.id];
+              const isLoading = !!drilldownLoading[line.id];
+              const drilldown = drilldownCache[line.id];
+              const txs = drilldown?.transactions || [];
+
+              return (
+                <Fragment key={line.id}>
+                  <tr
+                    onClick={() => onToggleLine(line.id)}
+                    className="hover:bg-[var(--bg-hover)] cursor-pointer group transition-colors select-none"
+                  >
+                    <td className="px-4 py-2.5 text-[var(--text-secondary)] flex items-center gap-2 font-medium">
+                      <span
+                        className={`material-symbols-outlined text-base text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-transform duration-150 ${
+                          isExpanded ? 'rotate-90 text-blue-600 dark:text-blue-400' : ''
+                        }`}
+                      >
+                        chevron_right
+                      </span>
+                      <span>{line.name}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono font-medium text-[var(--text-primary)]">
+                      ${fmt(line.amount)}
+                    </td>
+                  </tr>
+
+                  {isExpanded && (
+                    <tr className="bg-[var(--bg-secondary)]/40 border-b border-[var(--border)]">
+                      <td colSpan={2} className="p-0">
+                        {isLoading ? (
+                          <div className="py-4 px-8 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                            <span className="material-symbols-outlined animate-spin text-sm">
+                              progress_activity
+                            </span>
+                            <span>{t('loadingDrilldown')}</span>
+                          </div>
+                        ) : txs.length === 0 ? (
+                          <div className="py-3 px-8 text-xs text-[var(--text-muted)] italic">
+                            {t('noTransactions')}
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-[var(--bg-card)]/70 border-y border-[var(--border)]">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-[var(--border)] text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
+                                  <th className="text-left font-semibold py-1.5 px-3">{t('date')}</th>
+                                  <th className="text-left font-semibold py-1.5 px-3">{t('refNumber')}</th>
+                                  <th className="text-left font-semibold py-1.5 px-3">{t('memo')}</th>
+                                  <th className="text-left font-semibold py-1.5 px-3">{t('account')}</th>
+                                  <th className="text-right font-semibold py-1.5 px-3">{t('cashImpact')}</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[var(--border)]/40">
+                                {txs.map((tx, idx) => (
+                                  <tr key={`${tx.journalEntryId}-${idx}`} className="hover:bg-[var(--bg-hover)]/70 transition-colors">
+                                    <td className="py-1.5 px-3 font-mono text-[var(--text-secondary)] whitespace-nowrap">
+                                      {tx.entryDate}
+                                    </td>
+                                    <td className="py-1.5 px-3 font-mono whitespace-nowrap">
+                                      <Link
+                                        href={`/general-ledger/journal-entries?search=${encodeURIComponent(tx.entryNumber)}`}
+                                        className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 font-medium"
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={t('viewEntry')}
+                                      >
+                                        <span>{tx.entryNumber}</span>
+                                        <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                                      </Link>
+                                    </td>
+                                    <td className="py-1.5 px-3 text-[var(--text-primary)] max-w-xs truncate" title={tx.memo}>
+                                      {tx.memo}
+                                    </td>
+                                    <td className="py-1.5 px-3 text-[var(--text-secondary)] font-mono text-[11px] max-w-xs truncate" title={tx.accountName}>
+                                      {tx.accountCode ? `${tx.accountCode} - ${tx.accountName}` : tx.accountName}
+                                    </td>
+                                    <td
+                                      className={`py-1.5 px-3 text-right font-mono font-medium whitespace-nowrap ${
+                                        tx.allocatedCash < 0 ? 'text-[var(--danger)]' : 'text-emerald-600 dark:text-emerald-400'
+                                      }`}
+                                    >
+                                      ${fmt(tx.allocatedCash)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })
+          )}
+          <tr className="bg-[var(--bg-secondary)]/50 font-bold border-t border-[var(--border)]">
+            <td className="px-4 py-3 text-[var(--text-primary)]">
+              {netLabel}
+            </td>
+            <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
+              ${fmt(netCash)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function CashFlowPage() {
   const t = useTranslations('gl.cashFlow');
   useDocumentTitle(t('title'));
@@ -31,6 +183,11 @@ export default function CashFlowPage() {
   const [periods, setPeriods] = useState<api.FiscalPeriodResponseDto[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
   const [reportMode, setReportMode] = useState<'fiscal_period' | 'custom_range'>('fiscal_period');
+
+  // Drilldown state
+  const [expandedLines, setExpandedLines] = useState<Record<string, boolean>>({});
+  const [drilldownCache, setDrilldownCache] = useState<Record<string, api.CashFlowDrilldownResponseDto>>({});
+  const [drilldownLoading, setDrilldownLoading] = useState<Record<string, boolean>>({});
 
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -62,6 +219,10 @@ export default function CashFlowPage() {
   const fetchData = useCallback(() => {
     if (!startDate || !endDate) return;
     setLoading(true);
+    // Clear drilldown cache when date or period changes
+    setExpandedLines({});
+    setDrilldownCache({});
+
     const selectedPeriod = periods.find((p) => p.periodId === selectedPeriodId);
 
     api
@@ -89,6 +250,35 @@ export default function CashFlowPage() {
       setEndDate(p.endDate);
     }
   };
+
+  const toggleLine = useCallback(
+    (lineId: string) => {
+      setExpandedLines((prev) => {
+        const nextState = !prev[lineId];
+        if (nextState && !drilldownCache[lineId] && !drilldownLoading[lineId]) {
+          setDrilldownLoading((l) => ({ ...l, [lineId]: true }));
+          api
+            .glControllerGetCashFlowDrilldown({
+              lineId,
+              startDate,
+              endDate,
+            })
+            .then((res: { data: api.CashFlowDrilldownResponseDto }) => {
+              setDrilldownCache((c) => ({ ...c, [lineId]: res.data }));
+            })
+            .catch((err: unknown) => {
+              reportError(err, `CashFlowPage:getDrilldown:${lineId}`);
+              toast.error('Failed to load transaction drilldown');
+            })
+            .finally(() => {
+              setDrilldownLoading((l) => ({ ...l, [lineId]: false }));
+            });
+        }
+        return { ...prev, [lineId]: nextState };
+      });
+    },
+    [drilldownCache, drilldownLoading, startDate, endDate],
+  );
 
   const handleExportPdf = async () => {
     try {
@@ -119,37 +309,36 @@ export default function CashFlowPage() {
       header={
         <EntityHeader
           title={t('title')}
+          subtitle={
+            reportMode === 'fiscal_period' && selectedPeriodId
+              ? `${periods.find((p) => p.periodId === selectedPeriodId)?.periodName || ''} (${startDate} ${t('to')} ${endDate})`
+              : `${startDate} ${t('to')} ${endDate}`
+          }
           actions={
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3">
               <select
                 value={reportMode}
-                onChange={(e) => {
-                  const mode = e.target.value as 'fiscal_period' | 'custom_range';
-                  setReportMode(mode);
-                  if (mode === 'fiscal_period' && periods.length > 0) {
-                    handlePeriodChange(periods[0].periodId);
-                  }
-                }}
-                className="text-sm px-3 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
+                onChange={(e) =>
+                  setReportMode(e.target.value as 'fiscal_period' | 'custom_range')
+                }
+                className="text-sm px-3 py-1.5 rounded-lg border outline-none bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
               >
                 <option value="fiscal_period">{t('fiscalPeriod')}</option>
                 <option value="custom_range">{t('customRange')}</option>
               </select>
 
               {reportMode === 'fiscal_period' && (
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedPeriodId}
-                    onChange={(e) => handlePeriodChange(e.target.value)}
-                    className="text-sm px-3 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] font-medium"
-                  >
-                    {periods.map((p) => (
-                      <option key={p.periodId} value={p.periodId}>
-                        {p.periodName} ({p.status.replace('_', ' ')})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={selectedPeriodId}
+                  onChange={(e) => handlePeriodChange(e.target.value)}
+                  className="text-sm px-3 py-1.5 rounded-lg border outline-none bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] font-medium"
+                >
+                  {periods.map((p) => (
+                    <option key={p.periodId} value={p.periodId}>
+                      {p.periodName} ({p.status.replace('_', ' ')})
+                    </option>
+                  ))}
+                </select>
               )}
 
               {reportMode === 'custom_range' && (
@@ -157,14 +346,22 @@ export default function CashFlowPage() {
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.validity.valid && e.target.value) {
+                        setStartDate(e.target.value);
+                      }
+                    }}
                     className="text-sm px-3 py-1.5 rounded-lg border outline-none bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
                   />
                   <span className="text-xs text-[var(--text-muted)]">{t('to')}</span>
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.validity.valid && e.target.value) {
+                        setEndDate(e.target.value);
+                      }
+                    }}
                     className="text-sm px-3 py-1.5 rounded-lg border outline-none bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
                   />
                 </div>
@@ -175,9 +372,9 @@ export default function CashFlowPage() {
                 variant="secondary"
                 onClick={handleExportPdf}
                 disabled={exportingPdf}
-                className="!py-1.5 !text-xs whitespace-nowrap flex items-center gap-1.5"
+                className="!py-1.5 !text-xs whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                <span className="material-symbols-outlined text-sm mr-1">picture_as_pdf</span>
                 {exportingPdf ? t('exporting') : t('exportPdf')}
               </Button>
             </div>
@@ -186,78 +383,80 @@ export default function CashFlowPage() {
       }
     >
       <div className="flex flex-col gap-6">
-        {/* ── Reconciliation Status Banner ── */}
+        {/* Continuous Reconciliation Verification Banner */}
         {data && (
           <div
-            className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
+            className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
               data.reconciliation.isReconciled
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-900 dark:text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-900 dark:text-rose-300'
+                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800'
+                : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-2xl">
-                {reconIcon}
-              </span>
+              <div
+                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  data.reconciliation.isReconciled
+                    ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+                }`}
+              >
+                <span className="material-symbols-outlined text-2xl">{reconIcon}</span>
+              </div>
               <div>
-                <h3 className="text-sm font-semibold">
+                <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                   {data.reconciliation.isReconciled ? t('reconciled') : t('unreconciled')}
                 </h3>
-                <p className="text-xs opacity-90">
-                  {data.reconciliation.isReconciled ? t('reconciledDesc') : t('unreconciledDesc')}
+                <p className="text-xs text-[var(--text-muted)]">
+                  {data.reconciliation.isReconciled
+                    ? t('reconciledDesc')
+                    : `${t('unreconciledDesc')} (Drift: $${data.reconciliation.drift.toFixed(2)})`}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-xs font-medium opacity-75">{t('endingCash')}</div>
-              <div className="text-lg font-bold font-mono">
-                ${fmt(data.reconciliation.endingCash)}
+
+            <div className="flex items-center gap-4 text-xs font-mono">
+              <div className="flex flex-col items-end">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] font-sans">
+                  {t('beginningCash')}
+                </span>
+                <span className="font-bold text-[var(--text-primary)]">
+                  ${fmt(data.reconciliation.beginningCash)}
+                </span>
+              </div>
+              <span className="text-[var(--text-muted)]">{'+'}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] font-sans">
+                  {t('netPeriodChange')}
+                </span>
+                <span
+                  className={`font-bold ${
+                    data.reconciliation.netChangeInCash < 0
+                      ? 'text-[var(--danger)]'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}
+                >
+                  ${fmt(data.reconciliation.netChangeInCash)}
+                </span>
+              </div>
+              <span className="text-[var(--text-muted)]">{'='}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] font-sans">
+                  {t('endingCash')}
+                </span>
+                <span className="font-bold text-[var(--text-primary)]">
+                  ${fmt(data.reconciliation.endingCash)}
+                </span>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── Summary Metric Cards ── */}
-        {data && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
-              <div className="text-xs text-[var(--text-muted)] font-medium">{t('beginningCash')}</div>
-              <div className="text-xl font-bold font-mono mt-1 text-[var(--text-primary)]">
-                ${fmt(data.reconciliation.beginningCash)}
-              </div>
-            </div>
-            <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
-              <div className="text-xs text-[var(--text-muted)] font-medium">{t('operatingCash')}</div>
-              <div
-                className={`text-xl font-bold font-mono mt-1 ${
-                  data.operatingActivities.netCash >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                }`}
-              >
-                ${fmt(data.operatingActivities.netCash)}
-              </div>
-            </div>
-            <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
-              <div className="text-xs text-[var(--text-muted)] font-medium">{t('investingFinancing')}</div>
-              <div className="text-xl font-bold font-mono mt-1 text-[var(--text-primary)]">
-                ${fmt(data.investingActivities.netCash + data.financingActivities.netCash)}
-              </div>
-            </div>
-            <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
-              <div className="text-xs text-[var(--text-muted)] font-medium">{t('netPeriodChange')}</div>
-              <div
-                className={`text-xl font-bold font-mono mt-1 ${
-                  data.reconciliation.netChangeInCash >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                }`}
-              >
-                ${fmt(data.reconciliation.netChangeInCash)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Detailed Financial Schedules ── */}
+        {/* Loading / Data Table */}
         {loading ? (
-          <div className="p-12 text-center text-sm text-[var(--text-muted)]">
+          <div className="p-12 text-center text-sm text-[var(--text-muted)] flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined animate-spin text-base">
+              progress_activity
+            </span>
             {t('loading')}
           </div>
         ) : !data ? (
@@ -267,118 +466,43 @@ export default function CashFlowPage() {
         ) : (
           <div className="flex flex-col gap-6">
             {/* 1. Operating Activities */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-              <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-between">
-                <span>{t('section1')}</span>
-                <span className="font-mono font-bold text-sm">
-                  ${fmt(data.operatingActivities.netCash)}
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-[var(--border)]">
-                  {data.operatingActivities.lines.length === 0 ? (
-                    <tr>
-                      <td className="px-4 py-3 text-xs text-[var(--text-muted)] italic" colSpan={2}>
-                        {t('noOperating')}
-                      </td>
-                    </tr>
-                  ) : (
-                    data.operatingActivities.lines.map((line: api.CashFlowLineItemDto) => (
-                      <tr key={line.id} className="hover:bg-[var(--bg-hover)]">
-                        <td className="px-4 py-2.5 text-[var(--text-secondary)]">{line.name}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-medium text-[var(--text-primary)]">
-                          ${fmt(line.amount)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                  <tr className="bg-[var(--bg-secondary)]/50 font-bold">
-                    <td className="px-4 py-3 text-[var(--text-primary)]">
-                      {t('netOperating')}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
-                      ${fmt(data.operatingActivities.netCash)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <CashFlowSectionTable
+              title={t('section1')}
+              netCash={data.operatingActivities.netCash}
+              lines={data.operatingActivities.lines}
+              emptyMessage={t('noOperating')}
+              netLabel={t('netOperating')}
+              expandedLines={expandedLines}
+              drilldownCache={drilldownCache}
+              drilldownLoading={drilldownLoading}
+              onToggleLine={toggleLine}
+            />
 
             {/* 2. Investing Activities */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-              <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-between">
-                <span>{t('section2')}</span>
-                <span className="font-mono font-bold text-sm">
-                  ${fmt(data.investingActivities.netCash)}
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-[var(--border)]">
-                  {data.investingActivities.lines.length === 0 ? (
-                    <tr>
-                      <td className="px-4 py-3 text-xs text-[var(--text-muted)] italic" colSpan={2}>
-                        {t('noInvesting')}
-                      </td>
-                    </tr>
-                  ) : (
-                    data.investingActivities.lines.map((line: api.CashFlowLineItemDto) => (
-                      <tr key={line.id} className="hover:bg-[var(--bg-hover)]">
-                        <td className="px-4 py-2.5 text-[var(--text-secondary)]">{line.name}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-medium text-[var(--text-primary)]">
-                          ${fmt(line.amount)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                  <tr className="bg-[var(--bg-secondary)]/50 font-bold">
-                    <td className="px-4 py-3 text-[var(--text-primary)]">
-                      {t('netInvesting')}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
-                      ${fmt(data.investingActivities.netCash)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <CashFlowSectionTable
+              title={t('section2')}
+              netCash={data.investingActivities.netCash}
+              lines={data.investingActivities.lines}
+              emptyMessage={t('noInvesting')}
+              netLabel={t('netInvesting')}
+              expandedLines={expandedLines}
+              drilldownCache={drilldownCache}
+              drilldownLoading={drilldownLoading}
+              onToggleLine={toggleLine}
+            />
 
             {/* 3. Financing Activities */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-              <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-between">
-                <span>{t('section3')}</span>
-                <span className="font-mono font-bold text-sm">
-                  ${fmt(data.financingActivities.netCash)}
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-[var(--border)]">
-                  {data.financingActivities.lines.length === 0 ? (
-                    <tr>
-                      <td className="px-4 py-3 text-xs text-[var(--text-muted)] italic" colSpan={2}>
-                        {t('noFinancing')}
-                      </td>
-                    </tr>
-                  ) : (
-                    data.financingActivities.lines.map((line: api.CashFlowLineItemDto) => (
-                      <tr key={line.id} className="hover:bg-[var(--bg-hover)]">
-                        <td className="px-4 py-2.5 text-[var(--text-secondary)]">{line.name}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-medium text-[var(--text-primary)]">
-                          ${fmt(line.amount)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                  <tr className="bg-[var(--bg-secondary)]/50 font-bold">
-                    <td className="px-4 py-3 text-[var(--text-primary)]">
-                      {t('netFinancing')}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
-                      ${fmt(data.financingActivities.netCash)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <CashFlowSectionTable
+              title={t('section3')}
+              netCash={data.financingActivities.netCash}
+              lines={data.financingActivities.lines}
+              emptyMessage={t('noFinancing')}
+              netLabel={t('netFinancing')}
+              expandedLines={expandedLines}
+              drilldownCache={drilldownCache}
+              drilldownLoading={drilldownLoading}
+              onToggleLine={toggleLine}
+            />
 
             {/* 4. Cash Reconciliation Schedule */}
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">

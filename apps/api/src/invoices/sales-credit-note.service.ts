@@ -47,8 +47,11 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
-import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
-import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
+import {
+  computeLinePrice,
+  computeReturnCreditSummary,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+} from '@herobm/shared';
 import {
   SALES_CREDIT_NOTE_STATE,
   SALES_CREDIT_NOTE_TRANSITIONS,
@@ -561,7 +564,7 @@ export class SalesCreditNoteService {
       await this.glService.postJournalEntry(
         glLines,
         {
-          sourceType: 'sales_credit_note',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_CREDIT_NOTE,
           sourceId: creditNote.creditNoteId,
           memo: `Credit note ${creditNoteNumber} for return ${ret.returnNumber} on order ${order.orderNumber}`,
           actor,
@@ -1119,7 +1122,7 @@ export class SalesCreditNoteService {
     await this.glService.postJournalEntry(
       glLines,
       {
-        sourceType: 'sales_credit_note',
+        sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_CREDIT_NOTE,
         sourceId: creditNote.creditNoteId,
         memo: dto.notes ?? `Ad-hoc credit note ${creditNoteNumber}`,
         actor,
@@ -1323,7 +1326,7 @@ export class SalesCreditNoteService {
             reversedLines,
             {
               sourceId: creditNoteId,
-              sourceType: 'sales_credit_note',
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_CREDIT_NOTE,
               memo: `Reversal of Sales Credit Note ${existing.creditNoteNumber}`,
               entryDate: new Date().toISOString().slice(0, 10),
               actor,

@@ -15,6 +15,7 @@ import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
+import { Switch } from '@/components/shared/Switch';
 import BankMatchingView from './BankMatchingView';
 import { getErrorMessage, formatAmount } from '@herobm/shared';
 
@@ -47,30 +48,14 @@ const ToggleCell = (p: ToggleCellParams) => {
   if (!data || !context) return null;
   const { handleToggle, isPosted } = context;
 
-  const handleToggleClick = () => {
-    handleToggle(data.journalLineId, !data.isCleared);
-  };
-
   return (
-    <div className="flex items-center gap-3 mt-1">
-      <Button variant="ghost"
-        type="button"
+    <div className="flex items-center h-full">
+      <Switch
+        checked={data.isCleared}
         disabled={isPosted}
-        onClick={handleToggleClick}
-        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
- data.isCleared ? 'bg-[var(--accent)]' : 'bg-gray-300'
- } ${isPosted ? 'opacity-50 cursor-not-allowed' : ''}`}
-        aria-checked={data.isCleared}
-        role="switch"
+        onCheckedChange={() => handleToggle(data.journalLineId, !data.isCleared)}
         title={data.isCleared ? t('tooltips.clickToUnclear') : t('tooltips.clickToClear')}
-      >
-        <span
-          aria-hidden="true"
-          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
- data.isCleared ? 'translate-x-4' : 'translate-x-0'
- }`}
-        />
-      </Button>
+      />
     </div>
   );
 };
@@ -283,6 +268,7 @@ export default function EditReconciliationClient({ id }: { id: string }) {
                         toast('No matches found.', { icon: 'ℹ️' });
                       }
                     } catch (e) {
+                      toast.error('Auto-match preview failed: ' + getErrorMessage(e));
                       reportError(e, 'AutoMatchPreview');
                     } finally {
                       setPosting(false);

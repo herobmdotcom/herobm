@@ -90,15 +90,15 @@ describe('FiscalPeriodsContent', () => {
     expect(screen.getByText('Open')).toBeInTheDocument();
   });
 
-  it('triggers PDF generation when Audit Report button is clicked', async () => {
+  it('triggers PDF generation when Audit PDF button is clicked', async () => {
     const user = userEvent.setup();
     render(<FiscalPeriodsContent />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('Audit Report')).toHaveLength(2);
+      expect(screen.getAllByText('Audit PDF')).toHaveLength(2);
     });
 
-    const auditButtons = screen.getAllByText('Audit Report');
+    const auditButtons = screen.getAllByText('Audit PDF');
     await user.click(auditButtons[0]);
 
     await waitFor(() => {

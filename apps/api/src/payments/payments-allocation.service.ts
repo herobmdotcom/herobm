@@ -36,6 +36,7 @@ import {
   PURCHASE_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 
 @Injectable()
@@ -696,7 +697,7 @@ export class PaymentsAllocationService {
         lines,
         {
           sourceId: payment.paymentId,
-          sourceType: 'payment_entry',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PAYMENT_ENTRY,
           memo: `Late Allocation for ${payment.paymentNumber}`,
           entryDate: new Date().toISOString().split('T')[0],
           actor,

@@ -235,6 +235,110 @@ export class ProductGroupResponseDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export class ProductCostSummaryResponseDto {
+  @ApiProperty({ description: 'Product ID' })
+  productId: string;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Standard cost per unit',
+  })
+  standardCost: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Weighted average cost per unit',
+  })
+  weightedAverageCost: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'List price per unit',
+  })
+  listPrice: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Trade price per unit',
+  })
+  tradePrice: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Preferred supplier unit cost price',
+  })
+  preferredSupplierCost: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Preferred supplier discount percentage',
+  })
+  preferredSupplierDiscount: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Preferred supplier vendor ID',
+  })
+  preferredSupplierVendorId: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Preferred supplier vendor name',
+  })
+  preferredSupplierName: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Preferred supplier vendor number',
+  })
+  preferredSupplierVendorNumber: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Unit price from latest purchase order line',
+  })
+  lastPurchasePrice: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Order date of latest purchase order',
+  })
+  lastPurchaseDate: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Order number of latest purchase order',
+  })
+  lastPurchaseOrderNumber: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Vendor name of latest purchase order',
+  })
+  lastPurchaseVendorName: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Purchase order ID of latest purchase order',
+  })
+  lastPurchaseOrderId: string | null;
+}
+
 export class AddProductUomDto {
   @ApiProperty()
   @IsString()

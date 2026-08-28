@@ -43,6 +43,7 @@ import {
   UpdateProductDto,
   LinkBinDto,
   ProductResponseDto,
+  ProductCostSummaryResponseDto,
   AddProductUomDto,
   AddProductComponentDto,
   UpdateProductComponentDto,
@@ -148,6 +149,19 @@ export class ProductsController {
   @ApiOkResponse({ type: ProductResponseDto })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @Get(':id/cost-summary')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Product Cost Summary',
+    description:
+      'Retrieve aggregated cost metrics, supplier costs, purchasing stats, and inventory valuation for a product.',
+  })
+  @ApiFieldMask()
+  @ApiOkResponse({ type: ProductCostSummaryResponseDto })
+  getCostSummary(@Param('id') id: string) {
+    return this.productsService.getCostSummary(id);
   }
 
   @Post()

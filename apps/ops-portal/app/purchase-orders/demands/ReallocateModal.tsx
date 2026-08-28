@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import {
   buildReallocateLocationOptions,
   type ReallocateLocationOption,
@@ -92,6 +93,7 @@ export default function ReallocateModal({
       toast.success(`Successfully reallocated ${selectedDemands.length} line(s)`);
       onSuccess();
     } catch (err: unknown) {
+      toast.error('Failed to reallocate demands: ' + getErrorMessage(err));
       reportError(err, 'Failed to reallocate demands');
     } finally {
       setIsSubmitting(false);

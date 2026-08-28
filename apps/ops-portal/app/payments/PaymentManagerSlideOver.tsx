@@ -23,6 +23,7 @@ import {
   PURCHASE_DEBIT_NOTE_STATE,
   calculateEarlyPaymentDiscount,
   DATA_SOURCE_CONTEXT,
+  getErrorMessage,
 } from '@herobm/shared';
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
@@ -30,6 +31,8 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import PartialAllocationModal from './PartialAllocationModal';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
+
+import { Switch } from '@/components/shared/Switch';
 
 const ToggleCell = (p: ICellRendererParams<OutstandingInvoice>) => {
   const data = p.data;
@@ -41,30 +44,17 @@ const ToggleCell = (p: ICellRendererParams<OutstandingInvoice>) => {
   const isAllocated = data.pendingAllocation > 0;
 
   return (
-    <div className="flex items-center gap-3 mt-1">
-      <Button
-        type="button"
-        onClick={() => handleToggle(data)}
-        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
- isAllocated ? 'bg-[var(--accent)]' : 'bg-gray-300'
- }`}
-        aria-checked={isAllocated}
-        role="switch"
+    <div className="flex items-center h-full">
+      <Switch
+        checked={isAllocated}
+        onCheckedChange={() => handleToggle(data)}
         title={isAllocated ? t("manager.messages.clickToRemoveAllocation") : t("manager.messages.clickToAutoAllocateMax")}
-      >
-        <span
-          aria-hidden="true"
-          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
- isAllocated ? 'translate-x-4' : 'translate-x-0'
- }`}
-        />
-      </Button>
+      />
     </div>
   );
 };
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import GLAccountSelect from '@/components/shared/GLAccountSelect';
-import { getErrorMessage } from '@herobm/shared';
 
 interface Props {
   paymentId: string | null;
@@ -203,6 +193,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         setJournalEntry(null);
       }
     } catch (err) {
+      toast.error('Failed to load payment details: ' + getErrorMessage(err));
       reportError(err, 'PaymentManagerSlideOver.loadPayment');
     } finally {
       setLoading(false);
@@ -317,6 +308,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       
       setOutstandingInvoices(invoices);
     } catch (err) {
+      toast.error('Failed to load outstanding invoices: ' + getErrorMessage(err));
       reportError(err, 'PaymentManagerSlideOver.loadInvoices');
     } finally {
       setLoadingInvoices(false);

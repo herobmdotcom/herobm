@@ -9,29 +9,35 @@ action: "read"
 routes:
   - "/customers"
   - "/customers/:id"
-tags: ["customers", "accounts", "credit", "terms", "contacts", "addresses"]
+tags: ["customers", "accounts", "credit", "terms", "contacts", "addresses", "risk"]
 fields:
   name:
     title: "Customer Name"
     summary: "Legal trade name of the customer company or individual."
   customer_group_id:
     title: "Customer Group"
-    summary: "Assigns group defaults for Price Scale (1–4), default payment terms, and group discounts."
+    summary: "Assigns group defaults for Price Scale (1–4), default payment terms, group credit limit, and group discounts."
   currency_code:
     title: "Operating Currency"
     summary: "Transaction currency for sales orders and invoices (e.g. EUR, SGD, USD)."
   credit_limit:
     title: "Credit Limit"
-    summary: "Maximum allowable unpaid balance (outstanding invoices + un-invoiced orders)."
+    summary: "Maximum allowable financial exposure. Inherits from Customer Group or defaults to 0.00 (Cash Basis) if unspecified."
   is_on_credit_hold:
     title: "Credit Hold"
-    summary: "When enabled, prevents creating or confirming new sales orders without a manager override."
+    summary: "Blocks order progression to Quoted or Confirmed. Evaluated via an OR-gate across customer and group levels."
   trading_terms_id:
     title: "Payment Terms"
-    summary: "Standard payment window (e.g. Net 30, COD, Prepayment)."
+    summary: "Standard payment window (e.g. Net 30, COD, Prepayment) resolved via customer -> group -> system default."
+  early_payment_discount:
+    title: "Early Payment Discount %"
+    summary: "Percentage discount eligible if settled within early discount window."
+  early_payment_discount_days:
+    title: "Early Payment Window (Days)"
+    summary: "Number of calendar days from invoice date to qualify for early payment discount."
   tax_position_id:
     title: "Tax Position"
-    summary: "Tax exemption and specialized rules are handled relationally via Tax Positions."
+    summary: "Tax exemption and specialized rules handled relationally via Tax Positions."
   delivery_addresses:
     title: "Delivery Addresses"
     summary: "Multiple destination addresses selectable during sales order creation."
@@ -48,21 +54,46 @@ The **Customers** module manages commercial accounts, credit controls, pricing s
 
 ---
 
-## Business Rules & Settings
+## Business Logic & Inheritance Cascades
 
-### 1. Customer Groups & Price Scales
-Every customer belongs to a **Customer Group**. The group determines:
-- **Price Scale (1 to 4)**: Starting unit price level used on sales orders.
-- **Group Discount %**: Default percentage discount applied to all order lines.
-- **Default Payment Terms**: Standard trading terms inherited by new customer records.
+### 1. Data Inheritance Hierarchy
+When creating or updating customer orders, the system automatically resolves commercial defaults through a strict order of precedence:
 
-### 2. Credit Limits & Credit Holds
-- **Credit Limit**: The maximum allowable financial exposure for the account (`Unpaid Invoices + Open Sales Orders`).
-- **Credit Hold**: If an account breaches its limit, has overdue invoices, or is manually placed on credit hold, order progression is blocked unless a manager applies a **Credit Hold Override**.
+| Commercial Setting | Resolution Cascade (First Match Wins) | Default / Fallback |
+| :--- | :--- | :--- |
+| **Credit Limit** | `1. Customer Record` → `2. Customer Group` | `0.00` (Cash Basis only) |
+| **Payment Terms** | `1. Customer Record` → `2. Customer Group` → `3. System Default` | `None` (Immediate / Cash) |
+| **Early Payment Discount** | `1. Customer Record` → `2. Customer Group` | `0%` (No discount) |
+| **Early Payment Days** | `1. Customer Record` → `2. Customer Group` | `None` |
+| **Price Scale (1–4)** | `1. Customer Group Price Scale` | `Scale 1` (Retail List Price) |
 
-### 3. Multi-Currency & Tax Position
-- Each customer is assigned an operating currency (e.g. `EUR`, `SGD`, `USD`). All orders for this customer default to this currency.
-- Tax exemption and specialized tax rules are handled relationally via **Tax Positions**, which define the applicable tax rates for this customer.
+```mermaid
+flowchart TD
+    A[Order Creation / Progression] --> B{Customer Setting Defined?}
+    B -- Yes --> C[Use Customer Level Setting]
+    B -- No --> D{Group Setting Defined?}
+    D -- Yes --> E[Inherit Group Level Setting]
+    D -- No --> F[Apply System Default / Cash Basis]
+```
+
+### 2. Credit Exposure & Assessment Formula
+The system evaluates customer financial risk whenever an order is moved to **Quoted** or **Confirmed**:
+
+```
+Total Financial Exposure = Total Unpaid Invoice Balance + Additional Open Order Exposure
+```
+* **Unpaid Invoice Balance**: Sum of all posted, non-cancelled Sales Invoices minus credited amounts and unallocated customer receipts.
+* **Additional Open Order Exposure**: Gross total value of open Sales Orders in `Confirmed`, `Picking`, or `Shipped` states that have not yet been fully invoiced.
+
+### 3. Credit Hold Evaluation (Logical OR-Gate)
+An account's effective credit hold status is evaluated as a logical OR-gate:
+
+```
+Is Sales Blocked = (Customer is on Credit Hold) OR (Customer Group is on Credit Hold) OR (Overdue Balance > 0) OR (Total Exposure > Effective Credit Limit)
+```
+
+* **Active Override**: If an authorized user has granted a **Credit Hold Override**, the block is bypassed until `overrideCreditHoldUntil` timestamp expires (`overrideCreditHoldUntil > Current Time`).
+* **Hard vs. Soft Limit Behavior**: Under `hard` limit configuration (default), exceeding credit limits strictly prevents confirming or quoting orders. Under `soft` limit mode, operators receive a non-blocking financial warning.
 
 ---
 
@@ -77,11 +108,14 @@ Every customer belongs to a **Customer Group**. The group determines:
 6. (Optional) Add primary and billing **Contact Persons** with email and phone details.
 7. Click **Save Customer**.
 
-### 2. Managing Credit Holds
-1. Open the customer details page.
-2. In the **Financial Standing** section, view total outstanding receivables and credit headroom.
-3. To temporarily suspend ordering, toggle **Credit Hold: ON**.
-4. To release a hold, toggle **Credit Hold: OFF** (requires permission).
+### 2. Managing Credit Holds & Overrides
+1. Open the customer details page (`/customers/:id`).
+2. In the **Financial Standing** section, review total outstanding receivables, open order exposure, and remaining credit headroom.
+3. To manually suspend ordering, toggle **Credit Hold: ON**.
+4. To authorize a temporary override for a blocked account:
+   - Click **Apply Credit Override**.
+   - Select an expiry date/time and enter a mandatory **Business Justification Reason**.
+   - Confirm the override to allow order confirmation within the authorized window.
 
 ---
 
@@ -90,10 +124,12 @@ Every customer belongs to a **Customer Group**. The group determines:
 | Field | Description |
 | :--- | :--- |
 | **Customer Name** | Trading business name. |
-| **Customer Group** | Classification tier setting default price scale (1–4) and terms. |
+| **Customer Group** | Classification tier setting default price scale (1–4), terms, and group limits. |
 | **Currency** | Transaction currency for all sales orders and invoices. |
-| **Credit Limit** | Approved credit limit in customer currency. |
-| **Credit Hold** | Status flag blocking new sales order confirmations. |
+| **Credit Limit** | Maximum approved exposure in customer currency (inherits from group if null). |
+| **Credit Hold** | Manual or automated flag blocking new sales order confirmations. |
 | **Payment Terms** | Standard settlement timeline (e.g. Net 30, COD). |
+| **Early Payment Discount** | Discount percentage for early settlement before due date. |
+| **Early Payment Days** | Days from invoice date eligible for early payment discount. |
 | **Tax Position** | Relational link defining tax rules and exemptions. |
 | **Delivery Addresses** | Destination addresses for physical shipments. |

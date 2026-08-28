@@ -28,6 +28,7 @@ export const DATA_SOURCE_CONTEXT = {
   CUSTOMER_OVERDUE_NOTICE: 'customer-overdue-notice',
   PERIOD_CLOSE_AUDIT: 'period-close-audit',
   CASH_FLOW_STATEMENT: 'cash-flow-statement',
+  ACCOUNTING_CODES: 'accounting-codes',
 } as const;
 
 export type DataSourceContext = typeof DATA_SOURCE_CONTEXT[keyof typeof DATA_SOURCE_CONTEXT];

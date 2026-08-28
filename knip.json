@@ -23,7 +23,8 @@
         "apps/ops-portal/e2e/**",
         "apps/mcp-server/**",
         "extensions/**",
-        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx"
+        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
+        "apps/ops-portal/app/products/[id]/ProductCostSummary.tsx"
       ],
       "ignoreDependencies": [
         "@asyncapi/specs",

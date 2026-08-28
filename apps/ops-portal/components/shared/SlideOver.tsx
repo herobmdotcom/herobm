@@ -57,7 +57,7 @@ export default function SlideOver({
   if (!isOpen) return null;
 
   const content = (
-    <div className="fixed inset-0 z-[99999] overflow-hidden">
+    <div className="fixed inset-0 z-[9990] overflow-hidden">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity" 

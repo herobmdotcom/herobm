@@ -15,7 +15,7 @@ const translations: Record<string, string> = {
   fiscalPeriod: 'Fiscal Period',
   customRange: 'Custom Date Range',
   to: 'to',
-  exportPdf: 'Export Statement PDF',
+  exportPdf: 'Statement PDF',
   exporting: 'Exporting...',
   reconciled: 'General Ledger Cash Parity Verified',
   unreconciled: 'Cash Reconciliation Drift Detected',
@@ -168,15 +168,15 @@ describe('CashFlowPage', () => {
     });
   });
 
-  it('triggers PDF export when Export Statement PDF button is clicked', async () => {
+  it('triggers PDF export when Statement PDF button is clicked', async () => {
     const user = userEvent.setup();
     render(<CashFlowPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Export Statement PDF')).toBeInTheDocument();
+      expect(screen.getByText('Statement PDF')).toBeInTheDocument();
     });
 
-    const exportBtn = screen.getByText('Export Statement PDF');
+    const exportBtn = screen.getByText('Statement PDF');
     await user.click(exportBtn);
 
     await waitFor(() => {

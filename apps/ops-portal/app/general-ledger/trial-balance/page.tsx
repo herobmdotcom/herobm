@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { DATA_SOURCE_CONTEXT, getErrorMessage } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/shared/Button';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -186,14 +186,19 @@ export default function TrialBalancePage() {
       .then((res) => {
         setPeriods(res.data || []);
       })
-      .catch(() => {});
+      .catch((err) => {
+        reportError(err, 'TrialBalancePage.getFiscalPeriods');
+        toast.error('Failed to load fiscal periods: ' + getErrorMessage(err));
+      });
 
     api
       .glControllerGetSubledgerReconciliation()
       .then((res) => {
         setReconReport(res.data);
       })
-      .catch(() => {});
+      .catch((err) => {
+        reportError(err, 'TrialBalancePage.getSubledgerReconciliation');
+      });
   }, []);
 
   const fetchData = useCallback(() => {
@@ -318,9 +323,8 @@ export default function TrialBalancePage() {
                 variant="secondary"
                 onClick={handleExportCashFlowPdf}
                 disabled={exportingCashFlowPdf}
-                className="!py-1.5 !text-xs whitespace-nowrap flex items-center gap-1.5"
+                className="!py-1.5 !text-xs whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-sm">payments</span>
                 {exportingCashFlowPdf ? t('exporting') : t('exportCashFlowPdf')}
               </Button>
 
@@ -329,9 +333,8 @@ export default function TrialBalancePage() {
                 variant="secondary"
                 onClick={handleExportPeriodClosePdf}
                 disabled={exportingPdf}
-                className="!py-1.5 !text-xs whitespace-nowrap flex items-center gap-1.5"
+                className="!py-1.5 !text-xs whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
                 {exportingPdf ? t('exporting') : t('exportAuditPdf')}
               </Button>
             </div>
@@ -370,7 +373,9 @@ export default function TrialBalancePage() {
                 )}
               >
                 {formatStatusPill(
-                  'AR (1200)',
+                  reconReport.accountsReceivable.controlAccountCode
+                    ? `AR (${reconReport.accountsReceivable.controlAccountCode})`
+                    : 'AR',
                   reconReport.accountsReceivable.isMatched,
                   reconReport.accountsReceivable.drift,
                 )}
@@ -380,7 +385,9 @@ export default function TrialBalancePage() {
                 className={getPillClasses(reconReport.accountsPayable.isMatched)}
               >
                 {formatStatusPill(
-                  'AP (2000)',
+                  reconReport.accountsPayable.controlAccountCode
+                    ? `AP (${reconReport.accountsPayable.controlAccountCode})`
+                    : 'AP',
                   reconReport.accountsPayable.isMatched,
                   reconReport.accountsPayable.drift,
                 )}
@@ -392,7 +399,9 @@ export default function TrialBalancePage() {
                 )}
               >
                 {formatStatusPill(
-                  'GRNI (2150)',
+                  reconReport.goodsReceivedNotInvoiced.controlAccountCode
+                    ? `GRNI (${reconReport.goodsReceivedNotInvoiced.controlAccountCode})`
+                    : 'GRNI',
                   reconReport.goodsReceivedNotInvoiced.isMatched,
                   reconReport.goodsReceivedNotInvoiced.drift,
                 )}
@@ -404,7 +413,9 @@ export default function TrialBalancePage() {
                 )}
               >
                 {formatStatusPill(
-                  'Inventory (1300)',
+                  reconReport.perpetualInventory.controlAccountCode
+                    ? `Inventory (${reconReport.perpetualInventory.controlAccountCode})`
+                    : 'Inventory',
                   reconReport.perpetualInventory.isMatched,
                   reconReport.perpetualInventory.drift,
                 )}

@@ -44,6 +44,7 @@ import {
   PURCHASE_INVOICE_STATE,
   PURCHASE_INVOICE_TRANSITIONS,
   getValidStates,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 import { withCursorPagination } from '../common/pagination';
 
@@ -183,7 +184,7 @@ export class PurchaseInvoiceCoreService {
             reversedLines as Parameters<GlService['postJournalEntry']>[0],
             {
               sourceId: invoiceId,
-              sourceType: 'purchase_invoice_reversal',
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_INVOICE_REVERSAL,
               memo: `Reversal of Purchase Invoice ${existing.invoiceNumber}`,
               entryDate: new Date().toISOString().slice(0, 10),
               actor,

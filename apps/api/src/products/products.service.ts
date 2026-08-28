@@ -24,6 +24,11 @@ import {
   productComponents,
   inventoryLevels,
   productImages,
+  productSuppliers,
+  suppliers,
+  actors,
+  purchaseOrderLineItems,
+  purchaseOrders,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -31,6 +36,7 @@ import {
   withCursorPagination,
 } from '../common/pagination';
 import { PRODUCT_STATE } from '@herobm/shared';
+import { ProductCostSummaryResponseDto } from './dto';
 
 @Injectable()
 export class ProductsService {
@@ -359,6 +365,117 @@ export class ProductsService {
         parentQuantity: Number(c.parentQuantity),
         quantity: Number(c.quantity),
       })),
+    };
+  }
+
+  async getCostSummary(
+    id: string,
+    tx?: DrizzleDB,
+  ): Promise<ProductCostSummaryResponseDto> {
+    const db = tx || this.db;
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
+    if (!isUuid) {
+      throw new NotFoundException(`Product '${id}' not found`);
+    }
+
+    const [product] = await db
+      .select({
+        productId: coreProducts.productId,
+        standardCost: coreProducts.standardCost,
+        weightedAverageCost: coreProducts.weightedAverageCost,
+        listPrice: coreProducts.listPrice,
+        tradePrice: coreProducts.tradePrice,
+      })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, id))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product '${id}' not found`);
+    }
+
+    // 1. Preferred or primary supplier
+    const supplierRows = await db
+      .select({
+        vendorId: productSuppliers.vendorId,
+        costPrice: productSuppliers.costPrice,
+        discountPercent: productSuppliers.discountPercent,
+        isPreferred: productSuppliers.isPreferred,
+        vendorName: actors.name,
+        vendorNumber: suppliers.vendorNumber,
+      })
+      .from(productSuppliers)
+      .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .where(eq(productSuppliers.productId, id))
+      .orderBy(
+        desc(productSuppliers.isPreferred),
+        desc(productSuppliers.createdOn),
+      )
+      .limit(1);
+
+    const preferredSupplier = supplierRows[0] || null;
+
+    // 2. Latest purchase order line
+    const latestPoRows = await db
+      .select({
+        pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+        orderNumber: purchaseOrders.orderNumber,
+        createdOn: purchaseOrders.createdOn,
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        vendorName: actors.name,
+      })
+      .from(purchaseOrderLineItems)
+      .innerJoin(
+        purchaseOrders,
+        eq(
+          purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
+      )
+      .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .where(eq(purchaseOrderLineItems.productId, id))
+      .orderBy(desc(purchaseOrders.createdOn), desc(purchaseOrders.orderNumber))
+      .limit(1);
+
+    const latestPo = latestPoRows[0] || null;
+
+    return {
+      productId: product.productId,
+      standardCost: product.standardCost
+        ? parseFloat(product.standardCost).toFixed(2)
+        : null,
+      weightedAverageCost: product.weightedAverageCost
+        ? parseFloat(product.weightedAverageCost).toFixed(2)
+        : null,
+      listPrice: product.listPrice
+        ? parseFloat(product.listPrice).toFixed(2)
+        : null,
+      tradePrice: product.tradePrice
+        ? parseFloat(product.tradePrice).toFixed(2)
+        : null,
+      preferredSupplierCost: preferredSupplier?.costPrice
+        ? parseFloat(preferredSupplier.costPrice).toFixed(2)
+        : null,
+      preferredSupplierDiscount: preferredSupplier?.discountPercent
+        ? parseFloat(preferredSupplier.discountPercent).toFixed(2)
+        : null,
+      preferredSupplierVendorId: preferredSupplier?.vendorId ?? null,
+      preferredSupplierName: preferredSupplier?.vendorName ?? null,
+      preferredSupplierVendorNumber: preferredSupplier?.vendorNumber ?? null,
+      lastPurchasePrice: latestPo?.pricePerUnit
+        ? parseFloat(latestPo.pricePerUnit).toFixed(2)
+        : null,
+      lastPurchaseDate: latestPo?.createdOn
+        ? new Date(latestPo.createdOn).toISOString()
+        : null,
+      lastPurchaseOrderNumber: latestPo?.orderNumber ?? null,
+      lastPurchaseVendorName: latestPo?.vendorName ?? null,
+      lastPurchaseOrderId: latestPo?.purchaseOrderId ?? null,
     };
   }
 }

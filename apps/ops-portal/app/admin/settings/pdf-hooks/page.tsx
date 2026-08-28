@@ -45,6 +45,7 @@ export default function ReportingHooksPage() {
       setTemplates(templRes.data || []);
     } catch (e) {
       reportError(e, 'ReportingHooksPage');
+      toast.error('Failed to load hook assignments: ' + getErrorMessage(e));
     } finally {
       setLoading(false);
     }

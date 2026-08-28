@@ -13,6 +13,7 @@ import { BankStatementService } from './bank-statement.service';
 import { FxRevaluationService } from './fx-revaluation.service';
 import { PeriodCloseAuditService } from '../pdf-templates/period-close-audit.service';
 import { CashFlowService } from './cash-flow.service';
+import { AccountingCodesService } from './accounting-codes.service';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
@@ -34,6 +35,7 @@ import { BusinessReportsModule } from '../business-reports/business-reports.modu
     FxRevaluationService,
     PeriodCloseAuditService,
     CashFlowService,
+    AccountingCodesService,
   ],
   exports: [
     GlService,
@@ -44,6 +46,7 @@ import { BusinessReportsModule } from '../business-reports/business-reports.modu
     FxRevaluationService,
     PeriodCloseAuditService,
     CashFlowService,
+    AccountingCodesService,
   ],
 })
 export class GlModule implements OnModuleInit {
@@ -51,6 +54,7 @@ export class GlModule implements OnModuleInit {
     private readonly dataSourcesRegistry: DataSourcesRegistry,
     private readonly periodCloseAuditService: PeriodCloseAuditService,
     private readonly cashFlowService: CashFlowService,
+    private readonly accountingCodesService: AccountingCodesService,
   ) {}
 
   onModuleInit() {
@@ -104,6 +108,31 @@ export class GlModule implements OnModuleInit {
       },
       generateMockData: () => {
         return this.cashFlowService.generateMockData() as unknown as Record<
+          string,
+          unknown
+        >;
+      },
+    });
+
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.ACCOUNTING_CODES, {
+      requiredPermissions: [{ resource: SystemResource.GL, action: 'read' }],
+      resolveData: async (
+        id: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Context user
+        user: any,
+        options?: Record<string, unknown>,
+      ) => {
+        return (await this.accountingCodesService.assembleData(
+          id,
+          user,
+          options,
+        )) as unknown as Record<string, unknown>;
+      },
+      getRandomId: async () => {
+        return this.accountingCodesService.getRandomId();
+      },
+      generateMockData: () => {
+        return this.accountingCodesService.generateMockData() as unknown as Record<
           string,
           unknown
         >;

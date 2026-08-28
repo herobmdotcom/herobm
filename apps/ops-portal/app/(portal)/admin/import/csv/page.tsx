@@ -127,10 +127,16 @@ export default function CsvImportPage() {
           if (progress.status === 'completed') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
-            api.setupControllerGetImportSummary().then((summaryRes) => {
-               setImportSummary(summaryRes.data);
-               setStep('finalisation');
-            });
+            api.setupControllerGetImportSummary()
+              .then((summaryRes) => {
+                setImportSummary(summaryRes.data);
+                setStep('finalisation');
+              })
+              .catch((err) => {
+                toast.error('Failed to load import summary: ' + getErrorMessage(err));
+                reportError(err, 'CsvImportPage.getImportSummary');
+                setStep('finalisation');
+              });
           } else if (progress.status === 'failed') {
             setStatus('failed');
             const errorLog = progress.logs?.find((l: string) => l.includes('[ERROR]')) || 'Execution failed on backend.';
@@ -140,6 +146,7 @@ export default function CsvImportPage() {
         }
       } catch (err) {
         reportError(err, 'CsvImportPage.pollProgress');
+        setErrorMsg(getErrorMessage(err));
       }
     }, 1000);
   };

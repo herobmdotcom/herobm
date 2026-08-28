@@ -173,6 +173,9 @@ export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from
 
 export {
   GL_ACCOUNT_TYPE,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
+  TAKE_ON_JOURNAL_SOURCE_TYPES,
   calculateAgedTotals,
   isDebitNormalAccount,
   computeAccountNetBalance,
@@ -180,6 +183,7 @@ export {
 } from './accounting';
 export type {
   GLAccountType,
+  JournalEntrySourceType,
   AgedBalanceRow,
   AgedTotals,
   RunningBalanceInputLine,

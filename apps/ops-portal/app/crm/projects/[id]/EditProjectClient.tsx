@@ -21,7 +21,7 @@ import { ActorCard } from '@/components/shared/ActorCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
-import { PROJECT_STATE, SystemResource, hasPermission } from '@herobm/shared';
+import { PROJECT_STATE, SystemResource, hasPermission, getErrorMessage } from '@herobm/shared';
 
 interface ProjectFormDto {
   name: string;
@@ -370,6 +370,7 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
       toast.success('Project archived');
       loadProject();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Archive Project');
     }
   };
@@ -380,6 +381,7 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
       toast.success('Project unarchived');
       loadProject();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Unarchive Project');
     }
   };
@@ -392,6 +394,7 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
         const usersRes = await api.usersControllerFindAll();
         setUsers(usersRes.data || []);
       } catch (e) {
+        toast.error('Failed to load users: ' + getErrorMessage(e));
         reportError(e, 'EditProjectClient - load users');
       }
       try {
@@ -400,6 +403,7 @@ export default function EditProjectClient({ projectId }: { projectId: string }) 
           setAppSettings(settingsRes.data);
         }
       } catch (e) {
+        toast.error('Failed to load app settings: ' + getErrorMessage(e));
         reportError(e, 'EditProjectClient - load app settings');
       }
     };

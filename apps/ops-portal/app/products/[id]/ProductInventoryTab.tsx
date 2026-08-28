@@ -88,6 +88,7 @@ export function ProductInventoryTab({
           setBuildableQuantity(null);
         }
       } catch (err) {
+        toast.error('Failed to load inventory levels: ' + getErrorMessage(err));
         reportError(err, 'ProductInventoryTab');
       }
     };
@@ -98,7 +99,7 @@ export function ProductInventoryTab({
   useEffect(() => {
     api.inventoryControllerFindAllLocations({ productId })
       .then((res) => setLocations(res.data || []))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load locations: ' + getErrorMessage(err)));
   }, [productId]);
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export function ProductInventoryTab({
         bins.sort((a: any, b: any) => compareBinNumbers(a.binNumber, b.binNumber));
         setAvailableBins(bins);
       })
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load available bins: ' + getErrorMessage(err)));
   }, [newBinLink.locationId]);
 
   

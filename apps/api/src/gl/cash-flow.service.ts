@@ -6,8 +6,10 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { organization, glSettings, glFiscalPeriods } from '@herobm/db-schema';
 import {
   calculateCashFlowStatement,
+  calculateCashFlowLineDrilldown,
   CalculateCashFlowOptions,
   CashFlowStatementResult,
+  CashFlowDrilldownStatementResult,
 } from './gl-cash-flow.utils';
 
 export interface CashFlowStatementData {
@@ -85,7 +87,64 @@ export class CashFlowService {
   async getCashFlowStatement(
     options: CalculateCashFlowOptions,
   ): Promise<CashFlowStatementResult> {
+    if (!options.glSettings) {
+      try {
+        const [glSet] = await this.db
+          .select({
+            defaultArAccountId: glSettings.defaultArAccountId,
+            defaultApAccountId: glSettings.defaultApAccountId,
+            defaultRevenueAccountId: glSettings.defaultRevenueAccountId,
+            defaultCogsAccountId: glSettings.defaultCogsAccountId,
+            defaultSalesTaxAccountId: glSettings.defaultSalesTaxAccountId,
+            defaultPurchaseTaxAccountId: glSettings.defaultPurchaseTaxAccountId,
+            defaultInventoryAccountId: glSettings.defaultInventoryAccountId,
+            defaultExpenseAccountId: glSettings.defaultExpenseAccountId,
+          })
+          .from(glSettings)
+          .limit(1);
+
+        if (glSet) {
+          options = { ...options, glSettings: glSet };
+        }
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Could not load glSettings control accounts: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
     return calculateCashFlowStatement(this.db, options);
+  }
+
+  async getCashFlowDrilldown(
+    options: CalculateCashFlowOptions,
+    lineId: string,
+  ): Promise<CashFlowDrilldownStatementResult> {
+    if (!options.glSettings) {
+      try {
+        const [glSet] = await this.db
+          .select({
+            defaultArAccountId: glSettings.defaultArAccountId,
+            defaultApAccountId: glSettings.defaultApAccountId,
+            defaultRevenueAccountId: glSettings.defaultRevenueAccountId,
+            defaultCogsAccountId: glSettings.defaultCogsAccountId,
+            defaultSalesTaxAccountId: glSettings.defaultSalesTaxAccountId,
+            defaultPurchaseTaxAccountId: glSettings.defaultPurchaseTaxAccountId,
+            defaultInventoryAccountId: glSettings.defaultInventoryAccountId,
+            defaultExpenseAccountId: glSettings.defaultExpenseAccountId,
+          })
+          .from(glSettings)
+          .limit(1);
+
+        if (glSet) {
+          options = { ...options, glSettings: glSet };
+        }
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Could not load glSettings control accounts: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    return calculateCashFlowLineDrilldown(this.db, options, lineId);
   }
 
   async assembleData(
@@ -132,7 +191,17 @@ export class CashFlowService {
 
     const [org] = await this.db.select().from(organization).limit(1);
     const [glSet] = await this.db
-      .select({ baseCurrency: glSettings.baseCurrency })
+      .select({
+        baseCurrency: glSettings.baseCurrency,
+        defaultArAccountId: glSettings.defaultArAccountId,
+        defaultApAccountId: glSettings.defaultApAccountId,
+        defaultRevenueAccountId: glSettings.defaultRevenueAccountId,
+        defaultCogsAccountId: glSettings.defaultCogsAccountId,
+        defaultSalesTaxAccountId: glSettings.defaultSalesTaxAccountId,
+        defaultPurchaseTaxAccountId: glSettings.defaultPurchaseTaxAccountId,
+        defaultInventoryAccountId: glSettings.defaultInventoryAccountId,
+        defaultExpenseAccountId: glSettings.defaultExpenseAccountId,
+      })
       .from(glSettings)
       .limit(1);
 
@@ -144,6 +213,7 @@ export class CashFlowService {
       periodName,
       fiscalYear,
       periodNumber,
+      glSettings: glSet || undefined,
     });
 
     const snapshotPayload = `${startDate}:${endDate}:${result.reconciliation.netChangeInCash}:${result.reconciliation.endingCash}:${result.reconciliation.isReconciled}`;

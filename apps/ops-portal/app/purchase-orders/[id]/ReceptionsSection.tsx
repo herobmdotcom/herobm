@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatLocalDate } from '@/lib/date';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import * as api from '@herobm/sdk';
 
 import { useTranslations } from 'next-intl';
@@ -42,6 +43,7 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
       const { data } = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as unknown as Parameters<typeof api.goodsReceivedControllerFindAllLines>[0]);
       setReceptions((data.data || []) as unknown as ReceptionLine[]);
     } catch (err) {
+      toast.error('Failed to load goods receipts: ' + getErrorMessage(err));
       reportError(err, 'ReceptionsSection');
     } finally {
       setLoading(false);

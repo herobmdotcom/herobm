@@ -18,6 +18,8 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
 import { DateRangeFilter } from '@/components/reporting/DateRangeFilter';
 import { Button } from '@/components/shared/Button';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -47,7 +49,7 @@ export default function ReportViewer() {
   useEffect(() => {
     userSettingsControllerGetSettings()
       .then((res) => setUserSettings(res.data))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load user settings: ' + getErrorMessage(err)));
   }, []);
 
   const handleSaveView = async () => {
@@ -146,7 +148,7 @@ export default function ReportViewer() {
   useEffect(() => {
     businessReportsControllerGetReports()
       .then((res) => setReports(res.data))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load reports: ' + getErrorMessage(err)));
   }, []);
 
    
@@ -166,7 +168,7 @@ export default function ReportViewer() {
     setFilteredChartData(null);
     businessReportsControllerRunReport(slug, { filters: overrideFilters || filters })
       .then((res) => setReportData(res.data))
-      .catch(console.error)
+      .catch((err) => toast.error('Failed to run report: ' + getErrorMessage(err)))
       .finally(() => setIsLoadingData(false));
   }, [report, slug, filters]);
 

@@ -38,6 +38,15 @@ fields:
   standard_cost:
     title: "Standard Unit Cost"
     summary: "Current replacement cost used for inventory valuation and margin reporting."
+  weighted_average_cost:
+    title: "Weighted Average Cost (WAC)"
+    summary: "Dynamically calculated rolling unit cost based on receipt transaction history. Used for inventory valuation and COGS."
+  preferred_supplier_cost:
+    title: "Preferred Supplier Cost"
+    summary: "Negotiated unit price from the primary preferred vendor, factoring in contracted discount percentages."
+  last_purchase_price:
+    title: "Last PO Price"
+    summary: "Unit price paid on the most recent purchase order line item."
   purchase_tax_category_id:
     title: "Purchase Tax Category"
     summary: "Default GST/VAT tax category assigned to this item for purchasing."
@@ -76,6 +85,33 @@ A product can be configured as a **Kit**:
 - Sold under a single SKU at a bundle price.
 - Contains child component items with specified quantities.
 - When sold, component quantities are picked from stock, while the customer invoice shows the clean bundle item.
+
+---
+
+## Cost Metrics & Valuation Calculations
+
+HeroBM tracks four complementary cost metrics to provide complete visibility into purchasing history, replacement benchmarks, and real-time inventory valuation:
+
+### 1. Standard Cost (Target / Benchmark)
+- **Definition**: A fixed, manually configured unit cost set by management.
+- **Usage**: Serves as a standard budgeting baseline, target gross margin benchmark, and baseline replacement cost when historical purchasing data is not yet available.
+- **Editing**: Editable directly in the **Costs** section of the Product Details page.
+
+### 2. Weighted Average Cost (WAC — Inventory Valuation Basis)
+- **Definition**: The rolling weighted average purchase price of current on-hand stock.
+- **Calculation**: Automatically recalculated upon every stock receipt in the inventory ledger:
+  `New WAC = ((Current QOH * Current WAC) + (Received Qty * Received Unit Cost)) / (Current QOH + Received Qty)`
+- **Usage**: Powers accurate balance sheet asset valuation (`Total Value = QOH * WAC`) and Cost of Goods Sold (COGS) accounting upon sales fulfillment.
+
+### 3. Preferred Supplier Cost
+- **Definition**: The contracted cost price configured for the product's primary/preferred vendor in the **Suppliers** tab.
+- **Discount Calculation**: Reflects the net cost after applying supplier contract discounts:
+  `Net Supplier Cost = Cost Price * (1 - (Discount % / 100))`
+- **Usage**: Defaults automatically onto new Purchase Orders generated for this supplier.
+
+### 4. Last Purchase Order Price
+- **Definition**: The actual unit price recorded on the most recent approved purchase order line.
+- **Usage**: Provides instant operational visibility into recent market price trends and supplier billing fluctuations.
 
 ---
 
@@ -120,7 +156,10 @@ Images should be uploaded via the Ops Portal UI on the Product detail page, or v
 | **Product Code / SKU** | Unique catalog code. |
 | **Product Name** | Full commercial description. |
 | **Product Type** | `Stocked`, `Non-Stock`, `Service`, or `Freight`. |
-| **Standard Cost** | Current unit cost for GL valuation. |
+| **Standard Cost** | Current unit cost benchmark for GL valuation and budgeting. |
+| **Weighted Average Cost (WAC)** | Rolling inventory valuation unit cost basis calculated from stock receipts. |
+| **Preferred Supplier Cost** | Contracted purchase price from the primary vendor, including discount. |
+| **Last PO Price** | Most recent historical purchase order unit cost. |
 | **Price Scales (1–4)** | 4-tier pricing matrix. |
 | **Purchase Tax Category** | Default tax rate classification for purchasing. |
 | **Sales Tax Category** | Default tax rate classification for sales. |

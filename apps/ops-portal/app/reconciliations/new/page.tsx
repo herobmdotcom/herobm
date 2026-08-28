@@ -8,6 +8,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { reportError, apiFetch } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 export default function NewReconciliationPage() {
@@ -36,6 +37,7 @@ export default function NewReconciliationPage() {
         setAccounts(accRes.data as unknown as api.GlAccountResponseDto[]);
         setProfiles(profRes.data || []);
       } catch (err) {
+        toast.error('Failed to load accounts: ' + getErrorMessage(err));
         reportError(err, 'NewReconciliationFetch');
       }
     }

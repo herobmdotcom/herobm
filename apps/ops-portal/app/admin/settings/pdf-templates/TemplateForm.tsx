@@ -39,7 +39,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
   useEffect(() => {
     api.pdfTemplatesControllerGetHooks().then(res => {
       setAvailableHooks(res.data || []);
-    }).catch(() => {});
+    }).catch((err) => toast.error('Failed to load PDF hooks: ' + getErrorMessage(err)));
   }, []);
 
   const handleSave = async () => {
@@ -102,8 +102,11 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
       const newId = resData?.id || resDirect?.id;
       if (newId) {
         setPreviewVars(p => ({ ...p, entityId: newId }));
+      } else {
+        toast.error('No sample entities found for this hook');
       }
     } catch (err) {
+      toast.error('Failed to load sample entity: ' + getErrorMessage(err));
       reportError(err, 'TemplateForm.randomizeId');
     }
   };
@@ -119,7 +122,9 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           const newId = resData?.id || resDirect?.id;
           if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId }));
         })
-        .catch(() => {});
+        .catch((err) => {
+          reportError(err, 'TemplateForm.handleHookChange');
+        });
     }
   };
 

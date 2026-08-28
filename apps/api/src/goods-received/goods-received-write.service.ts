@@ -64,6 +64,7 @@ import {
   BackorderState,
   PUTAWAY_STATUS,
   MATCH_STATUS,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
@@ -665,7 +666,7 @@ export class GoodsReceivedWriteService {
         .where(
           and(
             eq(glJournalEntries.sourceId, receipt.goodsReceivedId),
-            eq(glJournalEntries.sourceType, 'inventory_receipt'),
+            eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT),
           ),
         )
         .limit(1);
@@ -695,7 +696,7 @@ export class GoodsReceivedWriteService {
             {
               actor: userId,
               entryDate: new Date().toISOString().slice(0, 10),
-              sourceType: 'inventory_receipt',
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT,
               sourceId: receipt.goodsReceivedId,
               memo: `Cancel Reception ${receipt.receiptNumber}`,
             },

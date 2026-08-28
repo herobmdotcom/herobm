@@ -248,6 +248,7 @@
         "view": "View"
       },
       "autoRefresh": "Auto-refresh (5s)",
+      "clearSuccess": "Events cleared successfully",
       "columns": {
         "actions": "Actions",
         "aggregate": "Aggregate",
@@ -1548,6 +1549,8 @@
     "totalAccounts": "TOTAL ACCOUNTS"
   },
   "dashboard": {
+    "failedToLoadReport": "Failed to load report configuration.",
+    "loadingReport": "Loading report...",
     "managePinnedReports": "Manage Pinned Reports",
     "noPinnedReports": "You haven't pinned any reports yet. Click the settings icon to add some.",
     "noSavedReports": "You don't have any saved report views yet. Go to the Reporting section to save some!",
@@ -1728,17 +1731,23 @@
   },
   "gl": {
     "cashFlow": {
+      "account": "Offset Account",
       "begCash": "Cash and Cash Equivalents at Beginning of Period",
       "beginningCash": "Beginning Cash",
+      "cashImpact": "Cash Impact",
       "customRange": "Custom Date Range",
+      "date": "Date",
+      "drilldown": "Drill-down",
       "endCash": "Cash and Cash Equivalents at End of Period (Calculated)",
       "endingCash": "Ending Cash Balance",
-      "exportPdf": "Export Statement PDF",
+      "exportPdf": "Statement PDF",
       "exporting": "Exporting...",
       "fiscalPeriod": "Fiscal Period",
       "glBalance": "General Ledger Bank & Cash Balance",
       "investingFinancing": "Investing & Financing",
       "loading": "Loading Statement of Cash Flows...",
+      "loadingDrilldown": "Loading constituent transactions...",
+      "memo": "Description / Memo",
       "netChange": "Net Increase / (Decrease) in Cash and Cash Equivalents",
       "netFinancing": "Net Cash Provided by / (Used in) Financing Activities",
       "netFinancingFlow": "Net Financing Cash Flow",
@@ -1751,9 +1760,11 @@
       "noFinancing": "No equity or loan financing transactions recorded in this period.",
       "noInvesting": "No investing capital transactions recorded in this period.",
       "noOperating": "No operating cash transactions recorded in this period.",
+      "noTransactions": "No individual transactions recorded for this line item.",
       "operatingCash": "Operating Cash Flow",
       "reconciled": "General Ledger Cash Parity Verified",
       "reconciledDesc": "Calculated net flow matches actual GL bank account movement.",
+      "refNumber": "Reference",
       "section1": "1. Cash Flows from Operating Activities",
       "section2": "2. Cash Flows from Investing Activities",
       "section3": "3. Cash Flows from Financing Activities",
@@ -1761,7 +1772,8 @@
       "title": "Statement of Cash Flows",
       "to": "to",
       "unreconciled": "Cash Reconciliation Drift Detected",
-      "unreconciledDesc": "Discrepancy detected between cash flow activities and GL bank control balances."
+      "unreconciledDesc": "Discrepancy detected between cash flow activities and GL bank control balances.",
+      "viewEntry": "View Journal Entry"
     },
     "codes": {
       "accountingCodes": "Accounting Codes",
@@ -1772,6 +1784,8 @@
         "costCenters": "Cost Centers"
       },
       "exportCsv": "Export CSV",
+      "exportPdf": "Export PDF",
+      "exporting": "Exporting...",
       "group": "Group",
       "search": "Search codes...",
       "subtitle": "Quick reference for customers, cost centers, and activities",
@@ -1816,6 +1830,7 @@
         "totalCredit": "Total Credit",
         "totalDebit": "Total Debit"
       },
+      "entryType": "Entry Type",
       "fromDate": "From",
       "lines": "Lines",
       "na": "N/A",
@@ -1842,6 +1857,26 @@
       "sourcePurchaseInvoice": "Purchase Invoice",
       "sourceSalesCreditNote": "Sales Credit Note",
       "sourceSalesInvoice": "Sales Invoice",
+      "sourceTypes": {
+        "adjustment": "Periodic / Audit Adjustment",
+        "fx_revaluation": "FX Revaluation",
+        "initial_import": "Initial Import",
+        "inventory_adjustment": "Inventory Adjustment",
+        "inventory_dispatch": "Inventory Dispatch",
+        "inventory_receipt": "Inventory Receipt",
+        "manual": "General Journal",
+        "opening_balance": "Opening Balance / Take-On",
+        "payment_entry": "Payment Entry",
+        "payroll": "Manual Payroll",
+        "purchase_debit_note": "Purchase Debit Note",
+        "purchase_invoice": "Supplier Bill",
+        "purchase_invoice_reversal": "Supplier Bill Reversal",
+        "sales_credit_note": "Sales Credit Note",
+        "sales_invoice": "Sales Invoice",
+        "sales_invoice_reversal": "Sales Invoice Reversal",
+        "tax_settlement": "Tax Settlement",
+        "year_end_close": "Year-End Close"
+      },
       "title": "Journal Entries",
       "toDate": "To",
       "total": "Total",
@@ -2026,8 +2061,8 @@
         "credit": "Credit",
         "debit": "Debit"
       },
-      "exportAuditPdf": "Export Audit PDF",
-      "exportCashFlowPdf": "Export Cash Flow PDF",
+      "exportAuditPdf": "Audit PDF",
+      "exportCashFlowPdf": "Cash Flow PDF",
       "exporting": "Exporting...",
       "fromDate": "From",
       "noData": "No transactions found for this period.",
@@ -2641,7 +2676,9 @@
     },
     "cards": {
       "classification": "Classification",
+      "costs": "Costs",
       "identity": "Identity",
+      "pricing": "Pricing",
       "taxation": "Taxation"
     },
     "columns": {
@@ -2674,6 +2711,23 @@
     "componentProduct": "Component Product",
     "confirmRemoveComponent": "Are you sure you want to remove this component?",
     "confirmRemoveConversion": "Remove {uomCode} conversion?",
+    "costSummary": {
+      "discount": "Disc.",
+      "lastPurchase": "Last Purchase",
+      "lastPurchasePrice": "Last PO Price",
+      "loading": "Loading cost summary...",
+      "noPoHistory": "No purchase order history",
+      "noPreferredSupplier": "No preferred supplier configured",
+      "notSet": "Not set",
+      "preferredSupplier": "Preferred Supplier",
+      "standardCost": "Standard Cost",
+      "standardCostDesc": "Budgeted standard unit cost",
+      "title": "Costs",
+      "unitCost": "Unit Cost",
+      "weightedAverageCost": "Weighted Avg Cost (WAC)",
+      "weightedAverageCostDesc": "Valuation basis"
+    },
+    "costs": "Costs",
     "defaultPurchaseUom": "Default Purchase UoM",
     "defaultSalesUom": "Default Sales UoM",
     "editComponent": "Edit Component",
@@ -2719,7 +2773,7 @@
       "searchProduct": "Search for a product...",
       "searchProducts": "Search by name, product number, or barcode..."
     },
-    "pricing": "Pricing & Costs",
+    "pricing": "Pricing",
     "productGroup": "Product Group",
     "productName": "Product Name",
     "storage": {
@@ -2851,6 +2905,8 @@
       "orderedQty": "Ordered Qty",
       "paymentNo": "Payment No.",
       "product": "Product",
+      "productLineTotal": "Line Total",
+      "productUnitPrice": "Unit Cost",
       "qty": "Qty",
       "qtyReceived": "Received",
       "qtyReturned": "Qty Returned",

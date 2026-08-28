@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import {
   userSettingsControllerGetSettings,
   userSettingsControllerUpdateSettings,
@@ -67,21 +69,27 @@ export function useDashboardData() {
     setEnabledEvents(events);
     const updatedConfig = { ...dashboardConfig, timelineEvents: events };
     setDashboardConfig(updatedConfig);
-    try {
-      userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig }).catch(console.warn);
-    } catch (err) {
-      console.warn('Failed to save timeline preferences', err);
-    }
+    userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig })
+      .then(() => {
+        toast.success('Timeline preferences updated');
+      })
+      .catch((err: unknown) => {
+        toast.error('Failed to save timeline preferences: ' + getErrorMessage(err));
+        reportError(err, 'useDashboardData.handlePreferencesChange');
+      });
   }, [dashboardConfig]);
 
   const handlePinnedReportsChange = useCallback((newPinnedReports: PinnedReportItem[]) => {
     const updatedConfig = { ...dashboardConfig, pinnedReports: newPinnedReports };
     setDashboardConfig(updatedConfig);
-    try {
-      userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig }).catch(console.warn);
-    } catch (err) {
-      console.warn('Failed to save pinned reports preferences', err);
-    }
+    userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig })
+      .then(() => {
+        toast.success('Pinned reports updated');
+      })
+      .catch((err: unknown) => {
+        toast.error('Failed to save pinned reports: ' + getErrorMessage(err));
+        reportError(err, 'useDashboardData.handlePinnedReportsChange');
+      });
   }, [dashboardConfig]);
 
   return {

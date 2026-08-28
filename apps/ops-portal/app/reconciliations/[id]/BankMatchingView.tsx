@@ -11,7 +11,7 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import MatchDetailsModal from './MatchDetailsModal';
 import { Button } from '@/components/shared/Button';
-import { formatAmount } from '@herobm/shared';
+import { formatAmount, getErrorMessage } from '@herobm/shared';
 
 interface UnreconciledLine {
   journalLineId: string;
@@ -76,6 +76,7 @@ export default function BankMatchingView({
       setBankLines(bankRes.data || []);
       setUnreconciledLines((journalRes.data || []) as unknown as UnreconciledLine[]);
     } catch (e) {
+      toast.error('Failed to load reconciliation data: ' + getErrorMessage(e));
       reportError(e, 'FetchReconciliationData');
     } finally {
       setLoading(false);
@@ -117,6 +118,7 @@ export default function BankMatchingView({
       await fetchData();
       onUpdate();
     } catch (e) {
+      toast.error('Failed to match transactions: ' + getErrorMessage(e));
       reportError(e, 'MatchBulk');
     } finally {
       setMatching(false);
@@ -342,6 +344,7 @@ export default function BankMatchingView({
                               setSelectedBankLines(new Set());
                               fetchData();
                             } catch (e) {
+                              toast.error('Failed to delete lines: ' + getErrorMessage(e));
                               reportError(e, 'DeleteLines');
                             }
                           }}

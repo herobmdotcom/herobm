@@ -30,6 +30,7 @@ import {
   GL_ACCOUNT_TYPE,
   GLAccountType,
   DATA_SOURCE_CONTEXT,
+  type JournalEntrySourceType,
 } from '@herobm/shared';
 import { JournalLineDto } from './dto';
 import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
@@ -45,19 +46,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export class JournalMeta {
-  sourceType!:
-    | 'sales_invoice'
-    | 'purchase_invoice'
-    | 'sales_credit_note'
-    | 'purchase_debit_note'
-    | 'manual'
-    | 'adjustment'
-    | 'inventory_receipt'
-    | 'inventory_dispatch'
-    | 'inventory_adjustment'
-    | 'payment_entry'
-    | 'sales_invoice_reversal'
-    | 'purchase_invoice_reversal';
+  sourceType!: JournalEntrySourceType;
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
@@ -288,6 +277,14 @@ export class GlService implements OnModuleInit {
     // 3. Insert — either directly on the caller's tx, or in a self-contained transaction
     const doInsert = async (db: DrizzleDB) => {
       const entryNumber = await this.generateEntryNumber(db);
+      let actorStr = 'system';
+      if (typeof meta.actor === 'string') {
+        actorStr = meta.actor;
+      } else if (meta.actor && typeof meta.actor === 'object') {
+        const actorObj = meta.actor as { username?: string; userId?: string };
+        actorStr = actorObj.username || actorObj.userId || 'system';
+      }
+
       const [entry] = await db
         .insert(glJournalEntries)
         .values({
@@ -297,7 +294,7 @@ export class GlService implements OnModuleInit {
           memo: meta.memo,
           sourceType: meta.sourceType,
           sourceId: meta.sourceId,
-          createdBy: meta.actor,
+          createdBy: actorStr,
           isReversed: false,
         })
         .returning();
@@ -679,7 +676,11 @@ export class GlService implements OnModuleInit {
       partyId: row.partyIdRef,
       partyType: row.partyTypeRef,
       sourceNumber: row.sourceNumber,
-      createdBy: row.created_by,
+      createdBy:
+        row.created_by === '[object Object]' ||
+        typeof row.created_by === 'object'
+          ? 'admin'
+          : row.created_by,
       createdOn: row.created_on,
     }));
 
@@ -776,7 +777,15 @@ export class GlService implements OnModuleInit {
       partyName: r.customerName || r.supplierName || null,
     }));
 
-    return { ...entry, lines: mappedLines };
+    return {
+      ...entry,
+      createdBy:
+        entry.createdBy === '[object Object]' ||
+        typeof entry.createdBy === 'object'
+          ? 'admin'
+          : entry.createdBy,
+      lines: mappedLines,
+    };
   }
 
   async findJournalEntryBySource(sourceType: string, sourceId: string) {

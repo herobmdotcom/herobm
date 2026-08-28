@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,9 +57,9 @@ export interface InventoryGlLine {
 export interface InventoryGlResult {
   lines: InventoryGlLine[];
   sourceType:
-    | 'inventory_receipt'
-    | 'inventory_dispatch'
-    | 'inventory_adjustment';
+    | typeof JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT
+    | typeof JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_DISPATCH
+    | typeof JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_ADJUSTMENT;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +173,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     );
     const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
     return {
-      sourceType: 'inventory_receipt',
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT,
       lines: [
         {
           accountId: inv,
@@ -204,7 +205,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       'Inventory Asset',
     );
     return {
-      sourceType: 'inventory_dispatch',
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_DISPATCH,
       lines: [
         {
           accountId: cogs,
@@ -234,7 +235,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     );
     const cogs = this.requireAccount(this.accts.cogsAccountId, 'COGS');
     return {
-      sourceType: 'inventory_dispatch',
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_DISPATCH,
       lines: [
         {
           accountId: inv,
@@ -273,7 +274,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     if (direction === 'loss') {
       // Stock decreased: DR Shrinkage Expense, CR Inventory Asset
       return {
-        sourceType: 'inventory_adjustment',
+        sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_ADJUSTMENT,
         lines: [
           {
             accountId: shrink,
@@ -296,7 +297,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     } else {
       // Stock increased: DR Inventory Asset, CR Shrinkage Expense
       return {
-        sourceType: 'inventory_adjustment',
+        sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_ADJUSTMENT,
         lines: [
           {
             accountId: inv,
@@ -328,7 +329,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     const cogs = this.requireAccount(this.accts.cogsAccountId, 'COGS');
     // Customer returned goods: DR Inventory Asset, CR COGS (cost reversal)
     return {
-      sourceType: 'inventory_adjustment',
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_ADJUSTMENT,
       lines: [
         {
           accountId: inv,
@@ -359,7 +360,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     );
     // Returning goods to supplier: DR GRNI, CR Inventory Asset
     return {
-      sourceType: 'inventory_receipt',
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT,
       lines: [
         {
           accountId: grni,
@@ -392,7 +393,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
     // Supplier Debit Note: DR Accounts Payable, CR GRNI
     return {
-      sourceType: 'inventory_receipt', // Alternatively 'supplier_debit_note' if defined, but keeping consistent with sourceType types
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT,
       lines: [
         {
           accountId: ap,

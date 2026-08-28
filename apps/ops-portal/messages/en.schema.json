@@ -1019,6 +1019,7 @@
   "gl.trialBalance.columns.credit",
   "gl.trialBalance.columns.debit",
   "gl.trialBalance.exportAuditPdf",
+  "gl.trialBalance.exportCashFlowPdf",
   "gl.trialBalance.exporting",
   "gl.trialBalance.fromDate",
   "gl.trialBalance.noData",

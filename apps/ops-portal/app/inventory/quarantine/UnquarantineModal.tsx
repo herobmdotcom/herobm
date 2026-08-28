@@ -4,8 +4,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { BIN_TYPE, getErrorMessage } from '@herobm/shared';
 import SlideOver from '@/components/shared/SlideOver';
-import { BIN_TYPE } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 interface UnquarantineModalProps {
@@ -49,7 +50,10 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
             setBinId('');
           }
         })
-        .catch((err) => reportError(err, 'UnquarantineModal.fetchBins'))
+        .catch((err) => {
+          toast.error('Failed to load destination bins: ' + getErrorMessage(err));
+          reportError(err, 'UnquarantineModal.fetchBins');
+        })
         .finally(() => setLoading(false));
     }
   }, [isOpen, locationId]);
@@ -61,6 +65,9 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
     try {
       await onSubmit(reason, binId);
       onClose();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      reportError(err, 'UnquarantineModal');
     } finally {
       setSubmitting(false);
     }

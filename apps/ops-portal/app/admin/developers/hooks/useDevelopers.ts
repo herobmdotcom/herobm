@@ -155,6 +155,7 @@ export function useDevelopers() {
       setAvailableEvents((res.data as string[]) || []);
     } catch (err: unknown) {
       reportError(err, 'DevelopersPage_loadEvents');
+      toast.error('Failed to load webhook events: ' + getErrorMessage(err));
     }
   }, []);
 

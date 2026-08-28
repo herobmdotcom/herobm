@@ -14,7 +14,7 @@ import PageNav from '@/components/shared/PageNav';
 import { Button } from '@/components/shared/Button';
 import { ProjectsTab } from '@/components/shared/ProjectsTab';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
-import { CONTACT_STATE, SystemResource, hasPermission } from '@herobm/shared';
+import { CONTACT_STATE, SystemResource, hasPermission, getErrorMessage } from '@herobm/shared';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 
 interface ContactFormDto {
@@ -173,6 +173,7 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       toast.success('Contact archived');
       loadContact();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Archive Contact');
     }
   };
@@ -183,6 +184,7 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       toast.success('Contact unarchived');
       loadContact();
     } catch (e) {
+      toast.error(getErrorMessage(e));
       reportError(e, 'Unarchive Contact');
     }
   };

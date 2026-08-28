@@ -3044,6 +3044,47 @@
         ]
       }
     },
+    "/products/{id}/cost-summary": {
+      "get": {
+        "description": "Retrieve aggregated cost metrics, supplier costs, purchasing stats, and inventory valuation for a product.",
+        "operationId": "ProductsController_getCostSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCostSummaryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Product Cost Summary",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
     "/products/{id}/archive": {
       "post": {
         "description": "Mark a product as archived to prevent it from being used in new transactions.",
@@ -5139,6 +5180,57 @@
           }
         },
         "summary": "Get Statement of Cash Flows",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/cash-flow/drilldown": {
+      "get": {
+        "description": "Lazy-load underlying decomposed journal lines that contributed to a specific cash flow line item.",
+        "operationId": "GlController_getCashFlowDrilldown",
+        "parameters": [
+          {
+            "name": "lineId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "op-customers",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashFlowDrilldownResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Statement of Cash Flows Line Drilldown",
         "tags": [
           "General Ledger"
         ]
@@ -23263,6 +23355,88 @@
           "updatedAt"
         ]
       },
+      "ProductCostSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Product ID"
+          },
+          "standardCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Standard cost per unit"
+          },
+          "weightedAverageCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Weighted average cost per unit"
+          },
+          "listPrice": {
+            "type": "string",
+            "nullable": true,
+            "description": "List price per unit"
+          },
+          "tradePrice": {
+            "type": "string",
+            "nullable": true,
+            "description": "Trade price per unit"
+          },
+          "preferredSupplierCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preferred supplier unit cost price"
+          },
+          "preferredSupplierDiscount": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preferred supplier discount percentage"
+          },
+          "preferredSupplierVendorId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preferred supplier vendor ID"
+          },
+          "preferredSupplierName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preferred supplier vendor name"
+          },
+          "preferredSupplierVendorNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preferred supplier vendor number"
+          },
+          "lastPurchasePrice": {
+            "type": "string",
+            "nullable": true,
+            "description": "Unit price from latest purchase order line"
+          },
+          "lastPurchaseDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "Order date of latest purchase order"
+          },
+          "lastPurchaseOrderNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Order number of latest purchase order"
+          },
+          "lastPurchaseVendorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Vendor name of latest purchase order"
+          },
+          "lastPurchaseOrderId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Purchase order ID of latest purchase order"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
       "CreateProductDto": {
         "type": "object",
         "properties": {
@@ -24333,6 +24507,18 @@
             "type": "string",
             "format": "uuid"
           },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "opening_balance",
+              "adjustment",
+              "payroll",
+              "tax_settlement"
+            ],
+            "description": "Type of journal entry (manual, opening_balance, adjustment, payroll, tax_settlement)",
+            "default": "manual"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -24543,6 +24729,86 @@
           "investingActivities",
           "financingActivities",
           "reconciliation"
+        ]
+      },
+      "CashFlowDrilldownItemDto": {
+        "type": "object",
+        "properties": {
+          "journalEntryId": {
+            "type": "string"
+          },
+          "entryNumber": {
+            "type": "string"
+          },
+          "entryDate": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "memo": {
+            "type": "string"
+          },
+          "partyType": {
+            "type": "string"
+          },
+          "partyName": {
+            "type": "string"
+          },
+          "accountCode": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "allocatedCash": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "journalEntryId",
+          "entryNumber",
+          "entryDate",
+          "sourceType",
+          "memo",
+          "accountCode",
+          "accountName",
+          "allocatedCash"
+        ]
+      },
+      "CashFlowDrilldownResponseDto": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "lineName": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "operating",
+              "investing",
+              "financing"
+            ]
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CashFlowDrilldownItemDto"
+            }
+          }
+        },
+        "required": [
+          "lineId",
+          "lineName",
+          "category",
+          "totalAmount",
+          "transactions"
         ]
       },
       "GlEntryResponseDto": {

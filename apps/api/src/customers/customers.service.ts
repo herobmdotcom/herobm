@@ -256,12 +256,69 @@ export class CustomersService {
       balancesMap = new Map(balancesList.map((b) => [b.customerId, b]));
     }
 
+    const behavior = this.appConfig.creditLimitBehavior();
+
     const customersWithBalances = data.map((c) => {
       const b = balancesMap.get(c.customerId);
+      const totalOutstanding = b ? b.totalOutstanding : 0;
+      const current = b ? b.current : 0;
+      const overdueInvoiceBalance = Math.max(0, totalOutstanding - current);
+      const glBalance = b ? b.glBalance : 0;
+      const uninvoicedOrdersTotal = b ? b.uninvoicedOrdersTotal : 0;
+
+      const custProfile: CustomerProfile = {
+        stateCode: c.stateCode as string,
+        isOnCreditHold: Boolean(c.isOnCreditHold),
+        creditLimit:
+          c.creditLimit !== null && c.creditLimit !== undefined
+            ? String(c.creditLimit)
+            : null,
+        tradingTermsId: c.tradingTermsId,
+        overrideCreditHoldUntil: c.overrideCreditHoldUntil
+          ? new Date(c.overrideCreditHoldUntil)
+          : null,
+        earlyPaymentDiscount:
+          c.earlyPaymentDiscount !== null &&
+          c.earlyPaymentDiscount !== undefined
+            ? String(c.earlyPaymentDiscount)
+            : null,
+        earlyPaymentDiscountDays: c.earlyPaymentDiscountDays,
+      };
+
+      const groupProfile: CustomerGroupProfile | null = c.customerGroupId
+        ? {
+            stateCode: c.stateCode as string,
+            isOnCreditHold: Boolean(c.customerGroupIsOnCreditHold),
+            creditLimit:
+              c.customerGroupCreditLimit !== null &&
+              c.customerGroupCreditLimit !== undefined
+                ? String(c.customerGroupCreditLimit)
+                : null,
+            tradingTermsId: c.customerGroupTradingTermsId,
+          }
+        : null;
+
+      const risk = resolveCustomerRiskProfile(
+        custProfile,
+        groupProfile,
+        {
+          totalInvoiceBalance: totalOutstanding,
+          overdueInvoiceBalance,
+          glBalance,
+          isOverdue: overdueInvoiceBalance > 0.01,
+        },
+        uninvoicedOrdersTotal,
+        behavior,
+        'confirm',
+      );
+
       return {
         ...c,
-        totalOutstanding: b ? b.totalOutstanding : 0,
-        uninvoicedOrdersTotal: b ? b.uninvoicedOrdersTotal : 0,
+        totalOutstanding,
+        uninvoicedOrdersTotal,
+        isSalesBlocked: risk.isSalesBlocked,
+        salesBlockReasons: risk.salesBlockReasons,
+        effectiveCreditLimit: risk.effectiveCreditLimit,
       };
     });
 

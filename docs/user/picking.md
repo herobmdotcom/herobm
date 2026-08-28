@@ -8,7 +8,7 @@ resource: "orders"
 action: "read"
 routes:
   - "/inventory/picking"
-tags: ["picking", "warehouse", "fulfillment", "bins"]
+tags: ["picking", "warehouse", "fulfillment", "bins", "barcodes", "routing"]
 fields:
   sales_order_id:
     title: "Sales Order"
@@ -29,36 +29,47 @@ related:
   - "sales-orders"
   - "inventory-shipping"
   - "inventory"
+  - "putaway"
 ---
 
 # Picking Operations
 
-The **Picking** module handles single-order picking workflows for warehouse staff, retrieving ordered goods from storage bins and verifying item accuracy before packing.
+The **Picking** module handles single-order and wave picking workflows, guiding warehouse operators through optimized travel paths to retrieve reserved stock from storage bins.
 
 ---
 
-## Picking Lifecycle & Auto-Transitions
+## Picking Lifecycle & Business Logic
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending : Order Confirmed
-    Pending --> InProgress : First Item Picked (Auto-Pick)
-    InProgress --> Completed : All Lines Picked
-    InProgress --> Shortage : Partial / Missing Stock
-    Completed --> Packing : Transfer to Pack Station
+    [*] --> Pending : Order Confirmed (Stock Allocated)
+    Pending --> InProgress : First Item Picked (Auto-Transition)
+    InProgress --> Completed : All Lines Fully Picked
+    InProgress --> Shortage : Partial Pick / Bin Shortage
+    Completed --> Packing : Staged at Packing Station
     Completed --> ScanToDispatch : Direct Barcode Dispatch
 ```
 
-### 1. Auto-Picking Trigger
-When an order is in `Confirmed` status, picking the first item automatically updates the sales order state to `Picking`.
+### 1. Pick Sequencing & Path Optimization
+* **Aisle Travel Optimization**: Pick lists are sorted sequentially by warehouse bin coordinates (`Aisle → Rack → Shelf → Position`) to minimize walking distance across warehouse zones.
+* **Bin Eligibility**: The picker is directed strictly to pickable bin types (`storage`, `pick`, `bulk`) where `is_unavailable = false` and `is_bonded = false`.
 
-### 2. Scan-to-Pick Barcodes & Zebra Label Integration
-Pick sheets and product labels can include canonical scan-to-pick barcodes (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). Scanning these barcodes directly registers picks and seamlessly integrates with the [Scan-to-Dispatch](./shipping.md) packing station (`/inventory/shipping/scan-to-dispatch`).
+### 2. Auto-State Transitions & Stock Ledger
+* **Automatic Status Transition**: When an order is in `Confirmed` state, recording the first item pick scan immediately updates the sales order state to **`Picking`**.
+* **Perpetual Ledger Deduction**: Registering a pick deducts the physical quantity from the storage bin and reclassifies it as staged on the picking cart.
 
-### 3. Handling Shortages
-If a bin has less stock than expected:
-- The picker can record a **Partial Pick**.
-- The system flags the shortage, leaving unpicked quantities open for backorder fulfillment or alternate bin picking.
+### 3. Scan-to-Pick Barcodes & Hardware Integration
+* Pick sheets and mobile scanners utilize the canonical barcode standard:
+  ```
+  PICK:{orderId}:{lineId}:{binId}:{quantity}
+  ```
+* Scanning the barcode validates the SKU and bin location simultaneously, preventing accidental fulfillment of incorrect items or batch lots.
+
+### 4. Handling Bin Shortages
+* If a storage bin contains fewer physical items than indicated:
+  1. The operator enters the actual found count as a **Partial Pick**.
+  2. The system flags a **Bin Variance**, prompting a cycle count adjustment.
+  3. The unpicked balance remains open for fulfillment from an alternate bin or split dispatch.
 
 ---
 
@@ -66,10 +77,10 @@ If a bin has less stock than expected:
 
 ### 1. Picking an Order
 1. Go to **Inventory** → **Picking** (`/inventory/picking`).
-2. Select an assigned sales order.
-3. Follow the sequence to the indicated bins.
-4. Scan or verify the **Bin**, **Product SKU**, and enter the **Quantity Picked**.
-5. Move picked items to the packing station and click **Complete Picking** (or take items directly to **Scan-to-Dispatch** for one-step packing and carrier dispatch).
+2. Select an assigned sales order from the queue.
+3. Follow the guided sequence to the indicated bins.
+4. Scan the **Bin Barcode** and **Product SKU**, then confirm the **Quantity Picked**.
+5. When all lines are retrieved, click **Complete Picking** to transfer items to the packing station (or proceed directly to **Scan-to-Dispatch**).
 
 ---
 
@@ -77,9 +88,10 @@ If a bin has less stock than expected:
 
 | Field | Description |
 | :--- | :--- |
-| **Sales Order** | Target customer order. |
-| **Bin Location** | Shelf/rack location to retrieve items. |
-| **Quantity Required** | Ordered quantity. |
-| **Quantity Picked** | Confirmed picked units. |
+| **Sales Order** | Target customer order being fulfilled. |
+| **Bin Location** | Shelf/rack coordinate to retrieve items. |
+| **Quantity Required** | Total allocated units requested on the sales order. |
+| **Quantity Picked** | Confirmed physical units collected into the pick cart. |
 | **Barcode Payload** | Encoded scan string (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). |
-| **Status** | Pick progress (`Pending`, `In-Progress`, `Completed`). |
+| **Status** | Pick progress (`Pending`, `In-Progress`, `Completed`, `Shortage`). |
+

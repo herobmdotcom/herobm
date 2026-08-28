@@ -20,6 +20,19 @@ export default function CustomersContent() {
   const columns = useMemo<ColDef[]>(() => [
     { field: 'customerNumber', headerName: tAccounts('columns.customerNumber'), width: 120, pinned: 'left' },
     { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
+    {
+      colId: 'status',
+      headerName: tCommon('columns.status'),
+      width: 120,
+      valueGetter: (params: { data?: { stateCode?: unknown, isSalesBlocked?: boolean, isOnCreditHold?: boolean } }) => {
+        if (!params.data) return '';
+        if (params.data.isSalesBlocked) return tCommon('columns.creditHold');
+        if (!params.data.stateCode) return '';
+        const s = String(params.data.stateCode).toLowerCase();
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.data.stateCode);
+      }
+    },
+    { field: 'customerGroupName', headerName: tCommon('columns.group'), width: 100 },
     { field: 'billingAddressLine1', headerName: tCommon('columns.address'), width: 180 },
     { field: 'billingAddressLine2', headerName: tCommon('columns.address2'), width: 150, hide: true },
     { field: 'billingAddressCity', headerName: tCommon('columns.city'), width: 130 },
@@ -30,19 +43,6 @@ export default function CustomersContent() {
     { field: 'email', headerName: tAccounts('columns.email'), width: 200 },
     { field: 'salesContactName', headerName: tAccounts('columns.salesContact'), width: 180 },
     { field: 'accountsContactName', headerName: tAccounts('columns.accountsContact'), width: 180 },
-    { field: 'customerGroupName', headerName: tCommon('columns.group'), width: 100 },
-    {
-      colId: 'status',
-      headerName: tCommon('columns.status'),
-      width: 120,
-      valueGetter: (params: { data?: { stateCode?: unknown, isSalesBlocked?: boolean } }) => {
-        if (!params.data) return '';
-        if (params.data.isSalesBlocked) return tCommon('columns.creditHold');
-        if (!params.data.stateCode) return '';
-        const s = String(params.data.stateCode).toLowerCase();
-        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.data.stateCode);
-      }
-    },
     { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },
     { field: 'currencyCode', headerName: tCommon('columns.currency'), width: 90 },
     {

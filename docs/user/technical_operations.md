@@ -16,20 +16,20 @@ routes:
   - "/admin/event-queue"
   - "/admin/system-logs"
   - "/admin/version"
-tags: ["developers", "api", "webhooks", "email", "outbox", "import", "health", "logs", "rate-limits"]
+tags: ["developers", "api", "webhooks", "email", "outbox", "import", "health", "logs", "rate-limits", "security"]
 fields:
   key_hash:
     title: "API Key Hash"
-    summary: "Hashed token used by external systems for REST API access."
+    summary: "SHA-256 cryptographic hash of the access token stored in the database."
   prefix:
     title: "API Key Prefix"
-    summary: "Prefix for identifying the API key."
+    summary: "Non-secret prefix (e.g. hbm_live_...) used to identify tokens without storing cleartext."
   target_url:
     title: "Webhook Endpoint"
     summary: "Destination HTTPS URL receiving real-time JSON event payloads."
   event_type:
     title: "Outbox Event Type"
-    summary: "System event (e.g. order_created, shipment_dispatched, invoice_posted)."
+    summary: "Domain event name (e.g. sales_order.status_changed, payment.allocated)."
   import_source:
     title: "Data Import Source"
     summary: "Migration source: CSV Files, Legacy ABM Database, or Odoo Database."
@@ -47,33 +47,31 @@ The **Technical** section provides enterprise tools for developer API key manage
 
 ---
 
-## Technical Architecture & Outbox Queue
+## Technical Architecture & Outbox Worker
 
 ```mermaid
 flowchart LR
     A[Business Action e.g. Order Confirmed] --> B[Atomic Transaction + Outbox Event]
-    B --> C[Transactional Event Queue]
-    C --> D[Webhook Dispatcher]
-    C --> E[Email Outbox Delivery]
-    C --> F[Audit Logging Stream]
+    B --> C[Transactional sys_outbox Table]
+    C --> D[Outbox Dispatch Worker]
+    D --> E[HTTP Webhook Endpoints]
+    D --> F[SMTP Email Delivery Engine]
+    D --> G[Audit Event Stream]
 ```
 
-### 1. Developer Hub Components (`/admin/developers`)
-- **API Keys & RBAC Roles**: Issue cryptographically secure API keys assigned to specific roles (`admin`, `agent`, `viewer`) for automated external access.
-- **Rate Limit Configuration**: Configure requests-per-minute thresholds per IP and API key to protect services from runaway integrations.
-- **Webhook Subscriptions**: Register HTTPS endpoints to receive real-time JSON event notifications (`sales_order.created`, `shipment.dispatched`, `stock.adjusted`).
-- **Secret Modal**: High-security, single-view dialog to securely display generated secrets upon creation.
+### 1. API Security & Key Hashing Architecture
+* **Cryptographic Token Generation**: API keys are generated using 32 bytes of cryptographically secure random entropy.
+* **One-Time Secret Presentation**: The plaintext token (`hbm_live_...`) is presented to the user **exactly once** in the secure Secret Modal.
+* **Zero Plaintext Storage**: The database stores only the **SHA-256 hash** (`key_hash`) and a 10-character identification prefix (`prefix`). Incoming requests hash the bearer token on-the-fly and match against `key_hash`.
 
-### 2. Email Outbox & SMTP Management
-- **Email Outbox** (`/admin/email/outbox`): Monitor outbound email delivery statuses, view error logs for bounced messages, and trigger manual retries.
-- **SMTP Settings** (`/admin/email/settings`): Configure custom host, port, TLS security, authentication, and verify connections via test emails.
+### 2. Rate Limiting & Sliding Window Controls
+* **Default Throughput**: Configured with a default limit of **120 requests per minute** per API key or IP address.
+* **Sliding Window Algorithm**: Tracks request velocity in rolling 60-second intervals.
+* **429 Response Guardrail**: When an integration exceeds its quota, the API rejects requests with HTTP `429 Too Many Requests` and supplies a `Retry-After: <seconds>` response header.
 
-### 3. Data Imports & System Diagnostics
-- **Data Import Workbench** (`/admin/import`): High-throughput migration pipelines for CSV master records, legacy ABM SQL Server databases, and Odoo databases.
-  > [!NOTE]
-  > For an in-depth guide on how to build, test, and maintain ETL/ELT pipelines, see the [Data Import Pipelines Guide](./import_pipelines.md).
-- **Transactional Event Queue** (`/admin/event-queue`): Inspect Redis BullMQ outbox jobs and audit event throughput.
-- **System Logs & Build Version** (`/admin/system-logs`, `/admin/version`): Search server logs and inspect active commit hashes and deployment timestamps.
+### 3. Outbox Dispatch & SMTP Queue
+* **Transactional Guarantee**: Outbound notifications and emails are written directly to database outbox tables (`sys_outbox`, `sys_email_outbox`) in the same database transaction as business mutations.
+* **Continuous Background Polling**: Background workers poll pending records with concurrency locks, ensuring at-least-once delivery with exponential retry backoff.
 
 ---
 
@@ -82,14 +80,14 @@ flowchart LR
 ### 1. Generating an API Key
 1. Go to **Technical** → **Developers** (`/admin/developers`).
 2. In the **API Keys** section, click **Generate API Key**.
-3. Enter a **Key Name** and select the assigned **Role** (e.g. `agent`).
+3. Enter a **Key Name** and select the assigned **Role** (e.g. `agent` or `admin`).
 4. Click **Create Key**. Copy the generated secret key immediately from the **Secret Modal** (it cannot be retrieved again).
 
 ### 2. Registering a Webhook Subscription
 1. In **Developers** (`/admin/developers`), scroll to the **Webhooks** card.
 2. Click **Add Webhook**.
 3. Enter the destination **Endpoint URL** (must be HTTPS) and select the subscribed **Event Topics**.
-4. Save the subscription. The system will begin streaming JSON payloads immediately upon event emission.
+4. Save the subscription. The system begins streaming JSON payloads immediately upon event emission.
 
 ---
 
@@ -97,10 +95,11 @@ flowchart LR
 
 | Field | Description |
 | :--- | :--- |
-| **API Key Name** | Label identifying external integration. |
-| **Assigned Role** | Casbin RBAC role governing endpoint permissions. |
-| **Rate Limit** | Maximum allowed API requests per minute. |
-| **Target URL** | Destination HTTPS URL receiving event webhooks. |
+| **API Key Name** | Descriptive label identifying the external application or system. |
+| **API Key Prefix** | Public 10-character identifier (e.g. `hbm_live_a1b2`). |
+| **Assigned Role** | Casbin RBAC role governing API endpoint authorizations. |
+| **Rate Limit** | Maximum allowed requests per 60-second sliding window. |
+| **Target URL** | Destination HTTPS endpoint receiving webhook payloads. |
 | **Outbox Status** | Delivery state (`Pending`, `Sent`, `Failed`). |
-| **Event Name** | Specific system event topic. |
-| **System Version** | Active Git commit hash and release build date. |
+| **System Version** | Active Git commit hash and release deployment timestamp. |
+

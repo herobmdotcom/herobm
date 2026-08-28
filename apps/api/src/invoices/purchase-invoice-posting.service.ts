@@ -35,6 +35,7 @@ import {
   PURCHASE_INVOICE_STATE,
   MATCH_STATUS,
   LineType,
+  JOURNAL_ENTRY_SOURCE_TYPE,
 } from '@herobm/shared';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
@@ -631,7 +632,7 @@ export class PurchaseInvoicePostingService {
             await this.glService.postJournalEntry(
               glLines,
               {
-                sourceType: 'purchase_invoice',
+                sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_INVOICE,
                 sourceId: invoice.invoiceId,
                 memo: `Purchase Invoice ${invoice.invoiceNumber}`,
                 actor,

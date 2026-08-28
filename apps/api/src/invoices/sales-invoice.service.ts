@@ -45,7 +45,7 @@ import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
-import { computeLinePrice } from '@herobm/shared';
+import { computeLinePrice, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
@@ -767,7 +767,7 @@ export class SalesInvoiceService {
             await this.glService.postJournalEntry(
               glLines,
               {
-                sourceType: 'sales_invoice',
+                sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
                 sourceId: invoice.invoiceId,
                 memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
                 actor,
@@ -1312,7 +1312,7 @@ export class SalesInvoiceService {
             reversedLines,
             {
               sourceId: invoiceId,
-              sourceType: 'sales_invoice_reversal',
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE_REVERSAL,
               memo: `Reversal of Sales Invoice ${existing.invoiceNumber}`,
               entryDate: new Date().toISOString().slice(0, 10),
               actor,

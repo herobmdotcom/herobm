@@ -19,6 +19,7 @@ describe('ProductsController', () => {
   const mockService = {
     findAll: jest.fn().mockResolvedValue(mockResult),
     findOne: jest.fn().mockResolvedValue({ productId: 'P001', name: 'Widget' }),
+    getCostSummary: jest.fn(),
   };
 
   const mockWriteService = {
@@ -74,6 +75,32 @@ describe('ProductsController', () => {
       const result = await controller.findOne('P001');
       expect(result).toEqual({ productId: 'P001', name: 'Widget' });
       expect(mockService.findOne).toHaveBeenCalledWith('P001');
+    });
+  });
+
+  describe('getCostSummary', () => {
+    it('should call service.getCostSummary with the ID', async () => {
+      const mockCostSummary = {
+        productId: 'P001',
+        standardCost: '12.50',
+        weightedAverageCost: '11.80',
+        listPrice: '20.00',
+        tradePrice: '16.00',
+        preferredSupplierCost: '10.50',
+        preferredSupplierDiscount: '5.00',
+        preferredSupplierVendorId: 'V001',
+        preferredSupplierName: 'Acme Supply',
+        preferredSupplierVendorNumber: 'VEN-001',
+        lastPurchasePrice: '11.00',
+        lastPurchaseDate: '2026-08-01T00:00:00.000Z',
+        lastPurchaseOrderNumber: 'PO-001',
+        lastPurchaseVendorName: 'Acme Supply',
+        lastPurchaseOrderId: 'PO-ID-1',
+      };
+      mockService.getCostSummary.mockResolvedValue(mockCostSummary);
+      const result = await controller.getCostSummary('P001');
+      expect(result).toEqual(mockCostSummary);
+      expect(mockService.getCostSummary).toHaveBeenCalledWith('P001');
     });
   });
 });

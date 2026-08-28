@@ -163,6 +163,7 @@ export default function ScanToDispatchClient() {
         };
       });
     } catch (err) {
+      toast.error('Failed to update order summary: ' + getErrorMessage(err));
       reportError(err, 'Failed to fetch order summary');
     }
   }, []);

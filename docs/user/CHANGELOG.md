@@ -4,6 +4,18 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-08-27] - ERPNext Chart of Accounts Import Documentation
+
+**Topics Updated:**
+- **`docs/user/general_ledger.md`**:
+  - Documented ERPNext JSON format support for Chart of Accounts (COA) import.
+  - Linked built-in presets and external verified/unverified ERPNext Chart of Accounts repositories.
+  - Added step-by-step workflow for importing and managing Chart of Accounts in Financial Settings.
+- **`docs/user/admin_groups_settings.md`**:
+  - Added Chart of Accounts import details under Financial Settings description and step-by-step workflows.
+
+---
+
 ## [2026-08-24] - System Architecture Help Topic
 
 **Topics Updated:**

@@ -24,6 +24,7 @@ import { ProductSuppliersTab } from './ProductSuppliersTab';
 import { ProductInventoryTab } from './ProductInventoryTab';
 import { ProductPurchaseOrdersTab } from './ProductPurchaseOrdersTab';
 import { ProductSalesTab } from './ProductSalesTab';
+import { ProductCostSummary } from './ProductCostSummary';
 import ProductImageUploader from '@/components/products/ProductImageUploader';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
@@ -381,10 +382,9 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Pricing & Financials Card */}
+          {/* Pricing Card */}
           <div id="pricing-section" className="card">
             <h3 className="section-heading">
-              { }
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -461,6 +461,16 @@ export default function ProductDetailPage() {
                   }}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Costs Card */}
+          <div id="costs-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">request_quote</span>
+              {t('products.costs')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('products.columns.stdCost')}
@@ -479,6 +489,8 @@ export default function ProductDetailPage() {
                   }}
                 />
               </div>
+
+              <ProductCostSummary productId={product.productId} product={product} />
             </div>
           </div>
 

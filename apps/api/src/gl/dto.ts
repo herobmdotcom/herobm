@@ -72,7 +72,11 @@ export class JournalLineDto {
 }
 
 import { Type } from 'class-transformer';
-import { ValidateNested, IsUUID, IsArray } from 'class-validator';
+import { ValidateNested, IsUUID, IsArray, IsIn } from 'class-validator';
+import {
+  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
+  type JournalEntrySourceType,
+} from '@herobm/shared';
 
 export class CreateJournalEntryDto {
   @ApiPropertyOptional()
@@ -96,6 +100,16 @@ export class CreateJournalEntryDto {
   @IsOptional()
   @IsString()
   actor?: string;
+
+  @ApiPropertyOptional({
+    enum: USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
+    description:
+      'Type of journal entry (manual, opening_balance, adjustment, payroll, tax_settlement)',
+    default: 'manual',
+  })
+  @IsOptional()
+  @IsIn(USER_SELECTABLE_JOURNAL_SOURCE_TYPES)
+  sourceType?: JournalEntrySourceType;
 }
 
 export class GlAccountResponseDto {
@@ -686,4 +700,27 @@ export class CashFlowStatementResponseDto {
   reconciliation!: CashFlowReconciliationDto;
   @ApiPropertyOptional({ type: () => CashFlowStatementResponseDto })
   comparativePeriod?: CashFlowStatementResponseDto;
+}
+
+export class CashFlowDrilldownItemDto {
+  @ApiProperty() journalEntryId!: string;
+  @ApiProperty() entryNumber!: string;
+  @ApiProperty() entryDate!: string;
+  @ApiProperty() sourceType!: string;
+  @ApiProperty() memo!: string;
+  @ApiPropertyOptional() partyType?: string;
+  @ApiPropertyOptional() partyName?: string;
+  @ApiProperty() accountCode!: string;
+  @ApiProperty() accountName!: string;
+  @ApiProperty() allocatedCash!: number;
+}
+
+export class CashFlowDrilldownResponseDto {
+  @ApiProperty() lineId!: string;
+  @ApiProperty() lineName!: string;
+  @ApiProperty({ enum: ['operating', 'investing', 'financing'] })
+  category!: 'operating' | 'investing' | 'financing';
+  @ApiProperty() totalAmount!: number;
+  @ApiProperty({ type: [CashFlowDrilldownItemDto] })
+  transactions!: CashFlowDrilldownItemDto[];
 }

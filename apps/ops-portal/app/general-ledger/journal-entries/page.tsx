@@ -25,6 +25,15 @@ export default function JournalEntriesPage() {
   const router = useRouter();
 
   const sourceLabel = (type: string) => {
+    const rawType = (type || '').toLowerCase();
+    try {
+      // @ts-expect-error dynamic lookup
+      const translated = t(`sourceTypes.${rawType}`);
+      if (translated && !translated.startsWith('gl.journalEntries.')) return translated;
+    } catch {
+      // ignore
+    }
+
     const labels: Record<string, string> = {
       sales_invoice: t('sourceSalesInvoice'),
       purchase_invoice: t('sourcePurchaseInvoice'),
@@ -140,7 +149,13 @@ export default function JournalEntriesPage() {
     { 
       field: 'createdBy', 
       headerName: t('columns.createdBy'), 
-      width: 140 
+      width: 140,
+      valueGetter: (params) => {
+        const val = params.data?.createdBy;
+        if (!val || val === '[object Object]') return 'admin';
+        if (typeof val === 'object') return (val as { username?: string; userId?: string }).username || (val as { username?: string; userId?: string }).userId || 'admin';
+        return val;
+      }
     }
   ], [t]);
 
@@ -167,14 +182,22 @@ export default function JournalEntriesPage() {
               className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[240px] bg-white rounded-lg"
             >
               <option value="">{t('allSources')}</option>
-              <option value="sales_invoice">{t('sourceSalesInvoice')}</option>
-              <option value="purchase_invoice">{t('sourcePurchaseInvoice')}</option>
-              <option value="sales_credit_note">{t('sourceSalesCreditNote')}</option>
-              <option value="payment_entry">{t('sourcePaymentEntry')}</option>
-              <option value="manual">{t('sourceManual')}</option>
-              <option value="inventory_receipt">Inventory Receipt</option>
-              <option value="inventory_adjustment">Inventory Adjustment</option>
-              <option value="adjustment">Adjustment</option>
+              <option value="manual">{t('sourceTypes.manual')}</option>
+              <option value="opening_balance">{t('sourceTypes.opening_balance')}</option>
+              <option value="adjustment">{t('sourceTypes.adjustment')}</option>
+              <option value="payroll">{t('sourceTypes.payroll')}</option>
+              <option value="tax_settlement">{t('sourceTypes.tax_settlement')}</option>
+              <option value="initial_import">{t('sourceTypes.initial_import')}</option>
+              <option value="sales_invoice">{t('sourceTypes.sales_invoice')}</option>
+              <option value="purchase_invoice">{t('sourceTypes.purchase_invoice')}</option>
+              <option value="sales_credit_note">{t('sourceTypes.sales_credit_note')}</option>
+              <option value="purchase_debit_note">{t('sourceTypes.purchase_debit_note')}</option>
+              <option value="payment_entry">{t('sourceTypes.payment_entry')}</option>
+              <option value="inventory_receipt">{t('sourceTypes.inventory_receipt')}</option>
+              <option value="inventory_dispatch">{t('sourceTypes.inventory_dispatch')}</option>
+              <option value="inventory_adjustment">{t('sourceTypes.inventory_adjustment')}</option>
+              <option value="fx_revaluation">{t('sourceTypes.fx_revaluation')}</option>
+              <option value="year_end_close">{t('sourceTypes.year_end_close')}</option>
             </select>
 
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">

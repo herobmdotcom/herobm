@@ -3,6 +3,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
+import { reportError } from '@/lib/api';
 import SlideOver from './SlideOver';
 import { Button } from './Button';
 import { useSettings } from '@/components/SettingsProvider';
@@ -90,6 +93,9 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
       setSaving(true);
       await onSave(formData as T);
       onClose();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      reportError(err, 'FinancialDefaultsSlideOver');
     } finally {
       setSaving(false);
     }

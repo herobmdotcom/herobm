@@ -47,6 +47,7 @@ import {
   QueryFiscalPeriodsDto,
   SubledgerReconciliationResponseDto,
   CashFlowStatementResponseDto,
+  CashFlowDrilldownResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { SystemResource } from '@herobm/shared';
@@ -216,13 +217,17 @@ export class GlController {
   async createManualJournalEntry(
     @Body()
     body: CreateJournalEntryDto,
-    @AuthUser('userId') userId: string,
+    @AuthUser() user?: JwtUser,
   ) {
+    const actor =
+      user?.username ||
+      user?.userId ||
+      (typeof user === 'string' ? user : 'system');
     const meta: JournalMeta = {
-      sourceType: 'manual',
+      sourceType: body.sourceType || 'manual',
       memo: body.memo,
       entryDate: body.entryDate,
-      actor: userId,
+      actor,
       journalEntryId: body.journalEntryId,
     };
     return this.glService.postJournalEntry(body.lines, meta);
@@ -286,6 +291,31 @@ export class GlController {
       comparativeStartDate,
       comparativeEndDate,
     });
+  }
+
+  @Get('cash-flow/drilldown')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Statement of Cash Flows Line Drilldown',
+    description:
+      'Lazy-load underlying decomposed journal lines that contributed to a specific cash flow line item.',
+  })
+  @ApiOkResponse({ type: CashFlowDrilldownResponseDto })
+  @ApiQuery({ name: 'lineId', required: true, example: 'op-customers' })
+  @ApiQuery({ name: 'startDate', required: true, example: '2026-08-01' })
+  @ApiQuery({ name: 'endDate', required: true, example: '2026-08-31' })
+  async getCashFlowDrilldown(
+    @Query('lineId') lineId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.cashFlowService.getCashFlowDrilldown(
+      {
+        startDate,
+        endDate,
+      },
+      lineId,
+    );
   }
 
   @Get('general-ledger')

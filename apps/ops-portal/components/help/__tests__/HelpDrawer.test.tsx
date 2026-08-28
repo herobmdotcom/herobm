@@ -56,6 +56,21 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('NOTE')).toBeInTheDocument();
   });
 
+  it('renders external links with target="_blank" and rewrites relative .md doc links', () => {
+    const markdown = `Check [External Resource](https://github.com/frappe/erpnext) and [Fiscal Periods](./fiscal_periods.md).`;
+    render(<MarkdownRenderer content={markdown} />);
+
+    const externalLink = screen.getByRole('link', { name: 'External Resource' });
+    expect(externalLink).toBeInTheDocument();
+    expect(externalLink).toHaveAttribute('href', 'https://github.com/frappe/erpnext');
+    expect(externalLink).toHaveAttribute('target', '_blank');
+    expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const internalLink = screen.getByRole('link', { name: 'Fiscal Periods' });
+    expect(internalLink).toBeInTheDocument();
+    expect(internalLink).toHaveAttribute('href', '/help?topic=fiscal-periods');
+  });
+
   it('renders mermaid diagram container when mermaid code block is present', async () => {
     const markdown = `# Workflow\n\n\`\`\`mermaid\nstateDiagram-v2\n[*] --> Draft\n\`\`\`\n\nDetails below.`;
     render(<MarkdownRenderer content={markdown} />);

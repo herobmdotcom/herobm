@@ -5,10 +5,13 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { CreateJournalEntryDtoSourceType } from './createJournalEntryDtoSourceType';
 import type { JournalLineDto } from './journalLineDto';
 
 export interface CreateJournalEntryDto {
   journalEntryId?: string;
+  /** Type of journal entry (manual, opening_balance, adjustment, payroll, tax_settlement) */
+  sourceType?: CreateJournalEntryDtoSourceType;
   lines: JournalLineDto[];
   memo?: string;
   entryDate?: string;

@@ -235,6 +235,35 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.FISCAL_PERIODS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.DASHBOARD,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.DASHBOARD,
+      v2: 'write',
+      v3: 'allow',
+    },
 
     {
       ptype: 'p',
@@ -872,6 +901,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     {
       ptype: 'p',
       v0: 'admin',
+      v1: SystemResource.DATA_EXPORT,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
       v1: SystemResource.CREDIT_CONTROL,
       v2: 'read',
       v3: 'allow',
@@ -1295,6 +1331,27 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v0: 'viewer',
       v1: SystemResource.SALES_CREDIT_NOTES,
       v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'archive',
       v3: 'allow',
     },
     {

@@ -108,8 +108,15 @@ describe('gl-financial-statements.utils', () => {
 
       // Verify category bucketing
       expect(result.categories.length).toBe(5);
-      const assetCategory = result.categories.find((c) =>
-        c.categoryName.includes('Assets'),
+      expect(result.categories.map((c) => c.categoryName)).toEqual([
+        'Assets',
+        'Liabilities',
+        'Equity',
+        'Revenue & Income',
+        'Expenses & Cost of Goods Sold',
+      ]);
+      const assetCategory = result.categories.find(
+        (c) => c.categoryName === 'Assets',
       );
       expect(assetCategory?.accounts.length).toBe(2);
       expect(assetCategory?.subtotal.closingBalance).toBe(180000);

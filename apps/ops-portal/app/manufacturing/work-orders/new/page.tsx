@@ -13,6 +13,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
 import { MobileCardField } from '@/components/shared/DataTable';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 import {
   workOrdersControllerCreate,
   productsControllerGetComponents,
@@ -20,7 +21,7 @@ import {
   inventoryControllerFindByProductIdsBulk,
 } from '@herobm/sdk';
 import type { CreateWorkOrderDto } from '@herobm/sdk';
-import { compareBinNumbers, BIN_TYPE } from '@herobm/shared';
+import { compareBinNumbers, BIN_TYPE, getErrorMessage } from '@herobm/shared';
 import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
 
 export const dynamic = 'force-dynamic';
@@ -192,6 +193,7 @@ export default function NewWorkOrderPage() {
 
       setLines(newLines);
     } catch (err) {
+      toast.error('Failed to load BOM components: ' + getErrorMessage(err));
       reportError(err, 'NewWorkOrderPage_BOM');
       setLines([]);
     }
@@ -307,9 +309,10 @@ export default function NewWorkOrderPage() {
         return;
       }
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : t('errors.failedToCreate'),
-      );
+      const msg = getErrorMessage(err) || t('errors.failedToCreate');
+      setError(msg);
+      toast.error(msg);
+      reportError(err, 'NewWorkOrderPage_Create');
       setSubmitting(false);
     }
   };

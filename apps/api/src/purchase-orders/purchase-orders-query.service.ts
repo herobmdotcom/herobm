@@ -35,11 +35,15 @@ export interface UnifiedPurchaseOrderRow {
 
   createdBy: string;
   createdOn: string | null;
+  expectedDate?: string | null;
   totalPrice: string | null;
   currencyCode: string | null;
 
   productQuantity?: string | null;
   productQuantityReceived?: string | null;
+  productUnitPrice?: string | null;
+  productLineTotal?: string | null;
+  productDiscountPercentage?: string | null;
 }
 
 @Injectable()
@@ -242,6 +246,9 @@ export class PurchaseOrdersQueryService {
     const appTotalMap = new Map<string, string>();
     const appProductQtyMap = new Map<string, string>();
     const appProductReceivedMap = new Map<string, string>();
+    const appProductUnitPriceMap = new Map<string, string>();
+    const appProductLineTotalMap = new Map<string, string>();
+    const appProductDiscountMap = new Map<string, string>();
 
     const appOrderIds = appRows.map((r) => r.id);
     if (appOrderIds.length > 0) {
@@ -264,6 +271,9 @@ export class PurchaseOrdersQueryService {
             purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
             qty: sql<string>`COALESCE(SUM(${purchaseOrderLineItems.quantity}::numeric), 0)::text`,
             received: sql<string>`COALESCE(SUM(${purchaseOrderLineItems.quantityReceived}::numeric), 0)::text`,
+            unitPrice: sql<string>`COALESCE(AVG(${purchaseOrderLineItems.pricePerUnit}::numeric), 0)::text`,
+            lineTotal: sql<string>`COALESCE(SUM(${purchaseOrderLineItems.totalAmount}::numeric), 0)::text`,
+            discountPercentage: sql<string>`COALESCE(MAX(${purchaseOrderLineItems.discountPercentage}::numeric), 0)::text`,
           })
           .from(purchaseOrderLineItems)
           .where(
@@ -277,6 +287,12 @@ export class PurchaseOrdersQueryService {
         for (const row of productQtys) {
           appProductQtyMap.set(row.purchaseOrderId, row.qty);
           appProductReceivedMap.set(row.purchaseOrderId, row.received);
+          appProductUnitPriceMap.set(row.purchaseOrderId, row.unitPrice);
+          appProductLineTotalMap.set(row.purchaseOrderId, row.lineTotal);
+          appProductDiscountMap.set(
+            row.purchaseOrderId,
+            row.discountPercentage,
+          );
         }
       }
     }
@@ -301,6 +317,15 @@ export class PurchaseOrdersQueryService {
           : undefined,
         productQuantityReceived: productId
           ? (appProductReceivedMap.get(r.id) ?? '0')
+          : undefined,
+        productUnitPrice: productId
+          ? (appProductUnitPriceMap.get(r.id) ?? null)
+          : undefined,
+        productLineTotal: productId
+          ? (appProductLineTotalMap.get(r.id) ?? null)
+          : undefined,
+        productDiscountPercentage: productId
+          ? (appProductDiscountMap.get(r.id) ?? null)
           : undefined,
       };
     });

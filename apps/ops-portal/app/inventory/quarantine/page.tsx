@@ -6,6 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
@@ -152,13 +153,14 @@ export default function QuarantineListPage() {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                     sourceType: 'manual' as any
                 });
-                toast.success('Line unquarantined successfully');
+                toast.success(`Unquarantined ${row.productNumber || 'item'}`);
             } catch (err: unknown) {
-                errors.push(row.productNumber as string);
+                reportError(err, 'QuarantinePage.unquarantine');
+                errors.push(`${row.productNumber || 'Item'}: ${getErrorMessage(err)}`);
             }
         }
         if (errors.length > 0) {
-            alert(`Failed to unquarantine the following products: ${errors.join(', ')}`);
+            toast.error(`Failed to unquarantine: ${errors.join('; ')}`);
         }
         triggerRefresh();
         setSelectedRows([]);

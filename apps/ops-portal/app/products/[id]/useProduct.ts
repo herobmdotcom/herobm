@@ -37,13 +37,13 @@ export function useProduct(id: string) {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => setTaxCategories(res.data))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load tax categories: ' + getErrorMessage(err)));
     api.productGroupsControllerFindAll()
       .then((res: unknown) => setProductGroups((res as { data: unknown[] }).data as unknown as api.ProductGroupResponseDto[]))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load product groups: ' + getErrorMessage(err)));
     api.uomDictionaryControllerFindAll()
       .then((res) => setUomDictionary(res.data))
-      .catch(console.error);
+      .catch((err) => toast.error('Failed to load UOM dictionary: ' + getErrorMessage(err)));
   }, []);
 
   const archiveProduct = async () => {

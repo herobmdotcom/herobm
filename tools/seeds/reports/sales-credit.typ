@@ -148,11 +148,7 @@
 
 #v(2.5cm)
 
-#if "returnMeta" in data and data.returnMeta.notes != "" [
-  #text(9pt, weight: "semibold")[Notes:] \
-  #text(9pt)[#data.returnMeta.notes]
-  #v(1cm)
-]
+
 
 #text(8pt, fill: luma(120), style: "italic")[
   Thank you for your business.

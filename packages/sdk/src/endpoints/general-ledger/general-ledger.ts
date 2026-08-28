@@ -16,6 +16,7 @@ import type {
   BankStatementMatchGroupResponseDto,
   BankStatementSuccessResponseDto,
   BulkImportResultDto,
+  CashFlowDrilldownResponseDto,
   CashFlowStatementResponseDto,
   ChartFileDto,
   CommitFxRevaluationDto,
@@ -44,6 +45,7 @@ import type {
   GenerateFiscalPeriodsDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
+  GlControllerGetCashFlowDrilldownParams,
   GlControllerGetCashFlowParams,
   GlControllerGetFiscalPeriodsParams,
   GlControllerGetFxCandidatesParams,
@@ -824,6 +826,49 @@ export const getGlControllerGetCashFlowUrl = (params: GlControllerGetCashFlowPar
 export const glControllerGetCashFlow = async (params: GlControllerGetCashFlowParams, options?: RequestInit): Promise<glControllerGetCashFlowResponse> => {
   
   return customFetch<glControllerGetCashFlowResponse>(getGlControllerGetCashFlowUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Lazy-load underlying decomposed journal lines that contributed to a specific cash flow line item.
+ * @summary Get Statement of Cash Flows Line Drilldown
+ */
+export type glControllerGetCashFlowDrilldownResponse200 = {
+  data: CashFlowDrilldownResponseDto
+  status: 200
+}
+    
+export type glControllerGetCashFlowDrilldownResponseSuccess = (glControllerGetCashFlowDrilldownResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetCashFlowDrilldownResponse = (glControllerGetCashFlowDrilldownResponseSuccess)
+
+export const getGlControllerGetCashFlowDrilldownUrl = (params: GlControllerGetCashFlowDrilldownParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/cash-flow/drilldown?${stringifiedParams}` : `/gl/cash-flow/drilldown`
+}
+
+export const glControllerGetCashFlowDrilldown = async (params: GlControllerGetCashFlowDrilldownParams, options?: RequestInit): Promise<glControllerGetCashFlowDrilldownResponse> => {
+  
+  return customFetch<glControllerGetCashFlowDrilldownResponse>(getGlControllerGetCashFlowDrilldownUrl(params),
   {      
     ...options,
     method: 'GET'

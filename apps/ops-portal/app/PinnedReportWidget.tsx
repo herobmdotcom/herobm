@@ -1,6 +1,7 @@
 'use client';
 
 import { reportError } from '@/lib/api';
+import { getErrorMessage } from '@herobm/shared';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings } from '@herobm/sdk';
@@ -27,11 +28,13 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [uiConfig, setUiConfig] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPinnedData() {
       try {
         setIsLoading(true);
+        setErrorMessage(null);
         // Load report definition for uiConfig
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const reports: any = await businessReportsControllerGetReports();
@@ -54,6 +57,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
         const dataRes: any = await businessReportsControllerRunReport(slug, { filters: config.filters || {} });
         setReportData(dataRes.data || dataRes);
       } catch (err) {
+        setErrorMessage(getErrorMessage(err));
         reportError(err, 'PinnedReportWidget');
       } finally {
         setIsLoading(false);
@@ -71,16 +75,16 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
   if (isLoading) {
     return (
       <div className="rounded-2xl border bg-[var(--bg-card)] border-[var(--border)] p-6 h-[400px] flex items-center justify-center">
-        <span className="text-[var(--text-muted)] font-medium">Loading report...</span>
+        <span className="text-[var(--text-muted)] font-medium">{t('loadingReport')}</span>
       </div>
     );
   }
 
-  if (!reportConfig || !uiConfig) {
+  if (errorMessage || !reportConfig || !uiConfig) {
+    const displayError = errorMessage ? errorMessage : t('failedToLoadReport');
     return (
       <div className="rounded-2xl border bg-[var(--bg-card)] border-[var(--border)] p-6 h-[400px] flex items-center justify-center">
-        { }
-        <span className="text-red-500 font-medium text-sm">Failed to load report configuration.</span>
+        <span className="text-red-500 font-medium text-sm">{displayError}</span>
       </div>
     );
   }

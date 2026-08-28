@@ -60,9 +60,9 @@ export default function NewAccountPage() {
   const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   useEffect(() => {
-    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
-    api.customerGroupsControllerFindAll().then((res: unknown) => setCustomerGroups((res as { data: unknown[] }).data as unknown as api.CustomerGroupResponseDto[])).catch(console.error);
-    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
+    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
+    api.customerGroupsControllerFindAll().then((res: unknown) => setCustomerGroups((res as { data: unknown[] }).data as unknown as api.CustomerGroupResponseDto[])).catch((err) => toast.error('Failed to load customer groups: ' + getErrorMessage(err)));
+    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
   }, []);
 
   const selectedGroup = useGroup(customerGroups, dto.customerGroupId);

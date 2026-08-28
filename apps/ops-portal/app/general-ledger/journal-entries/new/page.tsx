@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -49,6 +51,7 @@ export default function NewJournalEntryPage() {
   const { baseCurrency } = useSettings();
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sourceType, setSourceType] = useState<api.CreateJournalEntryDtoSourceType>('manual');
   const [memo, setMemo] = useState('');
   const [lines, setLines] = useState<JournalLineForm[]>([
     { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' },
@@ -140,10 +143,12 @@ export default function NewJournalEntryPage() {
       await api.glControllerCreateManualJournalEntry({
         entryDate: date,
         memo: memo || undefined,
+        sourceType,
         lines: payloadLines as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required to map partial form state to SDK expected properties */,
       });
       router.push('/general-ledger/journal-entries');
     } catch (err) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'NewJournalEntryPage');
       setSubmitting(false);
     }
@@ -179,7 +184,7 @@ export default function NewJournalEntryPage() {
     >
       <div className="flex flex-col gap-3">
         <div className="card">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.date')} *
@@ -190,6 +195,22 @@ export default function NewJournalEntryPage() {
                 onChange={(e) => setDate(e.target.value)}
                 className="input w-full"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {t('entryType')} *
+              </label>
+              <select
+                value={sourceType}
+                onChange={(e) => setSourceType(e.target.value as api.CreateJournalEntryDtoSourceType)}
+                className="input w-full"
+              >
+                <option value="manual">{t('sourceTypes.manual')}</option>
+                <option value="opening_balance">{t('sourceTypes.opening_balance')}</option>
+                <option value="adjustment">{t('sourceTypes.adjustment')}</option>
+                <option value="payroll">{t('sourceTypes.payroll')}</option>
+                <option value="tax_settlement">{t('sourceTypes.tax_settlement')}</option>
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">

@@ -220,6 +220,16 @@ const SEEDS: SeedData[] = [
     outputPattern:
       'CashFlowStatement-${period.startDate}-to-${period.endDate}.pdf',
   },
+  {
+    slug: 'accounting-codes',
+    name: 'Accounting Codes Cheat Sheet',
+    contexts: ['accounting-codes'],
+    hook: 'accounting-codes',
+    description:
+      'System default template for generating Accounting Codes Cheat Sheet (Chart of Accounts, Cost Centers, Activities).',
+    templatePath: '../../../../tools/seeds/reports/accounting-codes.typ',
+    outputPattern: 'AccountingCodes-${generatedAt}.pdf',
+  },
 ];
 
 export async function seedDynamicReports(db: SeedDB, dryRun = false) {

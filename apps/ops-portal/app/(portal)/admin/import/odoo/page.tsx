@@ -94,7 +94,7 @@ export default function OdooImportPage() {
           startPolling(res.data.jobId);
         }
       })
-      .catch(console.error);
+      .catch((err) => reportError(err, 'AdminImportOdooPage.getActiveJob'));
   }, []);
 
   useEffect(() => {
@@ -551,6 +551,7 @@ export default function OdooImportPage() {
                  setImportSummary(summaryRes.data);
                  setStep('finalisation');
               }).catch(err => {
+                 toast.error('Failed to load import summary: ' + getErrorMessage(err));
                  reportError(err, 'OdooImportPage.pollProgress.importSummary');
                  setStep('finalisation');
               });

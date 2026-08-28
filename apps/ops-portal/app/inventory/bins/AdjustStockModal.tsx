@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
 
@@ -51,6 +53,9 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
 
       await onSubmit(payloadLines, reason);
       onClose();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      reportError(err, 'AdjustStockModal');
     } finally {
       setSubmitting(false);
     }

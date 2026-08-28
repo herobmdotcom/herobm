@@ -8,6 +8,50 @@ export const GL_ACCOUNT_TYPE = {
 
 export type GLAccountType = typeof GL_ACCOUNT_TYPE[keyof typeof GL_ACCOUNT_TYPE];
 
+export const JOURNAL_ENTRY_SOURCE_TYPE = {
+  // System Automated Subsystems
+  SALES_INVOICE: 'sales_invoice',
+  SALES_INVOICE_REVERSAL: 'sales_invoice_reversal',
+  PURCHASE_INVOICE: 'purchase_invoice',
+  PURCHASE_INVOICE_REVERSAL: 'purchase_invoice_reversal',
+  SALES_CREDIT_NOTE: 'sales_credit_note',
+  PURCHASE_DEBIT_NOTE: 'purchase_debit_note',
+  PAYMENT_ENTRY: 'payment_entry',
+  INVENTORY_RECEIPT: 'inventory_receipt',
+  INVENTORY_DISPATCH: 'inventory_dispatch',
+  INVENTORY_ADJUSTMENT: 'inventory_adjustment',
+  FX_REVALUATION: 'fx_revaluation',
+  YEAR_END_CLOSE: 'year_end_close',
+
+  // Migration & Setup
+  INITIAL_IMPORT: 'initial_import',
+  OPENING_BALANCE: 'opening_balance',
+
+  // Manual User-Postable
+  MANUAL: 'manual',
+  ADJUSTMENT: 'adjustment',
+  PAYROLL: 'payroll',
+  TAX_SETTLEMENT: 'tax_settlement',
+} as const;
+
+export type JournalEntrySourceType =
+  (typeof JOURNAL_ENTRY_SOURCE_TYPE)[keyof typeof JOURNAL_ENTRY_SOURCE_TYPE];
+
+/** Source types that a user can select when creating a manual journal entry */
+export const USER_SELECTABLE_JOURNAL_SOURCE_TYPES = [
+  JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
+  JOURNAL_ENTRY_SOURCE_TYPE.OPENING_BALANCE,
+  JOURNAL_ENTRY_SOURCE_TYPE.ADJUSTMENT,
+  JOURNAL_ENTRY_SOURCE_TYPE.PAYROLL,
+  JOURNAL_ENTRY_SOURCE_TYPE.TAX_SETTLEMENT,
+] as const;
+
+/** Source types that represent balance take-on / migration (excluded from period operational cash flows) */
+export const TAKE_ON_JOURNAL_SOURCE_TYPES = [
+  JOURNAL_ENTRY_SOURCE_TYPE.INITIAL_IMPORT,
+  JOURNAL_ENTRY_SOURCE_TYPE.OPENING_BALANCE,
+] as const;
+
 export interface AgedBalanceRow {
   current?: number;
   days1To30?: number;

@@ -212,12 +212,11 @@ export default function FiscalPeriodsContent() {
                             size="sm"
                             variant="secondary"
                             className="!py-1 !text-xs !px-2"
-                            title="Download Audit Report"
+                            title="Download Audit PDF"
                             onClick={() => handleDownloadAuditReport(p.periodId)}
                             disabled={actionLoading === p.periodId}
                           >
-                            <span className="material-symbols-outlined text-xs mr-1">picture_as_pdf</span>
-                            Audit Report
+                            Audit PDF
                           </Button>
 
                           {canWrite && p.status === 'open' && (

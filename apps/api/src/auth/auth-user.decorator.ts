@@ -23,8 +23,15 @@ export interface JwtUser {
  * Replaces the anti-pattern: @Req() req: any → req.user.username
  */
 export const AuthUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): JwtUser => {
+  (
+    data: keyof JwtUser | undefined,
+    ctx: ExecutionContext,
+  ): JwtUser | string | null => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const user = request?.user;
+    if (data && user) {
+      return user[data] ?? null;
+    }
+    return user;
   },
 );

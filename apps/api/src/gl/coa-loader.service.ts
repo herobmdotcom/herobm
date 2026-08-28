@@ -7,7 +7,7 @@ import {
   taxCategories,
   tradingTerms,
 } from '@herobm/db-schema';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
@@ -205,6 +205,7 @@ export class CoaLoaderService {
       parentCode: string | null;
       isGroup: boolean;
       isSystem: boolean;
+      isBankAccount: boolean;
     }[] = [];
 
     let autoCode = 100; // fallback numbering for unnumbered accounts
@@ -219,6 +220,9 @@ export class CoaLoaderService {
           ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
         const code = node.account_number || String(autoCode++);
         const isGroup = node.is_group === 1 || !!node.children;
+        const rawType = (node.account_type || '').toLowerCase();
+        const isBankAccount =
+          !isGroup && (rawType === 'bank' || rawType === 'cash');
 
         insertRows.push({
           accountCode: code,
@@ -227,6 +231,7 @@ export class CoaLoaderService {
           parentCode,
           isGroup,
           isSystem: true, // seed accounts are system accounts
+          isBankAccount,
         });
 
         if (node.children) {
@@ -255,6 +260,10 @@ export class CoaLoaderService {
           cogs_account_code?: string;
           tax_account_code?: string;
           expense_account_code?: string;
+          inventory_account_code?: string;
+          grni_account_code?: string;
+          shrinkage_account_code?: string;
+          ppv_account_code?: string;
         };
         trading_terms?: {
           code: string;
@@ -283,7 +292,7 @@ export class CoaLoaderService {
             isGroup: row.isGroup,
             isSystem: row.isSystem,
             currencyCode: baseCurrency,
-            isBankAccount: false,
+            isBankAccount: row.isBankAccount,
             isActive: true,
           })
           .onConflictDoUpdate({
@@ -292,6 +301,7 @@ export class CoaLoaderService {
               name: row.name,
               accountType: row.accountType,
               isGroup: row.isGroup,
+              isBankAccount: row.isBankAccount,
             },
           })
           .returning();
@@ -350,6 +360,18 @@ export class CoaLoaderService {
             defaultExpenseAccountId: defaults.expense_account_code
               ? codeToId.get(defaults.expense_account_code)
               : undefined,
+            defaultInventoryAccountId: defaults.inventory_account_code
+              ? codeToId.get(defaults.inventory_account_code)
+              : undefined,
+            defaultGrniAccountId: defaults.grni_account_code
+              ? codeToId.get(defaults.grni_account_code)
+              : undefined,
+            defaultShrinkageAccountId: defaults.shrinkage_account_code
+              ? codeToId.get(defaults.shrinkage_account_code)
+              : undefined,
+            defaultPpvAccountId: defaults.ppv_account_code
+              ? codeToId.get(defaults.ppv_account_code)
+              : undefined,
             baseCurrency: settings.base_currency || 'AUD',
             bankMatchDateToleranceDays: 0,
             revenueRoutingPrecedence: 'product_first',
@@ -378,6 +400,18 @@ export class CoaLoaderService {
                 : undefined,
               defaultExpenseAccountId: defaults.expense_account_code
                 ? codeToId.get(defaults.expense_account_code)
+                : undefined,
+              defaultInventoryAccountId: defaults.inventory_account_code
+                ? codeToId.get(defaults.inventory_account_code)
+                : undefined,
+              defaultGrniAccountId: defaults.grni_account_code
+                ? codeToId.get(defaults.grni_account_code)
+                : undefined,
+              defaultShrinkageAccountId: defaults.shrinkage_account_code
+                ? codeToId.get(defaults.shrinkage_account_code)
+                : undefined,
+              defaultPpvAccountId: defaults.ppv_account_code
+                ? codeToId.get(defaults.ppv_account_code)
                 : undefined,
             },
           });

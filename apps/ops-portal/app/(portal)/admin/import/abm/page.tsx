@@ -73,7 +73,7 @@ export default function AdminImportPage() {
           startPolling(res.data.jobId);
         }
       })
-      .catch(console.error);
+      .catch((err) => reportError(err, 'AdminImportPage.getActiveJob'));
   }, []);
 
   useEffect(() => {
@@ -186,7 +186,7 @@ export default function AdminImportPage() {
     setStatus('pending');
     setLogs([]);
     if (jobIdRef.current) {
-      api.setupControllerStopJob(jobIdRef.current).catch(() => {});
+      api.setupControllerStopJob(jobIdRef.current).catch((err) => reportError(err, 'AdminImportPage.stopJob'));
     }
   };
 
@@ -604,10 +604,11 @@ export default function AdminImportPage() {
               api.setupControllerGetImportSummary().then((summaryRes) => {
                  setImportSummary(summaryRes.data);
                  setStep('finalisation');
-              }).catch(err => {
-                 reportError(err, 'AdminImportPage.pollProgress.importSummary');
-                 setStep('finalisation');
-              });
+               }).catch(err => {
+                  toast.error('Failed to load import summary: ' + getErrorMessage(err));
+                  reportError(err, 'AdminImportPage.pollProgress.importSummary');
+                  setStep('finalisation');
+               });
             }}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >

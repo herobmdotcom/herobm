@@ -48,11 +48,45 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
   }, [content]);
 
   const md = useMemo(() => {
-    return new MarkdownIt({
+    const instance = new MarkdownIt({
       html: true,
       linkify: true,
       breaks: false,
     });
+
+    const defaultRender =
+      instance.renderer.rules.link_open ||
+      function (tokens, idx, options, _env, self) {
+        return self.renderToken(tokens, idx, options);
+      };
+
+    instance.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+      const hrefIndex = tokens[idx].attrIndex('href');
+      const attrs = tokens[idx].attrs;
+      if (hrefIndex >= 0 && attrs && attrs[hrefIndex]) {
+        const href = attrs[hrefIndex][1];
+        if (/^https?:\/\//i.test(href)) {
+          tokens[idx].attrPush(['target', '_blank']);
+          tokens[idx].attrPush(['rel', 'noopener noreferrer']);
+        } else if (href.endsWith('.md')) {
+          const cleanName = href.replace(/^(\.\/|\.\.\/)+/, '').replace(/\.md$/, '');
+          const topicMap: Record<string, string> = {
+            admin_groups_settings: 'admin-settings',
+            admin_users_roles: 'admin-users',
+            dynamic_reporting: 'reporting',
+            inventory_management: 'inventory',
+            purchase_order_management: 'purchase-orders',
+            purchase_returns_debit_notes: 'purchase-returns',
+            sales_order_management: 'sales-orders',
+          };
+          const topicId = topicMap[cleanName] || cleanName.replace(/_/g, '-');
+          attrs[hrefIndex][1] = `/help?topic=${encodeURIComponent(topicId)}`;
+        }
+      }
+      return defaultRender(tokens, idx, options, env, self);
+    };
+
+    return instance;
   }, []);
 
   return (
@@ -98,7 +132,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
   <div class="font-bold uppercase tracking-wider text-[11px] mb-2 flex items-center gap-1.5 ${badgeClass}">
     <span class="material-symbols-outlined text-[16px]">${icon}</span> ${typeUpper}
   </div>
-  <div class="space-y-1.5 [&>p]:my-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ul>li]:my-0.5 [&>ol]:list-decimal [&>ol]:pl-4 [&_code]:bg-black/5 [&_code]:text-[#0F172A] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-[11px] [&_strong]:font-bold [&_strong]:text-[#0F172A]">
+  <div class="space-y-1.5 [&>p]:my-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ul>li]:my-0.5 [&>ol]:list-decimal [&>ol]:pl-4 [&_code]:bg-black/5 [&_code]:text-[#0F172A] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-[11px] [&_strong]:font-bold [&_strong]:text-[#0F172A] [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:opacity-80">
     ${innerHtml}
   </div>
 </div>\n\n`;
@@ -128,6 +162,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               [&>pre>code]:bg-transparent [&>pre>code]:text-xs [&>pre>code]:text-[#0F172A] [&>pre>code]:font-mono [&>pre>code]:leading-relaxed
               [&_code:not(pre_code)]:bg-[#F1F5F9] [&_code:not(pre_code)]:text-[#006B5C] [&_code:not(pre_code)]:px-1.5 [&_code:not(pre_code)]:py-0.5 [&_code:not(pre_code)]:rounded-md [&_code:not(pre_code)]:text-xs [&_code:not(pre_code)]:font-mono [&_code:not(pre_code)]:font-medium [&_code:not(pre_code)]:border [&_code:not(pre_code)]:border-[#E2E8F0]
               [&_strong]:text-[#0F172A] [&_strong]:font-semibold
+              [&_a]:text-[#006B5C] [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-[#006B5C]/40 hover:[&_a]:decoration-[#006B5C] hover:[&_a]:text-[#005145] [&_a]:transition-colors
             "
             dangerouslySetInnerHTML={{ __html: html }}
           />

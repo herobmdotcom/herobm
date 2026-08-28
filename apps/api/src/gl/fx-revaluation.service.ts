@@ -17,7 +17,7 @@ import {
   suppliers,
 } from '@herobm/db-schema';
 import { and, desc, eq, gt, lte, ne, sql } from 'drizzle-orm';
-import { MATCH_STATUS } from '@herobm/shared';
+import { MATCH_STATUS, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 
@@ -314,7 +314,7 @@ export class FxRevaluationService {
       await this.glService.postJournalEntry(
         dto.lines,
         {
-          sourceType: 'adjustment',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
           memo: `Period-End FX Revaluation for ${dto.revaluationDate}`,
           entryDate: dto.revaluationDate,
         },
@@ -330,7 +330,7 @@ export class FxRevaluationService {
       await this.glService.postJournalEntry(
         linesReverse,
         {
-          sourceType: 'adjustment',
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
           memo: `Reversal of Period-End FX Revaluation for ${dto.revaluationDate}`,
           entryDate: nextDayStr,
         },

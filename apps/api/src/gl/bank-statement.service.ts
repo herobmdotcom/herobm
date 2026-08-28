@@ -18,6 +18,7 @@ import { eq, and, desc, inArray, SQL } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
 import { GlService } from './gl.service';
+import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -372,7 +373,7 @@ export class BankStatementService {
 
         for (const entry of entries) {
           if (
-            entry.sourceType === 'manual' &&
+            entry.sourceType === JOURNAL_ENTRY_SOURCE_TYPE.MANUAL &&
             entry.memo?.startsWith('Auto-reconciled:')
           ) {
             const linesToReverse = await tx
@@ -399,7 +400,7 @@ export class BankStatementService {
             }));
 
             const meta = {
-              sourceType: 'manual' as const,
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
               memo: `Reversal of Auto-reconciled entry: ${entry.entryNumber}`,
               entryDate: new Date().toISOString().split('T')[0],
               actor,
