@@ -84,14 +84,73 @@ Before an entry is committed:
 | **Supplier Bill Payment** | Accounts Payable Control | Bank Account (+ Early Payment Discount) |
 | **Inventory Scrap / Count Loss** | Inventory Shrinkage Expense | Inventory Asset Account |
 
-### 4. Ledger Immutability & Compliance Auditing
-- **Database-Level Immutability**: All posted journal entries (`gl_journal_entries`, `gl_journal_lines`) and payment allocations are permanently protected by PostgreSQL triggers (`herobm_core.prevent_financial_deletion`). Direct SQL or API `DELETE` actions are strictly rejected.
-- **Scheduled Automated Integrity Audits**: A background BullMQ verification engine runs daily at 2:00 AM to verify:
-  1. Monotonic sequential numbering without gaps across all subledgers.
-  2. Timestamp continuity and absence of chronological inversions.
-  3. 100% journal linkage between subledger operational transactions and General Ledger double-entry lines.
-  4. Mathematical debit/credit balance equality (Total Debits = Total Credits).
-- **Proactive Alerting**: If any anomaly is detected, the system immediately surfaces a **Dashboard Timeline Alert** (under the Finance group) and dispatches an **Admin Email Notification** for immediate remediation.
+### 4. Auditability, Ledger Immutability & Compliance Architecture
+
+HeroBM is architected from the database up to satisfy strict statutory accounting standards (including SOX, GAAP, IFRS, and ATO audit requirements). The ledger incorporates multiple cryptographic, systemic, and operational safeguards to ensure complete auditability, non-repudiation, and tamper detection:
+
+```mermaid
+flowchart TD
+    subgraph Operations["Operational Subledgers (Invoices, Payments, Goods Receipts, Dispatches)"]
+        A[Operational Event] -->|Atomic DB Transaction| B[Post GL Journal Entry + Lines]
+        A -->|Atomic DB Transaction| C[Transactional Outbox Event]
+    end
+
+    subgraph Database["PostgreSQL Engine Guards"]
+        B --> D[Compute SHA-256 Hash Chain: prev_hash + payload -> entry_hash]
+        D --> E[(gl_journal_entries & gl_journal_lines)]
+        E --> F[Trigger: prevent_financial_deletion]
+        E --> G[Trigger: prevent_financial_modification]
+        E --> H[Trigger: enforce_fiscal_period_hard_lock]
+    end
+
+    subgraph Verifier["Continuous Ledger Verification Engine (BullMQ)"]
+        I[Nightly 2:00 AM Cron / On-Demand Audit] --> J[1. Sequence Continuity: Zero Gaps]
+        I --> K[2. Chronological Continuity: Monotonic Timestamps]
+        I --> L[3. Double-Entry Zero-Sum: Total DR = Total CR]
+        I --> M[4. SHA-256 Hash Recalculation: Genesis to Head]
+        I --> N[5. Subledger-to-GL Parity Reconciliation]
+        
+        J & K & L & M & N -->|Violation Detected| O[Emit system.ledger_integrity_violation]
+        O --> P[Dashboard Timeline Alert + Administrator Email]
+    end
+```
+
+#### A. Cryptographic SHA-256 Hash Chaining
+Every posted general ledger journal entry is cryptographically bound to the entire historical sequence of journal entries using a Merkle-style SHA-256 hash chain:
+1. **Genesis Seed**: The very first journal entry in the system chains from a fixed 64-zero genesis seed:
+   ```
+   0000000000000000000000000000000000000000000000000000000000000000
+   ```
+2. **Deterministic Payload Hashing**: When entry `N` is posted, its cryptographic hash (`entry_hash`) is computed deterministically from:
+   - `prev_entry_hash`: The SHA-256 hash of entry `N-1`.
+   - `journal_entry_id` and `journal_entry_number`.
+   - `posting_date` and `source_type`.
+   - Sorted list of line items (`account_code`, `debit_amount`, `credit_amount`, `currency`).
+3. **Tamper Detection**: If any record in `gl_journal_entries` or `gl_journal_lines` is modified, inserted out-of-order, or deleted at the database level, the hash chain breaks from that point forward, rendering tampering immediately evident during automated verification.
+
+#### B. Database-Level Trigger Protection (Immutability by Default)
+HeroBM enforces immutability directly inside PostgreSQL via native triggers that execute before any SQL statement commits:
+- **`herobm_core.prevent_financial_deletion`**: Strictly blocks `DELETE` operations across all financial tables (`gl_journal_entries`, `gl_journal_lines`, `sales_invoices`, `sales_invoice_lines`, `purchase_invoices`, `purchase_invoice_lines`, `sales_credit_notes`, `purchase_debit_notes`, `payment_entries`, `payment_allocations`, and `inventory_ledger_movements`). Draft unposted records can be discarded, but once posted, records are permanent.
+- **`herobm_core.prevent_financial_modification`**: Prevents in-place updates to posted monetary amounts, account codes, debit/credit values, and transaction dates.
+- **The "Reversal Only" Accounting Law**: To correct any historical transaction, operators must post an explicit offsetting reversal journal entry or issue a formal credit/debit note. This guarantees a permanent, transparent paper trail for auditors.
+
+#### C. Continuous Automated Ledger Integrity Audits (BullMQ)
+A dedicated background BullMQ verification engine runs automated integrity audits daily at 2:00 AM (as well as on-demand):
+1. **Sequential Monotonicity**: Verifies that journal entry numbers, invoice numbers, and credit note numbers increment continuously without gaps.
+2. **Chronological Continuity**: Validates that transaction timestamps never regress or invert.
+3. **Zero-Sum Mathematical Invariant**: Recalculates total debits and credits across the entire general ledger, asserting that `Total Debits - Total Credits = 0.00`.
+4. **Full SHA-256 Hash Chain Recalculation**: Recomputes all entry hashes sequentially from the genesis seed to the latest entry, confirming cryptographic integrity.
+5. **Subledger-to-GL Parity**: Cross-checks every operational document (sales invoices, customer payments, supplier bills, inventory dispatches) against its corresponding GL double-entry lines.
+
+If any anomaly or discrepancy is detected, the verification engine immediately raises a high-priority `system.ledger_integrity_violation` domain event, triggers an administrative email dispatch, and creates a critical alert banner on the Dashboard Timeline.
+
+#### D. Strict Fiscal Period Hard Locking
+Fiscal periods can be placed in `Open`, `Soft Locked`, or `Hard Closed` states:
+- **Hard Closed Periods**: Permanently locked against new postings or backdated adjustments. Database triggers block any write whose transaction date falls within a hard-closed period.
+- **Audit Attribution**: All period status changes record the user ID, timestamp, and justification reason.
+
+#### E. Transactional Outbox Event Colocation
+All state transitions and ledger postings atomically insert an audit event into the `sys_outbox` table within the same database transaction (`emitEvent`). This provides an immutable event log recording the actor, timestamp, prior state, new state, and full execution payload for forensic auditing.
 
 ---
 

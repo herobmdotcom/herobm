@@ -31,6 +31,13 @@ export const PRESET_QUICK_ACTIONS: Omit<QuickActionItem, 'enabled'>[] = [
     icon: 'receipt_long',
   },
   {
+    id: 'counter_sale',
+    title: 'counterSale',
+    description: 'counterSaleDesc',
+    href: '/sales-orders/counter',
+    icon: 'point_of_sale',
+  },
+  {
     id: 'create_customer',
     title: 'createCustomer',
     description: 'createCustomerDesc',
@@ -148,11 +155,27 @@ export const DEFAULT_QUICK_ACTIONS: QuickActionItem[] = [
     enabled: true,
   },
   {
+    id: 'counter_sale',
+    title: 'counterSale',
+    description: 'counterSaleDesc',
+    href: '/sales-orders/counter',
+    icon: 'point_of_sale',
+    enabled: true,
+  },
+  {
     id: 'create_purchase_order',
     title: 'createPurchaseOrder',
     description: 'createPurchaseDesc',
     href: '/purchase-orders/new',
     icon: 'local_shipping',
+    enabled: true,
+  },
+  {
+    id: 'create_supplier',
+    title: 'createSupplier',
+    description: 'createSupplierDesc',
+    href: '/suppliers/new',
+    icon: 'factory',
     enabled: true,
   },
   {

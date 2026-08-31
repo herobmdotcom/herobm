@@ -185,9 +185,7 @@ export default function UniversalSearch({
           </span>
           <input
             id="universal-search"
-            className={`w-full pl-12 pr-4 py-3 rounded-full text-sm font-medium outline-none transition-all duration-150 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] ${
-              showDropdown && results.length > 0 ? 'shadow-lg' : 'shadow-sm'
-            }`}
+            className="w-full pl-12 pr-4 py-3 rounded-full text-sm font-medium outline-none transition-all duration-150 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] focus:border-[var(--accent)]"
             placeholder={t('placeholder')}
             value={query}
             onChange={(e) => {
@@ -208,7 +206,7 @@ export default function UniversalSearch({
           <Button
             variant="ghost"
             onClick={onOpenSettings}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group shrink-0 border border-[var(--border)] bg-[var(--bg-card)]"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group shrink-0"
             title={t('settings')}
           >
             <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">

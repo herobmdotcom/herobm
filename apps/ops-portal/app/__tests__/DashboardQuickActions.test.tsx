@@ -13,7 +13,9 @@ describe('DashboardQuickActions', () => {
     expect(screen.getByText('quickActions.title')).toBeInTheDocument();
     expect(screen.getByText('quickActions.createQuote')).toBeInTheDocument();
     expect(screen.getByText('quickActions.createSalesOrder')).toBeInTheDocument();
+    expect(screen.getByText('quickActions.counterSale')).toBeInTheDocument();
     expect(screen.getByText('quickActions.createPurchaseOrder')).toBeInTheDocument();
+    expect(screen.getByText('quickActions.createSupplier')).toBeInTheDocument();
   });
 
   it('renders custom quick actions and filtered preset actions', () => {

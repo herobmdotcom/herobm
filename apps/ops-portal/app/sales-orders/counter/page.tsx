@@ -231,8 +231,8 @@ export default function CounterSalesPage() {
           0,
         );
         return isNaN(sumBins) ? 0 : sumBins;
-      } catch (err) {
-        console.warn('Failed to fetch stock on hand:', err);
+      } catch {
+        // fallback: return 0 stock on hand if bin inventory query fails
         return 0;
       }
     },
@@ -350,6 +350,7 @@ export default function CounterSalesPage() {
         data: prod,
       }));
     } catch {
+      // failed to load search results
       return [];
     }
   };

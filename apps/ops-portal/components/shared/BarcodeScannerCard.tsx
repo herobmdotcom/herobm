@@ -131,6 +131,7 @@ export default function BarcodeScannerCard<T = unknown>({
         setShowDropdown(results.length > 0);
         setSelectedIndex(results.length > 0 ? 0 : -1);
       } catch {
+        // failed to load search results
         setSearchResults([]);
         setShowDropdown(false);
       } finally {
