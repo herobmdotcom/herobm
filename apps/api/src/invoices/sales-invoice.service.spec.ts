@@ -102,13 +102,61 @@ describe('SalesInvoiceService', () => {
       structureType: 'standard',
       createdBy: 'system',
     });
+
+    const MOCK_AR_ID = '00000000-0000-4000-8000-0000000000a1';
+    const MOCK_REV_ID = '00000000-0000-4000-8000-0000000000a2';
+    const MOCK_TAX_ID = '00000000-0000-4000-8000-0000000000a3';
+
+    await pg.db.insert(glAccounts).values([
+      {
+        glAccountId: MOCK_AR_ID,
+        accountCode: '1100',
+        name: 'Accounts Receivable',
+        accountType: 'asset',
+        currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: true,
+        isBankAccount: false,
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_REV_ID,
+        accountCode: '4100',
+        name: 'Sales Revenue',
+        accountType: 'revenue',
+        currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: true,
+        isBankAccount: false,
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_TAX_ID,
+        accountCode: '2200',
+        name: 'GST Collected',
+        accountType: 'liability',
+        currencyCode: 'AUD',
+        isGroup: false,
+        isSystem: true,
+        isBankAccount: false,
+        isActive: true,
+      },
+    ]);
   });
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    const MOCK_AR_ID = '00000000-0000-4000-8000-0000000000a1';
+    const MOCK_REV_ID = '00000000-0000-4000-8000-0000000000a2';
+    const MOCK_TAX_ID = '00000000-0000-4000-8000-0000000000a3';
+
     mockGlService = {
-      getSettings: jest.fn().mockResolvedValue(null),
+      getSettings: jest.fn().mockResolvedValue({
+        defaultArAccountId: MOCK_AR_ID,
+        defaultRevenueAccountId: MOCK_REV_ID,
+        defaultSalesTaxAccountId: MOCK_TAX_ID,
+      }),
       postJournalEntry: jest
         .fn()
         .mockResolvedValue({ journalEntryId: 'je-001' }),
@@ -243,6 +291,149 @@ describe('SalesInvoiceService', () => {
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should allow creating an invoice on a CONFIRMED order with non-stock / service lines', async () => {
+      const nonStockOrderId = '00000000-0000-4000-8000-000000000888';
+      const nonStockLineId = '00000000-0000-4000-8000-000000000889';
+      const serviceProdId = '00000000-0000-4000-8000-000000000887';
+
+      await pg.db.insert(products).values({
+        productId: serviceProdId,
+        productNumber: 'SRV-TEST',
+        name: 'Service Test',
+        baseUom: 'EA',
+        productType: 'service',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: nonStockOrderId,
+        orderNumber: 'ORD-NON-STOCK',
+        customerId: CUSTOMER_ID,
+        stateCode: SALES_ORDER_STATE.CONFIRMED,
+        currencyCode: 'AUD',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderLineId: nonStockLineId,
+        salesOrderId: nonStockOrderId,
+        lineNumber: 1,
+        productId: serviceProdId,
+        quantity: '3',
+        pricePerUnit: '50.00',
+        taxCategoryId: TAX_CAT_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        discountPercentage: '0',
+        amount: '150.00',
+        tax: '15.00',
+        totalAmount: '165.00',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      const inv = await service.createInvoice(nonStockOrderId, {}, 'admin');
+
+      expect(inv).toBeDefined();
+      expect(inv.salesOrderId).toBe(nonStockOrderId);
+      expect(inv.stateCode).toBe(SALES_INVOICE_STATE.INVOICED);
+    });
+
+    it('should reject invoicing stocked inventory lines on a CONFIRMED order without shipments', async () => {
+      const stockedOrderId = '00000000-0000-4000-8000-000000000777';
+      const stockedLineId = '00000000-0000-4000-8000-000000000778';
+
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: stockedOrderId,
+        orderNumber: 'ORD-STOCKED-CONFIRMED',
+        customerId: CUSTOMER_ID,
+        stateCode: SALES_ORDER_STATE.CONFIRMED,
+        currencyCode: 'AUD',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderLineId: stockedLineId,
+        salesOrderId: stockedOrderId,
+        lineNumber: 1,
+        productId: PRODUCT_ID, // Tracked inventory product
+        quantity: '5',
+        pricePerUnit: '10.00',
+        taxCategoryId: TAX_CAT_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        discountPercentage: '0',
+        amount: '50.00',
+        tax: '5.00',
+        totalAmount: '55.00',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      // Attempting to invoice unfulfilled stocked line without shipments throws because quantity available is 0
+      await expect(
+        service.createInvoice(
+          stockedOrderId,
+          {
+            lines: [{ salesOrderLineId: stockedLineId, quantityToInvoice: 5 }],
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject invoice creation if defaultArAccountId is missing in GL Settings (Strict Mode)', async () => {
+      const { orderId } = await seedTaxOrderData();
+      mockGlService.getSettings.mockResolvedValueOnce({
+        defaultArAccountId: null,
+        defaultRevenueAccountId: '00000000-0000-4000-8000-0000000000a2',
+        defaultSalesTaxAccountId: '00000000-0000-4000-8000-0000000000a3',
+      });
+
+      await expect(service.createInvoice(orderId, {}, 'admin')).rejects.toThrow(
+        'Cannot create invoice: Accounts Receivable account (defaultArAccountId) is not configured in GL Settings.',
+      );
+    });
+
+    it('should reject invoice creation if defaultRevenueAccountId is missing when unmapped revenue lines exist (Strict Mode)', async () => {
+      const { orderId } = await seedTaxOrderData();
+      mockAppConfigService.defaultRevenueAccountId.mockReturnValue(null);
+      mockGlService.getSettings.mockResolvedValueOnce({
+        defaultArAccountId: '00000000-0000-4000-8000-0000000000a1',
+        defaultRevenueAccountId: null,
+        defaultSalesTaxAccountId: '00000000-0000-4000-8000-0000000000a3',
+      });
+
+      await expect(service.createInvoice(orderId, {}, 'admin')).rejects.toThrow(
+        'Cannot create invoice: Default Revenue account (defaultRevenueAccountId) is not configured in GL Settings.',
+      );
+    });
+
+    it('should reject invoice creation if defaultSalesTaxAccountId is missing when taxable lines exist (Strict Mode)', async () => {
+      const { orderId } = await seedTaxOrderData();
+      mockAppConfigService.defaultSalesTaxAccountId.mockReturnValue(null);
+      mockGlService.getSettings.mockResolvedValueOnce({
+        defaultArAccountId: '00000000-0000-4000-8000-0000000000a1',
+        defaultRevenueAccountId: '00000000-0000-4000-8000-0000000000a2',
+        defaultSalesTaxAccountId: null,
+      });
+
+      await expect(service.createInvoice(orderId, {}, 'admin')).rejects.toThrow(
+        'Cannot create invoice: Sales Tax account (defaultSalesTaxAccountId) is not configured in GL Settings.',
+      );
     });
 
     const seedTaxOrderData = async () => {

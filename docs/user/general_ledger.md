@@ -84,6 +84,15 @@ Before an entry is committed:
 | **Supplier Bill Payment** | Accounts Payable Control | Bank Account (+ Early Payment Discount) |
 | **Inventory Scrap / Count Loss** | Inventory Shrinkage Expense | Inventory Asset Account |
 
+### 4. Ledger Immutability & Compliance Auditing
+- **Database-Level Immutability**: All posted journal entries (`gl_journal_entries`, `gl_journal_lines`) and payment allocations are permanently protected by PostgreSQL triggers (`herobm_core.prevent_financial_deletion`). Direct SQL or API `DELETE` actions are strictly rejected.
+- **Scheduled Automated Integrity Audits**: A background BullMQ verification engine runs daily at 2:00 AM to verify:
+  1. Monotonic sequential numbering without gaps across all subledgers.
+  2. Timestamp continuity and absence of chronological inversions.
+  3. 100% journal linkage between subledger operational transactions and General Ledger double-entry lines.
+  4. Mathematical debit/credit balance equality (Total Debits = Total Credits).
+- **Proactive Alerting**: If any anomaly is detected, the system immediately surfaces a **Dashboard Timeline Alert** (under the Finance group) and dispatches an **Admin Email Notification** for immediate remediation.
+
 ---
 
 ## Step-by-Step Workflows

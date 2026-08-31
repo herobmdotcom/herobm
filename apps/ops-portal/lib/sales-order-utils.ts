@@ -1,4 +1,5 @@
 import type { OrderLine, SalesInvoice, OrderReturn } from '@/app/sales-orders/[id]/types';
+import { isStockedProductLine } from '@herobm/shared';
 
 /**
  * A picking line summary — shape mirrors the API response.
@@ -14,7 +15,7 @@ export interface PickingLine {
  */
 export interface InvoiceableQty {
     salesOrderLineId: string;
-    /** Maximum quantity that can be invoiced (shipped − already invoiced, clamped ≥ 0). */
+    /** Maximum quantity that can be invoiced (shipped or ordered − already invoiced, clamped ≥ 0). */
     maxQty: number;
     /** Default quantity to pre-fill (equals maxQty when > 0, else ''). */
     defaultQty: string;
@@ -23,7 +24,8 @@ export interface InvoiceableQty {
 /**
  * Calculate how many units of each order line can still be invoiced.
  *
- *   maxQty = max(0, shippedQty − alreadyInvoicedQty)
+ *   For stocked inventory lines: maxQty = max(0, shippedQty − alreadyInvoicedQty − refundedQty)
+ *   For non-stock / service / custom lines: maxQty = max(0, orderedQty − alreadyInvoicedQty − refundedQty)
  *
  * Only lines with maxQty > 0 are returned.
  */
@@ -53,16 +55,27 @@ export function calculateInvoiceableQuantities(
                 return sum + (retLine ? parseFloat(retLine.quantityReturned || '0') : 0);
             }, 0);
 
-            // Find shipped from picking
-            const pLine = pickingLines?.find(
-                (pl) => pl.salesOrderLineId === line.salesOrderLineId,
-            );
-            const shippedQty =
-                pLine && pLine.quantityShipped != null
-                    ? parseFloat(pLine.quantityShipped)
-                    : 0;
+            const isStocked = isStockedProductLine({
+                productId: line.productId,
+                productType: line.productType,
+            });
 
-            const maxQty = Math.max(0, shippedQty - invoicedQty - refundedQty);
+            let baseQty: number;
+            if (isStocked) {
+                // Tracked physical inventory items must be shipped before invoicing
+                const pLine = pickingLines?.find(
+                    (pl) => pl.salesOrderLineId === line.salesOrderLineId,
+                );
+                baseQty =
+                    pLine && pLine.quantityShipped != null
+                        ? parseFloat(pLine.quantityShipped)
+                        : 0;
+            } else {
+                // Non-stock, service, and custom lines do not require picking/shipping
+                baseQty = parseFloat(line.quantity || '0');
+            }
+
+            const maxQty = Math.max(0, baseQty - invoicedQty - refundedQty);
 
             return {
                 salesOrderLineId: line.salesOrderLineId,

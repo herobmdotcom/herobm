@@ -57,14 +57,16 @@ The engine also enforces:
 ### Entry Number Generation
 Journal entries receive a sequential identifier formatted as `JE-YYYYMMDD-NNNN` (e.g., `JE-20260322-0001`). This sequence resets daily and is generated safely within a database transaction.
 
-## Immutable Event Sourcing & Reversals
+## Immutable Event Sourcing, Database Triggers & Reversals
 
 Once a Journal Entry is committed, it forms the permanent financial record of the business. 
-To guarantee absolute audit continuity, financial transactions follow strict immutability principles:
+To guarantee absolute audit continuity and tax compliance, financial transactions follow strict immutability principles:
 
-1. **No Destructive Edits:** Mistakes or document cancellations cannot be edited away; they are reversed with a new, opposing Journal Entry linked to the source transaction.
-2. **Audit Event Log Integration:** Every `postJournalEntry` execution emits an immutable `gl_posted` audit log event with full line payloads.
-3. **Reconciliation Tracking:** Individual lines maintain bank matching references (`reconciliation_id`, `is_reconciled`) without altering the original posted monetary amounts.
+1. **Database-Level Immutability Triggers:** PostgreSQL `BEFORE DELETE` triggers (`herobm_core.prevent_financial_deletion()`) installed via migration `0130_prevent_financial_deletions.sql` unconditionally reject hard deletions on financial and audit tables.
+2. **No Destructive Edits:** Mistakes or document cancellations cannot be edited away; they are reversed with a new, opposing Journal Entry linked to the source transaction (`sourceType = 'sales_invoice_reversal'`).
+3. **Audit Event Log Integration:** Every `postJournalEntry` execution emits an immutable `gl_posted` audit log event with full line payloads.
+4. **Automated Scheduled Integrity Auditing:** A background BullMQ service (`verify-ledger-integrity.service.ts`) runs nightly at 2:00 AM on the `system-maintenance` queue to audit invoice sequence continuity, timestamp monotonicity, and double-entry invariants, raising Dashboard Timeline and email alerts on discrepancies.
+5. **Reconciliation Tracking:** Individual lines maintain bank matching references (`reconciliation_id`, `is_reconciled`) without altering the original posted monetary amounts.
 
 ## Integration with Subledgers
 

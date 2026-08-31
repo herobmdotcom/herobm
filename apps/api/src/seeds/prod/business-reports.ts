@@ -231,9 +231,10 @@ export async function seedBusinessReports(db: SeedDB, dryRun = false) {
       },
     },
     {
-      slug: 'sales-trend',
-      name: 'Sales Trend',
-      description: 'Monthly trend of total sales revenue and order counts.',
+      slug: 'sales-orders',
+      name: 'Sales Orders',
+      description:
+        'Monthly trend of total sales order revenue and order counts.',
       dataSourceHook: 'sales-performance-trend',
       isSystem: true,
       uiConfig: {
@@ -283,6 +284,63 @@ export async function seedBusinessReports(db: SeedDB, dryRun = false) {
           xAxisField: 'period',
           yAxisField: 'totalSales',
           seriesName: 'Total Sales',
+        },
+      },
+    },
+    {
+      slug: 'sales-invoices',
+      name: 'Sales Invoices',
+      description:
+        'Monthly trend of total sales invoice revenue and invoice counts.',
+      dataSourceHook: 'sales-performance-invoices',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'period', headerName: 'Period', flex: 1 },
+          {
+            field: 'invoiceCount',
+            headerName: 'Invoice Count',
+            type: 'numericColumn',
+          },
+          {
+            field: 'totalInvoiced',
+            headerName: 'Total Invoiced',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [
+          { type: 'date', name: 'fromDate', label: 'From Date' },
+          { type: 'date', name: 'toDate', label: 'To Date' },
+        ],
+        drillDownOptions: [
+          {
+            id: 'product',
+            label: 'Product',
+            field: 'productName',
+            headerName: 'Product',
+            flex: 2,
+          },
+          {
+            id: 'product-group',
+            label: 'Product Group',
+            field: 'productGroupName',
+            headerName: 'Product Group',
+            flex: 1,
+          },
+          {
+            id: 'customer',
+            label: 'Customer',
+            field: 'customerName',
+            headerName: 'Customer',
+            flex: 1,
+          },
+        ],
+        chartConfig: {
+          type: 'line',
+          xAxisField: 'period',
+          yAxisField: 'totalInvoiced',
+          seriesName: 'Total Invoiced',
         },
       },
     },
@@ -699,6 +757,12 @@ export async function seedBusinessReports(db: SeedDB, dryRun = false) {
       },
     },
   ];
+
+  // In-place rename for legacy slug if present from previous seeds (avoids DB deletes)
+  await db
+    .update(businessReports)
+    .set({ slug: 'sales-orders' })
+    .where(eq(businessReports.slug, 'sales-trend'));
 
   for (const report of reports) {
     const existing = await db

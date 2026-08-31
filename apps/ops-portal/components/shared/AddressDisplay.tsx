@@ -18,6 +18,7 @@ function getCountryName(countryCode?: string): string {
     const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
     return displayNames.of(countryCode) || countryCode;
   } catch {
+    // fallback: return raw country code if region name formatting fails
     return countryCode;
   }
 }

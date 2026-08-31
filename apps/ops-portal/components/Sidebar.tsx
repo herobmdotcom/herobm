@@ -22,8 +22,16 @@ export default function Sidebar() {
       label: t('groups.sales'),
       items: [
         { href: routes.customers.list(), label: t('items.customers'), icon: 'storefront' },
-        { href: routes.salesQuotes.list(), label: t('items.salesQuotes'), icon: 'request_quote' },
-        { href: routes.salesOrders.list(), label: t('items.salesOrders'), icon: 'receipt_long' },
+        { 
+          href: routes.salesOrders.list(), 
+          label: t('items.salesOrders'), 
+          icon: 'receipt_long',
+          subItems: [
+            { href: routes.salesOrders.list(), label: t('items.salesOrders') },
+            { href: routes.salesQuotes.list(), label: t('items.salesQuotes') },
+            { href: routes.salesOrders.counter(), label: t('items.counterSales') },
+          ]
+        },
         { href: routes.shipments.list(), label: t('items.shipments'), icon: 'local_post_office' },
         { href: routes.salesInvoices.list(), label: t('items.salesInvoices'), icon: 'request_quote' },
         { href: routes.salesReturns.list(), label: t('items.salesReturns'), icon: 'assignment_return' },

@@ -20,6 +20,7 @@ export const routes = {
     detail: (id: string) => `/sales-orders/${id}`,
     new: (customerId?: string) =>
       customerId ? `/sales-orders/new?customerId=${customerId}` : '/sales-orders/new',
+    counter: () => '/sales-orders/counter',
   },
   salesInvoices: {
     list: () => '/sales-invoices',

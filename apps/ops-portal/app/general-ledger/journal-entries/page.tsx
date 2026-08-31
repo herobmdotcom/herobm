@@ -26,22 +26,27 @@ export default function JournalEntriesPage() {
 
   const sourceLabel = (type: string) => {
     const rawType = (type || '').toLowerCase();
-    try {
-      // @ts-expect-error dynamic lookup
-      const translated = t(`sourceTypes.${rawType}`);
-      if (translated && !translated.startsWith('gl.journalEntries.')) return translated;
-    } catch {
-      // ignore
-    }
-
     const labels: Record<string, string> = {
       sales_invoice: t('sourceSalesInvoice'),
       purchase_invoice: t('sourcePurchaseInvoice'),
       sales_credit_note: t('sourceSalesCreditNote'),
       payment_entry: t('sourcePaymentEntry'),
       manual: t('sourceManual'),
+      adjustment: t('sourceTypes.adjustment'),
+      fx_revaluation: t('sourceTypes.fx_revaluation'),
+      initial_import: t('sourceTypes.initial_import'),
+      inventory_adjustment: t('sourceTypes.inventory_adjustment'),
+      inventory_dispatch: t('sourceTypes.inventory_dispatch'),
+      inventory_receipt: t('sourceTypes.inventory_receipt'),
+      opening_balance: t('sourceTypes.opening_balance'),
+      payroll: t('sourceTypes.payroll'),
+      purchase_debit_note: t('sourceTypes.purchase_debit_note'),
+      purchase_invoice_reversal: t('sourceTypes.purchase_invoice_reversal'),
+      sales_invoice_reversal: t('sourceTypes.sales_invoice_reversal'),
+      tax_settlement: t('sourceTypes.tax_settlement'),
+      year_end_close: t('sourceTypes.year_end_close'),
     };
-    if (labels[type]) return labels[type];
+    if (labels[rawType]) return labels[rawType];
     
     return type
       .split('_')

@@ -3179,9 +3179,43 @@
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
+        },
+        "sequence_number": {
+          "name": "sequence_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prev_hash": {
+          "name": "prev_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_hash": {
+          "name": "entry_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_gl_journal_entries_sequence_number": {
+          "name": "idx_gl_journal_entries_sequence_number",
+          "columns": [
+            {
+              "expression": "sequence_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "gl_journal_entries_reversed_by_gl_journal_entries_journal_entry_id_fk": {
           "name": "gl_journal_entries_reversed_by_gl_journal_entries_journal_entry_id_fk",
@@ -12565,22 +12599,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "user_events_user_id_users_user_id_fk": {
-          "name": "user_events_user_id_users_user_id_fk",
-          "tableFrom": "user_events",
-          "tableTo": "users",
-          "schemaTo": "herobm_core",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "user_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

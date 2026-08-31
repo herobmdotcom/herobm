@@ -8,7 +8,9 @@
     "cogs_account_code": "5100",
     "tax_account_code": "2200",
     "expense_account_code": "6900",
-    "inventory_account_code": "1300"
+    "inventory_account_code": "1300",
+    "otc_cash_account_code": "1010",
+    "otc_card_account_code": "1021"
   },
   "gst_categories": [
     { "code": "STATE", "title": "State Sales Tax (8.25%)", "type": "tax_applies", "rate": 8.25, "is_default": true },

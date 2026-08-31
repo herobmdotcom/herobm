@@ -121,9 +121,12 @@ export class ShipmentsWriteService {
     const result = await (tx || this.db).transaction(
       async (innerTx: DrizzleDB) => {
         const order = await findOrder(innerTx, salesOrderId);
-        if (order.stateCode !== SALES_ORDER_STATE.PICKING) {
+        if (
+          order.stateCode !== SALES_ORDER_STATE.PICKING &&
+          order.stateCode !== SALES_ORDER_STATE.CONFIRMED
+        ) {
           throw new BadRequestException(
-            `Cannot create shipment for order in state '${order.stateCode}'. Order must be in ${SALES_ORDER_STATE.PICKING}.`,
+            `Cannot create shipment for order in state '${order.stateCode}'. Order must be in ${SALES_ORDER_STATE.CONFIRMED} or ${SALES_ORDER_STATE.PICKING}.`,
           );
         }
 

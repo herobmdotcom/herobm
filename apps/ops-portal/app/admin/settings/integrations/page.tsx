@@ -242,7 +242,8 @@ export default function IntegrationsSettingsPage() {
       try {
         payload = JSON.parse(testPayload);
         isJson = true;
-      } catch (e) {
+      } catch {
+        // fallback to string payload if not valid JSON
         payload = testPayload;
       }
 

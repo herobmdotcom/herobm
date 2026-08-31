@@ -5,7 +5,18 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, isNull, and, or, inArray } from 'drizzle-orm';
+import {
+  eq,
+  sql,
+  isNull,
+  isNotNull,
+  and,
+  or,
+  inArray,
+  asc,
+  desc,
+} from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -31,6 +42,10 @@ import {
   GLAccountType,
   DATA_SOURCE_CONTEXT,
   type JournalEntrySourceType,
+  GENESIS_HASH,
+  computeCanonicalPayloadHash,
+  computeEntryHash,
+  verifyJournalChain,
 } from '@herobm/shared';
 import { JournalLineDto } from './dto';
 import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
@@ -285,24 +300,26 @@ export class GlService implements OnModuleInit {
         actorStr = actorObj.username || actorObj.userId || 'system';
       }
 
-      const [entry] = await db
-        .insert(glJournalEntries)
-        .values({
-          journalEntryId: meta.journalEntryId,
-          entryNumber,
-          entryDate,
-          memo: meta.memo,
-          sourceType: meta.sourceType,
-          sourceId: meta.sourceId,
-          createdBy: actorStr,
-          isReversed: false,
+      // Fetch latest journal entry for sequential hash chaining
+      const [latestEntry] = await db
+        .select({
+          sequenceNumber: glJournalEntries.sequenceNumber,
+          entryHash: glJournalEntries.entryHash,
         })
-        .returning();
+        .from(glJournalEntries)
+        .where(isNotNull(glJournalEntries.sequenceNumber))
+        .orderBy(desc(glJournalEntries.sequenceNumber))
+        .limit(1);
 
+      const sequenceNumber = latestEntry?.sequenceNumber
+        ? latestEntry.sequenceNumber + 1
+        : 1;
+      const prevHash = latestEntry?.entryHash || GENESIS_HASH;
+      const journalEntryId = meta.journalEntryId || randomUUID();
       const defaults = await this.getDefaults(db);
 
       const lineValues = lines.map((l) => ({
-        journalEntryId: entry.journalEntryId,
+        journalEntryId,
         glAccountId: l.accountId!,
         costCenterId: l.costCenterId || defaults.costCenterId,
         activityId: l.activityId || defaults.activityId,
@@ -317,6 +334,35 @@ export class GlService implements OnModuleInit {
         memo: l.memo,
       }));
 
+      // Compute cryptographic hash of canonical payload and chained entry hash
+      const payloadHash = computeCanonicalPayloadHash({
+        sequenceNumber,
+        entryNumber,
+        entryDate,
+        sourceType: meta.sourceType,
+        sourceId: meta.sourceId || null,
+        memo: meta.memo || null,
+        lines: lineValues,
+      });
+      const entryHash = computeEntryHash(prevHash, payloadHash);
+
+      const [entry] = await db
+        .insert(glJournalEntries)
+        .values({
+          journalEntryId,
+          sequenceNumber,
+          entryNumber,
+          entryDate,
+          memo: meta.memo,
+          sourceType: meta.sourceType,
+          sourceId: meta.sourceId,
+          prevHash,
+          entryHash,
+          createdBy: actorStr,
+          isReversed: false,
+        })
+        .returning();
+
       await db
         .insert(glJournalLines)
         .values(lineValues.map((line) => ({ isReconciled: false, ...line })));
@@ -330,6 +376,9 @@ export class GlService implements OnModuleInit {
         payload: {
           entryNumber,
           entryDate,
+          sequenceNumber,
+          entryHash,
+          prevHash,
           sourceType: meta.sourceType,
           sourceId: meta.sourceId,
           lines: lineValues,
@@ -1181,5 +1230,80 @@ export class GlService implements OnModuleInit {
    */
   async getSubledgerReconciliation(asOfDate?: string) {
     return calculateSubledgerReconciliation(this.db, asOfDate);
+  }
+
+  // -------------------------------------------------------------------------
+  // Cryptographic Ledger Hash Chain Verification
+  // -------------------------------------------------------------------------
+
+  /**
+   * Verifies the cryptographic SHA-256 hash chain across all general ledger entries from sequence #1 to latest.
+   */
+  async verifyLedgerHashChain(tx?: DrizzleDB) {
+    const queryDb = tx || this.db;
+
+    const entries = await queryDb
+      .select({
+        sequenceNumber: glJournalEntries.sequenceNumber,
+        entryNumber: glJournalEntries.entryNumber,
+        entryDate: glJournalEntries.entryDate,
+        sourceType: glJournalEntries.sourceType,
+        sourceId: glJournalEntries.sourceId,
+        memo: glJournalEntries.memo,
+        prevHash: glJournalEntries.prevHash,
+        entryHash: glJournalEntries.entryHash,
+        journalEntryId: glJournalEntries.journalEntryId,
+      })
+      .from(glJournalEntries)
+      .where(isNotNull(glJournalEntries.sequenceNumber))
+      .orderBy(asc(glJournalEntries.sequenceNumber));
+
+    if (entries.length === 0) {
+      return { isValid: true, verifiedCount: 0 };
+    }
+
+    const entryIds = entries.map((e) => e.journalEntryId);
+    const allLines = await queryDb
+      .select({
+        journalEntryId: glJournalLines.journalEntryId,
+        glAccountId: glJournalLines.glAccountId,
+        debit: glJournalLines.debit,
+        credit: glJournalLines.credit,
+        costCenterId: glJournalLines.costCenterId,
+        activityId: glJournalLines.activityId,
+        partyType: glJournalLines.partyType,
+        partyId: glJournalLines.partyId,
+      })
+      .from(glJournalLines)
+      .where(inArray(glJournalLines.journalEntryId, entryIds));
+
+    const linesByEntry = new Map<string, typeof allLines>();
+    for (const line of allLines) {
+      const existing = linesByEntry.get(line.journalEntryId) || [];
+      existing.push(line);
+      linesByEntry.set(line.journalEntryId, existing);
+    }
+
+    const payloadEntries = entries.map((e) => ({
+      sequenceNumber: e.sequenceNumber!,
+      entryNumber: e.entryNumber,
+      entryDate: e.entryDate,
+      sourceType: e.sourceType,
+      sourceId: e.sourceId,
+      memo: e.memo,
+      prevHash: e.prevHash || '',
+      entryHash: e.entryHash || '',
+      lines: (linesByEntry.get(e.journalEntryId) || []).map((l) => ({
+        glAccountId: l.glAccountId,
+        debit: l.debit,
+        credit: l.credit,
+        costCenterId: l.costCenterId,
+        activityId: l.activityId,
+        partyType: l.partyType,
+        partyId: l.partyId,
+      })),
+    }));
+
+    return verifyJournalChain(payloadEntries);
   }
 }

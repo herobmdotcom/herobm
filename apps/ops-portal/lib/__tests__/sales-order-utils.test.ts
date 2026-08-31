@@ -119,6 +119,38 @@ describe('calculateInvoiceableQuantities', () => {
             { salesOrderLineId: 'L2', maxQty: 10, defaultQty: '10' },
         ]);
     });
+
+    it('allows non-stock and custom lines to be invoiced without picking/shipping', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'service', quantity: '2' }),
+            makeLine({ salesOrderLineId: 'L2', productType: 'non-stock', productId: '00000000-0000-4000-8000-000000000000', quantity: '1' }),
+        ];
+
+        // No picking or shipping data
+        const result = calculateInvoiceableQuantities(lines, [], null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 2, defaultQty: '2' },
+            { salesOrderLineId: 'L2', maxQty: 1, defaultQty: '1' },
+        ]);
+    });
+
+    it('correctly handles mixed orders with both stocked and non-stock lines', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+            makeLine({ salesOrderLineId: 'L2', productType: 'service', quantity: '1' }),
+        ];
+        const picking: PickingLine[] = [
+            { salesOrderLineId: 'L1', quantityShipped: '0' },
+        ];
+
+        // Stocked line L1 has 0 shipped so maxQty = 0; service line L2 has maxQty = 1
+        const result = calculateInvoiceableQuantities(lines, [], picking);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L2', maxQty: 1, defaultQty: '1' },
+        ]);
+    });
 });
 
 /* ── convertFeeMode ──────────────────────────────────────────────── */

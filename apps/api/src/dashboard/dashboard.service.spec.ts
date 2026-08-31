@@ -7,6 +7,7 @@ import {
   PRODUCT_STATE,
   SALES_ORDER_STATE,
   ACTOR_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
 import {
   customers,
@@ -271,6 +272,78 @@ describe('DashboardService', () => {
       expect(soResult).toBeDefined();
       expect(soResult!.href).toBe(`/sales-orders/${so.salesOrderId}`);
     });
+
+    it('should filter search results based on selected types', async () => {
+      const [p] = await pg.db
+        .insert(products)
+        .values({
+          name: 'Widget Filter',
+          productNumber: 'WF-01',
+          productType: 'inventory',
+          baseUom: 'EA',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
+        })
+        .returning();
+
+      const actorIdFilter = '00000000-0000-4000-8000-000000000088';
+      await pg.db.insert(actors).values({
+        stateCode: ACTOR_STATE.ACTIVE,
+        actorId: actorIdFilter,
+        name: 'Widget Supplier',
+        headquartersAddressLine1: 'AU',
+        isTaxRegistered: false,
+      });
+
+      await pg.db.insert(suppliers).values({
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        isPurchasingBlocked: false,
+        actorId: actorIdFilter,
+        vendorNumber: 'SUP-01',
+        currencyCode: 'USD',
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      // When searching for 'Widget' with only 'product' enabled
+      const prodOnlyResult = await service.universalSearch('Widget', [
+        'product',
+      ]);
+      expect(prodOnlyResult.results.length).toBe(1);
+      expect(prodOnlyResult.results[0].type).toBe('product');
+      expect(prodOnlyResult.results[0].id).toBe(p.productId);
+
+      // When searching for 'Widget' with only 'supplier' enabled
+      const supOnlyResult = await service.universalSearch('Widget', [
+        'supplier',
+      ]);
+      expect(supOnlyResult.results.length).toBe(1);
+      expect(supOnlyResult.results[0].type).toBe('supplier');
+      expect(supOnlyResult.results[0].label).toBe('Widget Supplier');
+    });
+
+    it('should query default 8 entities when types is undefined or empty', async () => {
+      const [p] = await pg.db
+        .insert(products)
+        .values({
+          name: 'Default SKU',
+          productNumber: 'DSKU-01',
+          productType: 'inventory',
+          baseUom: 'EA',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
+        })
+        .returning();
+
+      const result = await service.universalSearch('Default');
+      expect(result.results.length).toBe(1);
+      expect(result.results[0].id).toBe(p.productId);
+      expect(result.results[0].type).toBe('product');
+    });
   });
 
   describe('getTimeline', () => {
@@ -315,6 +388,24 @@ describe('DashboardService', () => {
     it('should return empty if no types provided', async () => {
       const result = await service.getTimeline([]);
       expect(result.events).toEqual([]);
+    });
+
+    it('should handle mapped event types like general_ledger.entry_posted and warehouse.receipt_created', async () => {
+      const eventId1 = '00000000-0000-4000-8000-000000000010';
+      await pg.db.insert(systemEvents).values({
+        eventId: eventId1,
+        entityType: 'system',
+        entityId: eventId1,
+        entityDisplayName: 'GL Batch 1',
+        eventType: 'gl_posted',
+        actor: 'finance_user',
+        createdOn: new Date(),
+      });
+
+      const result = await service.getTimeline(['general_ledger.entry_posted']);
+      expect(result.events.length).toBe(1);
+      expect(result.events[0].eventType).toBe('general_ledger.entry_posted');
+      expect(result.events[0].entityDisplay).toBe('GL Batch 1');
     });
   });
 });

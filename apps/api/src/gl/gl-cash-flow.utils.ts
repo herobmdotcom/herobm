@@ -378,11 +378,19 @@ export async function calculateCashFlowStatement(
   for (const acc of accountsList) {
     accountMap.set(acc.glAccountId, acc);
     const typeLower = (acc.accountType || '').toLowerCase();
+    const nameLower = (acc.name || '').toLowerCase();
+    const isLoanOrMortgage =
+      nameLower.includes('loan') ||
+      nameLower.includes('borrowing') ||
+      nameLower.includes('mortgage') ||
+      nameLower.includes('darlehen') ||
+      nameLower.includes('kredit');
 
     if (
-      acc.isBankAccount === true ||
-      typeLower === 'cash' ||
-      typeLower === 'bank'
+      !isLoanOrMortgage &&
+      (acc.isBankAccount === true ||
+        typeLower === 'cash' ||
+        typeLower === 'bank')
     ) {
       cashAccountIds.add(acc.glAccountId);
     }
@@ -405,9 +413,11 @@ export async function calculateCashFlowStatement(
       SELECT
         COALESCE(SUM(CASE 
           WHEN je.entry_date < ${startDateSql} 
-            OR LOWER(je.source_type) IN ('initial_import', 'opening_balance')
-            OR UPPER(je.source_type) IN ('INITIAL_IMPORT', 'OPENING_BALANCE')
-            OR je.entry_number LIKE 'JE-OPENING-%'
+            OR (je.entry_date <= ${startDateSql} AND (
+              LOWER(je.source_type) IN ('initial_import', 'opening_balance')
+              OR UPPER(je.source_type) IN ('INITIAL_IMPORT', 'OPENING_BALANCE')
+              OR je.entry_number LIKE 'JE-OPENING-%'
+            ))
           THEN jl.debit - jl.credit 
           ELSE 0 
         END), 0)::numeric AS "openingCash",
@@ -834,24 +844,38 @@ export async function calculateCashFlowLineDrilldown(
   for (const acc of accountRows) {
     accountMap.set(acc.glAccountId, acc);
     const typeLower = (acc.accountType || '').toLowerCase();
+    const nameLower = (acc.name || '').toLowerCase();
+    const isLoanOrMortgage =
+      nameLower.includes('loan') ||
+      nameLower.includes('borrowing') ||
+      nameLower.includes('mortgage') ||
+      nameLower.includes('darlehen') ||
+      nameLower.includes('kredit');
+
     if (
-      acc.isBankAccount === true ||
-      typeLower === 'cash' ||
-      typeLower === 'bank'
+      !isLoanOrMortgage &&
+      (acc.isBankAccount === true ||
+        typeLower === 'cash' ||
+        typeLower === 'bank')
     ) {
       cashAccountIds.add(acc.glAccountId);
     }
   }
 
   // 2. Fetch journal entries touching bank accounts in this window
+  const cashIdsSql =
+    cashAccountIds.size > 0
+      ? sql.join(
+          Array.from(cashAccountIds).map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )
+      : sql`'00000000-0000-0000-0000-000000000000'::uuid`;
+
   const journalActivityQuery = sql`
     WITH relevant_entries AS (
       SELECT DISTINCT journal_entry_id
       FROM herobm_core.gl_journal_lines
-      WHERE gl_account_id IN (
-        SELECT gl_account_id FROM herobm_core.gl_accounts
-        WHERE is_group = false AND is_bank_account = true
-      )
+      WHERE gl_account_id IN (${cashIdsSql})
     )
     SELECT
       je.journal_entry_id AS "journalEntryId",

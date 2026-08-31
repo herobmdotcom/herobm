@@ -58,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `try { if (navigator.language) { document.documentElement.lang = navigator.language; } } catch (_) {}`,
+            __html: `try { if (navigator.language) { document.documentElement.lang = navigator.language; } } catch (_) { /* ignore */ }`,
           }}
         />
       </head>

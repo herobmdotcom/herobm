@@ -19,6 +19,7 @@ export function loadGridState(gridKey: string): GridState | null {
     const parsed = JSON.parse(raw) as GridState;
     return typeof parsed === 'object' && parsed !== null ? parsed : null;
   } catch {
+    // harmless: corrupt/invalid JSON in storage
     return null;
   }
 }
@@ -57,6 +58,7 @@ export function loadScrollState(gridKey: string): ScrollState | null {
     const parsed = JSON.parse(raw) as ScrollState;
     return typeof parsed.top === 'number' ? parsed : null;
   } catch {
+    // harmless: corrupt/invalid JSON in storage
     return null;
   }
 }

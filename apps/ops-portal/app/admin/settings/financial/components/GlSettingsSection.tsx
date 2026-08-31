@@ -162,7 +162,20 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
               </label>
               {renderGlAccountSelect('defaultPurchaseTaxAccountId', glSettings?.defaultPurchaseTaxAccountId as string | undefined)}
             </div>
-            <div className="hidden md:block"></div>
+
+            {/* Over-The-Counter (OTC) Defaults */}
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tSettings('labels.defaultOtcCash')}
+              </label>
+              {renderGlAccountSelect('defaultOtcCashAccountId', glSettings?.defaultOtcCashAccountId as string | undefined)}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tSettings('labels.defaultOtcCard')}
+              </label>
+              {renderGlAccountSelect('defaultOtcCardAccountId', glSettings?.defaultOtcCardAccountId as string | undefined)}
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">

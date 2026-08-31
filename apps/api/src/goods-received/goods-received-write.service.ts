@@ -666,7 +666,10 @@ export class GoodsReceivedWriteService {
         .where(
           and(
             eq(glJournalEntries.sourceId, receipt.goodsReceivedId),
-            eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT),
+            eq(
+              glJournalEntries.sourceType,
+              JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_RECEIPT,
+            ),
           ),
         )
         .limit(1);

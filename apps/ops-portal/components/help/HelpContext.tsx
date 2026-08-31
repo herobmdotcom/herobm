@@ -60,6 +60,7 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
       // If user hasn't drilled into a custom topic, keep active topic in sync with context
       setActiveTopic(contextData?.topic ?? null);
     } catch {
+      // failed to load contextual help
       setContextTopic(null);
       setActiveTopic(null);
     } finally {
@@ -75,6 +76,7 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
       });
       setTopics(res?.data ?? []);
     } catch {
+      // failed to load topic list
       setTopics([]);
     }
   }, []);
@@ -108,6 +110,7 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
         );
         setSearchResults(res?.data ?? []);
       } catch {
+        // failed to load search results
         setSearchResults([]);
       }
     }, 200);

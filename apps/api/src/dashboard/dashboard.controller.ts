@@ -1,5 +1,10 @@
 import { SystemResource } from '@herobm/shared';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Controller, Get, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
@@ -32,9 +37,23 @@ export class DashboardController {
     summary: 'Universal Search',
     description: 'Performs a global search across multiple entity types.',
   })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    description: 'Search term (minimum 2 characters)',
+  })
+  @ApiQuery({
+    name: 'types',
+    required: false,
+    description: 'Comma-separated entity types to filter search',
+  })
   @ApiOkResponse({ type: UniversalSearchResponseDto })
-  search(@Query('q') q: string) {
-    return this.dashboardService.universalSearch(q);
+  search(@Query('q') q: string, @Query('types') typesQuery?: string) {
+    const types =
+      typeof typesQuery === 'string' && typesQuery.length > 0
+        ? typesQuery.split(',')
+        : undefined;
+    return this.dashboardService.universalSearch(q, types);
   }
 
   @Get('timeline')
@@ -43,10 +62,20 @@ export class DashboardController {
     summary: 'Get Timeline',
     description: 'Retrieves a chronological list of recent system events.',
   })
+  @ApiQuery({
+    name: 'types',
+    required: false,
+    description: 'Comma-separated event types to include',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of events to return',
+  })
   @ApiOkResponse({ type: [TimelineEventDto] })
   getTimeline(
-    @Query('types') typesQuery: string,
-    @Query('limit') limitStr: string,
+    @Query('types') typesQuery?: string,
+    @Query('limit') limitStr?: string,
   ) {
     const types =
       typeof typesQuery === 'string' && typesQuery.length > 0

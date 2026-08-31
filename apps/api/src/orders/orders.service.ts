@@ -10,6 +10,8 @@ import {
   products,
   productGroups,
   actors,
+  salesInvoices,
+  salesInvoiceLines,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -20,7 +22,11 @@ import {
   getAggregationPeriod,
   getAggregationSql,
 } from '../common/utils/date-range.util';
-import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import {
+  SALES_ORDER_STATE,
+  SALES_INVOICE_STATE,
+  DATA_SOURCE_CONTEXT,
+} from '@herobm/shared';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
 export interface UnifiedOrderRow {
@@ -80,6 +86,13 @@ export class OrdersService implements OnModuleInit {
       {
         fetchData: (filters: Record<string, unknown>) =>
           this.getSalesPerformanceBySalesperson(filters),
+      },
+    );
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_INVOICES,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesInvoicesTrend(filters),
       },
     );
   }
@@ -354,6 +367,109 @@ export class OrdersService implements OnModuleInit {
         products,
         eq(products.productId, salesOrderLineItems.productId),
       );
+      if (drillDown === 'product-group') {
+        qb = qb.leftJoin(
+          productGroups,
+          eq(productGroups.productGroupId, products.productGroupId),
+        );
+      }
+    }
+
+    if (conditions.length > 0) qb = qb.where(and(...conditions));
+    qb = qb.groupBy(...groupCols).orderBy(asc(periodSql));
+
+    return await qb;
+  }
+
+  private getSalesInvoiceConditions(filters: Record<string, unknown>) {
+    const conditions = [];
+    if (filters.fromDate) {
+      conditions.push(
+        sql`coalesce(${salesInvoices.invoiceDate}, ${salesInvoices.createdOn}) >= ${filters.fromDate}::timestamp`,
+      );
+    }
+    if (filters.toDate) {
+      conditions.push(
+        sql`coalesce(${salesInvoices.invoiceDate}, ${salesInvoices.createdOn}) < (${filters.toDate}::date + interval '1 day')`,
+      );
+    }
+    conditions.push(
+      inArray(salesInvoices.stateCode, [
+        SALES_INVOICE_STATE.INVOICED,
+        SALES_INVOICE_STATE.PARTIALLY_PAID,
+        SALES_INVOICE_STATE.PAID,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bypass strict array type check for inArray operator
+      ] as any[]),
+    );
+    return conditions;
+  }
+
+  async getSalesInvoicesTrend(filters: Record<string, unknown>) {
+    const conditions = this.getSalesInvoiceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+    const period = getAggregationPeriod(filters);
+    const dateExpr = sql`coalesce(${salesInvoices.invoiceDate}, ${salesInvoices.createdOn})`;
+    const periodSql = getAggregationSql(dateExpr, period);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const selectCols: any = {
+      period: periodSql,
+      invoiceCount: sql<number>`count(distinct ${salesInvoices.invoiceId})::integer`,
+      totalInvoiced: sql<number>`coalesce(sum(${salesInvoiceLines.amount}::numeric), 0)::float`,
+    };
+
+    const groupCols: (
+      | import('drizzle-orm').SQL
+      | import('drizzle-orm/pg-core').PgColumn
+    )[] = [periodSql];
+
+    if (drillDown === 'product') {
+      selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
+      groupCols.push(products.productId, products.name);
+    } else if (drillDown === 'product-group') {
+      selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
+      groupCols.push(productGroups.productGroupId, productGroups.name);
+    } else if (drillDown === 'customer') {
+      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, ${salesInvoices.customerNameDisplay}, 'Unknown')`;
+      groupCols.push(
+        coreAccounts.customerId,
+        actors.name,
+        coreAccounts.customerNumber,
+        salesInvoices.customerNameDisplay,
+      );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
+    let qb: any = this.db
+      .select(selectCols)
+      .from(salesInvoices)
+      .leftJoin(
+        salesInvoiceLines,
+        eq(salesInvoices.invoiceId, salesInvoiceLines.invoiceId),
+      )
+      .$dynamic();
+
+    if (drillDown === 'customer') {
+      qb = qb
+        .leftJoin(
+          coreAccounts,
+          eq(salesInvoices.customerId, coreAccounts.customerId),
+        )
+        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+    }
+    if (drillDown === 'product' || drillDown === 'product-group') {
+      qb = qb
+        .leftJoin(
+          salesOrderLineItems,
+          eq(
+            salesInvoiceLines.salesOrderLineId,
+            salesOrderLineItems.salesOrderLineId,
+          ),
+        )
+        .leftJoin(
+          products,
+          eq(products.productId, salesOrderLineItems.productId),
+        );
       if (drillDown === 'product-group') {
         qb = qb.leftJoin(
           productGroups,

@@ -617,6 +617,8 @@
         "defaultFeeRevenue": "Default Fee Revenue",
         "defaultGrni": "Default GRNI",
         "defaultInventory": "Default Inventory",
+        "defaultOtcCard": "Default OTC Card / EFTPOS Account",
+        "defaultOtcCash": "Default OTC Cash Account",
         "defaultPurchaseTax": "Default Purchase Tax",
         "defaultRevenue": "Default Revenue",
         "defaultSalesTax": "Default Sales Tax",
@@ -1452,6 +1454,73 @@
     "removeReturnLine": "Remove this return line?",
     "removeShipmentLine": "Remove this shipment line?"
   },
+  "counterSale": {
+    "accountCustomer": "Account Customer",
+    "autoFocusOn": "Auto-focus on",
+    "barcodeBeep": "Barcode audio signal",
+    "cashSaleAccount": "Cash Sale Account",
+    "customer": "Customer",
+    "fulfillmentLocation": "Counter Location",
+    "linesCount": "{count, plural, =0 {No items scanned} one {# item} other {# items}}",
+    "noCashAccount": "No designated cash account found. Please select an account.",
+    "notes": "Notes",
+    "notesPlaceholder": "Add transaction notes (optional)...",
+    "processingScan": "Processing scan...",
+    "receiptModal": {
+      "amountPaid": "Total Paid",
+      "changeReturned": "Change Returned",
+      "emailReceipt": "Email Receipt",
+      "invoiceNumber": "Tax Invoice",
+      "newSale": "New Counter Sale",
+      "orderNumber": "Sales Order",
+      "paymentReference": "Payment Receipt",
+      "printReceipt": "Print Tax Invoice / Receipt",
+      "title": "Counter Sale Completed",
+      "viewInvoice": "View Invoice"
+    },
+    "scanOrSearch": "Scan / Search",
+    "scanPlaceholder": "Scan barcode or enter product SKU / name (Press Enter)...",
+    "scannerActive": "Scanner Active",
+    "searchCustomerPlaceholder": "Search customer account (or type Walk-In)...",
+    "selectCustomer": "Select customer account...",
+    "subtitle": "High-velocity point-of-sale order creation, stock handover, and invoicing.",
+    "summary": {
+      "discount": "Discount Savings",
+      "grandTotal": "Grand Total",
+      "subtotal": "Subtotal",
+      "tax": "Tax (GST)"
+    },
+    "table": {
+      "actions": "Actions",
+      "discount": "Disc %",
+      "item": "Item",
+      "qty": "Qty",
+      "stockOnHand": "Avail OH",
+      "tax": "Tax",
+      "total": "Total",
+      "unitPrice": "Price",
+      "uom": "UoM"
+    },
+    "tender": {
+      "amountTendered": "Amount Tendered",
+      "card": "Card / EFTPOS",
+      "cash": "Cash",
+      "changeDue": "Change Due",
+      "chargeToAccount": "Charge to Account",
+      "completeSale": "Complete Counter Sale",
+      "directDeposit": "Direct Deposit",
+      "exactAmount": "Exact",
+      "paymentMethod": "Payment Method",
+      "processing": "Processing Sale...",
+      "title": "Tender & Checkout"
+    },
+    "title": "Over-The-Counter Sales",
+    "walkInCustomer": "Walk-In Customer",
+    "warnings": {
+      "insufficientStock": "{shortage} short (only {available} on hand)",
+      "setAvailable": "Set to Available"
+    }
+  },
   "custom": "Custom",
   "customItem": "Custom Item",
   "customers": {
@@ -1556,25 +1625,91 @@
     "noSavedReports": "You don't have any saved report views yet. Go to the Reporting section to save some!",
     "pinnedReports": "Pinned Reports",
     "quickActions": {
+      "addCustomAction": "Add Custom Action",
+      "createContact": "Create Contact",
+      "createContactDesc": "Add a new CRM contact",
+      "createCustomer": "Create Customer",
+      "createCustomerDesc": "Register a new customer account",
+      "createProduct": "Create Product",
+      "createProductDesc": "Add a new product or SKU",
+      "createProject": "Create Project",
+      "createProjectDesc": "Start a new customer project",
       "createPurchaseDesc": "Restock inventory from supplier",
       "createPurchaseOrder": "Create Purchase Order",
       "createQuote": "Create Quote",
       "createQuoteDesc": "Draft a new quote for a customer",
-      "createSalesDesc": "New customer quote or order",
+      "createSalesDesc": "New customer sales order",
       "createSalesOrder": "Create Sales Order",
+      "createSupplier": "Create Supplier",
+      "createSupplierDesc": "Register a new supplier / vendor",
+      "createTransfer": "Transfer Inventory",
+      "createTransferDesc": "Move stock between warehouse locations",
+      "createWorkOrder": "Create Work Order",
+      "createWorkOrderDesc": "Start a manufacturing work order",
+      "customActions": "Custom Actions",
+      "deleteCustomAction": "Delete Action",
+      "editCustomAction": "Edit Custom Action",
+      "form": {
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "desc": "Description",
+        "descPlaceholder": "e.g. View open customer ledger balances",
+        "href": "Target Route / URL",
+        "hrefPlaceholder": "e.g. /balances/customers",
+        "icon": "Icon",
+        "save": "Save Action",
+        "title": "Action Title",
+        "titlePlaceholder": "e.g. Customer Balances",
+        "validation": "Title and route are required"
+      },
+      "journalEntry": "New Journal Entry",
+      "journalEntryDesc": "Create a manual GL journal entry",
+      "manage": "Manage Quick Actions",
+      "noCustomActions": "No custom quick actions configured.",
+      "presets": "Standard Actions",
+      "receiveGoods": "Receive Goods",
+      "receiveGoodsDesc": "Process incoming supplier shipment",
+      "recordPayment": "Record Payment",
+      "recordPaymentDesc": "Record customer receipt or supplier payment",
+      "salesReturn": "Create Sales Return",
+      "salesReturnDesc": "Process customer product return",
+      "scanDispatch": "Scan to Dispatch",
+      "scanDispatchDesc": "Scan and dispatch packed orders",
+      "settings": "Quick Action Settings",
+      "settingsDesc": "Choose standard quick actions or configure custom actions for fast navigation.",
+      "stockAdjustment": "Stock Adjustment",
+      "stockAdjustmentDesc": "View and adjust stock ledger entries",
       "title": "Quick Actions"
     },
     "reportSettingsDescription": "Select which saved report views you want to pin to your dashboard.",
     "search": {
+      "deselectAll": "Deselect All",
       "noResults": "No results found",
-      "placeholder": "Search products, customers, orders, suppliers...",
+      "placeholder": "Search products, customers, orders, suppliers, invoices...",
+      "resetToDefault": "Reset to Defaults",
+      "selectAll": "Select All",
+      "settings": "Search Settings",
+      "settingsDesc": "Select which business entities to include when searching from the dashboard.",
       "typeMinChars": "Type at least 2 characters...",
       "types": {
+        "contact": "Contacts",
         "customer": "Customers",
+        "goods_receipt": "Goods Receipts",
+        "payment": "Payments",
         "product": "Products",
+        "project": "Projects",
+        "purchase_debit_note": "Purchase Debit Notes",
+        "purchase_invoice": "Purchase Invoices",
         "purchase_order": "Purchase Orders",
+        "purchase_return": "Purchase Returns",
+        "sales_credit_note": "Sales Credit Notes",
+        "sales_invoice": "Sales Invoices",
         "sales_order": "Sales Orders",
-        "supplier": "Suppliers"
+        "sales_return": "Sales Returns",
+        "shipment": "Shipments",
+        "supplier": "Suppliers",
+        "transfer_order": "Transfer Orders",
+        "work_order": "Work Orders"
       }
     },
     "stats": {
@@ -1599,8 +1734,22 @@
       "settings": "Timeline Settings",
       "title": "Recent Events",
       "types": {
+        "actor": {
+          "created": "Actor created",
+          "updated": "Actor updated"
+        },
+        "api_key": {
+          "created": "API key created",
+          "deleted": "API key deleted"
+        },
+        "contact": {
+          "created": "Contact created",
+          "deleted": "Contact deleted",
+          "updated": "Contact updated"
+        },
         "customer": {
           "created": "Customer created",
+          "status_changed": "Customer status changed",
           "updated": "Customer updated"
         },
         "email": {
@@ -1608,8 +1757,17 @@
           "queued": "Email queued",
           "sent": "Email sent"
         },
+        "fiscal_period": {
+          "created": "Fiscal period created",
+          "status_changed": "Fiscal period status changed"
+        },
         "general_ledger": {
-          "entry_posted": "Journal entry posted"
+          "entry_posted": "Journal entry posted",
+          "integrity_violation": "Ledger integrity anomaly detected"
+        },
+        "gl_reconciliation": {
+          "created": "Bank reconciliation created",
+          "deleted": "Bank reconciliation deleted"
         },
         "inventory_ledger": {
           "entry_posted": "Ledger entry posted"
@@ -1617,7 +1775,18 @@
         "payment": {
           "allocated": "Payment allocated",
           "cancelled": "Payment cancelled",
+          "created": "Payment created",
           "submitted": "Payment submitted"
+        },
+        "product": {
+          "created": "Product created",
+          "status_changed": "Product status changed",
+          "updated": "Product updated"
+        },
+        "project": {
+          "created": "Project created",
+          "deleted": "Project deleted",
+          "updated": "Project updated"
         },
         "purchase_invoice": {
           "created": "Purchase Invoice created",
@@ -1652,11 +1821,18 @@
         "stock_adjusted": "Stock adjusted",
         "supplier": {
           "created": "Supplier created",
+          "status_changed": "Supplier status changed",
           "updated": "Supplier updated"
         },
         "transfer_order": {
           "created": "Transfer Order created",
-          "status_changed": "Transfer Order status changed"
+          "status_changed": "Transfer Order status changed",
+          "stock_dispatched": "Transfer dispatched"
+        },
+        "user": {
+          "created": "User created",
+          "status_changed": "User status changed",
+          "updated": "User updated"
         },
         "warehouse": {
           "goods_received": "Goods received",
@@ -1665,6 +1841,20 @@
           "shipment_created": "Shipment created",
           "shipment_dispatched": "Shipment dispatched",
           "shipment_status_changed": "Shipment status changed"
+        },
+        "webhook": {
+          "created": "Webhook created",
+          "deleted": "Webhook deleted",
+          "updated": "Webhook updated"
+        },
+        "work_order": {
+          "created": "Work Order created",
+          "status_changed": "Work Order status changed",
+          "updated": "Work Order updated"
+        },
+        "work_order_pick": {
+          "created": "Work Order Pick created",
+          "status_changed": "Work Order Pick status changed"
         }
       }
     },
@@ -3250,6 +3440,7 @@
       "commentLine": "Add Comment",
       "confirmationPdf": "Confirmation PDF",
       "copyOrder": "Copy Order",
+      "counterSale": "Counter Sale",
       "createCreditNote": "Create Credit Note",
       "createInvoice": "Create Invoice",
       "createOrder": "Create Order",
@@ -3920,6 +4111,7 @@
     },
     "items": {
       "bins": "Bin Contents",
+      "counterSales": "Counter Sales",
       "creditNotes": "Credit Notes",
       "customers": "Customers",
       "dashboard": "Dashboard",

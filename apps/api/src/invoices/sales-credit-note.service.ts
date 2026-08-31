@@ -47,6 +47,7 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
+import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
 import {
   computeLinePrice,
   computeReturnCreditSummary,

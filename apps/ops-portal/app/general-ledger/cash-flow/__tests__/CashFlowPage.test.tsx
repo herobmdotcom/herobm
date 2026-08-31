@@ -156,15 +156,37 @@ describe('CashFlowPage', () => {
     window.open = jest.fn();
   });
 
-  it('renders statement of cash flows with all sections and reconciliation parity', async () => {
+  it('renders statement of cash flows without info box when reconciled', async () => {
     render(<CashFlowPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Statement of Cash Flows')).toBeInTheDocument();
-      expect(screen.getByText('General Ledger Cash Parity Verified')).toBeInTheDocument();
+      expect(screen.queryByText('General Ledger Cash Parity Verified')).not.toBeInTheDocument();
       expect(screen.getByText('Cash Receipts from Customers & Sales')).toBeInTheDocument();
       expect(screen.getByText('Purchase of Property, Plant & Equipment (Capex)')).toBeInTheDocument();
       expect(screen.getByText('Proceeds from Borrowings & Bank Facilities')).toBeInTheDocument();
+    });
+  });
+
+  it('renders warning banner only when cash flow is unreconciled (has problem/drift)', async () => {
+    (api.glControllerGetCashFlow as jest.Mock).mockResolvedValue({
+      data: {
+        ...mockCashFlowData,
+        reconciliation: {
+          ...mockCashFlowData.reconciliation,
+          isReconciled: false,
+          drift: 125.5,
+        },
+      },
+    });
+
+    render(<CashFlowPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash Reconciliation Drift Detected')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Discrepancy detected between cash flow activities and GL bank control balances/),
+      ).toBeInTheDocument();
     });
   });
 

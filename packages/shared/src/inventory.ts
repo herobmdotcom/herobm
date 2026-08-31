@@ -79,6 +79,15 @@ export const SYSTEM_CUSTOM_LINE_ID = CUSTOM_LINE_ID;
 export const LEGACY_CUSTOM_LINE_ID = CUSTOM_LINE_ID;
 
 /**
+ * Canonical customer ID for Walk-In / Cash Counter Sales ('WALK-IN').
+ * Seeded in herobm_core.customers as a valid RFC 4122 UUIDv4.
+ */
+export const SYSTEM_WALK_IN_CUSTOMER_ID = '00000000-0000-4000-8000-000000000001';
+export const SYSTEM_WALK_IN_ACTOR_ID = '00000000-0000-4000-8000-000000000002';
+export const SYSTEM_WALK_IN_CUSTOMER_NUMBER = 'WALK-IN';
+export const SYSTEM_WALK_IN_CUSTOMER_NAME = 'Walk-In Customer';
+
+/**
  * Check to determine if a line represents a tracked inventory item
  * that is stocked in warehouse bins and requires perpetual inventory tracking / bin picking.
  */

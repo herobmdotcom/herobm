@@ -41,6 +41,10 @@ export interface UpdateGlSettingsDto {
   /** @nullable */
   defaultDiscountsGivenAccountId?: string | null;
   /** @nullable */
+  defaultOtcCashAccountId?: string | null;
+  /** @nullable */
+  defaultOtcCardAccountId?: string | null;
+  /** @nullable */
   defaultCostCenterId?: string | null;
   /** @nullable */
   defaultActivityId?: string | null;

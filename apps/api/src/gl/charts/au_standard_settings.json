@@ -11,7 +11,9 @@
     "inventory_account_code": "1300",
     "grni_account_code": "2150",
     "shrinkage_account_code": "5300",
-    "ppv_account_code": "5400"
+    "ppv_account_code": "5400",
+    "otc_cash_account_code": "1010",
+    "otc_card_account_code": "1021"
   },
   "gst_categories": [
     { "code": "GST", "title": "GST 10%", "type": "gst_applies", "rate": 10, "is_default": true },

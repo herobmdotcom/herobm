@@ -70,6 +70,7 @@ fields:
 related:
   - "customers"
   - "sales-quotes"
+  - "over-the-counter-sales"
   - "shipments"
   - "sales-invoices"
   - "sales-returns"
@@ -201,6 +202,9 @@ Total Financial Exposure = Total Outstanding AR Invoices + Value of Open Orders 
 2. If additional charges are required after confirmation, click **Add Post-Confirmation Line**.
 3. Dispatch parcels via **Sales** → **Shipments**. The order switches to `Shipped` upon 100% dispatch.
 4. Create the final bill via **Sales** → **Sales Invoices** (`/sales-invoices`). The order automatically transitions to `Invoiced`.
+
+### 4. Over-The-Counter (OTC) Trade Sales
+For walk-in customers and immediate trade counter collections, navigate to **Sales** → **Counter Sales** (`/sales-orders/counter`) or click the **Counter Sale** button on the Sales Orders header. This executes order creation, pickable bin stock deduction, tax invoicing, and cash/card payment receipting in a single atomic transaction.
 
 ---
 

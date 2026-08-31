@@ -13,7 +13,7 @@ let hasDrift = false;
 try {
   // Backup meta directory
   if (fs.existsSync(metaBackupDir)) {
-    fs.rmSync(metaBackupDir, { recursive: true, force: true });
+    fs.rmSync(metaBackupDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
   if (fs.existsSync(metaDir)) {
     fs.mkdirSync(metaBackupDir, { recursive: true });

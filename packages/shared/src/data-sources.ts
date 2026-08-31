@@ -10,6 +10,7 @@ export const DATA_SOURCE_CONTEXT = {
   SALES_PERFORMANCE_PRODUCT_GROUP: 'sales-performance-product-group',
   SALES_PERFORMANCE_TREND: 'sales-performance-trend',
   SALES_PERFORMANCE_SALESPERSON: 'sales-performance-salesperson',
+  SALES_PERFORMANCE_INVOICES: 'sales-performance-invoices',
   FINANCIAL_GL: 'financial-gl',
   INVENTORY_VALUATION: 'inventory-valuation',
   INVENTORY_MOVEMENTS: 'inventory-movements',

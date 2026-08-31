@@ -1129,4 +1129,69 @@ describe('gl-cash-flow.utils', () => {
       ).toBe(true);
     });
   });
+
+  describe('Pre-Take-On & Loan Account Defensive Protections (ADV-176)', () => {
+    it('defensively excludes loan accounts from bank control balance pool even if flagged as is_bank_account', async () => {
+      const accountsWithLoan = [
+        ...mockAccounts,
+        {
+          glAccountId: 'acc-loan-prop',
+          accountCode: '0507',
+          name: '3 ANZ Property Loan',
+          accountType: 'Asset',
+          isGroup: false,
+          isBankAccount: true,
+        },
+        {
+          glAccountId: 'acc-loan-jindera',
+          accountCode: '0665',
+          name: 'ANZ Loan Jindera Property',
+          accountType: 'Liability',
+          isGroup: false,
+          isBankAccount: true,
+        },
+      ];
+
+      // Proof engine returns balances only for the true cash accounts
+      mockDb.execute.mockResolvedValueOnce(accountsWithLoan);
+      mockDb.execute.mockResolvedValueOnce([
+        { openingCash: '50000', closingCash: '50000' },
+      ]);
+      mockDb.execute.mockResolvedValueOnce([]);
+
+      const result = await calculateCashFlowStatement(mockDb, {
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      });
+
+      expect(result.reconciliation.beginningCash).toBe(50000);
+      expect(result.reconciliation.endingCash).toBe(50000);
+      expect(result.reconciliation.drift).toBe(0);
+      expect(result.reconciliation.isReconciled).toBe(true);
+    });
+
+    it('reconciles cleanly with zero drift for periods prior to the take-on opening balance date', async () => {
+      // For July 2026 (prior to August 1 opening balance):
+      // Opening Cash = 0, Closing Cash = 0, Net Period Change = 0 -> Drift = 0
+      mockDb.execute.mockResolvedValueOnce(mockAccounts);
+      mockDb.execute.mockResolvedValueOnce([
+        { openingCash: '0', closingCash: '0' },
+      ]);
+      mockDb.execute.mockResolvedValueOnce([]);
+
+      const result = await calculateCashFlowStatement(mockDb, {
+        startDate: '2026-07-01',
+        endDate: '2026-07-31',
+      });
+
+      expect(result.operatingActivities.netCash).toBe(0);
+      expect(result.investingActivities.netCash).toBe(0);
+      expect(result.financingActivities.netCash).toBe(0);
+      expect(result.reconciliation.beginningCash).toBe(0);
+      expect(result.reconciliation.endingCash).toBe(0);
+      expect(result.reconciliation.netChangeInCash).toBe(0);
+      expect(result.reconciliation.drift).toBe(0);
+      expect(result.reconciliation.isReconciled).toBe(true);
+    });
+  });
 });

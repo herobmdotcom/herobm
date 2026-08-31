@@ -187,6 +187,7 @@ export function useOrder(id: string) {
             const res = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
             setReturns(res.data as unknown as OrderReturn[] || []);
         } catch {
+            // fallback to empty array if sub-resource fails to load
             setReturns([]);
         } finally {
             setReturnsLoading(false);
@@ -198,6 +199,7 @@ export function useOrder(id: string) {
             const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
             setInvoices((res.data as unknown as SalesInvoice[]) || []);
         } catch {
+            // fallback to empty array if sub-resource fails to load
             setInvoices([]);
         }
     };

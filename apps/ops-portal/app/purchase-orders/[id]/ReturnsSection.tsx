@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
@@ -66,7 +68,8 @@ export default function ReturnsSection({
       );
       setReturns(detailedReturns.map((r) => r.data) as Return[]);
     } catch (err) {
-      console.warn('Failed to load returns', err);
+      reportError(err, 'ReturnsSection.fetchReturns');
+      toast.error('Failed to load returns: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -157,6 +157,7 @@ export const EventType = {
   // ── System domain ───────────────────────────────────────────────────
   GL_POSTED: 'gl_posted',
   STOCK_ADJUSTED: 'stock_adjusted',
+  LEDGER_INTEGRITY_VIOLATION: 'ledger_integrity_violation',
 
   // ── Email domain ────────────────────────────────────────────────────
   QUEUED: 'queued',
@@ -324,6 +325,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'supplier_group.created',
   'supplier_group.deleted',
   'supplier_group.updated',
+  'system.ledger_integrity_violation',
   'system.receipt_matched',
   'system.receipt_unmatched',
   'system.updated',

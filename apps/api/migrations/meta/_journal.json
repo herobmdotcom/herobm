@@ -911,6 +911,55 @@
       "when": 1787574000000,
       "tag": "0129_grant_admin_all_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1787575000000,
+      "tag": "0130_prevent_financial_deletions",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1787576000000,
+      "tag": "0131_extend_immutability_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1787577000000,
+      "tag": "0132_prevent_financial_modifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1787578000000,
+      "tag": "0133_enforce_fiscal_period_hard_lock",
+      "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1787579000000,
+      "tag": "0134_add_gl_journal_hash_chain",
+      "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1787580000000,
+      "tag": "0135_allow_draft_payment_deletion",
+      "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1788204013412,
+      "tag": "0136_add_otc_gl_settings",
+      "breakpoints": true
     }
   ]
 }

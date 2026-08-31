@@ -139,20 +139,31 @@ export const glAccounts = herobmCore.table(
 // ---------------------------------------------------------------------------
 // gl_journal_entries  (Journal Entry header — one per financial event)
 // ---------------------------------------------------------------------------
-export const glJournalEntries = herobmCore.table('gl_journal_entries', {
-  journalEntryId: uuid('journal_entry_id').primaryKey().defaultRandom(),
-  entryNumber: text('entry_number').unique().notNull(),
-  entryDate: date('entry_date').notNull(),
-  memo: text('memo'),
-  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | purchase_debit_note | manual | adjustment
-  sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
-  isReversed: boolean('is_reversed').notNull(),
-  reversedBy: uuid('reversed_by').references(
-    (): any => glJournalEntries.journalEntryId,
-  ), // self-ref to reversing JE
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
+export const glJournalEntries = herobmCore.table(
+  'gl_journal_entries',
+  {
+    journalEntryId: uuid('journal_entry_id').primaryKey().defaultRandom(),
+    sequenceNumber: integer('sequence_number'),
+    entryNumber: text('entry_number').unique().notNull(),
+    entryDate: date('entry_date').notNull(),
+    memo: text('memo'),
+    sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | purchase_debit_note | manual | adjustment
+    sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
+    prevHash: text('prev_hash'),
+    entryHash: text('entry_hash'),
+    isReversed: boolean('is_reversed').notNull(),
+    reversedBy: uuid('reversed_by').references(
+      (): any => glJournalEntries.journalEntryId,
+    ), // self-ref to reversing JE
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    sequenceNumberIdx: uniqueIndex('idx_gl_journal_entries_sequence_number').on(
+      t.sequenceNumber,
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // gl_reconciliations (Bank Reconciliation header)
@@ -279,6 +290,12 @@ export const glSettings = herobmCore.table('gl_settings', {
   defaultDiscountsGivenAccountId: uuid(
     'default_discounts_given_account_id',
   ).references(() => glAccounts.glAccountId),
+  defaultOtcCashAccountId: uuid('default_otc_cash_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultOtcCardAccountId: uuid('default_otc_card_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
 });
 
 // ---------------------------------------------------------------------------

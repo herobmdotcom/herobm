@@ -307,7 +307,12 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
+        .where(
+          eq(
+            glJournalEntries.sourceType,
+            JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
+          ),
+        );
       expect(revals.length).toBe(2); // One adjustment, one reversal
 
       const adj = revals.find(
@@ -397,7 +402,12 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
+        .where(
+          eq(
+            glJournalEntries.sourceType,
+            JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
+          ),
+        );
       const adj = revals.find(
         (r) => r.memo && r.memo.includes('Reversal') === false,
       );
@@ -488,7 +498,12 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
+        .where(
+          eq(
+            glJournalEntries.sourceType,
+            JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
+          ),
+        );
       const adj = revals.find(
         (r) => r.memo && r.memo.includes('Reversal') === false,
       );
@@ -521,23 +536,22 @@ describe('FxRevaluationService', () => {
     });
 
     it('should not revalue if rate has not changed', async () => {
-      // Re-seed rates so there is no change
-      await pg.db.delete(exchangeRates);
+      // Seed EUR rates with no change
       await pg.db.insert(exchangeRates).values([
         {
-          currencyCode: 'USD',
-          currencyName: 'US Dollar',
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
           effectiveDate: new Date('2026-01-01'),
-          buyRate: '1.40',
-          sellRate: '1.40',
+          buyRate: '1.60',
+          sellRate: '1.60',
         },
         {
-          currencyCode: 'USD',
-          currencyName: 'US Dollar',
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
           effectiveDate: new Date('2026-01-31'),
-          buyRate: '1.40',
-          sellRate: '1.40',
-        }, // No change
+          buyRate: '1.60',
+          sellRate: '1.60',
+        },
       ]);
 
       const invoiceId = randomUUID();
@@ -547,8 +561,8 @@ describe('FxRevaluationService', () => {
         vendorId,
         totalAmount: '1000',
         outstandingAmount: '1000',
-        currencyCode: 'USD',
-        exchangeRate: '1.40',
+        currencyCode: 'EUR',
+        exchangeRate: '1.60',
         stateCode: 'approved',
         invoiceDate: new Date('2026-01-15'),
         baseTotalAmount: '0',
@@ -572,7 +586,12 @@ describe('FxRevaluationService', () => {
       const revals = await pg.db
         .select()
         .from(glJournalEntries)
-        .where(eq(glJournalEntries.sourceType, JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION));
+        .where(
+          eq(
+            glJournalEntries.sourceType,
+            JOURNAL_ENTRY_SOURCE_TYPE.FX_REVALUATION,
+          ),
+        );
       expect(revals.length).toBe(0); // No journals posted
     });
   });

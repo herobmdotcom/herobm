@@ -29,6 +29,7 @@ function cleanTranslation(val: unknown): string {
           return cleanTranslation(parsed);
         }
       } catch {
+        // fallback regex parsing when json parse fails
         const match = trimmed.match(/:\s*['"]([^'"]+)['"]/);
         if (match) return match[1];
       }

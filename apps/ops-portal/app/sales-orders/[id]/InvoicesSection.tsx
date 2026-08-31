@@ -14,7 +14,7 @@ import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
 import { routes } from '@/lib/routes';
 
 import { SalesInvoice, TaxCategory, OrderDetail, OrderReturn } from './types';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
+import { SALES_INVOICE_STATE, isStockedProductLine } from '@herobm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -99,13 +99,14 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
-                {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
+                {['shipped', 'picking', 'confirmed'].includes(order.stateCode) && !showCreateInvoice && (
                     <Button
                         variant="secondary" size="sm"
                         disabled={(() => {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                            const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
-                            return totalShipped === 0;
+                            const invoiceable = calculateInvoiceableQuantities(
+                                order.lines, invoices, pickingSummary?.lines, returns
+                            );
+                            return invoiceable.length === 0;
                         })()}
                         onClick={handleCreateClick}
                     >
@@ -287,9 +288,10 @@ export default function InvoicesSection({
                 {invoices.length === 0 && (
                     <div className="text-center py-6 text-sm text-[var(--text-muted)]">
                         {(() => {
+                            const hasStockedLines = order.lines.some(l => isStockedProductLine(l));
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
-                            if (totalShipped === 0) {
+                            if (hasStockedLines && totalShipped === 0) {
                                 return tSales('noProductsShippedYet');
                             }
                             return tSales('noInvoicesGeneratedYet');

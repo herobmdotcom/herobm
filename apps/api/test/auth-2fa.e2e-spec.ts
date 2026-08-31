@@ -27,7 +27,7 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
     const adminRes = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
-        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Test credentials).
+        username: 'admin',
         password:
           process.env.ADMIN_PASSWORD ||
           process.env.DEV_ADMIN_PASSWORD ||
@@ -77,7 +77,7 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
     const setupRes = await request(app.getHttpServer())
       .post('/api/auth/2fa/setup')
       .set('Authorization', `Bearer ${userToken}`)
-      .expect(200);
+      .expect(201);
 
     expect(setupRes.body.secret).toBeDefined();
     expect(setupRes.body.backupCodes).toHaveLength(8);
@@ -97,8 +97,8 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
     expect(badEnable.body.message).toContain('Invalid verification code');
 
     // 5. Enable with a valid TOTP code
-    const validCode = generate({ secret: rawSecret });
-    await request(app.getHttpServer())
+    const validCode = await generate({ secret: rawSecret });
+    const enableRes = await request(app.getHttpServer())
       .post('/api/auth/2fa/enable')
       .set('Authorization', `Bearer ${userToken}`)
       .send({
@@ -106,6 +106,9 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
         secret: rawSecret,
       })
       .expect(201);
+
+    expect(enableRes.body.backupCodes).toBeDefined();
+    const finalBackupCodes = enableRes.body.backupCodes;
 
     // 6. Login as test user — should now require 2FA challenge
     const challengeRes = await request(app.getHttpServer())
@@ -142,7 +145,7 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
       .expect(401);
 
     // 9. Complete 2FA login with a valid backup code
-    const validBackupCode = backupCodes[0];
+    const validBackupCode = finalBackupCodes[0];
     const backupVerifyRes = await request(app.getHttpServer())
       .post('/api/auth/2fa/verify-login')
       .send({

@@ -35,14 +35,32 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
+  icon?: string;
+  iconClassName?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading = false,
+      icon,
+      iconClassName,
+      disabled,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : 'button';
+    const effectiveSize = size || (icon && !children ? 'icon' : 'default');
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(buttonVariants({ variant, size: effectiveSize, className }))}
         ref={ref}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
@@ -50,18 +68,22 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {asChild ? (
           children
+        ) : loading ? (
+          <span
+            className="material-symbols-outlined animate-spin text-[16px] leading-none shrink-0"
+            aria-hidden="true"
+          >
+            progress_activity
+          </span>
+        ) : icon ? (
+          <span
+            className={cn('material-symbols-outlined text-[16px] leading-none shrink-0', iconClassName)}
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
         ) : (
-          <>
-            {loading && (
-              <span
-                className="material-symbols-outlined animate-spin text-[16px] leading-none shrink-0"
-                aria-hidden="true"
-              >
-                progress_activity
-              </span>
-            )}
-            {children}
-          </>
+          children
         )}
       </Comp>
     );

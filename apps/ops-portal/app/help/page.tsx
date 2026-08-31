@@ -7,6 +7,7 @@ import { customFetch } from '@herobm/sdk';
 import { HelpTopicSummary, HelpTopic } from '@/components/help/HelpTypes';
 import { MarkdownRenderer } from '@/components/help/MarkdownRenderer';
 import { Button } from '@/components/shared/Button';
+import { toast } from 'react-hot-toast';
 
 function HelpContent() {
   const t = useTranslations('help');
@@ -36,6 +37,7 @@ function HelpContent() {
         }
       } catch {
         setTopics([]);
+        toast.error('Failed to load help topics');
       } finally {
         setIsLoading(false);
       }
@@ -57,6 +59,7 @@ function HelpContent() {
         setTopicDetail(res?.data ?? null);
       } catch {
         setTopicDetail(null);
+        toast.error('Failed to load topic details');
       } finally {
         setIsLoading(false);
       }

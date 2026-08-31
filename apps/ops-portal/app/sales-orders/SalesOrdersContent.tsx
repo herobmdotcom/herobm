@@ -115,11 +115,18 @@ export default function SalesOrdersContent() {
         </select>
       }
       headerActions={
-        <Button asChild variant="primary">
-          <Link href="/sales-orders/new">
-            {tSales('buttons.createOrder')}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="secondary">
+            <Link href="/sales-orders/counter">
+              {tSales('buttons.counterSale')}
+            </Link>
+          </Button>
+          <Button asChild variant="primary">
+            <Link href="/sales-orders/new">
+              {tSales('buttons.createOrder')}
+            </Link>
+          </Button>
+        </div>
       }
     />
   );

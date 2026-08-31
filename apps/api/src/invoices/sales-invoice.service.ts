@@ -45,7 +45,11 @@ import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
-import { computeLinePrice, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import {
+  computeLinePrice,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  isStockedProductLine,
+} from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
@@ -125,11 +129,12 @@ export class SalesInvoiceService {
         [
           SALES_ORDER_STATE.SHIPPED,
           SALES_ORDER_STATE.PICKING,
+          SALES_ORDER_STATE.CONFIRMED,
         ] as SalesOrderState[]
       ).includes(order.stateCode)
     ) {
       throw new BadRequestException(
-        `Order ${order.orderNumber} must be in 'shipped' or 'picking' state to generate an invoice. Currently: '${order.stateCode}'.`,
+        `Order ${order.orderNumber} must be in 'confirmed', 'picking', or 'shipped' state to generate an invoice. Currently: '${order.stateCode}'.`,
       );
     }
 
@@ -371,11 +376,14 @@ export class SalesInvoiceService {
       const prevInvoicedQty = invoicedQtyByLine.get(line.salesOrderLineId) || 0;
       totalInvoicedSoFar += prevInvoicedQty;
 
-      const isPhysical = !line.productType || line.productType === 'inventory';
+      const isStocked = isStockedProductLine({
+        productId: line.productId,
+        productType: line.productType,
+      });
       let shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
 
-      if (!isPhysical) {
-        // Non-physical products can be invoiced at any time, up to their ordered quantity
+      if (!isStocked) {
+        // Non-stock, service, and custom products can be invoiced at any time, up to their ordered quantity
         shippedQty = orderedQty;
       }
 
@@ -589,7 +597,7 @@ export class SalesInvoiceService {
         })
         .returning();
 
-      await this.changeSalesInvoiceState(
+      const invoicedInvoice = await this.changeSalesInvoiceState(
         invoice.invoiceId,
         SALES_INVOICE_STATE.INVOICED,
         actor,
@@ -636,151 +644,162 @@ export class SalesInvoiceService {
       const effectiveArAccountId =
         customerArAccountId || settings?.defaultArAccountId;
 
-      if (effectiveArAccountId) {
-        // Collect all distinct Customer IDs logically needed
-        const distinctAccountIds = new Set<string>();
-        distinctAccountIds.add(effectiveArAccountId);
-        if (settings?.defaultSalesTaxAccountId)
-          distinctAccountIds.add(settings.defaultSalesTaxAccountId);
-        for (const acctId of taxGroups.keys()) {
-          if (acctId !== 'fallback') {
-            distinctAccountIds.add(acctId);
-          }
-        }
-        if (settings?.defaultRevenueAccountId)
-          distinctAccountIds.add(settings.defaultRevenueAccountId);
-        for (const group of revenueGroups.values()) {
-          distinctAccountIds.add(group.customerId);
-        }
+      if (!effectiveArAccountId) {
+        throw new BadRequestException(
+          'Cannot create invoice: Accounts Receivable account (defaultArAccountId) is not configured in GL Settings.',
+        );
+      }
 
-        const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
-
-        if (settingsIds.length > 0) {
-          const glAcct = glAccounts;
-          const acctRows = await tx
-            .select({
-              glAccountId: glAcct.glAccountId,
-              accountCode: glAcct.accountCode,
-            })
-            .from(glAcct)
-            .where(
-              sql`${glAcct.glAccountId} IN (${sql.join(
-                settingsIds.map((id) => sql`${id}`),
-                sql`, `,
-              )})`,
-            );
-
-          const idToCode = new Map(
-            acctRows.map((a) => [a.glAccountId, a.accountCode]),
-          );
-
-          const arCode = idToCode.get(effectiveArAccountId);
-          const taxCode = settings?.defaultSalesTaxAccountId
-            ? idToCode.get(settings.defaultSalesTaxAccountId)
-            : null;
-
-          if (arCode) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            const glLines: any[] = [
-              {
-                accountCode: arCode,
-                debit: combinedTotal * fx.rate,
-                credit: 0,
-                foreignCurrency: order.currencyCode,
-                foreignDebit: combinedTotal,
-                foreignCredit: 0,
-                memo: `AR: ${invoiceNumber}`,
-                partyType: 'customer',
-                partyId: order.customerId,
-                costCenterId:
-                  customerCostCenterId ||
-                  this.appConfig.defaultCostCenterId() ||
-                  undefined,
-                activityId:
-                  customerActivityId ||
-                  this.appConfig.defaultActivityId() ||
-                  undefined,
-              },
-            ];
-
-            // 1. Map explicitly dynamic revenue lines (grouped by customer + dimensions)
-            for (const group of revenueGroups.values()) {
-              const code = idToCode.get(group.customerId);
-              if (code && group.amount > 0) {
-                glLines.push({
-                  accountCode: code,
-                  debit: 0,
-                  credit: group.amount * fx.rate,
-                  foreignCurrency: order.currencyCode,
-                  foreignDebit: 0,
-                  foreignCredit: group.amount,
-                  memo: `Revenue: ${invoiceNumber}`,
-                  costCenterId: group.costCenterId || undefined,
-                  activityId: group.activityId || undefined,
-                });
-              }
-            }
-
-            // 2. Map default global revenue fallback sum
-            if (defaultRevenue > 0) {
-              const defCode = settings?.defaultRevenueAccountId
-                ? idToCode.get(settings.defaultRevenueAccountId)
-                : null;
-
-              if (defCode) {
-                glLines.push({
-                  accountCode: defCode,
-                  debit: 0,
-                  credit: defaultRevenue * fx.rate,
-                  foreignCurrency: order.currencyCode,
-                  foreignDebit: 0,
-                  foreignCredit: defaultRevenue,
-                  memo: `Revenue: ${invoiceNumber} (Default)`,
-                  costCenterId: defaultRevenueCostCenterId || undefined,
-                  activityId: defaultRevenueActivityId || undefined,
-                });
-              } else {
-                this.logger.warn(
-                  `Missing global default revenue customer to cover ${defaultRevenue} on invoice ${invoiceNumber}`,
-                );
-              }
-            }
-
-            for (const [acctId, taxAmt] of taxGroups.entries()) {
-              if (taxAmt > 0) {
-                const effectiveTaxCode =
-                  acctId !== 'fallback' ? idToCode.get(acctId) : taxCode;
-                if (effectiveTaxCode) {
-                  glLines.push({
-                    accountCode: effectiveTaxCode,
-                    debit: 0,
-                    credit: taxAmt * fx.rate,
-                    foreignCurrency: order.currencyCode,
-                    foreignDebit: 0,
-                    foreignCredit: taxAmt,
-                    memo: `GST: ${invoiceNumber}`,
-                  });
-                }
-              }
-            }
-
-            await this.glService.postJournalEntry(
-              glLines,
-              {
-                sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
-                sourceId: invoice.invoiceId,
-                memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
-                actor,
-              },
-              tx,
-            );
-
-            this.logger.log(
-              `GL journal posted for sales invoice ${invoiceNumber}`,
-            );
-          }
+      // Collect all distinct Customer IDs logically needed
+      const distinctAccountIds = new Set<string>();
+      distinctAccountIds.add(effectiveArAccountId);
+      if (settings?.defaultSalesTaxAccountId)
+        distinctAccountIds.add(settings.defaultSalesTaxAccountId);
+      for (const acctId of taxGroups.keys()) {
+        if (acctId !== 'fallback') {
+          distinctAccountIds.add(acctId);
         }
       }
+      if (settings?.defaultRevenueAccountId)
+        distinctAccountIds.add(settings.defaultRevenueAccountId);
+      for (const group of revenueGroups.values()) {
+        distinctAccountIds.add(group.customerId);
+      }
+
+      const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
+
+      const glAcct = glAccounts;
+      const acctRows =
+        settingsIds.length > 0
+          ? await tx
+              .select({
+                glAccountId: glAcct.glAccountId,
+                accountCode: glAcct.accountCode,
+              })
+              .from(glAcct)
+              .where(
+                sql`${glAcct.glAccountId} IN (${sql.join(
+                  settingsIds.map((id) => sql`${id}`),
+                  sql`, `,
+                )})`,
+              )
+          : [];
+
+      const idToCode = new Map(
+        acctRows.map((a) => [a.glAccountId, a.accountCode]),
+      );
+
+      const arCode = idToCode.get(effectiveArAccountId);
+      if (!arCode) {
+        throw new BadRequestException(
+          `Cannot create invoice: Accounts Receivable account '${effectiveArAccountId}' not found in Chart of Accounts.`,
+        );
+      }
+
+      const taxCode = settings?.defaultSalesTaxAccountId
+        ? idToCode.get(settings.defaultSalesTaxAccountId)
+        : null;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+      const glLines: any[] = [
+        {
+          accountCode: arCode,
+          debit: combinedTotal * fx.rate,
+          credit: 0,
+          foreignCurrency: order.currencyCode,
+          foreignDebit: combinedTotal,
+          foreignCredit: 0,
+          memo: `AR: ${invoiceNumber}`,
+          partyType: 'customer',
+          partyId: order.customerId,
+          costCenterId:
+            customerCostCenterId ||
+            this.appConfig.defaultCostCenterId() ||
+            undefined,
+          activityId:
+            customerActivityId ||
+            this.appConfig.defaultActivityId() ||
+            undefined,
+        },
+      ];
+
+      // 1. Map explicitly dynamic revenue lines (grouped by customer + dimensions)
+      for (const group of revenueGroups.values()) {
+        const code = idToCode.get(group.customerId);
+        if (code && group.amount > 0) {
+          glLines.push({
+            accountCode: code,
+            debit: 0,
+            credit: group.amount * fx.rate,
+            foreignCurrency: order.currencyCode,
+            foreignDebit: 0,
+            foreignCredit: group.amount,
+            memo: `Revenue: ${invoiceNumber}`,
+            costCenterId: group.costCenterId || undefined,
+            activityId: group.activityId || undefined,
+          });
+        }
+      }
+
+      // 2. Map default global revenue fallback sum
+      if (defaultRevenue > 0) {
+        const defCode = settings?.defaultRevenueAccountId
+          ? idToCode.get(settings.defaultRevenueAccountId)
+          : null;
+
+        if (!defCode) {
+          throw new BadRequestException(
+            'Cannot create invoice: Default Revenue account (defaultRevenueAccountId) is not configured in GL Settings.',
+          );
+        }
+
+        glLines.push({
+          accountCode: defCode,
+          debit: 0,
+          credit: defaultRevenue * fx.rate,
+          foreignCurrency: order.currencyCode,
+          foreignDebit: 0,
+          foreignCredit: defaultRevenue,
+          memo: `Revenue: ${invoiceNumber} (Default)`,
+          costCenterId: defaultRevenueCostCenterId || undefined,
+          activityId: defaultRevenueActivityId || undefined,
+        });
+      }
+
+      for (const [acctId, taxAmt] of taxGroups.entries()) {
+        if (taxAmt > 0) {
+          const effectiveTaxCode =
+            acctId !== 'fallback' ? idToCode.get(acctId) : taxCode;
+          if (!effectiveTaxCode) {
+            throw new BadRequestException(
+              'Cannot create invoice: Sales Tax account (defaultSalesTaxAccountId) is not configured in GL Settings.',
+            );
+          }
+
+          glLines.push({
+            accountCode: effectiveTaxCode,
+            debit: 0,
+            credit: taxAmt * fx.rate,
+            foreignCurrency: order.currencyCode,
+            foreignDebit: 0,
+            foreignCredit: taxAmt,
+            memo: `GST: ${invoiceNumber}`,
+          });
+        }
+      }
+
+      await this.glService.postJournalEntry(
+        glLines,
+        {
+          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
+          sourceId: invoice.invoiceId,
+          memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
+          actor,
+        },
+        tx,
+      );
+
+      this.logger.log(`GL journal posted for sales invoice ${invoiceNumber}`);
 
       // F. Record Transaction in External Engine if applicable
       const mappings = this.appConfig.taxProviderMappings();
@@ -865,7 +884,7 @@ export class SalesInvoiceService {
         }
       }
 
-      return invoice;
+      return invoicedInvoice;
     });
 
     this.logger.log(
@@ -1258,6 +1277,7 @@ export class SalesInvoiceService {
         .select({
           stateCode: salesInvoices.stateCode,
           invoiceNumber: salesInvoices.invoiceNumber,
+          salesOrderId: salesInvoices.salesOrderId,
         })
         .from(salesInvoices)
         .where(eq(salesInvoices.invoiceId, invoiceId))
@@ -1346,6 +1366,26 @@ export class SalesInvoiceService {
         },
         actor,
       });
+
+      if (newState === SALES_INVOICE_STATE.CANCELLED && existing.salesOrderId) {
+        try {
+          await evaluateLifecycleRules(
+            db,
+            existing.salesOrderId,
+            {
+              entity: 'sales_invoice',
+              action: 'cancelled',
+              id: invoiceId,
+            },
+            actor,
+          );
+        } catch (lifecycleErr) {
+          this.logger.error(
+            `Failed to evaluate lifecycle rules for SO ${existing.salesOrderId} after invoice cancellation:`,
+            lifecycleErr,
+          );
+        }
+      }
 
       return updated;
     };

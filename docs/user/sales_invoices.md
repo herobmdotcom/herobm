@@ -58,6 +58,11 @@ Posting a sales invoice creates an automatic balanced journal entry in the Gener
 - **Credit**: Sales Revenue (Product income accounts)
 - **Credit**: Tax / GST Payable (Tax output liability)
 
+### 3. Tax Compliance & Immutability Guarantees
+- **No Hard Deletions**: Invoices, credit notes, and invoice line items are protected by PostgreSQL database triggers (`herobm_core.prevent_financial_deletion`). Once created, they cannot be deleted or truncated.
+- **Compensating Corrections**: Errors or cancellations must be handled via **Cancellation** (which posts an automatic reversing journal entry) or by issuing a **Sales Credit Note**.
+- **Continuous Sequence Monitoring**: Invoices follow chronological sequential numbering. An automated background verification engine runs scheduled audits to guarantee gapless continuity and timestamp monotonicity.
+
 ---
 
 ## Step-by-Step Workflows

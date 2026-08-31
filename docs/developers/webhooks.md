@@ -122,7 +122,7 @@ The following 181 event types are actively supported across 50 domain entity typ
 | `shipment` | `shipment_created`, `shipment_line_added`, `shipment_line_removed`, `shipment_line_updated`, `shipment_updated` |
 | `supplier` | `added_expiry`, `archived`, `created`, `debit_note_posted`, `deleted_expiry`, `status_changed`, `unarchived`, `updated`, `updated_expiry` |
 | `supplier_group` | `created`, `deleted`, `updated` |
-| `system` | `receipt_matched`, `receipt_unmatched`, `updated` |
+| `system` | `ledger_integrity_violation`, `receipt_matched`, `receipt_unmatched`, `updated` |
 | `tax_category` | `created`, `deleted`, `updated` |
 | `tax_position` | `created`, `deleted`, `updated` |
 | `tax_position_mapping` | `created`, `deleted` |

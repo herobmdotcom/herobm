@@ -20,6 +20,7 @@ import { DateRangeFilter } from '@/components/reporting/DateRangeFilter';
 import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { reportError } from '@/lib/api';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -90,8 +91,10 @@ export default function ReportViewer() {
       setIsSavingView(false);
       setNewViewName('');
       setPinToDashboard(false);
+      toast.success('Report view saved successfully');
     } catch (err) {
-      console.error(err);
+      reportError(err, 'ReportViewer.handleSaveView');
+      toast.error('Failed to save view: ' + getErrorMessage(err));
     }
   };
 
@@ -123,8 +126,10 @@ export default function ReportViewer() {
       });
       setUserSettings(res.data);
       router.push(`/reporting/${slug}`);
+      toast.success('Report view removed');
     } catch (err) {
-      console.error(err);
+      reportError(err, 'ReportViewer.handleUnsaveView');
+      toast.error('Failed to remove view: ' + getErrorMessage(err));
     }
   };
 

@@ -154,7 +154,9 @@ describe('Demo Seed Verification Suite', () => {
     for (const c of seededCustomers) {
       expect(c.actorId).toBeDefined();
       expect(c.stateCode).toBe(CUSTOMER_STATE.ACTIVE);
-      expect(Number(c.creditLimit)).toBeGreaterThan(0);
+      if (c.customerNumber !== 'WALK-IN') {
+        expect(Number(c.creditLimit)).toBeGreaterThan(0);
+      }
     }
 
     const deliveryAddresses = await ctx.db

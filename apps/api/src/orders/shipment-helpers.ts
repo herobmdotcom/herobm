@@ -32,30 +32,54 @@ export async function getCommittedPerLine(
   db: DrizzleDB,
   salesOrderId: string,
 ): Promise<Map<string, number>> {
-  const rows = await db
-    .select({
-      salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
-      quantityShipped:
-        sql<number>`COALESCE(SUM(${salesOrderShipmentLines.quantityShipped}), 0)`.mapWith(
-          Number,
+  const [shipmentRows, counterPickRows] = await Promise.all([
+    db
+      .select({
+        salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
+        quantityShipped:
+          sql<number>`COALESCE(SUM(${salesOrderShipmentLines.quantityShipped}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(salesOrderShipmentLines)
+      .innerJoin(
+        salesOrderShipments,
+        eq(salesOrderShipmentLines.shipmentId, salesOrderShipments.shipmentId),
+      )
+      .where(
+        and(
+          eq(salesOrderShipments.salesOrderId, salesOrderId),
+          sql`${salesOrderShipments.stateCode} != ${SHIPMENT_STATE.CANCELLED}`,
         ),
-    })
-    .from(salesOrderShipmentLines)
-    .innerJoin(
-      salesOrderShipments,
-      eq(salesOrderShipmentLines.shipmentId, salesOrderShipments.shipmentId),
-    )
-    .where(
-      and(
-        eq(salesOrderShipments.salesOrderId, salesOrderId),
-        sql`${salesOrderShipments.stateCode} != ${SHIPMENT_STATE.CANCELLED}`,
-      ),
-    )
-    .groupBy(salesOrderShipmentLines.salesOrderLineId);
+      )
+      .groupBy(salesOrderShipmentLines.salesOrderLineId),
+    db
+      .select({
+        salesOrderLineId: salesOrderPicks.salesOrderLineId,
+        quantityShipped:
+          sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(salesOrderPicks)
+      .where(
+        and(
+          eq(salesOrderPicks.salesOrderId, salesOrderId),
+          eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.SHIPPED),
+        ),
+      )
+      .groupBy(salesOrderPicks.salesOrderLineId),
+  ]);
 
   const shippedMap = new Map<string, number>();
-  for (const row of rows) {
+  for (const row of shipmentRows) {
     shippedMap.set(row.salesOrderLineId, row.quantityShipped);
+  }
+  for (const row of counterPickRows) {
+    const fromShipments = shippedMap.get(row.salesOrderLineId) || 0;
+    if (row.quantityShipped > fromShipments) {
+      shippedMap.set(row.salesOrderLineId, row.quantityShipped);
+    }
   }
   return shippedMap;
 }

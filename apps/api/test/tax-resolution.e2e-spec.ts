@@ -45,11 +45,19 @@ describe('API E2E — Tax Resolution engine', () => {
       .expect(200);
     validCustomerId = customersRes.body.data[0].customerId;
 
-    const productsRes = await request(app.getHttpServer())
-      .get('/api/products?limit=1')
+    const prodRes = await request(app.getHttpServer())
+      .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    validProductId = productsRes.body.data[0].productId;
+      .send({
+        productNumber: `PROD-TAX-${Date.now()}`,
+        name: 'Tax Test Product',
+        productType: 'inventory',
+        structureType: 'standard',
+        baseUom: 'EA',
+        listPrice: '100.00',
+      })
+      .expect(201);
+    validProductId = prodRes.body.productId;
   });
 
   afterAll(async () => {

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { Button } from '@/components/shared/Button';
+import BarcodeScannerCard from '@/components/shared/BarcodeScannerCard';
 import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
@@ -333,54 +334,14 @@ export default function ScanToDispatchClient() {
 
       <div className="flex flex-col gap-6 w-full">
         {/* Scanner Input Card */}
-        <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-          <div className="flex items-center justify-between mb-3">
-            <label htmlFor="scanner-input" className="text-sm font-semibold flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              {t('scannerActive')}
-            </label>
-            {isProcessing && (
-              <span className="text-xs text-[var(--accent)] flex items-center gap-1">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
-                {t('processing')}
-              </span>
-            )}
-          </div>
-
-          <div className="relative">
-            <input
-              id="scanner-input"
-              ref={inputRef}
-              type="text"
-              value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('placeholder')}
-              className="w-full px-4 py-3 text-base rounded-lg border border-[var(--border)] bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all font-mono"
-              autoComplete="off"
-              disabled={isProcessing}
-            />
-            <div className="absolute right-3 top-3.5 text-xs text-[var(--text-muted)] pointer-events-none">
-              {t('autoFocusOn')}
-            </div>
-          </div>
-
-          {/* Live Feedback Banner */}
-          {feedback && (
-            <div className="mt-4">
-              <InlineAlert
-                type={feedback.type === 'success' ? 'info' : 'error'}
-                message={
-                  <div>
-                    <div className="font-bold">{feedback.message}</div>
-                    {feedback.detail && <div className="text-xs mt-0.5">{feedback.detail}</div>}
-                  </div>
-                }
-              />
-            </div>
-          )}
-        </div>
+        <BarcodeScannerCard
+          placeholder={t('placeholder')}
+          value={barcodeInput}
+          onChangeValue={setBarcodeInput}
+          isProcessing={isProcessing}
+          feedback={feedback}
+          onScan={processBarcode}
+        />
 
         {/* Active Orders List */}
         <div className="flex flex-col gap-4">

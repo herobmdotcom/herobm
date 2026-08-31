@@ -53,9 +53,12 @@ describe('Journal Entry Source Type Boundary (structural)', () => {
   });
 
   it('services constructing JournalMeta or calling postJournalEntry must not use hardcoded source type strings', () => {
-    const knownSourceTypeStrings = new Set<string>(Object.values(JOURNAL_ENTRY_SOURCE_TYPE));
+    const knownSourceTypeStrings = new Set<string>(
+      Object.values(JOURNAL_ENTRY_SOURCE_TYPE),
+    );
     const serviceFiles = findFiles(srcRoot, /\.service\.ts$/).filter(
-      (f) => !f.includes('.spec.') && !f.includes('inventory-movement.service.ts'), // inventory-movement uses stock movement sourceType
+      (f) =>
+        !f.includes('.spec.') && !f.includes('inventory-movement.service.ts'), // inventory-movement uses stock movement sourceType
     );
 
     const violations: { file: string; line: number; snippet: string }[] = [];
@@ -83,7 +86,10 @@ describe('Journal Entry Source Type Boundary (structural)', () => {
 
     if (violations.length > 0) {
       const report = violations
-        .map((v) => `  ${v.file}:${v.line} — hardcoded sourceType string literal found:\n    ${v.snippet}`)
+        .map(
+          (v) =>
+            `  ${v.file}:${v.line} — hardcoded sourceType string literal found:\n    ${v.snippet}`,
+        )
         .join('\n\n');
 
       throw new Error(

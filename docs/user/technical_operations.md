@@ -73,6 +73,12 @@ flowchart LR
 * **Transactional Guarantee**: Outbound notifications and emails are written directly to database outbox tables (`sys_outbox`, `sys_email_outbox`) in the same database transaction as business mutations.
 * **Continuous Background Polling**: Background workers poll pending records with concurrency locks, ensuring at-least-once delivery with exponential retry backoff.
 
+### 4. Database-Level Immutability Architecture
+HeroBM enforces unconditional PostgreSQL `BEFORE DELETE` triggers (`herobm_core.prevent_financial_deletion`) across three compliance tiers:
+* **Tier 1 (Perpetual Inventory & Bank Control)**: `inventory_ledger`, `goods_received`, `sales_order_shipments`, `transfer_order_shipments`, `bank_statement_lines`, `gl_reconciliations`, `gl_match_groups`.
+* **Tier 2 (Universal Domain Audit Logs)**: `procurement_events`, `inventory_events`, `warehouse_events`, `master_data_events`, `user_events`, `reconciliation_events`, `group_events`, `email_events`, `business_report_events`, `integration_events`.
+* **Tier 3 (Historical Financial Parameters)**: `exchange_rates`, `gl_fiscal_periods`.
+
 ---
 
 ## Step-by-Step Workflows

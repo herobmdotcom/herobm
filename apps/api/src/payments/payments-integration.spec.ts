@@ -476,6 +476,37 @@ describe('PaymentsService', () => {
       expect(creditLine?.glAccountId).toBe(arAccountId);
     });
 
+    it('should reject payment submission if GL account lines cannot form a complete double-entry (Strict Mode)', async () => {
+      // Temporarily clear default AR account
+      await pg.db.update(glSettings).set({ defaultArAccountId: null });
+
+      const invalidPaymentId = '00000000-0000-4000-8000-000000000999';
+      await pg.db.insert(paymentEntries).values({
+        paymentId: invalidPaymentId,
+        paymentNumber: 'PAY-STRICT-TEST',
+        paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+        partyId: null,
+        paymentDate: new Date(),
+        modeOfPayment: 'cash',
+        totalAmount: '100',
+        unallocatedAmount: '100',
+        glAccountBank: bankAccountId,
+        currencyCode: 'AUD',
+        exchangeRate: '1',
+        baseTotalAmount: '100',
+        baseUnallocatedAmount: '100',
+        stateCode: PAYMENT_STATE.DRAFT,
+        createdBy: 'admin',
+      });
+
+      await expect(
+        service.submitPaymentEntry(invalidPaymentId, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+
+      // Restore default AR account
+      await pg.db.update(glSettings).set({ defaultArAccountId: arAccountId });
+    });
+
     it('should submit and post GL journal with group-routed AP for supplier payment', async () => {
       const payment = await service.createPaymentEntry(
         {

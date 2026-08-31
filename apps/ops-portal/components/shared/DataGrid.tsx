@@ -21,7 +21,9 @@ import {
 import * as api from '@herobm/sdk';
 import useSWR from 'swr';
 import { useAuth } from './AuthGate';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, reportError } from '../../lib/api';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import { Button } from './Button';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -302,6 +304,7 @@ export default function DataGrid<T>({
         const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-search`);
         setSearch(saved ?? initialSearch ?? "");
       } catch {
+        // fallback to initialSearch if sessionStorage read fails
         setSearch(initialSearch ?? "");
       }
     } else {
@@ -316,6 +319,7 @@ export default function DataGrid<T>({
         const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${gridKey}-archived`);
         setIncludeArchived(saved === 'true');
       } catch {
+        // fallback to false if sessionStorage read fails
         setIncludeArchived(false);
       }
     } else {
@@ -802,7 +806,8 @@ export default function DataGrid<T>({
       link.click();
       document.body.removeChild(link);
     } catch (e) {
-      console.error('Export failed', e);
+      reportError(e, 'DataGrid.export');
+      toast.error('Export failed: ' + getErrorMessage(e));
     } finally {
       setIsExporting(false);
     }
@@ -827,8 +832,8 @@ export default function DataGrid<T>({
               saveScrollState(gridKey, state.scroll);
             }
           }
-        } catch (e) {
-          console.warn("Failed to get grid state:", e);
+        } catch {
+          // harmless scroll state snapshot fallback
         }
       }
       if (rowHref && event.data) {

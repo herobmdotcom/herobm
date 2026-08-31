@@ -4,6 +4,7 @@ import {
   forwardRef,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -29,10 +30,16 @@ import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
 import { PaymentsCoreService } from './payments-core.service';
 import { PaymentsAllocationService } from './payments-allocation.service';
-import { PAYMENT_STATE, PAYMENT_TYPE, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import {
+  PAYMENT_STATE,
+  PAYMENT_TYPE,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+} from '@herobm/shared';
 
 @Injectable()
 export class PaymentsPostingService {
+  private readonly logger = new Logger(PaymentsPostingService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
@@ -396,6 +403,12 @@ export class PaymentsPostingService {
             memo: `Realised FX Loss for ${payment.paymentNumber}`,
           });
         }
+      }
+
+      if (!lines || lines.length < 2) {
+        throw new BadRequestException(
+          `Cannot post payment ${payment.paymentNumber}: Bank or Control Account is not configured in GL Settings (${lines.length} lines resolved).`,
+        );
       }
 
       await this.glService.postJournalEntry(

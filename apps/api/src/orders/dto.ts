@@ -949,3 +949,85 @@ export class OverrideCreditHoldDto {
   @ApiProperty({ description: 'Reason for overriding the credit hold' })
   reason!: string;
 }
+
+export class FulfillCounterLineDto {
+  @IsUUID()
+  @ApiProperty({ description: 'Sales order line ID to fulfill' })
+  salesOrderLineId!: string;
+
+  @IsNumberString()
+  @ApiProperty({ description: 'Quantity to fulfill over the counter' })
+  quantityToFulfill!: string;
+
+  @IsOptional()
+  @IsUUID()
+  @ApiPropertyOptional({
+    description: 'Optional specific bin ID to issue stock from',
+  })
+  binId?: string;
+}
+
+export class FulfillCounterOrderDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FulfillCounterLineDto)
+  @ApiPropertyOptional({
+    type: () => [FulfillCounterLineDto],
+    description:
+      'Specific lines and quantities to fulfill. If omitted, fulfills all unfulfilled lines up to available stock.',
+  })
+  lines?: FulfillCounterLineDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiPropertyOptional({
+    description:
+      'Allow partial fulfillment if stock on hand is less than requested quantity',
+  })
+  allowPartialFulfillment?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Optional fulfillment or handover notes',
+  })
+  notes?: string;
+}
+
+export class CounterFulfilledLineDto {
+  @ApiProperty()
+  salesOrderLineId!: string;
+
+  @ApiPropertyOptional()
+  productId?: string;
+
+  @ApiProperty()
+  quantityFulfilled!: string;
+
+  @ApiPropertyOptional()
+  binId?: string;
+
+  @ApiPropertyOptional()
+  binNumber?: string;
+}
+
+export class CounterFulfillmentResponseDto {
+  @ApiProperty()
+  salesOrderId!: string;
+
+  @ApiProperty()
+  orderNumber!: string;
+
+  @ApiProperty()
+  stateCode!: string;
+
+  @ApiProperty({ type: () => [CounterFulfilledLineDto] })
+  fulfilledLines!: CounterFulfilledLineDto[];
+
+  @ApiProperty()
+  cogsAmount!: string;
+
+  @ApiPropertyOptional()
+  message?: string;
+}

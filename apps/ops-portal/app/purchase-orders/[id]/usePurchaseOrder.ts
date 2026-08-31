@@ -174,6 +174,7 @@ export function usePurchaseOrder(id: string) {
       const { data } = await api.purchaseReturnsControllerFindReturns(id);
       setReturns((Array.isArray(data) ? data : (data as unknown as { data: OrderReturn[] })?.data || []) as OrderReturn[]);
     } catch {
+      // fallback to empty array if sub-resource fails to load
       setReturns([]);
     } finally {
       setReturnsLoading(false);
@@ -185,6 +186,7 @@ export function usePurchaseOrder(id: string) {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
       setInvoices((data || []) as unknown as PurchaseInvoice[]);
     } catch {
+      // fallback to empty array if sub-resource fails to load
       setInvoices([]);
     }
   };
@@ -195,6 +197,7 @@ export function usePurchaseOrder(id: string) {
       const { data } = await api.allocationsControllerGetAllocationsByPo(id);
       setAllocations((Array.isArray(data) ? data : (data as unknown as { data: Allocation[] })?.data || []) as Allocation[]);
     } catch {
+      // fallback to empty array if sub-resource fails to load
       setAllocations([]);
     } finally {
       setAllocationsLoading(false);

@@ -157,6 +157,10 @@ export {
   CUSTOM_PRODUCT_ID,
   SYSTEM_CUSTOM_LINE_ID,
   LEGACY_CUSTOM_LINE_ID,
+  SYSTEM_WALK_IN_CUSTOMER_ID,
+  SYSTEM_WALK_IN_ACTOR_ID,
+  SYSTEM_WALK_IN_CUSTOMER_NUMBER,
+  SYSTEM_WALK_IN_CUSTOMER_NAME,
   formatPickBarcode,
   parsePickBarcode,
   formatQuantity,
@@ -202,3 +206,4 @@ export * from './orders';
 export * from './telemetry';
 export * from './contacts';
 export * from './event-types';
+export * from './ledger-hash';

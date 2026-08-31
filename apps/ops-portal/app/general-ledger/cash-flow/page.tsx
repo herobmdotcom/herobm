@@ -302,8 +302,6 @@ export default function CashFlowPage() {
     }
   };
 
-  const reconIcon = data?.reconciliation.isReconciled ? 'verified' : 'warning';
-
   return (
     <DetailsLayout
       header={
@@ -383,33 +381,23 @@ export default function CashFlowPage() {
       }
     >
       <div className="flex flex-col gap-6">
-        {/* Continuous Reconciliation Verification Banner */}
-        {data && (
+        {/* Continuous Reconciliation Verification Banner (Only shown if unreconciled / problem) */}
+        {data && !data.reconciliation.isReconciled && (
           <div
-            className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-              data.reconciliation.isReconciled
-                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800'
-                : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
-            }`}
+            className="p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
           >
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  data.reconciliation.isReconciled
-                    ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
-                }`}
+                className="w-10 h-10 rounded-lg flex items-center justify-center bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
               >
-                <span className="material-symbols-outlined text-2xl">{reconIcon}</span>
+                <span className="material-symbols-outlined text-2xl">warning</span>
               </div>
               <div>
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                  {data.reconciliation.isReconciled ? t('reconciled') : t('unreconciled')}
+                  {t('unreconciled')}
                 </h3>
                 <p className="text-xs text-[var(--text-muted)]">
-                  {data.reconciliation.isReconciled
-                    ? t('reconciledDesc')
-                    : `${t('unreconciledDesc')} (Drift: $${data.reconciliation.drift.toFixed(2)})`}
+                  {`${t('unreconciledDesc')} (Drift: $${data.reconciliation.drift.toFixed(2)})`}
                 </p>
               </div>
             </div>

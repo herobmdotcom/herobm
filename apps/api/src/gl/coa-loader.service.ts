@@ -264,6 +264,8 @@ export class CoaLoaderService {
           grni_account_code?: string;
           shrinkage_account_code?: string;
           ppv_account_code?: string;
+          otc_cash_account_code?: string;
+          otc_card_account_code?: string;
         };
         trading_terms?: {
           code: string;
@@ -372,6 +374,12 @@ export class CoaLoaderService {
             defaultPpvAccountId: defaults.ppv_account_code
               ? codeToId.get(defaults.ppv_account_code)
               : undefined,
+            defaultOtcCashAccountId: defaults.otc_cash_account_code
+              ? codeToId.get(defaults.otc_cash_account_code)
+              : undefined,
+            defaultOtcCardAccountId: defaults.otc_card_account_code
+              ? codeToId.get(defaults.otc_card_account_code)
+              : undefined,
             baseCurrency: settings.base_currency || 'AUD',
             bankMatchDateToleranceDays: 0,
             revenueRoutingPrecedence: 'product_first',
@@ -412,6 +420,12 @@ export class CoaLoaderService {
                 : undefined,
               defaultPpvAccountId: defaults.ppv_account_code
                 ? codeToId.get(defaults.ppv_account_code)
+                : undefined,
+              defaultOtcCashAccountId: defaults.otc_cash_account_code
+                ? codeToId.get(defaults.otc_cash_account_code)
+                : undefined,
+              defaultOtcCardAccountId: defaults.otc_card_account_code
+                ? codeToId.get(defaults.otc_card_account_code)
                 : undefined,
             },
           });

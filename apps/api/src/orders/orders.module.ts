@@ -37,6 +37,7 @@ import { PickingService } from './picking.service';
 import { PickingQueryService } from './picking-query.service';
 import { PickingShippingQueryService } from './picking-shipping-query.service';
 import { PickingActionService } from './picking-action.service';
+import { CounterFulfillmentService } from './counter-fulfillment.service';
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { ShipmentsWriteService } from './shipments/shipments-write.service';
 import { ShipmentsStateService } from './shipments/shipments-state.service';
@@ -100,6 +101,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     OrdersQueryService,
     BackordersService,
     ReturnsWriteService,
+    CounterFulfillmentService,
     PickingService,
     PickingQueryService,
     PickingShippingQueryService,
@@ -123,6 +125,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     OrderLinesService,
     OrderStateService,
     OrdersQueryService,
+    CounterFulfillmentService,
     BackordersService,
     PickingService,
     PickingQueryService,

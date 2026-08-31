@@ -5,6 +5,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { reportError } from '@/lib/api';
 import { Button } from '@/components/shared/Button';
 
 interface AddSupplierModalProps {
@@ -71,7 +72,9 @@ export default function AddSupplierModal({
       setSuppliers((res.data as any)?.data || res.data || []);
       setLastSearchQuery(q);
     } catch (err: unknown) {
-      // quiet fail
+      reportError(err, 'AddSupplierModal.fetchSuppliers');
+      setSuppliers([]);
+      toast.error('Failed to search suppliers: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }

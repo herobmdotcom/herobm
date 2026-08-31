@@ -874,8 +874,6 @@ describe('ShipmentService', () => {
     });
 
     it('should throw NotFoundException for unknown shipment', async () => {
-      await pg.db.delete(salesOrderShipmentLines);
-      await pg.db.delete(salesOrderShipments);
       await expect(
         service.findOne('00000000-0000-4000-8000-000000000999'),
       ).rejects.toThrow(NotFoundException);

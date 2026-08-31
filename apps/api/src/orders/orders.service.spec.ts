@@ -10,12 +10,16 @@ import {
   locations,
   taxCategories,
   products,
+  productGroups,
   uomDictionary,
   actors,
+  salesInvoices,
+  salesInvoiceLines,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
+  SALES_INVOICE_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ACTOR_STATE,
@@ -315,6 +319,235 @@ describe('OrdersService', () => {
       expect(unassignedRow?.customerName).toBe('Unknown');
       expect(unassignedRow?.orderCount).toBe(1);
       expect(unassignedRow?.totalSales).toBe(50);
+    });
+  });
+
+  describe('getSalesInvoicesTrend', () => {
+    it('should correctly aggregate invoice counts and totals, exclude drafts/cancelled, and support drill-downs', async () => {
+      const GROUP_ID = '00000000-0000-4000-8000-000000000088';
+      await pg.db.insert(productGroups).values({
+        productGroupId: GROUP_ID,
+        name: 'Electronics',
+        groupCode: 'ELEC',
+      });
+
+      const PROD_2 = '00000000-0000-4000-8000-000000000089';
+      await pg.db.insert(products).values({
+        productId: PROD_2,
+        productNumber: 'PROD-ELEC-02',
+        name: 'Gadget Plus',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        baseUom: 'EA',
+        productType: 'inventory',
+        structureType: 'standard',
+        source: 'app',
+        createdBy: 'system',
+        salesTaxCategoryId: TAX_CAT_ID,
+        productGroupId: GROUP_ID,
+      });
+
+      // Update base product to group
+      await pg.db
+        .update(products)
+        .set({ productGroupId: GROUP_ID })
+        .where(eq(products.productId, PROD_ID));
+
+      const ORDER_INV = '00000000-0000-4000-8000-000000000051';
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: ORDER_INV,
+        orderNumber: 'SO-INV-001',
+        customerId: ACCOUNT_ID,
+        stateCode: SALES_ORDER_STATE.INVOICED,
+        source: 'app',
+        createdBy: 'admin',
+        createdOn: new Date('2026-08-20T10:00:00Z'),
+        currencyCode: 'EUR',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '400',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+      });
+
+      const SOL_1 = '00000000-0000-4000-8000-000000000061';
+      const SOL_2 = '00000000-0000-4000-8000-000000000062';
+      await pg.db.insert(salesOrderLineItems).values([
+        {
+          salesOrderLineId: SOL_1,
+          salesOrderId: ORDER_INV,
+          lineNumber: 1,
+          productId: PROD_ID,
+          quantity: '1',
+          pricePerUnit: '150.00',
+          totalAmount: '150.00',
+          tax: '0.00',
+          amount: '150.00',
+          taxCategoryId: TAX_CAT_ID,
+          fulfillmentLocationId: LOCATION_ID,
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+        {
+          salesOrderLineId: SOL_2,
+          salesOrderId: ORDER_INV,
+          lineNumber: 2,
+          productId: PROD_2,
+          quantity: '2',
+          pricePerUnit: '100.00',
+          totalAmount: '200.00',
+          tax: '0.00',
+          amount: '200.00',
+          taxCategoryId: TAX_CAT_ID,
+          fulfillmentLocationId: LOCATION_ID,
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+      ]);
+
+      const INV_1 = '00000000-0000-4000-8000-000000000071';
+      const INV_2 = '00000000-0000-4000-8000-000000000072';
+      const INV_DRAFT = '00000000-0000-4000-8000-000000000073';
+      const INV_CANCELLED = '00000000-0000-4000-8000-000000000074';
+
+      await pg.db.insert(salesInvoices).values([
+        {
+          invoiceId: INV_1,
+          invoiceNumber: 'INV-20260820-0001',
+          salesOrderId: ORDER_INV,
+          customerId: ACCOUNT_ID,
+          stateCode: SALES_INVOICE_STATE.INVOICED,
+          invoiceDate: new Date('2026-08-20T10:00:00Z'),
+          totalAmount: '350.00',
+          outstandingAmount: '350.00',
+          currencyCode: 'EUR',
+          exchangeRate: '1',
+        },
+        {
+          invoiceId: INV_2,
+          invoiceNumber: 'INV-20260821-0001',
+          salesOrderId: ORDER_INV,
+          customerId: ACCOUNT_ID,
+          stateCode: SALES_INVOICE_STATE.PAID,
+          invoiceDate: new Date('2026-08-21T14:00:00Z'),
+          totalAmount: '150.00',
+          outstandingAmount: '0.00',
+          currencyCode: 'EUR',
+          exchangeRate: '1',
+        },
+        {
+          invoiceId: INV_DRAFT,
+          invoiceNumber: 'INV-20260820-DRAFT',
+          salesOrderId: ORDER_INV,
+          customerId: ACCOUNT_ID,
+          stateCode: SALES_INVOICE_STATE.DRAFT,
+          invoiceDate: new Date('2026-08-20T10:00:00Z'),
+          totalAmount: '999.00',
+          outstandingAmount: '999.00',
+          currencyCode: 'EUR',
+          exchangeRate: '1',
+        },
+        {
+          invoiceId: INV_CANCELLED,
+          invoiceNumber: 'INV-20260820-CANCEL',
+          salesOrderId: ORDER_INV,
+          customerId: ACCOUNT_ID,
+          stateCode: SALES_INVOICE_STATE.CANCELLED,
+          invoiceDate: new Date('2026-08-20T10:00:00Z'),
+          totalAmount: '888.00',
+          outstandingAmount: '0.00',
+          currencyCode: 'EUR',
+          exchangeRate: '1',
+        },
+      ]);
+
+      await pg.db.insert(salesInvoiceLines).values([
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000091',
+          invoiceId: INV_1,
+          salesOrderLineId: SOL_1,
+          quantityInvoiced: '1',
+          pricePerUnit: '150.00',
+          amount: '150.00',
+        },
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000092',
+          invoiceId: INV_1,
+          salesOrderLineId: SOL_2,
+          quantityInvoiced: '2',
+          pricePerUnit: '100.00',
+          amount: '200.00',
+        },
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000093',
+          invoiceId: INV_2,
+          salesOrderLineId: SOL_1,
+          quantityInvoiced: '1',
+          pricePerUnit: '150.00',
+          amount: '150.00',
+        },
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000094',
+          invoiceId: INV_DRAFT,
+          salesOrderLineId: SOL_1,
+          quantityInvoiced: '1',
+          pricePerUnit: '999.00',
+          amount: '999.00',
+        },
+      ]);
+
+      // 1. Basic period trend query (day granularity)
+      const trendResult: any[] = await service.getSalesInvoicesTrend({
+        fromDate: '2026-08-19',
+        toDate: '2026-08-22',
+      });
+
+      expect(trendResult.length).toBe(2);
+      const day1 = trendResult.find((r: any) => r.period === '2026-08-20');
+      expect(day1).toBeDefined();
+      expect(day1.invoiceCount).toBe(1);
+      expect(day1.totalInvoiced).toBe(350);
+
+      const day2 = trendResult.find((r: any) => r.period === '2026-08-21');
+      expect(day2).toBeDefined();
+      expect(day2.invoiceCount).toBe(1);
+      expect(day2.totalInvoiced).toBe(150);
+
+      // 2. Product drill-down
+      const productResult: any[] = await service.getSalesInvoicesTrend({
+        fromDate: '2026-08-19',
+        toDate: '2026-08-22',
+        drillDown: 'product',
+      });
+
+      const prod1Rows = productResult.filter(
+        (r: any) => r.productName === 'Product 1',
+      );
+      const prod2Rows = productResult.filter(
+        (r: any) => r.productName === 'Gadget Plus',
+      );
+      expect(prod1Rows.length).toBeGreaterThan(0);
+      expect(prod2Rows.length).toBeGreaterThan(0);
+
+      // 3. Product group drill-down
+      const groupResult: any[] = await service.getSalesInvoicesTrend({
+        fromDate: '2026-08-19',
+        toDate: '2026-08-22',
+        drillDown: 'product-group',
+      });
+      expect(
+        groupResult.some((r: any) => r.productGroupName === 'Electronics'),
+      ).toBe(true);
+
+      // 4. Customer drill-down
+      const customerResult: any[] = await service.getSalesInvoicesTrend({
+        fromDate: '2026-08-19',
+        toDate: '2026-08-22',
+        drillDown: 'customer',
+      });
+      expect(
+        customerResult.some((r: any) => r.customerName === 'Acme Corp'),
+      ).toBe(true);
     });
   });
 });

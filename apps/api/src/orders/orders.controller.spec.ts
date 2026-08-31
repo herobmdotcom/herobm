@@ -9,6 +9,7 @@ import { OrderStateService } from './order-state.service';
 import { OrdersCoreService } from './orders-core.service';
 import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 import { OrdersQueryService } from './orders-query.service';
+import { CounterFulfillmentService } from './counter-fulfillment.service';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import { CreateOrderDto, ChangeOrderStateDto, CreateOrderLineDto } from './dto';
 
@@ -92,6 +93,17 @@ describe('OrdersController', () => {
       findOne: jest.fn().mockResolvedValue(mockOrder),
     };
 
+    const mockCounterFulfillmentService = {
+      fulfillCounterOrder: jest.fn().mockResolvedValue({
+        salesOrderId: mockOrder.salesOrderId,
+        orderNumber: mockOrder.orderNumber,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
+        fulfilledLines: [],
+        cogsAmount: '0.00',
+        message: 'Order fully fulfilled over the counter',
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
@@ -111,6 +123,10 @@ describe('OrdersController', () => {
         },
         { provide: OrdersCoreService, useValue: mockCoreService },
         { provide: OrdersQueryService, useValue: mockQueryService },
+        {
+          provide: CounterFulfillmentService,
+          useValue: mockCounterFulfillmentService,
+        },
       ],
     }).compile();
 

@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesOrders,
@@ -57,9 +57,14 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
     )
       return null;
 
-    // 2. Order must be in 'picking'
+    // 2. Order must be in 'picking' or 'confirmed'
     const order = await findOrder(db, salesOrderId);
-    if (order.stateCode !== SALES_ORDER_STATE.PICKING) return null;
+    if (
+      order.stateCode !== SALES_ORDER_STATE.PICKING &&
+      order.stateCode !== SALES_ORDER_STATE.CONFIRMED
+    ) {
+      return null;
+    }
 
     // 3. Get all lines and shipped quantities
     const lines = await db
@@ -102,7 +107,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
       payload: {
         rule: 'auto-ship-when-fully-shipped',
         trigger,
-        from: SALES_ORDER_STATE.PICKING,
+        from: order.stateCode,
         to: SALES_ORDER_STATE.SHIPPED,
         reason: 'All lines fully shipped',
       },
@@ -111,7 +116,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
 
     return {
       ruleName: 'auto-ship-when-fully-shipped',
-      from: SALES_ORDER_STATE.PICKING,
+      from: order.stateCode,
       to: SALES_ORDER_STATE.SHIPPED,
       reason: 'All lines fully shipped',
     };
@@ -236,7 +241,12 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
           salesInvoices,
           eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId),
         )
-        .where(eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId));
+        .where(
+          and(
+            eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId),
+            sql`${salesInvoices.stateCode} != ${SALES_INVOICE_STATE.CANCELLED}`,
+          ),
+        );
 
       const invoiced = parseFloat(totalInvoiced || '0');
       const ordered = parseFloat(line.quantity || '0');
@@ -268,7 +278,7 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
       payload: {
         rule: 'auto-invoice-when-fully-invoiced',
         trigger,
-        from: SALES_ORDER_STATE.SHIPPED,
+        from: order.stateCode,
         to: SALES_ORDER_STATE.INVOICED,
         reason: 'All lines fully invoiced',
       },
@@ -277,9 +287,113 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
 
     return {
       ruleName: 'auto-invoice-when-fully-invoiced',
-      from: SALES_ORDER_STATE.SHIPPED,
+      from: order.stateCode,
       to: SALES_ORDER_STATE.INVOICED,
       reason: 'All lines fully invoiced',
+    };
+  },
+};
+
+export const revertInvoicedWhenInvoiceCancelled: LifecycleRule = {
+  name: 'revert-invoiced-when-invoice-cancelled',
+  description:
+    'Reverts an order from invoiced to shipped or confirmed when an invoice is cancelled and the order is no longer fully invoiced',
+  enabled: true,
+  evaluate: async (db, salesOrderId, trigger, actor) => {
+    // 1. Only applies if triggered by an invoice cancellation
+    if (trigger.entity !== 'sales_invoice' || trigger.action !== 'cancelled') {
+      return null;
+    }
+
+    const order = await findOrder(db, salesOrderId);
+    if (order.stateCode !== SALES_ORDER_STATE.INVOICED) {
+      return null;
+    }
+
+    // 2. Get all lines and ordered quantities
+    const lines = await db
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        quantity: salesOrderLineItems.quantity,
+      })
+      .from(salesOrderLineItems)
+      .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
+
+    if (lines.length === 0) return null;
+
+    // 3. Check if order is still fully invoiced (excluding cancelled invoices)
+    let isFullyInvoiced = true;
+    for (const line of lines) {
+      const [{ totalInvoiced }] = await db
+        .select({
+          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text`,
+        })
+        .from(salesInvoiceLines)
+        .innerJoin(
+          salesInvoices,
+          eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId),
+        )
+        .where(
+          and(
+            eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId),
+            sql`${salesInvoices.stateCode} != ${SALES_INVOICE_STATE.CANCELLED}`,
+          ),
+        );
+
+      const invoiced = parseFloat(totalInvoiced || '0');
+      const ordered = parseFloat(line.quantity || '0');
+
+      if (invoiced < ordered - 0.001) {
+        isFullyInvoiced = false;
+        break;
+      }
+    }
+
+    if (isFullyInvoiced) return null;
+
+    // 4. Determine target state:
+    // Check if order has shipped lines
+    const committedMap = await getCommittedPerLine(db, salesOrderId);
+    const hasShippedLines = lines.some((line) => {
+      const committed = committedMap.get(line.salesOrderLineId) ?? 0;
+      return committed > 0;
+    });
+
+    const targetState = hasShippedLines
+      ? SALES_ORDER_STATE.SHIPPED
+      : SALES_ORDER_STATE.CONFIRMED;
+
+    // 5. Execute transition
+    await db
+      .update(salesOrders)
+      .set({ stateCode: targetState, modifiedOn: new Date() })
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    const [{ orderNumber }] = await db
+      .select({ orderNumber: salesOrders.orderNumber })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    await emitEvent(db, {
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
+      eventType: EventType.AUTO_STATUS_CHANGED,
+      entityDisplayName: orderNumber,
+      payload: {
+        rule: 'revert-invoiced-when-invoice-cancelled',
+        trigger,
+        from: SALES_ORDER_STATE.INVOICED,
+        to: targetState,
+        reason: 'Invoice cancelled; order is no longer fully invoiced',
+      },
+      actor,
+    });
+
+    return {
+      ruleName: 'revert-invoiced-when-invoice-cancelled',
+      from: SALES_ORDER_STATE.INVOICED,
+      to: targetState,
+      reason: 'Invoice cancelled; order is no longer fully invoiced',
     };
   },
 };
@@ -338,6 +452,7 @@ const LIFECYCLE_RULES: LifecycleRule[] = [
   autoShipWhenFullyShipped,
   revertToPickingOnShipmentCancel,
   autoInvoiceWhenFullyInvoiced,
+  revertInvoicedWhenInvoiceCancelled,
   startPickingOnFirstPick,
 ];
 

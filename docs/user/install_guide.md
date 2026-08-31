@@ -97,6 +97,9 @@ The Fast Install target automatically:
 7. **Bootstraps Data & Admin User** (`make bootstrap`): Seeds master data and outputs your secure admin password.
 8. **Launches Applications** (`make up` or selected profile): Starts the Ops Portal and API backend.
 
+> [!TIP]
+> **Optional Demo Data**: To populate the database with sample products, customers, suppliers, inventory, and transactions for evaluation, run `make seed-demo`.
+
 > [!NOTE]
 > We recommend installing HeroBM on a self-service VM provider like [exe.dev](https://exe.dev). We work on exe.dev daily, and `make fast-install` will get you up and running without issues. In particular, the firewall is already configured to allow traffic to the HeroBM UI for users who you share the VM with.
 
@@ -115,7 +118,7 @@ If you prefer executing each step individually or are configuring a custom CI/CD
 | **5** | `make up-db` | Starts background PostgreSQL and Redis containers. |
 | **6** | `make init-db` | Initializes PostgreSQL schemas and waits for database readiness. |
 | **7** | `make migrate` | Applies all Drizzle SQL database migrations. |
-| **8** | `make bootstrap` | Seeds master data and outputs your secure `admin` credentials. |
+| **8** | `make bootstrap` | Seeds master data and outputs your secure `admin` credentials. *(Optional: run `make seed-demo` for sample demo data).* |
 | **9** | `make up` | Launches the Ops Portal and API backend. |
 
 ---

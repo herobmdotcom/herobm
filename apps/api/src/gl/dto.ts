@@ -287,6 +287,12 @@ export class SettingsResponseDto {
   defaultDiscountsGivenAccountId?: string | null;
 
   @ApiPropertyOptional()
+  defaultOtcCashAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultOtcCardAccountId?: string | null;
+
+  @ApiPropertyOptional()
   defaultCostCenterId?: string | null;
 
   @ApiPropertyOptional()
@@ -401,6 +407,16 @@ export class UpdateGlSettingsDto {
   @IsOptional()
   @IsString()
   defaultDiscountsGivenAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultOtcCashAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultOtcCardAccountId?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

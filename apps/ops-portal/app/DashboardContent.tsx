@@ -5,6 +5,8 @@ import UniversalSearch from '@/components/shared/UniversalSearch';
 import { useTranslations } from 'next-intl';
 import TimelineSettingsSlideOver from './TimelineSettingsSlideOver';
 import ReportSettingsSlideOver from './ReportSettingsSlideOver';
+import SearchSettingsSlideOver from './SearchSettingsSlideOver';
+import QuickActionsSettingsSlideOver from './QuickActionsSettingsSlideOver';
 import DashboardQuickActions from './DashboardQuickActions';
 import DashboardPinnedReportsSection from './DashboardPinnedReportsSection';
 import DashboardTimelineSection from './DashboardTimelineSection';
@@ -14,13 +16,19 @@ export default function DashboardContent() {
   const t = useTranslations('dashboard');
   const [isTimelineSettingsOpen, setIsTimelineSettingsOpen] = useState(false);
   const [isReportSettingsOpen, setIsReportSettingsOpen] = useState(false);
+  const [isSearchSettingsOpen, setIsSearchSettingsOpen] = useState(false);
+  const [isQuickActionsSettingsOpen, setIsQuickActionsSettingsOpen] = useState(false);
 
   const {
     isLoaded,
+    enabledSearchEntities,
+    quickActions,
     enabledEvents,
     dashboardConfig,
     userSettings,
     reports,
+    handleSearchEntitiesChange,
+    handleQuickActionsChange,
     handlePreferencesChange,
     handlePinnedReportsChange,
   } = useDashboardData();
@@ -32,7 +40,10 @@ export default function DashboardContent() {
           <h2 className="text-2xl font-bold mb-8">{t('title')}</h2>
 
           <div className="mb-12">
-            <UniversalSearch />
+            <UniversalSearch
+              enabledEntities={enabledSearchEntities}
+              onOpenSettings={() => setIsSearchSettingsOpen(true)}
+            />
           </div>
 
           <div className="flex flex-col gap-12">
@@ -42,7 +53,10 @@ export default function DashboardContent() {
               onOpenSettings={() => setIsReportSettingsOpen(true)}
             />
 
-            <DashboardQuickActions />
+            <DashboardQuickActions
+              quickActions={quickActions}
+              onOpenSettings={() => setIsQuickActionsSettingsOpen(true)}
+            />
 
             <DashboardTimelineSection
               enabledEvents={enabledEvents}
@@ -55,6 +69,18 @@ export default function DashboardContent() {
 
       {isLoaded && (
         <>
+          <SearchSettingsSlideOver
+            isOpen={isSearchSettingsOpen}
+            onClose={() => setIsSearchSettingsOpen(false)}
+            enabledEntities={enabledSearchEntities}
+            onChange={handleSearchEntitiesChange}
+          />
+          <QuickActionsSettingsSlideOver
+            isOpen={isQuickActionsSettingsOpen}
+            onClose={() => setIsQuickActionsSettingsOpen(false)}
+            quickActions={quickActions}
+            onChange={handleQuickActionsChange}
+          />
           <TimelineSettingsSlideOver
             isOpen={isTimelineSettingsOpen}
             onClose={() => setIsTimelineSettingsOpen(false)}

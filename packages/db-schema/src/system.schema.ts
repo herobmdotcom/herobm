@@ -92,9 +92,7 @@ export const userSettings = herobmCore.table('user_settings', {
 
 export const userEvents = herobmCore.table('user_events', {
   eventId: uuid('event_id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.userId, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull(),
   eventType: text('event_type').notNull(),
   entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),

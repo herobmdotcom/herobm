@@ -205,6 +205,51 @@ export class OrderCreationService {
         new Date(),
       );
 
+      let deliveryCompanyName = dto.deliveryCompanyName;
+      let deliveryName = dto.deliveryName;
+      const deliveryPhone = dto.deliveryPhone;
+      let deliveryAddressLine1 = dto.deliveryAddressLine1;
+      let deliveryAddressLine2 = dto.deliveryAddressLine2;
+      let deliveryCity = dto.deliveryCity;
+      let deliveryState = dto.deliveryState;
+      let deliveryPostalCode = dto.deliveryPostalCode;
+      let deliveryCountry = dto.deliveryCountry;
+
+      if (!deliveryAddressLine1 || deliveryAddressLine1.trim() === '') {
+        const [locRow] = await tx
+          .select()
+          .from(locations)
+          .where(eq(locations.locationId, fallbackLocId))
+          .limit(1);
+        deliveryCompanyName =
+          deliveryCompanyName ??
+          `${locRow?.name || 'Warehouse'} (Counter Collection)`;
+        deliveryName =
+          deliveryName ??
+          (customer.name || 'Counter Pickup / Customer Collection');
+        deliveryAddressLine1 =
+          locRow?.addressLine1 && locRow.addressLine1.trim() !== ''
+            ? locRow.addressLine1
+            : 'Over-the-counter collection';
+        deliveryAddressLine2 =
+          deliveryAddressLine2 ?? locRow?.addressLine2 ?? undefined;
+        deliveryCity = deliveryCity ?? locRow?.city ?? 'Counter Pickup';
+        deliveryState = deliveryState ?? locRow?.stateOrProvince ?? undefined;
+        deliveryPostalCode =
+          deliveryPostalCode ?? locRow?.postalCode ?? undefined;
+        deliveryCountry = deliveryCountry ?? locRow?.country ?? undefined;
+      }
+
+      if (!deliveryCompanyName) {
+        deliveryCompanyName = await tx
+          .select({ name: actors.name })
+          .from(coreAccounts)
+          .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+          .where(eq(coreAccounts.customerId, dto.customerId))
+          .limit(1)
+          .then((r) => r[0]?.name ?? '');
+      }
+
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
         .insert(salesOrders)
@@ -220,23 +265,15 @@ export class OrderCreationService {
           exchangeRate: fx.rate.toString(),
           notes: dto.notes,
           shippingNotes: dto.shippingNotes,
-          deliveryCompanyName:
-            dto.deliveryCompanyName ??
-            (await tx
-              .select({ name: actors.name })
-              .from(coreAccounts)
-              .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
-              .where(eq(coreAccounts.customerId, dto.customerId))
-              .limit(1)
-              .then((r) => r[0]?.name ?? '')),
-          deliveryName: dto.deliveryName,
-          deliveryPhone: dto.deliveryPhone,
-          deliveryAddressLine1: dto.deliveryAddressLine1,
-          deliveryAddressLine2: dto.deliveryAddressLine2,
-          deliveryCity: dto.deliveryCity,
-          deliveryState: dto.deliveryState,
-          deliveryPostalCode: dto.deliveryPostalCode,
-          deliveryCountry: dto.deliveryCountry,
+          deliveryCompanyName,
+          deliveryName,
+          deliveryPhone,
+          deliveryAddressLine1,
+          deliveryAddressLine2,
+          deliveryCity,
+          deliveryState,
+          deliveryPostalCode,
+          deliveryCountry,
           termsDescription: termsDescription,
           baseTotalAmount: '0',
           discrepanciesAcknowledged: false,

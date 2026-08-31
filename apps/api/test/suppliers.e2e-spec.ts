@@ -37,27 +37,6 @@ describe('Suppliers (e2e)', () => {
       );
     }
     adminToken = adminRes.body.access_token;
-
-    // Cleanup E2E data — events first (FK), then suppliers
-    await db.execute(sql`
-      DELETE FROM herobm_core.master_data_events
-      WHERE entity_type = 'supplier' AND entity_id IN (
-        SELECT vendor_id FROM herobm_core.suppliers 
-        WHERE vendor_number LIKE 'E2E-V-%' 
-           OR vendor_number LIKE 'E2E-PATCH-%' 
-           OR vendor_number LIKE 'E2E-DETAIL-%'
-      )
-    `);
-    try {
-      await db.execute(sql`
-        DELETE FROM herobm_core.suppliers 
-        WHERE vendor_number LIKE 'E2E-V-%' 
-           OR vendor_number LIKE 'E2E-PATCH-%' 
-           OR vendor_number LIKE 'E2E-DETAIL-%'
-      `);
-    } catch (e) {
-      // Quiet fail if external tests linked the suppliers
-    }
   });
 
   afterAll(async () => {

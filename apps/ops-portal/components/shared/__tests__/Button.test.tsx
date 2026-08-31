@@ -9,6 +9,20 @@ describe('Button Component', () => {
     expect(screen.getByRole('button', { name: 'Click Me' })).toBeInTheDocument();
   });
 
+  it('renders material icon when icon prop is provided', () => {
+    render(<Button icon="edit" aria-label="Edit Item" />);
+    const button = screen.getByRole('button', { name: 'Edit Item' });
+    expect(button).toBeInTheDocument();
+    expect(screen.getByText('edit')).toHaveClass('material-symbols-outlined');
+    expect(button).toHaveClass('w-8'); // defaults to size="icon"
+  });
+
+  it('renders either text or icon, not both (icon takes precedence when provided)', () => {
+    render(<Button icon="delete">Delete Item</Button>);
+    expect(screen.getByText('delete')).toBeInTheDocument();
+    expect(screen.queryByText('Delete Item')).not.toBeInTheDocument();
+  });
+
   it('renders progress_activity spinner and disables button when loading={true}', () => {
     const handleClick = jest.fn();
     render(<Button loading onClick={handleClick}>Save Changes</Button>);

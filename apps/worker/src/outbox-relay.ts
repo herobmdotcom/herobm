@@ -92,6 +92,7 @@ import { pollOutbox, processEvent } from './relay.service';
 import { pollEmailOutbox } from './email-relay';
 import { purgeOldEmails } from './purge-emails.service';
 import { checkSupplierCompliance } from './check-supplier-compliance.service';
+import { verifyLedgerIntegrity } from './verify-ledger-integrity.service';
 
 // Start Worker
 const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
@@ -151,6 +152,18 @@ maintenanceQueue.add(
   logger.error({ err }, 'Failed to schedule check-supplier-compliance job');
 });
 
+maintenanceQueue.add(
+  'verify-ledger-integrity',
+  {},
+  {
+    repeat: {
+      pattern: '0 2 * * *', // Every day at 2 AM
+    },
+  }
+).catch(err => {
+  logger.error({ err }, 'Failed to schedule verify-ledger-integrity job');
+});
+
 const maintenanceWorker = new Worker(
   'system-maintenance',
   async (job) => {
@@ -158,6 +171,8 @@ const maintenanceWorker = new Worker(
       return purgeOldEmails(job, db);
     } else if (job.name === 'check-supplier-compliance') {
       return checkSupplierCompliance(job, db);
+    } else if (job.name === 'verify-ledger-integrity') {
+      return verifyLedgerIntegrity(job, db);
     }
   },
   { connection, concurrency: 1 }

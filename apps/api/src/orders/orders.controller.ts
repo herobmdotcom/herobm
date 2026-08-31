@@ -41,10 +41,13 @@ import {
   ChangeOrderStateDto,
   OverrideCreditHoldDto,
   EmailDocumentDto,
+  FulfillCounterOrderDto,
+  CounterFulfillmentResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { CounterFulfillmentService } from './counter-fulfillment.service';
 
 /**
  * Core order CRUD and state transition endpoints.
@@ -69,6 +72,7 @@ export class OrdersController {
     private readonly ordersCoreService: OrdersCoreService,
     private readonly documentDispatchService: DocumentDispatchService,
     private readonly ordersQueryService: OrdersQueryService,
+    private readonly counterFulfillmentService: CounterFulfillmentService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -196,6 +200,27 @@ export class OrdersController {
       user.username,
       dto.generateBackorders,
       dto.discrepanciesAcknowledged,
+    );
+  }
+
+  @Post(':id/fulfill-counter')
+  @ApiBody({ type: FulfillCounterOrderDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Fulfill Counter Order',
+    description:
+      'Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.',
+  })
+  @ApiOkResponse({ type: CounterFulfillmentResponseDto })
+  async fulfillCounterOrder(
+    @Param('id') id: string,
+    @Body() body: FulfillCounterOrderDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.counterFulfillmentService.fulfillCounterOrder(
+      id,
+      body,
+      user.username,
     );
   }
 

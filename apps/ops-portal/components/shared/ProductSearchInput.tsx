@@ -68,6 +68,7 @@ export default function ProductSearchInput({
             onSelect(p);
           }
         } catch {
+          // fallback to selected summary product if detail fetch fails
           onSelect(p);
         }
       }}

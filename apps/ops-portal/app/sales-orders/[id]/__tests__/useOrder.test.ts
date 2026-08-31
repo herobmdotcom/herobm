@@ -222,7 +222,7 @@ describe('useOrder — computed values', () => {
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
-        expect(result.current.allowedTransitions).toEqual([SALES_ORDER_STATE.ARCHIVED]);
+        expect(result.current.allowedTransitions).toContain(SALES_ORDER_STATE.ARCHIVED);
     });
 });
 

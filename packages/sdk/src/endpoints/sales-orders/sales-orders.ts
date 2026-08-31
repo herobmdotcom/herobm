@@ -7,10 +7,12 @@
  */
 import type {
   ChangeOrderStateDto,
+  CounterFulfillmentResponseDto,
   CreateOrderDto,
   CreateOrderLineDto,
   EmailDocumentDto,
   EmptyBodyDto,
+  FulfillCounterOrderDto,
   OrderResponseDto,
   OrdersControllerEmailDocument201,
   OrdersControllerFindAll200,
@@ -213,6 +215,49 @@ export const ordersControllerChangeState = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       changeOrderStateDto,)
+  }
+);}
+
+
+/**
+ * Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.
+ * @summary Fulfill Counter Order
+ */
+export type ordersControllerFulfillCounterOrderResponse200 = {
+  data: CounterFulfillmentResponseDto
+  status: 200
+}
+
+export type ordersControllerFulfillCounterOrderResponse201 = {
+  data: CounterFulfillmentResponseDto
+  status: 201
+}
+    
+export type ordersControllerFulfillCounterOrderResponseSuccess = (ordersControllerFulfillCounterOrderResponse200 | ordersControllerFulfillCounterOrderResponse201) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerFulfillCounterOrderResponse = (ordersControllerFulfillCounterOrderResponseSuccess)
+
+export const getOrdersControllerFulfillCounterOrderUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/fulfill-counter`
+}
+
+export const ordersControllerFulfillCounterOrder = async (id: string,
+    fulfillCounterOrderDto: FulfillCounterOrderDto, options?: RequestInit): Promise<ordersControllerFulfillCounterOrderResponse> => {
+  
+  return customFetch<ordersControllerFulfillCounterOrderResponse>(getOrdersControllerFulfillCounterOrderUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      fulfillCounterOrderDto,)
   }
 );}
 

@@ -16,7 +16,26 @@ export class SearchResultDto {
   id!: string;
 
   @ApiProperty({
-    enum: ['product', 'customer', 'sales_order', 'supplier', 'purchase_order'],
+    enum: [
+      'product',
+      'customer',
+      'sales_order',
+      'supplier',
+      'purchase_order',
+      'shipment',
+      'goods_receipt',
+      'sales_invoice',
+      'purchase_invoice',
+      'sales_return',
+      'purchase_return',
+      'sales_credit_note',
+      'purchase_debit_note',
+      'transfer_order',
+      'work_order',
+      'contact',
+      'project',
+      'payment',
+    ],
   })
   type!: string;
 

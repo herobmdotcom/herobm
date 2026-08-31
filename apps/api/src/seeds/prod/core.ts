@@ -79,9 +79,11 @@ export async function runCoreSeeds(db: SeedDB, dryRun = false) {
 
   await seedCasbinPolicies(db, dryRun);
   await seedUsers(db, dryRun);
-  await seedProducts(db, dryRun);
+  await seedSystemEntities(db, dryRun);
   await seedOrganization(db, dryRun);
   await seedBaseGlSettings(db, dryRun);
+  await seedCoaAccounts(db, dryRun, 'au_standard');
+  await seedCoaSettings(db, dryRun, 'au_standard');
   await seedAppSettings(db, dryRun);
   await seedFinancialDimensions(db, dryRun);
   await seedReports(db, dryRun);
@@ -1458,10 +1460,10 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
   }
 }
 
-async function seedProducts(db: SeedDB, dryRun: boolean) {
+async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log(
-      "  [DRY RUN] Would seed UOM 'EA' and SYSTEM-CUSTOM-LINE product",
+      "  [DRY RUN] Would seed UOM 'EA', SYSTEM-CUSTOM-LINE product, and WALK-IN customer",
     );
     return;
   }
@@ -1496,7 +1498,49 @@ async function seedProducts(db: SeedDB, dryRun: boolean) {
       },
     });
 
-  console.log("  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product");
+  const walkInActorId = '00000000-0000-4000-8000-000000000002';
+  const walkInCustomerId = '00000000-0000-4000-8000-000000000001';
+
+  await db
+    .insert(actors)
+    .values({
+      actorId: walkInActorId,
+      name: 'Walk-In Customer',
+      headquartersAddressLine1: 'Over-the-counter collection',
+      isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
+    })
+    .onConflictDoUpdate({
+      target: actors.actorId,
+      set: {
+        name: 'Walk-In Customer',
+        stateCode: ACTOR_STATE.ACTIVE,
+      },
+    });
+
+  await db
+    .insert(customers)
+    .values({
+      customerId: walkInCustomerId,
+      actorId: walkInActorId,
+      customerNumber: 'WALK-IN',
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'AUD')`,
+      creditLimit: '0',
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      source: 'app',
+      createdBy: 'system',
+    })
+    .onConflictDoUpdate({
+      target: customers.customerId,
+      set: {
+        customerNumber: 'WALK-IN',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+      },
+    });
+
+  console.log(
+    "  Seeded UOM 'EA', SYSTEM-CUSTOM-LINE product, and WALK-IN customer",
+  );
 }
 
 async function seedFinancialDimensions(db: SeedDB, dryRun: boolean) {
@@ -1944,11 +1988,79 @@ export async function seedCoaSettings(
     { json: 'grni_account_code', col: 'defaultGrniAccountId' },
     { json: 'shrinkage_account_code', col: 'defaultShrinkageAccountId' },
     { json: 'ppv_account_code', col: 'defaultPpvAccountId' },
+    { json: 'otc_cash_account_code', col: 'defaultOtcCashAccountId' },
+    { json: 'otc_card_account_code', col: 'defaultOtcCardAccountId' },
   ];
 
+  const existingAccounts = await db
+    .select({
+      glAccountId: glAccounts.glAccountId,
+      accountCode: glAccounts.accountCode,
+      accountType: glAccounts.accountType,
+      name: glAccounts.name,
+      isGroup: glAccounts.isGroup,
+    })
+    .from(glAccounts);
+
+  const codeToId = new Map(
+    existingAccounts.map((a) => [a.accountCode, a.glAccountId]),
+  );
+
   for (const map of mappings) {
-    if (defaults[map.json]) {
-      glData[map.col] = uuidv5(defaults[map.json], NAMESPACE_COA);
+    const desiredCode = defaults[map.json];
+    if (desiredCode) {
+      let matchedId = codeToId.get(desiredCode);
+      if (!matchedId) {
+        const id = uuidv5(desiredCode, NAMESPACE_COA);
+        if (existingAccounts.some((a) => a.glAccountId === id)) {
+          matchedId = id;
+        }
+      }
+      if (!matchedId && existingAccounts.length > 0) {
+        const nonGroup = existingAccounts.filter((a) => !a.isGroup);
+        if (map.col.includes('Ar')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('receivable') ||
+              a.accountType === 'asset',
+          )?.glAccountId;
+        } else if (map.col.includes('Ap')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('payable') ||
+              a.accountType === 'liability',
+          )?.glAccountId;
+        } else if (map.col.includes('Revenue')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('sales') ||
+              a.accountType === 'revenue',
+          )?.glAccountId;
+        } else if (map.col.includes('Cogs')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('cost of goods') ||
+              a.name?.toLowerCase().includes('cogs') ||
+              a.accountType === 'expense',
+          )?.glAccountId;
+        } else if (map.col.includes('Tax')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('gst') ||
+              a.name?.toLowerCase().includes('tax') ||
+              a.accountType === 'liability',
+          )?.glAccountId;
+        } else if (map.col.includes('Inventory')) {
+          matchedId = nonGroup.find(
+            (a) =>
+              a.name?.toLowerCase().includes('inventory') ||
+              a.accountType === 'asset',
+          )?.glAccountId;
+        }
+      }
+      if (matchedId) {
+        glData[map.col] = matchedId;
+      }
     }
   }
 

@@ -7574,6 +7574,58 @@
         ]
       }
     },
+    "/sales-orders/{id}/fulfill-counter": {
+      "post": {
+        "description": "Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.",
+        "operationId": "OrdersController_fulfillCounterOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillCounterOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterFulfillmentResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterFulfillmentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fulfill Counter Order",
+        "tags": [
+          "Sales Orders"
+        ]
+      }
+    },
     "/sales-orders/{id}/override-credit-hold": {
       "post": {
         "description": "Temporarily overrides a credit hold for this specific order.",
@@ -25004,6 +25056,14 @@
             "type": "string",
             "nullable": true
           },
+          "defaultOtcCashAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultOtcCardAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "defaultCostCenterId": {
             "type": "string",
             "nullable": true
@@ -25114,6 +25174,14 @@
             "nullable": true
           },
           "defaultDiscountsGivenAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultOtcCashAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultOtcCardAccountId": {
             "type": "string",
             "nullable": true
           },
@@ -27321,6 +27389,106 @@
         },
         "required": [
           "stateCode"
+        ]
+      },
+      "FulfillCounterLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Sales order line ID to fulfill"
+          },
+          "quantityToFulfill": {
+            "type": "string",
+            "description": "Quantity to fulfill over the counter"
+          },
+          "binId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional specific bin ID to issue stock from"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityToFulfill"
+        ]
+      },
+      "FulfillCounterOrderDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "description": "Specific lines and quantities to fulfill. If omitted, fulfills all unfulfilled lines up to available stock.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FulfillCounterLineDto"
+            }
+          },
+          "allowPartialFulfillment": {
+            "type": "boolean",
+            "description": "Allow partial fulfillment if stock on hand is less than requested quantity"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional fulfillment or handover notes"
+          }
+        }
+      },
+      "CounterFulfilledLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "binId": {
+            "type": "string"
+          },
+          "binNumber": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityFulfilled"
+        ]
+      },
+      "CounterFulfillmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderId": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "fulfilledLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CounterFulfilledLineDto"
+            }
+          },
+          "cogsAmount": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderId",
+          "orderNumber",
+          "stateCode",
+          "fulfilledLines",
+          "cogsAmount"
         ]
       },
       "OverrideCreditHoldDto": {

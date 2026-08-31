@@ -37,6 +37,7 @@ function getCurrentUserId(): string | null {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.sub ?? null;
   } catch {
+    // harmless: unparseable/expired token in storage
     return null;
   }
 }
