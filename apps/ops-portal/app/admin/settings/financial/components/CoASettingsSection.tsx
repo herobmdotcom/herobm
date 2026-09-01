@@ -81,10 +81,10 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       const payload = { ...coaForm } as unknown as api.CreateAccountRequestDto;
       if (coaEditingId) {
         await api.glControllerUpdateAccount(coaEditingId, payload);
-        toast.success(tCommon('saved'));
+        toast.success(tSettings('toasts.saved'));
       } else {
         await api.glControllerCreateAccount(payload);
-        toast.success(tCommon('saved'));
+        toast.success(tSettings('toasts.saved'));
       }
       coaCancel(); loadGl();
     } catch (err: unknown) { toast.error(getErrorMessage(err)); }
