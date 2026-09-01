@@ -24,7 +24,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
       const res = await api.tradingTermsControllerFindAll();
       setTradingTerms(res.data as unknown as api.TradingTermResponseDto[]);
     } catch (err: unknown) {
-      toast.error('Failed to load trading terms: ' + getErrorMessage(err));
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('financialSettings.credit') }) + ': ' + getErrorMessage(err));
     } finally {
       setTradingTermsLoading(false);
     }
@@ -35,21 +35,21 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
   }, []);
 
   const tradingTermsColumns: import('@/components/shared/InlineSettingsTable').InlineTableColumn<api.TradingTermResponseDto>[] = [
-    { key: 'code', title: 'Code', type: 'text', width: '20%' },
-    { key: 'description', title: 'Description', type: 'text', width: '30%' },
-    { key: 'days', title: 'Days', type: 'number', width: '10%' },
-    { key: 'type', title: 'Type', type: 'select', options: [
-      { value: 'net', label: 'Net (Days from Invoice)' },
-      { value: 'end_of_month', label: 'End of Month (EOM)' },
-      { value: 'cash_on_delivery', label: 'Cash on Delivery (COD)' }
+    { key: 'code', title: tSettings('labels.code'), type: 'text', width: '20%' },
+    { key: 'description', title: tSettings('labels.description'), type: 'text', width: '30%' },
+    { key: 'days', title: tSettings('labels.days'), type: 'number', width: '10%' },
+    { key: 'type', title: tSettings('labels.type'), type: 'select', options: [
+      { value: 'net', label: tSettings('tradingTerms.types.net') },
+      { value: 'end_of_month', label: tSettings('tradingTerms.types.endOfMonth') },
+      { value: 'cash_on_delivery', label: tSettings('tradingTerms.types.cashOnDelivery') }
     ], width: '20%' },
   ];
 
   const handleTradingTermSave = async (row: api.TradingTermResponseDto, isNew: boolean) => {
     try {
       if (!row.code || !row.description || !row.type) {
-        toast.error('Code, description, and type are required');
-        throw new Error('Code, description, and type are required');
+        toast.error(tSettings('tradingTerms.errors.requiredFields'));
+        throw new Error(tSettings('tradingTerms.errors.requiredFields'));
       }
       
       const payload = {
@@ -61,10 +61,10 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
 
       if (isNew) {
         await api.tradingTermsControllerCreate(payload as api.CreateTradingTermDto);
-        toast.success('Trading Term created');
+        toast.success(tSettings('toasts.termCreated'));
       } else {
         await api.tradingTermsControllerUpdate(row.tradingTermsId, payload as api.CreateTradingTermDto);
-        toast.success('Trading Term updated');
+        toast.success(tSettings('toasts.termUpdated'));
       }
       loadTradingTerms();
     } catch (err: unknown) {
@@ -74,10 +74,10 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
   };
 
   const handleTradingTermDelete = async (row: api.TradingTermResponseDto) => {
-    if (!confirm('Are you sure you want to delete this trading term?')) return;
+    if (!confirm(tSettings('tradingTerms.confirmDelete'))) return;
     try {
       await api.tradingTermsControllerDelete(row.tradingTermsId);
-      toast.success('Trading Term deleted');
+      toast.success(tSettings('toasts.termDeleted'));
       loadTradingTerms();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
@@ -116,7 +116,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
       <div className="flex gap-8 mb-6">
         <div className="flex flex-col gap-1 flex-1 max-w-sm">
           <label className="text-xs font-medium text-[var(--text-muted)]">
-            Default Customer Terms
+            {tSettings('labels.defaultCustomerTerms')}
           </label>
           <select
             className="input"
@@ -133,7 +133,7 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
         
         <div className="flex flex-col gap-1 flex-1 max-w-sm">
           <label className="text-xs font-medium text-[var(--text-muted)]">
-            Default Supplier Terms
+            {tSettings('labels.defaultSupplierTerms')}
           </label>
           <select
             className="input"
@@ -168,9 +168,9 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
             onSave={handleTradingTermSave}
             onDelete={handleTradingTermDelete}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-            onAdd={() => ({ tradingTermsId: '', code: '', description: '', days: 0, type: 'EOM' } as any)}
+            onAdd={() => ({ tradingTermsId: '', code: '', description: '', days: 0, type: 'net' } as any)}
             addLabel={tSettings('actions.create')}
-            emptyLabel="No trading terms defined."
+            emptyLabel={tSettings('tradingTerms.empty')}
           />
         )}
       </div>

@@ -62,7 +62,7 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       await updateGlSetting('accountMetadataSchema', schemaObj);
       setSchemaEditorOpen(false);
     } catch (err) {
-      toast.error('Failed to save schema');
+      toast.error(tSettings('toasts.saveSchemaFailed', { error: getErrorMessage(err) }));
     }
   };
 
@@ -81,10 +81,10 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       const payload = { ...coaForm } as unknown as api.CreateAccountRequestDto;
       if (coaEditingId) {
         await api.glControllerUpdateAccount(coaEditingId, payload);
-        toast.success('Saved');
+        toast.success(tCommon('saved'));
       } else {
         await api.glControllerCreateAccount(payload);
-        toast.success('Saved');
+        toast.success(tCommon('saved'));
       }
       coaCancel(); loadGl();
     } catch (err: unknown) { toast.error(getErrorMessage(err)); }

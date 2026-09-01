@@ -64,7 +64,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-[var(--text-muted)]">
-              Default Sales Tax
+              {tSettings('labels.defaultSalesTaxCategory')}
             </label>
             <select 
               className="input max-w-[200px]" 
@@ -80,7 +80,7 @@ export function TaxSettingsSection({ appSettings, updateAppSetting }: TaxSetting
           
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-[var(--text-muted)]">
-              Default Purchase Tax
+              {tSettings('labels.defaultPurchaseTaxCategory')}
             </label>
             <select 
               className="input max-w-[200px]" 

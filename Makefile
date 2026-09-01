@@ -57,7 +57,14 @@ Verification & Quality Gates:
   make test-portal-e2e- Run Ops Portal Playwright E2E tests
   make test-api-e2e   - Run end-to-end API tests against real Postgres
   make test-structural- Run structural architecture, security & knip checks
-  make test-heavy     - Run containerized fuzzing and full-stack heavy tests
+  make test-heavy [FLAGS] - Run containerized test stack
+     TEST=<name>          - Run single backend heavy test
+     UI_ONLY=1            - Run only Playwright UI E2E tests
+     E2E=<pattern>        - Target specific Playwright E2E test file or pattern
+     SKIP_UI=1            - Run only backend heavy tests
+     REUSE=1              - Reuse already-running test containers (fast iteration)
+     NO_TEARDOWN=1        - Keep test containers alive after tests pass
+     SKIP_STRUCTURAL=1    - Skip AST invariant checks
 =========================================
 endef
 export HELP_TEXT
@@ -82,7 +89,7 @@ ifeq ($(OS),Windows_NT)
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
-  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
+  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse)
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
   NODE ?= node
@@ -105,7 +112,7 @@ else
   PROD_LOCAL_CMD = $(NODE) scripts/prod-local.mjs
   CLEAN_BUILD_CMD = $(NODE) scripts/clean-build.mjs
   TEST_PIPELINE_CMD = $(NODE) scripts/test-pipeline.mjs
-  TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(TEST),--test "$(TEST)")
+  TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse)
   COMPOSE_CMD := $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
   GIT_VERSION := $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)

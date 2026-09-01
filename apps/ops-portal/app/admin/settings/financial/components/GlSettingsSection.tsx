@@ -64,7 +64,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
       ) : (
         <div className="flex flex-col gap-6">
           {/* 1. Sales & Receivables */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">shopping_cart</span>
@@ -95,7 +95,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           </div>
 
           {/* 2. Purchasing & Payables */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">shopping_bag</span>
@@ -126,7 +126,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           </div>
 
           {/* 3. Inventory & Costing */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">inventory_2</span>
@@ -143,7 +143,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           </div>
 
           {/* 4. Tax Accounting */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">receipt_long</span>
@@ -158,7 +158,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           </div>
 
           {/* 5. Foreign Exchange (Multi-Currency) */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">currency_exchange</span>
@@ -175,7 +175,7 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
           </div>
 
           {/* 6. Trade Counter & POS */}
-          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">point_of_sale</span>

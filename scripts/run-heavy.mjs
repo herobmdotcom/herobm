@@ -10,14 +10,26 @@ const releaseLock = await acquireLock('test-heavy', { logWait: true });
 
 const args = process.argv.slice(2);
 let skipUI = false;
+let uiOnly = false;
 let testName = "";
+let e2eFilter = "";
+let noTeardown = false;
+let reuseContainers = false;
 
 for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--skip-ui' || arg === '-SkipUI') {
         skipUI = true;
+    } else if (arg === '--ui-only' || arg === '--only-ui' || arg === '--skip-backend' || arg === '-UIOnly') {
+        uiOnly = true;
     } else if (arg === '--test' || arg === '-TestName') {
         testName = args[++i];
+    } else if (arg === '--e2e' || arg === '--ui-test' || arg === '-E2E') {
+        e2eFilter = args[++i];
+    } else if (arg === '--no-teardown' || arg === '--keep-alive') {
+        noTeardown = true;
+    } else if (arg === '--reuse' || arg === '--no-rebuild') {
+        reuseContainers = true;
     }
 }
 
@@ -43,51 +55,92 @@ function run(cmd, extraEnv = {}) {
     }
 }
 
-console.log('\x1b[33mTearing down any existing test containers to ensure a clean run...\x1b[0m');
-run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
+if (!reuseContainers) {
+    console.log('\x1b[33mTearing down any existing test containers to ensure a clean run...\x1b[0m');
+    run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
 
-console.log('\x1b[36mBuilding isolated test images...\x1b[0m');
-if (!run('podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .')) {
-    console.error('\x1b[31mFailed to build API test image!\x1b[0m');
-    releaseLock();
-    process.exit(1);
-}
-if (!run('podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .')) {
-    console.error('\x1b[31mFailed to build Pipeline test image!\x1b[0m');
-    releaseLock();
-    process.exit(1);
-}
-if (!run('podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .')) {
-    console.error('\x1b[31mFailed to build Worker test image!\x1b[0m');
-    releaseLock();
-    process.exit(1);
-}
-if (!skipUI) {
-    if (!run('podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .')) {
-        console.error('\x1b[31mFailed to build Portal test image!\x1b[0m');
+    console.log('\x1b[36mBuilding isolated test images...\x1b[0m');
+    if (!run('podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .')) {
+        console.error('\x1b[31mFailed to build API test image!\x1b[0m');
         releaseLock();
         process.exit(1);
     }
+    if (!run('podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .')) {
+        console.error('\x1b[31mFailed to build Pipeline test image!\x1b[0m');
+        releaseLock();
+        process.exit(1);
+    }
+    if (!run('podman build -t localhost/herobm_worker-test:latest -f Dockerfile.worker .')) {
+        console.error('\x1b[31mFailed to build Worker test image!\x1b[0m');
+        releaseLock();
+        process.exit(1);
+    }
+    if (!skipUI) {
+        if (!run('podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .')) {
+            console.error('\x1b[31mFailed to build Portal test image!\x1b[0m');
+            releaseLock();
+            process.exit(1);
+        }
+    }
+
+    console.log('\x1b[36mEnsuring network exists...\x1b[0m');
+    process.env.APP_NETWORK_NAME = 'herobm_app-net';
+    const hasNet = run('podman network exists herobm_app-net');
+    if (!hasNet) {
+        run('podman network create herobm_app-net');
+    }
+
+    console.log('\x1b[36mBooting up test databases...\x1b[0m');
+    if (!run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d postgres-test redis-test maildev-test webhook-catcher')) {
+        console.error('\x1b[31mFailed to boot test databases!\x1b[0m');
+        process.exit(1);
+    }
+
+    console.log('\x1b[33mWaiting 20 seconds for Postgres and Redis to initialize...\x1b[0m');
+    const wait1 = Date.now();
+    while (Date.now() - wait1 < 20000) {}
+
+    console.log('\x1b[36mInitializing Test Database...\x1b[0m');
+    const dbEnvInit = {
+        POSTGRES_CONTAINER: "postgres-test",
+        POSTGRES_HOST: "127.0.0.1",
+        POSTGRES_PORT: "5434",
+        REDIS_HOST: "127.0.0.1",
+        REDIS_PORT: "6380",
+        TEST_RUNNER_URL: "http://127.0.0.1:8005",
+        TEST_API_URL: "http://127.0.0.1:3005"
+    };
+
+    const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+    if (!run(`${pyCmd} tools/migrate.py`, dbEnvInit)) {
+        // Fallback if python3 isn't available
+        if (process.platform !== 'win32' && !run(`python tools/migrate.py`, dbEnvInit)) {
+            console.error('\x1b[31mFailed to run migrations!\x1b[0m');
+            process.exit(1);
+        }
+    }
+
+    if (!run('npm run seed:test -w apps/api', dbEnvInit)) {
+        console.error('\x1b[31mFailed to seed test database!\x1b[0m');
+        process.exit(1);
+    }
+
+    console.log('\x1b[36mBooting up app containers...\x1b[0m');
+    const appContainers = skipUI 
+        ? 'custom-api-test worker-test pipeline-runner-test' 
+        : 'custom-api-test worker-test pipeline-runner-test ops-portal-test nginx-test';
+    if (!run(`podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d ${appContainers}`)) {
+        console.error('\x1b[31mFailed to boot test app containers!\x1b[0m');
+        process.exit(1);
+    }
+
+    console.log('\x1b[33mWaiting 15 seconds for apps to initialize...\x1b[0m');
+    const wait2 = Date.now();
+    while (Date.now() - wait2 < 15000) {}
+} else {
+    console.log('\x1b[33m[REUSE MODE] Reusing existing running test containers...\x1b[0m');
 }
 
-console.log('\x1b[36mEnsuring network exists...\x1b[0m');
-process.env.APP_NETWORK_NAME = 'herobm_app-net';
-const hasNet = run('podman network exists herobm_app-net');
-if (!hasNet) {
-    run('podman network create herobm_app-net');
-}
-
-console.log('\x1b[36mBooting up test databases...\x1b[0m');
-if (!run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d postgres-test redis-test maildev-test webhook-catcher')) {
-    console.error('\x1b[31mFailed to boot test databases!\x1b[0m');
-    process.exit(1);
-}
-
-console.log('\x1b[33mWaiting 20 seconds for Postgres and Redis to initialize...\x1b[0m');
-const wait1 = Date.now();
-while (Date.now() - wait1 < 20000) {}
-
-console.log('\x1b[36mInitializing Test Database...\x1b[0m');
 const dbEnv = {
     POSTGRES_CONTAINER: "postgres-test",
     POSTGRES_HOST: "127.0.0.1",
@@ -98,45 +151,23 @@ const dbEnv = {
     TEST_API_URL: "http://127.0.0.1:3005"
 };
 
-const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
-if (!run(`${pyCmd} tools/migrate.py`, dbEnv)) {
-    // Fallback if python3 isn't available
-    if (process.platform !== 'win32' && !run(`python tools/migrate.py`, dbEnv)) {
-        console.error('\x1b[31mFailed to run migrations!\x1b[0m');
-        process.exit(1);
-    }
-}
-
-if (!run('npm run seed:test -w apps/api', dbEnv)) {
-    console.error('\x1b[31mFailed to seed test database!\x1b[0m');
-    process.exit(1);
-}
-
-console.log('\x1b[36mBooting up app containers...\x1b[0m');
-const appContainers = skipUI 
-    ? 'custom-api-test worker-test pipeline-runner-test' 
-    : 'custom-api-test worker-test pipeline-runner-test ops-portal-test nginx-test';
-if (!run(`podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d ${appContainers}`)) {
-    console.error('\x1b[31mFailed to boot test app containers!\x1b[0m');
-    process.exit(1);
-}
-
-console.log('\x1b[33mWaiting 15 seconds for apps to initialize...\x1b[0m');
-const wait2 = Date.now();
-while (Date.now() - wait2 < 15000) {}
-
 let failed = false;
 
-console.log('\x1b[32mRunning heavy tests...\x1b[0m');
-if (!testName) {
-    if (!run('npx tsx infra/test-utils/run-heavy.ts', dbEnv)) failed = true;
-} else {
-    if (!run(`npx tsx infra/test-utils/run-single.ts ${testName}`, dbEnv)) failed = true;
+if (!uiOnly) {
+    console.log('\x1b[32mRunning heavy tests...\x1b[0m');
+    if (!testName) {
+        if (!run('npx tsx infra/test-utils/run-heavy.ts', dbEnv)) failed = true;
+    } else {
+        if (!run(`npx tsx infra/test-utils/run-single.ts ${testName}`, dbEnv)) failed = true;
+    }
 }
 
 if (!skipUI) {
     console.log('\x1b[32mRunning UI Playwright tests...\x1b[0m');
-    if (!run('npm run test:e2e -w apps/ops-portal', { PORTAL_URL: "http://localhost:4305" })) {
+    const e2eCmd = e2eFilter 
+        ? `npm run test:e2e -w apps/ops-portal -- ${e2eFilter}`
+        : 'npm run test:e2e -w apps/ops-portal';
+    if (!run(e2eCmd, { PORTAL_URL: "http://localhost:4305" })) {
         failed = true;
     }
 }
@@ -146,8 +177,12 @@ if (failed) {
     releaseLock();
     process.exit(1);
 } else {
-    console.log('\x1b[33mTearing down test containers to preserve dev-local isolation...\x1b[0m');
-    run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
+    if (noTeardown) {
+        console.log('\x1b[33m[KEEP ALIVE] Keeping test containers alive for rapid iteration (use REUSE=1 on next run).\x1b[0m');
+    } else {
+        console.log('\x1b[33mTearing down test containers to preserve dev-local isolation...\x1b[0m');
+        run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
+    }
     console.log('\x1b[32mHeavy tests PASSED!\x1b[0m');
     releaseLock();
     process.exit(0);

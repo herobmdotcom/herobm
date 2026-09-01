@@ -562,6 +562,7 @@
         "creditLimitBehavior": "Credit Limit Behavior",
         "currencies": "Currencies",
         "defaults": "Defaults",
+        "defaultsDesc": "Configure core and conditional General Ledger accounts across sales, purchasing, inventory, taxation, and treasury.",
         "domainFx": "Foreign Exchange (FX)",
         "domainFxDesc": "Realised gain/loss accounts on settlement and unrealised accounts for periodic revaluation.",
         "domainInventory": "Inventory & Cost of Goods Sold",
@@ -596,8 +597,10 @@
         "required": "Required",
         "saveToMap": "Save to map",
         "softWarning": "Soft Warning (Allow draft, block dispatch)",
+        "subtitle": "Manage core GL control accounts, chart of accounts hierarchy, trading terms, multi-currency rates, and tax positions",
         "tabGl": "General Ledger",
-        "tabOperations": "Operations"
+        "tabOperations": "Operations",
+        "title": "Financial Settings"
       },
       "fulfillmentHeading": "Default Fulfillment Location",
       "gl": {
@@ -612,22 +615,30 @@
         "dropFile": "Drag & drop an ERPNext Chart of Accounts .json file here, or click to browse",
         "fileLoaded": "Valid Chart of Accounts detected",
         "importAction": "Import CoA",
+        "importFailed": "Failed to import chart of accounts: {error}",
+        "importSuccess": "Successfully imported {count} accounts.",
         "importing": "Importing...",
         "invalidFile": "Invalid Chart of Accounts file: Must be a valid JSON file containing a \"tree\" property.",
+        "loadChartsFailed": "Failed to load available charts: {error}",
         "loadingCharts": "Loading available charts...",
         "noCharts": "No charts available.",
         "noFileSelected": "No file selected",
         "orDivider": "OR",
         "presetSection": "Predefined Presets",
         "selectPreset": "Select Preset",
+        "title": "Import Chart of Accounts",
         "uploadSection": "Upload JSON File"
       },
       "importTaxModal": {
         "importAction": "Import Tax Settings",
+        "importFailed": "Failed to import tax settings: {error}",
+        "importSuccess": "Successfully imported {count} tax categories.",
         "importing": "Importing...",
+        "loadFilesFailed": "Failed to load available tax settings: {error}",
         "loadingCharts": "Loading available files...",
         "noCharts": "No tax settings files available.",
-        "selectPreset": "Select Preset"
+        "selectPreset": "Select Preset",
+        "title": "Import Tax Settings"
       },
       "labels": {
         "accountName": "Customer Name",
@@ -651,6 +662,7 @@
         "currencyCode": "Currency Code",
         "currencyName": "Currency Name",
         "customerNumber": "Customer Number (BSB-Customer)",
+        "days": "Days",
         "defaultAp": "Default Accounts Payable",
         "defaultAr": "Default Accounts Receivable",
         "defaultCogs": "Default COGS",
@@ -796,12 +808,30 @@
         "rateCreated": "Exchange rate created",
         "rateDeleted": "Exchange rate deleted",
         "rateUpdated": "Exchange rate updated",
+        "saved": "Saved",
+        "saveSchemaFailed": "Failed to save schema: {error}",
+        "settingsUpdated": "Settings updated",
         "taxCreated": "Tax code created",
         "taxDeleted": "Tax code deleted",
         "taxUpdated": "Tax code updated",
+        "termCreated": "Trading term created",
+        "termDeleted": "Trading term deleted",
+        "termUpdated": "Trading term updated",
         "uomCreated": "Unit of measure created",
         "uomDeleted": "Unit of measure deleted",
         "uomUpdated": "Unit of measure updated"
+      },
+      "tradingTerms": {
+        "confirmDelete": "Are you sure you want to delete this trading term?",
+        "empty": "No trading terms defined. Create one to get started.",
+        "errors": {
+          "requiredFields": "Code, description, and type are required"
+        },
+        "types": {
+          "cashOnDelivery": "Cash on Delivery (COD)",
+          "endOfMonth": "End of Month (EOM)",
+          "net": "Net (Days from Invoice)"
+        }
       },
       "uom": {
         "empty": "No units of measure defined. Create one to get started."

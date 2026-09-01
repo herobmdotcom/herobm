@@ -62,7 +62,7 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
         setSelectedFile(data[0].filename);
       }
     } catch (err: unknown) {
-      toast.error('Failed to load available charts: ' + getErrorMessage(err));
+      toast.error(tSettings('importCoaModal.loadChartsFailed', { error: getErrorMessage(err) }));
     } finally {
       setIsLoading(false);
     }
@@ -141,11 +141,11 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
       setIsImporting(true);
       const res = await api.glControllerSeedChartOfAccounts({ data: uploadedData });
       const data = res.data;
-      toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} accounts.`);
+      toast.success(tSettings('importCoaModal.importSuccess', { count: (data as unknown as { created?: number })?.created || 0 }));
       onImportComplete();
       onClose();
     } catch (err: unknown) {
-      toast.error('Failed to import chart of accounts: ' + getErrorMessage(err));
+      toast.error(tSettings('importCoaModal.importFailed', { error: getErrorMessage(err) }));
     } finally {
       setIsImporting(false);
     }
@@ -157,18 +157,18 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
       setIsImporting(true);
       const res = await api.glControllerSeedChartOfAccounts({ filename: selectedFile });
       const data = res.data;
-      toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} accounts.`);
+      toast.success(tSettings('importCoaModal.importSuccess', { count: (data as unknown as { created?: number })?.created || 0 }));
       onImportComplete();
       onClose();
     } catch (err: unknown) {
-      toast.error('Failed to import chart of accounts: ' + getErrorMessage(err));
+      toast.error(tSettings('importCoaModal.importFailed', { error: getErrorMessage(err) }));
     } finally {
       setIsImporting(false);
     }
   };
 
   return (
-    <SlideOver isOpen={isOpen} onClose={onClose} title="Import Chart of Accounts" width="max-w-md">
+    <SlideOver isOpen={isOpen} onClose={onClose} title={tSettings('importCoaModal.title')} width="max-w-md">
       <div className="flex flex-col gap-6 p-4">
         {/* Section 1: Upload */}
         <div className="flex flex-col gap-3">

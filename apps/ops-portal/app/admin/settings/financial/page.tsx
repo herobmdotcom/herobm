@@ -33,7 +33,7 @@ interface MissingConfigItem {
 export default function FinancialSettingsPage() {
   const tSettings = useTranslations('admin.settings');
   const tCommon = useTranslations('admin.common');
-  useDocumentTitle('Financial Settings');
+  useDocumentTitle(tSettings('financialSettings.title'));
 
   // ── GL Settings state ────────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
@@ -83,7 +83,7 @@ export default function FinancialSettingsPage() {
       const res = await api.glControllerUpdateSettings(payload);
       const updated = res.data;
       setGlSettings(Object.assign({}, glSettings || {}, updated));
-      toast.success('Settings updated');
+      toast.success(tSettings('toasts.settingsUpdated'));
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
@@ -95,7 +95,7 @@ export default function FinancialSettingsPage() {
       const res = await api.appConfigControllerUpdate(payload);
       const updated = res.data;
       setAppSettings(Object.assign({}, appSettings || {}, updated));
-      toast.success('Settings updated');
+      toast.success(tSettings('toasts.settingsUpdated'));
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
@@ -110,31 +110,31 @@ export default function FinancialSettingsPage() {
   const navSections = useMemo(() => [
     {
       id: 'tab-gl',
-      label: 'General Ledger',
+      label: tSettings('financialSettings.tabGl'),
       isSubPage: true,
       isActive: activeTab === 'gl',
       onClick: () => setActiveTab('gl'),
       subtargets: [
-        { id: 'gl-section', label: 'Defaults', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('gl-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'coa-section', label: 'Accounts', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('coa-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'cc-section', label: 'Cost Centers', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('cc-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'activity-section', label: 'Activities', onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'gl-section', label: tSettings('financialSettings.defaults'), onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('gl-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'coa-section', label: tSettings('financialSettings.accounts'), onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('coa-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'cc-section', label: tSettings('financialSettings.costCenters'), onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('cc-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: tSettings('financialSettings.activities'), onClick: () => { setActiveTab('gl'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ]
     },
     {
       id: 'tab-operations',
-      label: 'Operations',
+      label: tSettings('financialSettings.tabOperations'),
       isSubPage: true,
       isActive: activeTab === 'operations',
       onClick: () => setActiveTab('operations'),
       subtargets: [
-        { id: 'credit-policy', label: 'Credit', onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('credit-policy')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'rates-section', label: 'Currencies', onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('rates-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'tax-section', label: 'Tax Codes', onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('tax-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'tax-positions-section', label: 'Tax Positions', onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('tax-positions-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'credit-policy', label: tSettings('financialSettings.credit'), onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('credit-policy')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'rates-section', label: tSettings('financialSettings.currencies'), onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('rates-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'tax-section', label: tSettings('sections.tax'), onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('tax-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'tax-positions-section', label: tSettings('sections.taxPositions'), onClick: () => { setActiveTab('operations'); setTimeout(() => document.getElementById('tax-positions-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ]
     }
-  ], [activeTab]);
+  ], [activeTab, tSettings]);
 
   const missingConfigs = useMemo<MissingConfigItem[]>(() => {
     const items: MissingConfigItem[] = [];
@@ -326,8 +326,8 @@ export default function FinancialSettingsPage() {
   return (
     <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
-        title="Financial Settings"
-        subtitle={tSettings('subtitle')}
+        title={tSettings('financialSettings.title')}
+        subtitle={tSettings('financialSettings.subtitle')}
       >
         <PageNav sections={navSections} />
       </ContentPageHeader>

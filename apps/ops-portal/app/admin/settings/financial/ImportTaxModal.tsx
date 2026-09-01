@@ -43,7 +43,7 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
         setSelectedFile(data[0].filename);
       }
     } catch (err: unknown) {
-      toast.error('Failed to load available tax settings: ' + getErrorMessage(err));
+      toast.error(tSettings('importTaxModal.loadFilesFailed', { error: getErrorMessage(err) }));
     } finally {
       setIsLoading(false);
     }
@@ -55,18 +55,18 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
       setIsImporting(true);
       const res = await api.glControllerSeedTaxSettings({ filename: selectedFile });
       const data = res.data;
-      toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} tax categories.`);
+      toast.success(tSettings('importTaxModal.importSuccess', { count: (data as unknown as { created?: number })?.created || 0 }));
       onImportComplete();
       onClose();
     } catch (err: unknown) {
-      toast.error('Failed to import tax settings: ' + getErrorMessage(err));
+      toast.error(tSettings('importTaxModal.importFailed', { error: getErrorMessage(err) }));
     } finally {
       setIsImporting(false);
     }
   };
 
   return (
-    <SlideOver isOpen={isOpen} onClose={onClose} title="Import Tax Settings" width="max-w-md">
+    <SlideOver isOpen={isOpen} onClose={onClose} title={tSettings('importTaxModal.title')} width="max-w-md">
       <div className="flex flex-col gap-4 p-4">
         {isLoading ? (
           <div className="text-sm text-muted animate-pulse">{tSettings('importTaxModal.loadingCharts')}</div>

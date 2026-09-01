@@ -79,7 +79,7 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
             <div className="flex gap-8 mb-6 mt-4">
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
                 <label className="text-xs font-medium text-[var(--text-muted)]">
-                  Default Customer Tax Position
+                  {tSettings('labels.defaultCustomerTaxPosition')}
                 </label>
                 <select
                   className="input"
@@ -95,7 +95,7 @@ export function TaxPositionsSection({ appSettings, updateAppSetting }: TaxPositi
               
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
                 <label className="text-xs font-medium text-[var(--text-muted)]">
-                  Default Supplier Tax Position
+                  {tSettings('labels.defaultSupplierTaxPosition')}
                 </label>
                 <select
                   className="input"
