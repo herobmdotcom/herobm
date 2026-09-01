@@ -167,19 +167,19 @@ down-db:
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
+	$(COMPOSE_CMD) up -d $(ARGS) herobm-api herobm-ui postgres-custom redis-broker herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 
 down-portal-api:
-	$(COMPOSE_CMD) stop herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
-	-podman rm -f herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline
+	$(COMPOSE_CMD) stop herobm-api herobm-ui postgres-custom redis-broker herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
+	-podman rm -f herobm-api herobm-ui postgres-custom redis-broker herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 
 # Portal + API + Nginx Proxy Core
 up-portal-api-nginx: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline herobm-nginx
+	$(COMPOSE_CMD) up -d $(ARGS) herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-nginx $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 
 down-portal-api-nginx:
-	$(COMPOSE_CMD) stop herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline herobm-nginx
-	-podman rm -f herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-pipeline herobm-nginx
+	$(COMPOSE_CMD) stop herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-nginx $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
+	-podman rm -f herobm-api herobm-ui postgres-custom redis-broker herobm-outbox herobm-nginx $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 
 # Nginx Reverse Proxy (Standalone UI proxy)
 up-nginx: check-postgres-logs
@@ -537,17 +537,17 @@ rebuild-worker:
 build-images:
 	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.0.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
 	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.1.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 rebuild-apps: build-images
-	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-pipeline herobm-outbox
-	-$(COMPOSE_CMD) rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox
-	-podman stop herobm-api herobm-ui herobm-pipeline herobm-outbox
-	-podman rm -f herobm-api herobm-ui herobm-pipeline herobm-outbox
+	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
+	-$(COMPOSE_CMD) rm -f herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
+	-podman stop herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
+	-podman rm -f herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 	-podman system prune -f
 	$(MAKE) migrate
-	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api herobm-ui herobm-pipeline herobm-outbox
+	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 	$(COMPOSE_CMD) ps
 
 pre-push: verify-all build-images

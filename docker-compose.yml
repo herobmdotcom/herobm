@@ -203,6 +203,9 @@ services:
         max-file: "3"
 
   herobm-pipeline:
+    profiles:
+      - ext
+      - pipeline
     image: localhost/herobm_pipeline-runner:latest
     build:
       context: .
