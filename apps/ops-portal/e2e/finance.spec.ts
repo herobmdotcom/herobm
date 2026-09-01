@@ -22,7 +22,7 @@ test.describe('Sidebar Section: Finance', () => {
     await page.goto('/general-ledger/journal-entries/new', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
     await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /post entry|save/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /post journal entry|post entry|save/i }).first()).toBeVisible();
   });
 
   test('Balances: Customers, Suppliers, and Tax Balances render', async ({ page }) => {

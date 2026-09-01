@@ -9,6 +9,7 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 import request from 'supertest';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('API E2E — Tax Resolution engine', () => {
   let app: INestApplication;
@@ -40,10 +41,14 @@ describe('API E2E — Tax Resolution engine', () => {
 
     // Get a valid customer and product using endpoints
     const customersRes = await request(app.getHttpServer())
-      .get('/api/customers?limit=1')
+      .get('/api/customers?limit=10')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validCustomerId = customersRes.body.data[0].customerId;
+    const activeCustomer =
+      customersRes.body.data.find(
+        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
+      ) || customersRes.body.data[0];
+    validCustomerId = activeCustomer.customerId;
 
     const prodRes = await request(app.getHttpServer())
       .post('/api/products')

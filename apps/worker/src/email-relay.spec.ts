@@ -102,11 +102,30 @@ describe('email-relay', () => {
     expect(mockDb.update).not.toHaveBeenCalled();
   });
 
-  it('should gracefully handle missing SMTP settings', async () => {
+  it('should update pending emails with error when SMTP settings are missing', async () => {
     settingsRows = [];
     await pollEmailOutbox(mockDb);
     expect(nodemailer.createTransport).not.toHaveBeenCalled();
-    expect(mockDb.update).not.toHaveBeenCalled();
+    expect(mockDb.update).toHaveBeenCalledTimes(1);
+    expect(mockDb.set).toHaveBeenCalledWith({
+      retries: '1',
+      status: 'pending',
+      lastError: 'SMTP configuration is missing in Settings',
+      nextRetryAt: expect.any(Date),
+    });
+  });
+
+  it('should update pending emails with error when smtpHost is null or empty', async () => {
+    settingsRows = [{ smtpHost: '' }];
+    await pollEmailOutbox(mockDb);
+    expect(nodemailer.createTransport).not.toHaveBeenCalled();
+    expect(mockDb.update).toHaveBeenCalledTimes(1);
+    expect(mockDb.set).toHaveBeenCalledWith({
+      retries: '1',
+      status: 'pending',
+      lastError: 'SMTP configuration is missing in Settings',
+      nextRetryAt: expect.any(Date),
+    });
   });
 
   it('should handle SMTP verification failure and skip processing', async () => {

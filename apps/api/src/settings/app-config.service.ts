@@ -231,6 +231,13 @@ export class AppConfigService implements OnModuleInit {
     return this.appCache;
   }
 
+  /** Whether SMTP host is configured in app settings. */
+  isSmtpConfigured(): boolean {
+    return Boolean(
+      this.appCache?.smtpHost && this.appCache.smtpHost.trim().length > 0,
+    );
+  }
+
   async update(dto: Partial<typeof appSettings.$inferInsert>, userId?: string) {
     const settings = this.getAppSettingsRaw();
     if (!settings) {

@@ -1,8 +1,0 @@
-ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "default_purchase_tax_category_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "default_sales_tax_category_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."product_groups" ADD COLUMN "purchase_tax_category_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."product_groups" ADD COLUMN "sales_tax_category_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."app_settings" ADD CONSTRAINT "app_settings_default_purchase_tax_category_id_tax_categories_tax_category_id_fk" FOREIGN KEY ("default_purchase_tax_category_id") REFERENCES "herobm_core"."tax_categories"("tax_category_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "herobm_core"."app_settings" ADD CONSTRAINT "app_settings_default_sales_tax_category_id_tax_categories_tax_category_id_fk" FOREIGN KEY ("default_sales_tax_category_id") REFERENCES "herobm_core"."tax_categories"("tax_category_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "herobm_core"."product_groups" ADD CONSTRAINT "product_groups_purchase_tax_category_id_tax_categories_tax_category_id_fk" FOREIGN KEY ("purchase_tax_category_id") REFERENCES "herobm_core"."tax_categories"("tax_category_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "herobm_core"."product_groups" ADD CONSTRAINT "product_groups_sales_tax_category_id_tax_categories_tax_category_id_fk" FOREIGN KEY ("sales_tax_category_id") REFERENCES "herobm_core"."tax_categories"("tax_category_id") ON DELETE no action ON UPDATE no action;

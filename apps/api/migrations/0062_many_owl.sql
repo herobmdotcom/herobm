@@ -1,4 +1,0 @@
-ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN "default_cost_center_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN "default_activity_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."gl_settings" ADD CONSTRAINT "gl_settings_default_cost_center_id_cost_centers_cost_center_id_fk" FOREIGN KEY ("default_cost_center_id") REFERENCES "herobm_core"."cost_centers"("cost_center_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "herobm_core"."gl_settings" ADD CONSTRAINT "gl_settings_default_activity_id_activities_activity_id_fk" FOREIGN KEY ("default_activity_id") REFERENCES "herobm_core"."activities"("activity_id") ON DELETE no action ON UPDATE no action;

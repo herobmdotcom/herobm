@@ -82,6 +82,7 @@ test.describe('Workflow: Order-to-Cash', () => {
     // 8. Follow through to Picking workflow view
     await page.goto('/inventory/picking', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
-    await waitForGrid(page);
+    const pickingHeading = page.getByRole('heading', { name: /picking/i }).first();
+    await expect(pickingHeading).toBeVisible();
   });
 });

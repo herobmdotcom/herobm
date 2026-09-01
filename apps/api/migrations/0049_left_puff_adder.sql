@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."customer_groups" ADD COLUMN "state_code" text DEFAULT 'active' NOT NULL;

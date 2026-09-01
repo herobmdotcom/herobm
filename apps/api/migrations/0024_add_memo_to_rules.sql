@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."reconciliation_rules" ADD COLUMN "memo" text;

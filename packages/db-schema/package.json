@@ -1,7 +1,16 @@
 {
   "name": "@herobm/db-schema",
   "version": "0.1.0",
+  "description": "HeroBM: Canonical Drizzle ORM database schemas",
   "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "packages/db-schema"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

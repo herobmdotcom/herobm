@@ -29,6 +29,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
+  ACTOR_STATE,
 } from '@herobm/shared';
 
 // Ensures random order numbers during test isolation
@@ -44,6 +45,7 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
       name,
       country: 'AU',
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .returning();
 
@@ -215,6 +217,7 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     .values({
       name,
       isTaxRegistered: false,
+      stateCode: ACTOR_STATE.ACTIVE,
     })
     .returning();
 

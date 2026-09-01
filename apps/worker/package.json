@@ -1,7 +1,16 @@
 {
   "name": "worker",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "description": "HeroBM: Background Outbox Relay & Event Processing Worker",
   "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "apps/worker"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",

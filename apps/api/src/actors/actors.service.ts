@@ -48,7 +48,11 @@ export class ActorsService {
   ): Promise<ActorResponseDto> {
     const [newActor] = await this.db
       .insert(actors)
-      .values({ isTaxRegistered: false, stateCode: ACTOR_STATE.ACTIVE, ...dto })
+      .values({
+        ...dto,
+        isTaxRegistered: dto.isTaxRegistered ?? false,
+        stateCode: ACTOR_STATE.ACTIVE,
+      })
       .returning();
 
     await emitEvent(this.db, {

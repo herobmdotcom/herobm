@@ -1,7 +1,16 @@
 {
   "name": "ops-portal",
   "version": "0.1.0",
+  "description": "HeroBM: Modern Web Operations Portal",
   "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "apps/ops-portal"
+  },
   "scripts": {
     "dev": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "dev:local": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",

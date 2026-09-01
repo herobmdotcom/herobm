@@ -692,9 +692,13 @@ export class SalesInvoiceService {
       const arCode = idToCode.get(effectiveArAccountId);
       if (!arCode) {
         throw new BadRequestException(
-          `Cannot create invoice: Accounts Receivable account '${effectiveArAccountId}' not found in Chart of Accounts.`,
+          `Cannot create invoice: Accounts Receivable account '${effectiveArAccountId}' not found in Chart of Accounts. Please configure it in Admin → Settings → Financial.`,
         );
       }
+
+      const defaultRevenueCode = settings?.defaultRevenueAccountId
+        ? idToCode.get(settings.defaultRevenueAccountId)
+        : null;
 
       const taxCode = settings?.defaultSalesTaxAccountId
         ? idToCode.get(settings.defaultSalesTaxAccountId)
@@ -723,9 +727,19 @@ export class SalesInvoiceService {
         },
       ];
 
-      // 1. Map explicitly dynamic revenue lines (grouped by customer + dimensions)
+      // 1. Map explicitly dynamic revenue lines (grouped by customer/product + dimensions)
       for (const group of revenueGroups.values()) {
-        const code = idToCode.get(group.customerId);
+        let code = idToCode.get(group.customerId);
+        if (!code && defaultRevenueCode) {
+          code = defaultRevenueCode;
+        }
+
+        if (!code && group.amount > 0) {
+          throw new BadRequestException(
+            `Cannot create invoice: Revenue account '${group.customerId}' not found in Chart of Accounts, and Default Revenue account is not configured in GL Settings. Please configure it in Admin → Settings → Financial.`,
+          );
+        }
+
         if (code && group.amount > 0) {
           glLines.push({
             accountCode: code,
@@ -743,18 +757,14 @@ export class SalesInvoiceService {
 
       // 2. Map default global revenue fallback sum
       if (defaultRevenue > 0) {
-        const defCode = settings?.defaultRevenueAccountId
-          ? idToCode.get(settings.defaultRevenueAccountId)
-          : null;
-
-        if (!defCode) {
+        if (!defaultRevenueCode) {
           throw new BadRequestException(
-            'Cannot create invoice: Default Revenue account (defaultRevenueAccountId) is not configured in GL Settings.',
+            'Cannot create invoice: Default Revenue account (defaultRevenueAccountId) is not configured in GL Settings. Please configure it in Admin → Settings → Financial.',
           );
         }
 
         glLines.push({
-          accountCode: defCode,
+          accountCode: defaultRevenueCode,
           debit: 0,
           credit: defaultRevenue * fx.rate,
           foreignCurrency: order.currencyCode,
@@ -768,11 +778,15 @@ export class SalesInvoiceService {
 
       for (const [acctId, taxAmt] of taxGroups.entries()) {
         if (taxAmt > 0) {
-          const effectiveTaxCode =
+          let effectiveTaxCode =
             acctId !== 'fallback' ? idToCode.get(acctId) : taxCode;
+          if (!effectiveTaxCode && taxCode) {
+            effectiveTaxCode = taxCode;
+          }
+
           if (!effectiveTaxCode) {
             throw new BadRequestException(
-              'Cannot create invoice: Sales Tax account (defaultSalesTaxAccountId) is not configured in GL Settings.',
+              'Cannot create invoice: Sales Tax account (defaultSalesTaxAccountId) is not configured in GL Settings. Please configure it in Admin → Settings → Financial.',
             );
           }
 
@@ -788,18 +802,26 @@ export class SalesInvoiceService {
         }
       }
 
-      await this.glService.postJournalEntry(
-        glLines,
-        {
-          sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
-          sourceId: invoice.invoiceId,
-          memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
-          actor,
-        },
-        tx,
-      );
+      if (combinedTotal > 0) {
+        if (glLines.length < 2) {
+          throw new BadRequestException(
+            'Cannot create invoice: Failed to construct balancing GL journal entry lines. Please verify that Default Accounts Receivable, Default Revenue, and Default Sales Tax accounts are configured in Admin → Settings → Financial.',
+          );
+        }
 
-      this.logger.log(`GL journal posted for sales invoice ${invoiceNumber}`);
+        await this.glService.postJournalEntry(
+          glLines,
+          {
+            sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
+            sourceId: invoice.invoiceId,
+            memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
+            actor,
+          },
+          tx,
+        );
+
+        this.logger.log(`GL journal posted for sales invoice ${invoiceNumber}`);
+      }
 
       // F. Record Transaction in External Engine if applicable
       const mappings = this.appConfig.taxProviderMappings();

@@ -19,6 +19,7 @@ import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichm
 import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
+import { Button } from '@/components/shared/Button';
 
 export default function NewSupplierPage() {
   const { baseCurrency, organization, app } = useSettings();
@@ -165,6 +166,26 @@ export default function NewSupplierPage() {
             title={t('buttons.createSupplier')}
             subtitle={t('management')}
             isSaving={submitting}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => router.push('/suppliers')}
+                  disabled={submitting}
+                >
+                  {tCommon('cancel')}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSubmit}
+                  disabled={!isValid || submitting}
+                >
+                  {submitting ? tCommon('saving') : t('buttons.createSupplier')}
+                </Button>
+              </>
+            }
             showPrint={false}
           />
         }

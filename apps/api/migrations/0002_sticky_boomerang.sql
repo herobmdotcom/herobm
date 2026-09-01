@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."api_keys" ADD COLUMN "role" text NOT NULL;

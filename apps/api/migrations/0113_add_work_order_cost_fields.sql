@@ -1,2 +1,0 @@
-ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "assembly_cost_per_unit" numeric;--> statement-breakpoint
-ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "additional_cost" numeric;

@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."customer_groups" DROP COLUMN "default_discount_percentage";

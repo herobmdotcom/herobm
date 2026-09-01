@@ -71,6 +71,30 @@ describe('ActorsService', () => {
 
       expect(dbRecord).toBeDefined();
       expect(dbRecord?.name).toBe('Test Actor');
+      expect(dbRecord?.isTaxRegistered).toBe(false);
+    });
+
+    it('should create an actor when isTaxRegistered is explicitly undefined', async () => {
+      const dto = {
+        name: 'Actor Without Tax Info',
+        industry: 'Manufacturing',
+        headquartersCountry: 'FR',
+        email: 'actor@testing.com',
+        isTaxRegistered: undefined,
+      };
+
+      const result = await service.createActor(dto, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(result.actorId).toBeDefined();
+      expect(result.name).toBe('Actor Without Tax Info');
+
+      const dbRecord = await pg.db.query.actors.findFirst({
+        where: eq(actors.actorId, result.actorId),
+      });
+
+      expect(dbRecord).toBeDefined();
+      expect(dbRecord?.isTaxRegistered).toBe(false);
     });
   });
 

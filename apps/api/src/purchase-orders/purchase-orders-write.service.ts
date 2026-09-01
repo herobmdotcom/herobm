@@ -208,7 +208,7 @@ export class PurchaseOrdersWriteService {
       const fx = await getExchangeRateForCurrency(
         tx as DrizzleDB,
         poCurrencyCode,
-        new Date(),
+        createDto.orderDate ? new Date(createDto.orderDate) : new Date(),
       );
 
       let order;

@@ -1,8 +1,16 @@
 {
   "name": "@herobm/mcp-server",
   "version": "0.1.0",
+  "description": "HeroBM: Model Context Protocol (MCP) Server for AI Automation Agents",
   "private": true,
-  "description": "MCP Server for the HeroBM API",
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "apps/mcp-server"
+  },
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

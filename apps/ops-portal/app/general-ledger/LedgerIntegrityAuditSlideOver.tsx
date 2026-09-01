@@ -6,6 +6,8 @@ import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 
@@ -68,6 +70,7 @@ export default function LedgerIntegrityAuditSlideOver({
       setAuditData(res.data as unknown as LedgerAuditData);
     } catch (err) {
       reportError(err, 'LedgerIntegrityAuditSlideOver.runAudit');
+      toast.error(getErrorMessage(err));
     } finally {
       setRunningAudit(false);
     }
@@ -93,6 +96,7 @@ export default function LedgerIntegrityAuditSlideOver({
       })
       .catch((err) => {
         reportError(err, 'LedgerIntegrityAuditSlideOver');
+        toast.error(getErrorMessage(err));
       })
       .finally(() => {
         setLoading(false);

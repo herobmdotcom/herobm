@@ -14,11 +14,9 @@ import { seedTestLocations } from './test-seed';
 export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   const client = new PGlite();
 
-  await client.exec(`
-    CREATE SCHEMA IF NOT EXISTS herobm_core;
-  `);
-
-  const migrationsDir = path.join(process.cwd(), 'migrations');
+  const migrationsDir = fs.existsSync(path.join(process.cwd(), 'migrations'))
+    ? path.join(process.cwd(), 'migrations')
+    : path.resolve(__dirname, '../../migrations');
   const files = fs
     .readdirSync(migrationsDir)
     .filter((f) => f.endsWith('.sql'))
@@ -44,9 +42,15 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     }
   }
 
-  // Schema drift catch-up (missing in migrations but present in Drizzle schema)
-  await client.exec(`
-    ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+  // Run extensions (Views, triggers, etc)
+  const extPath = fs.existsSync(
+    path.join(process.cwd(), 'src/drizzle/extensions.sql'),
+  )
+    ? path.join(process.cwd(), 'src/drizzle/extensions.sql')
+    : path.resolve(__dirname, '../../src/drizzle/extensions.sql');
+  const extensionsSql = fs.readFileSync(extPath, 'utf8');
+  await client.exec(extensionsSql);
+  await client.exec(`ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
     ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "customer_id" uuid;
     ALTER TABLE "herobm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
     ALTER TABLE "herobm_core"."api_keys" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'system' NOT NULL;
@@ -57,14 +61,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "output_bin_id" uuid;
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "putaway_status" text;
     ALTER TABLE "herobm_core"."purchase_order_return_lines" ADD COLUMN IF NOT EXISTS "source_bin_id" uuid;
-  `);
-
-  // Run extensions (Views, triggers, etc)
-  const extensionsSql = fs.readFileSync(
-    path.join(process.cwd(), 'src/drizzle/extensions.sql'),
-    'utf8',
-  );
-  await client.exec(extensionsSql);
+    ALTER TABLE "herobm_core"."actors" ALTER COLUMN "state_code" SET DEFAULT 'active';`);
 
   const db = drizzle(client, { schema });
 

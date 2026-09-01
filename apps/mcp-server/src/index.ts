@@ -585,9 +585,19 @@ async function main() {
         const safePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
         const docsDir = path.resolve(__dirname, '../../../docs');
         const absolutePath = path.resolve(docsDir, safePath);
-        
-        if (!fs.existsSync(absolutePath)) {
-          return { isError: true, content: [{ type: 'text', text: `File not found: ${filePath}` }] };
+        const relativePath = path.relative(docsDir, absolutePath);
+
+        if (
+          relativePath.startsWith('..') ||
+          path.isAbsolute(relativePath) ||
+          !fs.existsSync(absolutePath)
+        ) {
+          return { isError: true, content: [{ type: 'text', text: `File not found or access denied: ${filePath}` }] };
+        }
+
+        const stat = fs.statSync(absolutePath);
+        if (!stat.isFile()) {
+          return { isError: true, content: [{ type: 'text', text: `Path is not a file: ${filePath}` }] };
         }
         
         const content = fs.readFileSync(absolutePath, 'utf8');

@@ -10,7 +10,7 @@ test.describe('Sidebar Section: Sales', () => {
     await waitForGrid(page);
 
     // Verify presence of "+ New Customer" button or link
-    const newCustomerBtn = page.locator('a[href="/customers/new"], button:has-text("New Customer"), button:has-text("Add Customer")').first();
+    const newCustomerBtn = page.locator('a[href="/customers/new"]:visible, button:has-text("New Customer"):visible, button:has-text("Create Customer"):visible').first();
     await expect(newCustomerBtn).toBeVisible();
   });
 
@@ -20,7 +20,7 @@ test.describe('Sidebar Section: Sales', () => {
     await waitForGrid(page);
 
     // Verify "+ New Order" action
-    const newOrderBtn = page.locator('a[href="/sales-orders/new"], button:has-text("New Order")').first();
+    const newOrderBtn = page.locator('a[href="/sales-orders/new"]:visible, button:has-text("New Order"):visible, button:has-text("Create Order"):visible').first();
     await expect(newOrderBtn).toBeVisible();
   });
 

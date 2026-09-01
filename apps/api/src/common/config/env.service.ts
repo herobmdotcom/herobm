@@ -60,7 +60,7 @@ export class EnvService {
   }
 
   get enableSwagger(): boolean {
-    return this.get('ENABLE_SWAGGER') !== 'false';
+    return this.get('ENABLE_SWAGGER') === 'true';
   }
 
   get storagePath(): string | undefined {

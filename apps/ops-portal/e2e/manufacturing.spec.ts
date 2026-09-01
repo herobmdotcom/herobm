@@ -8,7 +8,7 @@ test.describe('Sidebar Section: Manufacturing', () => {
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    const newBtn = page.locator('a[href="/manufacturing/work-orders/new"], button:has-text("New Work Order")').first();
+    const newBtn = page.locator('a[href="/manufacturing/work-orders/new"]:visible, button:has-text("New Work Order"):visible, button:has-text("Create Work Order"):visible').first();
     await expect(newBtn).toBeVisible();
   });
 

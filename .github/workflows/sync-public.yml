@@ -1,7 +1,5 @@
 name: Sync to Public
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -44,9 +42,12 @@ jobs:
             --path .env.vgw \
             --path .env.volzau \
             --path .env.volzsg \
+            --path .env.odoo \
             --path .active_profile \
             --path .startup_choice \
             --path .setup-token \
+            --path .test_target \
+            --path .abm_resume_state \
             --path nul \
             --force
 

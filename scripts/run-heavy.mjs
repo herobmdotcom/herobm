@@ -15,6 +15,7 @@ let testName = "";
 let e2eFilter = "";
 let noTeardown = false;
 let reuseContainers = false;
+let skipCrawl = process.env.SKIP_CRAWL === '1' || process.env.SKIP_CRAWL === 'true';
 
 for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -30,6 +31,8 @@ for (let i = 0; i < args.length; i++) {
         noTeardown = true;
     } else if (arg === '--reuse' || arg === '--no-rebuild') {
         reuseContainers = true;
+    } else if (arg === '--skip-crawl' || arg === '--no-crawl' || arg === '-SkipCrawl') {
+        skipCrawl = true;
     }
 }
 
@@ -167,7 +170,7 @@ if (!skipUI) {
     const e2eCmd = e2eFilter 
         ? `npm run test:e2e -w apps/ops-portal -- ${e2eFilter}`
         : 'npm run test:e2e -w apps/ops-portal';
-    if (!run(e2eCmd, { PORTAL_URL: "http://localhost:4305" })) {
+    if (!run(e2eCmd, { PORTAL_URL: "http://localhost:4305", ...(skipCrawl ? { SKIP_CRAWL: "1" } : {}) })) {
         failed = true;
     }
 }

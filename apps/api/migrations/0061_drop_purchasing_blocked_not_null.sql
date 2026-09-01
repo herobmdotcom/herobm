@@ -1,2 +1,0 @@
-ALTER TABLE "herobm_core"."suppliers" ALTER COLUMN "is_purchasing_blocked" DROP DEFAULT;--> statement-breakpoint
-ALTER TABLE "herobm_core"."suppliers" ALTER COLUMN "is_purchasing_blocked" DROP NOT NULL;

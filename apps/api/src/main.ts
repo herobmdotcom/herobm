@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 // Force reload 1
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
+import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
 import { ConvertEmptyStringsToNullMiddleware } from './common/middleware/convert-empty-strings-to-null.middleware';
@@ -13,6 +14,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: fileLogger,
   });
+
+  // Apply Helmet HTTP security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   const envService = app.get(EnvService);
 

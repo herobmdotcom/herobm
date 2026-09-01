@@ -1,8 +1,14 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
 import { EmailService } from '../email/email.service';
+import { AppConfigService } from '../settings/app-config.service';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { EntityTypeValue } from '../common/event-types';
 
@@ -32,9 +38,16 @@ export class DocumentDispatchService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly pdfTemplatesService: PdfTemplatesService,
     private readonly emailService: EmailService,
+    private readonly appConfigService: AppConfigService,
   ) {}
 
   async emailDocument(dto: DispatchDocumentDto, user: JwtUser) {
+    if (!this.appConfigService.isSmtpConfigured()) {
+      throw new BadRequestException(
+        'SMTP settings are not configured. Please configure SMTP settings in Admin Settings before sending emails.',
+      );
+    }
+
     // 1. Generate PDF using the standard hook
     const { pdfBuffer, fileName } = await this.pdfTemplatesService.runHook(
       dto.hookSlug,

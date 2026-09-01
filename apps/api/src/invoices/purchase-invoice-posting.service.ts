@@ -548,7 +548,17 @@ export class PurchaseInvoicePostingService {
             }
 
             for (const group of expenseGroups.values()) {
-              const code = idToCode.get(group.accountId);
+              let code = idToCode.get(group.accountId);
+              if (!code && fallbackExpCode) {
+                code = fallbackExpCode;
+              }
+
+              if (!code && group.baseAmount > 0) {
+                throw new BadRequestException(
+                  `Cannot create purchase bill: Expense account '${group.accountId}' not found in Chart of Accounts, and Default Expense account is not configured in GL Settings. Please configure it in Admin → Settings → Financial.`,
+                );
+              }
+
               if (code && group.baseAmount > 0) {
                 const prodDims = {
                   costCenterId: group.costCenterId,
@@ -629,16 +639,24 @@ export class PurchaseInvoicePostingService {
               activityId: apDims.activityId || undefined,
             });
 
-            await this.glService.postJournalEntry(
-              glLines,
-              {
-                sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_INVOICE,
-                sourceId: invoice.invoiceId,
-                memo: `Purchase Invoice ${invoice.invoiceNumber}`,
-                actor,
-              },
-              tx,
-            );
+            if (headerTotalForeign > 0) {
+              if (glLines.length < 2) {
+                throw new BadRequestException(
+                  'Cannot create purchase bill: Failed to construct balancing GL journal entry lines. Please verify that Default Accounts Payable, Default Expense, and Default Purchase Tax accounts are configured in Admin → Settings → Financial.',
+                );
+              }
+
+              await this.glService.postJournalEntry(
+                glLines,
+                {
+                  sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_INVOICE,
+                  sourceId: invoice.invoiceId,
+                  memo: `Purchase Invoice ${invoice.invoiceNumber}`,
+                  actor,
+                },
+                tx,
+              );
+            }
           }
         }
       }

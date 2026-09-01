@@ -8,7 +8,7 @@ test.describe('Sidebar Section: Inventory', () => {
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    const newProductBtn = page.locator('a[href="/products/new"], button:has-text("New Product"), button:has-text("Add Product")').first();
+    const newProductBtn = page.locator('a[href="/products/new"]:visible, button:has-text("New Product"):visible, button:has-text("Create Product"):visible').first();
     await expect(newProductBtn).toBeVisible();
   });
 
@@ -47,7 +47,7 @@ test.describe('Sidebar Section: Inventory', () => {
 
     await page.goto('/inventory/picking', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
-    await waitForGrid(page);
+    await expect(page.getByRole('heading', { name: /picking/i }).first()).toBeVisible();
 
     await page.goto('/inventory/shipping', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);

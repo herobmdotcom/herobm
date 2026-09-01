@@ -52,7 +52,7 @@ export default defineConfig({
         storageState: authFile,
       },
       dependencies: ['setup'],
-      testIgnore: /auth\.setup\.ts/,
+      testIgnore: [/auth\.setup\.ts/, ...(process.env.SKIP_CRAWL ? [/crawler\.spec\.ts/] : [])],
     },
   ],
 });

@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "sales_analysis_codes" jsonb;

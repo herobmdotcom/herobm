@@ -33,8 +33,11 @@ describe('DashboardService', () => {
   beforeEach(async () => {
     // Ensure the view exists since it's an .existing() view in Drizzle
     // and might be missing from migrations if it was created manually.
+    await pg.db.execute(
+      sql`DROP VIEW IF EXISTS herobm_core.dashboard_timeline;`,
+    );
     await pg.db.execute(sql`
-      CREATE OR REPLACE VIEW herobm_core.dashboard_timeline AS
+      CREATE VIEW herobm_core.dashboard_timeline AS
       SELECT 
         event_id,
         entity_type,

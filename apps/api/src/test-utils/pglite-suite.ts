@@ -129,7 +129,10 @@ export function setupPgliteSuite(opts?: {
 
   // Standard path: boot once, truncate transactional tables between tests
   beforeAll(async () => {
-    const snapshotPath = path.join(process.cwd(), '.pglite-snapshot.bin');
+    const candidatePath = path.resolve(__dirname, '../../.pglite-snapshot.bin');
+    const snapshotPath = fs.existsSync(candidatePath)
+      ? candidatePath
+      : path.join(process.cwd(), '.pglite-snapshot.bin');
     if (!fs.existsSync(snapshotPath)) {
       throw new Error(
         'PGlite snapshot not found. Did you forget to run generate-snapshot.ts?',

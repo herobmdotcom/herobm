@@ -45,6 +45,19 @@ function getMigrationsFingerprint(): string {
     hash.update(String(stat.mtimeMs));
     hash.update(String(stat.size));
   }
+  const extensionsFile = path.join(
+    __dirname,
+    '..',
+    '..',
+    'src',
+    'drizzle',
+    'extensions.sql',
+  );
+  if (fs.existsSync(extensionsFile)) {
+    const extStat = fs.statSync(extensionsFile);
+    hash.update(String(extStat.mtimeMs));
+    hash.update(String(extStat.size));
+  }
   return hash.digest('hex');
 }
 
@@ -88,24 +101,20 @@ async function buildTemplateDb(
     for (const file of files) {
       let sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
       sql = sql.replace(/^\uFEFF/, ''); // strip BOM
-      try {
-        await templateSql.unsafe(sql);
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        console.warn(`  Migration warning on ${file}: ${message}`);
+      const statements = sql
+        .split('--> statement-breakpoint')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      for (const statement of statements) {
+        try {
+          await templateSql.unsafe(statement);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          console.warn(`  Migration warning on ${file}: ${message}`);
+        }
       }
     }
-    console.log(`[E2E DB] ${files.length} migrations applied to template.`);
 
-    // Schema drift catch-up
-    await templateSql.unsafe(`
-      ALTER TABLE "herobm_core"."sales_invoices"
-        ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
-      ALTER TABLE "herobm_core"."purchase_invoices"
-        ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
-    `);
-
-    // Apply extensions if present
     const extensionsFile = path.join(
       __dirname,
       '..',

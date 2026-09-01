@@ -27,71 +27,6 @@ export async function pollEmailOutbox(db: any) {
 
     logger.debug(`Found ${pendingEmails.length} pending emails to process.`);
 
-    // Fetch SMTP settings
-    const settingsRows = await db.select().from(appSettings).limit(1);
-    if (!settingsRows.length || !settingsRows[0].smtpHost) {
-      logger.warn('SMTP settings are not fully configured in app_settings. Skipping email processing.');
-      return;
-    }
-    const settings = settingsRows[0];
-
-    // Decrypt the SMTP password
-    // Need to use the same logic as EncryptionService in API
-    let smtpPass = '';
-    if (settings.smtpPassEncrypted) {
-      let rawKey = process.env.ENCRYPTION_KEY;
-      if (!rawKey) {
-        logger.warn('ENCRYPTION_KEY is not set. Falling back to JWT_SECRET for development.');
-        rawKey = process.env.JWT_SECRET;
-      }
-      if (!rawKey) {
-        throw new Error('No encryption key configured');
-      }
-
-      // Decrypt logic using shared encryption primitives
-      try {
-        const encryptionKey = deriveEncryptionKey(rawKey);
-        smtpPass = decrypt(settings.smtpPassEncrypted, encryptionKey);
-      } catch (err) {
-        logger.error({ err }, 'Failed to decrypt SMTP password. Check ENCRYPTION_KEY.');
-        return;
-      }
-    }
-
-    // Configure Nodemailer Transport
-    const transporter = nodemailer.createTransport({
-      host: settings.smtpHost,
-      port: Number(settings.smtpPort) || 587,
-      secure: Number(settings.smtpPort) === 465, // true for 465, false for other ports
-      auth: {
-        user: settings.smtpUser,
-        pass: smtpPass,
-      },
-    });
-
-    // Pre-flight check
-    try {
-      await transporter.verify();
-      logger.debug('SMTP Server connection verified successfully.');
-    } catch (err: any) {
-      logger.error({ err: err.message }, 'Failed to connect to SMTP server. Marking batch as failed.');
-      for (const email of pendingEmails) {
-        const retries = Number(email.retries || 0) + 1;
-        const status = retries >= 5 ? 'failed' : 'pending';
-        const nextRetryAt = new Date(Date.now() + Math.pow(2, retries - 1) * 60000);
-        await db
-          .update(emailOutbox)
-          .set({
-            retries: retries.toString(),
-            status,
-            lastError: 'SMTP Connection Failed: ' + err.message,
-            nextRetryAt,
-          })
-          .where(eq(emailOutbox.id, email.id));
-      }
-      return;
-    }
-
     const { 
       systemEvents, salesEvents, procurementEvents, masterDataEvents, 
       warehouseEvents, financialEvents, inventoryEvents, userEvents, 
@@ -116,6 +51,130 @@ export async function pollEmailOutbox(db: any) {
     };
 
     const emailEventsTable = getEventTable('email');
+
+    const handleEmailBatchFailure = async (emails: any[], errorMessage: string) => {
+      for (const email of emails) {
+        const retries = Number(email.retries || 0) + 1;
+        const status = retries >= 5 ? 'failed' : 'pending';
+        const nextRetryAt = new Date(Date.now() + Math.pow(2, retries - 1) * 60000);
+        await db
+          .update(emailOutbox)
+          .set({
+            retries: retries.toString(),
+            status,
+            lastError: errorMessage,
+            nextRetryAt,
+          })
+          .where(eq(emailOutbox.id, email.id));
+
+        if (status === 'failed') {
+          const [queuedEvent] = await db
+            .select({ actor: emailEventsTable.actor })
+            .from(emailEventsTable)
+            .where(and(eq(emailEventsTable.entityId, email.id), eq(emailEventsTable.eventType, 'queued')))
+            .limit(1);
+          const actor = queuedEvent?.actor || null;
+
+          const payload = {
+            emailId: email.id,
+            toAddress: email.toAddress,
+            subject: email.subject,
+            error: errorMessage,
+          };
+
+          await db.insert(emailEventsTable).values({
+            eventId: crypto.randomUUID(),
+            entityType: 'email',
+            entityId: email.id,
+            eventType: 'failed',
+            payload,
+            actor,
+            createdOn: new Date(),
+          });
+
+          if (email.entityType && email.entityId) {
+            const dynamicTable = getEventTable(email.entityType);
+            await db.insert(dynamicTable).values({
+              eventId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.failed',
+              payload,
+              actor,
+              createdOn: new Date(),
+            });
+            await db.insert(outbox).values({
+              outboxId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.failed',
+              payload,
+              createdOn: new Date(),
+            });
+          }
+        }
+      }
+    };
+
+    // Fetch SMTP settings
+    const settingsRows = await db.select().from(appSettings).limit(1);
+    if (!settingsRows.length || !settingsRows[0].smtpHost) {
+      const errorMsg = 'SMTP configuration is missing in Settings';
+      logger.warn(errorMsg + '. Marking pending emails with error.');
+      await handleEmailBatchFailure(pendingEmails, errorMsg);
+      return;
+    }
+    const settings = settingsRows[0];
+
+    // Decrypt the SMTP password
+    // Need to use the same logic as EncryptionService in API
+    let smtpPass = '';
+    if (settings.smtpPassEncrypted) {
+      let rawKey = process.env.ENCRYPTION_KEY;
+      if (!rawKey) {
+        logger.warn('ENCRYPTION_KEY is not set. Falling back to JWT_SECRET for development.');
+        rawKey = process.env.JWT_SECRET;
+      }
+      if (!rawKey) {
+        const errorMsg = 'No encryption key configured to decrypt SMTP password';
+        logger.error(errorMsg);
+        await handleEmailBatchFailure(pendingEmails, errorMsg);
+        return;
+      }
+
+      // Decrypt logic using shared encryption primitives
+      try {
+        const encryptionKey = deriveEncryptionKey(rawKey);
+        smtpPass = decrypt(settings.smtpPassEncrypted, encryptionKey);
+      } catch (err: any) {
+        const errorMsg = `Failed to decrypt SMTP password: ${err?.message || 'Check ENCRYPTION_KEY'}`;
+        logger.error({ err }, errorMsg);
+        await handleEmailBatchFailure(pendingEmails, errorMsg);
+        return;
+      }
+    }
+
+    // Configure Nodemailer Transport
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: Number(settings.smtpPort) || 587,
+      secure: Number(settings.smtpPort) === 465, // true for 465, false for other ports
+      auth: {
+        user: settings.smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    // Pre-flight check
+    try {
+      await transporter.verify();
+      logger.debug('SMTP Server connection verified successfully.');
+    } catch (err: any) {
+      const errorMsg = 'SMTP Connection Failed: ' + err.message;
+      logger.error({ err: err.message }, 'Failed to connect to SMTP server. Marking batch as failed.');
+      await handleEmailBatchFailure(pendingEmails, errorMsg);
+      return;
+    }
 
     for (const email of pendingEmails) {
       const [queuedEvent] = await db

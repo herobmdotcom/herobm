@@ -1,4 +1,0 @@
-ALTER TABLE "herobm_core"."customer_groups" ADD COLUMN "tax_position_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."supplier_groups" ADD COLUMN "tax_position_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."customer_groups" ADD CONSTRAINT "customer_groups_tax_position_id_tax_positions_tax_position_id_fk" FOREIGN KEY ("tax_position_id") REFERENCES "herobm_core"."tax_positions"("tax_position_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "herobm_core"."supplier_groups" ADD CONSTRAINT "supplier_groups_tax_position_id_tax_positions_tax_position_id_fk" FOREIGN KEY ("tax_position_id") REFERENCES "herobm_core"."tax_positions"("tax_position_id") ON DELETE no action ON UPDATE no action;

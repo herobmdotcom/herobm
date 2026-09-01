@@ -47,5 +47,6 @@ test.describe('Sidebar Section: Admin', () => {
 
     await page.goto('/admin/users/roles', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
+    await expect(page.getByRole('heading', { name: /roles/i }).first()).toBeVisible();
   });
 });

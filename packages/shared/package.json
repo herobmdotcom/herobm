@@ -1,7 +1,16 @@
 {
   "name": "@herobm/shared",
   "version": "0.1.0",
+  "description": "HeroBM: Shared domain models, types, enums, and calculation utilities",
   "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "packages/shared"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",

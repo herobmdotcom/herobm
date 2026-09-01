@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN "bank_match_date_tolerance_days" integer DEFAULT 3 NOT NULL;

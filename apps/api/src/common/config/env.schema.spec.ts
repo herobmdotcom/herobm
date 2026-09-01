@@ -12,7 +12,7 @@ describe('Environment Validation', () => {
     expect(config.POSTGRES_HOST).toBe('localhost');
     expect(config.POSTGRES_PORT).toBe(5432);
     expect(config.POSTGRES_DB).toBe('herobm');
-    expect(config.ENABLE_SWAGGER).toBe('true');
+    expect(config.ENABLE_SWAGGER).toBe('false');
   });
 
   it('should coerce numeric string variables correctly', () => {

@@ -1,2 +1,0 @@
-ALTER TABLE "herobm_core"."bank_statement_lines" ADD COLUMN IF NOT EXISTS "match_group_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "match_group_id" uuid;

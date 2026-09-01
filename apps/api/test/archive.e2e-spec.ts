@@ -72,10 +72,14 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     // Fetch real IDs from mart data
     const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=1')
+      .get('/api/customers?limit=10')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validCustomerId = customers.body.data[0].customerId;
+    const activeCustomer =
+      customers.body.data.find(
+        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
+      ) || customers.body.data[0];
+    validCustomerId = activeCustomer.customerId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=1')

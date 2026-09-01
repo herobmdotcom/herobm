@@ -13,10 +13,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'herobm',
-    template: '%s | herobm',
+    default: 'HeroBM',
+    template: '%s | HeroBM',
   },
-  description: 'Business management portal',
+  description: 'Modern, real-time business management and operations platform',
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },

@@ -8,7 +8,7 @@ test.describe('Sidebar Section: Purchasing', () => {
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    const newSupplierBtn = page.locator('a[href="/suppliers/new"], button:has-text("New Supplier"), button:has-text("Add Supplier")').first();
+    const newSupplierBtn = page.locator('a[href="/suppliers/new"]:visible, button:has-text("New Supplier"):visible, button:has-text("Create Supplier"):visible').first();
     await expect(newSupplierBtn).toBeVisible();
   });
 

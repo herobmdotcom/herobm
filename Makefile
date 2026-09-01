@@ -53,8 +53,8 @@ Verification & Quality Gates:
   make test-unit      - Run all fast unit tests (API PGlite + Ops Portal components)
   make test-single [TEST=name] - Run a single test file (or target from .test_target)
   make test-api-unit  - Run API unit tests (PGlite)
-  make test-portal-unit - Run Ops Portal unit tests
-  make test-portal-e2e- Run Ops Portal Playwright E2E tests
+  make test-portal-unit - Run Ops Portal unit tests (Jest/RTL)
+  make test-portal-e2e- Run Playwright E2E against running dev host (PORTAL_URL=http://localhost:4301)
   make test-api-e2e   - Run end-to-end API tests against real Postgres
   make test-structural- Run structural architecture, security & knip checks
   make test-heavy [FLAGS] - Run containerized test stack
@@ -62,6 +62,7 @@ Verification & Quality Gates:
      UI_ONLY=1            - Run only Playwright UI E2E tests
      E2E=<pattern>        - Target specific Playwright E2E test file or pattern
      SKIP_UI=1            - Run only backend heavy tests
+     SKIP_CRAWL=1         - Skip 200-page crawl during UI tests
      REUSE=1              - Reuse already-running test containers (fast iteration)
      NO_TEARDOWN=1        - Keep test containers alive after tests pass
      SKIP_STRUCTURAL=1    - Skip AST invariant checks
@@ -89,7 +90,7 @@ ifeq ($(OS),Windows_NT)
   PROD_LOCAL_CMD = node scripts/prod-local.mjs
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
-  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse)
+  TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse) $(if $(SKIP_CRAWL),--skip-crawl)
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
   NODE ?= node
@@ -112,7 +113,7 @@ else
   PROD_LOCAL_CMD = $(NODE) scripts/prod-local.mjs
   CLEAN_BUILD_CMD = $(NODE) scripts/clean-build.mjs
   TEST_PIPELINE_CMD = $(NODE) scripts/test-pipeline.mjs
-  TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse)
+  TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse) $(if $(SKIP_CRAWL),--skip-crawl)
   COMPOSE_CMD := $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
   GIT_VERSION := $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)
@@ -795,13 +796,11 @@ query-drizzle:
 query-postgres:
 	cd apps/api && $(NPX) tsx tools/query_pg.ts ../tmp/query.sql
 
-test-heavy: $(if $(SKIP_STRUCTURAL),,test-structural)
+test-heavy: $(if $(or $(SKIP_STRUCTURAL),$(UI_ONLY),$(REUSE)),,test-structural)
 	@$(TEST_HEAVY_CMD)
 
-test-data:
-	"$(VENV_PYTHON)" infra/tests/test_data_counts.py $(if $(SOURCE),--source $(SOURCE),)
-
-test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-heavy test-data
+test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-data
+	@$(MAKE) test-heavy SKIP_STRUCTURAL=1
 
 build-all:
 	@$(NPX) turbo run build

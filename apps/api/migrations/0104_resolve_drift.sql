@@ -1,2 +1,0 @@
--- Empty migration to resolve Drizzle Kit snapshot drift for tax accounts and pipeline jobs
--- (These schema changes were previously applied manually in 0102 and 0103)

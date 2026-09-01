@@ -1,4 +1,3 @@
-import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { ShipmentsWriteService } from './shipments/shipments-write.service';
@@ -24,6 +23,7 @@ import {
   inventoryLedger,
   actors,
   emailOutbox,
+  appSettings,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -42,6 +42,7 @@ import { CustomersService } from '../customers/customers.service';
 import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 import { EmailService } from '../email/email.service';
 import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 // Shared test data
 const PICKING_ORDER = {
@@ -130,6 +131,7 @@ describe('ShipmentService', () => {
   const pg = setupPgliteSuite();
   let service: ShipmentServiceProxy;
   let glService: GlService;
+  let appConfigService: AppConfigService;
 
   let mockInventoryService: any;
   let mockCustomersService: { findOne: jest.Mock };
@@ -196,6 +198,7 @@ describe('ShipmentService', () => {
 
     service = module.get(ShipmentServiceProxy);
     glService = module.get(GlService);
+    appConfigService = module.get(AppConfigService);
 
     // Clean only transactional tables
     await pg.client.exec(`
@@ -550,6 +553,11 @@ describe('ShipmentService', () => {
     });
 
     describe('automated dispatch notification', () => {
+      beforeEach(async () => {
+        await pg.db.update(appSettings).set({ smtpHost: 'localhost' });
+        await appConfigService.reload();
+      });
+
       it('should automatically queue email with shipping docket PDF attachment to primary delivery contact by default', async () => {
         const dto = {
           lines: [

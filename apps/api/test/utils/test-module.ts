@@ -39,6 +39,8 @@ export class MockAppConfigService {
   defaultPpvAccountId = jest.fn().mockImplementation(() => 'gl-ppv-default');
   defaultCostCenterId = jest.fn().mockImplementation(() => 'cc-default');
   defaultActivityId = jest.fn().mockImplementation(() => 'act-default');
+  isSmtpConfigured = jest.fn().mockImplementation(() => true);
+  reload = jest.fn().mockResolvedValue(undefined);
 
   setConfig(key: keyof typeof this.config, value: string) {
     this.config[key] = value;

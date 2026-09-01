@@ -13,13 +13,18 @@ test.describe('Workflow: Customer & Entity Lifecycle', () => {
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Customer Number and Name
-    const numberInput = page.locator('input[placeholder*="ACME-001" i], input[value=""]').first();
+    const numberInput = page.locator('input[placeholder*="ACME-001" i]').first();
     await expect(numberInput).toBeVisible({ timeout: 10000 });
     await numberInput.fill(custNumber);
 
     const nameInput = page.locator('input[placeholder*="Acme Corporation" i]').first();
-    if (await nameInput.isVisible()) {
-      await nameInput.fill(custName);
+    await expect(nameInput).toBeVisible({ timeout: 10000 });
+    await nameInput.fill(custName);
+
+    // Select country if required
+    const countrySelect = page.locator('select').first();
+    if (await countrySelect.isVisible()) {
+      await countrySelect.selectOption('US').catch(() => countrySelect.selectOption({ index: 1 }));
     }
 
     // 3. Submit Customer and intercept API request

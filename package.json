@@ -1,6 +1,18 @@
 {
-  "name": "herobm-monorepo",
+  "name": "herobm",
+  "version": "0.1.0",
+  "description": "HeroBM: Modern, Real-Time Business Management & Operations Platform",
   "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/herobmdotcom/herobm/issues"
+  },
   "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/*",

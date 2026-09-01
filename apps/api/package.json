@@ -1,10 +1,16 @@
 {
   "name": "api",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "version": "0.1.0",
+  "description": "HeroBM: Core Backend API Gateway & Domain Services",
   "private": true,
-  "license": "UNLICENSED",
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "apps/api"
+  },
   "scripts": {
     "prebuild": "node scripts/generate-extensions.mjs",
     "build": "nest build",
@@ -54,6 +60,7 @@
     "csv-parse": "^5.6.0",
     "drizzle-orm": "^0.45.1",
     "express": "^5.0.0",
+    "helmet": "^8.0.0",
     "libphonenumber-js": "^1.13.6",
     "nacha-cheese": "^1.0.5",
     "nodemailer": "^8.0.10",

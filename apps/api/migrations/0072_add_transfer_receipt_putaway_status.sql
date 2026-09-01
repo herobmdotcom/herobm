@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."transfer_order_receipt_lines" ADD COLUMN "putaway_status" text DEFAULT 'pending_putaway' NOT NULL;

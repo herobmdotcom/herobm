@@ -13,6 +13,7 @@ import {
   customers,
   suppliers,
 } from '@herobm/db-schema';
+import { CUSTOMER_STATE } from '@herobm/shared';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 
 describe('Inventory & GL Lifecycle (e2e)', () => {
@@ -55,10 +56,14 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     // 2. Fetch Master Data
     const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=1')
+      .get('/api/customers?limit=10')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    customerId = customers.body.data[0].customerId;
+    const activeCustomer =
+      customers.body.data.find(
+        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
+      ) || customers.body.data[0];
+    customerId = activeCustomer.customerId;
 
     console.log('Setup: Getting vendors...');
     const vendors = await request(app.getHttpServer())

@@ -507,7 +507,7 @@ describe('FX Lifecycle (e2e)', () => {
           currencyCode: 'GBP',
           orderDate: '2026-06-01',
           name: 'SO FX Lifecycle',
-          lines: [{ productId, quantity: '5', pricePerUnit: '200.00' }], // 1000 GBP Total
+          lines: [{ productId, quantity: '5', pricePerUnit: '200.00' }], // 1000 GBP Subtotal + 100 GST = 1100 GBP Total
         })
         .expect(201);
       soId = soRes.body.salesOrderId;

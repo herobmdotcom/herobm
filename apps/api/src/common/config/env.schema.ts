@@ -34,7 +34,7 @@ export const envSchema = z
     ENV_FILE: z.string().optional(),
 
     // Feature Flags & System Tools
-    ENABLE_SWAGGER: z.string().default('true'),
+    ENABLE_SWAGGER: z.string().default('false'),
     STORAGE_PATH: z.string().optional(),
     PIPELINE_LOG_DIR: z.string().optional(),
     TYPST_BINARY_PATH: z.string().optional(),

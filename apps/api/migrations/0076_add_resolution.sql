@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."sales_order_return_lines" ADD COLUMN "resolution" text DEFAULT 'refund' NOT NULL;

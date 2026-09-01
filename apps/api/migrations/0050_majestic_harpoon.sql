@@ -1,2 +1,0 @@
-ALTER TABLE "herobm_core"."trading_terms" ADD COLUMN "is_default_customer" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "herobm_core"."trading_terms" ADD COLUMN "is_default_supplier" boolean DEFAULT false NOT NULL;

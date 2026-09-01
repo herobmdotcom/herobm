@@ -13,7 +13,9 @@ async function generateSnapshot() {
   }
 
   console.log('[PGlite Cache] Generating global snapshot...');
-  const snapshotPath = path.join(process.cwd(), '.pglite-snapshot.bin');
+  const snapshotPath = fs.existsSync(path.join(process.cwd(), 'apps/api'))
+    ? path.join(process.cwd(), 'apps/api/.pglite-snapshot.bin')
+    : path.resolve(__dirname, '../../.pglite-snapshot.bin');
 
   const t0 = performance.now();
   const memory = await createMemoryDb();

@@ -1,1 +1,0 @@
-ALTER TABLE "herobm_core"."customer_delivery_addresses" ADD COLUMN "company_name" text;

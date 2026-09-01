@@ -16,6 +16,6 @@ test.describe('Sidebar Section: Reporting', () => {
 
     await page.goto('/reporting/config/new', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
-    await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /save/i })).toBeVisible();
   });
 });

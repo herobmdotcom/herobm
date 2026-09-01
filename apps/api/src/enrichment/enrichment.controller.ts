@@ -16,17 +16,18 @@ import {
   UpdateEnrichmentConfigDto,
   EnrichmentConfigResponseDto,
 } from './enrichment.dto';
-import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { ApiOkResponse, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('System')
 @Controller('enrichment')
+@CasbinResource(SystemResource.SETTINGS)
 @UseGuards(ThrottlerGuard)
 export class EnrichmentController {
   constructor(private readonly enrichmentService: EnrichmentService) {}
 
-  @SkipCasbin()
+  @CasbinAction('read')
   @Get('lookup')
   @ApiOperation({ summary: 'Lookup data', description: 'Lookup data by field' })
   @ApiOkResponse({
@@ -46,7 +47,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @SkipCasbin()
+  @CasbinAction('read')
   @Post('lookup')
   @ApiOperation({
     summary: 'Lookup data (POST)',
@@ -69,7 +70,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @SkipCasbin()
+  @CasbinAction('read')
   @Get('test')
   @ApiOperation({
     summary: 'Test provider',
@@ -87,7 +88,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @SkipCasbin()
+  @CasbinAction('read')
   @Post('test')
   @ApiOperation({
     summary: 'Test provider (POST)',
@@ -108,7 +109,6 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource(SystemResource.SETTINGS)
   @CasbinAction('read')
   @Get('providers')
   @ApiOperation({
