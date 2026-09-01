@@ -1059,4 +1059,85 @@ describe('GlService', () => {
       expect(result.data[0].runningBalance).toBe(1800);
     });
   });
+
+  describe('runIntegrityAudit', () => {
+    it('should ignore unsequenced historical journals and verify cryptographic hash chain for sequenced journals', async () => {
+      const bankAcctId = randomUUID();
+      const salesAcctId = randomUUID();
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: bankAcctId,
+          accountCode: '1000',
+          name: 'Cash',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+        },
+        {
+          glAccountId: salesAcctId,
+          accountCode: '4000',
+          name: 'Revenue',
+          accountType: 'revenue',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'EUR',
+        },
+      ]);
+
+      // 1. Insert unsequenced historical journal entry (sequenceNumber is null)
+      const historicalJeId = randomUUID();
+      await pg.db.insert(glJournalEntries).values({
+        journalEntryId: historicalJeId,
+        entryNumber: 'JE-OPENING-20260801',
+        entryDate: '2026-08-01',
+        sourceType: 'initial_import',
+        isReversed: false,
+        sequenceNumber: null,
+        prevHash: null,
+        entryHash: null,
+      });
+      await pg.db.insert(glJournalLines).values([
+        {
+          journalEntryId: historicalJeId,
+          glAccountId: bankAcctId,
+          debit: '1000.00',
+          credit: '0.00',
+          foreignDebit: '1000.00',
+          foreignCredit: '0.00',
+          exchangeRate: '1',
+          isReconciled: false,
+        },
+        {
+          journalEntryId: historicalJeId,
+          glAccountId: salesAcctId,
+          debit: '0.00',
+          credit: '1000.00',
+          foreignDebit: '0.00',
+          foreignCredit: '1000.00',
+          exchangeRate: '1',
+          isReconciled: false,
+        },
+      ]);
+
+      // 2. Post a sequenced operational journal entry
+      await service.postJournalEntry(
+        [
+          { accountCode: '1000', debit: 200, credit: 0 },
+          { accountCode: '4000', debit: 0, credit: 200 },
+        ],
+        { sourceType: 'manual', entryDate: '2026-08-31' },
+      );
+
+      const audit = await service.runIntegrityAudit();
+
+      expect(audit.anomaliesCount).toBe(0);
+      expect(audit.anomalies).toHaveLength(0);
+      expect(audit.verifiedJournalsCount).toBe(2);
+    });
+  });
 });

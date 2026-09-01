@@ -1,5 +1,6 @@
 import {
     calculateInvoiceableQuantities,
+    calculateShippableQuantities,
     convertFeeMode,
 } from '../sales-order-utils';
 import type { OrderLine, SalesInvoice } from '@/app/sales-orders/[id]/types';
@@ -149,6 +150,70 @@ describe('calculateInvoiceableQuantities', () => {
 
         expect(result).toEqual([
             { salesOrderLineId: 'L2', maxQty: 1, defaultQty: '1' },
+        ]);
+    });
+});
+
+/* ── calculateShippableQuantities ────────────────────────────────── */
+
+describe('calculateShippableQuantities', () => {
+    it('allows non-stock physical items to be shipped up to ordered quantity without picking', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'non-stock', quantity: '4' }),
+        ];
+
+        const result = calculateShippableQuantities(lines, [], null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 4, defaultQty: '4' },
+        ]);
+    });
+
+    it('requires stocked items to be picked before shipping', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+        ];
+        const picking: PickingLine[] = [
+            { salesOrderLineId: 'L1', quantityPicked: '6', quantityShipped: '0' },
+        ];
+
+        const result = calculateShippableQuantities(lines, [], picking);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 6, defaultQty: '6' },
+        ]);
+    });
+
+    it('subtracts already-shipped quantities from shipments', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'non-stock', quantity: '5' }),
+        ];
+        const shipments = [
+            {
+                shipmentId: 'ship-1',
+                stateCode: 'dispatched',
+                lines: [{ salesOrderLineId: 'L1', quantityShipped: '2' }],
+            },
+        ];
+
+        const result = calculateShippableQuantities(lines, shipments, null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 3, defaultQty: '3' },
+        ]);
+    });
+
+    it('excludes intangible service and freight lines from shipping', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'service', quantity: '2' }),
+            makeLine({ salesOrderLineId: 'L2', productType: 'freight', quantity: '1' }),
+            makeLine({ salesOrderLineId: 'L3', productType: 'non-stock', quantity: '3' }),
+        ];
+
+        const result = calculateShippableQuantities(lines, [], null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L3', maxQty: 3, defaultQty: '3' },
         ]);
     });
 });

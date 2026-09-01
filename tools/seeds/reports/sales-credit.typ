@@ -3,7 +3,7 @@
 
 #let data = json(sys.inputs.at("data"))
 #let fmt(val) = {
-  if val == none { return "—" }
+  if val == none or val == "" or val == "—" or str(val).trim() == "" { return "—" }
   let n = float(val)
   let s = str(calc.round(n, digits: 2))
   let parts = s.split(".")
@@ -16,8 +16,6 @@
   }
 }
 
-
-
 #import "theme-external.typ": conf
 #show: doc => conf(title: "CREDIT NOTE", doc)
 
@@ -29,14 +27,14 @@
   gutter: 10pt,
   [
     #text(12pt, weight: "semibold")[#data.header.orderNumber] \
-    #if data.header.name != "" [
+    #if "name" in data.header and data.header.name != none and data.header.name != "" [
       #v(-0.1cm)
       #text(9pt, fill: luma(120))[#data.header.name]
     ]
-    #if "returnMeta" in data [
+    #if "returnMeta" in data and data.returnMeta != none and "returnNumber" in data.returnMeta [
       #v(0.1cm)
       #text(10pt, weight: "semibold")[#data.returnMeta.returnNumber]
-      #if data.returnMeta.state != "" [
+      #if "state" in data.returnMeta and data.returnMeta.state != none and data.returnMeta.state != "" [
         #h(6pt)
         #text(9pt, fill: luma(100))[(#data.returnMeta.state)]
       ]
@@ -66,7 +64,7 @@
       row-gutter: 8pt,
       column-gutter: 12pt,
       text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.orderDate,
-      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if data.header.customerOrderNumber != "" [#data.header.customerOrderNumber] else [—],
+      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—],
       text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
     )
   ]
@@ -74,20 +72,47 @@
 
 #v(1cm)
 
+#let fmtQty(val) = {
+  if val == none or val == "" or val == "—" or str(val).trim() == "" { return "0" }
+  let n = float(val)
+  if calc.round(n) == n {
+    str(int(n))
+  } else {
+    str(calc.round(n, digits: 4))
+  }
+}
+
+#let hasDiscount = data.lines.any(l => {
+  let d = l.at("discountPercentage", default: 0)
+  if d == none or d == "" or d == "—" { false } else { float(d) > 0.0 }
+})
+
+#let tableColumns = if hasDiscount {
+  (1.6fr, 2.6fr, 0.6fr, 0.9fr, 0.6fr, 0.6fr, 1.2fr, 0.7fr, 1.0fr)
+} else {
+  (1.8fr, 3.0fr, 0.6fr, 0.9fr, 0.6fr, 1.2fr, 0.7fr, 1.0fr)
+}
+
+#let tableAlign = if hasDiscount {
+  (left, left, center, right, right, right, left, right, right)
+} else {
+  (left, left, center, right, right, left, right, right)
+}
+
 // ── Table: Order Lines ──────────────────────────────────────────────────────
 #table(
-  columns: (0.9fr, 2fr, 0.6fr, 0.9fr, 0.6fr, 0.6fr, 1.2fr, 0.8fr, 1.1fr),
-  inset: (x: 6pt, y: 10pt),
+  columns: tableColumns,
+  inset: (x: 5pt, y: 8pt),
   stroke: 0.5pt + luma(210),
   fill: (_, row) => if row == 0 { rgb("#f8fafc") },
-  align: (left, left, center, right, center, center, left, right, right),
+  align: tableAlign,
   
   // Header Row
   text(8pt, weight: "bold", fill: luma(50))[Code],
   text(8pt, weight: "bold", fill: luma(50))[Description],
   text(8pt, weight: "bold", fill: luma(50))[Qty],
   text(8pt, weight: "bold", fill: luma(50))[Unit Price],
-  text(8pt, weight: "bold", fill: luma(50))[Disc %],
+  ..(if hasDiscount { (text(8pt, weight: "bold", fill: luma(50))[Disc %],) } else { () }),
   text(8pt, weight: "bold", fill: luma(50))[Tax],
   text(8pt, weight: "bold", fill: luma(50))[Reason],
   text(8pt, weight: "bold", fill: luma(50))[Fee],
@@ -99,9 +124,9 @@
     (
       text(8pt)[#line.at("productNumber", default: "")],
       text(8pt)[#if desc != "" [#desc] else [—]],
-      text(8pt)[#line.at("quantity", default: 0)],
+      text(8pt)[#fmtQty(line.at("quantity", default: 0))],
       text(8pt)[#fmt(line.at("pricePerUnit", default: 0))],
-      text(8pt)[#line.at("discountPercentage", default: 0)],
+      ..(if hasDiscount { (text(8pt)[#line.at("discountPercentage", default: 0)],) } else { () }),
       text(8pt)[#line.at("tax", default: 0)],
       text(8pt)[#if rsn != "" [#rsn] else [—]],
       text(8pt)[#fmt(line.at("fee", default: 0))],
@@ -130,7 +155,7 @@
       text(10pt, weight: "bold")[Total Credit:], 
       text(10pt, weight: "bold")[#data.header.currencyCode #fmt(data.summary.totalCredit)],
 
-      ..if float(data.summary.totalFees) > 0 {
+      ..if "totalFees" in data.summary and data.summary.totalFees != none and data.summary.totalFees != "" and float(data.summary.totalFees) > 0 {
           (
             text(10pt, weight: "semibold", fill: rgb("#991b1b"))[Less Fees:],
             text(10pt, weight: "semibold", fill: rgb("#991b1b"))[− #data.header.currencyCode #fmt(data.summary.totalFees)],

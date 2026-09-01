@@ -3,7 +3,7 @@
 
 #let data = json(sys.inputs.at("data"))
 #let fmt(val) = {
-  if val == none { return "—" }
+  if val == none or val == "" or val == "—" or str(val).trim() == "" { return "—" }
   let n = float(val)
   let s = str(calc.round(n, digits: 2))
   let parts = s.split(".")
@@ -16,8 +16,6 @@
   }
 }
 
-
-
 #import "theme-external.typ": conf
 #show: doc => conf(title: "SALES QUOTE", doc)
 
@@ -29,7 +27,7 @@
   gutter: 10pt,
   [
     #text(12pt, weight: "semibold")[#data.header.orderNumber] \
-    #if data.header.name != "" [
+    #if "name" in data.header and data.header.name != none and data.header.name != "" [
       #v(-0.1cm)
       #text(9pt, fill: luma(120))[#data.header.name]
     ]
@@ -71,20 +69,47 @@
   #v(1cm)
 ]
 
+#let fmtQty(val) = {
+  if val == none or val == "" or val == "—" or str(val).trim() == "" { return "0" }
+  let n = float(val)
+  if calc.round(n) == n {
+    str(int(n))
+  } else {
+    str(calc.round(n, digits: 4))
+  }
+}
+
+#let hasDiscount = data.lines.any(l => {
+  let d = l.at("discountPercentage", default: 0)
+  if d == none or d == "" or d == "—" { false } else { float(d) > 0.0 }
+})
+
+#let tableColumns = if hasDiscount {
+  (2.2fr, 4fr, 0.7fr, 1.1fr, 0.8fr, 0.8fr, 1.1fr)
+} else {
+  (2.5fr, 4.8fr, 0.7fr, 1.1fr, 0.8fr, 1.1fr)
+}
+
+#let tableAlign = if hasDiscount {
+  (left, left, center, right, right, right, right)
+} else {
+  (left, left, center, right, right, right)
+}
+
 // ── Table: Order Lines ──────────────────────────────────────────────────────
 #table(
-  columns: (1fr, 3fr, 0.7fr, 1.2fr, 0.8fr, 0.8fr, 1.4fr),
-  inset: (x: 8pt, y: 10pt),
+  columns: tableColumns,
+  inset: (x: 6pt, y: 8pt),
   stroke: 0.5pt + luma(210),
   fill: (_, row) => if row == 0 { rgb("#f8fafc") },
-  align: (left, left, center, right, center, center, right),
+  align: tableAlign,
   
   // Header Row
   text(9pt, weight: "bold", fill: luma(50))[Code],
   text(9pt, weight: "bold", fill: luma(50))[Description],
   text(9pt, weight: "bold", fill: luma(50))[Qty],
   text(9pt, weight: "bold", fill: luma(50))[Unit Price],
-  text(9pt, weight: "bold", fill: luma(50))[Disc %],
+  ..(if hasDiscount { (text(9pt, weight: "bold", fill: luma(50))[Disc %],) } else { () }),
   text(9pt, weight: "bold", fill: luma(50))[Tax],
   text(9pt, weight: "bold", fill: luma(50))[Amount],
 
@@ -93,9 +118,9 @@
     (
       text(9pt)[#line.at("productNumber", default: "")],
       text(9pt)[#if desc != "" [#desc] else [—]],
-      text(9pt)[#line.at("quantity", default: 0)],
+      text(9pt)[#fmtQty(line.at("quantity", default: 0))],
       text(9pt)[#fmt(line.at("pricePerUnit", default: 0))],
-      text(9pt)[#line.at("discountPercentage", default: 0)],
+      ..(if hasDiscount { (text(9pt)[#line.at("discountPercentage", default: 0)],) } else { () }),
       text(9pt)[#line.at("tax", default: 0)],
       text(9pt, weight: "semibold")[#fmt(line.at("amount", default: 0))],
     )

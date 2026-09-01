@@ -7,6 +7,12 @@
  */
 
 export type DashboardControllerGetTimelineParams = {
-types: string;
-limit: string;
+/**
+ * Comma-separated event types to include
+ */
+types?: string;
+/**
+ * Maximum number of events to return
+ */
+limit?: string;
 };

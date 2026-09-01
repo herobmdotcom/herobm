@@ -6,7 +6,7 @@
 #import "theme-internal.typ": conf
 #show: doc => conf(title: "ACCOUNTING CODES CHEAT SHEET", doc)
 
-#set text(font: "DejaVu Sans", size: 8.5pt)
+#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 8.5pt)
 
 // ── Document Header ────────────────────────────────────────────────────────
 #grid(

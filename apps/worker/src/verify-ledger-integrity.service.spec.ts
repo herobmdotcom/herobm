@@ -78,7 +78,7 @@ describe('verify-ledger-integrity.service', () => {
     expect(res.anomaliesCount).toBe(0);
     expect(res.verifiedInvoicesCount).toBe(2);
     expect(res.verifiedJournalsCount).toBe(2);
-    expect(mockDb.insert).not.toHaveBeenCalled();
+    expect(mockDb.insert).toHaveBeenCalledTimes(1);
   });
 
   it('should detect sequence gaps in invoice numbering', async () => {
@@ -281,4 +281,74 @@ describe('verify-ledger-integrity.service', () => {
     expect(res.anomalies[0].type).toBe('hash_chain_violation');
     expect(res.anomalies[0].entryNumber).toBe('JE-20260831-0001');
   });
+
+  it('should skip missing_gl_journal and sequence gaps for historical imported invoices before take-on date', async () => {
+    // 2 historical pre-takeon invoices imported from legacy ABM without individual GL journals
+    const invoices = [
+      {
+        invoiceId: 'inv-legacy-1',
+        invoiceNumber: 'INV-2020-0001',
+        stateCode: 'invoiced',
+        invoiceDate: new Date('2020-05-15T00:00:00Z'),
+        createdBy: 'abm-import',
+        createdOn: new Date('2026-08-01T00:00:00Z'),
+        totalAmount: '5000.00',
+      },
+      {
+        invoiceId: 'inv-legacy-2',
+        invoiceNumber: 'INV-2020-0010', // Legacy sequence gap
+        stateCode: 'invoiced',
+        invoiceDate: new Date('2020-06-15T00:00:00Z'),
+        createdBy: 'abm-import',
+        createdOn: new Date('2026-08-01T00:00:00Z'),
+        totalAmount: '3000.00',
+      },
+    ];
+
+    // Single opening balance journal taking on all historical ledger balances on 2026-08-01
+    const journals = [
+      {
+        journalEntryId: 'je-opening',
+        entryNumber: 'JE-OPENING-20260801',
+        entryDate: '2026-08-01',
+        sourceType: 'opening_balance',
+        sourceId: null,
+        isReversed: false,
+      },
+    ];
+
+    const lines = [
+      { journalEntryId: 'je-opening', debit: '8000.00', credit: '0' },
+      { journalEntryId: 'je-opening', debit: '0', credit: '8000.00' },
+    ];
+
+    let selectCallCount = 0;
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockImplementation(() => {
+          selectCallCount++;
+          if (selectCallCount === 1) {
+            return {
+              orderBy: vi.fn().mockResolvedValue(invoices),
+            };
+          } else if (selectCallCount === 2) {
+            return Promise.resolve(journals);
+          } else {
+            return Promise.resolve(lines);
+          }
+        }),
+      }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(true),
+      }),
+    };
+
+    const res = await verifyLedgerIntegrity(mockJob, mockDb);
+
+    // 0 anomalies because historical invoices are covered by opening balance journal
+    expect(res.anomaliesCount).toBe(0);
+    expect(res.verifiedInvoicesCount).toBe(2);
+    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+  });
 });
+

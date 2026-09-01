@@ -5,7 +5,9 @@ import useSWR from 'swr';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import { useSearchParams, useRouter } from 'next/navigation';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
+import LedgerIntegrityAuditSlideOver from './LedgerIntegrityAuditSlideOver';
 import CodesModal from './CodesModal';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
@@ -40,6 +42,8 @@ export default function GeneralLedgerContent() {
   const t = useTranslations('gl.generalLedger');
   const tCodes = useTranslations('gl.codes');
   const tCommon = useTranslations('common');
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   function fmt(v: string | number | null | undefined) {
     if (v === null || v === undefined || v === '') return tCommon('na');
@@ -54,6 +58,25 @@ export default function GeneralLedgerContent() {
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [isCodesOpen, setIsCodesOpen] = useState(false);
+
+  const auditEventIdFromUrl = searchParams.get('auditEventId');
+  const [auditEventId, setAuditEventId] = useState<string | null>(auditEventIdFromUrl);
+  const [isIntegrityOpen, setIsIntegrityOpen] = useState(Boolean(auditEventIdFromUrl));
+
+  useEffect(() => {
+    if (auditEventIdFromUrl) {
+      setAuditEventId(auditEventIdFromUrl);
+      setIsIntegrityOpen(true);
+    }
+  }, [auditEventIdFromUrl]);
+
+  const handleCloseIntegrityAudit = () => {
+    setIsIntegrityOpen(false);
+    setAuditEventId(null);
+    if (searchParams.has('auditEventId')) {
+      router.replace('/general-ledger', { scroll: false });
+    }
+  };
 
   useEffect(() => {
     api.glControllerGetAccounts({ format: 'flat' })
@@ -177,14 +200,28 @@ export default function GeneralLedgerContent() {
         }}
         pageTitle={t('title')}
         headerActions={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsCodesOpen(true)}
-            className="whitespace-nowrap"
-          >
-            {tCodes('button')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setAuditEventId(null);
+                setIsIntegrityOpen(true);
+              }}
+              className="whitespace-nowrap flex items-center gap-1.5 text-xs"
+            >
+              <span className="material-symbols-outlined text-[16px] text-accent">verified_user</span>
+              {t('auditStatus')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsCodesOpen(true)}
+              className="whitespace-nowrap"
+            >
+              {tCodes('button')}
+            </Button>
+          </div>
         }
         secondaryHeader={
           <div className="flex flex-col gap-3 w-full">
@@ -276,6 +313,12 @@ export default function GeneralLedgerContent() {
       <CodesModal 
         isOpen={isCodesOpen}
         onClose={() => setIsCodesOpen(false)}
+      />
+
+      <LedgerIntegrityAuditSlideOver
+        isOpen={isIntegrityOpen}
+        onClose={handleCloseIntegrityAudit}
+        eventId={auditEventId}
       />
     </>
   );

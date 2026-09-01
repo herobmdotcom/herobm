@@ -41,6 +41,16 @@ describe('GlController', () => {
       updateSettings: jest
         .fn()
         .mockResolvedValue({ defaultArAccountId: 'ar-id-123' }),
+      getIntegrityAudit: jest.fn().mockResolvedValue({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      }),
+      runIntegrityAudit: jest.fn().mockResolvedValue({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      }),
     };
 
     coaLoader = {
@@ -518,6 +528,39 @@ describe('GlController', () => {
       );
       expect(sourceErrors.length).toBeGreaterThan(0);
       expect(sourceErrors[0].constraints?.isIn).toBeDefined();
+    });
+  });
+
+  describe('Ledger Integrity Audit endpoints', () => {
+    it('getLatestIntegrityAudit should delegate to glService.getIntegrityAudit()', async () => {
+      const result = await controller.getLatestIntegrityAudit();
+      expect(glService.getIntegrityAudit).toHaveBeenCalledWith();
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
+    });
+
+    it('runIntegrityAudit should delegate to glService.runIntegrityAudit()', async () => {
+      const result = await controller.runIntegrityAudit();
+      expect(glService.runIntegrityAudit).toHaveBeenCalledWith();
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
+    });
+
+    it('getIntegrityAuditById should delegate to glService.getIntegrityAudit(eventId)', async () => {
+      const eventId = 'test-event-uuid';
+      const result = await controller.getIntegrityAuditById(eventId);
+      expect(glService.getIntegrityAudit).toHaveBeenCalledWith(eventId);
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
     });
   });
 });

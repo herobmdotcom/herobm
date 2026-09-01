@@ -4,6 +4,17 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-09-01] - Chart of Accounts Local File Upload & Preset Import Documentation
+
+**Topics Updated:**
+- **`docs/user/admin_groups_settings.md`**:
+  - Documented direct client-side local JSON file upload option in the "Import CoA" modal.
+  - Documented server preset scanning (`apps/api/src/gl/charts/`) and updated step-by-step workflow.
+- **`docs/user/general_ledger.md`**:
+  - Documented browser file upload and server presets for ERPNext Chart of Accounts templates.
+
+---
+
 ## [2026-08-27] - ERPNext Chart of Accounts Import Documentation
 
 **Topics Updated:**

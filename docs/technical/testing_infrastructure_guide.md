@@ -1,87 +1,109 @@
 # Testing Infrastructure & Quality Assurance Guide
 
-The Composable ERP relies on a rigorous automated testing strategy to enforce architectural boundaries, security policies, and data integrity. As mandated by `CONSTITUTION.MD`, the system utilizes an "Immune System" approach where architectural rules are encoded as automated structural tests.
-
-All infrastructure and structural tests live in the `/infra/tests/` directory.
+HeroBM relies on a multi-tiered, cross-platform testing strategy to enforce architectural boundaries, security policies, data integrity, and end-to-end user workflows. As mandated by `CONSTITUTION.MD`, the system utilizes an "Immune System" approach where architectural rules and conventions are encoded as automated structural tests.
 
 ---
 
-## 1. Structural & Static Analysis Tests (AST)
+## 1. The 5-Tier Verification Hierarchy
 
-These tests do not require a running database or container stack. They parse the source code (using regex and AST-like pattern matching) to ensure developers and AI agents haven't violated core architectural boundaries.
+HeroBM structures testing into five distinct tiers, balancing feedback speed with integration fidelity:
 
-### Key Structural Tests:
-*   **`test_controller_authz.ps1`**: Enforces that every NestJS controller uses the `@CasbinResource` decorator, preventing accidental unauthenticated endpoints.
-*   **`test_no_hardcoded_secrets.ps1`**: Scans the codebase for hardcoded credentials, JWT secrets, or DB URIs.
-*   **`test_drizzle_schema_sync.ps1`**: Ensures that Drizzle ORM schema definitions remain in sync and don't introduce prohibited mutations (like dropping the Outbox table).
-*   **`test_no_inline_pricing.ps1` / `test_no_inline_inventory_math.ps1`**: Enforces that complex business math is strictly imported from the `@herobm/shared` package rather than being hardcoded inline.
-*   **`test_api_fetch_usage.ps1`**: Verifies that the frontend strictly uses the `apiFetch<T>` utility wrapper instead of raw `fetch()`, ensuring consistent auth-header injection and error handling.
-
-**How to run:**
-```bash
-make test-structural
+```
++-------------------------------------------------------------------------+
+| Tier 4: Heavy Regression (5-10m) — make test-heavy                      |
+| (Podman stack: container fuzzing, email/webhook daemons, full browser)  |
++-------------------------------------------------------------------------+
+| Tier 3: Pre-Push & CI Gates (2-3m) — make verify-all / GitHub Actions   |
+| (Full monorepo build, verify-fast, test-structural, test-api-e2e)       |
++-------------------------------------------------------------------------+
+| Tier 2: Subsystem Verification (30-60s)                                 |
+| (make verify-api, make verify-portal, make verify-pipeline)             |
++-------------------------------------------------------------------------+
+| Tier 1: Task Gate / Fast Pre-Commit (< 25s) — make verify-fast          |
+| (Typecheck, ESLint, OAS lint, PGlite unit tests, schema drift, deps)    |
++-------------------------------------------------------------------------+
+| Tier 0: Dev Inner Loop (Sub-second to 5s)                               |
+| (make check-types, make check-lint, make test-single TEST=<name>)       |
++-------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Infrastructure Smoke Tests
+## 2. Test Selection Decision Matrix
 
-These tests verify that the Dockerized stack is running correctly, ports are bound securely, and internal communication channels are open.
-
-### Key Smoke Tests:
-*   **`test_stack_health.ps1`**: Validates that all critical containers (`custom-api`, `ops-portal`, `redis`, `worker`) are `Up` and `healthy`.
-*   **`test_port_binding.ps1`**: Ensures that backend services (like Redis and Postgres) are only bound to `127.0.0.1` and not exposed to `0.0.0.0` (public internet).
-*   **`test_prometheus_targets.py`**: Queries the local Prometheus instance to ensure all expected targets (Node APIs, BullMQ) are successfully being scraped.
-
-**How to run:**
-*(Requires the stack to be running via `make up`)*
-```bash
-make test-infra
-```
+| What are you testing? | Recommended Tool / Suite | Command | Execution Speed |
+| :--- | :--- | :--- | :--- |
+| **Simple helper logic / pure utility** | Jest with pure functions or `createMockDb()` | `make test-single TEST=<name>` | Instant (< 1s) |
+| **Transactional DB logic / GL journals / constraints** | PGlite WASM in-memory PostgreSQL engine | `npm run test:unit:pglite -w apps/api` | Fast (< 3s) |
+| **API Endpoints, Casbin AuthZ, Multi-step state machines** | Supertest against real PostgreSQL (`apps/api/test/*.e2e-spec.ts`) | `make test-api-e2e` | Medium (15-30s) |
+| **UI Components, Hooks, DataGrid renderers** | React Testing Library + Jest (`apps/ops-portal/app/**/__tests__`) | `make test-portal-unit` | Fast (< 10s) |
+| **Browser User Journeys, Slide-overs, Page Navigation** | Playwright (`apps/ops-portal/e2e/*.spec.ts`) | `make test-portal-e2e` | Medium (15-45s) |
+| **Architectural Boundaries, Anti-patterns, Security invariants** | TypeScript AST structural tests (`infra/tests/test_adv_*.ts`) | `make test-structural` | Fast (5-10s) |
+| **Data Extraction, dbt Transformations, Schema counts** | Pipeline runner & Python audit scripts | `make verify-pipeline` | Medium (30-45s) |
+| **Full Containerized Fuzzing & Outbox Relays** | Heavy isolated Podman test stack | `make test-heavy` | 5–10m |
 
 ---
 
-## 4. Backend Unit & Integration Testing
+## 3. Structural & Static Analysis Tests (The Immune System)
 
-The API backend uses a multi-tiered unit testing strategy to balance execution speed with validation fidelity.
+Structural tests live in `infra/tests/` and are executed via `make test-structural` (or directly via `npx tsx infra/test-utils/run-structural.ts`). They parse source files via regex and TypeScript ASTs to prevent convention drift and architectural violations.
 
-### Which tool should I use?
+### Key Structural Invariant Checks:
+*   **`test_controller_authz.ts`**: Ensures all NestJS controllers declare `@CasbinResource` and action guards.
+*   **`test_no_hardcoded_secrets.ts`**: Scans the monorepo for hardcoded passwords, tokens, or URIs.
+*   **`test_drizzle_schema_sync.ts`**: Ensures Drizzle ORM schema definitions remain in sync with database migrations.
+*   **`test_no_inline_pricing.ts` / `test_no_inline_inventory_math.ts`**: Enforces that business math is imported from `@herobm/shared`.
+*   **`test_api_fetch_usage.ts` / `test_no_raw_fetch.ts`**: Verifies that the frontend strictly uses `apiFetch<T>` utility wrappers instead of raw `fetch()`.
+*   **`test_adv_*.ts`**: 120+ regression tests generated from Continuous Improvement Advisories to immunize against past systemic issues.
 
-| Scenario | Recommendation | Why? |
-| :--- | :--- | :--- |
-| **Simple CRUD / Utility** | **MockDrizzle** | Faster execution; DB constraints are not the focus. |
-| **Financial / GL Posting** | **PGLite** | Must verify transactional atomicity and balancing rules. |
-| **Complex Joins / Raw SQL** | **PGLite** | Ensures SQL syntax and relationship logic is valid. |
-| **State Machine Transitions** | **PGLite** | Verifies audit logs and lifecycle state persistence. |
-| **Performance Critical Suite** | **MockDrizzle** | Pure JS objects have zero overhead for hundreds of tests. |
+---
+
+## 4. Backend Testing Tiers (API)
 
 ### MockDrizzle Tier (Fast)
-Used for simple business logic that does not rely on complex SQL joins or database-level constraints. It uses a virtual memory DB that mocks the Drizzle ORM's structural responses.
-- **Reference:** `docs/conventions.md#12-mockdrizzle-unit-testing-pattern`
+Used for unit testing business calculations and simple services without database constraints. Uses virtual memory mocks.
 
-### PGLite Tier (High Fidelity)
-Used for services that execute complex transactional logic, GL postings, or raw SQL. It provides a real PostgreSQL engine (via WASM) running inside the Node.js process.
-- **Key Utility:** `setupPgliteSuite()` in `apps/api/src/test-utils/pglite-suite.ts`.
-- **Lifecycle:** The engine is provisioned once per test file. Developers must use `beforeEach` to truncate transactional tables to maintain isolation.
-- **Standard Seeds:** Includes a `runStandardSeeds()` loop that populates the environment with critical baseline data (COA, Tax, UOMs).
+### PGLite Tier (In-Memory WASM PostgreSQL)
+Used for services that execute transactional logic, double-entry GL postings, or complex queries:
+- **Utility:** `setupPgliteSuite()` in `apps/api/src/test-utils/pglite-suite.ts`.
+- **Isolation:** The engine is provisioned per test suite; use `beforeEach` to truncate tables in FK order.
+- **Seeds:** Includes `runStandardSeeds()` to populate baseline Chart of Accounts, Tax, and UOM definitions.
 
-**How to run:**
+### PostgreSQL E2E Tier (Real DB Integration)
+Full contract testing of NestJS HTTP controllers and multi-step state machines:
+- **Location:** `apps/api/test/*.e2e-spec.ts`
+- **Execution:** `make test-api-e2e` (uses `apps/api/test/utils/provision-e2e-db.ts` to clone the template database via copy-on-write).
+
+---
+
+## 5. Frontend & UI Testing (Ops Portal)
+
+### Component & Hook Unit Tests
+React Testing Library tests located in `apps/ops-portal/app/**/__tests__/` and `components/**/__tests__/`.
 ```bash
-# Run all pglite-compatible unit tests
-npm run test:unit:pglite
+make test-portal-unit
+```
+
+### Playwright Browser E2E Tests
+End-to-end browser tests located in `apps/ops-portal/e2e/`. Tests run against an authenticated storage state (`auth.setup.ts`).
+```bash
+# Run against default local portal (http://localhost:4301 or http://localhost:4300)
+make test-portal-e2e
+
+# Run against custom target
+make test-portal-e2e PORTAL_URL=http://localhost:3000
 ```
 
 ---
 
-## 5. The Continuous Integration (CI) Workflow
+## 6. GitHub Actions Continuous Integration (CI)
 
-The automated tests are heavily integrated into the project's workflow:
-1.  **Local Development:** Developers are expected to run `make test-structural` before committing code.
-2.  **The "Inspector" Persona:** When an AI agent acts as the Inspector, it is mandated by the Constitution to run these tests and evaluate the output.
-3.  **Advisory Remediation:** When a new vulnerability or architectural drift is discovered, the fix must include a new `test_*.ps1` script in `/infra/tests/` to prevent regressions.
+Every commit pushed to `main` and all Pull Requests targeting `main` trigger the automated CI workflow defined in `.github/workflows/ci.yml`.
 
-### Adding a New Test
-If you identify a new architectural rule that needs enforcement:
-1. Create a `.ps1` or `.py` script in `/infra/tests/`.
-2. The script must return an exit code `0` on success, and `1` on failure (printing the offending files/lines).
-3. Add the script to the relevant Makefile target (`test-structural` or `test-infra`).
+### CI Pipeline Stages:
+1. **Dependency Installation:** `npm ci` and native platform binary binding (`scripts/install-native-deps.js`).
+2. **Package Compilation:** Compiles `@herobm/shared`, `@herobm/db-schema`, and `@herobm/sdk`.
+3. **Tier 1 Fast Gate:** `make verify-fast` (types, ESLint, Spectral OpenAPI linting, PGlite unit tests, schema drift, dependency manifests).
+4. **Immune System Gate:** `make test-structural` (evaluates all 126 AST invariant tests).
+5. **Portal Production Build:** `make build-portal` (verifies Next.js 15 routing, server/client boundaries, and standalone bundling).
+6. **Backend API E2E:** Boots an ephemeral PostgreSQL service container (`postgres:16-alpine`), applies migrations, and executes `make test-api-e2e`.

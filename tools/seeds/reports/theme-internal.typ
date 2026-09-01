@@ -1,8 +1,11 @@
 #let conf(title: none, doc) = {
   let dataFile = sys.inputs.at("data", default: "data.json")
   let orgData = json(dataFile)
-  let org = orgData.at("_org", default: (:))
-  
+  let org = if "_org" in orgData and orgData._org != none { orgData._org } else { (:) }
+  let orgName = if "name" in org and org.name != none and org.name != "" { org.name } else { "Company Name" }
+
+  set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 10pt)
+
   set page(
     paper: "a4",
     margin: (top: 2cm, bottom: 2cm, left: 1.5cm, right: 1.5cm),
@@ -22,8 +25,8 @@
       #v(0.1cm)
       #grid(
         columns: (1fr, 1fr),
-        org.at("name", default: "Company Name") + " - Internal Use Only",
-        align(right)[Page #context counter(page).display()]
+        orgName + " - Internal Use Only",
+        align(right)[Page #context counter(page).display() of #context counter(page).final().at(0)]
       )
     ]
   )

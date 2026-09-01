@@ -107,4 +107,31 @@ describe('DashboardTimeline', () => {
       expect(screen.getByText('SO-1001')).toBeInTheDocument();
     });
   });
+
+  it('generates clean auditEventId search query href for ledger integrity alerts', async () => {
+    mockGetTimeline.mockResolvedValue({
+      data: {
+        events: [
+          {
+            eventId: 'evt-integrity-1',
+            eventType: 'system.ledger_integrity_violation',
+            entityId: 'evt-integrity-1',
+            entityDisplay: 'Ledger Integrity Alert: 5 anomalies detected',
+            actor: 'system-worker',
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    render(<DashboardTimeline enabledEvents={['system.ledger_integrity_violation']} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ledger Integrity Alert: 5 anomalies detected')).toBeInTheDocument();
+    });
+
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', '/general-ledger?auditEventId=evt-integrity-1');
+  });
 });
+

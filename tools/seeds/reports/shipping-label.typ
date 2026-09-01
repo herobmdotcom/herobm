@@ -7,15 +7,15 @@
   margin: (top: 0.6cm, bottom: 0.6cm, left: 0.6cm, right: 0.6cm)
 )
 
-#set text(font: "DejaVu Sans", size: 8pt)
+#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 8pt)
 
-#let org = if "_org" in data { data._org } else { (:) }
-#let orgName = org.at("name", default: "")
-#let orgAddr = org.at("addressLine1", default: "")
-#let orgCity = org.at("city", default: "")
-#let orgState = org.at("state", default: "")
-#let orgPost = org.at("postCode", default: "")
-#let orgPhone = org.at("phone", default: "")
+#let org = if "_org" in data and data._org != none { data._org } else { (:) }
+#let orgName = if "name" in org and org.name != none { org.name } else { "" }
+#let orgAddr = if "addressLine1" in org and org.addressLine1 != none { org.addressLine1 } else { "" }
+#let orgCity = if "city" in org and org.city != none { org.city } else { "" }
+#let orgState = if "state" in org and org.state != none { org.state } else { "" }
+#let orgPost = if "postCode" in org and org.postCode != none { org.postCode } else { "" }
+#let orgPhone = if "phone" in org and org.phone != none { org.phone } else { "" }
 
 #let header = data.header
 #let shipmentNumber = header.at("shipmentNumber", default: "")

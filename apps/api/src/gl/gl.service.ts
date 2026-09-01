@@ -32,6 +32,8 @@ import {
   actors,
   glFiscalPeriods,
   financialEvents,
+  systemEvents,
+  salesInvoices,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -46,8 +48,13 @@ import {
   computeCanonicalPayloadHash,
   computeEntryHash,
   verifyJournalChain,
+  SALES_INVOICE_STATE,
 } from '@herobm/shared';
-import { JournalLineDto } from './dto';
+import {
+  JournalLineDto,
+  LedgerIntegrityAuditResponseDto,
+  AnomalyDetailDto,
+} from './dto';
 import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
 import {
   fetchTrialBalance,
@@ -55,6 +62,10 @@ import {
   fetchBusinessReportData,
   GeneralLedgerFilters,
 } from './gl-ledger.utils';
+import {
+  executeLedgerIntegrityAudit,
+  fetchIntegrityAuditReport,
+} from './gl-integrity-audit.utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1305,5 +1316,16 @@ export class GlService implements OnModuleInit {
     }));
 
     return verifyJournalChain(payloadEntries);
+  }
+
+  // @herobm-skip-audit - Writes audit findings directly to system_events audit trail
+  async runIntegrityAudit(): Promise<LedgerIntegrityAuditResponseDto> {
+    return executeLedgerIntegrityAudit(this.db);
+  }
+
+  async getIntegrityAudit(
+    eventId?: string,
+  ): Promise<LedgerIntegrityAuditResponseDto> {
+    return fetchIntegrityAuditReport(this.db, eventId);
   }
 }

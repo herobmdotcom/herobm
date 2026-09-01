@@ -2709,7 +2709,7 @@ export type dashboardControllerGetTimelineResponseSuccess = (dashboardController
 
 export type dashboardControllerGetTimelineResponse = (dashboardControllerGetTimelineResponseSuccess)
 
-export const getDashboardControllerGetTimelineUrl = (params: DashboardControllerGetTimelineParams,) => {
+export const getDashboardControllerGetTimelineUrl = (params?: DashboardControllerGetTimelineParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2724,7 +2724,7 @@ export const getDashboardControllerGetTimelineUrl = (params: DashboardController
   return stringifiedParams.length > 0 ? `/dashboard/timeline?${stringifiedParams}` : `/dashboard/timeline`
 }
 
-export const dashboardControllerGetTimeline = async (params: DashboardControllerGetTimelineParams, options?: RequestInit): Promise<dashboardControllerGetTimelineResponse> => {
+export const dashboardControllerGetTimeline = async (params?: DashboardControllerGetTimelineParams, options?: RequestInit): Promise<dashboardControllerGetTimelineResponse> => {
   
   return customFetch<dashboardControllerGetTimelineResponse>(getDashboardControllerGetTimelineUrl(params),
   {      

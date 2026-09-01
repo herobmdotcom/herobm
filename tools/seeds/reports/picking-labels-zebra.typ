@@ -8,25 +8,27 @@
   margin: (top: 0.6cm, bottom: 0.6cm, left: 0.8cm, right: 0.8cm)
 )
 
-#set text(size: 9pt)
+#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 9pt)
 
 #let orderId = data.header.at("orderId", default: "")
 #let orderNumber = data.header.at("orderNumber", default: "")
 #let customerName = data.header.at("customerName", default: "")
 #let customerOrderNumber = data.header.at("customerOrderNumber", default: "")
 #let orderDate = data.header.at("orderDate", default: "")
+#let pickingLines = if "pickingLines" in data and data.pickingLines != none { data.pickingLines } else { () }
 
-#if data.pickingLines.len() == 0 [
+#if pickingLines.len() == 0 [
   #align(center + horizon)[
     #text(14pt, weight: "bold")[No items to pick]
   ]
 ] else [
-  #for (i, pickLine) in data.pickingLines.enumerate() [
+  #for (i, pickLine) in pickingLines.enumerate() [
     #let binNumber = pickLine.at("binNumber", default: "—")
     #let productCode = pickLine.at("productCode", default: "")
     #let description = pickLine.at("description", default: "")
     #let qty = str(pickLine.at("qtyToPick", default: 0))
-    #let barcodePayload = pickLine.at("barcodePayload", default: "")
+    #let rawBarcode = pickLine.at("barcodePayload", default: "")
+    #let barcodePayload = if rawBarcode != "" and rawBarcode != none { rawBarcode } else if productCode != "" { productCode } else { orderNumber }
 
     // Header banner
     #grid(
@@ -34,11 +36,11 @@
       align: (left, right),
       [
         #text(12pt, weight: "bold")[Order: #orderNumber] \
-        #text(8pt, fill: luma(80))[Customer: #customerName #if customerOrderNumber != "" [(PO: #customerOrderNumber)]]
+        #text(8pt, fill: luma(80))[Customer: #customerName #if customerOrderNumber != "" and customerOrderNumber != none [(PO: #customerOrderNumber)]]
       ],
       [
         #text(8pt, fill: luma(80))[Date: #orderDate] \
-        #text(8pt, weight: "bold", fill: luma(100))[Item #(i + 1) of #(data.pickingLines.len())]
+        #text(8pt, weight: "bold", fill: luma(100))[Item #(i + 1) of #(pickingLines.len())]
       ]
     )
 

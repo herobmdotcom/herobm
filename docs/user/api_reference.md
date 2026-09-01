@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (475 Endpoints Across 24 Domains)
+## Core Endpoint Catalog (478 Endpoints Across 24 Domains)
 
 ### Actors
 
@@ -158,6 +158,9 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/gl/periods/generate` | Generate Fiscal Periods |
 | `PATCH` | `/gl/periods/{id}/status` | Update Fiscal Period Status |
 | `GET` | `/gl/reconciliation/subledger` | Get Continuous Subledger Reconciliation |
+| `GET` | `/gl/integrity-audit` | Get Latest Ledger Integrity Audit Report |
+| `POST` | `/gl/integrity-audit/run` | Run Ledger Integrity Audit On Demand |
+| `GET` | `/gl/integrity-audit/{eventId}` | Get Specific Ledger Integrity Audit Report by Event ID |
 | `GET` | `/gl/reconciliations` | Get Reconciliations |
 | `POST` | `/gl/reconciliations` | Create Reconciliation |
 | `GET` | `/gl/reconciliations/{id}` | Get Reconciliation |

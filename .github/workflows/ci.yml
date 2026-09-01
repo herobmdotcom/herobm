@@ -8,18 +8,68 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: herobm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+
       - name: Install dependencies
-        run: npm ci
-      - name: Build packages
+        run: |
+          npm ci
+          node scripts/install-native-deps.js
+
+      - name: Initialize Environment Variables
+        run: |
+          python scripts/init_env.py
+
+      - name: Build Core Packages
         run: |
           make build-shared
           make build-db-schema
           make build-sdk
-      - name: Fast verification gate
+
+      - name: Fast verification gate (Tier 1)
         run: make verify-fast
+
+      - name: Structural Architecture & Invariant Tests
+        run: make test-structural
+
+      - name: Verify Portal Production Build
+        run: make build-portal
+
+      - name: Run Backend API E2E Tests (PostgreSQL)
+        env:
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: herobm
+          USE_PGLITE: false
+        run: |
+          make test-api-e2e

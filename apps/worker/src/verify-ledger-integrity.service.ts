@@ -54,11 +54,75 @@ export async function verifyLedgerIntegrity(
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
         stateCode: salesInvoices.stateCode,
+        invoiceDate: salesInvoices.invoiceDate,
+        createdBy: salesInvoices.createdBy,
         createdOn: salesInvoices.createdOn,
         totalAmount: salesInvoices.totalAmount,
       })
       .from(salesInvoices)
       .orderBy(asc(salesInvoices.createdOn), asc(salesInvoices.invoiceNumber));
+
+    // 2. Fetch all journal entries
+    const allJournalEntries = await db
+      .select({
+        journalEntryId: glJournalEntries.journalEntryId,
+        sequenceNumber: glJournalEntries.sequenceNumber,
+        entryNumber: glJournalEntries.entryNumber,
+        entryDate: glJournalEntries.entryDate,
+        memo: glJournalEntries.memo,
+        sourceType: glJournalEntries.sourceType,
+        sourceId: glJournalEntries.sourceId,
+        prevHash: glJournalEntries.prevHash,
+        entryHash: glJournalEntries.entryHash,
+        isReversed: glJournalEntries.isReversed,
+      })
+      .from(glJournalEntries);
+
+    // Identify if the system has take-on opening balance journal entries
+    const openingEntries = allJournalEntries.filter((je: any) => {
+      const st = (je.sourceType || '').toLowerCase();
+      const en = (je.entryNumber || '').toUpperCase();
+      return (
+        st === 'initial_import' ||
+        st === 'opening_balance' ||
+        en.startsWith('JE-OPENING-')
+      );
+    });
+
+    let takeOnDate: Date | null = null;
+    if (openingEntries.length > 0) {
+      const dates = openingEntries
+        .map((je: any) =>
+          je.entryDate ? new Date(je.entryDate).getTime() : null,
+        )
+        .filter((d: any): d is number => d !== null && !isNaN(d));
+      if (dates.length > 0) {
+        takeOnDate = new Date(Math.min(...dates));
+      }
+    }
+
+    const isHistoricalImport = (inv: (typeof allInvoices)[0]) => {
+      const creator = (inv.createdBy || '').toLowerCase();
+      if (
+        [
+          'abm-import',
+          'system-import',
+          'legacy-import',
+          'data-import',
+          'initial_import',
+        ].includes(creator)
+      ) {
+        return true;
+      }
+      if (
+        takeOnDate &&
+        inv.invoiceDate &&
+        new Date(inv.invoiceDate) < takeOnDate
+      ) {
+        return true;
+      }
+      return false;
+    };
 
     // Group invoices by sequence prefix (e.g. "INV-20260831-" or "INV-2026-")
     const invoicesByPrefix = new Map<string, typeof allInvoices>();
@@ -76,11 +140,17 @@ export async function verifyLedgerIntegrity(
 
     // A. Check Sequence Continuity and Timestamp Monotonicity within each prefix series
     for (const [prefix, invList] of invoicesByPrefix.entries()) {
+      // If all invoices in this prefix are legacy historical imports, skip sequence gap detection
+      const operationalInvoices = (invList as (typeof allInvoices[number])[]).filter(
+        (inv: typeof allInvoices[number]) => !isHistoricalImport(inv),
+      );
+      if (operationalInvoices.length === 0) continue;
+
       let expectedSeq: number | null = null;
       let prevCreatedOn: Date | null = null;
       let prevInvNum: string | null = null;
 
-      for (const inv of invList) {
+      for (const inv of operationalInvoices) {
         const match = inv.invoiceNumber.match(/^(.*?)(\d+)$/);
         if (!match) continue;
         const currentSeq = parseInt(match[2], 10);
@@ -119,22 +189,10 @@ export async function verifyLedgerIntegrity(
     }
 
     // B. Check GL Posting & Cancellation Reversals for each invoice
-    const allJournalEntries = await db
-      .select({
-        journalEntryId: glJournalEntries.journalEntryId,
-        sequenceNumber: glJournalEntries.sequenceNumber,
-        entryNumber: glJournalEntries.entryNumber,
-        entryDate: glJournalEntries.entryDate,
-        memo: glJournalEntries.memo,
-        sourceType: glJournalEntries.sourceType,
-        sourceId: glJournalEntries.sourceId,
-        prevHash: glJournalEntries.prevHash,
-        entryHash: glJournalEntries.entryHash,
-        isReversed: glJournalEntries.isReversed,
-      })
-      .from(glJournalEntries);
-
-    const journalBySourceId = new Map<string, (typeof allJournalEntries)[0][]>();
+    const journalBySourceId = new Map<
+      string,
+      (typeof allJournalEntries)[0][]
+    >();
     for (const je of allJournalEntries) {
       if (je.sourceId) {
         const sid = String(je.sourceId);
@@ -145,7 +203,11 @@ export async function verifyLedgerIntegrity(
       }
     }
 
-    for (const inv of allInvoices) {
+    const operationalInvoices = (allInvoices as (typeof allInvoices[number])[]).filter(
+      (inv: typeof allInvoices[number]) => !isHistoricalImport(inv),
+    );
+
+    for (const inv of operationalInvoices) {
       if (inv.stateCode === 'draft') continue;
 
       const journals = journalBySourceId.get(inv.invoiceId) || [];
@@ -347,11 +409,31 @@ export async function verifyLedgerIntegrity(
     } else {
       logger.info(
         {
-          verifiedInvoicesCount: allInvoices.length,
+          verifiedInvoicesCount: operationalInvoices.length,
           verifiedJournalsCount: allJournalEntries.length,
         },
         'Ledger integrity verification passed with 0 anomalies.',
       );
+
+      const eventId = randomUUID();
+      const payload = {
+        anomaliesCount: 0,
+        anomalies: [],
+        verifiedInvoicesCount: operationalInvoices.length,
+        verifiedJournalsCount: allJournalEntries.length,
+        auditedAt,
+      };
+
+      await db.insert(systemEvents).values({
+        eventId,
+        entityType: 'system',
+        entityId: eventId,
+        eventType: 'ledger_integrity_verified',
+        entityDisplayName: `Ledger Integrity Verified: 0 anomalies across ${allJournalEntries.length} journals`,
+        payload,
+        actor: 'system-worker',
+        createdOn: new Date(),
+      });
     }
 
     return result;

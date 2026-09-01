@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { TimelineEventDtoPayload } from './timelineEventDtoPayload';
 
 export interface TimelineEventDto {
   eventId: string;
@@ -13,5 +14,7 @@ export interface TimelineEventDto {
   entityDisplay: string;
   /** @nullable */
   actor: string | null;
+  /** @nullable */
+  payload?: TimelineEventDtoPayload;
   timestamp: string;
 }

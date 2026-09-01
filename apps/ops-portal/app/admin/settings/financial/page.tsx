@@ -15,9 +15,18 @@ import { ActivitiesSection } from './components/ActivitiesSection';
 import { GlSettingsSection } from './components/GlSettingsSection';
 import { CoASettingsSection } from './components/CoASettingsSection';
 import { TradingTermsSection } from './components/TradingTermsSection';
-
+import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+
+interface MissingConfigItem {
+  id: string;
+  label: string;
+  tab: 'gl' | 'operations';
+  sectionId: string;
+  sectionName: string;
+  impact: string;
+}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -127,32 +136,192 @@ export default function FinancialSettingsPage() {
     }
   ], [activeTab]);
 
-  const configWarnings = useMemo(() => {
-    const w: string[] = [];
-    if (!glLoading) {
-      if (!glSettings?.baseCurrency) {
-        w.push('Base Currency is not configured.');
-      }
-      if (!glSettings?.defaultArAccountId || !glSettings?.defaultApAccountId || !glSettings?.defaultRevenueAccountId || !glSettings?.defaultExpenseAccountId || !glSettings?.defaultSalesTaxAccountId || !glSettings?.defaultPurchaseTaxAccountId || !glSettings?.defaultInventoryAccountId || !glSettings?.defaultCogsAccountId) {
-        w.push('One or more default General Ledger accounts are missing (AR, AP, Revenue, Expense, Tax, Inventory, COGS).');
-      }
-      if (!appSettings?.defaultSalesTaxCategoryId || !appSettings?.defaultPurchaseTaxCategoryId) {
-        w.push('Default Sales and/or Purchase Tax Categories are not configured.');
-      }
-      if (!appSettings?.defaultCustomerTaxPositionId || !appSettings?.defaultSupplierTaxPositionId) {
-        w.push('Default Customer and/or Supplier Tax Positions are not configured.');
-      }
-      
-      if (!appSettings?.defaultCustomerTermsId) {
-        w.push('No Default Customer Trading Term is configured for Sales.');
-      }
-      
-      if (!appSettings?.defaultSupplierTermsId) {
-        w.push('No Default Supplier Trading Term is configured for Purchasing.');
-      }
+  const missingConfigs = useMemo<MissingConfigItem[]>(() => {
+    const items: MissingConfigItem[] = [];
+    if (glLoading) return items;
+
+    // 1. General Ledger Defaults
+    if (!glSettings?.defaultArAccountId) {
+      items.push({
+        id: 'defaultArAccountId',
+        label: tSettings('labels.defaultAr'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactAr'),
+      });
     }
-    return w;
-  }, [glLoading, glSettings, appSettings]);
+    if (!glSettings?.defaultApAccountId) {
+      items.push({
+        id: 'defaultApAccountId',
+        label: tSettings('labels.defaultAp'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactAp'),
+      });
+    }
+    if (!glSettings?.defaultRevenueAccountId) {
+      items.push({
+        id: 'defaultRevenueAccountId',
+        label: tSettings('labels.defaultRevenue'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactRevenue'),
+      });
+    }
+    if (!glSettings?.defaultExpenseAccountId) {
+      items.push({
+        id: 'defaultExpenseAccountId',
+        label: tSettings('labels.defaultExpense'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactExpense'),
+      });
+    }
+    if (!glSettings?.defaultInventoryAccountId) {
+      items.push({
+        id: 'defaultInventoryAccountId',
+        label: tSettings('labels.defaultInventory'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactInventory'),
+      });
+    }
+    if (!glSettings?.defaultCogsAccountId) {
+      items.push({
+        id: 'defaultCogsAccountId',
+        label: tSettings('labels.defaultCogs'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactCogs'),
+      });
+    }
+    if (!glSettings?.defaultGrniAccountId) {
+      items.push({
+        id: 'defaultGrniAccountId',
+        label: tSettings('labels.defaultGrni'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactGrni'),
+      });
+    }
+    if (!glSettings?.defaultSalesTaxAccountId) {
+      items.push({
+        id: 'defaultSalesTaxAccountId',
+        label: tSettings('labels.defaultSalesTax'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactSalesTax'),
+      });
+    }
+    if (!glSettings?.defaultPurchaseTaxAccountId) {
+      items.push({
+        id: 'defaultPurchaseTaxAccountId',
+        label: tSettings('labels.defaultPurchaseTax'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactPurchaseTax'),
+      });
+    }
+    if (!glSettings?.defaultShrinkageAccountId) {
+      items.push({
+        id: 'defaultShrinkageAccountId',
+        label: tSettings('labels.defaultShrinkage'),
+        tab: 'gl',
+        sectionId: 'gl-section',
+        sectionName: tSettings('financialSettings.defaults'),
+        impact: tSettings('financialSettings.impactShrinkage'),
+      });
+    }
+
+    // 2. Operations: Currencies
+    if (!glSettings?.baseCurrency) {
+      items.push({
+        id: 'baseCurrency',
+        label: tSettings('labels.baseCurrency'),
+        tab: 'operations',
+        sectionId: 'rates-section',
+        sectionName: tSettings('financialSettings.currencies'),
+        impact: tSettings('financialSettings.impactBaseCurrency'),
+      });
+    }
+
+    // 3. Operations: Credit & Terms
+    if (!appSettings?.defaultCustomerTermsId) {
+      items.push({
+        id: 'defaultCustomerTermsId',
+        label: tSettings('labels.defaultCustomerTerms'),
+        tab: 'operations',
+        sectionId: 'credit-policy',
+        sectionName: tSettings('financialSettings.credit'),
+        impact: tSettings('financialSettings.impactCustomerTerms'),
+      });
+    }
+    if (!appSettings?.defaultSupplierTermsId) {
+      items.push({
+        id: 'defaultSupplierTermsId',
+        label: tSettings('labels.defaultSupplierTerms'),
+        tab: 'operations',
+        sectionId: 'credit-policy',
+        sectionName: tSettings('financialSettings.credit'),
+        impact: tSettings('financialSettings.impactSupplierTerms'),
+      });
+    }
+
+    // 4. Operations: Tax Categories
+    if (!appSettings?.defaultSalesTaxCategoryId) {
+      items.push({
+        id: 'defaultSalesTaxCategoryId',
+        label: tSettings('labels.defaultSalesTaxCategory'),
+        tab: 'operations',
+        sectionId: 'tax-section',
+        sectionName: tSettings('sections.tax'),
+        impact: tSettings('financialSettings.impactSalesTaxCategory'),
+      });
+    }
+    if (!appSettings?.defaultPurchaseTaxCategoryId) {
+      items.push({
+        id: 'defaultPurchaseTaxCategoryId',
+        label: tSettings('labels.defaultPurchaseTaxCategory'),
+        tab: 'operations',
+        sectionId: 'tax-section',
+        sectionName: tSettings('sections.tax'),
+        impact: tSettings('financialSettings.impactPurchaseTaxCategory'),
+      });
+    }
+
+    // 5. Operations: Tax Positions
+    if (!appSettings?.defaultCustomerTaxPositionId) {
+      items.push({
+        id: 'defaultCustomerTaxPositionId',
+        label: tSettings('labels.defaultCustomerTaxPosition'),
+        tab: 'operations',
+        sectionId: 'tax-positions-section',
+        sectionName: tSettings('sections.taxPositions'),
+        impact: tSettings('financialSettings.impactCustomerTaxPosition'),
+      });
+    }
+    if (!appSettings?.defaultSupplierTaxPositionId) {
+      items.push({
+        id: 'defaultSupplierTaxPositionId',
+        label: tSettings('labels.defaultSupplierTaxPosition'),
+        tab: 'operations',
+        sectionId: 'tax-positions-section',
+        sectionName: tSettings('sections.taxPositions'),
+        impact: tSettings('financialSettings.impactSupplierTaxPosition'),
+      });
+    }
+
+    return items;
+  }, [glLoading, glSettings, appSettings, tSettings]);
 
   return (
     <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
@@ -163,21 +332,57 @@ export default function FinancialSettingsPage() {
         <PageNav sections={navSections} />
       </ContentPageHeader>
       <div className="flex flex-col gap-6">
-        {configWarnings.length > 0 && (
+        {missingConfigs.length > 0 && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                <span className="material-symbols-outlined text-yellow-400">{'warning'}</span>
+                <span className="material-symbols-outlined text-yellow-500">warning</span>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-bold">{tSettings('financialSettings.configurationRequired')}</h3>
-                <div className="mt-2 text-sm text-yellow-700">
-                  <ul role="list" className="list-disc space-y-1 pl-5">
-                    {configWarnings.map((w, idx) => (
-                      <li key={idx}>{w}</li>
-                    ))}
-                  </ul>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-bold text-yellow-900">
+                  {tSettings('financialSettings.configurationRequired')} ({missingConfigs.length})
+                </h3>
+                <p className="text-xs text-yellow-800 mt-1 mb-3">
+                  {tSettings('financialSettings.configurationRequiredSubheading')}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {missingConfigs.map((item) => {
+                    const tabLabel = item.tab === 'gl' ? tSettings('financialSettings.tabGl') : tSettings('financialSettings.tabOperations');
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-start gap-2 bg-yellow-100/70 p-2.5 rounded border border-yellow-200"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-yellow-700 mt-0.5">
+                          arrow_right
+                        </span>
+                        <div className="flex-1">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            className="!p-0 !h-auto text-yellow-900 font-semibold hover:underline text-left"
+                            onClick={() => {
+                              setActiveTab(item.tab);
+                              setTimeout(() => {
+                                document.getElementById(item.sectionId)?.scrollIntoView({
+                                  behavior: 'smooth',
+                                  block: 'start',
+                                });
+                              }, 50);
+                            }}
+                          >
+                            {item.label}
+                          </Button>
+                          <span className="text-[11px] text-yellow-800 font-medium block">
+                            {tabLabel} → {item.sectionName}
+                          </span>
+                          <span className="text-xs text-yellow-900/80 block mt-0.5">
+                            {item.impact}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

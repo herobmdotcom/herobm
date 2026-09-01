@@ -136,6 +136,7 @@ function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
 }
 
 const PICKING_INVOICE_STATES: string[] = [
+    SALES_ORDER_STATE.CONFIRMED,
     SALES_ORDER_STATE.PICKING, 
     SALES_ORDER_STATE.SHIPPED, 
     SALES_ORDER_STATE.INVOICED, 
@@ -508,7 +509,13 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     <>
                         <FulfillmentSection orderId={id} pickingSummary={pickingSummary} order={order} />
 
-                        <ShipmentsSection orderId={id} />
+                        <ShipmentsSection 
+                            orderId={id} 
+                            order={order}
+                            pickingSummary={pickingSummary}
+                            loadOrder={loadOrder}
+                            setError={setError}
+                        />
 
                         <InvoicesSection 
                             orderId={id}

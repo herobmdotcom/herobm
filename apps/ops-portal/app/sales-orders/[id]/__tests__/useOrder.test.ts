@@ -224,6 +224,19 @@ describe('useOrder — computed values', () => {
 
         expect(result.current.allowedTransitions).toContain(SALES_ORDER_STATE.ARCHIVED);
     });
+
+    it('fetches invoices and returns when order is in CONFIRMED state', async () => {
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.CONFIRMED });
+        setupMocks(order);
+
+        const { result } = renderHook(() => useOrder('so-001'));
+        await waitFor(() => expect(result.current.order).toBeTruthy());
+
+        await waitFor(() => {
+            expect(mockSdkFetch).toHaveBeenCalledWith('/invoices', expect.anything());
+            expect(mockSdkFetch).toHaveBeenCalledWith('/returns', expect.anything());
+        });
+    });
 });
 
 describe('useOrder — mutations', () => {

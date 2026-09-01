@@ -48,9 +48,11 @@ The **General Ledger (GL)** is the financial backbone of HeroBM. It records all 
 HeroBM organizes all financial postings within a structured, hierarchical **Chart of Accounts (COA)** across five root classifications: `Asset`, `Liability`, `Equity`, `Revenue`, and `Expense`.
 
 HeroBM natively supports importing Chart of Accounts structured in the **ERPNext JSON format**. When provisioning a new company or updating accounting structures:
-- **Built-in Presets**: HeroBM includes ready-to-use regional presets such as Australia Standard (`au_standard.json`) and US Standard (`us_standard.json`).
-- **ERPNext Verified Templates**: You can import or adapt any of the country-specific templates available in the official [ERPNext Verified Chart of Accounts repository](https://github.com/frappe/erpnext/tree/develop/erpnext/accounts/doctype/account/chart_of_accounts/verified).
-- **Importing in the UI**: Navigate to **Administration** → **Settings** → **Financial Settings** (`/admin/settings/financial`), scroll to the **Chart of Accounts** section, and click **Import Preset** to load and apply a chart of accounts template.
+- **Built-in Presets**: HeroBM includes ready-to-use regional presets such as Australia Standard (`au_standard.json`) and US Standard (`us_standard.json`), stored in `apps/api/src/gl/charts/`.
+- **ERPNext Verified Templates & Custom Charts**: You can import or adapt any country-specific template from the official [ERPNext Verified Chart of Accounts repository](https://github.com/frappe/erpnext/tree/develop/erpnext/accounts/doctype/account/chart_of_accounts/verified).
+- **Importing in the UI**: Navigate to **Administration** → **Settings** → **Financial Settings** (`/admin/settings/financial`), scroll to the **Chart of Accounts** section, and click **Import CoA**:
+  - **Upload JSON File**: Select or drag & drop any `.json` file from your local machine to upload and import directly in your browser.
+  - **Predefined Presets**: Select from pre-packaged regional presets or custom template files placed on the API server in `apps/api/src/gl/charts/`.
 
 ---
 

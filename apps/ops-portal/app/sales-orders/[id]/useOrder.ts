@@ -216,10 +216,11 @@ export function useOrder(id: string) {
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
-        if ([SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
+        if ([SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
             loadInvoices();
         }
         if ([
+            SALES_ORDER_STATE.CONFIRMED,
             SALES_ORDER_STATE.PICKING,
             SALES_ORDER_STATE.SHIPPED,
             SALES_ORDER_STATE.INVOICED

@@ -33,33 +33,44 @@ HeroBM utilizes Docker Compose profiles to logically isolate different operation
 
 ## Verification & Quality Gates
 
-HeroBM uses a 4-tier verification hierarchy designed for speed, isolation, and confidence:
+HeroBM uses a 5-tier verification hierarchy designed for speed, isolation, and confidence:
 
-### Tier 1: Fast Pre-Commit Gate (< 25s)
+### Tier 0: Dev Inner Loop (Sub-second to 5s)
+- **`make check-types`** — Typechecks all workspaces without compiling code.
+- **`make check-lint`** — Runs cached ESLint and Spectral OpenAPI linting.
+- **`make test-single`** / **`make test-single TEST=<name>`** — Runs a single test file by name or pattern (or reads `.test_target`).
+
+### Tier 1: Fast Task / Pre-Commit Gate (< 25s)
 - **`make verify-fast`**
-  The standard task completion and pre-commit gate. Runs typechecking across all workspaces, cached ESLint, Spectral OpenAPI checks, fast unit tests (API PGlite + Ops Portal components), schema drift checks, and dependency completeness without requiring external Docker containers or live database provisioning.
+  The standard mandatory pre-commit gate. Runs typechecking, cached ESLint, Spectral OpenAPI checks, in-memory unit tests (API PGlite + Ops Portal RTL), schema drift checks, and dependency completeness without requiring external containers.
 
 ### Tier 2: Subsystem Verification Gates (30–60s)
 - **`make verify-api`**
-  Runs backend typechecking, linting, OpenAPI checks, PGlite unit tests, and full End-to-End (`test-api-e2e`) integration tests against real PostgreSQL. Run this whenever modifying API controllers, services, DTOs, or database schemas.
+  Runs API typechecking, linting, OpenAPI checks, PGlite unit tests, and full End-to-End (`test-api-e2e`) integration tests against real PostgreSQL.
 - **`make verify-portal`**
   Runs frontend typechecking, ESLint, i18n/forms linting, UI unit tests, and Next.js production build (`build-portal`).
+- **`make test-portal-e2e`**
+  Runs Ops Portal Playwright browser E2E tests against a running portal instance (`PORTAL_URL`).
 - **`make verify-pipeline`**
   Runs ELT extract/transform validation and data count reconciliation checks.
 
-### Tier 3: Pre-Push & Release Gates (2–3m)
+### Tier 3: Pre-Push & CI Release Gates (2–3m)
 - **`make pre-push`** / **`make verify-all`**
   Runs full monorepo build (`build-all`), `verify-fast`, `test-api-e2e`, structural AST / security checks (`test-structural`), Knip dead-code checks, and database verification (`verify-db`).
+- **GitHub Actions CI (`.github/workflows/ci.yml`)**
+  Automated multi-stage gate executing `verify-fast`, `test-structural`, `build-portal`, and `test-api-e2e` against a native PostgreSQL service container.
 
 ### Tier 4: Heavy Regression (5–10m)
 - **`make test-heavy`**
-  Boots full isolated container stack and executes GL, inventory, and lifecycle fuzzing suites, webhook relay testing, and Playwright browser tests.
+  Boots full isolated container stack and executes GL, inventory, and lifecycle fuzzing suites, email/webhook relay testing, and Playwright browser suites.
 
-### Individual Fast Test Runners
-- **`make check-all`** — Fast static analysis (typechecking + linting).
-- **`make test-unit`** — Runs all unit tests (API PGlite + Ops Portal).
-- **`make test-single`** / **`make test-single TEST=<name>`** — Runs a single test file by name or path. If `TEST` is omitted, reads the test target from `.test_target` (or `tmp/.test_target`).
-- **`make test-structural`** — Runs structural architecture and security invariants.
+### Individual Test Targets
+- **`make test-unit`** — Runs all unit tests across all workspaces (API PGlite + Ops Portal components).
+- **`make test-api-unit`** — Runs API in-memory PGlite unit tests.
+- **`make test-portal-unit`** — Runs Ops Portal React Testing Library unit tests.
+- **`make test-api-e2e`** — Runs API End-to-End integration tests against real PostgreSQL.
+- **`make test-portal-e2e`** — Runs Ops Portal Playwright browser tests.
+- **`make test-structural`** — Runs all 126+ AST structural architecture and invariant checks.
 
 ## ELT Pipeline Commands
 

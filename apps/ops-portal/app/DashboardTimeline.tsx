@@ -89,9 +89,9 @@ export const EVENT_ICONS: Record<
   'payment.submitted': { icon: 'payments', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments?paymentId=' },
   'payment.allocated': { icon: 'account_balance', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments?paymentId=' },
   'payment.cancelled': { icon: 'cancel', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/payments?paymentId=' },
-  'general_ledger.entry_posted': { icon: 'menu_book', colorClass: 'text-slate-500', bgClass: 'bg-slate-500/10', path: '/general-ledger' },
-  'general_ledger.integrity_violation': { icon: 'error_outline', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/general-ledger' },
-  'system.ledger_integrity_violation': { icon: 'error_outline', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/general-ledger' },
+  'general_ledger.entry_posted': { icon: 'menu_book', colorClass: 'text-slate-500', bgClass: 'bg-slate-500/10', path: '/general-ledger/journal-entries' },
+  'general_ledger.integrity_violation': { icon: 'error_outline', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/general-ledger?auditEventId=' },
+  'system.ledger_integrity_violation': { icon: 'error_outline', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/general-ledger?auditEventId=' },
   'gl_reconciliation.created': { icon: 'compare_arrows', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/reconciliations' },
   'gl_reconciliation.deleted': { icon: 'delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/reconciliations' },
   'fiscal_period.created': { icon: 'calendar_month', colorClass: 'text-slate-500', bgClass: 'bg-slate-500/10', path: '/fiscal-periods' },
@@ -111,6 +111,15 @@ export const EVENT_ICONS: Record<
   'webhook.deleted': { icon: 'delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/admin/developers' },
 };
 
+const STATIC_MODULE_PATHS = new Set([
+  '/general-ledger',
+  '/general-ledger/journal-entries',
+  '/fiscal-periods',
+  '/admin/users',
+  '/admin/developers',
+  '/admin/email/outbox',
+]);
+
 function getEventStyle(eventType: string) {
   return (
     EVENT_ICONS[eventType] || {
@@ -120,6 +129,14 @@ function getEventStyle(eventType: string) {
       path: '#',
     }
   );
+}
+
+function getEventHref(path: string, entityId: string | null): string {
+  if (path === '#' || !path) return '#';
+  if (path.includes('?')) return `${path}${entityId || ''}`;
+  if (STATIC_MODULE_PATHS.has(path)) return path;
+  if (!entityId) return path;
+  return `${path}/${entityId}`;
 }
 
 function formatRelativeTime(dateString: string, t: ReturnType<typeof useTranslations>) {
@@ -247,11 +264,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
         return (
           <Link
             key={evt.eventId}
-            href={
-              style.path.includes('?')
-                ? `${style.path}${evt.entityId}`
-                : `${style.path}/${evt.entityId}`
-            }
+            href={getEventHref(style.path, evt.entityId || evt.eventId)}
             className="group flex gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] border bg-[var(--bg-card)] border-[var(--border)]"
           >
             <div

@@ -70,6 +70,9 @@ export class TimelineEventDto {
   @ApiProperty({ nullable: true })
   actor!: string | null;
 
+  @ApiProperty({ required: false, nullable: true })
+  payload?: Record<string, unknown> | null;
+
   @ApiProperty()
   timestamp!: Date;
 }

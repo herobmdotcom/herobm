@@ -69,7 +69,7 @@ const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
  * }
  */
 
-interface CoaNode {
+export interface CoaNode {
   root_type?: string;
   account_type?: string;
   account_number?: string;
@@ -78,7 +78,7 @@ interface CoaNode {
   children?: Record<string, CoaNode>;
 }
 
-interface CoaFile {
+export interface CoaFile {
   name: string;
   country_code?: string;
   tree: Record<string, CoaNode>;
@@ -172,6 +172,32 @@ export class CoaLoaderService {
   async loadFromFile(
     filename: string,
   ): Promise<{ created: number; skipped: boolean }> {
+    // Resolve file path resiliently
+    const chartsDir = resolveChartsDir(__dirname);
+    const filePath = path.join(chartsDir, filename);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`COA file not found: ${filePath}`);
+    }
+
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const coa: CoaFile = JSON.parse(raw);
+    const settingsFilename = filename.replace('.json', '_settings.json');
+    return this.loadFromData(coa, settingsFilename);
+  }
+
+  /**
+   * Load a chart of accounts from a parsed CoaFile object.
+   */
+  async loadFromData(
+    coa: CoaFile,
+    settingsFilename?: string,
+  ): Promise<{ created: number; skipped: boolean }> {
+    if (!coa || !coa.tree || typeof coa.tree !== 'object') {
+      throw new Error(
+        'Invalid Chart of Accounts structure: missing "tree" root property.',
+      );
+    }
+
     // Check if COA already loaded
     const [existing] = await this.db
       .select({ count: count() })
@@ -185,17 +211,7 @@ export class CoaLoaderService {
       );
     }
 
-    // Resolve file path resiliently
-    const chartsDir = resolveChartsDir(__dirname);
-    const filePath = path.join(chartsDir, filename);
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`COA file not found: ${filePath}`);
-    }
-
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const coa: CoaFile = JSON.parse(raw);
-
-    this.logger.log(`Loading chart of accounts: ${coa.name}`);
+    this.logger.log(`Loading chart of accounts: ${coa.name || 'Custom Chart'}`);
 
     // Flatten the tree into ordered inserts
     const insertRows: {
@@ -245,10 +261,13 @@ export class CoaLoaderService {
     // Insert in dependency order (parents first) within a transaction
     await this.db.transaction(async (tx: DrizzleDB) => {
       // Pre-load settings to get base_currency
-      const settingsPath = path.join(
-        resolveChartsDir(__dirname),
-        'au_standard_settings.json',
-      );
+      const chartsDir = resolveChartsDir(__dirname);
+      let settingsPath = settingsFilename
+        ? path.join(chartsDir, settingsFilename)
+        : '';
+      if (!settingsPath || !fs.existsSync(settingsPath)) {
+        settingsPath = path.join(chartsDir, 'au_standard_settings.json');
+      }
       let baseCurrency = 'EUR';
       let settings: {
         base_currency?: string;

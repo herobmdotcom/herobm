@@ -163,6 +163,17 @@ describe('InvoicesSection — rendering', () => {
         );
         expect(screen.getByText('buttons.createInvoice')).toBeInTheDocument();
     });
+
+    it('shows Create Invoice button for confirmed state with non-stock lines', () => {
+        mockCalcInvoiceable.mockReturnValueOnce([
+            { salesOrderLineId: 'L1', maxQty: 2, defaultQty: '2' },
+        ]);
+        render(
+            <InvoicesSection {...defaultProps} order={{ ...baseOrder, stateCode: 'confirmed' }} pickingSummary={{ lines: [] }} />,
+        );
+        expect(screen.getByText('buttons.createInvoice')).toBeInTheDocument();
+        expect(screen.getByText('buttons.createInvoice')).not.toBeDisabled();
+    });
 });
 
 describe('InvoicesSection — create invoice form', () => {

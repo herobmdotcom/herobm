@@ -3,7 +3,7 @@
 
 #let data = json(sys.inputs.at("data"))
 #let fmt(val) = {
-  if val == none { return "—" }
+  if val == none or val == "" or val == "—" or str(val).trim() == "" { return "—" }
   let n = float(val)
   let isNeg = n < 0.0
   let absVal = calc.abs(n)
@@ -50,7 +50,7 @@
 #import "theme-internal.typ": conf
 #show: doc => conf(title: "AUDIT SNAPSHOT & PERIOD CLOSE", doc)
 
-#set text(font: "DejaVu Sans", size: 9pt)
+#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 9pt)
 
 // ── Document Header ────────────────────────────────────────────────────────
 #grid(

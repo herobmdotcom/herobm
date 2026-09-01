@@ -58,6 +58,7 @@ import type {
   ImportCsvDto,
   ImportCsvResponseDto,
   JournalEntryResponseDto,
+  LedgerIntegrityAuditResponseDto,
   MappingProfileResponseDto,
   MatchConfirmedResponseDto,
   ParseCsvResponseDto,
@@ -66,6 +67,7 @@ import type {
   ReconciliationControllerGetReconciliations200Item,
   ReconciliationDetailResponseDto,
   ReconciliationRuleResponseDto,
+  RunIntegrityAuditDto,
   SeedRequestDto,
   SeedTaxRequestDto,
   SettingsFileDto,
@@ -1148,7 +1150,7 @@ export const glControllerListCharts = async ( options?: RequestInit): Promise<gl
 
 
 /**
- * Initialize the chart of accounts from a predefined template file.
+ * Initialize the chart of accounts from a predefined template file or uploaded JSON data.
  * @summary Seed Chart of Accounts
  */
 export type glControllerSeedChartOfAccountsResponse201 = {
@@ -1409,6 +1411,120 @@ export const getGlControllerGetSubledgerReconciliationUrl = (params?: GlControll
 export const glControllerGetSubledgerReconciliation = async (params?: GlControllerGetSubledgerReconciliationParams, options?: RequestInit): Promise<glControllerGetSubledgerReconciliationResponse> => {
   
   return customFetch<glControllerGetSubledgerReconciliationResponse>(getGlControllerGetSubledgerReconciliationUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieves the most recent automated ledger verification audit findings and anomalies.
+ * @summary Get Latest Ledger Integrity Audit Report
+ */
+export type glControllerGetLatestIntegrityAuditResponse200 = {
+  data: LedgerIntegrityAuditResponseDto
+  status: 200
+}
+    
+export type glControllerGetLatestIntegrityAuditResponseSuccess = (glControllerGetLatestIntegrityAuditResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetLatestIntegrityAuditResponse = (glControllerGetLatestIntegrityAuditResponseSuccess)
+
+export const getGlControllerGetLatestIntegrityAuditUrl = () => {
+
+
+  
+
+  return `/gl/integrity-audit`
+}
+
+export const glControllerGetLatestIntegrityAudit = async ( options?: RequestInit): Promise<glControllerGetLatestIntegrityAuditResponse> => {
+  
+  return customFetch<glControllerGetLatestIntegrityAuditResponse>(getGlControllerGetLatestIntegrityAuditUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Performs a real-time audit of sequence continuity, transactional GL parity, and hash chain invariants, updating the system integrity status.
+ * @summary Run Ledger Integrity Audit On Demand
+ */
+export type glControllerRunIntegrityAuditResponse200 = {
+  data: LedgerIntegrityAuditResponseDto
+  status: 200
+}
+
+export type glControllerRunIntegrityAuditResponse201 = {
+  data: LedgerIntegrityAuditResponseDto
+  status: 201
+}
+    
+export type glControllerRunIntegrityAuditResponseSuccess = (glControllerRunIntegrityAuditResponse200 | glControllerRunIntegrityAuditResponse201) & {
+  headers: Headers;
+};
+;
+
+export type glControllerRunIntegrityAuditResponse = (glControllerRunIntegrityAuditResponseSuccess)
+
+export const getGlControllerRunIntegrityAuditUrl = () => {
+
+
+  
+
+  return `/gl/integrity-audit/run`
+}
+
+export const glControllerRunIntegrityAudit = async (runIntegrityAuditDto?: RunIntegrityAuditDto, options?: RequestInit): Promise<glControllerRunIntegrityAuditResponse> => {
+  
+  return customFetch<glControllerRunIntegrityAuditResponse>(getGlControllerRunIntegrityAuditUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      runIntegrityAuditDto,)
+  }
+);}
+
+
+/**
+ * Retrieves the audit findings and detailed anomalies for a specific integrity violation event.
+ * @summary Get Specific Ledger Integrity Audit Report by Event ID
+ */
+export type glControllerGetIntegrityAuditByIdResponse200 = {
+  data: LedgerIntegrityAuditResponseDto
+  status: 200
+}
+    
+export type glControllerGetIntegrityAuditByIdResponseSuccess = (glControllerGetIntegrityAuditByIdResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetIntegrityAuditByIdResponse = (glControllerGetIntegrityAuditByIdResponseSuccess)
+
+export const getGlControllerGetIntegrityAuditByIdUrl = (eventId: string,) => {
+
+
+  
+
+  return `/gl/integrity-audit/${eventId}`
+}
+
+export const glControllerGetIntegrityAuditById = async (eventId: string, options?: RequestInit): Promise<glControllerGetIntegrityAuditByIdResponse> => {
+  
+  return customFetch<glControllerGetIntegrityAuditByIdResponse>(getGlControllerGetIntegrityAuditByIdUrl(eventId),
   {      
     ...options,
     method: 'GET'

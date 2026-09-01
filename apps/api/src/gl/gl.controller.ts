@@ -19,7 +19,7 @@ import {
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { GlService, JournalMeta } from './gl.service';
-import { CoaLoaderService } from './coa-loader.service';
+import { CoaLoaderService, type CoaFile } from './coa-loader.service';
 import { FxRevaluationService } from './fx-revaluation.service';
 import {
   CreateJournalEntryDto,
@@ -48,6 +48,8 @@ import {
   SubledgerReconciliationResponseDto,
   CashFlowStatementResponseDto,
   CashFlowDrilldownResponseDto,
+  LedgerIntegrityAuditResponseDto,
+  RunIntegrityAuditDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { SystemResource } from '@herobm/shared';
@@ -437,10 +439,17 @@ export class GlController {
   @ApiOperation({
     summary: 'Seed Chart of Accounts',
     description:
-      'Initialize the chart of accounts from a predefined template file.',
+      'Initialize the chart of accounts from a predefined template file or uploaded JSON data.',
   })
   @ApiCreatedResponse({ type: SuccessMessageResponseDto })
   async seedChartOfAccounts(@Body() body: SeedRequestDto) {
+    if (
+      body?.data &&
+      typeof body.data === 'object' &&
+      Object.keys(body.data).length > 0
+    ) {
+      return this.coaLoader.loadFromData(body.data as unknown as CoaFile);
+    }
     const filename = body?.filename || 'au_standard.json';
     return this.coaLoader.loadFromFile(filename);
   }
@@ -550,5 +559,46 @@ export class GlController {
   @ApiQuery({ name: 'asOfDate', required: false, type: String })
   async getSubledgerReconciliation(@Query('asOfDate') asOfDate?: string) {
     return this.glService.getSubledgerReconciliation(asOfDate);
+  }
+
+  // -------------------------------------------------------------------------
+  // Continuous Ledger Integrity Audit Result
+  // -------------------------------------------------------------------------
+
+  @Get('integrity-audit')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Latest Ledger Integrity Audit Report',
+    description:
+      'Retrieves the most recent automated ledger verification audit findings and anomalies.',
+  })
+  @ApiOkResponse({ type: LedgerIntegrityAuditResponseDto })
+  async getLatestIntegrityAudit() {
+    return this.glService.getIntegrityAudit();
+  }
+
+  @Post('integrity-audit/run')
+  @ApiBody({ type: RunIntegrityAuditDto, required: false })
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Run Ledger Integrity Audit On Demand',
+    description:
+      'Performs a real-time audit of sequence continuity, transactional GL parity, and hash chain invariants, updating the system integrity status.',
+  })
+  @ApiOkResponse({ type: LedgerIntegrityAuditResponseDto })
+  async runIntegrityAudit(@Body() _body?: RunIntegrityAuditDto) {
+    return this.glService.runIntegrityAudit();
+  }
+
+  @Get('integrity-audit/:eventId')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Specific Ledger Integrity Audit Report by Event ID',
+    description:
+      'Retrieves the audit findings and detailed anomalies for a specific integrity violation event.',
+  })
+  @ApiOkResponse({ type: LedgerIntegrityAuditResponseDto })
+  async getIntegrityAuditById(@Param('eventId') eventId: string) {
+    return this.glService.getIntegrityAudit(eventId);
   }
 }

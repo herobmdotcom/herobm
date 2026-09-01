@@ -58,6 +58,7 @@ export interface TimelineEvent {
   eventType: string;
   entityId: string;
   entityDisplay: string;
+  payload?: Record<string, unknown> | null;
   actor: string | null;
   timestamp: Date;
 }
@@ -699,6 +700,7 @@ export class DashboardService {
         END as "eventType",
         e.entity_id as "entityId", 
         e.entity_display_name as "entityDisplay", 
+        e.payload as "payload",
         e.actor, 
         e.created_on as "timestamp"
       FROM herobm_core.dashboard_timeline e

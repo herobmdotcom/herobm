@@ -540,9 +540,20 @@ export class SeedTaxRequestDto {
   filename!: string;
 }
 export class SeedRequestDto {
+  @ApiPropertyOptional({
+    description: 'Predefined preset filename (e.g. au_standard.json)',
+  })
   @IsString()
   @IsOptional()
   filename?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Direct ERPNext-compatible Chart of Accounts JSON data payload',
+  })
+  @IsOptional()
+  @IsObject()
+  data?: Record<string, unknown>;
 }
 export class EmptyBodyDto {}
 
@@ -739,4 +750,60 @@ export class CashFlowDrilldownResponseDto {
   @ApiProperty() totalAmount!: number;
   @ApiProperty({ type: [CashFlowDrilldownItemDto] })
   transactions!: CashFlowDrilldownItemDto[];
+}
+
+export class AnomalyDetailDto {
+  @ApiProperty()
+  type!: string;
+
+  @ApiPropertyOptional()
+  invoiceNumber?: string;
+
+  @ApiPropertyOptional()
+  invoiceId?: string;
+
+  @ApiPropertyOptional()
+  journalEntryId?: string;
+
+  @ApiPropertyOptional()
+  entryNumber?: string;
+
+  @ApiPropertyOptional({ type: Object })
+  details?: Record<string, unknown>;
+}
+
+export class LedgerIntegrityAuditResponseDto {
+  @ApiProperty()
+  hasAudit!: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
+  eventId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  entityDisplayName?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  createdOn?: Date | null;
+
+  @ApiProperty()
+  anomaliesCount!: number;
+
+  @ApiProperty({ type: [AnomalyDetailDto] })
+  anomalies!: AnomalyDetailDto[];
+
+  @ApiPropertyOptional({ nullable: true })
+  auditedAt?: string | null;
+
+  @ApiPropertyOptional()
+  verifiedInvoicesCount?: number;
+
+  @ApiPropertyOptional()
+  verifiedJournalsCount?: number;
+}
+
+export class RunIntegrityAuditDto {
+  @ApiPropertyOptional({ description: 'Optional trigger reason or actor note' })
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }

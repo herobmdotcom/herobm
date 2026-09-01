@@ -7,5 +7,12 @@
  */
 
 export type DashboardControllerSearchParams = {
+/**
+ * Search term (minimum 2 characters)
+ */
 q: string;
+/**
+ * Comma-separated entity types to filter search
+ */
+types?: string;
 };

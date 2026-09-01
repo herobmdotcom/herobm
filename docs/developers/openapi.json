@@ -5497,7 +5497,7 @@
     },
     "/gl/seed": {
       "post": {
-        "description": "Initialize the chart of accounts from a predefined template file.",
+        "description": "Initialize the chart of accounts from a predefined template file or uploaded JSON data.",
         "operationId": "GlController_seedChartOfAccounts",
         "parameters": [],
         "requestBody": {
@@ -5741,6 +5741,104 @@
           }
         },
         "summary": "Get Continuous Subledger Reconciliation",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/integrity-audit": {
+      "get": {
+        "description": "Retrieves the most recent automated ledger verification audit findings and anomalies.",
+        "operationId": "GlController_getLatestIntegrityAudit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerIntegrityAuditResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Latest Ledger Integrity Audit Report",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/integrity-audit/run": {
+      "post": {
+        "description": "Performs a real-time audit of sequence continuity, transactional GL parity, and hash chain invariants, updating the system integrity status.",
+        "operationId": "GlController_runIntegrityAudit",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunIntegrityAuditDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerIntegrityAuditResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerIntegrityAuditResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Run Ledger Integrity Audit On Demand",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/integrity-audit/{eventId}": {
+      "get": {
+        "description": "Retrieves the audit findings and detailed anomalies for a specific integrity violation event.",
+        "operationId": "GlController_getIntegrityAuditById",
+        "parameters": [
+          {
+            "name": "eventId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerIntegrityAuditResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Specific Ledger Integrity Audit Report by Event ID",
         "tags": [
           "General Ledger"
         ]
@@ -14737,6 +14835,16 @@
             "name": "q",
             "required": true,
             "in": "query",
+            "description": "Search term (minimum 2 characters)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "types",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entity types to filter search",
             "schema": {
               "type": "string"
             }
@@ -14767,16 +14875,18 @@
         "parameters": [
           {
             "name": "types",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Comma-separated event types to include",
             "schema": {
               "type": "string"
             }
           },
           {
             "name": "limit",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Maximum number of events to return",
             "schema": {
               "type": "string"
             }
@@ -25321,7 +25431,12 @@
         "type": "object",
         "properties": {
           "filename": {
-            "type": "string"
+            "type": "string",
+            "description": "Predefined preset filename (e.g. au_standard.json)"
+          },
+          "data": {
+            "type": "object",
+            "description": "Direct ERPNext-compatible Chart of Accounts JSON data payload"
           }
         }
       },
@@ -25548,6 +25663,86 @@
           "goodsReceivedNotInvoiced",
           "perpetualInventory"
         ]
+      },
+      "AnomalyDetailDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string"
+          },
+          "journalEntryId": {
+            "type": "string"
+          },
+          "entryNumber": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "LedgerIntegrityAuditResponseDto": {
+        "type": "object",
+        "properties": {
+          "hasAudit": {
+            "type": "boolean"
+          },
+          "eventId": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "anomaliesCount": {
+            "type": "number"
+          },
+          "anomalies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnomalyDetailDto"
+            }
+          },
+          "auditedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "verifiedInvoicesCount": {
+            "type": "number"
+          },
+          "verifiedJournalsCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "hasAudit",
+          "anomaliesCount",
+          "anomalies"
+        ]
+      },
+      "RunIntegrityAuditDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Optional trigger reason or actor note"
+          }
+        }
       },
       "CreateReconciliationDto": {
         "type": "object",
@@ -30687,7 +30882,20 @@
               "customer",
               "sales_order",
               "supplier",
-              "purchase_order"
+              "purchase_order",
+              "shipment",
+              "goods_receipt",
+              "sales_invoice",
+              "purchase_invoice",
+              "sales_return",
+              "purchase_return",
+              "sales_credit_note",
+              "purchase_debit_note",
+              "transfer_order",
+              "work_order",
+              "contact",
+              "project",
+              "payment"
             ]
           },
           "label": {
@@ -30739,6 +30947,10 @@
           },
           "actor": {
             "type": "string",
+            "nullable": true
+          },
+          "payload": {
+            "type": "object",
             "nullable": true
           },
           "timestamp": {

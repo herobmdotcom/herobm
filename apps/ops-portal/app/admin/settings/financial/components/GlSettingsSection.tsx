@@ -30,14 +30,31 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
     );
   };
 
+  const renderAccountField = (field: string, label: string, isRequired: boolean) => {
+    return (
+      <div className="flex flex-col gap-1">
+        <label className="flex items-center justify-between text-xs font-medium mb-1 text-[var(--text-muted)]">
+          <span>{label}</span>
+          {isRequired ? (
+            <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded uppercase tracking-wider">
+              {tSettings('financialSettings.required')}
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-muted bg-[var(--bg-card)] border border-[var(--border-color)] px-1.5 py-0.2 rounded uppercase tracking-wider">
+              {tSettings('financialSettings.optional')}
+            </span>
+          )}
+        </label>
+        {renderGlAccountSelect(field, glSettings?.[field] as string | undefined)}
+      </div>
+    );
+  };
+
   return (
-    <div id="gl-section" className="card">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="section-heading !mb-0">
-          {''}
-          {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-          <span className="material-symbols-outlined">{'account_balance_wallet'}</span>
-          {''}
+    <div id="gl-section" className="card flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h3 className="section-heading !mb-0 flex items-center gap-2">
+          <span className="material-symbols-outlined">account_balance_wallet</span>
           <span>{tSettings('financialSettings.defaults')}</span>
         </h3>
       </div>
@@ -46,166 +63,129 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
         <div className="text-sm text-muted animate-pulse">{tSettings('gl.loading')}</div>
       ) : (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
-            {/* Sales & Revenue */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultAr')}
-              </label>
-              {renderGlAccountSelect('defaultArAccountId', glSettings?.defaultArAccountId as string | undefined)}
+          {/* 1. Sales & Receivables */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">shopping_cart</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainSales')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainSalesDesc')}</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultRevenue')}
-              </label>
-              {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId as string | undefined)}
-            </div>
-
-            {/* Purchasing & Expense */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultAp')}
-              </label>
-              {renderGlAccountSelect('defaultApAccountId', glSettings?.defaultApAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultExpense')}
-              </label>
-              {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId as string | undefined)}
-            </div>
-
-            {/* Inventory & COGS */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultInventory')}
-              </label>
-              {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultCogs')}
-              </label>
-              {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId as string | undefined)}
-            </div>
-
-            {/* Accruals & Shrinkage */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultGrni')}
-              </label>
-              {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultShrinkage')}
-              </label>
-              {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId as string | undefined)}
-            </div>
-
-            {/* Misc */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultFeeRevenue')}
-              </label>
-              {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultDiscountsReceived')}
-              </label>
-              {renderGlAccountSelect('defaultDiscountsReceivedAccountId', glSettings?.defaultDiscountsReceivedAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultDiscountsGiven')}
-              </label>
-              {renderGlAccountSelect('defaultDiscountsGivenAccountId', glSettings?.defaultDiscountsGivenAccountId as string | undefined)}
-            </div>
-
-            {/* Foreign Exchange */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.realisedFxGain')}
-              </label>
-              {renderGlAccountSelect('realisedFxGainAccountId', glSettings?.realisedFxGainAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.realisedFxLoss')}
-              </label>
-              {renderGlAccountSelect('realisedFxLossAccountId', glSettings?.realisedFxLossAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.unrealisedFxGain')}
-              </label>
-              {renderGlAccountSelect('unrealisedFxGainAccountId', glSettings?.unrealisedFxGainAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.unrealisedFxLoss')}
-              </label>
-              {renderGlAccountSelect('unrealisedFxLossAccountId', glSettings?.unrealisedFxLossAccountId as string | undefined)}
-            </div>
-
-            {/* Tax */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultSalesTax')}
-              </label>
-              {renderGlAccountSelect('defaultSalesTaxAccountId', glSettings?.defaultSalesTaxAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultPurchaseTax')}
-              </label>
-              {renderGlAccountSelect('defaultPurchaseTaxAccountId', glSettings?.defaultPurchaseTaxAccountId as string | undefined)}
-            </div>
-
-            {/* Over-The-Counter (OTC) Defaults */}
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultOtcCash')}
-              </label>
-              {renderGlAccountSelect('defaultOtcCashAccountId', glSettings?.defaultOtcCashAccountId as string | undefined)}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.defaultOtcCard')}
-              </label>
-              {renderGlAccountSelect('defaultOtcCardAccountId', glSettings?.defaultOtcCardAccountId as string | undefined)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultArAccountId', tSettings('labels.defaultAr'), true)}
+              {renderAccountField('defaultRevenueAccountId', tSettings('labels.defaultRevenue'), true)}
+              {renderAccountField('defaultFeeRevenueAccountId', tSettings('labels.defaultFeeRevenue'), false)}
+              {renderAccountField('defaultDiscountsGivenAccountId', tSettings('labels.defaultDiscountsGiven'), false)}
+              <div className="flex flex-col gap-1 md:col-span-2 max-w-sm">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
+                  {tSettings('labels.revenueRouting')}
+                  <span className="material-symbols-outlined text-[14px] cursor-help" title="Determines whether customer or product account takes precedence on sales lines">info</span>
+                </label>
+                <select 
+                  className="input" 
+                  value={(glSettings?.revenueRoutingPrecedence as string) || 'customer_first'} 
+                  onChange={(e) => updateGlSetting('revenueRoutingPrecedence', e.target.value)}
+                >
+                  <option value="customer_first">{tSettings('gl.customerFirst')}</option>
+                  <option value="product_first">{tSettings('gl.productFirst')}</option>
+                </select>
+              </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-            <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.revenueRouting')}
-                <span className="material-symbols-outlined text-[14px] cursor-help" title="If customer and product both have a default GL account, this determines which to use">info</span>
-              </label>
-              <select 
-                className="input max-w-sm" 
-                value={(glSettings?.revenueRoutingPrecedence as string) || ''} 
-                onChange={(e) => updateGlSetting('revenueRoutingPrecedence', e.target.value)}
-              >
-                <option value="customer_first">{tSettings('gl.customerFirst')}</option>
-                <option value="product_first">{tSettings('gl.productFirst')}</option>
-              </select>
+
+          {/* 2. Purchasing & Payables */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">shopping_bag</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainPurchasing')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainPurchasingDesc')}</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {tSettings('labels.expenseRouting')}
-                <span className="material-symbols-outlined text-[14px] cursor-help" title="If supplier and product both have a default GL account, this determines which to use">info</span>
-              </label>
-              <select 
-                className="input max-w-sm" 
-                value={(glSettings?.expenseRoutingPrecedence as string) || ''} 
-                onChange={(e) => updateGlSetting('expenseRoutingPrecedence', e.target.value)}
-              >
-                <option value="supplier_first">{tSettings('gl.supplierFirst')}</option>
-                <option value="product_first">{tSettings('gl.productFirst')}</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultApAccountId', tSettings('labels.defaultAp'), true)}
+              {renderAccountField('defaultExpenseAccountId', tSettings('labels.defaultExpense'), true)}
+              {renderAccountField('defaultDiscountsReceivedAccountId', tSettings('labels.defaultDiscountsReceived'), false)}
+              {renderAccountField('defaultPpvAccountId', tSettings('labels.defaultPpv'), false)}
+              <div className="flex flex-col gap-1 md:col-span-2 max-w-sm">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
+                  {tSettings('labels.expenseRouting')}
+                  <span className="material-symbols-outlined text-[14px] cursor-help" title="Determines whether supplier or product account takes precedence on purchase lines">info</span>
+                </label>
+                <select 
+                  className="input" 
+                  value={(glSettings?.expenseRoutingPrecedence as string) || 'supplier_first'} 
+                  onChange={(e) => updateGlSetting('expenseRoutingPrecedence', e.target.value)}
+                >
+                  <option value="supplier_first">{tSettings('gl.supplierFirst')}</option>
+                  <option value="product_first">{tSettings('gl.productFirst')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Inventory & Costing */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">inventory_2</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainInventory')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainInventoryDesc')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultInventoryAccountId', tSettings('labels.defaultInventory'), true)}
+              {renderAccountField('defaultCogsAccountId', tSettings('labels.defaultCogs'), true)}
+              {renderAccountField('defaultGrniAccountId', tSettings('labels.defaultGrni'), true)}
+              {renderAccountField('defaultShrinkageAccountId', tSettings('labels.defaultShrinkage'), true)}
+            </div>
+          </div>
+
+          {/* 4. Tax Accounting */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">receipt_long</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainTax')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainTaxDesc')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultSalesTaxAccountId', tSettings('labels.defaultSalesTax'), true)}
+              {renderAccountField('defaultPurchaseTaxAccountId', tSettings('labels.defaultPurchaseTax'), true)}
+            </div>
+          </div>
+
+          {/* 5. Foreign Exchange (Multi-Currency) */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">currency_exchange</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainFx')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainFxDesc')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('realisedFxGainAccountId', tSettings('labels.realisedFxGain'), false)}
+              {renderAccountField('realisedFxLossAccountId', tSettings('labels.realisedFxLoss'), false)}
+              {renderAccountField('unrealisedFxGainAccountId', tSettings('labels.unrealisedFxGain'), false)}
+              {renderAccountField('unrealisedFxLossAccountId', tSettings('labels.unrealisedFxLoss'), false)}
+            </div>
+          </div>
+
+          {/* 6. Trade Counter & POS */}
+          <div className="p-4 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">point_of_sale</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainPos')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainPosDesc')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultOtcCashAccountId', tSettings('labels.defaultOtcCash'), false)}
+              {renderAccountField('defaultOtcCardAccountId', tSettings('labels.defaultOtcCard'), false)}
             </div>
           </div>
         </div>
@@ -213,3 +193,4 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
     </div>
   );
 }
+

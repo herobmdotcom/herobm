@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
 
 
 define HELP_TEXT
@@ -54,6 +54,7 @@ Verification & Quality Gates:
   make test-single [TEST=name] - Run a single test file (or target from .test_target)
   make test-api-unit  - Run API unit tests (PGlite)
   make test-portal-unit - Run Ops Portal unit tests
+  make test-portal-e2e- Run Ops Portal Playwright E2E tests
   make test-api-e2e   - Run end-to-end API tests against real Postgres
   make test-structural- Run structural architecture, security & knip checks
   make test-heavy     - Run containerized fuzzing and full-stack heavy tests
@@ -557,6 +558,10 @@ test-api-unit:
 test-portal-unit:
 	@$(NPX) turbo run test:unit --filter=ops-portal
 
+test-portal-e2e:
+	@echo "Running Ops Portal Playwright E2E tests against $(or $(PORTAL_URL),http://localhost:4301)..."
+	$(NPM) run test:e2e -w apps/ops-portal
+
 test-api-cov:
 	$(NPM) run test:cov -w apps/api
 
@@ -610,6 +615,7 @@ build-mcp:
 	$(NPM) run build -w apps/mcp-server
 
 build-portal: build-shared build-sdk
+	node -e "const fs = require('fs'); if (fs.existsSync('apps/ops-portal/.next')) fs.rmSync('apps/ops-portal/.next', { recursive: true, force: true, maxRetries: 5 });"
 	$(NPM) run build -w apps/ops-portal
 ifeq ($(OS),Windows_NT)
 	if exist apps\ops-portal\public xcopy /E /I /Y apps\ops-portal\public apps\ops-portal\.next\standalone\apps\ops-portal\public

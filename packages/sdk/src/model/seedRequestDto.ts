@@ -5,7 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { SeedRequestDtoData } from './seedRequestDtoData';
 
 export interface SeedRequestDto {
+  /** Predefined preset filename (e.g. au_standard.json) */
   filename?: string;
+  /** Direct ERPNext-compatible Chart of Accounts JSON data payload */
+  data?: SeedRequestDtoData;
 }
