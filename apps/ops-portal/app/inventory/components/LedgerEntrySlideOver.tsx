@@ -104,32 +104,32 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
             <table className="w-full text-sm text-left">
-              <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+              <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3">{t('columns.product')}</th>
                   <th className="px-5 py-3">{t('columns.locationBin')}</th>
                   <th className="px-5 py-3 text-right">{t('columns.qtyChange')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--border)]">
                 {details.lines.map((l) => {
                   const val = parseFloat(l.change || '0');
                   const isPositive = val > 0;
                   const isNegative = val < 0;
                   
                   return (
-                    <tr key={l.ledgerId} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={l.ledgerId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                       <td className="px-5 py-3 align-top">
-                        <div className="font-bold text-[#041627]">{l.productNumber}</div>
-                        <div className="text-gray-500 text-xs mt-0.5 max-w-[280px] break-words leading-tight">{l.productName}</div>
+                        <div className="font-bold text-[var(--text-primary)]">{l.productNumber}</div>
+                        <div className="text-[var(--text-muted)] text-xs mt-0.5 max-w-[280px] break-words leading-tight">{l.productName}</div>
                       </td>
                       <td className="px-5 py-3 align-top whitespace-nowrap">
-                        <div className="font-semibold text-gray-700">{l.locationName}</div>
-                        <div className="font-mono text-xs text-gray-500 mt-0.5">{l.binCode}</div>
+                        <div className="font-semibold text-[var(--text-secondary)]">{l.locationName}</div>
+                        <div className="font-mono text-xs text-[var(--text-muted)] mt-0.5">{l.binCode}</div>
                       </td>
-                      <td className={`px-5 py-3 align-top text-right font-mono font-bold ${isPositive ? 'text-[#006b5c]' : isNegative ? 'text-[#b45309]' : 'text-gray-600'}`}>
+                      <td className={`px-5 py-3 align-top text-right font-mono font-bold ${isPositive ? 'text-[var(--accent)]' : isNegative ? 'text-amber-400' : 'text-[var(--text-muted)]'}`}>
                         {isPositive ? `+${val.toLocaleString()}` : val.toLocaleString()}
                       </td>
                     </tr>
@@ -138,7 +138,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
               </tbody>
             </table>
             {details.lines.length === 0 && (
-              <div className="p-8 text-center text-gray-500 text-sm">
+              <div className="p-8 text-center text-[var(--text-muted)] text-sm">
                 {t('noLines')}
               </div>
             )}

@@ -22,21 +22,21 @@ export default function DetailTabGrid<T>({
 
   return (
     <div className="flex-1 flex flex-col w-full h-full min-h-[500px] pb-6">
-      <div className="flex-1 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all h-full min-h-0">
+      <div className="flex-1 flex flex-col z-10 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden transition-all h-full min-h-0">
         <DataGrid<T>
           domLayout={domLayout}
           renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 gap-3">
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                <h2 className="text-[1.2rem] sm:text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0">
+                <h2 className="text-[1.2rem] sm:text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] shrink-0">
                   {title}
                 </h2>
-                <div className="hidden sm:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                  <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase">
+                <div className="hidden sm:block h-5 w-px bg-[var(--border)] shrink-0 mx-1"></div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md shrink-0">
+                  <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase">
                     {tCommon('grid.rowCountLabel')}
                   </span>
-                  <span className="text-[11px] font-bold text-[#006b5c]">
+                  <span className="text-[11px] font-mono font-bold text-[var(--text-primary)]">
                     {loading ? '...' : rowCount.toLocaleString()}
                   </span>
                 </div>

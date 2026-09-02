@@ -175,9 +175,9 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
         {hasGenerated && (
           <div className="space-y-4">
 
-            <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+            <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
               <table className="w-full text-sm text-left">
-                <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                   <tr>
                     <th className="px-4 py-3 w-[150px]">Account</th>
                     <th className="px-4 py-3 min-w-[200px]">Memo</th>
@@ -187,10 +187,10 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
                     <th className="px-4 py-3 text-right w-[140px]">Credit ({baseCurrency})</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[var(--border)]/40">
                   {candidates.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 italic">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--text-muted)] italic">
                         No eligible candidates
                       </td>
                     </tr>
@@ -204,17 +204,17 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
                     const fxRateDisplay = line.exchangeRate ? line.exchangeRate.toFixed(4) : '-';
 
                     return (
-                    <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-2 font-mono text-xs text-[#041627]" title={accountNameDisplay}>
-                        <span className="border-b border-dashed border-gray-400 cursor-help">{accountCodeDisplay}</span>
+                    <tr key={idx} className="hover:bg-[var(--bg-card-hover)]">
+                      <td className="px-4 py-2 font-mono text-xs text-[var(--text-primary)]" title={accountNameDisplay}>
+                        <span className="border-b border-dashed border-[var(--border)] cursor-help">{accountCodeDisplay}</span>
                       </td>
-                      <td className="px-4 py-2 text-xs text-[#041627]">
+                      <td className="px-4 py-2 text-xs text-[var(--text-primary)]">
                         {line.memo}
                       </td>
-                      <td className="px-4 py-2 text-xs font-mono text-right text-gray-500">
+                      <td className="px-4 py-2 text-xs font-mono text-right text-[var(--text-muted)]">
                         {origDisplay}
                       </td>
-                      <td className="px-4 py-2 text-xs font-mono text-right text-gray-500">
+                      <td className="px-4 py-2 text-xs font-mono text-right text-[var(--text-muted)]">
                         {fxRateDisplay}
                       </td>
                       <td className="px-4 py-2 text-right">
@@ -242,20 +242,20 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
                   })}
                   {candidates.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-muted)] text-sm">
                         No variances found to revalue.
                       </td>
                     </tr>
                   )}
                   {candidates.length > 0 && (
-                    <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
-                      <td colSpan={4} className="px-4 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
+                    <tr className="bg-[var(--bg-secondary)] border-t-2 border-[var(--border)]">
+                      <td colSpan={4} className="px-4 py-3 text-right font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">
                         Total
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono font-bold ${!isBalanced ? 'text-red-500' : 'text-[#041627]'}`}>
+                      <td className={`px-4 py-3 text-right font-mono font-bold ${!isBalanced ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
                         {totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono font-bold ${!isBalanced ? 'text-red-500' : 'text-[#041627]'}`}>
+                      <td className={`px-4 py-3 text-right font-mono font-bold ${!isBalanced ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
                         {totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>

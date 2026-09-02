@@ -381,18 +381,56 @@ export class InventoryQueryService {
     });
 
     // Handle kit component availability for all kits (stock and non-stock)
-    for (const kit of allKits) {
-      const components = await this.db
-        .select()
-        .from(productComponents)
-        .where(eq(productComponents.parentProductId, kit.productId));
+    const kitProductIds = allKits.map((k) => k.productId);
+    const allKitComponents =
+      kitProductIds.length > 0
+        ? await this.db
+            .select()
+            .from(productComponents)
+            .where(inArray(productComponents.parentProductId, kitProductIds))
+        : [];
 
+    const componentsByParent = new Map<
+      string,
+      (typeof productComponents.$inferSelect)[]
+    >();
+    const allChildProductIds = new Set<string>();
+
+    for (const comp of allKitComponents) {
+      if (!comp.parentProductId) continue;
+      const list = componentsByParent.get(comp.parentProductId) || [];
+      list.push(comp);
+      componentsByParent.set(comp.parentProductId, list);
+      if (comp.childProductId) {
+        allChildProductIds.add(comp.childProductId);
+      }
+    }
+
+    const allCompsInventory =
+      allChildProductIds.size > 0
+        ? await this.findByProductIds(
+            Array.from(allChildProductIds),
+            locationId,
+          )
+        : { data: [] };
+
+    // Group inventory data by childProductId
+    const compsInventoryByProduct = new Map<
+      string,
+      (typeof allCompsInventory.data)[0][]
+    >();
+    for (const inv of allCompsInventory.data) {
+      const list = compsInventoryByProduct.get(inv.productId) || [];
+      list.push(inv);
+      compsInventoryByProduct.set(inv.productId, list);
+    }
+
+    for (const kit of allKits) {
+      const components = componentsByParent.get(kit.productId) || [];
       if (components.length === 0) continue;
 
       const compIds = components.map((c) => c.childProductId).filter(Boolean);
       if (compIds.length === 0) continue;
-
-      const compsInventory = await this.findByProductIds(compIds, locationId);
 
       const inventoryByLocation: Record<
         string,
@@ -404,19 +442,22 @@ export class InventoryQueryService {
         }
       > = {};
 
-      for (const inv of compsInventory.data) {
-        if (!inv.locationId) continue;
-        if (!inventoryByLocation[inv.locationId]) {
-          inventoryByLocation[inv.locationId] = {
-            locationId: inv.locationId,
-            locationNo: inv.locationNo || null,
-            locationName: inv.locationName || null,
-            compAvailable: {},
-          };
+      for (const compId of compIds) {
+        const invList = compsInventoryByProduct.get(compId) || [];
+        for (const inv of invList) {
+          if (!inv.locationId) continue;
+          if (!inventoryByLocation[inv.locationId]) {
+            inventoryByLocation[inv.locationId] = {
+              locationId: inv.locationId,
+              locationNo: inv.locationNo || null,
+              locationName: inv.locationName || null,
+              compAvailable: {},
+            };
+          }
+          inventoryByLocation[inv.locationId].compAvailable[inv.productId] =
+            (inventoryByLocation[inv.locationId].compAvailable[inv.productId] ||
+              0) + (Number(inv.quantityAvailable) || 0);
         }
-        inventoryByLocation[inv.locationId].compAvailable[inv.productId] =
-          (inventoryByLocation[inv.locationId].compAvailable[inv.productId] ||
-            0) + (Number(inv.quantityAvailable) || 0);
       }
 
       for (const locId in inventoryByLocation) {

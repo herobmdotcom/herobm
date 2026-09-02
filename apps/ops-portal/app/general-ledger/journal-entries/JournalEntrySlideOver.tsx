@@ -94,7 +94,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
             <div className="flex flex-col gap-5 text-sm">
               <div>
                 <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('columns.memo')}</span>
-                <span className="text-[#041627]">{entry.memo || tCommon('na')}</span>
+                <span className="text-[var(--text-primary)]">{entry.memo || tCommon('na')}</span>
               </div>
               <div>
                 <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('sourceDocument')}</span>
@@ -117,20 +117,20 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                     {entry.sourceNumber || sourceLabel(entry.sourceType)}
                   </Link>
                 ) : (
-                  <span className="text-[#041627]">{entry.sourceNumber || sourceLabel(entry.sourceType)}</span>
+                  <span className="text-[var(--text-primary)]">{entry.sourceNumber || sourceLabel(entry.sourceType)}</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
             {loading ? (
               <div className="flex justify-center items-center py-12">
-                <span className="loading loading-spinner text-gray-400"></span>
+                <span className="loading loading-spinner text-[var(--text-muted)]"></span>
               </div>
             ) : (
               <table className="w-full text-sm text-left">
-                <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                   <tr>
                     <th className="px-5 py-3">{t('columns.glAccount')}</th>
                     <th className="px-5 py-3">{t('columns.party')}</th>
@@ -139,12 +139,12 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                     <th className="px-5 py-3">{t('columns.memo')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[var(--border)]/40">
                   {lines.map((l) => (
-                    <tr key={l.journalLineId} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={l.journalLineId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                       <td className="px-5 py-3">
-                        <div className="font-mono text-xs text-gray-500">{l.accountCode}</div>
-                        <div className="font-semibold text-[#041627] mt-0.5">{l.accountName}</div>
+                        <div className="font-mono text-xs text-[var(--text-muted)]">{l.accountCode}</div>
+                        <div className="font-semibold text-[var(--text-primary)] mt-0.5">{l.accountName}</div>
                       </td>
                       <td className="px-5 py-3 text-xs">
                         {l.partyType && l.partyId ? (
@@ -156,32 +156,32 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                             {l.partyName || (l.partyId ? `${l.partyType}: ${l.partyId.substring(0, 8)}...` : l.partyType)}
                           </Link>
                         ) : l.partyType ? (
-                          <span className="text-gray-600">
+                          <span className="text-[var(--text-muted)]">
                             {l.partyType}: {l.partyId?.substring(0, 8)}...
                           </span>
                         ) : tCommon('na')}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                      <td className="px-5 py-3 text-right font-mono font-medium text-[var(--text-primary)]">
                         {fmt(l.debit)}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                      <td className="px-5 py-3 text-right font-mono font-medium text-[var(--text-primary)]">
                         {fmt(l.credit)}
                       </td>
-                      <td className="px-5 py-3 text-gray-500 text-xs">
+                      <td className="px-5 py-3 text-[var(--text-muted)] text-xs">
                         {l.memo || tCommon('na')}
                       </td>
                     </tr>
                   ))}
                   {/* Totals Row */}
                   {lines.length > 0 && (
-                    <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
-                      <td colSpan={2} className="px-5 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
+                    <tr className="bg-[var(--bg-secondary)] border-t-2 border-[var(--border)]">
+                      <td colSpan={2} className="px-5 py-3 text-right font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">
                         {t('total')}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
+                      <td className="px-5 py-3 text-right font-mono font-bold text-[var(--text-primary)]">
                         {fmt(lines.reduce((s, l) => s + parseFloat(l.debit || '0'), 0))}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
+                      <td className="px-5 py-3 text-right font-mono font-bold text-[var(--text-primary)]">
                         {fmt(lines.reduce((s, l) => s + parseFloat(l.credit || '0'), 0))}
                       </td>
                       <td></td>

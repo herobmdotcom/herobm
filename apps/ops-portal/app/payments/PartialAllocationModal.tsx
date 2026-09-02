@@ -64,18 +64,18 @@ export default function PartialAllocationModal({
         </div>
         
         <div className="p-6 space-y-6">
-          <div className="bg-[#f0f8f6] border border-[#006b5c]/30 p-4 rounded-lg flex flex-col gap-2">
+          <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 p-4 rounded-lg flex flex-col gap-2">
             <div className="flex justify-between text-sm">
-              <span className="font-bold text-[#006b5c]">{t('invoice')}</span>
-              <span className="font-medium text-[#041627]">{invoice.invoiceNumber}</span>
+              <span className="font-bold text-[var(--accent)]">{t('invoice')}</span>
+              <span className="font-medium text-[var(--text-primary)]">{invoice.invoiceNumber}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="font-bold text-[#006b5c]">{t('outstanding')}</span>
-              <span className="font-medium text-[#041627]">{formatAmount(parseFloat(invoice.outstandingAmount), currencyCode)}</span>
+              <span className="font-bold text-[var(--accent)]">{t('outstanding')}</span>
+              <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(invoice.outstandingAmount), currencyCode)}</span>
             </div>
-            <div className="flex justify-between text-sm pt-2 border-t border-[#006b5c]/20">
-              <span className="font-bold text-[#006b5c]">{t('maxAvailable')}</span>
-              <span className="font-medium text-[#041627]">{formatAmount(maxAvailable, currencyCode)}</span>
+            <div className="flex justify-between text-sm pt-2 border-t border-[var(--accent)]/20">
+              <span className="font-bold text-[var(--accent)]">{t('maxAvailable')}</span>
+              <span className="font-medium text-[var(--text-primary)]">{formatAmount(maxAvailable, currencyCode)}</span>
             </div>
           </div>
 

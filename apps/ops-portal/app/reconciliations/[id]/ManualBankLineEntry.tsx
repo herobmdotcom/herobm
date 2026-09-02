@@ -90,7 +90,7 @@ export default function ManualBankLineEntry({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[var(--bg-card)]">
       <div className="p-4 overflow-y-auto flex-1" ref={containerRef}>
         <div className="text-sm text-[var(--text-secondary)] mb-4">
           {t('manualEntryHelp')}
@@ -98,7 +98,7 @@ export default function ManualBankLineEntry({
         
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            <tr className="border-b border-[var(--border)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
               <th className="pb-2 font-medium w-[120px]">{t('date')}</th>
               <th className="pb-2 font-medium">{t('description')}</th>
               <th className="pb-2 font-medium w-[150px]">{t('reference')}</th>
@@ -108,7 +108,7 @@ export default function ManualBankLineEntry({
           </thead>
           <tbody>
             {lines.map((line, idx) => (
-              <tr key={line.id} className="border-b border-gray-100 last:border-0">
+              <tr key={line.id} className="border-b border-[var(--border)] last:border-0">
                 <td className="py-2 pr-2">
                   <input
                     type="date"
@@ -116,7 +116,7 @@ export default function ManualBankLineEntry({
                     data-field="date"
                     value={line.date}
                     onChange={(e) => updateLine(line.id, 'date', e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded text-sm focus:outline-none focus:border-[var(--brand-blue)] focus:ring-1 focus:ring-[var(--brand-blue)]"
+                    className="input w-full text-sm"
                   />
                 </td>
                 <td className="py-2 pr-2">
@@ -124,7 +124,7 @@ export default function ManualBankLineEntry({
                     type="text"
                     value={line.description}
                     onChange={(e) => updateLine(line.id, 'description', e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded text-sm focus:outline-none focus:border-[var(--brand-blue)] focus:ring-1 focus:ring-[var(--brand-blue)]"
+                    className="input w-full text-sm"
                     placeholder="Description"
                   />
                 </td>
@@ -133,7 +133,7 @@ export default function ManualBankLineEntry({
                     type="text"
                     value={line.reference}
                     onChange={(e) => updateLine(line.id, 'reference', e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded text-sm focus:outline-none focus:border-[var(--brand-blue)] focus:ring-1 focus:ring-[var(--brand-blue)]"
+                    className="input w-full text-sm"
                     placeholder="Ref"
                   />
                 </td>
@@ -144,14 +144,14 @@ export default function ManualBankLineEntry({
                     value={line.amount}
                     onChange={(e) => updateLine(line.id, 'amount', e.target.value)}
                     onKeyDown={(e) => handleKeyDown(e, idx, 'amount')}
-                    className="w-full px-2 py-1.5 border rounded text-sm text-right focus:outline-none focus:border-[var(--brand-blue)] focus:ring-1 focus:ring-[var(--brand-blue)]"
+                    className="input w-full text-sm text-right"
                     placeholder="0.00"
                   />
                 </td>
                 <td className="py-2 text-center">
                   <Button variant="ghost"
                     onClick={() => removeLine(line.id)}
-                    className="text-[var(--text-muted)] hover:text-red-500"
+                    className="text-[var(--text-muted)] hover:text-red-400"
                     title={tCommon('delete')}
                   >
                     { }
@@ -164,17 +164,17 @@ export default function ManualBankLineEntry({
         </table>
       </div>
       
-      <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0">
+      <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] flex justify-end gap-3 shrink-0">
         <Button variant="secondary"
           onClick={onCancel}
-          className="px-4 py-2 border rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-100"
+          className="px-4 py-2 text-sm font-medium"
         >
           {tCommon('cancel')}
         </Button>
         <Button variant="primary"
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded-lg text-sm font-medium hover:brightness-110 disabled:opacity-50"
+          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:brightness-110 disabled:opacity-50"
         >
           {saving ? tCommon('saving') : tCommon('save')}
         </Button>

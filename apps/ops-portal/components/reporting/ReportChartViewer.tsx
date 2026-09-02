@@ -126,7 +126,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full w-full bg-white/50 text-[var(--text-muted)]">
+      <div className="flex items-center justify-center h-full w-full bg-transparent text-[var(--text-muted)]">
         {t('noData')}
       </div>
     );
@@ -134,7 +134,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
 
   if (pivotedData.data.length > 500) {
     return (
-      <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-white/50 text-[var(--text-muted)]">
+      <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-transparent text-[var(--text-muted)]">
 
         <span className="material-symbols-outlined text-4xl text-amber-500 mb-2">warning</span>
         <p className="max-w-md">{t('chartTooLarge', { count: pivotedData.data.length })}</p>
@@ -151,13 +151,13 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     if (config.type === 'line') {
       return (
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(196,198,205,0.4)" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
           <XAxis dataKey={xKey} type="category" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
           <Tooltip 
-            contentStyle={{ borderRadius: '8px', border: '1px solid rgba(196,198,205,0.4)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+            contentStyle={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}
           />
-          <Legend wrapperStyle={{ paddingTop: '20px' }} />
+          <Legend wrapperStyle={{ paddingTop: '20px', color: 'var(--text-secondary)' }} />
           
           {isMultiSeries ? (
             seriesKeys.map((key, i) => (
@@ -173,14 +173,14 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     // Default to Bar
     return (
       <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(196,198,205,0.4)" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
         <XAxis dataKey={xKey} type="category" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
         <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
         <Tooltip 
-          contentStyle={{ borderRadius: '8px', border: '1px solid rgba(196,198,205,0.4)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+          contentStyle={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}
           cursor={{ fill: 'rgba(196,198,205,0.1)' }}
         />
-        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+        <Legend wrapperStyle={{ paddingTop: '20px', color: 'var(--text-secondary)' }} />
         
         {isMultiSeries ? (
           seriesKeys.map((key, i) => (
@@ -194,7 +194,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
   };
 
   return (
-    <div className="w-full h-full min-h-[400px] p-4 bg-white">
+    <div className="w-full h-full min-h-[400px] p-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
       <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>

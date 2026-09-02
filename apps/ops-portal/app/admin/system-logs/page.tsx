@@ -85,7 +85,7 @@ export default function SystemLogsPage() {
   return (
 
       <div className="w-full p-6 lg:p-8 flex flex-col">
-        <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto min-h-[calc(100vh-150px)] flex flex-col">
+        <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto min-h-[calc(100vh-150px)] flex flex-col">
         {/* Header */}
         <ContentPageHeader
           title={t('title')}

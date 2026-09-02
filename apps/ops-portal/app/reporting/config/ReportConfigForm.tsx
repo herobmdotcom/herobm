@@ -136,17 +136,17 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
   return (
     <div className="h-full p-4 lg:p-6 overflow-y-auto">
       <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] p-6 lg:p-8">
+        <div className="flex flex-col gap-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-6 lg:p-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]">
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)]">
               {initialData ? formData.name || t('titles.edit') : t('titles.new')}
             </h2>
           </div>
 
         {isSystem && (
-          <div className="bg-gray-50 border border-gray-200 p-4 rounded-md flex items-center gap-3">
-            <span className="material-symbols-outlined text-gray-400 text-[20px]">{`info`}</span>
-            <p className="text-sm text-gray-600">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-4 rounded-md flex items-center gap-3">
+            <span className="material-symbols-outlined text-[var(--text-muted)] text-[20px]">{`info`}</span>
+            <p className="text-sm text-[var(--text-secondary)]">
               {t('systemReportWarning')}
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
 
           <div className="flex gap-4 mt-2">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.displayName')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('labels.displayName')}</label>
               <input
                 type="text"
                 value={formData.name}
@@ -165,7 +165,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
             </div>
             
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.uniqueSlug')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('labels.uniqueSlug')}</label>
               <input
                 type="text"
                 value={formData.slug}
@@ -179,12 +179,12 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
 
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.dataSourceHook')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('labels.dataSourceHook')}</label>
               <div className="flex gap-2">
                 <select
                   value={formData.dataSourceHook}
                   onChange={e => handleChange('dataSourceHook', e.target.value)}
-                  className="select flex-1 bg-white border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c]"
+                  className="select flex-1"
                 >
                   <option value="">{t('placeholders.selectDataSource')}</option>
                   {availableHooks.map((hook, idx) => (
@@ -192,7 +192,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
                   ))}
                 </select>
                 <Button
-                  variant="secondary" className="whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
+                  variant="secondary" className="whitespace-nowrap text-[var(--accent)] border-[var(--accent)]/20 hover:bg-[var(--accent)]/10"
                   onClick={() => setBrowserOpen(true)}
                   disabled={!formData.dataSourceHook}
                 >
@@ -202,7 +202,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
             </div>
 
             <div className="flex-[2]">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.description')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('labels.description')}</label>
               <input
                 type="text"
                 value={formData.description}
@@ -213,18 +213,18 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
           </div>
           
           <div className="flex flex-col flex-1 mt-4">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.uiConfig')}</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('labels.uiConfig')}</label>
             <textarea
               value={formData.uiConfigText}
               onChange={e => handleChange('uiConfigText', e.target.value)}
-              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c] min-h-[400px] resize-y"
+              className="flex-1 w-full border border-[var(--border)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[var(--bg-secondary)] text-[var(--text-primary)] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] min-h-[400px] resize-y"
               spellCheck={false}
             />
           </div>
 
           <div className="flex items-center gap-3 mt-4">
             <Button 
-              variant="primary" className="px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" 
+              variant="primary" className="px-8 py-3 text-sm font-bold rounded-lg transition-all btn btn-primary" 
               onClick={handleSave} 
               disabled={isSubmitting}
             >
@@ -232,7 +232,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
             </Button>
             {initialData && !isSystem && (
               <Button 
-                variant="secondary" className="px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
+                variant="secondary" className="px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-400 hover:bg-red-500/10 transition-all" 
                 onClick={handleDelete} 
                 disabled={isSubmitting}
               >

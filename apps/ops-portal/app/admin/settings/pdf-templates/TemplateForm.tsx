@@ -132,9 +132,9 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
     <div className="flex flex-col gap-6 pb-12 h-full overflow-y-auto pr-2">
       {/* Top side: Form & Editor */}
       <div className="flex flex-col gap-4 w-full shrink-0">
-        <div className="card p-6 flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
+        <div className="card p-6 flex flex-col gap-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
           <div className="flex items-center gap-3">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] font-['Manrope',sans-serif]">
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] font-['Manrope',sans-serif]">
               {isNew ? t('newTemplate') : formData.name}
             </h2>
           </div>
@@ -165,28 +165,28 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
               <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.supportedContexts')}</label>
               <div className="relative w-full">
                 <div 
-                  className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white"
+                  className="input flex items-center justify-between cursor-pointer font-normal border-[var(--border)]"
                   onClick={() => setContextsOpen(!contextsOpen)}
                 >
-                  <span className="truncate pr-4 text-sm text-gray-700 font-medium">
-                    {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">{t('placeholders.selectContexts')}</span>}
+                  <span className="truncate pr-4 text-sm text-[var(--text-primary)] font-medium">
+                    {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-[var(--text-muted)] font-normal">{t('placeholders.selectContexts')}</span>}
                   </span>
                   {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                  <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
+                  <span className="material-symbols-outlined text-[var(--text-muted)] text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
                 </div>
                 
                 {contextsOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setContextsOpen(false)}></div>
-                    <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[rgba(196,198,205,0.4)] rounded-lg z-50 py-1">
+                    <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-[var(--bg-card)] border border-[var(--border)] rounded-lg z-50 py-1 shadow-xl">
                       {availableHooks.length === 0 ? (
-                        <div className="text-xs text-gray-400 italic p-3">{t('loadingContexts')}</div>
+                        <div className="text-xs text-[var(--text-muted)] italic p-3">{t('loadingContexts')}</div>
                       ) : (
                         availableHooks.map((h, i) => (
-                          <label key={`${h.slug}-${i}`} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f8f9fa] transition-colors border-b border-gray-100 last:border-0">
+                          <label key={`${h.slug}-${i}`} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[var(--bg-card-hover)] transition-colors border-b border-[var(--border)] last:border-0">
                             <input 
                               type="checkbox" 
-                              className="checkbox checkbox-sm checkbox-primary border-gray-300 rounded"
+                              className="checkbox checkbox-sm checkbox-primary border-[var(--border)] rounded"
                               checked={formData.contexts.includes(h.slug)}
                               onChange={(e) => {
                                 const checked = e.target.checked;
@@ -198,7 +198,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                                 }));
                               }}
                             />
-                            <span className="text-[13px] font-medium text-gray-700">{h.slug}</span>
+                            <span className="text-[13px] font-medium text-[var(--text-primary)]">{h.slug}</span>
                           </label>
                         ))
                       )}
@@ -206,7 +206,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                   </>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400 mt-2 italic">
+              <p className="text-[10px] text-[var(--text-muted)] mt-2 italic">
                 {t('descriptions.contextHelp')}
               </p>
             </div>
@@ -215,7 +215,7 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           <div className="flex flex-col flex-1 mt-4 min-h-[500px]">
             <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.typstSource')}</label>
             <textarea 
-              className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c] min-h-[500px] resize-y"
+              className="flex-1 w-full border border-[var(--border)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[var(--bg-secondary)] text-[var(--text-primary)] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] min-h-[500px] resize-y"
               value={formData.template}
               onChange={e => setFormData(d => ({ ...d, template: e.target.value }))}
               spellCheck={false}
@@ -241,21 +241,21 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
 
       {/* Bottom side: Live Preview */}
       <div className="flex flex-col w-full min-h-[800px] shrink-0">
-        <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
+        <div className="card p-6 flex flex-col gap-4 h-full bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-[#041627] font-['Manrope',sans-serif]">{t('livePreview.title')}</h3>
-            <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] font-['Manrope',sans-serif]">{t('livePreview.title')}</h3>
+            <span className="text-xs text-[var(--text-muted)] font-medium bg-[var(--bg-secondary)] px-2 py-1 rounded">{t('livePreview.badge')}</span>
           </div>
-          <div className="flex gap-3 items-end bg-[#f8f9fa] p-4 rounded-lg border border-[rgba(196,198,205,0.4)]">
+          <div className="flex gap-3 items-end bg-[var(--bg-secondary)] p-4 rounded-lg border border-[var(--border)]">
             <div className="flex-1">
               <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.contextResolver')}</label>
               <div className="flex gap-2">
-                <select className="select flex-1 bg-white" value={previewVars.hookSlug} onChange={e => handleHookChange(e.target.value)}>
+                <select className="select flex-1" value={previewVars.hookSlug} onChange={e => handleHookChange(e.target.value)}>
                   <option value="">{t('none')}</option>
                   {availableHooks.map((h, i) => <option key={`preview-${h.slug}-${i}`} value={h.slug}>{h.slug}</option>)}
                 </select>
                 <Button
-                  variant="secondary" className="whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
+                  variant="secondary" className="whitespace-nowrap text-[var(--accent)] border-[var(--accent)]/20 hover:bg-[var(--accent)]/10"
                   onClick={() => setBrowserOpen(true)}
                   disabled={!previewVars.hookSlug}
                 >
@@ -266,18 +266,18 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
             <div className="flex-1 relative">
               <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">{t('labels.targetRecordId')}</label>
               <div className="flex gap-2">
-                 <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
-                 <Button variant="secondary" className="px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
+                 <input className="input w-full font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
+                 <Button variant="secondary" className="px-3" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
                    🎲
                  </Button>
               </div>
             </div>
-            <Button variant="secondary" className="w-36 px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
+            <Button variant="secondary" className="w-36 px-4 py-2 text-sm font-semibold rounded-lg transition-all btn btn-secondary" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
                {previewing ? t('buttons.compiling') : t('buttons.generatePdf')}
             </Button>
           </div>
           
-          <div className="flex-1 border border-[rgba(196,198,205,0.4)] rounded-lg bg-gray-200/50 overflow-hidden relative">
+          <div className="flex-1 border border-[var(--border)] rounded-lg bg-black/20 overflow-hidden relative">
             {pdfBlobUrl ? (
               <iframe src={`${pdfBlobUrl}#toolbar=0`} className="w-[100%] h-[100%] border-0 object-contain bg-[#525659]" />
             ) : (

@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <html lang="en" className="herobm-light" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -58,7 +58,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `try { if (navigator.language) { document.documentElement.lang = navigator.language; } } catch (_) { /* ignore */ }`,
+            __html: `try {
+  if (navigator.language) { document.documentElement.lang = navigator.language; }
+  var p = localStorage.getItem('herobm_user_prefs');
+  var prefs = p ? JSON.parse(p) : {};
+  if (prefs.density) { document.documentElement.setAttribute('data-density', prefs.density); }
+  var theme = prefs.theme || 'system';
+  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
+    document.documentElement.classList.add('dark', 'herobm-dark');
+    document.documentElement.classList.remove('herobm-light');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.style.colorScheme = 'dark';
+  } else {
+    document.documentElement.classList.add('herobm-light');
+    document.documentElement.classList.remove('dark', 'herobm-dark');
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.style.colorScheme = 'light';
+  }
+} catch (_) { /* ignore */ }`,
           }}
         />
       </head>

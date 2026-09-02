@@ -344,7 +344,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
           />
           <label
             htmlFor="isPrimaryDeliveryAddress"
-            className="text-sm text-gray-700 cursor-pointer"
+            className="text-sm text-[var(--text-primary)] cursor-pointer"
           >
             {t('setAsPrimary')}
           </label>

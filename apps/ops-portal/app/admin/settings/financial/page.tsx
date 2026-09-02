@@ -324,7 +324,7 @@ export default function FinancialSettingsPage() {
   }, [glLoading, glSettings, appSettings, tSettings]);
 
   return (
-    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
         title={tSettings('financialSettings.title')}
         subtitle={tSettings('financialSettings.subtitle')}

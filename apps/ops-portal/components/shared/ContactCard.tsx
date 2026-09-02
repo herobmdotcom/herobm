@@ -60,7 +60,7 @@ export function ContactCard({
             <Button
               variant="ghost"
               type="button"
-              className="text-gray-400 hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
               onClick={onEdit}
               title={t("contactManagement.editContact")}
             >
@@ -71,7 +71,7 @@ export function ContactCard({
             <Button
               variant="ghost"
               type="button"
-              className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
               onClick={onDelete}
               title={deleteTitle || t("contactManagement.deleteContact")}
             >
@@ -82,28 +82,28 @@ export function ContactCard({
         </div>
       }
     >
-      <div className="text-sm text-gray-600">{contact.jobTitle || tGlobal("portal.noTitle")}</div>
+      <div className="text-sm text-[var(--text-muted)]">{contact.jobTitle || tGlobal("portal.noTitle")}</div>
       
 
       {(contact.phone || contact.mobile) && (
         <div className="flex flex-col gap-1.5 mt-2">
           {contact.phone && (
-            <div className="flex items-center gap-1.5 text-sm text-gray-600">
-              <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
+            <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+              <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">phone</span>
               <a href={`tel:${contact.phone}`} className="hover:text-[var(--accent)] transition-colors">{contact.phone}</a>
             </div>
           )}
           {contact.mobile && (
-            <div className="flex items-center gap-1.5 text-sm text-gray-600">
-              <span className="material-symbols-outlined text-[14px] text-gray-400">smartphone</span>
+            <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+              <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">smartphone</span>
               <a href={`tel:${contact.mobile}`} className="hover:text-[var(--accent)] transition-colors">{contact.mobile}</a>
             </div>
           )}
         </div>
       )}
       {contact.email && (
-        <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
-          <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
+        <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] mt-1.5">
+          <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">mail</span>
           <a href={`mailto:${contact.email}`} className="text-[var(--accent)] hover:underline truncate">
             {contact.email}
           </a>
@@ -111,7 +111,7 @@ export function ContactCard({
       )}
 
       {roles && roles.length > 0 && (
-        <div className="text-sm text-gray-600 mt-1.5 pt-1.5 border-t border-gray-100">
+        <div className="text-sm text-[var(--text-muted)] mt-1.5 pt-1.5 border-t border-[var(--border)]">
           Role: {roles.join(', ')}
         </div>
       )}

@@ -398,7 +398,7 @@ export default function ReceptionDetailContent({ id }: { id: string }) {
                     {data.vendorName ? data.vendorName : (data.vendorNumber ? data.vendorNumber : t('columns.supplier'))}
                   </Link>
                 ) : (
-                  <span className="font-medium text-slate-800 pt-1.5 block">{data.vendorName || '—'}</span>
+                  <span className="font-medium text-[var(--text-primary)] pt-1.5 block">{data.vendorName || '—'}</span>
                 )
               ) : (
                 <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export default function ReceptionDetailContent({ id }: { id: string }) {
               <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">
                 Date &amp; Received By
               </span>
-              <span className="font-medium text-slate-800 block pt-1.5">
+              <span className="font-medium text-[var(--text-primary)] block pt-1.5">
                 {formatLocalDate(data.createdOn)}
               </span>
               {data.createdBy && (

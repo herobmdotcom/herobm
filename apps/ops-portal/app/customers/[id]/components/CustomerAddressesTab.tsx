@@ -77,43 +77,39 @@ export function CustomerAddressesTab({
                         <Button
                           variant="ghost"
                           type="button"
-                          className="text-gray-400 hover:text-blue-600 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                          className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                           onClick={() => handleEditAddressClick(addr)}
                           title="Edit Address"
                         >
-                          { }
-                          { }
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </Button>
                         <Button
                           variant="ghost"
                           type="button"
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                          className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                           onClick={() => handleDeleteAddressClick(addr.id)}
                           title="Delete Address"
                         >
-                          { }
-                          { }
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </Button>
                       </div>
                     </>
                   }
                 >
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-col gap-0.5">
                     {(addr.recipientName || addr.recipientPhone) && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm font-medium text-[var(--text-secondary)]">
                         {[addr.recipientName, addr.recipientPhone].filter(Boolean).join(" - ")}
                       </div>
                     )}
-                    <div className="text-sm text-gray-600">{addr.addressLine1}</div>
-                    {addr.addressLine2 && <div className="text-sm text-gray-600">{addr.addressLine2}</div>}
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-[var(--text-primary)] font-medium">{addr.addressLine1}</div>
+                    {addr.addressLine2 && <div className="text-sm text-[var(--text-secondary)]">{addr.addressLine2}</div>}
+                    <div className="text-sm text-[var(--text-secondary)]">
                       {addr.city}
                       {addr.city && (addr.stateOrProvince || addr.postalCode) ? ", " : ""}
                       {addr.stateOrProvince} {addr.postalCode}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-[var(--text-muted)]">
                       {COUNTRIES.find((c) => c.code === addr.country)?.name || addr.country}
                     </div>
                   </div>
@@ -122,8 +118,7 @@ export function CustomerAddressesTab({
             )
           ) : (
             <>
-              { }
-              <div className="text-gray-500 text-sm py-4">{t("portal.noDeliveryAddressesFound")}</div>
+              <div className="text-[var(--text-muted)] text-sm py-4">{t("portal.noDeliveryAddressesFound")}</div>
             </>
           )}
         </div>

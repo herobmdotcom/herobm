@@ -7,7 +7,7 @@ import { useAuth } from '@/components/AuthGate';
 import { useUserSettings } from '@/components/UserSettingsProvider';
 import SlideOver from './SlideOver';
 import { Button } from './Button';
-import { getErrorMessage, type DisplayDensity } from '@herobm/shared';
+import { getErrorMessage, type DisplayDensity, type ThemeMode } from '@herobm/shared';
 import * as api from '@herobm/sdk';
 
 interface UserPreferencesModalProps {
@@ -19,7 +19,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
   const t = useTranslations('common.preferences');
   const t2fa = useTranslations('common.preferences.twoFactor');
   const { role, username, displayName } = useAuth();
-  const { density, updatePreferences } = useUserSettings();
+  const { density, theme, updatePreferences } = useUserSettings();
 
   // 2FA State
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -56,6 +56,16 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
     if (newDensity === density) return;
     try {
       await updatePreferences({ density: newDensity });
+      toast.success(t('saved'));
+    } catch {
+      toast.error(t('saveFailed'));
+    }
+  };
+
+  const handleThemeChange = async (newTheme: ThemeMode) => {
+    if (newTheme === theme) return;
+    try {
+      await updatePreferences({ theme: newTheme });
       toast.success(t('saved'));
     } catch {
       toast.error(t('saveFailed'));
@@ -210,7 +220,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
                 density === 'compact'
                   ? 'border-[var(--accent)] bg-[var(--accent)]/5 ring-1 ring-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]'
               }`}
             >
               <input
@@ -231,6 +241,89 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
               </div>
             </label>
           </div>
+        </div>
+
+        {/* Appearance / Theme */}
+        <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6">
+          <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            {t('theme')}
+          </label>
+          <div className="grid grid-cols-3 gap-2.5">
+            {/* System */}
+            <label
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all text-center gap-1.5 ${
+                theme === 'system'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-1 ring-[var(--accent)] text-[var(--text-primary)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="display-theme"
+                value="system"
+                checked={theme === 'system'}
+                onChange={() => handleThemeChange('system')}
+                className="sr-only"
+              />
+              <span className={`material-symbols-outlined text-[22px] ${theme === 'system' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
+                desktop_windows
+              </span>
+              <span className="text-xs font-semibold">
+                {t('themeSystem')}
+              </span>
+            </label>
+
+            {/* Light */}
+            <label
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all text-center gap-1.5 ${
+                theme === 'light'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-1 ring-[var(--accent)] text-[var(--text-primary)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="display-theme"
+                value="light"
+                checked={theme === 'light'}
+                onChange={() => handleThemeChange('light')}
+                className="sr-only"
+              />
+              <span className={`material-symbols-outlined text-[22px] ${theme === 'light' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
+                light_mode
+              </span>
+              <span className="text-xs font-semibold">
+                {t('themeLight')}
+              </span>
+            </label>
+
+            {/* Dark */}
+            <label
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all text-center gap-1.5 ${
+                theme === 'dark'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-1 ring-[var(--accent)] text-[var(--text-primary)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="display-theme"
+                value="dark"
+                checked={theme === 'dark'}
+                onChange={() => handleThemeChange('dark')}
+                className="sr-only"
+              />
+              <span className={`material-symbols-outlined text-[22px] ${theme === 'dark' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
+                dark_mode
+              </span>
+              <span className="text-xs font-semibold">
+                {t('themeDark')}
+              </span>
+            </label>
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {theme === 'system' ? t('themeSystemDesc') : theme === 'dark' ? t('themeDarkDesc') : t('themeLightDesc')}
+          </p>
         </div>
 
         {/* 2FA Section */}

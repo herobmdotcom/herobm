@@ -184,7 +184,7 @@ export default function JournalEntriesPage() {
             <select
               value={sourceType}
               onChange={(e) => setSourceType(e.target.value)}
-              className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[240px] bg-white rounded-lg"
+              className="input text-xs h-9 w-full sm:!w-auto sm:min-w-[240px] rounded-lg"
             >
               <option value="">{t('allSources')}</option>
               <option value="manual">{t('sourceTypes.manual')}</option>
@@ -210,15 +210,15 @@ export default function JournalEntriesPage() {
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                className="input text-xs h-9 px-2 sm:px-3 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
                 title={t('fromDate')}
               />
-              <span className="text-gray-300 font-bold shrink-0">→</span>
+              <span className="text-[var(--text-muted)] font-bold shrink-0">→</span>
               <input
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                className="input text-xs h-9 px-2 sm:px-3 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
                 title={t('toDate')}
               />
             </div>
@@ -228,7 +228,7 @@ export default function JournalEntriesPage() {
           <div className="flex items-center gap-2">
             <Button variant="secondary"
               onClick={() => setIsFxRevalOpen(true)}
-              className="px-4 py-2 text-sm rounded-lg transition-all bg-white border border-gray-200 text-[#041627] hover:bg-gray-50 whitespace-nowrap"
+              className="btn btn-secondary whitespace-nowrap"
             >
               FX Revaluation
             </Button>

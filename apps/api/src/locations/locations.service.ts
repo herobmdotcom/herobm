@@ -183,17 +183,23 @@ export class LocationsService {
           );
         }
 
-        for (const bin of binList) {
-          const stockCount = await tx
-            .select({ count: sql<number>`count(*)` })
+        const binIds = binList.map((b) => b.binId);
+        if (binIds.length > 0) {
+          const binsWithStock = await tx
+            .select({
+              binId: binContents.binId,
+              binNumber: bins.binNumber,
+            })
             .from(binContents)
+            .innerJoin(bins, eq(binContents.binId, bins.binId))
             .where(
-              and(eq(binContents.binId, bin.binId), sql`actual_quantity > 0`),
-            );
+              and(inArray(binContents.binId, binIds), sql`actual_quantity > 0`),
+            )
+            .limit(1);
 
-          if (Number(stockCount[0].count) > 0) {
+          if (binsWithStock.length > 0) {
             throw new BadRequestException(
-              `Cannot delete location because system bin ${bin.binNumber} contains stock.`,
+              `Cannot delete location because system bin ${binsWithStock[0].binNumber} contains stock.`,
             );
           }
         }
@@ -299,17 +305,23 @@ export class LocationsService {
         );
       }
 
-      for (const bin of binList) {
-        const stockCount = await tx
-          .select({ count: sql<number>`count(*)` })
+      const binIds = binList.map((b) => b.binId);
+      if (binIds.length > 0) {
+        const binsWithStock = await tx
+          .select({
+            binId: binContents.binId,
+            binNumber: bins.binNumber,
+          })
           .from(binContents)
+          .innerJoin(bins, eq(binContents.binId, bins.binId))
           .where(
-            and(eq(binContents.binId, bin.binId), sql`actual_quantity > 0`),
-          );
+            and(inArray(binContents.binId, binIds), sql`actual_quantity > 0`),
+          )
+          .limit(1);
 
-        if (Number(stockCount[0].count) > 0) {
+        if (binsWithStock.length > 0) {
           throw new BadRequestException(
-            `Cannot delete zone because system bin ${bin.binNumber} contains stock.`,
+            `Cannot delete zone because system bin ${binsWithStock[0].binNumber} contains stock.`,
           );
         }
       }

@@ -1099,6 +1099,7 @@ export class GlService implements OnModuleInit {
         const endDate = `${calendarYear}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
         const periodName = `${calendarYear}-${monthStr}`;
 
+        // n-plus-one-ignore: fixed 12-month calendar loop during fiscal year setup
         const [existing] = await tx
           .select()
           .from(glFiscalPeriods)

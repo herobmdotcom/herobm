@@ -125,7 +125,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
               step="0.01"
               value={amount}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-md focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none transition- text-gray-900"
+              className="input w-full text-sm"
             />
           </div>
 

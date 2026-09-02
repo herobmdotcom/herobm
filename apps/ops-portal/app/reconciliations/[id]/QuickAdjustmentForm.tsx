@@ -94,7 +94,7 @@ export default function QuickAdjustmentForm({
             required
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="border border-[var(--border)] rounded px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="input w-full text-sm"
           />
         </div>
 
@@ -103,7 +103,7 @@ export default function QuickAdjustmentForm({
           <select
             value={type}
             onChange={e => setType(e.target.value as 'debit' | 'credit')}
-            className="border border-[var(--border)] rounded px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="select w-full text-sm"
           >
             <option value="credit">{t('quickAdjustmentForm.moneyOut')}</option>
             <option value="debit">{t('quickAdjustmentForm.moneyIn')}</option>
@@ -114,7 +114,7 @@ export default function QuickAdjustmentForm({
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-[var(--text-secondary)]">{t('quickAdjustmentForm.amount')}</label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{currencySymbol}</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">{currencySymbol}</span>
           <input
             type="number"
             step="0.01"
@@ -122,7 +122,7 @@ export default function QuickAdjustmentForm({
             required
             value={amount}
             onChange={e => setAmount(e.target.value)}
-            className="border border-[var(--border)] rounded pl-8 pr-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] w-full"
+            className="input pl-8 pr-3 w-full text-sm"
             placeholder="0.00"
           />
         </div>
@@ -134,7 +134,7 @@ export default function QuickAdjustmentForm({
           required
           value={offsetAccountId}
           onChange={e => setOffsetAccountId(e.target.value)}
-          className="border border-[var(--border)] rounded px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+          className="select w-full text-sm"
         >
           <option value="">{t('quickAdjustmentForm.selectAccount')}</option>
           {accounts.map(acc => (
@@ -152,7 +152,7 @@ export default function QuickAdjustmentForm({
           required
           value={memo}
           onChange={e => setMemo(e.target.value)}
-          className="border border-[var(--border)] rounded px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+          className="input w-full text-sm"
           placeholder={t('quickAdjustmentForm.memoPlaceholder')}
         />
       </div>

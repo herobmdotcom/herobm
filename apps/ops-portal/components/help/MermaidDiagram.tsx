@@ -231,7 +231,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         aria-label={t('enlargeDiagram')}
       >
         {/* Hover / Click to Enlarge Badge */}
-        <div className="absolute top-2.5 right-2.5 opacity-70 group-hover:opacity-100 transition-opacity bg-white/90 group-hover:bg-[#F0FDFA] border border-[#E2E8F0] group-hover:border-[#006B5C]/40 text-[#64748B] group-hover:text-[#006B5C] px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 shadow-xs pointer-events-none">
+        <div className="absolute top-2.5 right-2.5 opacity-70 group-hover:opacity-100 transition-opacity bg-[var(--bg-card)]/90 group-hover:bg-[var(--accent)]/10 border border-[var(--border)] group-hover:border-[var(--accent)] text-[var(--text-muted)] group-hover:text-[var(--accent)] px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 shadow-xs pointer-events-none">
           {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
           <span className="material-symbols-outlined text-[14px]">fullscreen</span>
           <span>{t('clickToEnlarge')}</span>
@@ -254,17 +254,17 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
           onClick={handleClose}
         >
           <div
-            className="relative w-full max-w-6xl h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#CBD5E1] animate-in zoom-in-95 duration-150"
+            className="relative w-full max-w-6xl h-[88vh] bg-[var(--bg-card)] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[var(--border)] animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-5 py-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between shrink-0">
+            <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#F0FDFA] text-[#006B5C] border border-[#006B5C]/30 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 flex items-center justify-center">
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[18px]">schema</span>
                 </div>
-                <span className="font-bold text-sm text-[#0F172A]">
+                <span className="font-bold text-sm text-[var(--text-primary)]">
                   {t('diagramView')}
                 </span>
               </div>
@@ -277,7 +277,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   size="sm"
                   onClick={handleZoomOut}
                   disabled={zoomLevel <= 0.3}
-                  className="w-8 h-8 rounded-lg !p-0 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 cursor-pointer shadow-none disabled:opacity-40"
+                  className="w-8 h-8 rounded-lg !p-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer shadow-none disabled:opacity-40"
                   title={t('zoomOut')}
                   aria-label={t('zoomOut')}
                 >
@@ -286,7 +286,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
                 <span
                   data-testid="zoom-level-badge"
-                  className="text-[11px] font-mono font-semibold text-[#475569] px-2 py-1 rounded bg-[#E2E8F0]/60 min-w-[50px] text-center select-none"
+                  className="text-[11px] font-mono font-semibold text-[var(--text-primary)] px-2 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border)] min-w-[50px] text-center select-none"
                 >
                   {Math.round(zoomLevel * 100)}%
                 </span>
@@ -297,7 +297,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   size="sm"
                   onClick={handleZoomIn}
                   disabled={zoomLevel >= 3}
-                  className="w-8 h-8 rounded-lg !p-0 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 cursor-pointer shadow-none disabled:opacity-40"
+                  className="w-8 h-8 rounded-lg !p-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer shadow-none disabled:opacity-40"
                   title={t('zoomIn')}
                   aria-label={t('zoomIn')}
                 >
@@ -310,7 +310,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   size="sm"
                   onClick={handleFitToScreen}
                   disabled={Math.abs(zoomLevel - fitZoom) < 0.01}
-                  className="px-2 py-1 h-8 rounded-lg text-xs font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 cursor-pointer shadow-none disabled:opacity-40 flex items-center gap-1"
+                  className="px-2 py-1 h-8 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer shadow-none disabled:opacity-40 flex items-center gap-1"
                   title={t('fitToScreen')}
                   aria-label={t('fitToScreen')}
                 >
@@ -324,7 +324,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   size="sm"
                   onClick={handleResetTo100}
                   disabled={Math.abs(zoomLevel - 1) < 0.01}
-                  className="px-2 py-1 h-8 rounded-lg text-xs font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 cursor-pointer shadow-none disabled:opacity-40 flex items-center gap-1"
+                  className="px-2 py-1 h-8 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer shadow-none disabled:opacity-40 flex items-center gap-1"
                   title={t('resetZoom')}
                   aria-label={t('resetZoom')}
                 >
@@ -332,14 +332,14 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   <span className="hidden sm:inline">100%</span>
                 </Button>
 
-                <div className="w-[1px] h-5 bg-[#CBD5E1] mx-1" />
+                <div className="w-[1px] h-5 bg-[var(--border)] mx-1" />
 
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleClose}
-                  className="w-8 h-8 rounded-lg !p-0 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 cursor-pointer shadow-none"
+                  className="w-8 h-8 rounded-lg !p-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer shadow-none"
                   title={t('closeDiagram')}
                   aria-label={t('closeDiagram')}
                 >
@@ -351,7 +351,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
             {/* Modal Body / Pan Canvas */}
             <div
               ref={containerRef}
-              className="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center bg-[#F1F5F9]/50"
+              className="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center bg-[var(--bg-primary)]"
             >
               <div
                 ref={contentRef}
@@ -363,7 +363,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                   transformOrigin: 'center center',
                   transition: 'transform 0.15s ease-out',
                 }}
-                className="shrink-0 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-none shadow-sm rounded-xl p-6 bg-white border border-[#E2E8F0]"
+                className="shrink-0 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-none shadow-sm rounded-xl p-6 bg-[var(--bg-card)] border border-[var(--border)]"
                 dangerouslySetInnerHTML={{ __html: svg }}
               />
             </div>

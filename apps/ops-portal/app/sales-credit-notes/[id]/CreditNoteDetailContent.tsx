@@ -243,7 +243,7 @@ export default function CreditNoteDetailContent({ id }: { id: string }) {
                     : `Customer ${data.customerId.substring(0, 8)}`}
                 </Link>
               ) : (
-                <span className="text-[#041627]">
+                <span className="text-[var(--text-primary)]">
                   {data.customerNumber ? `${data.customerNumber} - ` : ''}
                   {data.customerName || tCommon('na')}
                 </span>

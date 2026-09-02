@@ -81,7 +81,7 @@ export default function TaxBalancesContent() {
           Loading report...
         </div>
       ) : (
-        <div className="bg-white border border-[var(--border)] rounded-lg overflow-hidden flex flex-col">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg overflow-hidden flex flex-col">
           {balances.map((row) => (
             <div 
               key={row.id} 
@@ -96,7 +96,7 @@ export default function TaxBalancesContent() {
               <Button variant="ghost"
                 type="button"
                 onClick={() => handleCopy(row.id, row.amount)}
-                className="w-32 text-right text-lg font-mono tracking-tight text-[var(--text-primary)] bg-white px-3 py-1 rounded border border-[var(--border)] hover:border-[var(--primary)] focus:border-[var(--primary)] focus:outline-none transition-colors cursor-pointer"
+                className="w-32 text-right text-lg font-mono tracking-tight text-[var(--text-primary)] bg-[var(--bg-secondary)] px-3 py-1 rounded border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--bg-card-hover)] focus:border-[var(--accent)] focus:outline-none transition-colors cursor-pointer"
                 title="Click to copy"
               >
                 {row.amount !== undefined && row.amount !== null ? row.amount.toString() : '0'}

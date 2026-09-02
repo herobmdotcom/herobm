@@ -306,7 +306,7 @@ export default function PaymentsContent() {
           </select>
           
           {(hasDraftSelected || hasExportedSelected) && (
-            <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
+            <div className="h-5 w-px bg-[var(--border)] shrink-0 mx-1"></div>
           )}
 
           {hasDraftSelected && showAba && (

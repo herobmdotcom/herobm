@@ -131,27 +131,26 @@ export default function AutoMatchPreviewModal({
 
   const renderStatementTable = (lines: { date: string, description: string, amount: number }[]) => (
     <div className="space-y-3">
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('statementLines')}</h3>
-      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{t('statementLines')}</h3>
+      <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
         <table className="w-full text-sm text-left">
-          <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+          <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
             <tr>
               <th className="px-5 py-3">{t('date')}</th>
               <th className="px-5 py-3">{t('description')}</th>
               <th className="px-5 py-3 text-right">{t('amount')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {lines.map((line, i) => (
-              <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-5 py-3 whitespace-nowrap text-[#041627]">{formatDate(line.date)}</td>
-                <td className="px-5 py-3 text-[#041627]">{line.description}</td>
-                <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[#041627]">{formatCurrency(line.amount)}</td>
+              <tr key={i} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                <td className="px-5 py-3 whitespace-nowrap text-[var(--text-primary)]">{formatDate(line.date)}</td>
+                <td className="px-5 py-3 text-[var(--text-primary)]">{line.description}</td>
+                <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[var(--text-primary)]">{formatCurrency(line.amount)}</td>
               </tr>
             ))}
             {lines.length === 0 && (
-               
-              <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">No lines</td></tr>
+              <tr><td colSpan={3} className="px-5 py-8 text-center text-[var(--text-muted)] italic">No lines</td></tr>
             )}
           </tbody>
         </table>
@@ -162,28 +161,28 @@ export default function AutoMatchPreviewModal({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const renderLedgerTable = (lines: any[]) => (
     <div className="space-y-3">
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ledgerLines')}</h3>
-      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{t('ledgerLines')}</h3>
+      <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
         <table className="w-full text-sm text-left">
-          <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+          <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
             <tr>
               <th className="px-5 py-3">{t('date')}</th>
               <th className="px-5 py-3">{t('memo')}</th>
               <th className="px-5 py-3 text-right">{t('amount')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {lines.map((line, i) => (
-              <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-5 py-3 whitespace-nowrap text-[#041627]">{line.entryDate || line.date ? formatDate(line.entryDate || line.date) : ''}</td>
-                <td className="px-5 py-3 text-[#041627]">{line.memo || line.entryMemo}</td>
-                <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[#041627]">
+              <tr key={i} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                <td className="px-5 py-3 whitespace-nowrap text-[var(--text-primary)]">{line.entryDate || line.date ? formatDate(line.entryDate || line.date) : ''}</td>
+                <td className="px-5 py-3 text-[var(--text-primary)]">{line.memo || line.entryMemo}</td>
+                <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[var(--text-primary)]">
                   {formatCurrency(line.debit !== undefined ? Number(line.debit) - Number(line.credit) : line.amount)}
                 </td>
               </tr>
             ))}
             {lines.length === 0 && (
-              <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">{t('noLedgerLinesFound')}</td></tr>
+              <tr><td colSpan={3} className="px-5 py-8 text-center text-[var(--text-muted)] italic">{t('noLedgerLinesFound')}</td></tr>
             )}
           </tbody>
         </table>

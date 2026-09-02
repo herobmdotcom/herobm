@@ -59,8 +59,8 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {tProducts('weightedAverageCost')}
         </label>
-        <div className="input !bg-[#f9fafb] !opacity-60 text-[#1e293b] flex items-center justify-between select-none">
-          <span className="tabular-nums">
+        <div className="input bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] flex items-center justify-between select-none">
+          <span className="tabular-nums font-medium">
             {loading ? '—' : formatCurrency(weightedAverageCost)}
           </span>
           <span className="text-xs text-[var(--text-muted)]">
@@ -74,8 +74,8 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {tProducts('preferredSupplier')}
         </label>
-        <div className="input !bg-[#f9fafb] !opacity-70 text-[#1e293b] flex items-center justify-between min-w-0">
-          <span className="tabular-nums whitespace-nowrap">
+        <div className="input bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] flex items-center justify-between min-w-0">
+          <span className="tabular-nums font-medium whitespace-nowrap">
             {loading ? '—' : formatCurrency(preferredSupplierCost)}
           </span>
           <div className="text-xs truncate ml-2 text-right">
@@ -83,7 +83,7 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
               summary.preferredSupplierVendorId ? (
                 <Link
                   href={`/suppliers/${summary.preferredSupplierVendorId}`}
-                  className="text-[#006b5c] hover:underline"
+                  className="text-[var(--accent)] hover:underline"
                 >
                   {summary.preferredSupplierName}
                   {summary.preferredSupplierDiscount && parseFloat(summary.preferredSupplierDiscount) > 0
@@ -91,7 +91,7 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
                     : ''}
                 </Link>
               ) : (
-                <span className="text-slate-600">
+                <span className="text-[var(--text-secondary)]">
                   {summary.preferredSupplierName}
                   {summary.preferredSupplierDiscount && parseFloat(summary.preferredSupplierDiscount) > 0
                     ? ` (-${parseFloat(summary.preferredSupplierDiscount)}%)`
@@ -110,8 +110,8 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {tProducts('lastPurchasePrice')}
         </label>
-        <div className="input !bg-[#f9fafb] !opacity-70 text-[#1e293b] flex items-center justify-between min-w-0">
-          <span className="tabular-nums whitespace-nowrap">
+        <div className="input bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] flex items-center justify-between min-w-0">
+          <span className="tabular-nums font-medium whitespace-nowrap">
             {loading ? '—' : formatCurrency(lastPurchasePrice)}
           </span>
           <div className="text-xs truncate ml-2 text-right">
@@ -120,12 +120,12 @@ export function ProductCostSummary({ productId, product }: ProductCostSummaryPro
                 {summary.lastPurchaseOrderId ? (
                   <Link
                     href={`/purchase-orders/${summary.lastPurchaseOrderId}`}
-                    className="text-[#006b5c] hover:underline"
+                    className="text-[var(--accent)] hover:underline"
                   >
                     {summary.lastPurchaseOrderNumber}
                   </Link>
                 ) : (
-                  <span className="text-slate-600">{summary.lastPurchaseOrderNumber}</span>
+                  <span className="text-[var(--text-secondary)]">{summary.lastPurchaseOrderNumber}</span>
                 )}
                 {summary.lastPurchaseDate && (
                   <span className="text-[var(--text-muted)] ml-1">

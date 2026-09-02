@@ -36,6 +36,7 @@ import {
   or,
   ilike,
   asc,
+  inArray,
   getTableColumns,
 } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -159,64 +160,80 @@ export class GoodsReceivedWriteService {
           uomCode: string;
         })[] = [];
 
-        for (const line of createDto.lines) {
-          // Validate product
-          const [product] = await tx
-            .select({
-              productId: products.productId,
-              baseUom: products.baseUom,
-            })
-            .from(products)
-            .where(eq(products.productId, line.productId))
-            .limit(1);
+        const distinctProductIds = [
+          ...new Set(createDto.lines.map((l) => l.productId)),
+        ];
 
-          if (!product) {
+        // 4.1 Validate products in batch
+        const valProductRows = await tx
+          .select({
+            productId: products.productId,
+            baseUom: products.baseUom,
+          })
+          .from(products)
+          .where(inArray(products.productId, distinctProductIds));
+
+        const valProductMap = new Map(
+          valProductRows.map((p) => [p.productId, p]),
+        );
+
+        for (const line of createDto.lines) {
+          if (!valProductMap.has(line.productId)) {
             throw new BadRequestException(
               `Product '${line.productId}' not found`,
             );
           }
+        }
 
-          // Auto-match: find open PO lines for this vendor + product
-          const openPoLines = await tx
-            .select({
-              purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
-              purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-              quantity: purchaseOrderLineItems.quantity,
-              quantityReceived: purchaseOrderLineItems.quantityReceived,
-              pricePerUnit: purchaseOrderLineItems.pricePerUnit,
-              unitOfMeasure: purchaseOrderLineItems.unitOfMeasure,
-              exchangeRate: purchaseOrders.exchangeRate,
-            })
-            .from(purchaseOrderLineItems)
-            .innerJoin(
-              purchaseOrders,
-              eq(
-                purchaseOrderLineItems.purchaseOrderId,
-                purchaseOrders.purchaseOrderId,
-              ),
-            )
-            .where(
-              and(
-                eq(purchaseOrders.vendorId, createDto.vendorId),
-                eq(purchaseOrderLineItems.productId, line.productId),
-                eq(purchaseOrders.deliveryLocationId, createDto.locationId),
-                createDto.purchaseOrderId
-                  ? eq(
-                      purchaseOrders.purchaseOrderId,
-                      createDto.purchaseOrderId,
-                    )
-                  : undefined,
-                line.purchaseOrderLineId
-                  ? eq(
-                      purchaseOrderLineItems.purchaseOrderLineId,
-                      line.purchaseOrderLineId,
-                    )
-                  : undefined,
-                sql`${purchaseOrders.stateCode} IN (${PURCHASE_ORDER_STATE.ORDERED}, ${PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED})`,
-                sql`CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
-                sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`,
-              ),
-            );
+        // 4.2 Auto-match: find open PO lines for this vendor + products in batch
+        const allOpenPoLines = await tx
+          .select({
+            purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+            purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+            productId: purchaseOrderLineItems.productId,
+            quantity: purchaseOrderLineItems.quantity,
+            quantityReceived: purchaseOrderLineItems.quantityReceived,
+            pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+            unitOfMeasure: purchaseOrderLineItems.unitOfMeasure,
+            exchangeRate: purchaseOrders.exchangeRate,
+          })
+          .from(purchaseOrderLineItems)
+          .innerJoin(
+            purchaseOrders,
+            eq(
+              purchaseOrderLineItems.purchaseOrderId,
+              purchaseOrders.purchaseOrderId,
+            ),
+          )
+          .where(
+            and(
+              eq(purchaseOrders.vendorId, createDto.vendorId),
+              inArray(purchaseOrderLineItems.productId, distinctProductIds),
+              eq(purchaseOrders.deliveryLocationId, createDto.locationId),
+              createDto.purchaseOrderId
+                ? eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId)
+                : undefined,
+              sql`${purchaseOrders.stateCode} IN (${PURCHASE_ORDER_STATE.ORDERED}, ${PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED})`,
+              sql`CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
+            ),
+          );
+
+        for (const line of createDto.lines) {
+          const product = valProductMap.get(line.productId)!;
+
+          const openPoLines = allOpenPoLines.filter((poLine) => {
+            if (poLine.productId !== line.productId) return false;
+            if (
+              line.purchaseOrderLineId &&
+              poLine.purchaseOrderLineId !== line.purchaseOrderLineId
+            ) {
+              return false;
+            }
+            const orderedQty = parseFloat(poLine.quantity || '0');
+            const recQty = parseFloat(poLine.quantityReceived || '0');
+            const lineRecQty = parseFloat(line.quantityReceived.toString());
+            return orderedQty - recQty >= lineRecQty;
+          });
 
           let matchStatus: string;
           let matchedPoLineId: string | null = null;
@@ -437,18 +454,43 @@ export class GoodsReceivedWriteService {
         }
 
         // --- 6.1 Backorder Sync: Transition awaiting_receipt → received_reserved ---
+        const matchedPoLineIds = [
+          ...new Set(
+            matchedLines
+              .map((ml) => ml.purchaseOrderLineId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+
+        const allAwaitingBackorders =
+          matchedPoLineIds.length > 0
+            ? await tx
+                .select()
+                .from(backorders)
+                .where(
+                  and(
+                    inArray(backorders.purchaseOrderLineId, matchedPoLineIds),
+                    eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
+                  ),
+                )
+            : [];
+
+        const backordersByPoLine = new Map<
+          string,
+          (typeof backorders.$inferSelect)[]
+        >();
+        for (const bo of allAwaitingBackorders) {
+          if (!bo.purchaseOrderLineId) continue;
+          const list = backordersByPoLine.get(bo.purchaseOrderLineId) || [];
+          list.push(bo);
+          backordersByPoLine.set(bo.purchaseOrderLineId, list);
+        }
+
         for (const ml of matchedLines) {
           if (!ml.purchaseOrderLineId) continue;
 
-          const awaitingBackorders = await tx
-            .select()
-            .from(backorders)
-            .where(
-              and(
-                eq(backorders.purchaseOrderLineId, ml.purchaseOrderLineId),
-                eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
-              ),
-            );
+          const awaitingBackorders =
+            backordersByPoLine.get(ml.purchaseOrderLineId) || [];
 
           let receiptRemaining = parseFloat(ml.quantityReceived);
 

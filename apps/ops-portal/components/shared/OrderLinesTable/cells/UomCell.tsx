@@ -61,7 +61,7 @@ export function UomCell({
 
   return (
     <div className="relative w-full">
-      <div className="input w-full !text-xs text-center h-7 !px-1 py-1 flex items-center justify-center pointer-events-none bg-white">
+      <div className="input w-full !text-xs text-center h-7 !px-1 py-1 flex items-center justify-center pointer-events-none">
         <span className="tabular-nums">{currentUom}</span>
       </div>
       <select

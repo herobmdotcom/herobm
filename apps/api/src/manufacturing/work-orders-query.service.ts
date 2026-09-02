@@ -12,7 +12,16 @@ import {
   zones,
   warehouseEvents,
 } from '@herobm/db-schema';
-import { eq, desc, gte, and, aliasedTable, sql, gt } from 'drizzle-orm';
+import {
+  eq,
+  desc,
+  gte,
+  and,
+  aliasedTable,
+  sql,
+  gt,
+  inArray,
+} from 'drizzle-orm';
 import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import { WORK_ORDER_PICK_STATE } from '@herobm/shared';
 import { EntityType } from '../common/event-types';
@@ -147,55 +156,70 @@ export class WorkOrdersQueryService {
       )
       .where(eq(workOrderComponents.workOrderId, id));
 
-    const componentsList = await Promise.all(
-      rawComponents.map(async (comp) => {
-        const [pickedSum] = await db
-          .select({
-            sum: sql<number>`COALESCE(SUM(${workOrderPicks.quantity}::numeric), 0)`.mapWith(
-              Number,
-            ),
-          })
-          .from(workOrderPicks)
-          .where(
-            and(
-              eq(
-                workOrderPicks.workOrderComponentId,
-                comp.workOrderComponentId,
-              ),
-              eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
-            ),
-          );
+    const compIds = rawComponents.map((c) => c.workOrderComponentId);
+    const productIds = [...new Set(rawComponents.map((c) => c.productId))];
 
-        let wipStockOnHand = 0;
-        if (wo.wipBinId) {
-          const [wipStock] = await db
+    // Pre-fetch picked sums in batch
+    const pickedSums =
+      compIds.length > 0
+        ? await db
             .select({
-              onHand:
-                sql<number>`COALESCE(SUM(${binContents.actualQuantity}::numeric), 0)`.mapWith(
-                  Number,
-                ),
+              workOrderComponentId: workOrderPicks.workOrderComponentId,
+              sum: sql<number>`COALESCE(SUM(${workOrderPicks.quantity}::numeric), 0)`.mapWith(
+                Number,
+              ),
             })
-            .from(binContents)
+            .from(workOrderPicks)
             .where(
               and(
-                eq(binContents.binId, wo.wipBinId),
-                eq(binContents.productId, comp.productId),
+                inArray(workOrderPicks.workOrderComponentId, compIds),
+                eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
               ),
-            );
-          wipStockOnHand = wipStock?.onHand || 0;
-        }
+            )
+            .groupBy(workOrderPicks.workOrderComponentId)
+        : [];
 
-        const pickedQuantity = pickedSum?.sum || 0;
-        const stagedQuantity = (pickedQuantity + wipStockOnHand).toString();
-
-        return {
-          ...comp,
-          stagedQuantity,
-          wipBinQuantity: wipStockOnHand.toString(),
-          currentQuantity: comp.expectedQuantity,
-        };
-      }),
+    const pickedSumMap = new Map(
+      pickedSums.map((p) => [p.workOrderComponentId, p.sum]),
     );
+
+    // Pre-fetch WIP stock in batch if wipBinId is present
+    const wipStockMap = new Map<string, number>();
+    if (wo.wipBinId && productIds.length > 0) {
+      const wipStocks = await db
+        .select({
+          productId: binContents.productId,
+          onHand:
+            sql<number>`COALESCE(SUM(${binContents.actualQuantity}::numeric), 0)`.mapWith(
+              Number,
+            ),
+        })
+        .from(binContents)
+        .where(
+          and(
+            eq(binContents.binId, wo.wipBinId),
+            inArray(binContents.productId, productIds),
+          ),
+        )
+        .groupBy(binContents.productId);
+
+      for (const w of wipStocks) {
+        wipStockMap.set(w.productId, w.onHand);
+      }
+    }
+
+    const componentsList = rawComponents.map((comp) => {
+      const pickedQuantity = pickedSumMap.get(comp.workOrderComponentId) || 0;
+      const wipStockOnHand = wipStockMap.get(comp.productId) || 0;
+      const stagedQuantity = (pickedQuantity + wipStockOnHand).toString();
+
+      return {
+        ...comp,
+        stagedQuantity,
+        wipBinQuantity: wipStockOnHand.toString(),
+        currentQuantity: comp.expectedQuantity,
+      };
+    });
 
     const eventsList = await db
       .select({
@@ -225,71 +249,97 @@ export class WorkOrdersQueryService {
     const db = tx || this.db;
     const wo = await this.findOne(id, db);
 
-    const lines = await Promise.all(
-      wo.components.map(async (comp, idx) => {
-        const requiredQty = parseFloat(comp.expectedQuantity || '0');
+    const compIds = wo.components.map((c) => c.workOrderComponentId);
+    const productIds = [...new Set(wo.components.map((c) => c.productId))];
 
-        const [pickedSum] = await db
-          .select({
-            sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number),
-          })
-          .from(workOrderPicks)
-          .where(
-            and(
-              eq(
-                workOrderPicks.workOrderComponentId,
-                comp.workOrderComponentId,
+    // Pre-fetch picked sums in batch
+    const pickedSums =
+      compIds.length > 0
+        ? await db
+            .select({
+              workOrderComponentId: workOrderPicks.workOrderComponentId,
+              sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number),
+            })
+            .from(workOrderPicks)
+            .where(
+              and(
+                inArray(workOrderPicks.workOrderComponentId, compIds),
+                eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
               ),
-              eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
-            ),
-          );
+            )
+            .groupBy(workOrderPicks.workOrderComponentId)
+        : [];
 
-        const qtyPicked = pickedSum?.sum || 0;
-        const remaining = Math.max(0, requiredQty - qtyPicked);
-
-        const availableBins = await db
-          .select({
-            binId: bins.binId,
-            binName: bins.binNumber,
-            onHand: binContents.actualQuantity,
-          })
-          .from(binContents)
-          .innerJoin(bins, eq(binContents.binId, bins.binId))
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(zones.locationId, wo.locationId),
-              eq(binContents.productId, comp.productId),
-              isPickableBinCondition(bins),
-              gt(binContents.actualQuantity, '0'),
-            ),
-          )
-          .orderBy(desc(binContents.actualQuantity));
-
-        const totalOnHand = availableBins.reduce(
-          (acc, b) => acc + parseFloat(b.onHand || '0'),
-          0,
-        );
-
-        return {
-          salesOrderLineId: comp.workOrderComponentId,
-          lineNumber: idx + 1,
-          productId: comp.productId,
-          productNumber: comp.productNumber,
-          productType: 'inventory',
-          productDescription: comp.productName,
-          locationName: wo.locationName,
-          quantity: comp.expectedQuantity,
-          quantityPicked: qtyPicked.toString(),
-          quantityShipped: '0',
-          remaining: remaining.toString(),
-          isFullyPicked: remaining <= 0,
-          isPhysical: true,
-          onHand: totalOnHand.toString(),
-          availableBins,
-        };
-      }),
+    const pickedSumMap = new Map(
+      pickedSums.map((p) => [p.workOrderComponentId, p.sum]),
     );
+
+    // Pre-fetch available bins for all components in batch
+    const allAvailableBins =
+      productIds.length > 0
+        ? await db
+            .select({
+              productId: binContents.productId,
+              binId: bins.binId,
+              binName: bins.binNumber,
+              onHand: binContents.actualQuantity,
+            })
+            .from(binContents)
+            .innerJoin(bins, eq(binContents.binId, bins.binId))
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, wo.locationId),
+                inArray(binContents.productId, productIds),
+                isPickableBinCondition(bins),
+                gt(binContents.actualQuantity, '0'),
+              ),
+            )
+            .orderBy(desc(binContents.actualQuantity))
+        : [];
+
+    const availableBinsByProduct = new Map<
+      string,
+      { binId: string; binName: string; onHand: string | null }[]
+    >();
+    for (const b of allAvailableBins) {
+      const list = availableBinsByProduct.get(b.productId) || [];
+      list.push({
+        binId: b.binId,
+        binName: b.binName,
+        onHand: b.onHand,
+      });
+      availableBinsByProduct.set(b.productId, list);
+    }
+
+    const lines = wo.components.map((comp, idx) => {
+      const requiredQty = parseFloat(comp.expectedQuantity || '0');
+      const qtyPicked = pickedSumMap.get(comp.workOrderComponentId) || 0;
+      const remaining = Math.max(0, requiredQty - qtyPicked);
+      const availableBins = availableBinsByProduct.get(comp.productId) || [];
+      const totalOnHand = availableBins.reduce(
+        (acc, b) => acc + parseFloat(b.onHand || '0'),
+        0,
+      );
+
+      return {
+        salesOrderLineId: comp.workOrderComponentId,
+        lineNumber: idx + 1,
+        productId: comp.productId,
+        productNumber: comp.productNumber,
+        productType: 'inventory',
+        productDescription: comp.productName,
+        locationName: wo.locationName,
+        quantity: comp.expectedQuantity,
+        quantityPicked: qtyPicked.toString(),
+        quantityShipped: '0',
+        remaining: remaining.toString(),
+        isFullyPicked: remaining <= 0,
+        isPhysical: true,
+        onHand: totalOnHand.toString(),
+        availableBins,
+      };
+    });
 
     const picks = await db
       .select({

@@ -88,7 +88,7 @@ export default function NewReconciliationPage() {
     <div className="p-4 max-w-2xl mx-auto h-[calc(100vh-64px)] flex flex-col">
       <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">{t('newReconciliation')}</h1>
 
-      <div className="bg-white border border-[var(--border)] rounded-md p-6">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-md p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
@@ -99,7 +99,7 @@ export default function NewReconciliationPage() {
                 value={glAccountId}
                 onChange={(e) => setGlAccountId(e.target.value)}
                 required
-                className="input w-full bg-white"
+                className="select w-full"
               >
                 <option value="">{t('selectAccount')}</option>
                 {Array.isArray(accounts) && accounts.map(acc => (
@@ -119,7 +119,7 @@ export default function NewReconciliationPage() {
                 value={statementDate}
                 onChange={(e) => setStatementDate(e.target.value)}
                 required
-                className="input w-full bg-white"
+                className="input w-full"
               />
             </div>
 
@@ -133,7 +133,7 @@ export default function NewReconciliationPage() {
                 value={statementBalance}
                 onChange={(e) => setStatementBalance(e.target.value)}
                 required
-                className="input w-full bg-white"
+                className="input w-full"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ export default function NewReconciliationPage() {
             {file && (
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">{t('savedProfile')}</label>
-                <select className="input w-full bg-white" value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)} required={!!file}>
+                <select className="select w-full" value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)} required={!!file}>
                   <option value="">{t('selectProfile')}</option>
                   {profiles.map(p => <option key={p.profileId} value={p.profileId}>{p.name}</option>)}
                 </select>
@@ -167,7 +167,7 @@ export default function NewReconciliationPage() {
             <Button variant="secondary"
               type="button"
               onClick={() => router.back()}
-              className="px-4 py-2 border border-[var(--border)] text-[var(--text-secondary)] rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+              className="px-4 py-2 border border-[var(--border)] text-[var(--text-secondary)] rounded-md hover:bg-[var(--bg-card-hover)] transition-colors text-sm font-medium"
             >
               {tCommon('cancel')}
             </Button>

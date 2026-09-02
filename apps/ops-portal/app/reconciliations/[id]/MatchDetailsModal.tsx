@@ -149,25 +149,25 @@ export default function MatchDetailsModal({
             
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{t('statementLines')}</h3>
-              <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+              <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                  <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                     <tr>
                       <th className="px-5 py-3">{t('date')}</th>
                       <th className="px-5 py-3">{t('description')}</th>
                       <th className="px-5 py-3 text-right">{t('amount')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {bankLines.map(line => (
-                      <tr key={line.lineId} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap text-[#041627]">{line.date}</td>
-                        <td className="px-5 py-3 text-[#041627]">{line.description}</td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[#041627]">{formatCurrency(line.amount)}</td>
+                      <tr key={line.lineId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap text-[var(--text-primary)]">{line.date}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)]">{line.description}</td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[var(--text-primary)]">{formatCurrency(line.amount)}</td>
                       </tr>
                     ))}
                     {bankLines.length === 0 && (
-                      <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">{t('noBankLinesFound')}</td></tr>
+                      <tr><td colSpan={3} className="px-5 py-8 text-center text-[var(--text-muted)] italic">{t('noBankLinesFound')}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -176,25 +176,25 @@ export default function MatchDetailsModal({
 
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{t('ledgerLines')}</h3>
-              <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+              <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                  <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                     <tr>
                       <th className="px-5 py-3">{t('date')}</th>
                       <th className="px-5 py-3">{t('memo')}</th>
                       <th className="px-5 py-3 text-right">{t('amount')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {ledgerLines.map(line => (
-                      <tr key={line.journalLineId} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap text-[#041627]">{line.entryDate}</td>
-                        <td className="px-5 py-3 text-[#041627]">{line.memo || line.entryMemo}</td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[#041627]">{formatCurrency(Number(line.debit) - Number(line.credit))}</td>
+                      <tr key={line.journalLineId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap text-[var(--text-primary)]">{line.entryDate}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)]">{line.memo || line.entryMemo}</td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap font-mono font-medium text-[var(--text-primary)]">{formatCurrency(Number(line.debit) - Number(line.credit))}</td>
                       </tr>
                     ))}
                     {ledgerLines.length === 0 && (
-                      <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">{t('noLedgerLinesFound')}</td></tr>
+                      <tr><td colSpan={3} className="px-5 py-8 text-center text-[var(--text-muted)] italic">{t('noLedgerLinesFound')}</td></tr>
                     )}
                   </tbody>
                 </table>

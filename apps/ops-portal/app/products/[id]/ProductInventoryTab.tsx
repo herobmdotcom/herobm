@@ -219,10 +219,10 @@ export function ProductInventoryTab({
 
   return (
     <div className="w-full pb-6">
-      <div className="z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
+      <div className="z-10 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden transition-all">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
           <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0 font-['Manrope',sans-serif]">
+            <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] shrink-0 font-['Manrope',sans-serif]">
               {t('products.inventoryLevels')}
               {product?.productType === 'non-stock' && filteredBuildableQuantity !== null && (
                 <span className="ml-3 badge badge-success text-[13px] font-bold">
@@ -245,7 +245,7 @@ export function ProductInventoryTab({
         </div>
 
         {addingBinLink && (
-          <div className="flex flex-wrap items-end gap-3 p-5 border-b border-gray-100 bg-white">
+          <div className="flex flex-wrap items-end gap-3 p-5 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
             <div className="flex-[1_1_200px]">
               <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.location')}</label>
               <select
@@ -315,7 +315,7 @@ export function ProductInventoryTab({
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-[#64748b] hover:bg-[#f1f5f9]"
+                className="text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)]"
                 onClick={() => {
                   setAddingBinLink(false);
                   setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
@@ -353,7 +353,7 @@ export function ProductInventoryTab({
         <div className="overflow-x-auto">
           {product?.structureType === 'kit' && product?.productType === 'non-stock' ? (
             <>
-              <div className="flex justify-end px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
+              <div className="flex justify-end px-6 py-4 border-b border-[var(--border)]">
                 <select 
                   className="input input-sm w-64" 
                   value={selectedLocation} 
@@ -367,17 +367,17 @@ export function ProductInventoryTab({
                 </select>
               </div>
               <table className="w-full text-left border-collapse text-[13px]">
-              <thead className="bg-[#f9fafb] sticky top-0 z-10">
+              <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
                 <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 px-6 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
-                  <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
-                  <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                  <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
+                  <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
+                  <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
                 {kitComponents.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-[#64748b] text-sm">{t('common.noMatchingResults')}</td>
+                    <td colSpan={3} className="py-8 text-center text-[var(--text-muted)] text-sm">{t('common.noMatchingResults')}</td>
                   </tr>
                 ) : (
                   kitComponents.map(comp => {
@@ -385,12 +385,12 @@ export function ProductInventoryTab({
                     const compInv = inventoryLevels.filter(l => l.productId === comp.childProductId && (!selectedLocation || (l as any).locationId === selectedLocation));
                     const totalAvail = compInv.reduce((sum, l) => sum + (parseFloat(l.quantityAvailable as string) || 0), 0);
                     return (
-                      <tr key={comp.childProductId} className="bg-white border-b border-[#e2e8f0]">
+                      <tr key={comp.childProductId} className="bg-[var(--bg-card)] border-b border-[var(--border)]">
                         <td className="py-3 px-6">
-                          <div className="text-[#0f172a]">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
+                          <div className="text-[var(--text-primary)] font-medium">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-[#475569]">{formatQuantity(comp.parentQuantity || 1)}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-[#006b5c]">{formatQuantity(totalAvail)}</td>
+                        <td className="py-3 px-4 text-right font-medium text-[var(--text-secondary)]">{formatQuantity(comp.parentQuantity || 1)}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-[var(--accent)]">{formatQuantity(totalAvail)}</td>
                       </tr>
                     );
                   })
@@ -400,49 +400,49 @@ export function ProductInventoryTab({
             </>
           ) : (
             <table className="w-full text-left border-collapse text-[13px]">
-            <thead className="bg-[#f9fafb] sticky top-0 z-10">
+            <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
               <tr className="border-b border-[var(--border)]">
-                <th className="py-2 px-6 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.maxQty')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantityOnHand')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
-                <th className="py-2 px-4 font-semibold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
+                <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.maxQty')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantityOnHand')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
                 <th className="w-[90px]"></th>
               </tr>
             </thead>
             <tbody className="[&_tr:last-child]:border-b-0">
               {unifiedInventory.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-[#64748b] text-sm">{t('common.noMatchingResults')}</td>
+                  <td colSpan={9} className="py-8 text-center text-[var(--text-muted)] text-sm">{t('common.noMatchingResults')}</td>
                 </tr>
               ) : (
                 unifiedInventory.map((lvl) => (
                   <Fragment key={lvl.locationId}>
-                    <tr className="bg-[#f1f5f9] border-b border-[#e2e8f0]">
-                      <td className="py-2 px-6 font-bold text-[#0f172a]" colSpan={4}>
-                        {lvl.locationName} <span className="text-[#64748b] ml-1 font-semibold">({lvl.locationNo})</span>
+                    <tr className="bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+                      <td className="py-2 px-6 font-bold text-[var(--text-primary)]" colSpan={4}>
+                        {lvl.locationName} <span className="text-[var(--text-muted)] ml-1 font-semibold">({lvl.locationNo})</span>
                       </td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityOnHand)}</td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityCommitted)}</td>
-                      <td className="py-2 px-4 font-bold text-[#006b5c] text-right tabular-nums">{formatQuantity(lvl.quantityAvailable)}</td>
-                      <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatQuantity(lvl.quantityOnOrder)}</td>
+                      <td className="py-2 px-4 font-bold text-[var(--text-primary)] text-right tabular-nums">{formatQuantity(lvl.quantityOnHand)}</td>
+                      <td className="py-2 px-4 font-bold text-[var(--text-primary)] text-right tabular-nums">{formatQuantity(lvl.quantityCommitted)}</td>
+                      <td className="py-2 px-4 font-bold text-[var(--accent)] text-right tabular-nums">{formatQuantity(lvl.quantityAvailable)}</td>
+                      <td className="py-2 px-4 font-bold text-[var(--text-primary)] text-right tabular-nums">{formatQuantity(lvl.quantityOnOrder)}</td>
                       <td></td>
                     </tr>
                     {lvl.bins.length === 0 ? (
-                      <tr className="border-b border-[#e2e8f0]">
+                      <tr className="border-b border-[var(--border)]">
                         <td className="py-2 px-6"></td>
-                        <td className="py-2 px-4 text-[#64748b] italic text-xs" colSpan={8}>{t('products.storage.noBins')}</td>
+                        <td className="py-2 px-4 text-[var(--text-muted)] italic text-xs" colSpan={8}>{t('products.storage.noBins')}</td>
                       </tr>
                     ) : (
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
                       Array.from(lvl.bins.values()).map((bin: any) => editingBinId === bin.binId ? (
-                        <tr key={bin.binId} className="bg-white border-b border-[#e2e8f0]">
+                        <tr key={bin.binId} className="bg-[var(--bg-card)] border-b border-[var(--border)]">
                           <td className="py-2 px-6"></td>
                           <td className="py-2 px-4">
-                            <span className="font-semibold text-[#334155]">{bin.binNumber}</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{bin.binNumber}</span>
                           </td>
                           <td className="py-2 px-4">
                             <input
@@ -472,14 +472,14 @@ export function ProductInventoryTab({
                                 />
                                 <span className="switch-slider"></span>
                               </label>
-                              <span className="text-xs text-[#64748b] font-medium leading-none mt-[-2px]">{t('products.storage.columns.primary')}</span>
+                              <span className="text-xs text-[var(--text-muted)] font-medium leading-none mt-[-2px]">{t('products.storage.columns.primary')}</span>
                             </div>
                           </td>
                           <td className="py-2 px-4 text-right">
                             <div className="flex justify-end gap-1">
-                              <Button onClick={() => setEditingBinId(null)} size="xs" variant="ghost" className="px-1.5" title={tCommon('buttons.cancel')}>
+                              <Button onClick={() => setEditingBinId(null)} size="xs" variant="ghost" className="px-1.5 text-[var(--text-muted)]" title={tCommon('buttons.cancel')}>
 
-                                <span className="material-symbols-outlined text-[16px] text-gray-500">close</span>
+                                <span className="material-symbols-outlined text-[16px]">close</span>
                               </Button>
                               <Button 
                                 size="xs"
@@ -508,21 +508,21 @@ export function ProductInventoryTab({
                           </td>
                         </tr>
                       ) : (
-                        <tr key={bin.binId} className="border-b border-[#e2e8f0] hover:bg-[#f8fafc]">
+                        <tr key={bin.binId} className="border-b border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]">
                           <td className="py-2 px-6"></td>
                           <td className="py-2 px-4">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-[#334155]">
+                              <span className="font-semibold text-[var(--text-primary)]">
                                 {bin.binNumber}
                               </span>
                               {bin.isPrimary && (
-                                <span title="Primary Bin" className="text-[10px] font-bold text-[#64748b] bg-[#e2e8f0] px-1.5 py-0.5 rounded leading-tight cursor-help mt-[1px]">P</span>
+                                <span title="Primary Bin" className="text-[10px] font-bold text-[var(--accent)] bg-[var(--accent)]/15 border border-[var(--accent)]/30 px-1.5 py-0.5 rounded leading-tight cursor-help mt-[1px]">P</span>
                               )}
                             </div>
                           </td>
-                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? (bin.minQty !== undefined && bin.minQty !== null && bin.minQty !== '' ? formatQuantity(bin.minQty) : '0') : '—'}</td>
-                          <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? (bin.maxQty !== undefined && bin.maxQty !== null && bin.maxQty !== '' ? formatQuantity(bin.maxQty) : '0') : '—'}</td>
-                          <td className="py-2 px-4 font-medium text-[#475569] text-right tabular-nums">{formatQuantity(bin.quantityOnHand)}</td>
+                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.minQty !== undefined && bin.minQty !== null && bin.minQty !== '' ? formatQuantity(bin.minQty) : '0') : '—'}</td>
+                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.maxQty !== undefined && bin.maxQty !== null && bin.maxQty !== '' ? formatQuantity(bin.maxQty) : '0') : '—'}</td>
+                          <td className="py-2 px-4 font-medium text-[var(--text-secondary)] text-right tabular-nums">{formatQuantity(bin.quantityOnHand)}</td>
                           <td colSpan={3}></td>
                           <td className="py-2 px-4 text-center">
                             {isEditable && (
@@ -538,7 +538,7 @@ export function ProductInventoryTab({
                                       maxQty: bin.maxQty || '',
                                     });
                                   }}
-                                  className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                  className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                                 >
                                   { }
                                   <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -558,7 +558,7 @@ export function ProductInventoryTab({
                                         setSaving(false);
                                       }
                                     }}
-                                    className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                    className="p-1 hover:bg-red-500/10 rounded text-red-400 transition-colors"
                                   >
                                     { }
                                     <span className="material-symbols-outlined text-[16px]">delete</span>

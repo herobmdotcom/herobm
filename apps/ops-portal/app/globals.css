@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Status badges */
 .badge {
@@ -74,9 +75,9 @@ input[type="number"] {
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  color: #1e293b;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   font-weight: 500;
   transition: border-color 150ms;
 }
@@ -97,7 +98,19 @@ input[type="number"] {
 .input:disabled, .select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: #f9fafb;
+  background: var(--bg-secondary);
+}
+
+/* WebKit Autofill in Dark Theme */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Add custom dropdown arrow for select elements */
@@ -133,7 +146,8 @@ select.input:not([multiple]):not([size]) {
 
 .btn-primary {
   background: var(--accent);
-  color: white;
+  color: var(--accent-text, #ffffff);
+  font-weight: 700;
 }
 .btn-primary:hover {
   background: var(--accent-hover);
@@ -205,8 +219,8 @@ select.input:not([multiple]):not([size]) {
 
 /* Cards */
 .card {
-  background: #fff;
-  border: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
 }
@@ -248,13 +262,8 @@ select.input:not([multiple]):not([size]) {
   color: var(--accent);
 }
 
-/* Light-mode overrides for detail pages (sidebar + grids keep dark theme) */
+/* Detail pages token scoping */
 .detail-content {
-  --border: #e5e7eb;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --bg-card: #fff;
   color: var(--text-primary);
 }
 
@@ -310,7 +319,7 @@ select.input:not([multiple]):not([size]) {
 }
 
 .table-lines tr:hover td {
-  background: rgba(0, 107, 92, 0.04);
+  background: rgba(0, 180, 156, 0.06);
 }
 
 /* Scrollable area — scrollbar sits at window edge */
@@ -325,11 +334,11 @@ select.input:not([multiple]):not([size]) {
 /* HeroBM Global Theme */
 
 :root {
-
-  /* Soft Tech Colors */
+  color-scheme: light;
+  /* Soft Tech Colors - Light Theme */
   --bg-primary: #F2F4F6;
   --bg-secondary: #E9ECEF;
-  --bg-card: #FFFFFF; /* Cards are now white */
+  --bg-card: #FFFFFF;
   --bg-card-hover: #F8F9FA;
   --text-primary: #041627;
   --text-secondary: #44474C;
@@ -337,11 +346,87 @@ select.input:not([multiple]):not([size]) {
   --border: rgba(196, 198, 205, 0.4);
   --accent: #006b5c;
   --accent-hover: #005145;
+  --accent-text: #ffffff;
   --accent-glow: #FFFFFF;
   --brand-navy: #041627;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
+}
+
+.dark,
+.herobm-dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Machine Shop Dark Theme - Swapped for Maximum Text Contrast on Tables */
+  --bg-primary: #101726; /* Calm, elevated canvas & page background */
+  --bg-secondary: #141d30; /* Table header bar, toolbar, and section background */
+  --bg-card: #080d16; /* Deepest pitch dark technical navy for table rows & cards */
+  --bg-card-hover: #0f1828; /* Subtle row and card hover */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.06);
+  --accent: #00b49c;
+  --accent-hover: #00d4b8;
+  --accent-text: #021a16;
+  --accent-glow: rgba(0, 180, 156, 0.25);
+  --brand-navy: #f8fafc;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+/* Dark mode high-contrast luminous badges */
+.dark .badge-confirmed,
+.dark .badge-ordered,
+.dark .badge-active,
+.dark .badge-planned,
+.dark .badge-released,
+.dark .badge-success {
+  background: rgba(0, 180, 156, 0.18);
+  color: #2dd4bf;
+}
+.dark .badge-draft,
+.dark .badge-quoted,
+.dark .badge-secondary,
+.dark .badge-inactive,
+.dark .badge-archived,
+.dark .badge-legacy,
+.dark .badge-abm {
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
+}
+.dark .badge-picking,
+.dark .badge-partially_received,
+.dark .badge-partially_paid,
+.dark .badge-in_progress,
+.dark .badge-warning {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+}
+.dark .badge-shipped,
+.dark .badge-received,
+.dark .badge-dispatched,
+.dark .badge-processed,
+.dark .badge-invoiced,
+.dark .badge-completed,
+.dark .badge-posted,
+.dark .badge-paid,
+.dark .badge-info {
+  background: rgba(45, 212, 191, 0.18);
+  color: #2dd4bf;
+}
+.dark .badge-cancelled,
+.dark .badge-discontinued,
+.dark .badge-app,
+.dark .badge-danger {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+.dark .badge-overdue {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
 }
 
 /* Base resets */
@@ -377,13 +462,14 @@ h2 {
 .ag-theme-alpine-dark .ag-wrapper.ag-picker-field-wrapper,
 .ag-theme-alpine-dark .ag-wrapper.ag-text-field-input-wrapper,
 .ag-theme-alpine-dark .ag-wrapper.ag-number-field-input-wrapper {
-  background-color: #ffffff !important;
-  border: 1px solid #d1d5db !important; /* Higher contrast border for visibility on white */
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 8px !important;
   min-height: 38px !important;
   display: flex !important;
   align-items: center !important;
   overflow: hidden;
+  color: var(--text-primary) !important;
 }
 
 .ag-theme-alpine-dark .ag-picker-field {
@@ -398,7 +484,7 @@ h2 {
 }
 
 .ag-theme-alpine-dark .ag-picker-field-display {
-  color: var(--brand-navy) !important;
+  color: var(--text-primary) !important;
   font-weight: 500 !important;
 }
 
@@ -419,22 +505,23 @@ h2 {
 /* Unify focus state: single glow, no double AG Grid blue border */
 .ag-theme-alpine-dark .ag-wrapper:focus-within {
   border-color: var(--accent) !important;
-
   outline: none !important;
 }
-/* DataGrid overrides for the POC */
+
+/* DataGrid overrides */
 .ag-theme-alpine-dark {
+  --ag-background-color: var(--bg-card) !important;
   --ag-header-background-color: var(--bg-secondary) !important;
   --ag-header-foreground-color: var(--text-secondary) !important;
   --ag-odd-row-background-color: transparent !important;
-  --ag-even-row-background-color: #f7f9fb !important;
+  --ag-even-row-background-color: var(--bg-card-hover) !important;
   --ag-borders: none !important;
   --ag-borders-critical: none !important;
   --ag-borders-secondary: none !important;
   --ag-border-color: transparent !important;
-  --ag-row-border-color: rgba(196, 198, 205, 0.2) !important;
-  --ag-foreground-color: var(--brand-navy) !important;
-  --ag-row-hover-color: #f8fafc !important; /* Lighter hover color */
+  --ag-row-border-color: var(--border) !important;
+  --ag-foreground-color: var(--text-primary) !important;
+  --ag-row-hover-color: var(--bg-secondary) !important;
   --ag-font-family: 'Inter', sans-serif !important;
   --ag-font-size: 13px !important;
   --ag-header-cell-hover-background-color: transparent !important;
@@ -444,31 +531,24 @@ h2 {
   --ag-wrapper-border-radius: 0 !important;
   
   border-radius: 0 !important;
-
   border: none !important;
   overflow: hidden;
   flex: 1; /* Take remaining space */
 }
 
-/* Fix transparent/grey filter popups and menus to be solid white cards */
+/* Filter popups and menus */
 .ag-theme-alpine-dark .ag-popup-content-wrapper,
 .ag-theme-alpine-dark .ag-menu,
 .ag-theme-alpine-dark .ag-filter-wrapper {
-  background-color: #ffffff !important;
+  background-color: var(--bg-card) !important;
   border: 1px solid var(--border) !important;
-
+  color: var(--text-primary) !important;
   border-radius: 12px !important;
 }
 
 .ag-theme-alpine-dark .ag-tabs-header {
-  background-color: #f7f9fb !important;
+  background-color: var(--bg-secondary) !important;
   border-bottom: 1px solid var(--border) !important;
-}
-
-/* Ensure foreground color in popups is dark navy */
-.ag-theme-alpine-dark .ag-popup-content-wrapper,
-.ag-theme-alpine-dark .ag-filter-wrapper {
-  color: var(--brand-navy) !important;
 }
 
 /* Explicit fallback for grid wrappers */
@@ -503,7 +583,7 @@ h2 {
 }
 
 .ag-theme-alpine-dark .ag-row {
-  border-bottom: 1px solid rgba(196, 198, 205, 0.2) !important;
+  border-bottom: 1px solid var(--border) !important;
   transition: background-color 0.15s ease;
 }
 
@@ -522,18 +602,84 @@ h2 {
   padding-right: 16px !important;
 }
 
-/* Hide AG grid scrollbars explicitly if required or style them */
-.ag-theme-alpine-dark ::-webkit-scrollbar-thumb {
-  background: rgba(4, 22, 39, 0.1);
+/* Universal sleek dark scrollbars */
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.dark *:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.48) transparent;
+}
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* AG Grid Dark Scrollbars */
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport,
+.ag-theme-alpine-dark .ag-virtual-list-viewport {
+  scrollbar-color: rgba(148, 163, 184, 0.3) var(--bg-card) !important;
+  scrollbar-width: thin !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-track {
+  background: var(--bg-card) !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28) !important;
+  border-radius: 9999px !important;
+  border: 2px solid var(--bg-card) !important;
+  background-clip: content-box !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6) !important;
 }
 
 /* Fix missing background on pinned columns causing text bleed-through when scrolling */
 .ag-pinned-left-cols-container .ag-cell,
 .ag-cell-pinned-left {
-  background-color: var(--ag-background-color, #ffffff) !important;
+  background-color: var(--bg-card) !important;
 }
 
-/* Ensure pinned headers match the grey of the rest of the header row */
+/* Ensure pinned headers match the rest of the header row */
 .ag-pinned-left-header,
 .ag-header-cell.ag-header-cell-pinned-left {
   background-color: var(--bg-secondary) !important;

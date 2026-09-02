@@ -224,9 +224,9 @@ export default function EditReconciliationClient({ id }: { id: string }) {
   const formatCurrency = (val: number) => formatAmount(val, 'AUD');
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-[var(--bg-primary)]">
       {/* GLOBAL HEADER (Outside of specific views) */}
-      <div className="flex flex-col bg-white border-b border-gray-200 px-6 py-4 gap-4 shrink-0 z-10 relative">
+      <div className="flex flex-col bg-[var(--bg-card)] border-b border-[var(--border)] px-6 py-4 gap-4 shrink-0 z-10 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="secondary" 
@@ -237,13 +237,13 @@ export default function EditReconciliationClient({ id }: { id: string }) {
             >
               ←
             </Button>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
               {t('reconciliationLabel', { glAccount: reconciliation.accountName })}
             </h1>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
  isPosted 
- ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
- : 'bg-amber-50 text-[var(--warning)] border-amber-200'
+ ? 'bg-emerald-500/15 text-[var(--success)] border-emerald-500/30' 
+ : 'bg-amber-500/15 text-[var(--warning)] border-amber-500/30'
  }`}>
               {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
             </span>
@@ -299,7 +299,7 @@ export default function EditReconciliationClient({ id }: { id: string }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 mt-1 text-sm text-gray-600">
+        <div className="flex items-center gap-6 mt-1 text-sm text-[var(--text-secondary)]">
           <span>{t('statementDateLabel', { date: reconciliation.statementDate })}</span>
           <div className="flex items-center gap-2">
             <span>{t('opening')}:</span>
@@ -313,16 +313,16 @@ export default function EditReconciliationClient({ id }: { id: string }) {
             <span>{t('statement')}:</span>
             <span>{formatCurrency(reconciliation.statementBalance)}</span>
           </div>
-          <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
+          <div className="flex items-center gap-2 border-l border-[var(--border)] pl-6">
             <span>{t('variance')}:</span>
-            <span className={`${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
+            <span className={`${Math.abs(reconciliation.variance) < 0.001 ? 'text-[var(--accent)]' : 'text-[var(--danger)]'}`}>
               {formatCurrency(reconciliation.variance)}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col bg-gray-50 relative">
+      <div className="flex-1 min-h-0 flex flex-col bg-[var(--bg-primary)] relative">
         <BankMatchingView 
           refreshTrigger={refreshKey}
           reconciliation={reconciliation} 

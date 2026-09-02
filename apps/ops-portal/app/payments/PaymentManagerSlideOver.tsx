@@ -928,7 +928,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                         <div>
                           <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.party')}</span>
-                          <span className="text-[#041627] font-medium">{data?.partyName || '—'}</span>
+                          <span className="text-[var(--text-primary)] font-medium">{data?.partyName || '—'}</span>
                         </div>
                         <div>
                           <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.status')}</span>
@@ -936,11 +936,11 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                         </div>
                         <div>
                           <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.mode')}</span>
-                          <span className="text-[#041627] font-medium">{data?.modeOfPayment}</span>
+                          <span className="text-[var(--text-primary)] font-medium">{data?.modeOfPayment}</span>
                         </div>
                         <div>
                           <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.reference')}</span>
-                          <span className="text-[#041627]">{data?.referenceNumber || '—'}</span>
+                          <span className="text-[var(--text-primary)]">{data?.referenceNumber || '—'}</span>
                         </div>
                         {!data?.paymentType?.startsWith('direct_') && (
                           <div>
@@ -954,18 +954,18 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     {/* Direct Payment Lines */}
                     {data?.paymentType?.startsWith('direct_') && data.lines && data.lines.length > 0 && (
                       <div className="space-y-3">
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                           <table className="w-full text-sm text-left">
-                            <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                            <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                               <tr>
                                 <th className="px-5 py-3">{t('manager.labels.glAccount')}</th>
                                 <th className="px-5 py-3 text-right">{t('manager.labels.amount')}</th>
                                 <th className="px-5 py-3">{t('manager.labels.memo')}</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-[var(--border)]">
                               {data.lines.map((l: PaymentLine, idx: number) => (
-                                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                <tr key={idx} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                                   <td className="px-5 py-3">
                                     <div>{l.accountName}</div>
                                   </td>
@@ -984,14 +984,14 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     {/* Ledger Impact */}
                     {isSubmitted && (
                       <div className="space-y-3">
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                           {loadingJournal ? (
                             <div className="flex justify-center items-center py-12">
-                              <span className="loading loading-spinner text-gray-400"></span>
+                              <span className="loading loading-spinner text-[var(--text-muted)]"></span>
                             </div>
                           ) : journalEntry?.lines ? (
                             <table className="w-full text-sm text-left">
-                              <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                              <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                                 <tr>
                                   <th className="px-5 py-3">{t('manager.columns.customer')}</th>
                                   <th className="px-5 py-3 text-right">{t('manager.columns.debit')}</th>
@@ -999,9 +999,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                   <th className="px-5 py-3">{t('manager.columns.memo')}</th>
                                 </tr>
                               </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-[var(--border)]">
                                   {(journalEntry.lines as Record<string, unknown>[]).map((l: Record<string, unknown>, idx: number) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr key={idx} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                                       <td className="px-5 py-3">
                                         <div>{String(l.accountCode)} - {String(l.accountName)}</div>
                                       </td>
@@ -1017,7 +1017,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                     </tr>
                                   ))}
                                   {/* Totals Row */}
-                                  <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
+                                  <tr className="bg-[var(--bg-secondary)] border-t border-[var(--border)]">
                                     <td className="px-5 py-3 text-right uppercase tracking-wider text-xs">
                                       {t('manager.messages.total')}
                                     </td>
@@ -1032,7 +1032,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 </tbody>
                             </table>
                           ) : (
-                            <div className="p-8 text-center text-gray-500 text-sm">
+                            <div className="p-8 text-center text-[var(--text-muted)] text-sm">
                               {t('manager.messages.noLedgerLines')}
                             </div>
                           )}
@@ -1048,16 +1048,16 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                           <span className="material-symbols-outlined">history</span>
                           {t('manager.messages.allocationHistory')}
                         </h3>
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                           <table className="w-full text-sm text-left">
-                            <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                            <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                               <tr>
                                 <th className="px-5 py-3">{t('manager.columns.invoice')}</th>
                                 <th className="px-5 py-3">{t('manager.columns.type')}</th>
                                 <th className="px-5 py-3 text-right">{t('manager.columns.allocatedAmount')}</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-[var(--border)]">
                               {data.allocations.map((a) => {
                                 const isSalesInv = a.referenceType as string === 'sales_invoice';
                                 const isCreditNote = a.referenceType as string === 'sales_credit_note';
@@ -1067,7 +1067,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                                 isPurchInv ? routes.supplierInvoices.detail(a.referenceId) :
                                                 routes.purchaseDebitNotes.detail(a.referenceId);
                                 return (
-                                <tr key={a.allocationId} className="hover:bg-gray-50/50 transition-colors">
+                                <tr key={a.allocationId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                                   <td className="px-5 py-3">
                                     <Link 
                                       href={linkUrl}
@@ -1077,14 +1077,14 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                     </Link>
                                   </td>
                                   <td className="px-5 py-3">
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-600 uppercase font-bold tracking-wider">
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded text-[var(--text-secondary)] uppercase font-bold tracking-wider">
                                       {isSalesInv ? t('salesInv') : 
                                        isCreditNote ? 'Credit Note' :
                                        isPurchInv ? t('purchInv') : 
                                        'Debit Note'}
                                     </span>
                                   </td>
-                                  <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                                  <td className="px-5 py-3 text-right font-mono font-medium text-[var(--text-primary)]">
                                     {formatAmount(parseFloat(a.allocatedAmount), data.currencyCode)}
                                   </td>
                                 </tr>

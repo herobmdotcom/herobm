@@ -40,7 +40,7 @@ export default function ReconciliationsPage() {
   ], [t, tCommon]);
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-[var(--bg-primary)]">
       <div className="flex-1 min-h-0 flex flex-col">
         <DataGrid
           endpoint="/api/gl/reconciliations"

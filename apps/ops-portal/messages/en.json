@@ -1374,6 +1374,13 @@
       "saveFailed": "Failed to save preferences",
       "saved": "Preferences saved",
       "saving": "Saving...",
+      "theme": "Appearance",
+      "themeDark": "Dark",
+      "themeDarkDesc": "High-contrast dark palette engineered for low light",
+      "themeLight": "Light",
+      "themeLightDesc": "Clean, standard light interface",
+      "themeSystem": "System",
+      "themeSystemDesc": "Synchronize with your operating system appearance",
       "title": "User Preferences",
       "twoFactor": {
         "active": "Active",

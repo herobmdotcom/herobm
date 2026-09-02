@@ -9,7 +9,7 @@ import {
   zones,
   backorders,
 } from '@herobm/db-schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import {
   WORK_ORDER_STATE,
@@ -92,11 +92,15 @@ export class WorkOrdersExecutionService {
         innerTx,
       );
 
-      for (const comp of wo.components) {
-        const expectedQty = parseFloat(comp.expectedQuantity || '0');
+      const compProductIds = [
+        ...new Set(wo.components.map((c) => c.productId)),
+      ];
 
-        const [stock] = await innerTx
+      const stockMap = new Map<string, number>();
+      if (compProductIds.length > 0) {
+        const stockRows = await innerTx
           .select({
+            productId: binContents.productId,
             onHand:
               sql<number>`COALESCE(SUM(${binContents.actualQuantity}::numeric), 0)`.mapWith(
                 Number,
@@ -108,12 +112,20 @@ export class WorkOrdersExecutionService {
           .where(
             and(
               eq(zones.locationId, wo.locationId),
-              eq(binContents.productId, comp.productId),
+              inArray(binContents.productId, compProductIds),
               isPickableBinCondition(bins),
             ),
-          );
+          )
+          .groupBy(binContents.productId);
 
-        const availableOnHand = stock?.onHand || 0;
+        for (const r of stockRows) {
+          stockMap.set(r.productId, r.onHand);
+        }
+      }
+
+      for (const comp of wo.components) {
+        const expectedQty = parseFloat(comp.expectedQuantity || '0');
+        const availableOnHand = stockMap.get(comp.productId) || 0;
         const shortfall = Math.max(0, expectedQty - availableOnHand);
 
         if (shortfall > 0) {

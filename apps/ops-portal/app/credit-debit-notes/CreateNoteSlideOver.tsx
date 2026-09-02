@@ -243,7 +243,7 @@ export default function CreateNoteSlideOver({
                   </label>
                   <input
                     type="text"
-                    className="input text-sm h-10 border-gray-200 bg-white rounded-lg w-full px-3"
+                    className="input text-sm h-10 w-full px-3"
                     placeholder="e.g. DN-SUP-1029"
                     value={supplierReferenceNumber}
                     onChange={(e) => setSupplierReferenceNumber(e.target.value)}
@@ -257,7 +257,7 @@ export default function CreateNoteSlideOver({
                 Internal Note / Reason
               </label>
               <textarea
-                className="textarea input text-sm border-gray-200 bg-white rounded-lg w-full p-3 min-h-[70px]"
+                className="input text-sm w-full p-3 min-h-[70px]"
                 placeholder={notesPlaceholder}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -268,9 +268,9 @@ export default function CreateNoteSlideOver({
         </div>
 
         {/* Lines Table Card */}
-        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-          <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-[#f8f9fa]">
-            <span className="font-semibold text-xs text-[#041627] uppercase tracking-wider">
+        <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
+            <span className="font-semibold text-xs text-[var(--text-primary)] uppercase tracking-wider">
               {linesSectionTitle}
             </span>
             <Button
@@ -284,7 +284,7 @@ export default function CreateNoteSlideOver({
           </div>
 
           <table className="w-full text-sm text-left">
-            <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+            <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-2.5">Description</th>
                 <th className="px-4 py-2.5 w-[240px]">GL Account</th>
@@ -292,13 +292,13 @@ export default function CreateNoteSlideOver({
                 <th className="w-[48px]"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {lines.map((line, index) => (
-                <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={index} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                   <td className="px-4 py-2.5">
                     <input
                       type="text"
-                      className="input text-xs h-9 border-gray-200 bg-white rounded-lg w-full px-2.5"
+                      className="input text-xs h-9 w-full px-2.5"
                       placeholder="Line description..."
                       value={line.description}
                       onChange={(e) => handleLineChange(index, 'description', e.target.value)}
@@ -306,7 +306,7 @@ export default function CreateNoteSlideOver({
                   </td>
                   <td className="px-4 py-2.5">
                     <select
-                      className="select text-xs h-9 border-gray-200 bg-white rounded-lg w-full px-2"
+                      className="select text-xs h-9 w-full px-2"
                       value={line.accountId}
                       onChange={(e) => handleLineChange(index, 'accountId', e.target.value)}
                     >
@@ -323,7 +323,7 @@ export default function CreateNoteSlideOver({
                   <td className="px-4 py-2.5">
                     <input
                       type="number"
-                      className="input text-xs h-9 border-gray-200 bg-white rounded-lg w-full text-right font-mono px-2.5"
+                      className="input text-xs h-9 w-full text-right font-mono px-2.5"
                       placeholder="0.00"
                       step="0.01"
                       min="0.01"
@@ -335,7 +335,7 @@ export default function CreateNoteSlideOver({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded disabled:opacity-30 border-none bg-transparent"
+                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 rounded disabled:opacity-30 border-none bg-transparent"
                       onClick={() => handleRemoveLine(index)}
                       disabled={lines.length === 1}
                       title="Remove line"
@@ -348,11 +348,11 @@ export default function CreateNoteSlideOver({
             </tbody>
             {lines.length > 0 && (
               <tfoot>
-                <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
-                  <td colSpan={2} className="px-4 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
+                <tr className="bg-[var(--bg-secondary)] border-t border-[var(--border)]">
+                  <td colSpan={2} className="px-4 py-3 text-right font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">
                     Total
                   </td>
-                  <td className="px-4 py-3 text-right font-mono font-bold text-sm text-[#041627]">
+                  <td className="px-4 py-3 text-right font-mono font-bold text-sm text-[var(--text-primary)]">
                     {formatAmount(totalAmount, baseCurrency)}
                   </td>
                   <td></td>

@@ -255,7 +255,7 @@ export default function OdooImportPage() {
   return (
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
           {step === 'config' ? t('connectSourceSystem') : 
            step === 'finalisation' ? t('titleFinalisation') :
            status === 'pending' ? t('titlePending') :
@@ -263,7 +263,7 @@ export default function OdooImportPage() {
            status === 'completed' ? t('titleCompleted') : 
            t('titleRunning')}
         </h1>
-        <p className="text-slate-500">
+        <p className="text-[var(--text-muted)]">
           {step === 'config' ? t('connectSourceSystemDescOdoo') :
            step === 'finalisation' ? t('descFinalisation') :
            status === 'pending' ? t('descPending') :
@@ -274,13 +274,13 @@ export default function OdooImportPage() {
       </div>
 
       {step === 'config' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.host')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.host')}</label>
               <input
                 type="text"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="input w-full"
                 placeholder="localhost"
                 value={config.host}
                 onChange={(e) => setConfig({ ...config, host: e.target.value })}
@@ -288,10 +288,10 @@ export default function OdooImportPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.port')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.port')}</label>
               <input
                 type="text"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="input w-full"
                 placeholder="5432"
                 value={config.port}
                 onChange={(e) => setConfig({ ...config, port: e.target.value })}
@@ -301,10 +301,10 @@ export default function OdooImportPage() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.database')}</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.database')}</label>
             <input
               type="text"
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+              className="input w-full"
               placeholder="odoo"
               value={config.database}
               onChange={(e) => setConfig({ ...config, database: e.target.value })}
@@ -314,10 +314,10 @@ export default function OdooImportPage() {
 
           <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.username')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.username')}</label>
               <input
                 type="text"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="input w-full"
                 placeholder="odoo"
                 value={config.username}
                 onChange={(e) => setConfig({ ...config, username: e.target.value })}
@@ -325,10 +325,10 @@ export default function OdooImportPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.password')}</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.password')}</label>
               <input
                 type="password"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="input w-full"
                 value={config.password || ''}
                 onChange={(e) => setConfig({ ...config, password: e.target.value })}
                 disabled={loading}
@@ -336,15 +336,12 @@ export default function OdooImportPage() {
             </div>
           </div>
 
-          <div className="mt-auto pt-6 flex items-center justify-end border-t border-slate-100">
-            <Button variant="secondary"
+          <div className="mt-auto pt-6 flex items-center justify-end border-t border-[var(--border)]">
+            <Button
+              variant="primary"
               onClick={handleTestConnection}
               disabled={!isFormValid || loading}
-              className={`px-8 py-3 rounded-lg font-bold transition-colors ${
- !isFormValid || loading
- ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
- : 'bg-[#006b5c] hover:bg-[#005246] text-white cursor-pointer'
- }`}
+              className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
             >
               {loading ? tExt('testing') : tExt('testConnection')}
             </Button>
@@ -353,14 +350,14 @@ export default function OdooImportPage() {
       )}
 
       {step === 'preview' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           
-          <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-100">
+          <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-[var(--border)]">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultLocation')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('defaultLocationDescOdoo')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('defaultLocation')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('defaultLocationDescOdoo')}</p>
               <select
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="select w-full"
                 value={config.defaultLocationCode}
                 onChange={(e) => setConfig({ ...config, defaultLocationCode: e.target.value })}
               >
@@ -371,10 +368,10 @@ export default function OdooImportPage() {
             </div>
             
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('systemBaseCurrency')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('systemBaseCurrencyDescOdoo')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('systemBaseCurrency')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('systemBaseCurrencyDescOdoo')}</p>
               <select
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="select w-full"
                 value={config.baseCurrency}
                 onChange={(e) => setConfig({ ...config, baseCurrency: e.target.value })}
               >
@@ -386,10 +383,10 @@ export default function OdooImportPage() {
             
             {odooTaxCategories.length > 0 && (
               <div className="col-span-2 mt-2">
-                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory')}</h2>
-                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc')}</p>
+                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('defaultTaxCategory')}</h2>
+                <p className="text-sm text-[var(--text-muted)] mb-4">{t('defaultTaxCategoryDesc')}</p>
                 <select
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                  className="select w-full"
                   value={config.defaultTaxCategoryCode}
                   onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
                 >
@@ -401,30 +398,30 @@ export default function OdooImportPage() {
             )}
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions')}</h2>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('sections.executionOptions')}</h2>
           
           <div className="flex flex-col gap-4 mb-8">
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.resumeExtraction}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.resumeExtraction}>
               <input 
                 type="radio" 
                 name="resumeMode" 
                 checked={config.resumeExtraction === true}
                 onChange={() => setConfig({ ...config, resumeExtraction: true })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800 flex items-center gap-2">
+                <div className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                   {t('options.resumeModeTitle')}
                   {completedTables !== null && (
-                    <span className="bg-[#006b5c]/10 text-[#006b5c] text-xs font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold px-2 py-0.5 rounded-full">
                       {t('options.tablesCached', { count: completedTables.length })}
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-slate-500">{t('options.resumeModeDesc')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('options.resumeModeDesc')}</div>
                 
                 {completedTables !== null && completedTables.length > 0 && (
-                  <div className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 border border-slate-100 rounded p-2 max-h-24 overflow-y-auto">
+                  <div className="mt-3 text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded p-2 max-h-24 overflow-y-auto">
                     <strong>{t('options.alreadyStaged')}</strong> 
                     {completedTables.join(', ')}
                   </div>
@@ -432,31 +429,31 @@ export default function OdooImportPage() {
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={!config.resumeExtraction}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={!config.resumeExtraction}>
               <input 
                 type="radio" 
                 name="resumeMode" 
                 checked={config.resumeExtraction === false}
                 onChange={() => setConfig({ ...config, resumeExtraction: false })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{t('options.fullExtractionTitle')}</div>
-                <div className="text-sm text-slate-500">{t('options.fullExtractionDesc')}</div>
+                <div className="font-bold text-[var(--text-primary)]">{t('options.fullExtractionTitle')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('options.fullExtractionDesc')}</div>
               </div>
             </label>
           </div>
 
-          <div className="flex justify-between border-t border-slate-100 pt-6">
+          <div className="flex justify-between border-t border-[var(--border)] pt-6">
             <Button variant="ghost"
               onClick={() => setStep('config')}
-              className="text-slate-500 hover:text-slate-800 font-medium"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium"
             >
               {t('back')}
             </Button>
-            <Button variant="secondary"
+            <Button variant="primary"
               onClick={handleStartElt}
-              className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
+              className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
             >
               {t('buttons.startExecution')}
             </Button>
@@ -511,33 +508,33 @@ export default function OdooImportPage() {
       )}
 
       {step === 'finalisation' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('importSuccessful')}</h2>
-          <p className="text-slate-500 mb-8">{t('dbPopulated')}</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t('importSuccessful')}</h2>
+          <p className="text-[var(--text-muted)] mb-8">{t('dbPopulated')}</p>
 
           {importSummary && (
             <div className="grid grid-cols-3 gap-6 mb-8 text-left">
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('products')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.products.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('products')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.products.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('customers')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.customers.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('customers')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.customers.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('orders')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.orders.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('orders')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.orders.toLocaleString()}</div>
               </div>
             </div>
           )}
 
-          <Button variant="secondary"
+          <Button variant="primary"
             onClick={() => router.push('/')}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
+            className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('buttons.goToDashboard')}
           </Button>
@@ -546,7 +543,7 @@ export default function OdooImportPage() {
       
       {step === 'executing' && status === 'completed' && (
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
-           <Button variant="secondary"
+           <Button variant="primary"
             onClick={() => {
               api.setupControllerGetImportSummary().then((summaryRes) => {
                  setImportSummary(summaryRes.data);
@@ -557,7 +554,7 @@ export default function OdooImportPage() {
                  setStep('finalisation');
               });
             }}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
+            className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.continueToSummary')}
            </Button>
@@ -568,7 +565,7 @@ export default function OdooImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <Button variant="secondary"
             onClick={() => { setStep('config'); setStatus('pending'); }}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
+            className="btn btn-secondary px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.retryImport')}
            </Button>

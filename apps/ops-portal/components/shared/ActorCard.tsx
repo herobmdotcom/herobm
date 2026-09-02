@@ -59,7 +59,7 @@ export function ActorCard({
             <Button
               variant="ghost"
               type="button"
-              className="text-gray-400 hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
               onClick={onEdit}
             >
               <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -69,7 +69,7 @@ export function ActorCard({
             <Button
               variant="ghost"
               type="button"
-              className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
               onClick={onDelete}
               title={deleteTitle || "Unlink Actor"}
             >
@@ -79,19 +79,19 @@ export function ActorCard({
         </div>
       }
     >
-      {actor.legalStatus && <div className="text-sm text-gray-600">{actor.legalStatus}</div>}
+      {actor.legalStatus && <div className="text-sm text-[var(--text-muted)]">{actor.legalStatus}</div>}
 
       {actor.telephone && (
         <div className="flex flex-col gap-1.5 mt-2">
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
+          <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">phone</span>
             <a href={`tel:${actor.telephone}`} className="hover:text-[var(--accent)] transition-colors">{actor.telephone}</a>
           </div>
         </div>
       )}
       {actor.email && (
-        <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
-          <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
+        <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] mt-1.5">
+          <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">mail</span>
           <a href={`mailto:${actor.email}`} className="text-[var(--accent)] hover:underline truncate">
             {actor.email}
           </a>

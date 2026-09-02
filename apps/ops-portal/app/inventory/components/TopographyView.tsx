@@ -123,12 +123,12 @@ export default function TopographyView() {
   const totalZones = (locations || []).reduce((acc, loc) => acc + (loc?.zones || []).length, 0);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+    <div className="flex-1 min-h-0 flex flex-col z-10 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden transition-all">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[rgba(196,198,205,0.4)] gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
           <div className="flex items-center justify-between sm:justify-start">
-            <h2 className="text-lg sm:text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0">
+            <h2 className="text-lg sm:text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] shrink-0">
               {tInventory('tabs.locations')}
             </h2>
             {canEdit && (
@@ -146,31 +146,31 @@ export default function TopographyView() {
               </div>
             )}
           </div>
-          <div className="hidden sm:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
+          <div className="hidden sm:block h-5 w-px bg-[var(--border)] shrink-0 mx-1"></div>
 
           {/* Stats */}
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#041627] tracking-wider uppercase">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[var(--bg-secondary)] rounded-lg shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--text-primary)] tracking-wider uppercase">
                 {tCommon('columns.location')}
               </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#006b5c]">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--accent)]">
                 {loading ? tCommon('loadingEllipsis') : locations.length}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#041627] tracking-wider uppercase">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[var(--bg-secondary)] rounded-lg shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--text-primary)] tracking-wider uppercase">
                 {tLoc('zones')}
               </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#006b5c]">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--accent)]">
                 {loading ? tCommon('loadingEllipsis') : totalZones}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#041627] tracking-wider uppercase">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[var(--bg-secondary)] rounded-lg shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--text-primary)] tracking-wider uppercase">
                 {tLoc('bins')}
               </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#006b5c]">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[var(--accent)]">
                 {loading ? tCommon('loadingEllipsis') : totalBins.toLocaleString()}
               </span>
             </div>
@@ -193,7 +193,7 @@ export default function TopographyView() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 bg-[#fafbfc]">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 bg-[var(--bg-primary)]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <span className="text-sm text-[var(--text-muted)]">
@@ -215,8 +215,8 @@ export default function TopographyView() {
               return (
                 <div
                   key={loc.locationId}
-                  className={`rounded-xl border overflow-hidden transition-all bg-white ${
-                    isLocExpanded ? 'border-[#006b5c]/30' : 'border-[rgba(196,198,205,0.4)]'
+                  className={`rounded-xl border overflow-hidden transition-all bg-[var(--bg-card)] ${
+                    isLocExpanded ? 'border-[var(--accent)]/40' : 'border-[var(--border)]'
                   }`}
                 >
                   {/* Location Row */}
@@ -225,7 +225,7 @@ export default function TopographyView() {
                     tabIndex={0}
                     onClick={() => toggleLocation(loc.locationId)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLocation(loc.locationId); } }}
-                    className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-5 sm:py-4 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
+                    className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-5 sm:py-4 text-left hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
                       <span className={`material-symbols-outlined text-[18px] transition-transform text-[var(--accent)] shrink-0 ${isLocExpanded ? 'rotate-90' : 'rotate-0'}`}>chevron_right</span>
@@ -233,7 +233,7 @@ export default function TopographyView() {
                       <span className="material-symbols-outlined text-[20px] sm:text-[22px] text-[var(--accent)] shrink-0">warehouse</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
-                          <span className="text-sm font-bold text-[#041627]">
+                          <span className="text-sm font-bold text-[var(--text-primary)]">
                             {loc.code}
                           </span>
                           <span className="text-sm text-[var(--text-secondary)] truncate">
@@ -255,14 +255,14 @@ export default function TopographyView() {
 
                     <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 shrink-0 pl-7 sm:pl-0">
                       {canEdit && (
-                        <div className="flex items-center gap-1 sm:gap-1.5 sm:mr-2 sm:pr-2 sm:border-r border-[rgba(196,198,205,0.3)]">
+                        <div className="flex items-center gap-1 sm:gap-1.5 sm:mr-2 sm:pr-2 sm:border-r border-[var(--border)]">
                           <Button variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingZone({ locationId: loc.locationId });
                               setIsZoneModalOpen(true);
                             }}
-                            className="p-1 sm:p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
+                            className="p-1 sm:p-1.5 hover:bg-emerald-500/10 rounded text-emerald-400 transition-colors"
                             title={tLoc('addZoneTo', { name: loc.code })}
                           >
                             <span className="material-symbols-outlined text-[18px]">add_circle</span>
@@ -273,7 +273,7 @@ export default function TopographyView() {
                               setEditingLocation(loc);
                               setIsLocationModalOpen(true);
                             }}
-                            className="p-1 sm:p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                            className="p-1 sm:p-1.5 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                             title={tCommon('edit')}
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -290,7 +290,7 @@ export default function TopographyView() {
                                   .catch((err) => toast.error(getErrorMessage(err)));
                               }
                             }}
-                            className="p-1 sm:p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
+                            className="p-1 sm:p-1.5 hover:bg-red-500/10 rounded text-red-400 transition-colors"
                             title={tCommon('delete')}
                           >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -304,15 +304,15 @@ export default function TopographyView() {
                             navigator.clipboard.writeText(loc.locationId);
                             toast.success('Copied to clipboard');
                           }}
-                          className="p-1 sm:p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                          className="p-1 sm:p-1.5 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                           title={`UUID: ${loc.locationId}`}
                         >
                           <span className="material-symbols-outlined text-[18px]">info</span>
                         </Button>
-                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#006b5c]/[0.08] text-[#006b5c] whitespace-nowrap">
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--accent)]/10 text-[var(--accent)] whitespace-nowrap">
                           {tLoc('zonesCount', { count: (loc?.zones || []).length })}
                         </span>
-                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#041627]/[0.06] text-[#041627] whitespace-nowrap">
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--text-primary)]/[0.06] text-[var(--text-primary)] whitespace-nowrap">
                           {tLoc('binsCount', { count: binCount })}
                         </span>
                       </div>
@@ -321,7 +321,7 @@ export default function TopographyView() {
 
                   {/* Zones */}
                   {isLocExpanded && (
-                    <div className="border-t border-[rgba(196,198,205,0.3)]">
+                    <div className="border-t border-[var(--border)]">
                       {(loc?.zones || []).map((zone) => {
                         const isZoneExpanded = expandedZones.has(zone.zoneId);
 
@@ -333,13 +333,13 @@ export default function TopographyView() {
                               tabIndex={0}
                               onClick={() => toggleZone(zone.zoneId)}
                               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleZone(zone.zoneId); } }}
-                              className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:px-5 sm:py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer pl-6 sm:pl-10 md:pl-12"
+                              className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:px-5 sm:py-3 text-left hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer pl-6 sm:pl-10 md:pl-12"
                             >
                               <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
                                 <span className={`material-symbols-outlined text-[16px] transition-transform text-[var(--text-muted)] shrink-0 ${isZoneExpanded ? 'rotate-90' : 'rotate-0'}`}>chevron_right</span>
-                                <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-indigo-500 shrink-0">grid_view</span>
+                                <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-indigo-400 shrink-0">grid_view</span>
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 min-w-0">
-                                  <span className="text-sm font-semibold text-[#041627]">
+                                  <span className="text-sm font-semibold text-[var(--text-primary)]">
                                     {zone.code}
                                   </span>
                                   <span className="text-sm text-[var(--text-secondary)] truncate">
@@ -349,14 +349,14 @@ export default function TopographyView() {
                               </div>
                               <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 shrink-0 pl-6 sm:pl-0">
                                 {canEdit && (
-                                  <div className="flex items-center gap-1 sm:pr-2 sm:mr-2 sm:border-r border-[rgba(196,198,205,0.3)]">
+                                  <div className="flex items-center gap-1 sm:pr-2 sm:mr-2 sm:border-r border-[var(--border)]">
                                     <Button variant="ghost"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setEditingBin({ zoneId: zone.zoneId });
                                         setIsBinModalOpen(true);
                                       }}
-                                      className="p-1 sm:p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
+                                      className="p-1 sm:p-1.5 hover:bg-emerald-500/10 rounded text-emerald-400 transition-colors"
                                       title={tLoc('addBinTo', { name: zone.code })}
                                     >
                                       <span className="material-symbols-outlined text-[16px]">add_circle</span>
@@ -367,7 +367,7 @@ export default function TopographyView() {
                                         setEditingZone({ zone, locationId: loc.locationId });
                                         setIsZoneModalOpen(true);
                                       }}
-                                      className="p-1 sm:p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                      className="p-1 sm:p-1.5 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                       title={tCommon('edit')}
                                     >
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -387,7 +387,7 @@ export default function TopographyView() {
                                       }}
                                       disabled={zone.code === 'HANDLING'}
                                       title={zone.code === 'HANDLING' ? 'System zones cannot be deleted' : tCommon('delete')}
-                                      className={`p-1 sm:p-1.5 rounded transition-colors ${zone.code === 'HANDLING' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
+                                      className={`p-1 sm:p-1.5 rounded transition-colors ${zone.code === 'HANDLING' ? 'text-gray-500 cursor-not-allowed' : 'hover:bg-red-500/10 text-red-400'}`}
                                     >
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
                                     </Button>
@@ -400,12 +400,12 @@ export default function TopographyView() {
                                       navigator.clipboard.writeText(zone.zoneId);
                                       toast.success('Copied to clipboard');
                                     }}
-                                    className="p-1 sm:p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                    className="p-1 sm:p-1.5 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                     title={`UUID: ${zone.zoneId}`}
                                   >
                                     <span className="material-symbols-outlined text-[16px]">info</span>
                                   </Button>
-                                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 bg-[#041627]/[0.06] text-[#041627] whitespace-nowrap">
+                                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 bg-[var(--text-primary)]/[0.06] text-[var(--text-primary)] whitespace-nowrap">
                                     {tLoc('binsCount', { count: (zone?.bins || []).length })}
                                   </span>
                                 </div>
@@ -420,15 +420,15 @@ export default function TopographyView() {
                                   {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin) => (
                                     <div
                                       key={bin.binId}
-                                      className="p-2.5 rounded-lg border border-[rgba(196,198,205,0.3)] bg-white flex items-center justify-between gap-2"
+                                      className="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] flex items-center justify-between gap-2"
                                     >
                                       <div className="flex flex-col gap-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                          <span className="text-xs font-bold font-mono text-[#041627]">
+                                          <span className="text-xs font-bold font-mono text-[var(--text-primary)]">
                                             {bin.binNumber}
                                           </span>
                                           {bin.binType && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium">
                                               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                                               {tLoc(`binTypes.${bin.binType}` as any)}
                                             </span>
@@ -436,19 +436,19 @@ export default function TopographyView() {
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                           {bin.isConsignment && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-600">
+                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-400">
                                               {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
                                               {'CSG'}
                                             </span>
                                           )}
                                           {bin.isBonded && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/10 text-amber-700">
+                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/10 text-amber-400">
                                               {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
                                               {'BND'}
                                             </span>
                                           )}
                                           {bin.isUnavailable && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-500/10 text-red-600">
+                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-500/10 text-red-400">
                                               {tCommon('na')}
                                             </span>
                                           )}
@@ -463,7 +463,7 @@ export default function TopographyView() {
                                                 setEditingBin({ bin, zoneId: zone.zoneId });
                                                 setIsBinModalOpen(true);
                                               }}
-                                              className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                              className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                               title={tCommon('edit')}
                                             >
                                               <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -482,7 +482,7 @@ export default function TopographyView() {
                                               }}
                                               disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
                                               title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
-                                              className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
+                                              className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-500 cursor-not-allowed' : 'hover:bg-red-500/10 text-red-400'}`}
                                             >
                                               <span className="material-symbols-outlined text-[16px]">delete</span>
                                             </Button>
@@ -494,7 +494,7 @@ export default function TopographyView() {
                                             navigator.clipboard.writeText(bin.binId);
                                             toast.success(tCommon('copiedToClipboard'));
                                           }}
-                                          className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                          className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                           title={`UUID: ${bin.binId}`}
                                         >
                                           <span className="material-symbols-outlined text-[16px]">info</span>
@@ -505,10 +505,10 @@ export default function TopographyView() {
                                 </div>
 
                                 {/* Desktop Table View */}
-                                <div className="hidden md:block rounded-lg border overflow-hidden border-[rgba(196,198,205,0.3)]">
+                                <div className="hidden md:block rounded-lg border overflow-hidden border-[var(--border)]">
                                   <table className="w-full text-sm border-collapse">
                                     <thead>
-                                      <tr className="bg-[#f8f9fa]">
+                                      <tr className="bg-[var(--bg-secondary)]">
                                         <th
                                           className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
                                         >
@@ -534,9 +534,9 @@ export default function TopographyView() {
                                       {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin, idx) => (
                                         <tr
                                           key={bin.binId}
-                                          className={idx > 0 ? 'border-t border-[rgba(196,198,205,0.2)]' : ''}
+                                          className={idx > 0 ? 'border-t border-[var(--border)]' : ''}
                                         >
-                                          <td className="px-4 py-2 font-medium text-[#041627] tabular-nums">
+                                          <td className="px-4 py-2 font-medium text-[var(--text-primary)] tabular-nums">
                                             {bin.binNumber}
                                           </td>
                                           <td className="px-4 py-2 text-[var(--text-secondary)]">
@@ -547,7 +547,7 @@ export default function TopographyView() {
                                             <div className="flex items-center justify-center gap-1.5">
                                               {bin.isConsignment && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500"
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400"
                                                 >
                                                   {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
                                                   {'CSG'}
@@ -555,7 +555,7 @@ export default function TopographyView() {
                                               )}
                                               {bin.isBonded && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700"
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400"
                                                 >
                                                   {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
                                                   {'BND'}
@@ -563,7 +563,7 @@ export default function TopographyView() {
                                               )}
                                               {bin.isUnavailable && (
                                                 <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-600"
+                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400"
                                                 >
                                                   {tCommon('na')}
                                                 </span>
@@ -582,7 +582,7 @@ export default function TopographyView() {
                                                       setEditingBin({ bin, zoneId: zone.zoneId });
                                                       setIsBinModalOpen(true);
                                                     }}
-                                                    className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                                    className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                                   >
                                                     { }
                                                     <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -601,7 +601,7 @@ export default function TopographyView() {
                                                     }}
                                                     disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
                                                     title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
-                                                    className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
+                                                    className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-500 cursor-not-allowed' : 'hover:bg-red-500/10 text-red-400'}`}
                                                   >
                                                     { }
                                                     <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -614,7 +614,7 @@ export default function TopographyView() {
                                                   navigator.clipboard.writeText(bin.binId);
                                                   toast.success(tCommon('copiedToClipboard'));
                                                 }}
-                                                className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                                className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
                                                 title={`UUID: ${bin.binId}`}
                                               >
                                                 <span className="material-symbols-outlined text-[16px]">info</span>

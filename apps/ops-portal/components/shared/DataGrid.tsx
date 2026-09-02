@@ -858,7 +858,7 @@ export default function DataGrid<T>({
 
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
       <input
-        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-white border border-[var(--border)] text-[var(--text-primary)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-slate-400 focus:placeholder-slate-400 lg:pr-4 focus:pr-4' : 'pr-4'}`}
+        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-[var(--text-muted)] focus:placeholder-[var(--text-muted)] lg:pr-4 focus:pr-4' : 'pr-4'}`}
         placeholder={searchPlaceholder ?? "Search…"}
         value={search}
         onChange={(e) => {
@@ -1072,7 +1072,7 @@ export default function DataGrid<T>({
     if (!shouldShowPagination || !mounted) return null;
     
     const wrapperClass = isMobileView 
-      ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
+      ? 'lg:hidden flex items-center justify-between w-full p-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shrink-0'
       : 'flex gap-1 shrink-0';
 
     return (
@@ -1085,7 +1085,7 @@ export default function DataGrid<T>({
 
   const gridContent = (
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
-      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-2 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none -[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-t-0 lg:border-x-0 lg:border-b-transparent">
+      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-2 bg-[var(--bg-card)] shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none lg:border lg:border-t-0 lg:border-x-0 lg:border-b-transparent">
         <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
           {(shouldShowPagination && mounted) && prevButton}
           
@@ -1094,7 +1094,7 @@ export default function DataGrid<T>({
           {(shouldShowPagination && mounted) && nextButton}
           {(isCustomView) && (
             <>
-              <div className="h-4 w-px bg-slate-200" />
+              <div className="h-4 w-px bg-[var(--border)]" />
               <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <span>{tGrid('customViewMessage', { fallback: 'All records' })}</span>
                 <Button 
@@ -1300,20 +1300,20 @@ export default function DataGrid<T>({
     return (
       <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative lg:h-full flex flex-col">
-          <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
+          <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-[var(--bg-card)] lg:rounded-xl lg:border lg:border-[var(--border)] lg:overflow-hidden transition-all">
              <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 pt-4 pb-2 lg:pt-4 lg:pb-2 gap-4">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
                   <div className="flex items-center justify-between w-full lg:w-auto gap-4 min-w-0">
                     <div className="flex items-center gap-4 min-w-0">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] truncate min-w-0">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] truncate min-w-0">
                         {pageTitle}
                       </h2>
-                      <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
-                      <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase">
+                      <div className="hidden lg:block h-5 w-px bg-[var(--border)] shrink-0"></div>
+                      <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md shrink-0">
+                        <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase">
                           {tGrid('rowCountLabel')}
                         </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
+                        <span className="text-[11px] font-mono font-bold text-[var(--text-primary)]">
                           {loading ? '...' : displayedRowCount.toLocaleString()}
                         </span>
                       </div>
@@ -1354,7 +1354,7 @@ export default function DataGrid<T>({
   }
 
   return (
-    <div className={`flex flex-col lg:bg-white relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full flex-1 min-h-0'}`}>
+    <div className={`flex flex-col lg:bg-[var(--bg-card)] relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full flex-1 min-h-0'}`}>
       {renderHeader ? (
         renderHeader!({ searchInput: searchInputNode, optionsButton: null, rowCount: displayedRowCount, loading })
       ) : (

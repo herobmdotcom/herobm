@@ -274,7 +274,7 @@ export default function GoodsReceivedListPage() {
                     return (
                         <Link
                             href={routes.suppliers.detail(p.data.vendorId)}
-                            className="text-slate-800 hover:text-[var(--accent)] hover:underline"
+                            className="text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {p.data.vendorName}

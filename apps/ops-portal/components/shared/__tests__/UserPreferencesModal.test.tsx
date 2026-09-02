@@ -14,8 +14,10 @@ jest.mock('@/components/AuthGate', () => ({
 
 jest.mock('@/components/UserSettingsProvider', () => ({
   useUserSettings: () => ({
-    preferences: { density: 'comfortable' },
+    preferences: { density: 'comfortable', theme: 'system' },
     density: 'comfortable',
+    theme: 'system',
+    isDarkMode: false,
     updatePreferences: mockUpdatePreferences,
   }),
 }));
@@ -70,6 +72,25 @@ describe('UserPreferencesModal', () => {
         density: 'compact',
       });
       expect(mockOnClose).not.toHaveBeenCalled();
+    });
+  });
+
+  it('renders correctly and switches theme with auto-save', async () => {
+    render(<UserPreferencesModal isOpen={true} onClose={mockOnClose} />);
+
+    expect(screen.getByText('theme')).toBeInTheDocument();
+    expect(screen.getByText('themeSystem')).toBeInTheDocument();
+    expect(screen.getByText('themeLight')).toBeInTheDocument();
+    expect(screen.getByText('themeDark')).toBeInTheDocument();
+
+    const darkRadio = document.querySelector('input[value="dark"]') as HTMLInputElement;
+    expect(darkRadio).toBeInTheDocument();
+    fireEvent.click(darkRadio);
+
+    await waitFor(() => {
+      expect(mockUpdatePreferences).toHaveBeenCalledWith({
+        theme: 'dark',
+      });
     });
   });
 

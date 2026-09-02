@@ -348,8 +348,8 @@ export default function ReportViewer() {
           </div>
         </div>
       )}
-      <div className="flex flex-col h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden">
-        <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
+      <div className="flex flex-col h-full bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden">
+        <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
           {uiConfig.filters && uiConfig.filters.length > 0 && (
             <>
               { }
@@ -400,15 +400,15 @@ export default function ReportViewer() {
           {uiConfig.chartConfig && (
             <div className="flex flex-col">
               <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5 text-[var(--text-muted)]">View As</label>
-              <div className="flex bg-white rounded-md border border-[rgba(196,198,205,0.4)] p-0.5 h-[34px]">
+              <div className="flex bg-[var(--bg-secondary)] rounded-md border border-[var(--border)] p-0.5 h-[34px]">
                 <Button
-                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                   onClick={() => setViewMode('grid')}
                 >
                   Table
                 </Button>
                 <Button
-                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'chart' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'chart' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                   onClick={() => setViewMode('chart')}
                 >
                   Chart
@@ -435,7 +435,7 @@ export default function ReportViewer() {
 
         <div className="flex-1 ag-theme-alpine-dark w-full min-h-0 relative">
           {isLoadingData ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-card)]/70 z-10">
               <p className="font-medium text-[var(--text-muted)]">Loading data...</p>
             </div>
           ) : null}

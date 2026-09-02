@@ -119,19 +119,19 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
 
   return (
     <aside
-      className="w-60 h-full flex flex-col print:hidden bg-[#F8FAFC] text-[#0F172A] border-r border-[#E2E8F0] select-none"
+      className="w-60 h-full flex flex-col print:hidden bg-[var(--bg-primary)] text-[var(--text-primary)] border-r border-[var(--border)] select-none"
     >
       {/* Brand Header */}
-      <div className="px-5 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+      <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-primary)]">
         <Link href="/" className="flex items-center gap-2.5 no-underline hover:opacity-85 transition-opacity">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#006B5C] text-white font-extrabold text-sm shadow-xs">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent)] text-white font-extrabold text-sm shadow-xs">
             H
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tight text-[#0F172A] leading-tight">
+            <h1 className="text-base font-bold tracking-tight text-[var(--text-primary)] leading-tight">
               {title}
             </h1>
-            <p className="text-[10px] text-[#64748B] tracking-normal font-medium">
+            <p className="text-[10px] text-[var(--text-muted)] tracking-normal font-medium">
               {subtitle}
             </p>
           </div>
@@ -139,7 +139,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3 bg-[#F8FAFC]">
+      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3 bg-[var(--bg-primary)]">
         {sections.map((section, si) => {
           const sectionKey = section.label || `unlabeled-${si}`;
           const isExpanded = !section.label || expanded[sectionKey];
@@ -151,10 +151,10 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                   className="flex items-center justify-between px-2.5 py-1 cursor-pointer group"
                   onClick={() => setExpanded((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] group-hover:text-[#475569] transition-colors">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">
                     {section.label}
                   </p>
-                  <span className="material-symbols-outlined text-[14px] text-[#94A3B8] group-hover:text-[#475569] transition-colors">
+                  <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">
                     {sectionExpandIcon}
                   </span>
                 </div>
@@ -187,13 +187,13 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                         scroll={false}
                         className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all duration-150 relative no-underline ${
                           isActive
-                            ? 'bg-[#006B5C]/10 text-[#006B5C] font-semibold'
-                            : 'bg-transparent text-[#475569] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 font-normal'
+                            ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
+                            : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-normal'
                         }`}
                       >
                         <span
                           className={`material-symbols-outlined text-[17px] ${
-                            isActive ? 'text-[#006B5C]' : 'text-[#64748B]'
+                            isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                           }`}
                         >
                           {item.icon}
@@ -207,7 +207,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                       </Link>
 
                       {item.subItems && isActive && (
-                        <div className="ml-5 mt-1 mb-1.5 flex flex-col gap-0.5 border-l border-[#CBD5E1] pl-2.5 py-0.5">
+                        <div className="ml-5 mt-1 mb-1.5 flex flex-col gap-0.5 border-l border-[var(--border)] pl-2.5 py-0.5">
                           {item.subItems.map((sub) => {
                             const isSubActive =
                               sub.href === '/'
@@ -226,8 +226,8 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                                 scroll={false}
                                 className={`text-[11px] py-1 px-2 rounded-md transition-colors no-underline truncate ${
                                   isSubActive
-                                    ? 'bg-[#006B5C]/15 text-[#006B5C] font-semibold'
-                                    : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70'
+                                    ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                                 }`}
                               >
                                 {sub.label}
@@ -245,14 +245,14 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       </nav>
 
       {/* Footer: User Button & Help Button */}
-      <div className="px-3 py-3 border-t border-[#E2E8F0] flex items-center gap-2 bg-[#F8FAFC] relative">
+      <div className="px-3 py-3 border-t border-[var(--border)] flex items-center gap-2 bg-[var(--bg-primary)] relative">
         {/* User Menu Popover */}
         {isMenuOpen && (
           <div
             ref={menuRef}
             role="menu"
             aria-orientation="vertical"
-            className="absolute bottom-full left-3 right-3 mb-2 bg-white border border-[#CBD5E1] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1 text-[#0F172A] animate-in fade-in slide-in-from-bottom-2 duration-150"
+            className="absolute bottom-full left-3 right-3 mb-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1 text-[var(--text-primary)] animate-in fade-in slide-in-from-bottom-2 duration-150"
           >
             <Button
               variant="secondary"
@@ -261,14 +261,14 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                 setIsMenuOpen(false);
                 setIsPrefsOpen(true);
               }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[#334155] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
             >
-              <span className="material-symbols-outlined text-[16px] text-[#64748B]">
+              <span className="material-symbols-outlined text-[16px] text-[var(--text-muted)]">
                 tune
               </span>
               <span>{t('settings')}</span>
             </Button>
-            <div className="h-[1px] bg-[#E2E8F0] my-0.5" />
+            <div className="h-[1px] bg-[var(--border)] my-0.5" />
             <Button
               variant="secondary"
               role="menuitem"
@@ -276,10 +276,10 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
                 setIsMenuOpen(false);
                 logout();
               }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[#DC2626] hover:bg-[#DC2626]/10 transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors cursor-pointer !border-0 text-left justify-start shadow-none"
             >
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-              <span className="material-symbols-outlined text-[16px] text-[#DC2626]">
+              <span className="material-symbols-outlined text-[16px] text-[var(--danger)]">
                 logout
               </span>
               <span>{t('signOut')}</span>
@@ -297,21 +297,21 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
           aria-haspopup="menu"
           aria-label={rawName}
           title={rawName}
-          className={`h-10 flex-1 flex items-center gap-2 px-2 rounded-lg bg-transparent border border-[#CBD5E1] text-left overflow-hidden cursor-pointer shadow-none justify-start transition-all !p-1.5 ${
+          className={`h-10 flex-1 flex items-center gap-2 px-2 rounded-lg bg-transparent border border-[var(--border)] text-left overflow-hidden cursor-pointer shadow-none justify-start transition-all !p-1.5 ${
             isMenuOpen
-              ? 'border-[#006B5C] bg-[#006B5C]/10 ring-2 ring-[#006B5C]/15'
-              : 'hover:border-[#94A3B8] hover:bg-[#E2E8F0]/70'
+              ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-2 ring-[var(--accent)]/20'
+              : 'hover:border-[var(--border)] hover:bg-[var(--bg-card-hover)]'
           }`}
         >
-          <div className="w-6 h-6 rounded-md bg-[#006B5C]/15 text-[#006B5C] font-bold text-xs flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-md bg-[var(--accent)]/15 text-[var(--accent)] font-bold text-xs flex items-center justify-center shrink-0">
             {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-normal text-[#0F172A] truncate">
+            <p className="text-xs font-normal text-[var(--text-primary)] truncate">
               {rawName}
             </p>
           </div>
-          <span className="material-symbols-outlined text-[15px] text-[#94A3B8] shrink-0">
+          <span className="material-symbols-outlined text-[15px] text-[var(--text-muted)] shrink-0">
             unfold_more
           </span>
         </Button>
@@ -323,7 +323,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
           onClick={toggleHelp}
           aria-label={tHelp('title')}
           title={contextTopic ? `${tHelp('manual')}: ${contextTopic.title}` : tHelp('manual')}
-          className="h-10 w-10 rounded-lg bg-transparent hover:bg-[#E2E8F0]/70 text-[#006B5C] hover:text-[#005145] border border-[#CBD5E1] hover:border-[#006B5C] flex items-center justify-center shrink-0 cursor-pointer shadow-none !p-0 font-bold text-xs transition-all"
+          className="h-10 w-10 rounded-lg bg-transparent hover:bg-[var(--bg-card-hover)] text-[var(--accent)] hover:text-[var(--accent-hover)] border border-[var(--border)] hover:border-[var(--accent)] flex items-center justify-center shrink-0 cursor-pointer shadow-none !p-0 font-bold text-xs transition-all"
         >
           {HELP_SYMBOL}
         </Button>

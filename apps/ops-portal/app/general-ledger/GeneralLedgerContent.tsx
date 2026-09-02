@@ -133,7 +133,7 @@ export default function GeneralLedgerContent() {
         cellRenderer: (p: ICellRendererParams<GlEntry>) => {
           return (
             <span>
-              <span className="font-mono text-gray-400 mr-2">{p.value}</span>
+              <span className="font-mono text-[var(--text-muted)] mr-2">{p.value}</span>
               {p.data?.accountName}
             </span>
           );
@@ -229,7 +229,7 @@ export default function GeneralLedgerContent() {
               <select
                 value={accountCode}
                 onChange={(e) => setAccountCode(e.target.value)}
-                className="input text-xs h-9 border-gray-200 w-full sm:!w-auto sm:min-w-[260px] bg-white rounded-lg"
+                className="input text-xs h-9 w-full sm:!w-auto sm:min-w-[260px] rounded-lg"
               >
                 <option value="">{t('allAccounts')}</option>
                 {accounts.map((a) => (
@@ -243,15 +243,15 @@ export default function GeneralLedgerContent() {
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                  className="input text-xs h-9 px-2 sm:px-3 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
                   title={t('fromDate')}
                 />
-                <span className="text-gray-300 font-bold shrink-0">→</span>
+                <span className="text-[var(--text-muted)] font-bold shrink-0">→</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="input text-xs h-9 border-gray-200 bg-white px-2 sm:px-3 text-gray-500 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
+                  className="input text-xs h-9 px-2 sm:px-3 rounded-lg flex-1 sm:flex-initial sm:w-auto min-w-0"
                   title={t('toDate')}
                 />
               </div>
@@ -260,7 +260,7 @@ export default function GeneralLedgerContent() {
             {accountCode && accountSummary && (
               <div className="flex flex-wrap items-center gap-6 py-2.5 px-4 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] w-full">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
                     {t('openingBalance')}
                   </span>
                   <span className={`text-sm font-mono font-bold ${(accountSummary.openingBalance ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
@@ -268,7 +268,7 @@ export default function GeneralLedgerContent() {
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
                     {t('periodDebits')}
                   </span>
                   <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
@@ -276,7 +276,7 @@ export default function GeneralLedgerContent() {
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
                     {t('periodCredits')}
                   </span>
                   <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
@@ -284,7 +284,7 @@ export default function GeneralLedgerContent() {
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
                     {t('netMovement')}
                   </span>
                   <span className={`text-sm font-mono font-bold ${(accountSummary.netMovement ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
@@ -292,10 +292,10 @@ export default function GeneralLedgerContent() {
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
                     {t('closingBalance')}
                   </span>
-                  <span className={`text-sm font-mono font-bold ${(accountSummary.closingBalance ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-emerald-600'}`}>
+                  <span className={`text-sm font-mono font-bold ${(accountSummary.closingBalance ?? 0) < 0 ? 'text-[var(--danger)]' : 'text-[var(--accent)]'}`}>
                     ${fmt(accountSummary.closingBalance)}
                   </span>
                 </div>

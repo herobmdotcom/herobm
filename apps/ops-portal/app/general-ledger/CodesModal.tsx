@@ -207,10 +207,10 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
       />
       
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-6xl h-[85vh] rounded-2xl border border-[var(--border)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-[var(--bg-card)] w-full max-w-6xl h-[85vh] rounded-2xl border border-[var(--border)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
-        <div className="grid grid-cols-1 md:grid-cols-3 items-center px-8 py-5 border-b border-[var(--border)] shrink-0 bg-white">
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center px-8 py-5 border-b border-[var(--border)] shrink-0 bg-[var(--bg-card)]">
           
           {/* Left: Title & Icon */}
           <div className="flex items-center gap-3 overflow-hidden">
@@ -270,7 +270,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
         <div className="flex-1 overflow-hidden flex gap-0 bg-[var(--bg-primary)]">
           
           {/* Column 1: Chart of Accounts */}
-          <div className="flex-1 border-r border-[var(--border)] flex flex-col min-w-0 bg-white">
+          <div className="flex-1 border-r border-[var(--border)] flex flex-col min-w-0 bg-[var(--bg-card)]">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
                 <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.chartOfAccounts')}
@@ -293,7 +293,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           </div>
 
           {/* Column 2: Cost Centers */}
-          <div className="w-72 border-r border-[var(--border)] flex flex-col shrink-0 bg-white">
+          <div className="w-72 border-r border-[var(--border)] flex flex-col shrink-0 bg-[var(--bg-card)]">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
                 <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.costCenters')}
@@ -328,7 +328,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           </div>
 
           {/* Column 3: Activities */}
-          <div className="w-72 flex flex-col shrink-0 bg-white">
+          <div className="w-72 flex flex-col shrink-0 bg-[var(--bg-card)]">
              <div className="px-5 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] shrink-0">
                 <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                   {t('columns.activities')}

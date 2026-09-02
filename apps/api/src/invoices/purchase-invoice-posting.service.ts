@@ -812,6 +812,7 @@ export class PurchaseInvoicePostingService {
 
       let matchedCount = 0;
       let addedCount = 0;
+      const newInvoiceLines: (typeof purchaseInvoiceLines.$inferInsert)[] = [];
 
       for (const poLine of poLines) {
         if (poLine.lineType === (LineType.COMMENT as string)) {
@@ -844,7 +845,7 @@ export class PurchaseInvoicePostingService {
             pricePerUnit: price,
           });
 
-          await tx.insert(purchaseInvoiceLines).values({
+          newInvoiceLines.push({
             invoiceLineId: randomUUID(),
             invoiceId,
             description: poLine.productDescription || '',
@@ -858,6 +859,10 @@ export class PurchaseInvoicePostingService {
           });
           addedCount++;
         }
+      }
+
+      if (newInvoiceLines.length > 0) {
+        await tx.insert(purchaseInvoiceLines).values(newInvoiceLines);
       }
 
       await this.core.recalculateInvoiceTotals(invoiceId, tx);

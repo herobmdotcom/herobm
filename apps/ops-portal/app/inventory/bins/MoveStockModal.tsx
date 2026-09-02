@@ -157,9 +157,9 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                 Selected Items
               </label>
               
-              <div className="border border-gray-200 rounded overflow-hidden">
+              <div className="border border-[var(--border)] rounded overflow-hidden">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider hidden sm:table-header-group">
+                  <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider hidden sm:table-header-group">
                     <tr>
                       { }
                       <th className="px-4 py-2">Product</th>
@@ -171,22 +171,22 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                       <th className="px-4 py-2">Move Qty</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 flex flex-col sm:table-row-group">
+                  <tbody className="divide-y divide-[var(--border)] flex flex-col sm:table-row-group">
                     {editableLines.map((line, idx) => {
                       const originalLine = selectedLines[idx];
                       return (
-                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors flex flex-col sm:table-row p-3 sm:p-0">
-                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627]">
+                        <tr key={idx} className="hover:bg-[var(--bg-card-hover)] transition-colors flex flex-col sm:table-row p-3 sm:p-0">
+                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[var(--text-primary)]">
                             <span className="font-semibold sm:font-normal">{line.productName}</span>
                           </td>
-                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627] flex items-center justify-between sm:table-cell">
+                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[var(--text-primary)] flex items-center justify-between sm:table-cell">
                             { }
-                            <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Source:</span>
+                            <span className="sm:hidden text-xs text-[var(--text-muted)] font-bold uppercase">Source:</span>
                             <span>{line.sourceBinNumber}</span>
                           </td>
-                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627] flex items-center justify-between sm:table-cell">
+                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[var(--text-primary)] flex items-center justify-between sm:table-cell">
                             { }
-                            <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Recorded:</span>
+                            <span className="sm:hidden text-xs text-[var(--text-muted)] font-bold uppercase">Recorded:</span>
                             <span>{originalLine?.quantity || 0}</span>
                           </td>
                           <td className="px-0 sm:px-4 py-2 sm:py-3 flex items-center justify-between sm:table-cell">

@@ -81,7 +81,7 @@ export function TaxCell({
   if (isEditable) {
     return (
       <div className="relative w-full">
-        <div className="input w-full !text-xs text-right h-7 !px-1.5 py-1 flex items-center justify-end pointer-events-none bg-white">
+        <div className="input w-full !text-xs text-right h-7 !px-1.5 py-1 flex items-center justify-end pointer-events-none">
           <span className="tabular-nums">{formattedPct}</span>
         </div>
         <select

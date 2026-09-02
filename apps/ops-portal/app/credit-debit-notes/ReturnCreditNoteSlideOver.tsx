@@ -245,7 +245,7 @@ export default function ReturnCreditNoteSlideOver({
                         </div>
                         <div className="col-span-2">
                             <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">Customer</span>
-                            <span className="text-[#041627]">
+                            <span className="text-[var(--text-primary)]">
                                 {returnRecord.customerId ? (
                                     <Link href={`/customers/${returnRecord.customerId}`} className="text-[var(--accent)] hover:underline" onClick={onClose}>
                                         {returnRecord.customerNumber} - {returnRecord.customerName}
@@ -288,9 +288,9 @@ export default function ReturnCreditNoteSlideOver({
                         <span className="material-symbols-outlined shrink-0">receipt_long</span>
                         <span>Credit Note</span>
                     </h3>
-                    <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-white">
+                    <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-[#f8f9fa] border-b border-[var(--border)] text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                            <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-primary)] font-semibold text-xs uppercase tracking-wider">
                                 <tr>
                                     <th className="px-5 py-3 w-[160px]">Account</th>
                                     <th className="px-5 py-3 w-[220px]">Party</th>
@@ -303,7 +303,7 @@ export default function ReturnCreditNoteSlideOver({
                                 <tr>
                                     <td className="px-5 py-3">
                                         <div className="text-xs text-[var(--text-muted)] font-mono mb-0.5">1200</div>
-                                        <div className="font-semibold text-[#041627]">Accounts Receivable</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">Accounts Receivable</div>
                                     </td>
                                     <td className="px-5 py-3">
                                         {returnRecord.customerId ? (
@@ -311,11 +311,11 @@ export default function ReturnCreditNoteSlideOver({
                                                 {returnRecord.customerName}
                                             </Link>
                                         ) : (
-                                            <span className="text-[#041627]">{returnRecord.customerName}</span>
+                                            <span className="text-[var(--text-primary)]">{returnRecord.customerName}</span>
                                         )}
                                     </td>
                                     <td className="px-5 py-3 text-right font-mono text-[var(--text-muted)]">N/A</td>
-                                    <td className="px-5 py-3 text-right font-mono text-[#041627]">
+                                    <td className="px-5 py-3 text-right font-mono text-[var(--text-primary)]">
                                         {Number(creditSummary.netCredit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     <td className="px-5 py-3">
@@ -329,7 +329,7 @@ export default function ReturnCreditNoteSlideOver({
                                     </td>
                                 </tr>
                             </tbody>
-                            <tfoot className="bg-[#f8f9fa] border-t border-[var(--border)] font-semibold text-[#041627]">
+                            <tfoot className="bg-[var(--bg-secondary)] border-t border-[var(--border)] font-semibold text-[var(--text-primary)]">
                                 <tr>
                                     <td colSpan={2} className="px-5 py-3 text-right uppercase text-xs tracking-wider">Total</td>
                                     <td className="px-5 py-3 text-right font-mono text-[var(--text-muted)]">N/A</td>

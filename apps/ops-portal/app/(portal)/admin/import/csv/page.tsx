@@ -181,13 +181,13 @@ export default function CsvImportPage() {
       </div>
 
       {step === 'config' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in shadow-sm">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in shadow-sm">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-bold text-slate-700">
+              <label className="block text-sm font-bold text-[var(--text-primary)]">
                 {t('targetTable')}
               </label>
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-xs text-[var(--text-muted)] font-medium">
                 {t('availableEntities', { count: tables.length })}
               </span>
             </div>
@@ -198,11 +198,11 @@ export default function CsvImportPage() {
                 placeholder={t('searchTables')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c] transition-colors"
+                className="input w-full"
               />
             </div>
 
-            <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100 bg-slate-50">
+            <div className="max-h-72 overflow-y-auto border border-[var(--border)] rounded-lg divide-y divide-[var(--border)] bg-[var(--bg-secondary)]">
               {filteredTables.map((tbl) => {
                 const isSelected = tbl.id === selectedTable;
                 return (
@@ -218,20 +218,20 @@ export default function CsvImportPage() {
                     }}
                     className={`w-full text-left p-3.5 flex items-center justify-between transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-[#f0f9f8] border-l-4 border-l-[#006b5c] font-semibold text-slate-900'
-                        : 'hover:bg-slate-100 text-slate-700'
+                        ? 'bg-[var(--accent)]/15 border-l-4 border-l-[var(--accent)] font-semibold text-[var(--text-primary)]'
+                        : 'hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)]'
                     }`}
                   >
                     <div>
-                      <div className="text-sm font-bold text-slate-900">
+                      <div className="text-sm font-bold text-[var(--text-primary)]">
                         {tbl.name}
                       </div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                      <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
                         {tbl.id}
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-200 text-slate-700 font-mono">
+                      <span className="inline-block px-2 py-0.5 text-xs rounded bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] font-mono">
                         Key: {tbl.uniqueKey}
                       </span>
                     </div>
@@ -239,7 +239,7 @@ export default function CsvImportPage() {
                 );
               })}
               {filteredTables.length === 0 && (
-                <div className="p-4 text-center text-sm text-slate-400">
+                <div className="p-4 text-center text-sm text-[var(--text-muted)]">
                   No matching entities found
                 </div>
               )}
@@ -250,7 +250,7 @@ export default function CsvImportPage() {
             <Button
               variant="ghost"
               onClick={handleDownloadTemplate}
-              className="text-[#006b5c] hover:text-[#005246] hover:underline font-medium transition-colors p-0 h-auto text-xs flex items-center gap-1.5"
+              className="text-[var(--accent)] hover:underline font-medium transition-colors p-0 h-auto text-xs flex items-center gap-1.5"
             >
               <svg
                 className="w-4 h-4"
@@ -270,10 +270,10 @@ export default function CsvImportPage() {
           </div>
 
           <Button
-            variant="secondary"
+            variant="primary"
             onClick={() => setStep('preview')}
             disabled={!selectedTable}
-            className="w-full bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 text-white px-4 py-3 rounded-lg font-bold transition-colors"
+            className="w-full btn btn-primary px-4 py-3 rounded-lg font-bold transition-colors"
           >
             {t('continue')}
           </Button>
@@ -281,13 +281,13 @@ export default function CsvImportPage() {
       )}
 
       {step === 'preview' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
-          <div className="mb-8 pb-8 border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">{t('fileUpload')}</h2>
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+          <div className="mb-8 pb-8 border-b border-[var(--border)]">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('fileUpload')}</h2>
             
             <div className="flex items-center gap-4">
-              <label className="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+              <label className="cursor-pointer bg-[var(--bg-secondary)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2">
+                <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                 {t('chooseFile')}
                 <input
                   type="file"
@@ -296,68 +296,68 @@ export default function CsvImportPage() {
                   className="hidden"
                 />
               </label>
-              <span className="text-sm font-medium text-slate-600 truncate max-w-xs">
+              <span className="text-sm font-medium text-[var(--text-secondary)] truncate max-w-xs">
                 {file ? file.name : t('noFileChosen')}
               </span>
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('mergeStrategy')}</h2>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('mergeStrategy')}</h2>
           <div className="flex flex-col gap-4 mb-8">
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={strategy === 'insert'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'insert'}>
               <input 
                 type="radio" 
                 name="strategy" 
                 checked={strategy === 'insert'}
                 onChange={() => setStrategy('insert')}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{t('insertOnly')}</div>
-                <div className="text-sm text-slate-500">{t('insertOnlyDesc')}</div>
+                <div className="font-bold text-[var(--text-primary)]">{t('insertOnly')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('insertOnlyDesc')}</div>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={strategy === 'ignore'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'ignore'}>
               <input 
                 type="radio" 
                 name="strategy" 
                 checked={strategy === 'ignore'}
                 onChange={() => setStrategy('ignore')}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{t('insertNewOnly')}</div>
-                <div className="text-sm text-slate-500">{t('insertNewOnlyDesc')}</div>
+                <div className="font-bold text-[var(--text-primary)]">{t('insertNewOnly')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('insertNewOnlyDesc')}</div>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={strategy === 'upsert'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'upsert'}>
               <input 
                 type="radio" 
                 name="strategy" 
                 checked={strategy === 'upsert'}
                 onChange={() => setStrategy('upsert')}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{t('upsertMerge')}</div>
-                <div className="text-sm text-slate-500">{t('upsertMergeDesc')}</div>
+                <div className="font-bold text-[var(--text-primary)]">{t('upsertMerge')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('upsertMergeDesc')}</div>
               </div>
             </label>
           </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-slate-100">
+          <div className="flex justify-between items-center pt-6 border-t border-[var(--border)]">
             <Button variant="ghost"
               onClick={() => setStep('config')}
-              className="text-slate-500 hover:text-slate-800 font-bold px-4 py-2"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] font-bold px-4 py-2"
             >
               {t('back')}
             </Button>
-            <Button variant="secondary"
+            <Button variant="primary"
               onClick={handleStartImport}
               disabled={!file}
-              className="bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold transition-colors flex items-center gap-2"
+              className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors flex items-center gap-2"
             >
               {t('startImport')}
             </Button>
@@ -402,33 +402,33 @@ export default function CsvImportPage() {
       )}
 
       {step === 'finalisation' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('importSuccessful')}</h2>
-          <p className="text-slate-500 mb-8">{t('importSuccessfulDesc')}</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t('importSuccessful')}</h2>
+          <p className="text-[var(--text-muted)] mb-8">{t('importSuccessfulDesc')}</p>
 
           {importSummary && (
             <div className="grid grid-cols-3 gap-6 mb-8 text-left">
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('products')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.products.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('products')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.products.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('customers')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.customers.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('customers')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.customers.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('orders')}</div>
-                <div className="text-3xl font-bold text-slate-900">{importSummary.orders.toLocaleString()}</div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('orders')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.orders.toLocaleString()}</div>
               </div>
             </div>
           )}
 
-          <Button variant="secondary"
+          <Button variant="primary"
             onClick={() => router.push('/')}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
+            className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('goToDashboard')}
           </Button>

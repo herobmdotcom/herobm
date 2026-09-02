@@ -37,7 +37,7 @@ export function GenericMobileCard<T>({
     validRestCols = validRestCols.filter(item => item.val != null && item.val !== '');
   } else {
     validRestCols = validRestCols.map(item => {
-      if (item.val == null || item.val === '') item.val = <span className="text-slate-300">—</span>;
+      if (item.val == null || item.val === '') item.val = <span className="text-[var(--text-muted)] opacity-40">—</span>;
       return item;
     });
   }
@@ -48,13 +48,13 @@ export function GenericMobileCard<T>({
 
   return (
     <div 
-      className={`p-4 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      className={`p-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
       onClick={(e) => onRowClicked?.(row, e)}
     >
       <div className="flex justify-between items-start gap-4">
         <div>
-          <div className="text-[13px] text-slate-500 font-medium whitespace-nowrap mb-0.5">{primaryVal as React.ReactNode}</div>
-          <div className="text-[11px] text-slate-400 max-w-[200px] truncate">{secondaryVal as React.ReactNode}</div>
+          <div className="text-[13px] text-[var(--text-secondary)] font-medium whitespace-nowrap mb-0.5">{primaryVal as React.ReactNode}</div>
+          <div className="text-[11px] text-[var(--text-muted)] max-w-[200px] truncate">{secondaryVal as React.ReactNode}</div>
         </div>
         {selectable && (
           <div 
@@ -75,16 +75,16 @@ export function GenericMobileCard<T>({
       </div>
       
       {displayedCols.length > 0 && (
-        <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
+        <div className="flex flex-col gap-2 pt-3 border-t border-[var(--border)]">
           {displayedCols.map(({col, val}, idx) => (
             <div key={col.field || col.headerName || idx} className="flex justify-between items-start gap-4 text-[13px]">
-              <span className="text-slate-500">{col.headerName}</span>
-              <span className="font-medium text-[#041627] text-right">{val as React.ReactNode}</span>
+              <span className="text-[var(--text-muted)]">{col.headerName}</span>
+              <span className="font-medium text-[var(--text-primary)] text-right">{val as React.ReactNode}</span>
             </div>
           ))}
           {isTruncated && (
             <div 
-              className="text-[13px] font-bold text-[var(--accent)] mt-1 pt-2 border-t border-slate-50 flex items-center justify-center gap-1 cursor-pointer hover:brightness-110"
+              className="text-[13px] font-bold text-[var(--accent)] mt-1 pt-2 border-t border-[var(--border)] flex items-center justify-center gap-1 cursor-pointer hover:brightness-110"
               onClick={(e) => {
                 e.stopPropagation();
                 setExpanded(!expanded);

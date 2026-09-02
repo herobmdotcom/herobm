@@ -58,7 +58,7 @@ export default function SmtpSettingsPage() {
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
         title="SMTP Settings"
         subtitle="Configure outbound email server"

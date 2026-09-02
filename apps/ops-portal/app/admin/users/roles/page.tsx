@@ -277,7 +277,7 @@ export default function RolesPage() {
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
         title="Roles & Permissions"
         subtitle="Manage access control policies and inheritance"
@@ -339,16 +339,16 @@ export default function RolesPage() {
               )}
 
               {roles.map(roleItem => (
-                <div key={roleItem.role} className="border border-[var(--border)] rounded-xl overflow-hidden flex flex-col bg-white transition-colors">
+                <div key={roleItem.role} className="border border-[var(--border)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-card)] transition-colors">
                   <div 
-                    className={`flex items-center justify-between px-5 py-3 hover:bg-[#f8f9fa] cursor-pointer select-none ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'border-b border-[rgba(196,198,205,0.4)]' : ''}`}
+                    className={`flex items-center justify-between px-5 py-3 hover:bg-[var(--bg-card-hover)] cursor-pointer select-none ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'border-b border-[var(--border)]' : ''}`}
                     onClick={() => toggleRole(roleItem.role)}
                   >
                     <div className="flex items-center gap-4">
                       <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'rotate-90' : ''}`}>
                         chevron_right
                       </span>
-                      <div className="font-bold text-sm text-[#041627] capitalize font-['Manrope',sans-serif]">{roleItem.role}</div>
+                      <div className="font-bold text-sm text-[var(--text-primary)] capitalize font-['Manrope',sans-serif]">{roleItem.role}</div>
                       {roleItem.inherits && roleItem.inherits.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                           {t('inheritsLabel')} <span className="font-medium">{roleItem.inherits.join(', ')}</span>
@@ -367,7 +367,7 @@ export default function RolesPage() {
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </Button>
                           {roleItem.role !== 'admin' && roleItem.role !== 'viewer' && roleItem.role !== 'webhook' && roleItem.role !== 'agent' && (
-                            <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5 hover:bg-red-50 text-[#ef4444] border-[#ef4444]" title={tCommon('delete')} onClick={() => deleteRole(roleItem.role)}>
+                            <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5 hover:bg-red-500/10 text-red-400 border-red-500/30" title={tCommon('delete')} onClick={() => deleteRole(roleItem.role)}>
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </Button>
                           )}

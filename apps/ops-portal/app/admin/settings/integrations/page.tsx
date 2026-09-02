@@ -281,7 +281,7 @@ export default function IntegrationsSettingsPage() {
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
       <ContentPageHeader
         title="Integrations & Enrichment"
         subtitle="Manage external integrations, data providers, and API keys"
@@ -422,9 +422,9 @@ export default function IntegrationsSettingsPage() {
                 const isExpanded = expandedProvider === p.name;
                 
                 return (
-                  <div key={p.name} className="border border-[var(--border)] rounded-xl overflow-hidden flex flex-col bg-white transition-colors">
+                  <div key={p.name} className="border border-[var(--border)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-card)] transition-colors">
                     <div 
-                      className={`flex items-center justify-between px-5 py-4 hover:bg-[var(--bg-secondary)] cursor-pointer select-none ${isExpanded ? 'border-b border-[rgba(196,198,205,0.4)]' : ''}`}
+                      className={`flex items-center justify-between px-5 py-4 hover:bg-[var(--bg-secondary)] cursor-pointer select-none ${isExpanded ? 'border-b border-[var(--border)]' : ''}`}
                       onClick={() => toggleProvider(p)}
                     >
                       <div className="flex items-center gap-4">
@@ -433,7 +433,7 @@ export default function IntegrationsSettingsPage() {
                           chevron_right
                         </span>
                         <div>
-                          <div className="font-bold text-sm text-[#041627] capitalize font-['Manrope',sans-serif]">
+                          <div className="font-bold text-sm text-[var(--text-primary)] capitalize font-['Manrope',sans-serif]">
                             {p.name.toUpperCase()}
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -453,14 +453,14 @@ export default function IntegrationsSettingsPage() {
                         
                         {/* Configuration Section */}
                         <div>
-                          <h4 className="text-sm font-bold text-[#041627] mb-3 font-['Manrope',sans-serif]">
+                          <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3 font-['Manrope',sans-serif]">
                             {tInt('configuration')}
                           </h4>
                           {loadingConfig ? (
-                            <div className="text-sm text-muted animate-pulse p-4 bg-white rounded border border-[var(--border)]">Loading configuration...</div>
+                            <div className="text-sm text-muted animate-pulse p-4 bg-[var(--bg-secondary)] rounded border border-[var(--border)]">Loading configuration...</div>
                           ) : (
                             <div className="flex flex-col gap-4">
-                              <div className="bg-white p-5 border border-[var(--border)] rounded-lg">
+                              <div className="bg-[var(--bg-secondary)] p-5 border border-[var(--border)] rounded-lg">
                                 {(() => {
                                   const displaySchema = { ...p.schema };
                                   if (displaySchema.properties) {
@@ -493,10 +493,10 @@ export default function IntegrationsSettingsPage() {
 
                         {/* Test Connection Section */}
                         <div>
-                          <h4 className="text-sm font-bold text-[#041627] mb-3 font-['Manrope',sans-serif]">
+                          <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3 font-['Manrope',sans-serif]">
                             {tInt('testConnection')}
                           </h4>
-                          <div className="bg-white p-5 border border-[var(--border)] rounded-lg flex flex-col gap-4">
+                          <div className="bg-[var(--bg-secondary)] p-5 border border-[var(--border)] rounded-lg flex flex-col gap-4">
                             <div>
                               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                 {tInt('queryOrPayload')}
@@ -529,7 +529,7 @@ export default function IntegrationsSettingsPage() {
                                         {testResult.success ? tInt('testSuccessful') : tInt('testFailed')}
                                       </span>
                                       {testResult.success ? (
-                                        <pre className="text-xs bg-white/60 p-2 rounded overflow-x-auto whitespace-pre-wrap font-mono text-emerald-900 border border-emerald-100">
+                                        <pre className="text-xs bg-[var(--bg-card)] p-2 rounded overflow-x-auto whitespace-pre-wrap font-mono text-[var(--success)] border border-[var(--border)]">
                                           {JSON.stringify(testResult.data, null, 2)}
                                         </pre>
                                       ) : (
