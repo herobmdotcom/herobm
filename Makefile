@@ -605,7 +605,7 @@ migrate-dry:
 seed: build-shared build-db-schema
 	npm run seed
 
-seed-demo:
+seed-demo: build-shared build-db-schema
 	@echo "Running demo seed script..."
 	npm run seed:demo -w apps/api
 

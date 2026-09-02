@@ -393,8 +393,22 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trg_guard_update_sales_credit_notes ON herobm_core.sales_credit_notes;
 CREATE TRIGGER trg_guard_update_sales_credit_notes BEFORE UPDATE ON herobm_core.sales_credit_notes FOR EACH ROW EXECUTE FUNCTION herobm_core.prevent_sales_credit_note_modification();
 
+CREATE OR REPLACE FUNCTION herobm_core.prevent_sales_credit_note_line_modification()
+RETURNS trigger AS $$
+BEGIN
+  IF (NEW.credit_note_id IS DISTINCT FROM OLD.credit_note_id) OR
+     (NEW.quantity_credited IS DISTINCT FROM OLD.quantity_credited) OR
+     (NEW.price_per_unit IS DISTINCT FROM OLD.price_per_unit) OR
+     (NEW.amount IS DISTINCT FROM OLD.amount) THEN
+    RAISE EXCEPTION 'COMPLIANCE VIOLATION: Modifying line item values on sales credit note % is prohibited.', OLD.credit_note_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS trg_guard_update_sales_credit_note_lines ON herobm_core.sales_credit_note_lines;
-CREATE TRIGGER trg_guard_update_sales_credit_note_lines BEFORE UPDATE ON herobm_core.sales_credit_note_lines FOR EACH ROW EXECUTE FUNCTION herobm_core.prevent_financial_deletion();
+CREATE TRIGGER trg_guard_update_sales_credit_note_lines BEFORE UPDATE ON herobm_core.sales_credit_note_lines FOR EACH ROW EXECUTE FUNCTION herobm_core.prevent_sales_credit_note_line_modification();
+
 
 CREATE OR REPLACE FUNCTION herobm_core.prevent_purchase_invoice_modification()
 RETURNS trigger AS $$

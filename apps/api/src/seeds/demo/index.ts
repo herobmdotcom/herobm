@@ -1820,7 +1820,9 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     let componentsCost = 0;
     for (const comp of compRows) {
       const childProd = data.prods.find((p) => p.id === comp.childProductId);
-      const childCost = childProd ? childProd.standardCost : kit.standardCost * 0.25;
+      const childCost = childProd
+        ? childProd.standardCost
+        : kit.standardCost * 0.25;
       const expectedQty = Number(comp.quantity) * targetQty;
       componentsCost += expectedQty * childCost;
     }
@@ -1855,7 +1857,9 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       const wocId = uuid();
       const expectedQty = Number(comp.quantity) * targetQty;
       const childProd = data.prods.find((p) => p.id === comp.childProductId);
-      const childCost = childProd ? childProd.standardCost : kit.standardCost * 0.25;
+      const childCost = childProd
+        ? childProd.standardCost
+        : kit.standardCost * 0.25;
 
       await db
         .insert(workOrderComponents)
