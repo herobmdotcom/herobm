@@ -17,9 +17,9 @@ fields:
   sales_order_id:
     title: "Sales Order"
     summary: "Customer order associated with the shipment."
-  carrier_id:
+  delivery_company_name:
     title: "Carrier / Freight Provider"
-    summary: "Logistics provider transporting goods (e.g. DHL, FedEx, AusPost, Internal Fleet)."
+    summary: "Logistics provider or freight carrier name (e.g. DHL, FedEx, AusPost, Internal Fleet)."
   tracking_number:
     title: "Tracking Number"
     summary: "Carrier tracking code or consignment note number entered at dispatch."

@@ -24,7 +24,7 @@ fields:
     summary: "Target facility receiving inventory."
   status:
     title: "Transfer Status"
-    summary: "State of transfer (Draft, Requested, In Transit, Received, Cancelled)."
+    summary: "State of transfer (Confirmed, Picking, Shipped, Partially Received, Received, Cancelled)."
   quarantine_reason:
     title: "Quarantine Reason"
     summary: "Cause for isolation (Damaged in Transit, Quality Inspection, Defective Batch, Customer RMA)."
@@ -45,16 +45,14 @@ The **Transfers & Quarantine** module manages moving inventory between warehouse
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft : Create Transfer Order
-    Draft --> Requested : Request / Approve Transfer
-    Draft --> Cancelled : Cancel
-
-    Requested --> InTransit : Dispatch from Origin (Stock to IN_TRANSIT Bin)
-    Requested --> Cancelled : Cancel
-
-    InTransit --> Received : Inbound Receipt at Destination (Stock to STAGING Bin)
-    InTransit --> Cancelled : Reversal
-
+    [*] --> Confirmed : Create Transfer Order
+    Confirmed --> Picking : Start Picking Stock
+    Confirmed --> Cancelled : Cancel Order
+    Picking --> Shipped : Dispatch from Origin (Stock to IN_TRANSIT)
+    Picking --> Cancelled : Cancel Order
+    Shipped --> PartiallyReceived : Partial Inbound Receipt at Destination
+    Shipped --> Received : Full Inbound Receipt at Destination
+    PartiallyReceived --> Received : Complete Final Receipt
     Received --> [*]
 ```
 
@@ -77,8 +75,9 @@ Stock placed into a `quarantine` bin is completely quarantined from available in
 2. Click **New Transfer** (`/inventory/transfers/new`).
 3. Select the **Source Warehouse** and **Destination Warehouse**.
 4. Add items and transfer quantities.
-5. Click **Request Transfer**, then **Dispatch**.
-6. At the receiving warehouse, locate the incoming transfer under `/inventory/transfers` and click **Receive Transfer**.
+5. Click **Create Transfer Order** (order is created in `Confirmed` status).
+6. Warehouse operators pick the items (`Picking`), then dispatch to generate an outbound in-transit shipment (`Shipped`).
+7. At the receiving warehouse, locate the incoming shipment under `/inventory/transfers` or `/receiving/transfers` and click **Receive Transfer** (`Partially Received` or `Received`).
 
 ---
 
@@ -89,5 +88,5 @@ Stock placed into a `quarantine` bin is completely quarantined from available in
 | **Transfer Number** | Unique movement reference (`TRF-...`). |
 | **Source Warehouse** | Origin dispatch facility. |
 | **Destination Warehouse** | Destination receiving facility. |
-| **Status** | Stage (`Draft`, `Requested`, `In Transit`, `Received`, `Cancelled`). |
+| **Status** | Stage (`Confirmed`, `Picking`, `Shipped`, `Partially Received`, `Received`, `Cancelled`). |
 | **Quarantine Bin** | Isolated location holding defective or uninspected goods. |

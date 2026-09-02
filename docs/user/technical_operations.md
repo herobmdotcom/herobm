@@ -28,12 +28,12 @@ fields:
   target_url:
     title: "Webhook Endpoint"
     summary: "Destination HTTPS URL receiving real-time JSON event payloads."
-  event_type:
-    title: "Outbox Event Type"
-    summary: "Domain event name (e.g. sales_order.status_changed, payment.allocated)."
-  import_source:
-    title: "Data Import Source"
-    summary: "Migration source: CSV Files, Legacy ABM Database, or Odoo Database."
+  event_types:
+    title: "Webhook Event Subscriptions"
+    summary: "JSON array of domain event names (e.g. sales_order.status_changed, payment.allocated)."
+  job_type:
+    title: "Pipeline Job Type"
+    summary: "Migration pipeline type: CSV Import, Legacy ABM Database, or Odoo Database."
 related:
   - "import-pipelines"
   - "admin-settings"

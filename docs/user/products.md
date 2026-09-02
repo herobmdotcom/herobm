@@ -19,7 +19,7 @@ fields:
     summary: "Item description displayed across orders, invoices, and pick slips."
   product_type:
     title: "Product Type"
-    summary: "Stock classification: Stocked Item, Non-Stock Item, Service, or Freight."
+    summary: "Stock classification: Inventory (Tracked) (`inventory`), Non-Stock (`non-stock`), Service (`service`), or Freight (`freight`)."
   structure_type:
     title: "Structure / Kit"
     summary: "Standard product or Kit/Bundle with component decomposition."
@@ -68,10 +68,10 @@ The **Products** module manages master catalog items, barcode tracking, 4-tier p
 ## Product Types & Pricing Tiers
 
 ### 1. Product Types
-- **Stocked Item**: Physical inventory tracked in warehouse bins with on-hand counts.
-- **Non-Stock Item**: Purchased on demand or drop-shipped directly without bin tracking.
-- **Service**: Non-physical labor or maintenance charges.
-- **Freight**: Transport and delivery charges.
+- **Inventory (Tracked)** (`inventory`): Physical stock tracked in warehouse bins with on-hand counts and perpetual ledger valuation.
+- **Non-Stock** (`non-stock`): Purchased on demand or drop-shipped directly without bin tracking.
+- **Service** (`service`): Non-physical labor or maintenance charges.
+- **Freight** (`freight`): Transport and delivery charges.
 
 ### 2. The 4 Price Scales
 Every product carries up to four predefined price tiers in the company base currency:
@@ -121,7 +121,7 @@ HeroBM tracks four complementary cost metrics to provide complete visibility int
 1. Go to **Inventory** → **Products** (`/products`).
 2. Click **New Product**.
 3. Enter the **Product Code / SKU**, **Name**, and **Product Group**.
-4. Select the **Product Type** (e.g. Stocked Item) and **Base Unit of Measure** (e.g. EA, BOX).
+4. Select the **Product Type** (e.g. Inventory (Tracked)) and **Base Unit of Measure** (e.g. EA, BOX).
 5. Enter the **Standard Cost** and the four selling price levels (**List Price**, **Trade Price**, etc.).
 6. Select the default **Purchase Tax Category** and **Sales Tax Category**.
 7. Click **Save Product**.

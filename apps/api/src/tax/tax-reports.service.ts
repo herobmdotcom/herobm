@@ -183,7 +183,7 @@ export class TaxReportsService {
       totalNetPurchases,
       defaultSalesTaxAccountId,
       categories: allTaxCats,
-      currencyCode: 'AUD',
+      currencyCode: settings.baseCurrency ?? 'AUD',
     });
 
     const { title, subtitle } = getTaxReportMetadata(reportType);

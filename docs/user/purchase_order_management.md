@@ -21,7 +21,7 @@ fields:
   expected_date:
     title: "Expected Delivery Date"
     summary: "Target date goods should arrive at the receiving dock."
-  fulfillment_location_id:
+  delivery_location_id:
     title: "Receiving Warehouse"
     summary: "Warehouse destination where inbound goods will be received."
   currency_code:

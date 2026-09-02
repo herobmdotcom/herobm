@@ -8,7 +8,6 @@ resource: "sales-invoices"
 action: "read"
 routes:
   - "/sales-invoices"
-  - "/sales-invoices/new"
   - "/sales-invoices/:id"
 tags: ["invoices", "sales", "billing", "ar", "revenue", "tax", "payments", "email", "pdf"]
 fields:
@@ -78,12 +77,11 @@ Credit: Output Tax / GST Payable            (Statutory Sales Tax Total)
 ## Step-by-Step Workflows
 
 ### 1. Invoicing Dispatched Sales Orders
-1. Go to **Sales** → **Invoices** (`/sales-invoices`).
-2. Click **New Invoice** (`/sales-invoices/new`).
-3. Select the dispatched **Sales Order**. Dispatched quantities, customer pricing, and tax categories populate automatically.
-4. Review lines, billing contact, and payment due date.
-5. Click **Post Invoice** to commit to the General Ledger and Accounts Receivable.
-6. Click **Email Invoice** to transmit the official branded Typst PDF invoice to the customer.
+1. Open the dispatched order in **Sales** → **Orders** (`/sales-orders/:id`).
+2. Click **Create Invoice**. Dispatched quantities, customer pricing, and tax categories populate automatically.
+3. Review lines, billing contact, and payment due date.
+4. Click **Post Invoice** to commit to the General Ledger and Accounts Receivable.
+5. In **Sales** → **Invoices** (`/sales-invoices`), locate the invoice and click **Email Invoice** to transmit the official branded Typst PDF invoice to the customer.
 
 ---
 

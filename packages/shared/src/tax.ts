@@ -216,7 +216,7 @@ export function calculateGenericTaxSummary(
     exemptSales,
     totalNetPurchases,
     taxablePurchases,
-    currencyCode: input.currencyCode || 'USD',
+    currencyCode: input.currencyCode ?? 'USD', // base_currency fallback
     categories,
   };
 }

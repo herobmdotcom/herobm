@@ -20,13 +20,13 @@ fields:
   account_type:
     title: "Account Classification"
     summary: "Standard accounting class: Asset, Liability, Equity, Revenue, or Expense."
-  journal_entry_number:
+  entry_number:
     title: "Journal Entry Number"
     summary: "Unique transaction identifier (e.g. JRN-2026-00041)."
-  debit_amount:
+  debit:
     title: "Debit (DR)"
     summary: "Left-side transaction value increasing Assets/Expenses or decreasing Liabilities/Equity/Revenue."
-  credit_amount:
+  credit:
     title: "Credit (CR)"
     summary: "Right-side transaction value increasing Liabilities/Equity/Revenue or decreasing Assets/Expenses."
 related:
@@ -125,9 +125,9 @@ Every posted general ledger journal entry is cryptographically bound to the enti
    ```
 2. **Deterministic Payload Hashing**: When entry `N` is posted, its cryptographic hash (`entry_hash`) is computed deterministically from:
    - `prev_entry_hash`: The SHA-256 hash of entry `N-1`.
-   - `journal_entry_id` and `journal_entry_number`.
-   - `posting_date` and `source_type`.
-   - Sorted list of line items (`account_code`, `debit_amount`, `credit_amount`, `currency`).
+   - `journal_entry_id` and `entry_number`.
+   - `entry_date` and `source_type`.
+   - Sorted list of line items (`account_code`, `debit`, `credit`, `currency`).
 3. **Tamper Detection**: If any record in `gl_journal_entries` or `gl_journal_lines` is modified, inserted out-of-order, or deleted at the database level, the hash chain breaks from that point forward, rendering tampering immediately evident during automated verification.
 
 #### B. Database-Level Trigger Protection (Immutability by Default)

@@ -8,6 +8,7 @@ resource: "invoices"
 action: "read"
 routes:
   - "/supplier-invoices"
+  - "/supplier-invoices/new"
   - "/supplier-invoices/:id"
 tags: ["supplier-invoices", "bills", "ap", "3-way-match", "purchasing", "tax", "grni", "ppv", "variance"]
 fields:

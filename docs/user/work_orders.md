@@ -7,14 +7,12 @@ order: 21
 resource: "work-orders"
 action: "read"
 routes:
-  - "/work-orders"
-  - "/work-orders/new"
-  - "/work-orders/:id"
   - "/manufacturing/work-orders"
   - "/manufacturing/work-orders/new"
+  - "/manufacturing/work-orders/:id"
 tags: ["work-orders", "manufacturing", "bom", "assembly", "wip", "costing", "production"]
 fields:
-  work_order_number:
+  order_number:
     title: "Work Order Number"
     summary: "Unique production job identifier (e.g. WO-2026-00032)."
   product_id:
@@ -92,8 +90,8 @@ Finished Product Unit Cost = Total Work Order Cost / Target Quantity
 ## Step-by-Step Workflows
 
 ### 1. Creating and Executing a Work Order
-1. Go to **Manufacturing** → **Work Orders** (`/work-orders`).
-2. Click **New Work Order** (`/work-orders/new`).
+1. Go to **Manufacturing** → **Work Orders** (`/manufacturing/work-orders`).
+2. Click **New Work Order** (`/manufacturing/work-orders/new`).
 3. Select the **Assembly Product** and enter the **Target Build Quantity**.
 4. The system snapshots component requirements from the active Bill of Materials into `work_order_components`.
 5. Enter any **Unit Assembly Cost** (labor per unit) and **Additional Cost** (setup/overhead).

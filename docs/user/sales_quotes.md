@@ -8,7 +8,6 @@ resource: "sales-orders"
 action: "read"
 routes:
   - "/sales-quotes"
-  - "/sales-quotes/new"
 tags: ["sales", "quotes", "estimates", "margins", "credit-limit", "pricing", "pricing-scales"]
 fields:
   customer_id:
@@ -63,7 +62,7 @@ stateDiagram-v2
 
 ### 1. Creating and Emailing a Quote
 1. Go to **Sales** → **Quotes** (`/sales-quotes`).
-2. Click **New Quote** (`/sales-quotes/new`).
+2. Click **New Quote** (opens the order workbench at `/sales-orders/new`).
 3. Select the **Customer**. Price scale, currency, and tax positions load automatically.
 4. Set the **Expiry Date** (`valid_until`).
 5. Add items, enter negotiated prices or line discounts.

@@ -157,7 +157,7 @@ export class GenericTaxSummaryDto {
   @ApiProperty({ description: 'Net taxable purchases' })
   taxablePurchases: number;
 
-  @ApiProperty({ description: 'Base currency code', example: 'AUD' })
+  @ApiProperty({ description: 'Base currency code' })
   currencyCode: string;
 
   @ApiProperty({
