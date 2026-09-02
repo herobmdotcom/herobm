@@ -1811,8 +1811,22 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       completedQty = 0;
     }
 
+    // Query parent components for this kit
+    const compRows = await db
+      .select()
+      .from(productComponents)
+      .where(eq(productComponents.parentProductId, kit.id));
+
+    let componentsCost = 0;
+    for (const comp of compRows) {
+      const childProd = data.prods.find((p) => p.id === comp.childProductId);
+      const childCost = childProd ? childProd.standardCost : kit.standardCost * 0.25;
+      const expectedQty = Number(comp.quantity) * targetQty;
+      componentsCost += expectedQty * childCost;
+    }
+
     const assemblyCost = 15.0;
-    const totalCost = (kit.standardCost + assemblyCost) * targetQty;
+    const totalCost = componentsCost + assemblyCost * targetQty;
 
     await db
       .insert(workOrders)
@@ -1837,15 +1851,12 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       })
       .onConflictDoNothing();
 
-    // Query parent components for this kit
-    const compRows = await db
-      .select()
-      .from(productComponents)
-      .where(eq(productComponents.parentProductId, kit.id));
-
     for (const comp of compRows) {
       const wocId = uuid();
       const expectedQty = Number(comp.quantity) * targetQty;
+      const childProd = data.prods.find((p) => p.id === comp.childProductId);
+      const childCost = childProd ? childProd.standardCost : kit.standardCost * 0.25;
+
       await db
         .insert(workOrderComponents)
         .values({
@@ -1853,7 +1864,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           workOrderId: woId,
           productId: comp.childProductId,
           expectedQuantity: expectedQty.toString(),
-          unitCost: (kit.standardCost * 0.25).toFixed(2),
+          unitCost: childCost.toFixed(2),
         })
         .onConflictDoNothing();
 

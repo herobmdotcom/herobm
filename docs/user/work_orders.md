@@ -20,15 +20,21 @@ fields:
   product_id:
     title: "Assembly Product"
     summary: "Finished manufactured item to be produced."
-  quantity_ordered:
+  target_quantity:
     title: "Target Build Quantity"
     summary: "Planned number of finished units to assemble."
   status:
     title: "Work Order Status"
     summary: "Production state (Draft, Planned, In-Progress, Completed, Cancelled)."
-  assembly_cost:
-    title: "Assembly Unit Cost"
-    summary: "Sum of snapshotted component WAC costs plus additional labor and overhead."
+  assembly_cost_per_unit:
+    title: "Assembly Cost / Unit"
+    summary: "Direct variable labor and machining cost per assembled finished unit."
+  additional_cost:
+    title: "Additional Cost"
+    summary: "Fixed lump-sum overhead, machine setup, or subcontracting charge."
+  total_cost:
+    title: "Total Work Order Cost"
+    summary: "Total production cost: component materials + (unit assembly cost * target quantity) + additional cost."
 related:
   - "products"
   - "inventory-management"
@@ -66,15 +72,20 @@ stateDiagram-v2
 * **`Completed`**: Finished goods verified, unit cost calculated, finished items moved to Putaway staging, and work order closed.
 * **`Cancelled`**: Job cancelled; reserved or issued components returned to storage.
 
-### 2. Live Assembly Costing & Moving WAC
-The unit cost of the finished assembly is calculated dynamically upon completion:
+### 2. Live Assembly Costing & Valuation
+When completing a build (`completeBuild`), the system calculates total job costs and finished inventory valuation:
 
 ```
-Assembly Cost Per Unit = (Sum of Component Quantities * Component Moving WAC) / Target Build Quantity
-Total Work Order Cost = (Assembly Cost Per Unit * Target Build Quantity) + Additional Overhead / Labor Cost
+Component Materials Cost = Sum(Component Expected Quantity * Component Unit Cost)
+Total Assembly Labor Cost = Assembly Cost Per Unit * Target Quantity
+Total Work Order Cost = Component Materials Cost + Total Assembly Labor Cost + Additional Cost
+Finished Product Unit Cost = Total Work Order Cost / Target Quantity
 ```
 
-Completing the work order capitalizes the finished product into inventory asset valuation at the new calculated WAC, while crediting the component inventory asset accounts.
+* **Component Materials Cost**: Calculated from the snapshotted Bill of Materials components (`work_order_components`) based on expected quantities and their unit cost / Moving WAC.
+* **Assembly Cost Per Unit (`assemblyCostPerUnit`)**: Variable direct labor or machine running cost entered per finished unit.
+* **Additional Cost (`additionalCost`)**: Fixed lump-sum overhead, machine setup fee, or subcontracting charge for the overall build.
+* **Inventory Capitalization**: Completing the build capitalizes the finished products into warehouse inventory at the new `Finished Product Unit Cost`, while crediting the consumed raw materials.
 
 ---
 
@@ -85,9 +96,10 @@ Completing the work order capitalizes the finished product into inventory asset 
 2. Click **New Work Order** (`/work-orders/new`).
 3. Select the **Assembly Product** and enter the **Target Build Quantity**.
 4. The system snapshots component requirements from the active Bill of Materials into `work_order_components`.
-5. Click **Plan Work Order** to verify and reserve component stock.
-6. When assembly begins, click **Start Assembly** to issue components.
-7. Upon completion, enter verified finished units and any additional labor/overhead costs, then click **Complete Work Order**.
+5. Enter any **Unit Assembly Cost** (labor per unit) and **Additional Cost** (setup/overhead).
+6. Click **Plan Work Order** to verify and reserve component stock.
+7. When assembly begins, click **Start Assembly** to issue components to WIP.
+8. Upon completion, verify output quantities and click **Complete Work Order**.
 
 ---
 
@@ -98,6 +110,8 @@ Completing the work order capitalizes the finished product into inventory asset 
 | **Work Order Number** | Production identifier (`WO-...`). |
 | **Assembly Product** | Finished item being manufactured. |
 | **Target Build Quantity** | Planned assembly count. |
-| **Components** | List of raw materials and sub-assemblies required. |
+| **Components** | List of raw materials and sub-assemblies required with unit costs. |
+| **Assembly Cost / Unit** | Direct variable labor and machine cost per assembled unit (`assemblyCostPerUnit`). |
+| **Additional Cost** | Fixed lump-sum setup or overhead fee (`additionalCost`). |
+| **Total Cost** | Total build cost (`components + assembly labor + additional cost`). |
 | **Status** | Stage (`Draft`, `Planned`, `In-Progress`, `Completed`, `Cancelled`). |
-| **Assembly Unit Cost** | Total unit cost of the manufactured finished item. |

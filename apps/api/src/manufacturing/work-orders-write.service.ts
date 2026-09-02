@@ -211,8 +211,13 @@ export class WorkOrdersWriteService {
           .select({
             childProductId: productComponents.childProductId,
             quantity: productComponents.quantity,
+            standardCost: products.standardCost,
           })
           .from(productComponents)
+          .innerJoin(
+            products,
+            eq(productComponents.childProductId, products.productId),
+          )
           .where(eq(productComponents.parentProductId, dto.productId));
 
         const targetQtyNum = parseFloat(dto.targetQuantity) || 1;
@@ -224,6 +229,7 @@ export class WorkOrdersWriteService {
             workOrderId: newWo.workOrderId,
             productId: comp.childProductId,
             expectedQuantity,
+            unitCost: comp.standardCost ? comp.standardCost.toString() : null,
           });
         }
       }
