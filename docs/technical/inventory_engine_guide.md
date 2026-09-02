@@ -91,7 +91,7 @@ To read total stock levels per product and location, use the PostgreSQL View `he
 > This guarantees structural parity between the API mappings and Client UI calculations.
 
 ### Read: Bin Contents
-To see exactly what stock is in what bin, use the `InventoryService.findBins` method which queries the `herobm_core.bin_contents` view.
+To see exactly what stock is in what bin, use the `InventoryService.findBins` method which queries the physical `herobm_core.bin_contents` table.
 
 ## Testing Strategy
 The inventory engine is validated by comprehensive test suites:

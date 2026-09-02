@@ -29,10 +29,10 @@ The engine relies on 4 dedicated tables in the `herobm_core` schema:
 
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
-| `gl_accounts` | The Chart of Accounts | `account_code` (PK), `name`, `account_type`, `is_group`, `parent_account_code`, `is_system`, `is_active` |
-| `gl_journal_entries` | Transaction headers | `journal_entry_id` (PK), `entry_number`, `entry_date`, `memo`, `source_type`, `source_id` |
-| `gl_journal_lines` | Transaction lines (debits/credits) | `journal_line_id` (PK), `journal_entry_id` (FK), `account_code` (FK), `debit`, `credit`, `memo`, `party_type`, `party_id` |
-| `gl_settings` | Global configuration | `id` (PK), `company_name`, `currency` |
+| `gl_accounts` | The Chart of Accounts | `gl_account_id` (UUID PK), `account_code` (Unique Code), `name`, `account_type`, `is_group`, `parent_account_id`, `is_system`, `is_active` |
+| `gl_journal_entries` | Transaction headers | `journal_entry_id` (UUID PK), `entry_number`, `entry_date`, `memo`, `source_type`, `source_id`, `entry_hash`, `prev_entry_hash` |
+| `gl_journal_lines` | Transaction lines (debits/credits) | `journal_line_id` (UUID PK), `journal_entry_id` (UUID FK), `gl_account_id` (UUID FK), `debit`, `credit`, `memo`, `party_type`, `party_id` |
+| `gl_settings` | Global configuration | `id` (UUID PK), `company_name`, `base_currency` |
 
 > [!IMPORTANT]
 > Because database migrations are run manually and automatically via `make migrate`, all schema definitions in `migrations/` use idempotent DDL (`CREATE TABLE IF NOT EXISTS`, and PL/pgSQL `DO` blocks for constraints).

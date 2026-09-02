@@ -23,13 +23,14 @@ headingLevel: 2
 
 > Scroll down for code samples, example requests and responses. Select a language for code samples from the tabs above or the mobile navigation menu.
 
-Core Forgeron API System endpoints
+Core HeroBM Enterprise REST API System endpoints
 
 Base URLs:
 
 # Authentication
 
-- HTTP Authentication, scheme: bearer 
+- API Key Authentication: `x-api-key: <64_char_hex_key>`
+- JWT Bearer Authentication: `Authorization: Bearer <jwt_token>` 
 
 <h1 id="herobm-api-auth">Auth</h1>
 

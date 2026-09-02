@@ -26,6 +26,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
   "eventType": "sales_order.status_changed",
   "entityId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
   "entityType": "sales_order",
+  "entityDisplayName": "SO-2026-00124",
   "timestamp": "2026-08-19T12:00:00.000Z",
   "payload": {
     "orderNumber": "SO-2026-00124",
@@ -33,7 +34,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
     "newState": "confirmed",
     "customerId": "f8586ef0-bbc3-4af8-9c00-7b40dc25bbae",
     "totalAmount": 12450.00,
-    "currencyCode": "EUR"
+    "currencyCode": "AUD"
   }
 }
 ```
@@ -46,6 +47,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
 | **`eventType`** | String | Event identifier in `entity.action` format (e.g. `sales_order.created`). |
 | **`entityId`** | UUID v4 | Primary key ID of the affected domain object. |
 | **`entityType`** | String | Domain object classification (e.g. `sales_order`, `payment`). |
+| **`entityDisplayName`** | String | Human-readable identifier or title of the domain entity (e.g. `SO-2026-00124`, `Acme Corp`). |
 | **`timestamp`** | ISO 8601 | UTC timestamp when the event was recorded. |
 | **`payload`** | Object | Structured business data relevant to the event. |
 
@@ -53,7 +55,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
 
 ## Security & Signature Verification
 
-Each webhook request includes an `X-HeroBM-Signature-256` HTTP header. You should verify this signature using your webhook secret to confirm the request originated from HeroBM:
+Each webhook request includes an `x-herobm-signature` HTTP header containing an HMAC-SHA256 digest of the raw request payload. You should verify this signature using your webhook secret to confirm the request originated from HeroBM:
 
 ```typescript
 import * as crypto from 'crypto';
@@ -79,7 +81,7 @@ function verifyWebhookSignature(
 
 ## Supported Events Matrix
 
-The following 181 event types are actively supported across 50 domain entity types:
+The following 182 event types are actively supported across 50 domain entity types:
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|

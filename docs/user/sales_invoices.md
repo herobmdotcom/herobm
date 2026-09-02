@@ -1,97 +1,89 @@
 ---
 id: sales-invoices
 title: "Sales Invoices"
-description: "Issue customer invoices, manage payment terms, record tax, and post directly to Accounts Receivable."
+description: "Generate customer tax invoices from dispatched orders, post double-entry GL revenue journals, and track payment settlements."
 category: "Sales"
-order: 6
+order: 8
 resource: "sales-invoices"
 action: "read"
 routes:
   - "/sales-invoices"
+  - "/sales-invoices/new"
   - "/sales-invoices/:id"
-tags: ["invoices", "sales", "billing", "ar", "tax", "payments"]
+tags: ["invoices", "sales", "billing", "ar", "revenue", "tax", "payments", "email", "pdf"]
 fields:
   invoice_number:
     title: "Invoice Number"
-    summary: "Sequential tax invoice number (e.g. INV-2026-00312)."
-  customer_id:
-    title: "Customer"
-    summary: "Customer account billed for goods or services."
+    summary: "Unique legal tax invoice number (e.g. INV-2026-00089)."
   sales_order_id:
     title: "Sales Order"
-    summary: "Originating sales order linked to this invoice."
-  invoice_date:
-    title: "Invoice Date"
-    summary: "Date of issue for tax and reporting purposes."
+    summary: "Originating sales order from which invoice lines and terms were pulled."
   due_date:
-    title: "Due Date"
-    summary: "Payment due date calculated from customer trading terms."
-  currency_code:
-    title: "Currency"
-    summary: "Invoice currency, matching the sales order."
+    title: "Payment Due Date"
+    summary: "Commercial settlement date computed from customer trading terms."
   total_amount:
-    title: "Invoice Total"
-    summary: "Grand total including line amounts and tax."
+    title: "Total Gross Amount"
+    summary: "Total invoice balance including line items, freight, and statutory taxes."
+  outstanding_amount:
+    title: "Outstanding Balance"
+    summary: "Remaining unpaid balance after allocated payments and credit notes."
+  state_code:
+    title: "Invoice Status"
+    summary: "Invoice state (Draft, Posted, Partially Paid, Paid, Cancelled, Archived)."
 related:
   - "sales-orders"
-  - "customers"
+  - "sales-credit-notes"
   - "payments"
   - "general-ledger"
+  - "balances"
 ---
 
 # Sales Invoices
 
-The **Sales Invoices** module handles customer billing. Generating and posting an invoice records tax liabilities, posts Accounts Receivable to the General Ledger, and tracks payment settlement progress.
+The **Sales Invoices** module manages legal tax invoice billing, posting automated double-entry revenue journals to the General Ledger, emailing PDF invoices, and tracking payment settlements.
 
 ---
 
-## Invoicing Rules & Accounting Integration
+## Invoice Lifecycle & General Ledger Posting
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft : Create Invoice
-    Draft --> Posted : Post to General Ledger
-    Draft --> Cancelled : Discard
+    [*] --> Draft : Create Invoice from Dispatched Order
+    Draft --> Posted : Post Invoice (GL Revenue & AR Debited)
+    Draft --> Cancelled : Cancel Draft
 
-    Posted --> PartiallyPaid : Partial Payment Allocated
-    Posted --> Paid : Fully Paid
-    Posted --> Cancelled : Reversal (Credit Adjustment)
+    Posted --> PartiallyPaid : Partial Customer Payment Allocated
+    Posted --> Paid : 100% Payment Settled
+    Posted --> Archived : Archive (Fully Settled)
 
-    PartiallyPaid --> Paid : Final Settlement
-    PartiallyPaid --> Cancelled : Void Unsettled Balance
-
-    Paid --> Archived : Archiving
-    Cancelled --> Archived : Archiving
+    PartiallyPaid --> Paid : Remaining Balance Settled
+    Paid --> Archived : Archive
 ```
 
-### 1. Generating Invoices from Orders
-- Invoices can be generated directly from confirmed or shipped Sales Orders.
-- **Partial Invoicing**: If an order is delivered in stages, multiple partial invoices can be raised against individual shipments.
-- **Auto-Completion**: When 100% of an order's line items have been billed across invoices, the parent Sales Order automatically transitions to `invoiced`.
+### 1. General Ledger Revenue Postings
+Clicking **Post Invoice** writes an immutable transaction to the General Ledger:
 
-### 2. General Ledger Posting
-Posting a sales invoice creates an automatic balanced journal entry in the General Ledger:
-- **Debit**: Accounts Receivable Control Account (Customer balance increases)
-- **Credit**: Sales Revenue (Product income accounts)
-- **Credit**: Tax / GST Payable (Tax output liability)
+```
+Debit:  Accounts Receivable Control Account  (Total Gross Amount including tax)
+Credit: Sales Revenue Account               (Net Line Items Total)
+Credit: Output Tax / GST Payable            (Statutory Sales Tax Total)
+```
 
-### 3. Tax Compliance & Immutability Guarantees
-- **No Hard Deletions**: Invoices, credit notes, and invoice line items are protected by database triggers (`herobm_core.prevent_financial_deletion`). Once created, they cannot be deleted or truncated.
-- **Compensating Corrections**: Errors or cancellations must be handled via **Cancellation** (which posts an automatic reversing journal entry) or by issuing a **Sales Credit Note**.
-- **Sequential Auditing**: Invoices follow chronological sequential numbering. An automated background verification engine runs scheduled audits to guarantee gapless continuity.
+### 2. Database Immutability & Reversals
+* Once posted, a sales invoice cannot be edited or deleted due to database immutability triggers (`herobm_core.prevent_financial_deletion`).
+* To correct or void a posted invoice, operators must issue a formal [Sales Credit Note](./sales_credit_notes.md).
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Generating a Sales Invoice
-1. Go to **Sales** → **Sales Invoices** (`/sales-invoices`).
-2. Click **New Invoice**.
-3. Select the **Sales Order** from the search list.
-4. Review the billed quantities, unit prices, discounts, and tax rates.
-5. Verify the **Invoice Date** and calculated **Due Date**.
-6. Click **Post Invoice** to finalize the billing and update the General Ledger.
-7. Click **PDF** or **Email** to send the official tax invoice to the customer.
+### 1. Invoicing Dispatched Sales Orders
+1. Go to **Sales** → **Invoices** (`/sales-invoices`).
+2. Click **New Invoice** (`/sales-invoices/new`).
+3. Select the dispatched **Sales Order**. Dispatched quantities, customer pricing, and tax categories populate automatically.
+4. Review lines, billing contact, and payment due date.
+5. Click **Post Invoice** to commit to the General Ledger and Accounts Receivable.
+6. Click **Email Invoice** to transmit the official branded Typst PDF invoice to the customer.
 
 ---
 
@@ -99,12 +91,10 @@ Posting a sales invoice creates an automatic balanced journal entry in the Gener
 
 | Field | Description |
 | :--- | :--- |
-| **Invoice Number** | Legal tax invoice identifier (e.g. `INV-2026-00312`). |
-| **Customer** | Billed customer account. |
-| **Sales Order** | Originating sales order reference (`ORD-...`). |
-| **Invoice Date** | Official billing date. |
-| **Due Date** | Payment settlement deadline based on terms. |
-| **Subtotal** | Net amount before tax. |
-| **Tax Amount** | Calculated GST / VAT. |
-| **Total Amount** | Gross payable amount in customer currency. |
-| **Status** | Stage (`Draft`, `Posted`, `Partially Paid`, `Paid`, `Cancelled`, `Archived`). |
+| **Invoice Number** | Legal tax invoice identifier (`INV-...`). |
+| **Customer** | Debtor account billed for the goods. |
+| **Invoice Date** | Statutory tax point date. |
+| **Due Date** | Settlement deadline based on customer trading terms. |
+| **Gross Total** | Full payable amount including GST/VAT. |
+| **Outstanding Amount** | Unpaid balance remaining on debtor ledger. |
+| **Invoice Status** | Stage (`Draft`, `Posted`, `Partially Paid`, `Paid`, `Cancelled`, `Archived`). |

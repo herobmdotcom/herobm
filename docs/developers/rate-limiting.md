@@ -1,19 +1,36 @@
 # Rate Limiting
 
-The HeroBM API enforces rate limiting to ensure system stability and fair usage across all consumers. 
+The HeroBM API enforces rate limiting across public and authenticated endpoints to protect system stability and prevent denial-of-service or brute-force attacks.
 
-Rate limits are applied dynamically based on the authentication context. 
+---
 
-## Default Limits
+## Rate Limit Tiers
 
-1. **Browser/Session Requests**: `60 requests / minute`
-2. **API Key Requests**: `1000 requests / minute` (Configurable by Administrators)
+Rate limits are evaluated using a rolling 60-second sliding window based on the client IP address or authenticated API key identity:
 
-Administrators can increase or decrease the API Key limit via the **Admin > Developers** section in the Operations Portal.
+| Endpoint / Context | Rate Limit | Purpose |
+| :--- | :--- | :--- |
+| **Authentication (`POST /auth/login`)** | `5 requests / minute` | Brute-force credential protection |
+| **User Profile (`GET /auth/me`)** | `30 requests / minute` | Session validation throttling |
+| **Health Checks (`GET /health`)** | `120 requests / minute` | Infrastructure monitoring |
+| **Standard API Endpoints (Default)** | `120 requests / minute` | General REST CRUD protection |
+| **High-Throughput API Keys** | Up to `1,000 requests / minute` | Configurable in Developer Settings for bulk syncs |
 
-## Exceeding the Limits
+---
 
-If you exceed the rate limit, the API will reject subsequent requests and return a standard `429 Too Many Requests` HTTP response code. 
+## Rate Limit Response Headers & HTTP 429
+
+When rate limits are approached or exceeded, the API provides standard diagnostic headers:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 45
+X-RateLimit-Limit: 120
+X-RateLimit-Remaining: 0
+```
+
+### Response Body
 
 ```json
 {
@@ -22,11 +39,11 @@ If you exceed the rate limit, the API will reject subsequent requests and return
 }
 ```
 
-## Handling 429 Errors
+---
 
-It is strongly recommended to implement exponential backoff and retry logic in your API clients to gracefully handle rate limit exceptions during high-throughput operations (e.g. bulk data syncs).
+## Handling 429 Errors with Exponential Backoff
 
-### Example Retry Logic (JavaScript)
+Clients should inspect the `Retry-After` header and implement exponential backoff:
 
 ```javascript
 async function fetchWithRetry(url, options, maxRetries = 3) {
@@ -34,9 +51,10 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
     const res = await fetch(url, options);
     
     if (res.status === 429) {
-      const waitTime = Math.pow(2, i) * 1000; // 1s, 2s, 4s...
-      console.warn(`Rate limited. Waiting ${waitTime}ms...`);
-      await new Promise(r => setTimeout(r, waitTime));
+      const retryAfter = parseInt(res.headers.get('Retry-After') || '1', 10);
+      const waitTime = retryAfter * 1000 || Math.pow(2, i) * 1000;
+      console.warn(`Rate limited. Waiting ${waitTime}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
       continue;
     }
     

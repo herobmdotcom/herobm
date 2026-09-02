@@ -4,7 +4,7 @@ title: "Purchase Orders"
 description: "Manage supplier purchase orders, vendor holds, delivery schedules, document emailing, and dock receiving integration."
 category: "Purchasing"
 order: 18
-resource: "orders"
+resource: "purchase-orders"
 action: "read"
 routes:
   - "/purchase-orders"
@@ -29,7 +29,7 @@ fields:
     summary: "Purchasing currency and exchange rate snapshotted from supplier settings."
   state_code:
     title: "PO Status"
-    summary: "Order state (Draft, Ordered, Partially Received, Received, Invoiced, Closed Short, Cancelled)."
+    summary: "Order state (Draft, Ordered, Partially Received, Received, Invoiced, Closed Short, Cancelled, Archived)."
 related:
   - "suppliers"
   - "purchase-demands"
@@ -52,16 +52,22 @@ stateDiagram-v2
     Draft --> Ordered : Send / Confirm with Supplier
     Draft --> Cancelled : Cancel
 
+    Ordered --> Draft : Revise PO
     Ordered --> PartiallyReceived : Partial Dock Receipt (Auto)
     Ordered --> Received : 100% Received (Auto)
+    Ordered --> Cancelled : Cancel
+
     PartiallyReceived --> Received : Remaining Lines Received (Auto)
+    PartiallyReceived --> ClosedShort : Close Unfulfilled Balance
+    PartiallyReceived --> Ordered : Receipt Reversal
 
     Received --> Invoiced : AP Bills Matched & Posted (Auto)
-    PartiallyReceived --> ClosedShort : Close Unfulfilled Balance
     Received --> PartiallyReceived : RTV Return Shipped (Auto-Revert)
+    Received --> Ordered : Full Receipt Cancellation
 
-    Invoiced --> Closed : Archiving
-    Cancelled --> Closed : Archiving
+    Invoiced --> Archived : Archive
+    Cancelled --> Archived : Archive
+    ClosedShort --> Archived : Archive
 ```
 
 ### Automated State Transition Rules Engine
@@ -80,16 +86,17 @@ The PO lifecycle rules engine continuously monitors warehouse and accounting eve
 ## Business Logic & Purchasing Controls
 
 ### 1. Supplier Purchasing Holds
-* **Hold Gate**: If a vendor is marked **On Purchasing Hold** in [Suppliers](./suppliers.md), the system warns operators during draft creation and strictly blocks advancing the PO to `Ordered` or `Confirmed`.
-* **Hold Release**: Holds can only be lifted by users with authorized vendor management privileges.
+* **Hold Gate**: If a vendor is marked **On Purchasing Hold** in [Suppliers](./suppliers.md), the system warns operators during draft creation and strictly blocks advancing the PO to `Ordered`.
+* **Hold Release**: Holds can only be lifted on the vendor master record by users with authorized vendor management privileges.
 
 ### 2. Multi-Currency & FX Snapshotting
-* Purchase orders snapshot the vendor's active currency code and current exchange rate to base currency (`EUR`) upon order creation.
+* Purchase orders snapshot the vendor's active currency code and current exchange rate to the system base currency upon order creation.
 * Line items, unit costs, and purchase totals are transacted in the vendor's currency, while base equivalent amounts are maintained for inventory capitalization and GL budgeting.
 
-### 3. Closing Short vs. Backorder Cancellation
+### 3. Closing Short vs. Revision
 * If a supplier is unable to deliver the remaining units on a partially received order, an operator can click **Close Short**.
 * Closing short transitions the PO status to `Closed Short`, releasing open on-order stock reservations from demand planning without leaving orphaned purchase commitments.
+* An `Ordered` purchase order with no received goods can be reverted to `Draft` if commercial terms or line items need modification.
 
 ---
 
@@ -118,7 +125,7 @@ The PO lifecycle rules engine continuously monitors warehouse and accounting eve
 | **PO Number** | Unique procurement identifier (e.g. `PO-2026-00067`). |
 | **Expected Delivery Date** | Anticipated arrival date at the receiving dock. |
 | **Receiving Warehouse** | Target warehouse facility for goods receipt. |
-| **Currency & FX Rate** | Sourcing currency and exchange rate to base currency. |
-| **PO Status** | Stage (`Draft`, `Ordered`, `Partially Received`, `Received`, `Invoiced`, `Closed Short`). |
+| **Currency & FX Rate** | Sourcing currency and exchange rate to system base currency. |
+| **PO Status** | Stage (`Draft`, `Ordered`, `Partially Received`, `Received`, `Invoiced`, `Closed Short`, `Cancelled`, `Archived`). |
 | **Unit Cost** | Agreed purchase price per unit in supplier currency. |
 | **Supplier Hold** | Warning indicator shown if vendor is on operational hold. |

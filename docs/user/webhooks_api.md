@@ -39,6 +39,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
   "eventType": "sales_order.status_changed",
   "entityId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
   "entityType": "sales_order",
+  "entityDisplayName": "SO-2026-00124",
   "timestamp": "2026-08-19T12:00:00.000Z",
   "payload": {
     "orderNumber": "SO-2026-00124",
@@ -46,7 +47,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
     "newState": "confirmed",
     "customerId": "f8586ef0-bbc3-4af8-9c00-7b40dc25bbae",
     "totalAmount": 12450.00,
-    "currencyCode": "EUR"
+    "currencyCode": "AUD"
   }
 }
 ```
@@ -59,6 +60,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
 | **`eventType`** | String | Event identifier in `entity.action` format (e.g. `sales_order.created`). |
 | **`entityId`** | UUID v4 | Primary key ID of the affected domain object. |
 | **`entityType`** | String | Domain object classification (e.g. `sales_order`, `payment`). |
+| **`entityDisplayName`** | String | Human-readable identifier or title of the domain entity (e.g. `SO-2026-00124`, `Acme Corp`). |
 | **`timestamp`** | ISO 8601 | UTC timestamp when the event was recorded. |
 | **`payload`** | Object | Structured business data relevant to the event. |
 
@@ -66,7 +68,7 @@ Every webhook notification is delivered as an HTTP `POST` request with a JSON en
 
 ## Security & Signature Verification
 
-Each webhook request includes an `X-HeroBM-Signature-256` HTTP header. You should verify this signature using your webhook secret to confirm the request originated from HeroBM:
+Each webhook request includes an `x-herobm-signature` HTTP header containing an HMAC-SHA256 digest of the raw request payload. You should verify this signature using your webhook secret to confirm the request originated from HeroBM:
 
 ```typescript
 import * as crypto from 'crypto';
@@ -92,7 +94,7 @@ function verifyWebhookSignature(
 
 ## Supported Events Matrix
 
-The following 181 event types are actively supported across 50 domain entity types:
+The following 182 event types are actively supported across 50 domain entity types:
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
@@ -149,41 +151,8 @@ The following 181 event types are actively supported across 50 domain entity typ
 
 ---
 
-## Transactional Outbox Architecture & Delivery Guarantees
+## Delivery Retries & Resilience
 
-HeroBM implements the **Transactional Outbox Pattern** to ensure strict data consistency between database mutations and external event notifications:
-
-```mermaid
-flowchart TD
-    DB[(PostgreSQL Primary DB)]
-    Domain[Domain Transaction] -->|1. Atomic Write| DB
-    Outbox[sys_outbox Table] -->|1. Atomic Write| DB
-    Worker[Outbox Dispatch Worker] -->|2. Poll & Lock Batch| DB
-    Worker -->|3. HTTP POST + HMAC Sign| Endpoint[Subscriber Webhook URL]
-    Endpoint -->|4. HTTP 2xx ACK| Worker
-    Endpoint -.->|4. Timeout / 5xx Error| Retry[Exponential Backoff Queue]
-```
-
-### 1. Zero Lost Events (At-Least-Once Delivery)
-* When any database entity is modified (e.g. Sales Order confirmed, Payment posted), the resulting domain event is written to the `sys_outbox` table **inside the exact same SQL transaction**.
-* If the database transaction rolls back, no webhook event is ever published. If the transaction commits, the event is guaranteed to exist.
-
-### 2. Retry Schedule & Exponential Backoff
-If the subscriber endpoint times out (> 10s) or returns an HTTP status outside `200–299`:
-
-| Attempt | Delay / Backoff | Description |
-| :--- | :--- | :--- |
-| **Immediate** | 0s | First delivery attempt upon worker poll. |
-| **Attempt 1** | +1 second | Rapid transient network recovery. |
-| **Attempt 2** | +5 seconds | Short application warm-up window. |
-| **Attempt 3** | +30 seconds | Infrastructure auto-scaling window. |
-| **Attempt 4** | +5 minutes | Minor deployment outage recovery. |
-| **Attempt 5** | +30 minutes | Extended outage retry before Dead Letter. |
-
-### 3. Dead Letter Queue (DLQ) & Manual Replay
-* After 5 failed attempts, the event delivery transitions to **`failed`** (Dead Letter Queue).
-* Operators can inspect the full error stack, payload, and response code under **Technical** → **Developers** (`/admin/developers`) or **Event Queue** (`/admin/event-queue`), and click **Replay Webhook** to redeliver without losing state.
-
-### 4. Subscriber Idempotency Rule
-Because network timeouts can occur after the subscriber processes an event but before the HTTP 200 reaches HeroBM, webhooks are delivered with **at-least-once semantics**. Subscribers must use the **`eventId`** (UUID v4) as a unique idempotency key to prevent duplicate processing.
-
+1. **Success Expectation**: Your endpoint must respond with an HTTP `2xx` status code within 10 seconds.
+2. **Exponential Backoff**: If your server responds with an error (4xx/5xx) or times out, HeroBM automatically retries delivery with exponential backoff (up to 5 attempts).
+3. **Event Queue Inspection**: View delivery statuses, response latencies, and retry failed webhooks under **Technical** → **System Health** → **Event Queue** (`/admin/event-queue`).

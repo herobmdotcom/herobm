@@ -1,96 +1,84 @@
 ---
 id: transfers-quarantine
-title: "Transfers & Quarantine"
-description: "Transfer stock between warehouses and storage bins, manage in-transit shipments, and hold items in quarantine."
+title: "Stock Transfers & Quarantine Control"
+description: "Transfer stock between warehouses, manage in-transit shipments, isolate damaged items in quarantine, and execute disposition actions."
 category: "Inventory"
-order: 11
+order: 14
 resource: "inventory"
 action: "read"
 routes:
   - "/inventory/transfers"
+  - "/inventory/transfers/new"
   - "/inventory/transfers/:id"
   - "/inventory/quarantine"
-tags: ["transfers", "quarantine", "inventory", "in-transit", "quality", "warehouse", "scrap"]
+tags: ["transfers", "quarantine", "in-transit", "warehouse", "logistics", "quality-control"]
 fields:
-  order_number:
-    title: "Transfer Number"
-    summary: "Unique transfer order identifier (e.g. TRN-2026-00034)."
+  transfer_number:
+    title: "Transfer Order Number"
+    summary: "Unique inter-warehouse movement identifier (e.g. TRF-2026-00018)."
   source_location_id:
     title: "Source Warehouse"
-    summary: "Originating facility and bin where stock is picked."
+    summary: "Origin facility supplying inventory."
   destination_location_id:
     title: "Destination Warehouse"
-    summary: "Target facility and receiving bin for the items."
-  quarantine_reason:
-    title: "Quarantine Reason"
-    summary: "Mandatory classification (e.g. Damaged in Transit, Quality Audit, Customer RMA)."
+    summary: "Target facility receiving inventory."
   status:
     title: "Transfer Status"
-    summary: "Stage of the transfer (Draft, Requested, In-Transit, Received, Cancelled)."
+    summary: "State of transfer (Draft, Requested, In Transit, Received, Cancelled)."
+  quarantine_reason:
+    title: "Quarantine Reason"
+    summary: "Cause for isolation (Damaged in Transit, Quality Inspection, Defective Batch, Customer RMA)."
 related:
-  - "inventory"
-  - "receiving"
+  - "inventory-management"
   - "putaway"
+  - "receiving"
   - "purchase-returns"
 ---
 
-# Stock Transfers & Quarantine
+# Stock Transfers & Quarantine Control
 
-The **Transfers & Quarantine** module manages stock relocation between warehouse facilities and controls quality inspection holds on damaged or suspect goods.
+The **Transfers & Quarantine** module manages moving inventory between warehouse facilities and isolating non-conforming or damaged products.
 
 ---
 
-## Transfer Lifecycle & Quarantine Logic
+## Inter-Warehouse Transfers Lifecycle
 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Transfer Order
-    Draft --> Requested : Request Stock from Origin
+    Draft --> Requested : Request / Approve Transfer
     Draft --> Cancelled : Cancel
 
-    Requested --> InTransit : Dispatch from Origin (In-Transit Bin)
+    Requested --> InTransit : Dispatch from Origin (Stock to IN_TRANSIT Bin)
     Requested --> Cancelled : Cancel
 
-    InTransit --> Received : Receive at Destination Storage
-    InTransit --> Cancelled : Abort Transfer
+    InTransit --> Received : Inbound Receipt at Destination (Stock to STAGING Bin)
+    InTransit --> Cancelled : Reversal
+
+    Received --> [*]
 ```
 
-### 1. Inter-Warehouse Virtual Bin Accounting
-To ensure perpetual inventory balances remain accurate while goods are in transit between physical sites:
-* **Dispatching from Origin**: Picking and dispatching items moves them out of the origin facility's pickable storage bins and into a virtual **`in_transit`** location. Physical on-hand at the origin is decremented immediately, while destination available stock does not increase prematurely.
-* **Receiving at Destination**: When the vehicle arrives at the target facility, dock staff receive the goods, transferring units from `in_transit` into destination storage or dock staging bins.
+### 1. In-Transit Accounting & Ledger Movements
+* **Dispatch from Origin**: Stock is deducted from the source warehouse bin and moved into an `in_transit` virtual location. Financial valuation remains on the company inventory asset balance.
+* **Receipt at Destination**: Arriving units are received into destination dock staging (`staging` bin) and queued for putaway into local storage.
 
-### 2. Quarantine Management & Availability Isolation
-* **Isolation Rule**: Any inventory residing in a bin with `bin_type = quarantine` is strictly excluded from `Available Stock` calculations (`isPickableBin = false`). It cannot be reserved by new sales orders or allocated to picking queues.
-* **Three Quarantine Resolution Paths**:
-  1. **Release to Active Stock**: Quality inspection passes; stock is moved from the Quarantine bin into standard `storage`, `pick`, or `bulk` bins, immediately restoring Available Stock.
-  2. **Scrap / Write-off**: Items are condemned as unrecoverable waste. The stock count is adjusted to zero and the system posts:
-     ```
-     Debit:  Inventory Scrap / Shrinkage Expense
-     Credit: Inventory Asset Account
-     ```
-  3. **Return to Vendor (RTV)**: If supplier defect is identified, the system initiates a linked **Purchase Return** (`/purchase-orders/returns`) to ship goods back for vendor credit.
+### 2. Quarantine Disposition Workflows
+Stock placed into a `quarantine` bin is completely quarantined from available inventory calculations. Operators resolve quarantined goods via three paths:
+1. **Release to Active Stock**: After inspection or repackaging, units are transferred to storage bins.
+2. **Scrap / Write-off**: Units are permanently scrapped, debiting Inventory Shrinkage/Loss expense.
+3. **Return to Vendor (RTV)**: Units are routed to a Purchase Return and shipped back to the supplier for credit.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Executing an Inter-Warehouse Stock Transfer
+### 1. Creating and Dispatching an Inter-Warehouse Transfer
 1. Go to **Inventory** → **Transfers** (`/inventory/transfers`).
-2. Click **New Transfer**.
+2. Click **New Transfer** (`/inventory/transfers/new`).
 3. Select the **Source Warehouse** and **Destination Warehouse**.
-4. Add products and transfer quantities.
-5. Click **Dispatch Transfer**. Stock moves to `in_transit`.
-6. At the receiving warehouse, go to **Receiving** → **Incoming Transfers** and click **Receive Stock** to move items into destination storage bins.
-
-### 2. Quarantining and Resolving Stock
-1. Go to **Inventory** → **Quarantine** (`/inventory/quarantine`).
-2. Click **Move to Quarantine**.
-3. Select the product, quantity, origin bin, and enter a mandatory **Quarantine Reason**.
-4. After inspection, choose an action:
-   - Click **Release from Quarantine** to return units to pickable stock.
-   - Click **Write Off / Scrap** to recognize an inventory loss in the General Ledger.
-   - Click **Create Purchase Return** if returning defective items to a vendor.
+4. Add items and transfer quantities.
+5. Click **Request Transfer**, then **Dispatch**.
+6. At the receiving warehouse, locate the incoming transfer under `/inventory/transfers` and click **Receive Transfer**.
 
 ---
 
@@ -98,8 +86,8 @@ To ensure perpetual inventory balances remain accurate while goods are in transi
 
 | Field | Description |
 | :--- | :--- |
-| **Transfer Number** | Unique transfer order reference (e.g. `TRN-2026-00034`). |
-| **Source Warehouse** | Originating facility and bin. |
-| **Destination Warehouse** | Receiving facility and target storage bin. |
-| **Quarantine Reason** | Quality, damage, or audit reason code for held inventory. |
-| **Status** | Stage (`Draft`, `Requested`, `In-Transit`, `Received`, `Cancelled`). |
+| **Transfer Number** | Unique movement reference (`TRF-...`). |
+| **Source Warehouse** | Origin dispatch facility. |
+| **Destination Warehouse** | Destination receiving facility. |
+| **Status** | Stage (`Draft`, `Requested`, `In Transit`, `Received`, `Cancelled`). |
+| **Quarantine Bin** | Isolated location holding defective or uninspected goods. |

@@ -1,6 +1,6 @@
 # Tri-Schema Database Architecture
 
-The Composable ERP utilizes a "Tri-Schema" PostgreSQL database architecture to manage the transition from the legacy ABM system to the modern, API-driven platform. This design cleanly separates legacy data ingestion, transformation, and the operational application core.
+HeroBM utilizes a "Tri-Schema" PostgreSQL database architecture to manage the transition from legacy systems to the modern, API-driven platform. This design cleanly separates legacy data ingestion, transformation, and the operational application core.
 
 ---
 
@@ -19,7 +19,8 @@ flowchart TD
     subgraph "3. Operational Layer (Drizzle ORM)"
         Marts -- "Initial Import Pipeline" --> Core[(herobm_core)]
         App(NestJS API) -- "Reads & Writes" --> Core
-        Core -- "Outbox Relay" --> ERPNext
+        Core -- "Outbox Relay" --> Webhooks[Webhooks & Event Bus]
+        Core -- "Native Double-Entry GL" --> Ledger[Cryptographic General Ledger]
     end
     
     classDef staging fill:#f3e5f5,stroke:#8e24aa
@@ -33,36 +34,35 @@ flowchart TD
 
 ### 1. `public_staging` (The Cleansing Layer)
 * **Owner:** dbt (`pipelines/abm_transform/models/staging/`)
-* **Purpose:** Provides a clean, typed interface over the messy legacy data imported from ABM via ODBC/dlt.
+* **Purpose:** Provides a clean, typed interface over legacy data imported via ODBC/dlt.
 * **Rules:**
-  * Translates ABM column names to `snake_case`.
-  * Coalesces NULLs and safely casts legacy string-math fields into proper `numeric` types.
+  * Translates legacy column names to standard `snake_case`.
+  * Coalesces NULLs and safely casts string-math fields into proper `numeric` types.
   * *No business logic or complex joins occur here.*
 
 ### 2. `public_marts` (The Transformation Layer)
 * **Owner:** dbt (`pipelines/abm_transform/models/marts/`)
 * **Purpose:** Denormalized, flattened tables that apply business logic and join related staging data together.
 * **Rules:**
-  * **Strict Access Boundary:** The application API **DOES NOT** read from or write to `public_marts`.
-  * The only system that reads from `public_marts` is the **Initial Import Pipeline** which seeds the core database during setup/migration.
+  * **Strict Access Boundary:** The application API **DOES NOT** execute operational transactions against `public_marts`.
+  * Used by the initial migration and data import pipelines to seed historical records.
 
 ### 3. `herobm_core` (The Application Source of Truth)
-* **Owner:** Drizzle ORM (`apps/api/src/drizzle/herobm-core-schema.ts`)
-* **Purpose:** The transactional backbone of the custom application.
+* **Owner:** Drizzle ORM (`packages/db-schema/src/*.schema.ts`)
+* **Purpose:** The transactional backbone of the live HeroBM application.
 * **Characteristics:**
-  * Highly normalized.
-  * Every table uses `gen_random_uuid()` UUIDs as primary keys.
-  * Enforces strict Foreign Key constraints and `CHECK` constraints (e.g., verifying `state_code` enums against the state machines).
-  * Contains the `outbox` table utilized by the transactional outbox relay to guarantee ERPNext financial delivery.
+  * Highly normalized relational model.
+  * Every entity uses `gen_random_uuid()` UUIDs as primary keys.
+  * Enforces strict Foreign Key constraints, enum checks, and database-level immutability triggers (`herobm_core.prevent_financial_deletion`).
+  * Contains the `outbox` table utilized by the transactional outbox relay for guaranteed domain event and webhook delivery.
+  * Houses the native Double-Entry General Ledger and SHA-256 cryptographic hash chaining engine.
 * **Rules:**
   * The NestJS API **exclusively READS and WRITES** to this schema.
-  * It represents the live state of the business operations.
+  * It represents the live state of all business and financial operations.
 
 ---
 
-## 2. Managing Schema Synchronization
+## 2. Managing Schema Synchronization & Invariants
 
-Because the platform spans legacy extraction tools (dbt) and modern application ORMs (Drizzle), maintaining structural integrity is critical.
-
-* **Import Mapping:** The import scripts read the flattened views from `public_marts` and map them into the heavily constrained relational structure of `herobm_core`.
-* **Structural Testing:** The system utilizes the AST test **`test_drizzle_schema_sync.ps1`** to automatically detect and prevent schema definition drift between the application and the database.
+* **Modular Schema Definition**: Database tables and relations are maintained as modular TypeScript schemas under `packages/db-schema/src/`.
+* **Automated Structural Testing**: Schema integrity, foreign key references, and DTO alignments are continuously verified by `make test-structural` (`infra/test-utils/run-structural.ts`).

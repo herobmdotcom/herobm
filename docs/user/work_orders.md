@@ -1,119 +1,93 @@
 ---
 id: work-orders
-title: "Manufacturing & Work Orders"
-description: "Schedule production assembly, issue raw materials from stock to WIP, roll up assembly costs, and receive finished goods."
+title: "Work Orders & Assemblies"
+description: "Manage light manufacturing, Bill of Materials (BOM) disassembly, component reservations, assembly costing, and finished goods creation."
 category: "Manufacturing"
 order: 21
 resource: "work-orders"
 action: "read"
 routes:
+  - "/work-orders"
+  - "/work-orders/new"
+  - "/work-orders/:id"
   - "/manufacturing/work-orders"
-  - "/manufacturing/work-orders/:id"
-tags: ["manufacturing", "work-orders", "production", "assembly", "bom", "finished-goods", "wip", "costing"]
+  - "/manufacturing/work-orders/new"
+tags: ["work-orders", "manufacturing", "bom", "assembly", "wip", "costing", "production"]
 fields:
-  order_number:
+  work_order_number:
     title: "Work Order Number"
-    summary: "Unique production job identifier (e.g. WO-2026-00021)."
+    summary: "Unique production job identifier (e.g. WO-2026-00032)."
   product_id:
-    title: "Finished Good"
-    summary: "Target product item and SKU scheduled for manufacture."
-  target_quantity:
-    title: "Target Quantity"
-    summary: "Number of finished units scheduled for assembly."
-  completed_quantity:
-    title: "Completed Quantity"
-    summary: "Actual verified good units produced and received into warehouse stock."
-  location_id:
-    title: "Production Facility"
-    summary: "Warehouse facility where raw materials are consumed and finished goods are stocked."
-  wip_bin_id:
-    title: "WIP Holding Bin"
-    summary: "Dedicated Work-in-Progress staging bin holding picked components during assembly."
-  output_bin_id:
-    title: "Output Destination Bin"
-    summary: "Storage bin where finished manufactured goods are deposited upon completion."
+    title: "Assembly Product"
+    summary: "Finished manufactured item to be produced."
+  quantity_ordered:
+    title: "Target Build Quantity"
+    summary: "Planned number of finished units to assemble."
   status:
     title: "Work Order Status"
-    summary: "Production stage (Draft, Planned, In-Progress, Completed, Cancelled)."
+    summary: "Production state (Draft, Planned, In-Progress, Completed, Cancelled)."
+  assembly_cost:
+    title: "Assembly Unit Cost"
+    summary: "Sum of snapshotted component WAC costs plus additional labor and overhead."
 related:
   - "products"
-  - "inventory"
-  - "picking"
+  - "inventory-management"
   - "putaway"
-  - "general-ledger"
+  - "purchase-demands"
 ---
 
-# Manufacturing & Work Orders
+# Work Orders & Assemblies
 
-The **Work Orders** module coordinates assembly and manufacturing processes. It consumes raw component stock based on Bill of Materials (BOM) formulas, stages Work-in-Progress (WIP), rolls up assembly and additional costs, and receives capitalized finished goods into inventory.
+The **Work Orders & Assemblies** module manages light assembly, kit building, and manufacturing. It decomposes multi-component Bills of Materials (BOM), allocates raw material parts, tracks work-in-progress (WIP), and calculates finished goods unit costs.
 
 ---
 
-## Manufacturing Lifecycle & Cost Rollup Logic
+## Work Order Lifecycle & Costing
 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Work Order
-    Draft --> Planned : Plan Assembly (Verify Components)
+    Draft --> Planned : Plan / Allocate Components
     Draft --> Cancelled : Cancel
 
-    Planned --> InProgress : Start Assembly (Issue Parts to WIP)
-    Planned --> Draft : Revise Quantities
-    Planned --> Cancelled : Cancel
+    Planned --> InProgress : Start Assembly (Issue Components to WIP)
+    Planned --> Cancelled : Cancel (Release Component Reservations)
 
-    InProgress --> Completed : Receive Finished Goods
-    InProgress --> Cancelled : Cancel
+    InProgress --> Completed : Finish Assembly (Stock Finished Units)
+    InProgress --> Cancelled : Abort Assembly (Return Unused Components)
 
-    Cancelled --> Draft : Reopen
+    Completed --> [*]
 ```
 
-### 1. Bill of Materials (BOM) Component Requirements
-When creating a work order, required component quantities are populated from the product's Bill of Materials:
+### 1. Work Order States & Progression
+* **`Draft`**: Production job created, target assembly selected, and component requirements calculated from BOM.
+* **`Planned`**: Components checked and reserved from warehouse storage bins. Shortages enter the Purchase Demands queue.
+* **`In-Progress`**: Production underway. Component stock is physically issued from bins to Work-In-Progress (`wip` bin).
+* **`Completed`**: Finished goods verified, unit cost calculated, finished items moved to Putaway staging, and work order closed.
+* **`Cancelled`**: Job cancelled; reserved or issued components returned to storage.
+
+### 2. Live Assembly Costing & Moving WAC
+The unit cost of the finished assembly is calculated dynamically upon completion:
 
 ```
-Required Component Quantity = Target Quantity * BOM Component Ratio
+Assembly Cost Per Unit = (Sum of Component Quantities * Component Moving WAC) / Target Build Quantity
+Total Work Order Cost = (Assembly Cost Per Unit * Target Build Quantity) + Additional Overhead / Labor Cost
 ```
 
-* **Shortage Detection**: If any raw material component has insufficient stock, the system flags the shortage and logs a linked demand in the **Purchase Demands** queue tagged with the `demandWorkOrderId`.
-* **Component Picking (`work_order_picks`)**: Moving to `Planned` and picking components transfers physical items from standard storage bins into the job's designated **`WIP Holding Bin`**.
-
-### 2. Finished Good Valuation & Cost Rollup
-When assembly is completed, the total manufacturing cost and finished good unit valuation are calculated:
-
-```
-Total Manufacturing Cost = Sum(Actual Component Qty Consumed * Component Unit Cost) + Additional Costs + (Assembly Cost Per Unit * Completed Qty)
-Finished Good Unit Cost = Total Manufacturing Cost / Completed Quantity
-```
-
-The resulting unit cost becomes the capitalized Moving WAC baseline for the newly manufactured inventory batch.
-
-### 3. General Ledger Manufacturing Postings
-
-```
-1. Component Consumption (Issue to Floor):
-   Debit:  Work in Progress (WIP) Asset Account
-   Credit: Raw Materials Inventory Asset Account
-
-2. Finished Goods Completion:
-   Debit:  Finished Goods Inventory Asset Account (Completed Qty * Finished Unit Cost)
-   Credit: Work in Progress (WIP) Asset Account
-   Credit: Direct Labor / Assembly Overhead Absorption Account (if applicable)
-```
+Completing the work order capitalizes the finished product into inventory asset valuation at the new calculated WAC, while crediting the component inventory asset accounts.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Creating and Completing a Work Order
-1. Go to **Manufacturing** → **Work Orders** (`/manufacturing/work-orders`).
-2. Click **New Work Order**.
-3. Select the **Finished Product**, destination **Warehouse Facility**, and specify the **Target Quantity**.
-4. The system auto-populates the single-level Bill of Materials component lines and required quantities.
-5. Click **Save as Draft**, then click **Plan Order** to verify component availability.
-6. Pick the required component parts into the designated **WIP Bin**.
-7. Click **Start Assembly** to advance to `In-Progress`.
-8. When production is finished, enter the **Completed Quantity**, select the destination **Output Bin**, and review any additional assembly charges.
-9. Click **Complete Work Order** to deposit finished units into storage and post capitalized asset entries.
+### 1. Creating and Executing a Work Order
+1. Go to **Manufacturing** → **Work Orders** (`/work-orders`).
+2. Click **New Work Order** (`/work-orders/new`).
+3. Select the **Assembly Product** and enter the **Target Build Quantity**.
+4. The system snapshots component requirements from the active Bill of Materials into `work_order_components`.
+5. Click **Plan Work Order** to verify and reserve component stock.
+6. When assembly begins, click **Start Assembly** to issue components.
+7. Upon completion, enter verified finished units and any additional labor/overhead costs, then click **Complete Work Order**.
 
 ---
 
@@ -121,14 +95,9 @@ The resulting unit cost becomes the capitalized Moving WAC baseline for the newl
 
 | Field | Description |
 | :--- | :--- |
-| **Work Order Number** | Unique production identifier (e.g. `WO-2026-00021`). |
-| **Finished Good** | Assembled product SKU and title. |
-| **Target Quantity** | Scheduled production count. |
-| **Completed Quantity** | Actual verified units manufactured. |
-| **Production Facility** | Warehouse location where assembly occurs. |
-| **WIP Bin** | Staging bin holding raw materials during assembly. |
-| **Output Bin** | Permanent storage bin receiving finished units. |
-| **Assembly Cost Per Unit**| Direct labor/assembly rate per completed unit. |
-| **Additional Cost** | Ad-hoc overhead or machine tooling charge. |
-| **Total Cost** | Total capitalized manufacturing value. |
+| **Work Order Number** | Production identifier (`WO-...`). |
+| **Assembly Product** | Finished item being manufactured. |
+| **Target Build Quantity** | Planned assembly count. |
+| **Components** | List of raw materials and sub-assemblies required. |
 | **Status** | Stage (`Draft`, `Planned`, `In-Progress`, `Completed`, `Cancelled`). |
+| **Assembly Unit Cost** | Total unit cost of the manufactured finished item. |

@@ -1,126 +1,103 @@
 ---
-id: inventory
-title: "Inventory & Stock Ledger"
-description: "Track warehouse bin contents, perpetual stock ledger movements, physical counts, and location balances."
+id: inventory-management
+title: "Inventory & Bin Management"
+description: "Monitor multi-warehouse stock balances, manage bin hierarchies, execute stocktakes, and audit perpetual ledger movements."
 category: "Inventory"
-order: 10
+order: 11
 resource: "inventory"
 action: "read"
 routes:
+  - "/inventory"
+  - "/inventory/locations"
   - "/inventory/bins"
   - "/inventory/ledger"
-  - "/inventory/locations"
-tags: ["inventory", "stock", "bins", "ledger", "locations", "counts", "adjustments", "valuation", "wac"]
+  - "/inventory/stocktakes"
+tags: ["inventory", "stock", "bins", "valuation", "wac", "stocktakes", "warehouse"]
 fields:
   location_id:
     title: "Warehouse Location"
-    summary: "Physical warehouse building or site (e.g. Main Warehouse, Transit Depot)."
+    summary: "Physical distribution center or branch facility."
   bin_code:
-    title: "Storage Bin"
-    summary: "Specific shelf, rack, or aisle coordinate (e.g. A-04-B2)."
+    title: "Bin Identifier"
+    summary: "Coordinate location (e.g. A01-R02-S3-B)."
   bin_type:
-    title: "Bin Type"
-    summary: "Storage classification (storage, pick, bulk, staging, quarantine, in_transit, wip)."
+    title: "Bin Classification"
+    summary: "Type of bin: storage, pick, bulk, staging, quarantine, in_transit, wip."
   quantity_on_hand:
-    title: "On Hand (OH)"
-    summary: "Total physical units physically present in the warehouse facility."
-  quantity_committed:
-    title: "Committed"
-    summary: "Stock allocated to confirmed customer orders and active picking queues."
+    title: "Quantity On Hand"
+    summary: "Total physical stock physically residing in warehouse bins."
   quantity_available:
-    title: "Available (Avail)"
-    summary: "Stock free for new customer orders (Pickable Bins minus Committed stock)."
-  movement_type:
-    title: "Movement Type"
-    summary: "Ledger transaction type: INITIAL_IMPORT, PO_RECEIPT, SO_SHIPMENT, RETURN, ADJUSTMENT, TRANSFER."
+    title: "Quantity Available"
+    summary: "Stock available for new orders (On Hand minus Allocated Reservations)."
 related:
-  - "products"
-  - "transfers-quarantine"
   - "receiving"
+  - "putaway"
   - "picking"
-  - "shipping"
+  - "transfers-quarantine"
+  - "balances"
 ---
 
-# Inventory & Stock Ledger
+# Inventory & Bin Management
 
-The **Inventory** module tracks perpetual stock levels across warehouse locations, individual storage bins, valuation ledgers, and physical count adjustments.
+The **Inventory & Bin Management** module provides perpetual inventory visibility across all warehouse facilities, managing stock balances, multi-zone bin structures, and physical stocktake adjustments.
 
 ---
 
-## Inventory Calculations & Valuation Rules
+## Inventory Architecture & Bin Types
 
-### 1. The Stock Availability Equation
-Availability is calculated dynamically across warehouse storage bins using the canonical availability function:
+```mermaid
+flowchart TD
+    WH[Warehouse Location] --> Z1[Receiving / Staging Zone]
+    WH --> Z2[Active Picking Zone]
+    WH --> Z3[Bulk Storage Racking]
+    WH --> Z4[Quarantine Isolation]
 
-```
-Available Stock = On Hand - Committed Stock - Reserved Stock
-```
-
-* **Pickable Bin Whitelist**: Stock is only eligible for commercial allocation if the storage bin meets the pickability criteria:
-  1. `bin_type` is `storage`, `pick`, or `bulk`.
-  2. `is_unavailable = false` (bin is not locked or under maintenance).
-  3. `is_bonded = false` (stock is cleared for commercial release).
-* **Non-Pickable Bins**: Items in `quarantine`, `staging`, `in_transit`, or `wip` bins are visible in physical **On Hand** totals but are strictly **excluded from Available Stock**.
-* **Committed Stock**: Units reserved for `Confirmed` sales orders, active picking lines, and open production work orders.
-
-### 2. Perpetual Costing & Valuation Strategies
-
-HeroBM supports two perpetual valuation models:
-
-#### A. Moving Weighted Average Cost (WAC)
-WAC is recalculated immediately whenever inbound goods are received at the dock:
-
-```
-New WAC = ((Current QOH * Current WAC) + (Qty Received * Actual Unit Cost)) / (Current QOH + Qty Received)
+    Z1 --> B1[staging Bin]
+    Z2 --> B2[pick Bin]
+    Z2 --> B3[storage Bin]
+    Z3 --> B4[bulk Bin]
+    Z4 --> B5[quarantine Bin]
 ```
 
-* Stored to **4 decimal places** to eliminate fractional rounding drift over high-volume transactions.
-* **COGS at Dispatch**: When goods are shipped to clients, the financial ledger posts:
-  ```
-  Debit:  Cost of Goods Sold (COGS)  (Qty Shipped * Current WAC)
-  Credit: Inventory Asset Account     (Qty Shipped * Current WAC)
-  ```
+### 1. Bin Classifications (`BIN_TYPE`)
+Bins are categorized by operational purpose:
+* **`storage`**: Standard shelving and pallet positions holding sellable inventory.
+* **`pick`**: Dedicated forward pick-face locations.
+* **`bulk`**: High-density overstock and reserve pallet racking.
+* **`staging`**: Temporary staging zones for dock receiving or outbound shipping.
+* **`quarantine`**: Isolated bins holding rejected or damaged stock excluded from sales availability.
+* **`in_transit`**: Virtual bin tracking stock moving between company facilities.
+* **`wip`**: Work-in-progress holding location for manufacturing assemblies.
 
-#### B. Standard Costing & Purchase Price Variance (PPV)
-When using Standard Costing, inventory is capitalized at standard cost regardless of the supplier purchase price:
+### 2. Available Stock Calculation
+The system dynamically computes sellable availability:
 
 ```
-Inventory Value Added = Qty Received * Standard Cost
-Purchase Price Variance (PPV) = (Actual Unit Cost - Standard Cost) * Qty Received
+Available Quantity = On-Hand Stock - Allocated Order Reservations - Quarantine Stock
 ```
 
-* If `Actual Cost > Standard Cost`, the positive difference debits PPV expense.
-* If `Actual Cost < Standard Cost`, the favorable variance credits PPV expense.
-
-### 3. Stock Adjustments & GL Impact
-Stock count corrections generate immutable entries in the Perpetual Stock Ledger and post directly to the General Ledger:
-
-* **Positive Count Adjustment (Surplus Found)**:
-  ```
-  Debit:  Inventory Asset Account
-  Credit: Stocktake Variance Gain / Expense
-  ```
-* **Negative Count Adjustment (Shrinkage / Damage / Scrap)**:
-  ```
-  Debit:  Inventory Shrinkage / Loss Expense
-  Credit: Inventory Asset Account
-  ```
+* **On-Hand**: Physical inventory present in warehouse storage, pick, and bulk bins.
+* **Allocated**: Units committed to confirmed customer sales orders awaiting picking/dispatch.
+* **Quarantine**: Units in quarantine bins awaiting inspection or return.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Checking Bin Contents and Availability
-1. Go to **Inventory** → **Bin Contents** (`/inventory/bins`).
-2. Filter by warehouse facility, SKU, or bin coordinate.
-3. Review physical On Hand, Committed reservations, and free Available units.
+### 1. Performing an Ad-Hoc Stock Adjustment
+1. Go to **Inventory** (`/inventory`).
+2. Search for the product SKU.
+3. Click **Adjust Stock**.
+4. Select the **Warehouse** and specific **Bin Location**.
+5. Enter the **Quantity Change** (+/-) and select a reason code (e.g. Found Stock, Breakage).
+6. Click **Confirm Adjustment**. The inventory ledger updates immediately, and the balancing expense posts to the General Ledger.
 
-### 2. Performing a Stock Adjustment
-1. Go to **Inventory** → **Stock Ledger** (`/inventory/ledger`).
-2. Click **Stock Adjustment**.
-3. Select the **Warehouse**, **Storage Bin**, and **Product**.
-4. Enter the count variance (+/- quantity) and select a mandatory **Adjustment Reason**.
-5. Click **Post Adjustment**. Perpetual stock balances and GL inventory assets update immediately.
+### 2. Conducting a Stocktake
+1. Go to **Inventory** → **Stocktakes** (`/inventory/stocktakes`).
+2. Click **New Stocktake** and select the warehouse or zone.
+3. Warehouse staff count physical items and enter counts into the stocktake sheet.
+4. Review calculated variances.
+5. Click **Post Stocktake** to apply inventory adjustments atomically.
 
 ---
 
@@ -128,10 +105,10 @@ Stock count corrections generate immutable entries in the Perpetual Stock Ledger
 
 | Field | Description |
 | :--- | :--- |
-| **Warehouse Location** | Facility or site where stock is physically situated. |
-| **Bin Coordinate** | Aisle, rack, and shelf storage location (e.g. `A-04-B2`). |
-| **Bin Type** | Functional category (`storage`, `pick`, `bulk`, `staging`, `quarantine`, `in_transit`, `wip`). |
-| **On Hand** | Total physical quantity residing in the facility. |
-| **Committed** | Quantity reserved for open sales orders and work orders. |
-| **Available** | Free stock in eligible pickable bins ready for new orders. |
-| **Movement Type** | Transaction type in the perpetual ledger (`INITIAL_IMPORT`, `PO_RECEIPT`, `SO_SHIPMENT`, `RETURN`, `ADJUSTMENT`, `TRANSFER`). |
+| **Product SKU** | Unique catalog identifier. |
+| **Warehouse** | Physical facility location. |
+| **Bin Location** | Shelf/rack address (`storage`, `pick`, `bulk`, `staging`, `quarantine`). |
+| **On Hand** | Total physical count present in bins. |
+| **Allocated** | Units reserved for confirmed customer orders. |
+| **Available** | Net sellable stock (`On Hand - Allocated - Quarantine`). |
+| **WAC Unit Cost** | Current Moving Weighted Average Cost valuation. |

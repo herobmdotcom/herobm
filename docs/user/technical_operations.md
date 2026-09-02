@@ -11,6 +11,7 @@ routes:
   - "/admin/email/outbox"
   - "/admin/email/settings"
   - "/admin/import/csv"
+  - "/admin/export/csv"
   - "/admin/import/abm"
   - "/admin/import/odoo"
   - "/admin/event-queue"

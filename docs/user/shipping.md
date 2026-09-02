@@ -1,7 +1,7 @@
 ---
 id: inventory-shipping
-title: "Shipping & Outbound Logistics"
-description: "Inspect picked items, execute scan-to-dispatch barcode fulfillment, record carrier tracking details, and confirm shipment dispatch."
+title: "Outbound Shipping & Dispatch"
+description: "Pack picked orders, assign carrier tracking details, record outbound shipments, post COGS entries, and execute fast-track scan-to-dispatch."
 category: "Inventory"
 order: 15
 resource: "sales-orders"
@@ -9,109 +9,87 @@ action: "read"
 routes:
   - "/inventory/shipping"
   - "/inventory/shipping/scan-to-dispatch"
-  - "/shipments/returns"
-tags: ["shipping", "logistics", "dispatch", "carriers", "tracking", "scan-to-dispatch", "barcode", "zebra", "rtv"]
+tags: ["shipping", "dispatch", "fulfillment", "tracking", "cogs", "scan-to-dispatch", "packing-slips", "labels"]
 fields:
-  shipping_notes:
-    title: "Driver Instructions"
-    summary: "Special delivery instructions (e.g. Tailgate required, Gate access code)."
+  shipment_number:
+    title: "Shipment Number"
+    summary: "Unique outbound shipment reference (e.g. SHP-2026-00045)."
+  sales_order_id:
+    title: "Sales Order"
+    summary: "Customer order associated with the shipment."
+  carrier_id:
+    title: "Carrier / Freight Provider"
+    summary: "Logistics provider transporting goods (e.g. DHL, FedEx, AusPost, Internal Fleet)."
   tracking_number:
-    title: "Carrier Tracking Number"
-    summary: "External consignment or carrier tracking number recorded for customer reference."
-  scanner_input:
-    title: "Barcode Scanner Input"
-    summary: "Continuous auto-focused input field for USB/Bluetooth hardware scanners and mobile terminals."
-  barcode_payload:
-    title: "Scan-to-Pick Barcode"
-    summary: "Canonical barcode string encoding order ID, sales order line ID, bin ID, and quantity."
-  dispatch_action:
-    title: "Ship / Dispatch Action"
-    summary: "Generates the shipment record and advances state directly to Dispatched."
+    title: "Tracking Number"
+    summary: "Carrier tracking code or consignment note number entered at dispatch."
+  state_code:
+    title: "Shipment Status"
+    summary: "State of the shipment record (Draft, Dispatched, Partially Received, Received, Cancelled)."
 related:
-  - "shipments"
-  - "picking"
   - "sales-orders"
-  - "purchase-returns"
+  - "picking"
+  - "inventory"
+  - "sales-invoices"
 ---
 
-# Shipping & Outbound Logistics
+# Outbound Shipping & Dispatch
 
-The **Shipping** desk is the final checkpoint before goods leave the facility. Operators review picked items staged in the shipping area, record carrier tracking numbers and driver instructions, print delivery packing slips, and confirm outbound dispatch.
+The **Shipping** module manages packing, carrier tracking assignment, outbound consignment dispatch, and automated Cost of Goods Sold (COGS) accounting integration.
 
 ---
 
-## Outbound Logistics Workflows
+## Outbound Dispatch Lifecycle & Accounting
 
 ```mermaid
 flowchart TD
-    A[Picked Order Staged in SHIPPING Bin] --> B{Fulfillment Workbench}
-    B -->|Standard Workbench| C[Shipping Workbench /inventory/shipping]
-    B -->|Fast-Track Barcode Station| D[Scan-to-Dispatch Station /inventory/shipping/scan-to-dispatch]
-
-    C --> E[Select Order, Enter Tracking & Line Qtys]
-    D --> F[Scan Barcodes to Auto-Pick & Group Order]
-
-    E --> G[Click Ship Order / Ship Partial]
-    F --> G
-
-    G --> H[1. Generate Shipment Record & Mark DISPATCHED]
-    G --> I[2. Relieve Location Inventory & Post COGS to GL]
-    G --> J[3. Print Branded Delivery Docket / Packing Slip PDF]
+    A[Order Lines Picked to SHIPPING Staging Bin] --> B[Shipping Workbench /inventory/shipping]
+    B --> C[Enter Carrier & Tracking Number]
+    C --> D[Click Dispatch Shipment]
+    D --> E[1. Create Shipment Record in 'dispatched' State]
+    D --> F[2. Decrement Stock from Warehouse SHIPPING Staging Bin]
+    D --> G[3. Post Automated COGS General Ledger Journal]
+    D --> H[4. Update Sales Order to 'Shipped']
 ```
 
-### 1. Shipment Channels
+### 1. Shipment States & Progression
+* **`Draft`**: Packing list is created and lines are verified at the packing bench.
+* **`Dispatched`**: The carrier collects the parcel. Stock is permanently cleared from the location's `SHIPPING` staging bin, and the order advances to `Shipped`.
+* **`Partially Received` / `Received`**: Used for transfer shipments arriving at destination facilities.
+* **`Cancelled`**: Voided shipment before dispatch.
 
-- **Shipping Workbench (`/inventory/shipping`)**: Visual dispatch interface to review open orders ready for shipping, enter carrier tracking details, adjust line quantities for partial shipments, and generate outbound consignments.
-- **Scan-to-Dispatch (`/inventory/shipping/scan-to-dispatch`)**: High-velocity barcode fulfillment station designed for rapid pick-and-pack operations with handheld wireless or USB barcode scanners.
-- **Supplier Returns Dispatch (`/shipments/returns`)**: Staged vendor return lines are reviewed, packed, and marked shipped to decrement inventory and notify procurement.
+### 2. General Ledger COGS Posting
+Dispatching an outbound customer shipment immediately triggers an automated double-entry GL journal:
 
----
-
-## Scan to Dispatch (Fast-Track Barcode Fulfillment)
-
-The **Scan-to-Dispatch** interface (`/inventory/shipping/scan-to-dispatch`) combines line pick registration and shipment dispatch into a single scan-driven workflow.
-
-### 1. Hardware Scanner Integration
-- **Hands-Free Autofocus**: The scanner input field maintains continuous focus automatically, eliminating the need to use a mouse or keyboard between scans.
-- **Auditory Feedback**:
-  - **Success Chime (880 Hz)**: Confirms valid barcode scans, line pick registrations, and successful order dispatches.
-  - **Error Tone (220 Hz)**: Alerts the operator immediately if an invalid barcode, unallocated line, or system error occurs.
-
-### 2. Barcode Format Specification
-The scanner processes standard Zebra pick label barcodes formatted according to the HeroBM canonical pick payload:
-
-```text
-PICK:{orderId}:{lineId}:{binId}:{quantity}
+```
+Debit:  Cost of Goods Sold (COGS)  (Total dispatched units * moving WAC unit cost)
+Credit: Inventory Asset Account     (Total dispatched units * moving WAC unit cost)
 ```
 
-- **`orderId`**: UUID of the sales order being fulfilled.
-- **`lineId`**: UUID of the specific sales order line item.
-- **`binId`**: UUID of the warehouse bin location where the stock was picked.
-- **`quantity`**: Picked unit count (defaults to `1` if omitted).
-
-### 3. Real-Time Order Cards & Aggregation
-As barcodes are scanned:
-- Scans are automatically aggregated into distinct **Order Cards** in the active session list, sorted by most recent activity.
-- The interface displays real-time progress indicators:
-  - **Fully Picked**: All physical line items on the order have been scanned.
-  - **Partially Picked (X / Y lines)**: Indicates remaining unpicked lines.
-- Expanding an order card displays the full list of order lines, bin allocations, picked counts, and individual pick cancellation buttons.
-
-### 4. One-Click Automated Dispatch
-- **Ship Order**: Enabled when all lines (or all available physical lines) have been picked. In a single automated action, the system queries the shipping context, creates the shipment record, transitions the shipment state to `DISPATCHED`, posts COGS, and clears the order from the active queue.
-- **Ship Partial**: Available when an order is partially picked and remaining lines are on backorder, allowing dispatch of available goods without stalling the customer.
+### 3. Scan-to-Dispatch High-Velocity Station
+For distribution centers with dedicated packing conveyors, the **Scan-to-Dispatch Station** (`/inventory/shipping/scan-to-dispatch`) provides barcode-driven packing and instant dispatch:
+* Operator scans the order or line barcode.
+* System verifies that items have been picked into staging.
+* Operator inputs tracking number and dispatches with a single scan, printing the Packing Slip PDF and Delivery Docket automatically.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Dispatching from the Shipping Workbench
+### 1. Dispatching a Shipment via Shipping Workbench
 1. Go to **Inventory** → **Shipping** (`/inventory/shipping`).
-2. Select an order from the **Ready to Ship** or **Partially Picked** tabs.
-3. Review the customer address and picked quantities.
-4. (Optional) Enter the carrier's **Tracking Number** and any special **Driver Instructions**.
-5. Click **Ship Order** (or **Ship Partial** if shipping only a subset of picked lines).
-6. The shipment record is created in `DISPATCHED` state and the packing slip PDF is ready to print.
+2. Locate the order with picked lines in the dispatch queue.
+3. Click **Create Shipment**.
+4. Select the **Carrier** and enter the **Tracking Number** and **Special Delivery Instructions**.
+5. Confirm the dispatch quantities for each picked line.
+6. Click **Dispatch Shipment**.
+7. Print the generated **Delivery Docket / Packing Slip** and apply to the carton.
+
+### 2. High-Speed Fulfillment via Scan-to-Dispatch
+1. Go to **Inventory** → **Shipping** → **Scan to Dispatch** (`/inventory/shipping/scan-to-dispatch`).
+2. Scan the barcode on the pick sheet (`PICK:...`).
+3. Enter or scan the carrier consignment barcode into the **Tracking Number** field.
+4. Press Enter or click **Dispatch**.
 
 ---
 
@@ -119,9 +97,9 @@ As barcodes are scanned:
 
 | Field | Description |
 | :--- | :--- |
-| **Order Number** | Linked Sales Order number (`ORD-...`). |
-| **Customer** | Name of the recipient account. |
-| **Tracking Number** | Carrier consignment tracking code for freight lookup. |
-| **Driver Notes** | Special freight instructions printed on the delivery docket. |
-| **Shipment Status** | Stage of the shipment (`Draft`, `Dispatched`, `Partially Received`, `Received`, `Cancelled`). |
-| **Available to Ship** | Picked physical units currently staged in the `SHIPPING` bin ready for dispatch. |
+| **Shipment Number** | System consignment reference (`SHP-...`). |
+| **Sales Order** | Linked customer order number (`ORD-...`). |
+| **Carrier** | Assigned freight or courier company. |
+| **Tracking Number** | Carrier consignment or package tracking code. |
+| **Shipment Date** | Exact date and timestamp of outbound carrier handoff. |
+| **Shipment Status** | Stage (`Draft`, `Dispatched`, `Partially Received`, `Received`, `Cancelled`). |

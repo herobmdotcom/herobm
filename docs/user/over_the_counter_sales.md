@@ -1,39 +1,24 @@
 ---
 id: over-the-counter-sales
-title: "Over-The-Counter (OTC) Sales"
-description: "Process rapid trade counter sales with barcode scanning, direct bin stock deduction, instant tax invoicing, and immediate payment receipts."
+title: "Over-the-Counter Sales & POS"
+description: "Process walk-in counter sales, cash and card register settlements, instant inventory fulfillment, and receipt printing."
 category: "Sales"
-order: 4
+order: 11
 resource: "sales-orders"
 action: "read"
 routes:
   - "/sales-orders/counter"
-tags: ["sales", "counter", "otc", "pos", "barcode", "fulfillment", "walk-in", "invoices", "payments"]
+tags: ["pos", "counter-sales", "retail", "cash", "card", "receipts", "otc"]
 fields:
   customer_id:
-    title: "Customer"
-    summary: "Customer account. Defaults to the system Walk-In Customer for cash trade, or switch to an account customer for negotiated trade pricing."
-  fulfillment_location_id:
-    title: "Counter Location"
-    summary: "Warehouse location where stock is held and physically handed to the customer."
-  barcode_scanner:
-    title: "Barcode Scanner & Search"
-    summary: "Auto-focused scanner input for fast SKU/barcode scanning or manual product search."
-  product_id:
-    title: "Product Item"
-    summary: "Product line item with live stock-on-hand availability, unit price, and discount."
-  discount_percentage:
-    title: "Discount %"
-    summary: "Line discount percentage (0% to 100%), pre-filled from customer defaults or adjusted manually."
-  tax_category_id:
-    title: "Tax Category"
-    summary: "Tax classification (e.g. 10% GST, Zero-Rated) applied to calculate exact line tax."
-  tender_type:
+    title: "Customer (Optional)"
+    summary: "Walk-in Cash Customer or assigned account debtor."
+  payment_method:
     title: "Tender Type"
-    summary: "Payment method: Cash, Card / EFTPOS, Direct Deposit (EFT), or Charge to Account."
-  notes:
-    title: "Order Notes"
-    summary: "Optional transaction notes appended to the sales order and printed on tax invoices."
+    summary: "Payment tender: Cash, EFTPOS / Card, Direct Deposit, or Customer Account."
+  amount_tendered:
+    title: "Amount Tendered"
+    summary: "Physical cash handed over (calculates exact change required)."
 related:
   - "sales-orders"
   - "sales-invoices"
@@ -41,80 +26,53 @@ related:
   - "inventory"
 ---
 
-# Over-The-Counter (OTC) Sales
+# Over-the-Counter Sales & POS
 
-The **Over-The-Counter (OTC) Sales** station provides a streamlined, rapid point-of-sale interface tailored for trade counters, pickup desks, and walk-in retail transactions.
-
-Instead of navigating the standard multi-step fulfillment lifecycle (Order → Pick Queue → Dispatch Shipments → AR Invoicing → Payment Allocation), the OTC module unifies all operational and accounting actions into a single atomic transaction.
+The **Over-the-Counter (OTC) Sales** module provides a streamlined Point-of-Sale (POS) interface for trade counters and physical branches, combining order creation, payment collection, stock decrement, and receipt printing into an atomic transaction.
 
 ---
 
-## Where to Find It
-
-You can access the Over-The-Counter Sales module in two ways:
-
-1. **Sidebar Navigation**: Go to **Sales** → **Counter Sales** (`/sales-orders/counter`).
-2. **Sales Orders List**: Click the **Counter Sale** button in the top action bar of the **Sales Orders** page (`/sales-orders`).
-
----
-
-## Key Features
+## Counter Sales Transaction Architecture
 
 ```mermaid
-flowchart LR
-    A[1. Scan Products / Select Customer] --> B[2. Choose Tender Type]
-    B --> C[3. Click Complete Counter Sale]
-    C --> D[Order Created & Confirmed]
-    C --> E[Stock Deducted from Pickable Bins]
-    C --> F[Tax Invoice Generated]
-    C --> G[Payment Allocated to Invoice]
+flowchart TD
+    A[Operator Scans Items at Trade Counter] --> B[Enter Cash / Card Payment]
+    B --> C[Click Complete Sale]
+    C --> D[1. Sales Order Auto-Completed & Invoiced]
+    C --> E[2. Stock Decremented from Counter Bin]
+    C --> F[3. Cash/Card GL Entry & Revenue Journal Posted Atomically]
+    C --> G[4. Branded Thermal Receipt PDF Printed]
 ```
 
-- **Hardware Barcode Scanning**: Active scanner listener automatically captures barcode scans without requiring manual mouse focusing.
-- **Walk-In & Account Customer Support**: Defaults to the seeded system `Walk-In Customer` (`CUST-WALKIN`) with standard cash terms, while allowing instant lookup of regular trade account customers to apply custom price matrices and discounts.
-- **Direct Stock Deduction (No Freight Shipments)**: Automatically deducts physical inventory from available pickable bins at the selected counter location and posts Cost of Goods Sold (COGS) to the General Ledger.
-- **Instant Billing & Payment**: Generates a finalized Tax Invoice and records an allocated Payment Receipt in real time.
-- **1-Click Printing**: Immediate access to print or download PDF Order Confirmations, Tax Invoices, and Payment Receipts upon completion.
+### 1. Atomic POS Execution
+When the cashier completes an OTC sale, HeroBM executes in a single database transaction:
+1. Creates a Sales Order in `Shipped` / `Invoiced` status.
+2. Decrements inventory from the branch's counter bin.
+3. Generates a fully paid Sales Invoice and records the payment entry into the Cash Drawer or EFTPOS clearing GL account.
+4. Generates a compact thermal receipt formatted for counter printers.
+
+### 2. General Ledger Prerequisites
+To process counter sales with cash or EFTPOS settlement, the organization must configure default OTC Cash & Card clearing accounts in **Administration** → **Settings** → **Financial Settings** (`/admin/settings/financial`).
 
 ---
 
-## Step-by-Step Counter Workflow
+## Step-by-Step Workflows
 
-### 1. Identify the Customer & Location
-1. **Counter Location**: Ensure the correct warehouse/counter location is selected in the top header.
-2. **Customer**: 
-   - For walk-in retail sales, keep the default **Walk-In Customer**.
-   - For trade account customers, type in the **Customer** field to search by company name or account number. Negotiated discounts and price tiers are loaded immediately.
-
-### 2. Add Line Items
-- **Barcode Scanning**: Scan product barcodes (EAN/SKU) with a USB or Bluetooth scanner. Each scan increments the line quantity with audio feedback.
-- **Search by Name/SKU**: Type SKU or description into the search box and press `Enter` or select from the dropdown.
-- **Custom Lines**: Click **+ Add Custom Line** to add one-off non-catalog parts or miscellaneous counter charges.
-- **Comment Lines**: Click **+ Add Comment** to attach notes or instructions to the printed invoice.
-
-### 3. Review Pricing & Taxes
-- Line quantities, unit prices, discounts (0% to 100%), and tax categories can be edited directly in the grid.
-- Subtotal, Tax (GST), and Grand Total calculate live with strict 2-decimal arithmetic rounding.
-
-### 4. Select Tender & Complete Sale
-Select the payment method in the bottom right panel:
-- **Cash**: Records an immediate customer payment receipt posted to the system **Default OTC Cash Account** (configured under **Admin** → **Settings** → **Financial**).
-- **Card / EFTPOS**: Records an immediate customer payment receipt posted to the system **Default OTC Card / EFTPOS Account** (configured under **Admin** → **Settings** → **Financial**).
-- **Direct Deposit (EFT)**: Records an immediate electronic receipt posted to the system **Default OTC Card / EFTPOS Account**.
-- **On Account**: Generates the invoice with outstanding balance under the customer's payment terms (without creating an immediate cash receipt).
-
-> [!NOTE]
-> Under strict accounting mode, if an OTC payment method is tendered and the corresponding default GL account has not been configured in Financial Settings, the payment recording is blocked with a clear prompt to configure the account.
-
-Click **Complete Counter Sale**.
+### 1. Processing a Walk-In Sale
+1. Go to **Sales** → **Counter Sales** (`/sales-orders/counter`).
+2. Search or scan product SKUs to add items to the cart.
+3. Select the customer (defaults to `Cash Sale / Walk-In`).
+4. Select the **Payment Method** (`Cash` or `Card`).
+5. For cash sales, enter the **Amount Tendered** to view change due.
+6. Click **Complete Sale**. The receipt prints instantly, and stock decrements from the counter bin.
 
 ---
 
-## Post-Sale Modal & Documents
+## Field Reference
 
-Once completed, a summary modal displays the generated entity references:
-- **Sales Order** (`ORD-...`): Click the order link to view full order details.
-- **Tax Invoice** (`INV-...`): Click to inspect accounts receivable postings.
-- **Payment** (`PAY-...`): Click to review the cash receipt entry and journal postings.
-
-Click the **🖨 Print** icon next to any entity to generate and open the official Typst PDF document in a new tab. Click **New Counter Sale** to reset the station for the next customer.
+| Field | Description |
+| :--- | :--- |
+| **Customer** | Account receiving the receipt (Cash Walk-In by default). |
+| **Payment Method** | Cash, Card/EFTPOS, Direct Deposit, or Trade Account. |
+| **Tendered Amount** | Cash received from customer. |
+| **Change Due** | Difference returned to walk-in customer. |

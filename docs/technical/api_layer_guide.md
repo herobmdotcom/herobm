@@ -18,9 +18,9 @@ The API connects to Postgres using individual connection parameters (`host`, `us
 
 ## What the API layer does
 
-1. **Authenticate** — Issues JWTs via `POST /api/auth/login`. Every data endpoint validates the token and extracts the user's role.
-2. **Authorise** — The Casbin guard evaluates the user's role against a policy file (`policy.csv`) using the RBAC model (`model.conf`). Controllers declare their resource and action via `@CasbinResource` / `@CasbinAction` decorators.
-3. **Query** — Services use Drizzle ORM to run typed `SELECT` queries against the marts tables. All list endpoints support pagination (`page`, `limit`) and search (`search`).
+1. **Authenticate** — Issues JWTs via `POST /api/auth/login` and validates API Keys via `x-api-key`. Every endpoint extracts the user's role and identity.
+2. **Authorise** — The Casbin guard evaluates the user's role against live policies stored in PostgreSQL (`casbin_rules`) using a 4-tuple Deny-Override model (`model.conf`). Controllers declare their resource and action via `@CasbinResource` / `@CasbinAction` decorators.
+3. **Query & Mutate** — Services use Drizzle ORM to run typed queries against the `herobm_core` schema via `@herobm/db-schema`. All list endpoints support pagination (`page`, `limit`) and search (`search`).
 4. **Observe** — A global `MetricsInterceptor` logs every request (method, URL, status code, duration) and records Prometheus metrics.
 
 ## Endpoint Inventory & Surface Area

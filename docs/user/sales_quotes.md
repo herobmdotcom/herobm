@@ -1,80 +1,79 @@
 ---
 id: sales-quotes
 title: "Sales Quotes"
-description: "Prepare customer price estimates, send branded PDF quotations, and convert quotes to Sales Orders."
+description: "Create commercial price proposals, evaluate customer credit limits and profit margins, and convert quotes to confirmed orders."
 category: "Sales"
-order: 3
+order: 6
 resource: "sales-orders"
 action: "read"
 routes:
   - "/sales-quotes"
-tags: ["quotes", "sales", "estimates", "pricing", "pdf", "conversions"]
+  - "/sales-quotes/new"
+tags: ["sales", "quotes", "estimates", "margins", "credit-limit", "pricing", "pricing-scales"]
 fields:
   customer_id:
-    title: "Customer"
-    summary: "Target customer account. Automatically pre-fills currency, terms, addresses, and price scale (1–4)."
-  quote_number:
-    title: "Quote Number"
-    summary: "Unique quote identifier (corresponds directly to the underlying Sales Order number)."
-  currency_code:
-    title: "Currency"
-    summary: "Transaction currency for all quoted line items, inherited from the customer."
-  line_items:
-    title: "Line Items"
-    summary: "Products, quantities, unit prices, discount matrix percentages, and tax rates."
+    title: "Customer Account"
+    summary: "Debtor account. Automatically populates currency, credit limits, price scale, and default tax position."
+  valid_until:
+    title: "Quote Expiry Date"
+    summary: "Date through which quoted pricing, promotional discounts, and terms are commercially guaranteed."
+  margin_percent:
+    title: "Real-Time Gross Margin"
+    summary: "Calculated profit margin ((Price - Cost) / Price) updated dynamically per line."
+  state_code:
+    title: "Quote Status"
+    summary: "State within the order pipeline (Draft or Quoted)."
 related:
-  - "customers"
   - "sales-orders"
+  - "customers"
   - "products"
+  - "dynamic-reporting"
 ---
 
 # Sales Quotes
 
-The **Sales Quotes** module allows sales representatives to prepare formal price proposals, inspect live warehouse stock availability, and issue branded PDF quotations. 
-
-Sales Quotes are implemented directly as filtered views of Sales Orders in the `Draft` or `Quoted` state.
+The **Sales Quotes** module manages the commercial quotation process. Sales representatives can prepare price proposals, evaluate gross profit margins, check customer credit limits, and seamlessly convert winning proposals into confirmed sales orders.
 
 ---
 
-## Quote Lifecycle & Business Logic
+## Quote Lifecycle & Architecture
+
+In HeroBM, quotes and sales orders share a unified underlying entity (`sales_orders` table). A quote is simply an order residing in the `Draft` or `Quoted` lifecycle state:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft : Create Quote (Draft Order)
-    Draft --> Quoted : Issue Quote (Lock Terms)
-    Draft --> Cancelled : Discard
-
-    Quoted --> Confirmed : Customer Approves (Commit Stock)
-    Quoted --> Draft : Revise Commercial Terms
-    Quoted --> Cancelled : Customer Rejects
+    [*] --> Draft : Create Quote
+    Draft --> Quoted : Send Quote to Customer
+    Draft --> Cancelled : Reject / Cancel
+    Quoted --> Confirmed : Accept / Convert to Order (Stock Reserved)
+    Quoted --> Cancelled : Customer Declined
 ```
 
-### 1. Underlying Architecture & Commercial Locking
-* **Single Entity Pipeline**: A quote is a Sales Order in `Draft` or `Quoted` state. There is no duplicate record creation when converting to an order.
-* **Pricing Freeze**: Moving to `Quoted` locks the price scale, line discount percentages, exchange rates, and tax categories to preserve the exact commercial agreement offered to the client.
-* **Revision Workflow**: To modify quantities or pricing on a locked quote, click **Revise Quote** to return the record to `Draft`.
+### 1. Unified Entity Pipeline
+* Creating a quote generates a standard order record in `Draft` or `Quoted` state.
+* Converting a quote executes the `confirm` action, advancing the status to `Confirmed`. No duplicate records or messy data migrations occur.
 
-### 2. Stock Allocation vs. Availability Visibility
-* **Draft & Quoted Visibility**: The quote screen displays live On Hand (OH) and Available (Avail) stock across all storage bins, but **does not reserve physical stock**.
-* **Stock Commitment at Confirmation**: Physical inventory is strictly committed when an operator clicks **Confirm Order** (transitioning the record to `Confirmed`).
-* **Inventory Gap Resolution**: If available stock is insufficient at the moment of confirmation, the system commits currently available inventory and logs open backorder demands in Purchasing.
+### 2. Live Margin & Credit Verification
+* **Real-Time Margin Tracking**: As products and discounts are entered, each line calculates real-time gross margin based on the product's active Moving Weighted Average Cost (WAC).
+* **Credit Limit Verification**: The system evaluates total customer exposure (Open Invoices + Unbilled Confirmed Orders + This Quote) against their pre-configured credit limit.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Creating and Sending a Quotation
-1. Go to **Sales** → **Sales Quotes** (`/sales-quotes`).
-2. Click **New Quote** (creates a new order in `Draft`).
-3. Select the **Customer**. Price scale, currency, and addresses fill automatically.
-4. Add line items, quantities, unit prices, and discounts.
-5. Click **Save as Draft**.
-6. Click **Issue Quote** to lock terms, then click **PDF** or **Email** to transmit the quote to the customer.
+### 1. Creating and Emailing a Quote
+1. Go to **Sales** → **Quotes** (`/sales-quotes`).
+2. Click **New Quote** (`/sales-quotes/new`).
+3. Select the **Customer**. Price scale, currency, and tax positions load automatically.
+4. Set the **Expiry Date** (`valid_until`).
+5. Add items, enter negotiated prices or line discounts.
+6. Click **Save as Quote** (sets status to `Quoted`).
+7. Click **Email** to send the branded Typst PDF quotation directly to the customer.
 
-### 2. Converting an Accepted Quote
-1. Open the accepted quote from `/sales-quotes`.
-2. Click **Confirm Order**.
-3. The system performs real-time credit checks and stock reservation, transitioning the document into a live confirmed Sales Order for fulfillment.
+### 2. Converting a Quote to a Confirmed Order
+1. Open the winning quote.
+2. Click **Convert to Order** (or **Confirm Order**).
+3. The order advances to `Confirmed`, reserving available stock and queuing lines for warehouse picking.
 
 ---
 
@@ -82,8 +81,8 @@ stateDiagram-v2
 
 | Field | Description |
 | :--- | :--- |
-| **Customer** | Customer account receiving the quotation. |
-| **Quote Number** | Unique quote identifier (matches Sales Order number `ORD-...`). |
-| **Currency** | Transaction currency for all quoted prices and totals. |
-| **Price Scale** | Default pricing scale (1–4) used for product list prices. |
-| **Total Amount** | Grand total including calculated taxes. |
+| **Customer** | Account receiving the quotation. |
+| **Quote Number** | Unique identifier (`ORD-...`). |
+| **Expiry Date** | Commercial validity cut-off date. |
+| **Gross Margin %** | Calculated profitability metric (`(Price - WAC) / Price`). |
+| **Status** | Stage (`Draft`, `Quoted`, `Confirmed`, `Cancelled`). |

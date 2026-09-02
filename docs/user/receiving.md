@@ -1,105 +1,95 @@
 ---
 id: receiving
-title: "Goods Receiving"
-description: "Process inbound supplier deliveries, customer returns, and incoming inter-warehouse transfers."
+title: "Dock Receiving & GRNI Accruals"
+description: "Process inbound supplier deliveries, update Moving Weighted Average Cost (WAC), record GRNI accruals, and isolate damaged items to quarantine."
 category: "Inventory"
 order: 12
-resource: "inventory"
+resource: "orders"
 action: "read"
 routes:
+  - "/inventory/receiving"
   - "/receiving"
   - "/receiving/new"
   - "/receiving/returns"
   - "/receiving/transfers"
-tags: ["receiving", "inbound", "suppliers", "receipts", "grn", "returns", "grni", "wac"]
+tags: ["receiving", "dock", "grn", "grni", "wac", "costing", "quarantine", "inventory"]
 fields:
-  receipt_number:
-    title: "Goods Receipt Note (GRN)"
-    summary: "Unique inbound receipt record (e.g. GRN-2026-00155)."
   purchase_order_id:
     title: "Purchase Order"
-    summary: "Supplier purchase order against which items are being received."
-  packing_slip_number:
-    title: "Supplier Delivery Note / Slip"
-    summary: "External consignment or carrier tracking number on supplier packaging."
+    summary: "Originating PO against which goods are being accepted."
   received_quantity:
     title: "Received Quantity"
-    summary: "Actual verified physical count accepted at the dock."
+    summary: "Physical item count inspected and accepted into warehouse stock."
+  damaged_quantity:
+    title: "Quarantine / Damaged Quantity"
+    summary: "Damaged units routed immediately to quarantine bins for return to vendor."
   unit_cost:
     title: "Receipt Unit Cost"
-    summary: "Purchasing cost per unit used for inventory capitalization and GRNI accrual."
+    summary: "Unit purchase price used for Moving WAC recalculation and GRNI accrual."
 related:
   - "purchase-orders"
   - "putaway"
-  - "sales-returns"
+  - "transfers-quarantine"
   - "supplier-invoices"
 ---
 
-# Inbound Goods Receiving
+# Dock Receiving & GRNI Accruals
 
-The **Receiving** module manages inbound freight at the warehouse dock — processing supplier purchase orders, customer returns (RMA), and incoming stock transfers.
+The **Receiving** module handles inbound shipments from suppliers at the warehouse dock. It creates Goods Received Notes (GRN), updates perpetual inventory balances, recalculates Moving Weighted Average Cost (WAC), and posts Goods Received Not Invoiced (GRNI) accounting accruals.
 
 ---
 
-## Receiving Logic & Automated Financial Postings
+## Receiving & Costing Architecture
 
 ```mermaid
 flowchart TD
-    A[Inbound Freight Arrives at Dock] --> B[Select PO & Verify Received Counts]
-    B --> C[Generate Goods Receipt Note GRN]
-    C --> D[1. Recalculate Product Moving WAC Costing]
-    C --> E[2. Post GRNI Accrual to General Ledger]
-    C --> F[3. Increment Physical On-Hand in Dock Staging Bin]
-    C --> G[4. Auto-Transition Purchase Order State]
+    A[Supplier Delivery Arrives at Dock] --> B[Receiving Queue /inventory/receiving]
+    B --> C[Inspect Physical Items & Quantities]
+    C --> D{Damage or Discrepancy?}
+    D -- Damaged Items --> E[Route to QUARANTINE Bin]
+    D -- Sound Items --> F[Route to DOCK / STAGING Bin]
+
+    E & F --> G[Post Goods Received Note GRN]
+    G --> H[1. Update Product Moving WAC]
+    G --> I[2. Post GL: DR Inventory Asset / CR GRNI Accrual]
+    G --> J[3. Update Purchase Order Received Quantities]
+    G --> K[4. Enqueue Sound Items to Putaway Queue]
 ```
 
-### 1. General Ledger Accrual (GRNI Clearance Gate)
-Confirming a Goods Receipt Note (GRN) immediately recognizes inventory assets in the General Ledger before vendor invoices arrive:
+### 1. Moving Weighted Average Cost (WAC) Recalculation
+Whenever stock is accepted at the dock at a known unit purchase cost:
 
 ```
-Debit:  Inventory Asset Account               (Qty Received * Actual Unit Cost)
-Credit: Goods Received Not Invoiced (GRNI)    (Qty Received * Actual Unit Cost)
+New WAC = ((Current On-Hand * Current WAC) + (Received Units * Inbound Unit Cost)) / (Current On-Hand + Received Units)
 ```
 
-* Under Standard Costing, inventory is debited at standard cost and any difference against PO cost is posted to Purchase Price Variance (PPV).
+The recalculated unit cost becomes the immediate valuation base for future sales orders and COGS dispatches.
 
-### 2. Moving WAC Recalculation
-Every Goods Receipt automatically recalculates the product's **Moving Weighted Average Cost**:
+### 2. General Ledger GRNI Accrual Entry
+Receiving goods before receiving the supplier invoice triggers an automated accrual entry:
 
 ```
-New WAC = ((Current QOH * Current WAC) + (Qty Received * Actual Unit Cost)) / (Current QOH + Qty Received)
+Debit:  Inventory Asset Account                    (Received Units * Unit Cost)
+Credit: Goods Received Not Invoiced (GRNI) Accrual  (Received Units * Unit Cost)
 ```
 
-* The new WAC is saved to 4 decimal places and becomes the active valuation baseline for subsequent COGS dispatches.
+When the supplier invoice arrives later, the AP matching process clears the GRNI account and posts to Accounts Payable.
 
-### 3. Purchase Order Auto-Transitions
-The system evaluates line-level receipt progress automatically:
-* **Partial Delivery**: If `0 < Total Received < Total Ordered`, the PO transitions to `Partially Received`.
-* **Full Delivery**: When `Total Received >= Total Ordered` across all lines, the PO transitions to `Received` (`auto-receive-when-fully-received` rule), enabling 3-way invoice matching.
-
-### 4. Damaged Inbound Stock
-Damaged units identified upon delivery can be routed directly to a **Quarantine Bin**, preventing them from entering active stock while preserving the accurate GRNI accrual liability until replacement or debit notes are processed.
+### 3. Quarantine Routing for Damaged Items
+If items arrive broken, defective, or fail inspection, the dock operator enters the count in the **Damaged Quantity** field. These units bypass active stock and are routed directly into the warehouse facility's `quarantine` bin, awaiting Return to Vendor (RTV) or credit note settlement.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Receiving a Supplier Purchase Order
-1. Go to **Inventory** → **Receiving** → **Supplier Receipts** (`/receiving`).
-2. Click **New Receipt** (`/receiving/new`) and select the **Purchase Order**.
-3. Enter the supplier's **Delivery Note / Packing Slip Number**.
-4. For each line item, enter the physical **Received Quantity** and assign to the dock staging bin (or quarantine bin for damaged goods).
-5. Click **Confirm Receipt** to generate the official GRN, recalculate WAC, and post the GRNI GL accrual.
-
-### 2. Receiving Customer Returns (RMA)
-1. Go to **Inventory** → **Receiving** → **Customer Returns** (`/receiving/returns`).
-2. Select the confirmed return authorization.
-3. Verify returned item condition, count received quantities, and click **Accept & Restock**.
-
-### 3. Receiving Incoming Stock Transfers
-1. Go to **Inventory** → **Receiving** → **Incoming Transfers** (`/receiving/transfers`).
-2. Select the in-transit transfer order.
-3. Verify arriving counts and click **Receive Transfer** to deposit units into destination staging.
+### 1. Receiving a Purchase Order Delivery
+1. Go to **Inventory** → **Receiving** (`/inventory/receiving`).
+2. Select the purchase order from the expected delivery queue (or search by PO number).
+3. Review order lines and verify physical carton counts.
+4. Enter the **Received Quantity** for sound items.
+5. If any items are damaged, enter the count in **Damaged Quantity**.
+6. Click **Confirm Goods Receipt**.
+7. The system posts the GRN, updates PO status, triggers the GRNI journal, and queues the items for Putaway.
 
 ---
 
@@ -107,9 +97,9 @@ Damaged units identified upon delivery can be routed directly to a **Quarantine 
 
 | Field | Description |
 | :--- | :--- |
-| **Receipt Number (GRN)** | Unique goods receipt identifier (e.g. `GRN-2026-00155`). |
-| **Purchase Order** | Parent supplier purchase order reference (`PO-...`). |
-| **Supplier Slip Number** | External delivery docket reference from the supplier/carrier. |
-| **Received Quantity** | Verified physical count accepted at the dock. |
-| **Receipt Unit Cost** | Capitalized inventory cost per unit. |
-| **Staging Bin** | Inbound holding bin where goods are staged before putaway. |
+| **PO Number** | Supplier order identifier (`PO-...`). |
+| **Supplier** | Vendor name delivering the goods. |
+| **Ordered Quantity** | Original contracted line count. |
+| **Received Quantity** | Verified count accepted into staging stock. |
+| **Damaged Quantity** | Units routed immediately to quarantine. |
+| **Unit Cost** | Valuation price used for WAC and GRNI accrual. |
