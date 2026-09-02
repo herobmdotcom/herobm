@@ -235,11 +235,36 @@ export class PurchaseOrdersWriteService {
           .returning();
         order = inserted;
       } catch (err: unknown) {
-        console.error('PO INSERT ERROR:', getErrorMessage(err) || err);
+        this.logger.error('PO INSERT ERROR:', getErrorMessage(err) || err);
         throw err;
       }
 
       if (createDto.lines && createDto.lines.length > 0) {
+        const productIdsToValidate: string[] = [];
+        for (const l of createDto.lines) {
+          if (
+            l.lineType !== LineType.COMMENT &&
+            l.productId &&
+            l.productId !== '00000000-0000-4000-8000-000000000000' &&
+            !productIdsToValidate.includes(l.productId)
+          ) {
+            productIdsToValidate.push(l.productId);
+          }
+        }
+
+        const productRows =
+          productIdsToValidate.length > 0
+            ? await tx
+                .select({
+                  productId: products.productId,
+                  stateCode: products.stateCode,
+                })
+                .from(products)
+                .where(inArray(products.productId, productIdsToValidate))
+            : [];
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const lineValues: any[] = [];
         let index = 0;
@@ -268,11 +293,7 @@ export class PurchaseOrdersWriteService {
           const isCustom =
             line.productId === '00000000-0000-4000-8000-000000000000';
           if (!isCustom && line.productId) {
-            const [product] = await tx
-              .select({ stateCode: products.stateCode })
-              .from(products)
-              .where(eq(products.productId, line.productId))
-              .limit(1);
+            const product = productMap.get(line.productId);
 
             if (!product) {
               throw new BadRequestException(

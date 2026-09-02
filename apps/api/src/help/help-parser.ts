@@ -17,17 +17,62 @@ export function parseHelpMarkdown(
     .basename(filePath, path.extname(filePath))
     .replace(/_/g, '-');
 
+  // Derive directory-aware defaults
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  let fallbackCategory = 'Miscellaneous';
+  let fallbackResource: string | undefined = undefined;
+
+  if (
+    normalizedPath.includes('/docs/developers') ||
+    normalizedPath.includes('/developers/')
+  ) {
+    fallbackCategory = 'Developer';
+    fallbackResource = 'developers';
+  } else if (
+    normalizedPath.includes('/docs/technical') ||
+    normalizedPath.includes('/technical/')
+  ) {
+    fallbackCategory = 'Architecture & Engineering';
+    fallbackResource = 'system';
+  }
+
+  const extractFirstParagraph = (content: string): string | undefined => {
+    const lines = content.split('\n');
+    let inHeading = false;
+    for (const raw of lines) {
+      const trimmed = raw.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('#')) {
+        inHeading = true;
+        continue;
+      }
+      if (
+        trimmed.startsWith('---') ||
+        trimmed.startsWith('```') ||
+        trimmed.startsWith('>')
+      ) {
+        continue;
+      }
+      return trimmed;
+    }
+    return undefined;
+  };
+
   if (!frontmatterMatch) {
     const titleMatch = normalized.match(/^#\s+(.+)$/m);
     const title = titleMatch ? titleMatch[1].trim() : fallbackId;
     return {
       id: fallbackId,
       title,
-      content: normalized.trim(),
-      filePath,
+      category: fallbackCategory,
+      description: extractFirstParagraph(normalized),
       order: 999,
       routes: [],
+      resource: fallbackResource,
+      action: 'read',
       tags: [],
+      content: normalized.trim(),
+      filePath,
     };
   }
 
@@ -42,12 +87,16 @@ export function parseHelpMarkdown(
   return {
     id: typeof meta.id === 'string' ? meta.id : fallbackId,
     title: typeof meta.title === 'string' ? meta.title : fallbackTitle,
-    category: typeof meta.category === 'string' ? meta.category : 'General',
+    category:
+      typeof meta.category === 'string' ? meta.category : fallbackCategory,
     description:
-      typeof meta.description === 'string' ? meta.description : undefined,
+      typeof meta.description === 'string'
+        ? meta.description
+        : extractFirstParagraph(markdownBody),
     order: typeof meta.order === 'number' ? meta.order : 999,
     routes: Array.isArray(meta.routes) ? (meta.routes as string[]) : [],
-    resource: typeof meta.resource === 'string' ? meta.resource : undefined,
+    resource:
+      typeof meta.resource === 'string' ? meta.resource : fallbackResource,
     action: typeof meta.action === 'string' ? meta.action : 'read',
     tags: Array.isArray(meta.tags) ? (meta.tags as string[]) : [],
     fields:

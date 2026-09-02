@@ -207,3 +207,5 @@ export * from './telemetry';
 export * from './contacts';
 export * from './event-types';
 export * from './ledger-hash';
+export * from './tax';
+

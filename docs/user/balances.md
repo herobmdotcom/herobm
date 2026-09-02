@@ -97,6 +97,19 @@ Net Tax Payable / (Refund) = Total Output Tax (Sales Invoices) - Total Input Tax
 1. Go to **Finance** → **Balances** → **Suppliers** (`/balances/suppliers`).
 2. Review upcoming payment obligations by due date bucket to schedule weekly payment batches.
 
+### 3. Reviewing Tax Balances and Statutory Reports
+1. Go to **Finance** → **Balances** → **Tax** (`/balances/tax`).
+2. Select your desired **Report Template** from the dropdown:
+   - **Generic Tax Summary (Global)**: International VAT/GST balances with Output Tax, Input Tax, Net Position, Turnover breakdown, and Tax Category schedule.
+   - **Australia (ATO BAS)**: Australian Business Activity Statement boxes (G1, 1A, 1B, 8A, 8B, 9).
+   - **United Kingdom (HMRC VAT Return)**: VAT 100 Return boxes (Boxes 1–9).
+   - **Singapore (IRAS GST Form 5)**: GST F5 return boxes (Boxes 1–8).
+   - **New Zealand (Inland Revenue GST 101)**: GST 101 return boxes (Boxes 5, 6, 7, 8, 9, 11, 12).
+   - **Germany / EU (USt-VA)**: Umsatzsteuer-Voranmeldung lines (Zg 81, 86, 41, 66, 83).
+   - **United States (Sales & Use Tax)**: State and local sales & use tax summary.
+3. Set `From Date` and `To Date` filters to calculate period liabilities. Your chosen template is automatically remembered across sessions.
+4. Click on any statutory box value in country views to copy it directly to your clipboard for easy online portal lodgement.
+
 ---
 
 ## Field Reference

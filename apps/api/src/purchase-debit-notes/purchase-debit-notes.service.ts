@@ -128,6 +128,7 @@ export class PurchaseDebitNotesService {
     const CHUNK_SIZE = 500;
     for (let i = 0; i < noteIds.length; i += CHUNK_SIZE) {
       const chunk = noteIds.slice(i, i + CHUNK_SIZE);
+      // n-plus-one-ignore: chunked batching in chunks of 500
       const lines = await this.db
         .select()
         .from(purchaseDebitNoteLines)
@@ -140,6 +141,7 @@ export class PurchaseDebitNotesService {
       [];
     for (let i = 0; i < lineIds.length; i += CHUNK_SIZE) {
       const chunk = lineIds.slice(i, i + CHUNK_SIZE);
+      // n-plus-one-ignore: chunked batching in chunks of 500
       const allocs = await this.db
         .select()
         .from(purchaseDebitNoteShipments)
@@ -242,19 +244,26 @@ export class PurchaseDebitNotesService {
       )
       .where(eq(purchaseDebitNoteLines.debitNoteId, id));
 
-    const linesWithAllocations = [];
-    for (const line of lines) {
-      const allocations = await this.db
-        .select()
-        .from(purchaseDebitNoteShipments)
-        .where(
-          eq(purchaseDebitNoteShipments.debitNoteLineId, line.debitNoteLineId),
-        );
-      linesWithAllocations.push({
-        ...line,
-        shipmentAllocations: allocations,
-      });
+    const lineIds = lines.map((l) => l.debitNoteLineId);
+    const allAllocations =
+      lineIds.length > 0
+        ? await this.db
+            .select()
+            .from(purchaseDebitNoteShipments)
+            .where(inArray(purchaseDebitNoteShipments.debitNoteLineId, lineIds))
+        : [];
+
+    const allocationsByLineId = new Map<string, typeof allAllocations>();
+    for (const alloc of allAllocations) {
+      const list = allocationsByLineId.get(alloc.debitNoteLineId) || [];
+      list.push(alloc);
+      allocationsByLineId.set(alloc.debitNoteLineId, list);
     }
+
+    const linesWithAllocations = lines.map((line) => ({
+      ...line,
+      shipmentAllocations: allocationsByLineId.get(line.debitNoteLineId) || [],
+    }));
 
     const events = await this.db
       .select({
@@ -446,6 +455,24 @@ export class PurchaseDebitNotesService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Debit note lines
     const dnLineValues: any[] = [];
 
+    const accountIds = [
+      ...new Set(
+        dto.lines
+          .map((l) => l.accountId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    const accountRows =
+      accountIds.length > 0
+        ? await this.db
+            .select()
+            .from(glAccounts)
+            .where(inArray(glAccounts.glAccountId, accountIds))
+        : [];
+
+    const accountMap = new Map(accountRows.map((a) => [a.glAccountId, a]));
+
     for (const line of dto.lines) {
       const amount = parseFloat(line.amount);
       totalDebitAmount += amount;
@@ -461,10 +488,7 @@ export class PurchaseDebitNotesService {
       });
 
       if (line.accountId) {
-        const [acct] = await this.db
-          .select()
-          .from(glAccounts)
-          .where(eq(glAccounts.glAccountId, line.accountId));
+        const acct = accountMap.get(line.accountId);
         if (!acct)
           throw new BadRequestException(`Account ${line.accountId} not found`);
 

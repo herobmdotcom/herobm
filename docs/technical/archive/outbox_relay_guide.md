@@ -1,3 +1,19 @@
+---
+id: tech-outbox-relay
+title: "Transactional Outbox & Event Relay Guide"
+description: "Transactional Outbox pattern, background worker polling, guaranteed at-least-once delivery, and webhook streaming architecture."
+category: "Architecture & Engineering"
+order: 5
+resource: "system"
+action: "read"
+routes:
+  - "/admin/developers"
+  - "/admin/event-queue"
+tags: ["outbox", "worker", "events", "webhooks", "bullmq", "relay", "architecture"]
+related:
+  - "dev-webhooks"
+---
+
 # Outbox Relay & Webhook Delivery Guide
 
 The outbox relay (`apps/worker/`) is a high-throughput background worker process that streams domain events and webhook notifications from HeroBM to external systems and webhook subscribers. It implements the [Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html): the API writes domain events atomically to `herobm_core.outbox` inside the same database transaction as business mutations, and the worker asynchronously relays them to HTTP webhook subscribers and BullMQ queues.

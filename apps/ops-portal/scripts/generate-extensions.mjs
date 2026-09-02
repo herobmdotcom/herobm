@@ -7,11 +7,11 @@ const __dirname = path.dirname(__filename);
 
 const extensionsDir = path.resolve(__dirname, '../../../extensions');
 const generatedDir = path.resolve(__dirname, '../src/generated');
-const nextTypesDir = path.resolve(__dirname, '../.next/types');
+const nextDir = path.resolve(__dirname, '../.next');
 
-if (fs.existsSync(nextTypesDir)) {
+if (fs.existsSync(nextDir)) {
   try {
-    fs.rmSync(nextTypesDir, { recursive: true, force: true });
+    fs.rmSync(nextDir, { recursive: true, force: true, maxRetries: 5 });
   } catch (e) {}
 }
 

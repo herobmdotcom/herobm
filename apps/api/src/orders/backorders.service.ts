@@ -434,6 +434,40 @@ export class BackordersService {
         (d) => d.structureType === 'kit',
       );
 
+      const kitProductIds = [
+        ...new Set(
+          kitDemands
+            .map((d) => d.productId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+
+      const allComponents =
+        kitProductIds.length > 0
+          ? await tx
+              .select({
+                parentProductId: productComponents.parentProductId,
+                productId: productComponents.childProductId,
+                quantity: productComponents.quantity,
+              })
+              .from(productComponents)
+              .where(inArray(productComponents.parentProductId, kitProductIds))
+          : [];
+
+      const componentsByParent = new Map<
+        string,
+        { productId: string; quantity: string }[]
+      >();
+      for (const comp of allComponents) {
+        if (!comp.parentProductId) continue;
+        const list = componentsByParent.get(comp.parentProductId) || [];
+        list.push({
+          productId: comp.productId,
+          quantity: comp.quantity,
+        });
+        componentsByParent.set(comp.parentProductId, list);
+      }
+
       // 4. Generate Work Orders for unfulfilled stock kit demands
       for (const demand of kitDemands) {
         const orderNumber = await this.generateWorkOrderNumber(tx);
@@ -451,13 +485,7 @@ export class BackordersService {
           .returning();
 
         // Snapshot the BOM components
-        const components = await tx
-          .select({
-            productId: productComponents.childProductId,
-            quantity: productComponents.quantity,
-          })
-          .from(productComponents)
-          .where(eq(productComponents.parentProductId, demand.productId));
+        const components = componentsByParent.get(demand.productId) || [];
 
         for (const comp of components) {
           const expectedQty = Number(comp.quantity) * Number(demand.quantity);
@@ -547,6 +575,24 @@ export class BackordersService {
         fallbackTaxId = firstCat?.id;
       }
 
+      const allProductIds = [
+        ...new Set(payload.pos.flatMap((p) => p.lines.map((l) => l.productId))),
+      ];
+
+      const coreProdRows =
+        allProductIds.length > 0
+          ? await tx
+              .select({
+                productId: coreProducts.productId,
+                name: coreProducts.name,
+                purchaseTaxCategoryId: coreProducts.purchaseTaxCategoryId,
+              })
+              .from(coreProducts)
+              .where(inArray(coreProducts.productId, allProductIds))
+          : [];
+
+      const coreProdMap = new Map(coreProdRows.map((cp) => [cp.productId, cp]));
+
       for (const poPayload of payload.pos) {
         if (!poPayload.vendorId) {
           throw new HttpException(
@@ -607,13 +653,7 @@ export class BackordersService {
 
         let openLineNumber = 1;
         for (const line of poPayload.lines) {
-          const [coreProd] = await tx
-            .select({
-              name: coreProducts.name,
-              purchaseTaxCategoryId: coreProducts.purchaseTaxCategoryId,
-            })
-            .from(coreProducts)
-            .where(eq(coreProducts.productId, line.productId));
+          const coreProd = coreProdMap.get(line.productId);
 
           const [poLine] = await tx
             .insert(purchaseOrderLineItems)
@@ -910,6 +950,29 @@ export class BackordersService {
         .from(backorders)
         .where(eq(backorders.salesOrderLineId, salesOrderLineId));
 
+      const poIds = [
+        ...new Set(
+          lineDemands
+            .map((ld) => ld.purchaseOrderId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+
+      const poRows =
+        poIds.length > 0
+          ? await tx
+              .select({
+                purchaseOrderId: purchaseOrders.purchaseOrderId,
+                orderNumber: purchaseOrders.orderNumber,
+              })
+              .from(purchaseOrders)
+              .where(inArray(purchaseOrders.purchaseOrderId, poIds))
+          : [];
+
+      const poMap = new Map(
+        poRows.map((p) => [p.purchaseOrderId, p.orderNumber]),
+      );
+
       // 3. Unlink any linked demands
       for (const ld of lineDemands) {
         if (ld.purchaseOrderId) {
@@ -926,15 +989,12 @@ export class BackordersService {
             },
           );
 
-          const [po] = await tx
-            .select({ orderNumber: purchaseOrders.orderNumber })
-            .from(purchaseOrders)
-            .where(eq(purchaseOrders.purchaseOrderId, ld.purchaseOrderId));
+          const orderNumber = poMap.get(ld.purchaseOrderId) || '';
           await emitEvent(tx, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: ld.purchaseOrderId,
             eventType: EventType.DEMAND_UNALLOCATED,
-            entityDisplayName: po.orderNumber,
+            entityDisplayName: orderNumber,
             actor,
             payload: { backorderId: ld.backorderId },
           });

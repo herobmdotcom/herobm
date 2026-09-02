@@ -1,3 +1,16 @@
+---
+id: tech-database-seeds
+title: "Database Seeds & Initialization"
+description: "Core system seeds, singletons, GL Chart of Accounts seeding, and legacy migration anchors."
+category: "Architecture & Engineering"
+order: 18
+resource: "system"
+action: "read"
+routes:
+  - "/admin/settings"
+tags: ["database", "seeds", "initialization", "bootstrap", "coa", "system-values"]
+---
+
 # Database Seed Documentation
 
 This document categorizes the essential system values (seeds) required for the HeroBM platform. These values are divided into **Core System Seeds** (managed by TypeScript seed runner `make seed`) and **Legacy Import Anchors** (managed by dbt pre_hooks during data migrations).

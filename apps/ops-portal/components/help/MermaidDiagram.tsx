@@ -8,8 +8,6 @@ interface MermaidDiagramProps {
   chart: string;
 }
 
-let isMermaidInitialized = false;
-
 function extractSvgDimensions(svgString: string): { width: number; height: number } {
   const vb = svgString.match(/viewBox=["']\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s*["']/i);
   if (vb && parseFloat(vb[3]) > 0 && parseFloat(vb[4]) > 0) {
@@ -32,9 +30,26 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   const [isEnlarged, setIsEnlarged] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [fitZoom, setFitZoom] = useState(1);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement.classList.contains('dark');
+  });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setIsDarkMode((prev) => (prev !== isDark ? isDark : prev));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -53,23 +68,39 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         // Handle ESM default vs named export
         const mermaid = mermaidModule.default ?? mermaidModule;
 
-        if (typeof mermaid?.initialize === 'function' && !isMermaidInitialized) {
+        if (typeof mermaid?.initialize === 'function') {
           mermaid.initialize({
             startOnLoad: false,
-            theme: 'neutral',
-            themeVariables: {
-              primaryColor: '#F0FDFA',
-              primaryBorderColor: '#006B5C',
-              primaryTextColor: '#0F172A',
-              lineColor: '#64748B',
-              secondaryColor: '#F8FAFC',
-              tertiaryColor: '#FFFFFF',
-              fontSize: '12px',
-              fontFamily: 'inherit',
-            },
+            theme: isDarkMode ? 'dark' : 'neutral',
+            themeVariables: isDarkMode
+              ? {
+                  darkMode: true,
+                  background: '#080d16',
+                  primaryColor: '#141d30',
+                  primaryBorderColor: '#00b49c',
+                  primaryTextColor: '#f8fafc',
+                  lineColor: '#94a3b8',
+                  secondaryColor: '#101726',
+                  tertiaryColor: '#080d16',
+                  edgeLabelBackground: '#101726',
+                  nodeBorder: '#00b49c',
+                  mainBkg: '#141d30',
+                  textColor: '#f8fafc',
+                  fontSize: '12px',
+                  fontFamily: 'inherit',
+                }
+              : {
+                  primaryColor: '#F0FDFA',
+                  primaryBorderColor: '#006B5C',
+                  primaryTextColor: '#0F172A',
+                  lineColor: '#64748B',
+                  secondaryColor: '#F8FAFC',
+                  tertiaryColor: '#FFFFFF',
+                  fontSize: '12px',
+                  fontFamily: 'inherit',
+                },
             securityLevel: 'loose',
           });
-          isMermaidInitialized = true;
         }
 
         if (typeof mermaid?.render === 'function') {
@@ -83,7 +114,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         } else {
           // Fallback if environment doesn't support rendering (e.g. node/jest)
           if (isMounted) {
-            const fallback = `<div class="font-mono text-xs text-[#475569] p-2 whitespace-pre">${chart.trim()}</div>`;
+            const fallback = `<div class="font-mono text-xs text-[var(--text-muted)] p-2 whitespace-pre">${chart.trim()}</div>`;
             setSvg(fallback);
             setDimensions({ width: 600, height: 300 });
           }
@@ -101,7 +132,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     return () => {
       isMounted = false;
     };
-  }, [chart, uniqueId]);
+  }, [chart, uniqueId, isDarkMode]);
 
   const calculateFitZoom = useCallback(() => {
     if (!containerRef.current) return 1;
@@ -197,7 +228,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
   if (error) {
     return (
-      <div className="my-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] font-mono text-xs text-[#64748B] overflow-x-auto whitespace-pre">
+      <div className="my-3 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] font-mono text-xs text-[var(--text-secondary)] overflow-x-auto whitespace-pre">
         {chart.trim()}
       </div>
     );
@@ -205,7 +236,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
   if (!svg) {
     return (
-      <div className="my-3 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-xs text-[#94A3B8] animate-pulse min-h-[80px]">
+      <div className="my-3 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center text-xs text-[var(--text-muted)] animate-pulse min-h-[80px]">
         {t('loadingDocs')}
       </div>
     );
@@ -226,7 +257,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
             setIsEnlarged(true);
           }
         }}
-        className="group relative my-4 p-4 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] hover:border-[#006B5C] transition-all overflow-hidden flex flex-col items-center shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#006B5C]/40"
+        className="group relative my-4 p-4 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] hover:border-[var(--accent)] transition-all overflow-hidden flex flex-col items-center shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
         title={t('clickToEnlarge')}
         aria-label={t('enlargeDiagram')}
       >

@@ -1,4 +1,9 @@
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
@@ -9,6 +14,8 @@ import { TwoFactorService } from './two-factor.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject(JwtService) private jwtService: JwtService,
     @Inject(DRIZZLE) private db: DrizzleDB,
@@ -23,11 +30,17 @@ export class AuthService {
       .limit(1);
 
     if (!user || !user.isActive) {
+      this.logger.warn(
+        `[AUDIT] Failed login attempt for username '${username}': User not found or inactive`,
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      this.logger.warn(
+        `[AUDIT] Failed login attempt for username '${username}': Invalid password`,
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -35,6 +48,9 @@ export class AuthService {
     const has2Fa = await this.twoFactorService.isEnabled(user.userId);
 
     if (has2Fa) {
+      this.logger.log(
+        `[AUDIT] User '${user.username}' authenticated password; 2FA challenge issued`,
+      );
       // Return a short-lived temp token for 2FA verification
       const tempPayload = {
         sub: user.userId,
@@ -52,6 +68,10 @@ export class AuthService {
     }
 
     // Standard login (no 2FA)
+    this.logger.log(
+      `[AUDIT] User '${user.username}' successfully logged in (role: ${user.role})`,
+    );
+
     const payload = {
       sub: user.userId,
       username: user.username,
@@ -86,6 +106,9 @@ export class AuthService {
     const verifier = await this.twoFactorService.verifyCode(payload.sub);
     const isValid = await verifier.verify(code);
     if (!isValid) {
+      this.logger.warn(
+        `[AUDIT] Failed 2FA verification attempt for user '${payload.username}'`,
+      );
       throw new UnauthorizedException('Invalid 2FA code');
     }
 
@@ -104,6 +127,10 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
+    this.logger.log(
+      `[AUDIT] User '${user.username}' successfully completed 2FA login (role: ${user.role})`,
+    );
 
     const fullPayload = {
       sub: user.userId,

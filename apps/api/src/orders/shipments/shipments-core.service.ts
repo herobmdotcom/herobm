@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
@@ -321,33 +321,44 @@ export class ShipmentsCoreService {
       .where(eq(salesOrderShipments.salesOrderId, salesOrderId))
       .orderBy(desc(salesOrderShipments.createdOn));
 
-    const result = [];
-    for (const shipment of shipments) {
-      const lines = await this.db
-        .select({
-          shipmentLineId: salesOrderShipmentLines.shipmentLineId,
-          salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
-          quantityShipped: salesOrderShipmentLines.quantityShipped,
-          productId: salesOrderLineItems.productId,
-          productNumber: coreProducts.productNumber,
-        })
-        .from(salesOrderShipmentLines)
-        .innerJoin(
-          salesOrderLineItems,
-          eq(
-            salesOrderShipmentLines.salesOrderLineId,
-            salesOrderLineItems.salesOrderLineId,
-          ),
-        )
-        .leftJoin(
-          coreProducts,
-          eq(salesOrderLineItems.productId, coreProducts.productId),
-        )
-        .where(eq(salesOrderShipmentLines.shipmentId, shipment.shipmentId));
-      result.push({ ...shipment, lines });
+    const shipmentIds = shipments.map((s) => s.shipmentId);
+    const allLines =
+      shipmentIds.length > 0
+        ? await this.db
+            .select({
+              shipmentId: salesOrderShipmentLines.shipmentId,
+              shipmentLineId: salesOrderShipmentLines.shipmentLineId,
+              salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
+              quantityShipped: salesOrderShipmentLines.quantityShipped,
+              productId: salesOrderLineItems.productId,
+              productNumber: coreProducts.productNumber,
+            })
+            .from(salesOrderShipmentLines)
+            .innerJoin(
+              salesOrderLineItems,
+              eq(
+                salesOrderShipmentLines.salesOrderLineId,
+                salesOrderLineItems.salesOrderLineId,
+              ),
+            )
+            .leftJoin(
+              coreProducts,
+              eq(salesOrderLineItems.productId, coreProducts.productId),
+            )
+            .where(inArray(salesOrderShipmentLines.shipmentId, shipmentIds))
+        : [];
+
+    const linesByShipmentId = new Map<string, typeof allLines>();
+    for (const l of allLines) {
+      const list = linesByShipmentId.get(l.shipmentId) || [];
+      list.push(l);
+      linesByShipmentId.set(l.shipmentId, list);
     }
 
-    return result;
+    return shipments.map((shipment) => ({
+      ...shipment,
+      lines: linesByShipmentId.get(shipment.shipmentId) || [],
+    }));
   }
 
   /**

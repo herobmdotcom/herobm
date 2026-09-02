@@ -1,3 +1,16 @@
+---
+id: tech-database-architecture
+title: "Tri-Schema Database Architecture"
+description: "Architecture guide for the tri-schema PostgreSQL design separating ingestion (raw), transformation (marts), and transactional core (herobm_core)."
+category: "Architecture & Engineering"
+order: 1
+resource: "system"
+action: "read"
+routes:
+  - "/admin/settings"
+tags: ["database", "postgres", "tri-schema", "dbt", "drizzle", "herobm_core", "architecture"]
+---
+
 # Tri-Schema Database Architecture
 
 HeroBM utilizes a "Tri-Schema" PostgreSQL database architecture to manage the transition from legacy systems to the modern, API-driven platform. This design cleanly separates legacy data ingestion, transformation, and the operational application core.

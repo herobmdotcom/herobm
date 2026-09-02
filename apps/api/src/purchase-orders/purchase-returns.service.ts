@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -181,16 +181,26 @@ export class PurchaseReturnsService {
       .where(eq(purchaseOrderReturns.purchaseOrderId, purchaseOrderId))
       .orderBy(desc(purchaseOrderReturns.createdOn));
 
-    const result = [];
-    for (const ret of returns) {
-      const lines = await this.db
-        .select()
-        .from(purchaseOrderReturnLines)
-        .where(eq(purchaseOrderReturnLines.returnId, ret.returnId));
-      result.push({ ...ret, lines });
+    const returnIds = returns.map((r) => r.returnId);
+    const allLines =
+      returnIds.length > 0
+        ? await this.db
+            .select()
+            .from(purchaseOrderReturnLines)
+            .where(inArray(purchaseOrderReturnLines.returnId, returnIds))
+        : [];
+
+    const linesByReturnId = new Map<string, typeof allLines>();
+    for (const l of allLines) {
+      const list = linesByReturnId.get(l.returnId) || [];
+      list.push(l);
+      linesByReturnId.set(l.returnId, list);
     }
 
-    return result;
+    return returns.map((ret) => ({
+      ...ret,
+      lines: linesByReturnId.get(ret.returnId) || [],
+    }));
   }
 
   async findOne(returnId: string) {
@@ -256,6 +266,24 @@ export class PurchaseReturnsService {
           );
         }
 
+        const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
+        const orderLineRows =
+          poLineIds.length > 0
+            ? await tx
+                .select()
+                .from(purchaseOrderLineItems)
+                .where(
+                  inArray(
+                    purchaseOrderLineItems.purchaseOrderLineId,
+                    poLineIds,
+                  ),
+                )
+            : [];
+
+        const orderLinesMap = new Map(
+          orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
+        );
+
         for (const rl of returnLines) {
           if (!rl.sourceBinId) {
             throw new BadRequestException(
@@ -263,16 +291,7 @@ export class PurchaseReturnsService {
             );
           }
 
-          const [orderLine] = await tx
-            .select()
-            .from(purchaseOrderLineItems)
-            .where(
-              eq(
-                purchaseOrderLineItems.purchaseOrderLineId,
-                rl.purchaseOrderLineId,
-              ),
-            )
-            .limit(1);
+          const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
           if (!orderLine || !orderLine.productId) {
             throw new BadRequestException(
@@ -385,17 +404,26 @@ export class PurchaseReturnsService {
           );
         }
 
+        const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
+        const orderLineRows =
+          poLineIds.length > 0
+            ? await tx
+                .select()
+                .from(purchaseOrderLineItems)
+                .where(
+                  inArray(
+                    purchaseOrderLineItems.purchaseOrderLineId,
+                    poLineIds,
+                  ),
+                )
+            : [];
+
+        const orderLinesMap = new Map(
+          orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
+        );
+
         for (const rl of returnLines) {
-          const [orderLine] = await tx
-            .select()
-            .from(purchaseOrderLineItems)
-            .where(
-              eq(
-                purchaseOrderLineItems.purchaseOrderLineId,
-                rl.purchaseOrderLineId,
-              ),
-            )
-            .limit(1);
+          const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
           if (!orderLine || !orderLine.productId) {
             throw new BadRequestException(
@@ -589,18 +617,24 @@ export class PurchaseReturnsService {
       }
 
       // 3. Deduct inventory from SUPPLIER_RETURNS bin
+      const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
+      const orderLineRows =
+        poLineIds.length > 0
+          ? await tx
+              .select()
+              .from(purchaseOrderLineItems)
+              .where(
+                inArray(purchaseOrderLineItems.purchaseOrderLineId, poLineIds),
+              )
+          : [];
+
+      const orderLinesMap = new Map(
+        orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
+      );
+
       const stockLines = [];
       for (const rl of returnLines) {
-        const [orderLine] = await tx
-          .select()
-          .from(purchaseOrderLineItems)
-          .where(
-            eq(
-              purchaseOrderLineItems.purchaseOrderLineId,
-              rl.purchaseOrderLineId,
-            ),
-          )
-          .limit(1);
+        const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
         if (orderLine) {
           stockLines.push({
@@ -661,16 +695,7 @@ export class PurchaseReturnsService {
       let totalValueReturned = 0;
       for (const rl of returnLines) {
         // Calculate financial value of return
-        const [orderLine] = await tx
-          .select({ pricePerUnit: purchaseOrderLineItems.pricePerUnit })
-          .from(purchaseOrderLineItems)
-          .where(
-            eq(
-              purchaseOrderLineItems.purchaseOrderLineId,
-              rl.purchaseOrderLineId,
-            ),
-          )
-          .limit(1);
+        const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
         if (orderLine && orderLine.pricePerUnit) {
           totalValueReturned +=
@@ -792,18 +817,27 @@ export class PurchaseReturnsService {
           )
           .limit(1);
 
+        const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
+        const orderLineRows =
+          poLineIds.length > 0
+            ? await tx
+                .select()
+                .from(purchaseOrderLineItems)
+                .where(
+                  inArray(
+                    purchaseOrderLineItems.purchaseOrderLineId,
+                    poLineIds,
+                  ),
+                )
+            : [];
+
+        const orderLinesMap = new Map(
+          orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
+        );
+
         if (supplierReturnsBin) {
           for (const rl of returnLines) {
-            const [orderLine] = await tx
-              .select()
-              .from(purchaseOrderLineItems)
-              .where(
-                eq(
-                  purchaseOrderLineItems.purchaseOrderLineId,
-                  rl.purchaseOrderLineId,
-                ),
-              )
-              .limit(1);
+            const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
             if (!orderLine || !orderLine.productId) {
               throw new BadRequestException(

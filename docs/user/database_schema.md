@@ -2,7 +2,7 @@
 id: database-schema
 title: "Database Schema Reference"
 description: "Comprehensive relational database schema reference, entity definitions, table columns, data types, constraints, and entity-relationship lineage for herobm_core."
-category: "Technical"
+category: "Developer"
 order: 31
 resource: "system"
 action: "read"
@@ -132,7 +132,7 @@ flowchart TD
 
 ## Schema Summary & Table Directory
 
-The `herobm_core` schema contains **116 tables**, **1228 columns**, and **233 foreign key relationships** across **8 business domains**:
+The `herobm_core` schema contains **116 tables**, **1233 columns**, and **234 foreign key relationships** across **8 business domains**:
 
 | Table | Domain | Primary Key | Columns | Foreign Keys | Live Rows |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -212,11 +212,11 @@ The `herobm_core` schema contains **116 tables**, **1228 columns**, and **233 fo
 | [financial_events](#table-financial-events) | Financials & General Ledger | `event_id` | 8 | 0 | — |
 | [gl_accounts](#table-gl-accounts) | Financials & General Ledger | `gl_account_id` | 12 | 0 | — |
 | [gl_fiscal_periods](#table-gl-fiscal-periods) | Financials & General Ledger | `period_id` | 14 | 0 | — |
-| [gl_journal_entries](#table-gl-journal-entries) | Financials & General Ledger | `journal_entry_id` | 10 | 1 | — |
+| [gl_journal_entries](#table-gl-journal-entries) | Financials & General Ledger | `journal_entry_id` | 13 | 1 | — |
 | [gl_journal_lines](#table-gl-journal-lines) | Financials & General Ledger | `journal_line_id` | 17 | 6 | — |
 | [gl_match_groups](#table-gl-match-groups) | Financials & General Ledger | `match_group_id` | 5 | 1 | — |
 | [gl_reconciliations](#table-gl-reconciliations) | Financials & General Ledger | `reconciliation_id` | 8 | 1 | — |
-| [gl_settings](#table-gl-settings) | Financials & General Ledger | `settings_id` | 28 | 20 | — |
+| [gl_settings](#table-gl-settings) | Financials & General Ledger | `settings_id` | 30 | 22 | — |
 | [payment_allocations](#table-payment-allocations) | Financials & General Ledger | `allocation_id` | 7 | 1 | — |
 | [payment_entries](#table-payment-entries) | Financials & General Ledger | `payment_id` | 19 | 1 | — |
 | [payment_lines](#table-payment-lines) | Financials & General Ledger | `payment_line_id` | 5 | 2 | — |
@@ -247,7 +247,7 @@ The `herobm_core` schema contains **116 tables**, **1228 columns**, and **233 fo
 | [pdf_template_hooks](#table-pdf-template-hooks) | System, Security & Telemetry | `id` | 5 | 1 | — |
 | [pdf_templates](#table-pdf-templates) | System, Security & Telemetry | `id` | 9 | 0 | — |
 | [system_events](#table-system-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
-| [user_events](#table-user-events) | System, Security & Telemetry | `event_id` | 7 | 1 | — |
+| [user_events](#table-user-events) | System, Security & Telemetry | `event_id` | 7 | 0 | — |
 | [user_settings](#table-user-settings) | System, Security & Telemetry | `user_id` | 6 | 1 | — |
 | [user_two_factor](#table-user-two-factor) | System, Security & Telemetry | `user_id` | 7 | 1 | — |
 | [users](#table-users) | System, Security & Telemetry | `user_id` | 8 | 0 | — |
@@ -329,6 +329,8 @@ The table below catalogs all referential constraints across the application data
 | `gl_settings` | `default_fee_revenue_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_grni_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_inventory_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
+| `gl_settings` | `default_otc_card_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
+| `gl_settings` | `default_otc_cash_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_ppv_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_purchase_tax_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_revenue_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
@@ -481,7 +483,6 @@ The table below catalogs all referential constraints across the application data
 | `transfer_order_shipments` | `transfer_order_id` | `transfer_orders` | `transfer_order_id` | `RESTRICT` |
 | `transfer_orders` | `destination_location_id` | `locations` | `location_id` | `RESTRICT` |
 | `transfer_orders` | `source_location_id` | `locations` | `location_id` | `RESTRICT` |
-| `user_events` | `user_id` | `users` | `user_id` | `cascade` |
 | `user_settings` | `user_id` | `users` | `user_id` | `cascade` |
 | `user_two_factor` | `user_id` | `users` | `user_id` | `cascade` |
 | `work_order_components` | `product_id` | `products` | `product_id` | `RESTRICT` |
@@ -1766,15 +1767,18 @@ Chart of accounts, double-entry journals, fiscal periods, bank reconciliation, t
 | # | Column | Data Type | Nullable | Default | Constraints & Relationships |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | `journal_entry_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `entry_number` | `text` | NO | — | ⚡ `UNIQUE` |
-| 3 | `entry_date` | `date` | NO | — | — |
-| 4 | `memo` | `text` | YES | — | — |
-| 5 | `source_type` | `text` | NO | — | — |
-| 6 | `source_id` | `uuid` | YES | — | — |
-| 7 | `is_reversed` | `boolean` | NO | — | — |
-| 8 | `reversed_by` | `uuid` | YES | — | 🔗 `gl_journal_entries.journal_entry_id` |
-| 9 | `created_by` | `text` | YES | — | — |
-| 10 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 2 | `sequence_number` | `integer` | YES | — | — |
+| 3 | `entry_number` | `text` | NO | — | ⚡ `UNIQUE` |
+| 4 | `entry_date` | `date` | NO | — | — |
+| 5 | `memo` | `text` | YES | — | — |
+| 6 | `source_type` | `text` | NO | — | — |
+| 7 | `source_id` | `uuid` | YES | — | — |
+| 8 | `prev_hash` | `text` | YES | — | — |
+| 9 | `entry_hash` | `text` | YES | — | — |
+| 10 | `is_reversed` | `boolean` | NO | — | — |
+| 11 | `reversed_by` | `uuid` | YES | — | 🔗 `gl_journal_entries.journal_entry_id` |
+| 12 | `created_by` | `text` | YES | — | — |
+| 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.gl_journal_lines` {#table-gl-journal-lines}
 
@@ -1853,6 +1857,8 @@ Chart of accounts, double-entry journals, fiscal periods, bank reconciliation, t
 | 26 | `default_fee_revenue_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 | 27 | `default_discounts_received_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 | 28 | `default_discounts_given_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
+| 29 | `default_otc_cash_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
+| 30 | `default_otc_card_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 
 ### Table: `herobm_core.payment_allocations` {#table-payment-allocations}
 
@@ -2305,7 +2311,7 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | # | Column | Data Type | Nullable | Default | Constraints & Relationships |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | `event_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `user_id` | `uuid` | NO | — | 🔗 `users.user_id` (cascade) |
+| 2 | `user_id` | `uuid` | NO | — | — |
 | 3 | `event_type` | `text` | NO | — | — |
 | 4 | `entity_display_name` | `text` | YES | — | — |
 | 5 | `payload` | `jsonb` | YES | — | — |

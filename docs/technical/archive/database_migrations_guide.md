@@ -1,3 +1,18 @@
+---
+id: tech-database-migrations
+title: "Database Migrations & Schema Workflow"
+description: "Drizzle ORM schema definitions, migration ledger linearity, make dev-db-generate workflows, and idempotent DDL practices."
+category: "Architecture & Engineering"
+order: 6
+resource: "system"
+action: "read"
+routes:
+  - "/admin/settings"
+tags: ["database", "migrations", "drizzle", "schema", "postgres", "sql", "engineering"]
+related:
+  - "tech-database-architecture"
+---
+
 # Database Schema & Migrations Guide
 
 The `herobm_core` database uses [Drizzle ORM](https://orm.drizzle.team/) as its source-of-truth for schema definitions. This document outlines the rules for managing schema changes, handling custom Postgres logic, and maintaining migration journal integrity.

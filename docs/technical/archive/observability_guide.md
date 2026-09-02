@@ -1,3 +1,16 @@
+---
+id: tech-observability
+title: "Observability, Logging & Health Checks"
+description: "Structured JSON logging, Docker log rotation, audit logging standards, and system health endpoints."
+category: "Architecture & Engineering"
+order: 12
+resource: "system"
+action: "read"
+routes:
+  - "/admin/event-queue"
+tags: ["observability", "logging", "health", "metrics", "monitoring", "audit"]
+---
+
 # Observability Guide
 
 HeroBM employs a local setup for observability: applications emit strictly formatted JSON logs directly to the Docker logging daemon, and simultaneously persist human-readable logs to an internal volume. This approach allows the system to remain lightweight while guaranteeing high-quality, structured logs can be ingested by any centralized monitoring platform (e.g. Datadog, Splunk) that a deployer chooses to attach to the Docker socket.

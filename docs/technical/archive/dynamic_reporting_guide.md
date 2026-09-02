@@ -1,3 +1,19 @@
+---
+id: tech-dynamic-reporting
+title: "Dynamic Report Engine & Typst Templates"
+description: "Metadata-driven report engine, Typst CLI integration, intent-based template registries, and context bindings."
+category: "Architecture & Engineering"
+order: 15
+resource: "system"
+action: "read"
+routes:
+  - "/reports"
+  - "/admin/reports"
+tags: ["reports", "typst", "templates", "pdf", "dynamic-reporting", "printing"]
+related:
+  - "dynamic-reporting"
+---
+
 # Technical Guide: Dynamic Report Engine
 
 **Status**: Implemented

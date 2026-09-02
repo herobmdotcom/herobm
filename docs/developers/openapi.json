@@ -11015,17 +11015,18 @@
         ]
       }
     },
-    "/tax/bas-summary": {
+    "/tax/reports": {
       "get": {
-        "description": "Returns the formatted ATO BAS summary for the specified date range",
-        "operationId": "TaxBasController_getBasSummary",
+        "description": "Returns generic VAT/GST tax balances summary and country-specific statutory reports (ATO BAS, HMRC VAT, IRAS GST, USt-VA, NZ GST, US Sales Tax).",
+        "operationId": "TaxReportsController_getTaxReport",
         "parameters": [
           {
             "name": "fromDate",
             "required": false,
             "in": "query",
-            "description": "Start date of the reporting period (YYYY-MM-DD)",
+            "description": "Start date of the reporting period (inclusive) in YYYY-MM-DD format",
             "schema": {
+              "example": "2026-01-01",
               "type": "string"
             }
           },
@@ -11033,22 +11034,39 @@
             "name": "toDate",
             "required": false,
             "in": "query",
-            "description": "End date of the reporting period (YYYY-MM-DD)",
+            "description": "End date of the reporting period (inclusive) in YYYY-MM-DD format",
             "schema": {
+              "example": "2026-03-31",
               "type": "string"
+            }
+          },
+          {
+            "name": "reportType",
+            "required": false,
+            "in": "query",
+            "description": "Report template / jurisdiction type",
+            "schema": {
+              "default": "generic",
+              "type": "string",
+              "enum": [
+                "generic",
+                "au_bas",
+                "uk_vat",
+                "sg_gst",
+                "nz_gst",
+                "de_ustva",
+                "us_sales_tax"
+              ]
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns the ATO BAS Summary layout",
+            "description": "Returns the structured tax balance and report data",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BasSummaryRowDto"
-                  }
+                  "$ref": "#/components/schemas/TaxReportResponseDto"
                 }
               }
             }
@@ -11059,7 +11077,7 @@
             "bearer": []
           }
         ],
-        "summary": "Get ATO BAS Summary Report Data",
+        "summary": "Get Tax Balances & Statutory Report Data",
         "tags": [
           "Tax"
         ]
@@ -28941,23 +28959,219 @@
           }
         }
       },
-      "BasSummaryRowDto": {
+      "TaxCategoryBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "taxCategoryId": {
+            "type": "string",
+            "description": "Tax category ID"
+          },
+          "code": {
+            "type": "string",
+            "description": "Tax category code",
+            "example": "GST_10"
+          },
+          "title": {
+            "type": "string",
+            "description": "Tax category title",
+            "example": "Standard GST 10%"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tax classification type",
+            "example": "tax_applies"
+          },
+          "rate": {
+            "type": "number",
+            "description": "Tax percentage rate",
+            "example": 10
+          },
+          "salesBase": {
+            "type": "number",
+            "description": "Net sales base turnover for this tax category"
+          },
+          "outputTax": {
+            "type": "number",
+            "description": "Total output tax collected on sales"
+          },
+          "purchaseBase": {
+            "type": "number",
+            "description": "Net purchase base turnover for this tax category"
+          },
+          "inputTax": {
+            "type": "number",
+            "description": "Total input tax claimed on purchases"
+          },
+          "netTax": {
+            "type": "number",
+            "description": "Net tax position (Output Tax - Input Tax)"
+          }
+        },
+        "required": [
+          "taxCategoryId",
+          "code",
+          "title",
+          "type",
+          "rate",
+          "salesBase",
+          "outputTax",
+          "purchaseBase",
+          "inputTax",
+          "netTax"
+        ]
+      },
+      "GenericTaxSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalOutputTax": {
+            "type": "number",
+            "description": "Total output tax collected on sales (Tax Payable)"
+          },
+          "totalInputTax": {
+            "type": "number",
+            "description": "Total input tax paid on purchases (Tax Deductible / Reclaimable)"
+          },
+          "netTaxLiability": {
+            "type": "number",
+            "description": "Net tax liability or refund claim (Output Tax - Input Tax)"
+          },
+          "netStatus": {
+            "type": "string",
+            "description": "Indicates whether the net amount is payable, refundable, or zero",
+            "enum": [
+              "payable",
+              "refundable",
+              "zero"
+            ],
+            "example": "payable"
+          },
+          "totalGrossSales": {
+            "type": "number",
+            "description": "Total gross sales turnover (inclusive of tax)"
+          },
+          "totalNetSales": {
+            "type": "number",
+            "description": "Total net revenue / sales (exclusive of tax)"
+          },
+          "taxableSales": {
+            "type": "number",
+            "description": "Net taxable sales turnover"
+          },
+          "exemptSales": {
+            "type": "number",
+            "description": "Net zero-rated or exempt sales turnover"
+          },
+          "totalNetPurchases": {
+            "type": "number",
+            "description": "Total net purchases / expense base"
+          },
+          "taxablePurchases": {
+            "type": "number",
+            "description": "Net taxable purchases"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Base currency code",
+            "example": "AUD"
+          },
+          "categories": {
+            "description": "Breakdown of turnover and taxes by configured tax category",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxCategoryBreakdownDto"
+            }
+          }
+        },
+        "required": [
+          "totalOutputTax",
+          "totalInputTax",
+          "netTaxLiability",
+          "netStatus",
+          "totalGrossSales",
+          "totalNetSales",
+          "taxableSales",
+          "exemptSales",
+          "totalNetPurchases",
+          "taxablePurchases",
+          "currencyCode",
+          "categories"
+        ]
+      },
+      "TaxReportBoxDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Statutory box / line identifier",
+            "example": "1A"
+          },
+          "code": {
+            "type": "string",
+            "description": "Official box code or label",
+            "example": "1A"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "Box description / line name",
+            "example": "GST on sales"
           },
           "amount": {
-            "type": "number"
+            "type": "number",
+            "description": "Numeric rounded amount",
+            "example": 1250
+          },
+          "section": {
+            "type": "string",
+            "description": "Grouping or category of the box",
+            "example": "GST"
           }
         },
         "required": [
           "id",
+          "code",
           "description",
           "amount"
+        ]
+      },
+      "TaxReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "reportType": {
+            "type": "string",
+            "description": "Report type requested",
+            "example": "generic"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title of the report",
+            "example": "Generic Tax Summary"
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Subtitle or jurisdiction description",
+            "example": "International Tax Balances & VAT/GST Summary"
+          },
+          "genericSummary": {
+            "description": "Generic tax summary metrics and category schedule",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GenericTaxSummaryDto"
+              }
+            ]
+          },
+          "boxes": {
+            "description": "Statutory box lines (when country-specific report is selected)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxReportBoxDto"
+            }
+          }
+        },
+        "required": [
+          "reportType",
+          "title",
+          "subtitle",
+          "genericSummary"
         ]
       },
       "CreateSalesInvoiceLineDto": {

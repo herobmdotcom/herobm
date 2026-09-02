@@ -1,3 +1,22 @@
+---
+id: tech-state-machines
+title: "Document State Machines & Lifecycles"
+description: "State transition rules, validation guards, and lifecycle states for Sales Orders, Invoices, Shipments, and Purchase Orders."
+category: "Architecture & Engineering"
+order: 4
+resource: "system"
+action: "read"
+routes:
+  - "/sales-orders"
+  - "/invoices"
+  - "/purchase-orders"
+tags: ["state-machine", "lifecycle", "transitions", "validation", "orders", "invoices"]
+related:
+  - "sales-orders"
+  - "purchase-orders"
+  - "sales-invoices"
+---
+
 # State Machines & Business Lifecycles
 
 This document outlines the core business lifecycles and state machine transitions used throughout the Composable ERP. 

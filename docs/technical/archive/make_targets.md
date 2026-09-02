@@ -1,3 +1,14 @@
+---
+id: tech-make-targets
+title: "Makefile Targets & Commands Catalog"
+description: "Reference catalog for all Makefile commands: setup, container management, migrations, verification gates, and testing suites."
+category: "Architecture & Engineering"
+order: 8
+resource: "system"
+action: "read"
+tags: ["makefile", "commands", "build", "ci", "docker", "testing", "targets"]
+---
+
 # Make Targets Guide
 
 This repository uses a `Makefile` to standardize the orchestration of Docker containers, development processes, and the 5-tier verification testing framework that powers the HeroBM platform.

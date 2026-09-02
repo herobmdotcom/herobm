@@ -1,3 +1,17 @@
+---
+id: tech-authorization-guide
+title: "Authorization & Security (Casbin RBAC)"
+description: "Centralized authorization engine, 4-tuple Deny-Override model, CasbinGuard handlers, and policy synchronization."
+category: "Architecture & Engineering"
+order: 9
+resource: "system"
+action: "read"
+routes:
+  - "/admin/users"
+  - "/admin/developers"
+tags: ["authz", "casbin", "rbac", "security", "permissions", "policy", "guards"]
+---
+
 # Authorization & Security Guide (Casbin RBAC)
 
 This document details the authorization architecture of the HeroBM platform. Authentication (AuthN) proves *who* a user is via JWT or API Key, while Authorization (AuthZ) dictates *what* they can do.

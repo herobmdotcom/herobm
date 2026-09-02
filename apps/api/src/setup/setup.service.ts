@@ -1308,7 +1308,7 @@ export class SetupService {
         'source' in requestPayload
           ? `${requestPayload.source}:${requestPayload.stage}`
           : requestPayload.command;
-      console.log(
+      this.logger.log(
         `[Job ${jobId}] Sending POST to pipeline-runner/run for ${desc}...`,
       );
       const runnerUrl =
@@ -1349,12 +1349,14 @@ export class SetupService {
         }),
       })
         .then(async (response) => {
-          console.log(
+          this.logger.log(
             `[Job ${jobId}] pipeline-runner/run responded with status ${response.status}`,
           );
           if (!response.ok) {
             const body = await response.text();
-            console.error(`[Job ${jobId}] Failed to trigger sidecar: ${body}`);
+            this.logger.error(
+              `[Job ${jobId}] Failed to trigger sidecar: ${body}`,
+            );
             delete this.jobResolvers[jobId];
             reject(
               new Error(
@@ -1367,7 +1369,7 @@ export class SetupService {
           }
         })
         .catch((err) => {
-          console.error(
+          this.logger.error(
             `[Job ${jobId}] fetch to pipeline-runner/run failed completely:`,
             err,
           );

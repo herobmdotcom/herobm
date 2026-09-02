@@ -1,3 +1,17 @@
+---
+id: tech-api-layer
+title: "NestJS API Layer Architecture"
+description: "NestJS backend patterns, controller conventions, DTO validation pipes, Drizzle ORM transactions, and global filters."
+category: "Architecture & Engineering"
+order: 16
+resource: "system"
+action: "read"
+tags: ["api", "nestjs", "backend", "drizzle", "controllers", "dtos", "architecture"]
+related:
+  - "tech-authorization-guide"
+  - "dev-authentication"
+---
+
 # API Layer Guide
 
 The NestJS API layer (`apps/api/`) provides a typed, authenticated HTTP interface for the ops-portal. All data endpoints require JWT authentication and Casbin RBAC authorisation. The API reads and writes exclusively to the `herobm_core` schema via Drizzle ORM.

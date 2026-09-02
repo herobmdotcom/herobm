@@ -327,24 +327,31 @@ export class SalesCreditNoteService {
         resolution?: string;
       }> = [];
 
+      const soLineIds = returnLines.map((rl) => rl.salesOrderLineId);
+      const orderLineRows =
+        soLineIds.length > 0
+          ? await innerTx
+              .select({
+                ...getTableColumns(salesOrderLineItems),
+                externalTaxCode: coreProducts.externalTaxCode,
+                productType: coreProducts.productType,
+                productNumber: coreProducts.productNumber,
+                productName: coreProducts.name,
+              })
+              .from(salesOrderLineItems)
+              .leftJoin(
+                coreProducts,
+                eq(salesOrderLineItems.productId, coreProducts.productId),
+              )
+              .where(inArray(salesOrderLineItems.salesOrderLineId, soLineIds))
+          : [];
+
+      const orderLineMap = new Map(
+        orderLineRows.map((ol) => [ol.salesOrderLineId, ol]),
+      );
+
       for (const rl of returnLines) {
-        const orderLine = await innerTx
-          .select({
-            ...getTableColumns(salesOrderLineItems),
-            externalTaxCode: coreProducts.externalTaxCode,
-            productType: coreProducts.productType,
-            productNumber: coreProducts.productNumber,
-            productName: coreProducts.name,
-          })
-          .from(salesOrderLineItems)
-          .leftJoin(
-            coreProducts,
-            eq(salesOrderLineItems.productId, coreProducts.productId),
-          )
-          .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
-          .limit(1)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle select intersection is too complex for static inference
-          .then((r: any[]) => r[0]);
+        const orderLine = orderLineMap.get(rl.salesOrderLineId);
 
         if (!orderLine) continue;
 
@@ -424,10 +431,14 @@ export class SalesCreditNoteService {
           discountPercentage: discStr,
           quantity: qty,
           tax: pricing.tax,
-          productType: orderLine.productType,
+          productType: orderLine.productType
+            ? orderLine.productType
+            : undefined,
           productNumber: prodNumber,
           productName: prodName,
-          productDescription: orderLine.productDescription,
+          productDescription: orderLine.productDescription
+            ? orderLine.productDescription
+            : undefined,
           description: resolvedDescription,
           accountId: settings.defaultRevenueAccountId,
         });
@@ -852,6 +863,7 @@ export class SalesCreditNoteService {
     const CHUNK_SIZE = 500;
     for (let i = 0; i < noteIds.length; i += CHUNK_SIZE) {
       const chunk = noteIds.slice(i, i + CHUNK_SIZE);
+      // n-plus-one-ignore: chunked batching in chunks of 500
       const lines = await this.db
         .select()
         .from(salesCreditNoteLines)
@@ -934,18 +946,26 @@ export class SalesCreditNoteService {
       resolution?: string;
     }> = [];
 
+    const soLineIds = returnLines.map((rl) => rl.salesOrderLineId);
+    const orderLineRows =
+      soLineIds.length > 0
+        ? await innerTx
+            .select({
+              salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+              pricePerUnit: salesOrderLineItems.pricePerUnit,
+              discountPercentage: salesOrderLineItems.discountPercentage,
+              taxCategoryId: salesOrderLineItems.taxCategoryId,
+            })
+            .from(salesOrderLineItems)
+            .where(inArray(salesOrderLineItems.salesOrderLineId, soLineIds))
+        : [];
+
+    const orderLineMap = new Map(
+      orderLineRows.map((ol) => [ol.salesOrderLineId, ol]),
+    );
+
     for (const rl of returnLines) {
-      const orderLine = await innerTx
-        .select({
-          pricePerUnit: salesOrderLineItems.pricePerUnit,
-          discountPercentage: salesOrderLineItems.discountPercentage,
-          taxCategoryId: salesOrderLineItems.taxCategoryId,
-        })
-        .from(salesOrderLineItems)
-        .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
-        .limit(1)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle select intersection is too complex for static inference
-        .then((r: any[]) => r[0]);
+      const orderLine = orderLineMap.get(rl.salesOrderLineId);
 
       if (!orderLine) continue;
 
@@ -1051,6 +1071,24 @@ export class SalesCreditNoteService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Array of anonymous complex objects to be inserted
     const cnLineValues: any[] = [];
 
+    const accountIds = [
+      ...new Set(
+        dto.lines
+          .map((l) => l.accountId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    const accountRows =
+      accountIds.length > 0
+        ? await innerTx
+            .select()
+            .from(glAccounts)
+            .where(inArray(glAccounts.glAccountId, accountIds))
+        : [];
+
+    const accountMap = new Map(accountRows.map((a) => [a.glAccountId, a]));
+
     for (const line of dto.lines) {
       const amount = line.amount;
       totalCreditAmount += amount;
@@ -1064,21 +1102,20 @@ export class SalesCreditNoteService {
         pricePerUnit: amount.toFixed(2),
       });
 
-      const [acct] = await innerTx
-        .select()
-        .from(glAccounts)
-        .where(eq(glAccounts.glAccountId, line.accountId));
-      if (!acct)
-        throw new BadRequestException(`Account ${line.accountId} not found`);
+      if (line.accountId) {
+        const acct = accountMap.get(line.accountId);
+        if (!acct)
+          throw new BadRequestException(`Account ${line.accountId} not found`);
 
-      glLines.push({
-        accountCode: acct.accountCode,
-        debit: amount,
-        credit: 0,
-        memo: line.description,
-        costCenterId: custInfo.costCenterId || undefined,
-        activityId: custInfo.activityId || undefined,
-      });
+        glLines.push({
+          accountCode: acct.accountCode,
+          debit: amount,
+          credit: 0,
+          memo: line.description,
+          costCenterId: custInfo.costCenterId || undefined,
+          activityId: custInfo.activityId || undefined,
+        });
+      }
     }
 
     glLines.push({
@@ -1242,16 +1279,26 @@ export class SalesCreditNoteService {
       .where(eq(salesCreditNotes.salesOrderId, salesOrderId))
       .orderBy(desc(salesCreditNotes.createdOn));
 
-    const result = [];
-    for (const cn of notes) {
-      const lines = await this.db
-        .select()
-        .from(salesCreditNoteLines)
-        .where(eq(salesCreditNoteLines.creditNoteId, cn.creditNoteId));
-      result.push({ ...cn, lines });
+    const noteIds = notes.map((n) => n.creditNoteId);
+    const allLines =
+      noteIds.length > 0
+        ? await this.db
+            .select()
+            .from(salesCreditNoteLines)
+            .where(inArray(salesCreditNoteLines.creditNoteId, noteIds))
+        : [];
+
+    const linesByNoteId = new Map<string, typeof allLines>();
+    for (const l of allLines) {
+      const list = linesByNoteId.get(l.creditNoteId) || [];
+      list.push(l);
+      linesByNoteId.set(l.creditNoteId, list);
     }
 
-    return result;
+    return notes.map((cn) => ({
+      ...cn,
+      lines: linesByNoteId.get(cn.creditNoteId) || [],
+    }));
   }
 
   /**

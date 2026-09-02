@@ -126,6 +126,44 @@ export class CounterFulfillmentService {
         const valuationMethod = this.appConfig.valuationMethod();
         const valuationStrategy = getValuationStrategy(valuationMethod);
 
+        const stockedProductIds = [
+          ...new Set(
+            lines
+              .filter(
+                (l) =>
+                  isStockedProductLine({
+                    productId: l.productId,
+                    productType: l.productType,
+                  }) && l.productId,
+              )
+              .map((l) => l.productId as string),
+          ),
+        ];
+
+        const allProductBins =
+          stockedProductIds.length > 0
+            ? await innerTx
+                .select({
+                  productId: binContents.productId,
+                  locationId: zones.locationId,
+                  binId: bins.binId,
+                  binNumber: bins.binNumber,
+                  zoneCode: zones.code,
+                  binType: bins.binType,
+                  isUnavailable: bins.isUnavailable,
+                  onHand: binContents.actualQuantity,
+                })
+                .from(binContents)
+                .innerJoin(bins, eq(binContents.binId, bins.binId))
+                .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+                .where(
+                  and(
+                    inArray(binContents.productId, stockedProductIds),
+                    isPickableBinCondition(bins),
+                  ),
+                )
+            : [];
+
         for (const line of lines) {
           const orderedQty = parseFloat(line.quantity || '0');
           const alreadyCommitted = committedMap.get(line.salesOrderLineId) || 0;
@@ -165,25 +203,10 @@ export class CounterFulfillmentService {
 
           if (isStocked && line.productId) {
             // Find available stock in pickable bins at this location
-            const productBins = await innerTx
-              .select({
-                binId: bins.binId,
-                binNumber: bins.binNumber,
-                zoneCode: zones.code,
-                binType: bins.binType,
-                isUnavailable: bins.isUnavailable,
-                onHand: binContents.actualQuantity,
-              })
-              .from(binContents)
-              .innerJoin(bins, eq(binContents.binId, bins.binId))
-              .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-              .where(
-                and(
-                  eq(binContents.productId, line.productId),
-                  eq(zones.locationId, locationId),
-                  isPickableBinCondition(bins),
-                ),
-              );
+            const productBins = allProductBins.filter(
+              (pb) =>
+                pb.productId === line.productId && pb.locationId === locationId,
+            );
 
             const pickableBins = filterPickableBins(productBins).sort(
               (a, b) =>

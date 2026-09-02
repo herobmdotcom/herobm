@@ -1,3 +1,14 @@
+---
+id: tech-staging-layer
+title: "Data Staging Layer & dbt Pipelines"
+description: "dbt staging layer models, type casting rules, materialization strategies, and legacy raw data cleansing."
+category: "Architecture & Engineering"
+order: 13
+resource: "system"
+action: "read"
+tags: ["dbt", "staging", "data-pipeline", "sql", "cleansing", "etl"]
+---
+
 # Staging Layer Guide
 
 The dbt staging layer (`stg_*` models) provides a clean, type-safe interface over the raw ABM data loaded by `dlt` into the `raw_abm` schema. All staging models live in `pipelines/abm_transform/models/staging/` and materialise in the `public_staging` schema.

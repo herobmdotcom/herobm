@@ -1,3 +1,12 @@
+---
+id: doc-changelog
+title: "Documentation Changelog"
+description: "Audit trail of documentation updates, schema synchronizations, and checkpoint revisions."
+category: "Miscellaneous"
+order: 99
+tags: ["changelog", "audit", "updates", "docs"]
+---
+
 # User Help Documentation Changelog
 
 This changelog records all synchronization audits and updates to `docs/user/`. Each entry documents the audited Git commit range, covered topics, and the updated synchronization checkpoint.

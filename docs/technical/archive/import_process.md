@@ -1,3 +1,16 @@
+---
+id: tech-import-process
+title: "Legacy Data Import & Migration Pipelines"
+description: "ELT pipeline mechanics, dlt ODBC extraction, dbt transformations, and data reconciliation workflows."
+category: "Architecture & Engineering"
+order: 14
+resource: "system"
+action: "read"
+routes:
+  - "/admin/settings"
+tags: ["import", "elt", "dlt", "odbc", "migration", "reconciliation"]
+---
+
 # ABM Import Process
 
 Technical reference for the ELT pipeline that imports legacy ABM data into the `herobm_core` schema.

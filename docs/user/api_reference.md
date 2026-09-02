@@ -1,10 +1,10 @@
 ---
 id: api-reference
-title: "REST API Reference"
-description: "RESTful API documentation, authentication, rate limits, error schemas, and endpoint catalog."
-category: "Technical"
-order: 33
-resource: "system"
+title: "REST API Reference & Catalog"
+description: "RESTful API documentation, authentication, rate limits, error schemas, and endpoint catalog across 24 domains."
+category: "Developer"
+order: 4
+resource: "developers"
 action: "read"
 routes:
   - "/admin/developers"
@@ -559,7 +559,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/tax-positions/{id}` | Get a tax position by id |
 | `PUT` | `/tax-positions/{id}` | Update a tax position |
 | `DELETE` | `/tax-positions/{id}` | Delete a tax position |
-| `GET` | `/tax/bas-summary` | Get ATO BAS Summary Report Data |
+| `GET` | `/tax/reports` | Get Tax Balances & Statutory Report Data |
 
 ### Transfer Orders
 

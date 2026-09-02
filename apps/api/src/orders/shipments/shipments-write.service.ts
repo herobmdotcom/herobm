@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
@@ -189,22 +189,58 @@ export class ShipmentsWriteService {
           await innerTx.insert(salesOrderShipmentLines).values(lineValues);
         }
 
-        const stockLines = [];
-        for (const line of lineValues) {
-          const orderLine = await findOrderLine(
-            innerTx,
-            line.salesOrderLineId,
-            salesOrderId,
-          );
-          const [product] = orderLine.productId
+        const soLineIds = lineValues.map((l) => l.salesOrderLineId);
+        const orderLineRows =
+          soLineIds.length > 0
+            ? await innerTx
+                .select()
+                .from(salesOrderLineItems)
+                .where(
+                  and(
+                    inArray(salesOrderLineItems.salesOrderLineId, soLineIds),
+                    eq(salesOrderLineItems.salesOrderId, salesOrderId),
+                  ),
+                )
+            : [];
+
+        const orderLinesMap = new Map<string, (typeof orderLineRows)[0]>();
+        for (const ol of orderLineRows) {
+          orderLinesMap.set(ol.salesOrderLineId, ol);
+        }
+
+        const productIds = [
+          ...new Set(
+            orderLineRows
+              .map((ol) => ol.productId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+
+        const productRows =
+          productIds.length > 0
             ? await innerTx
                 .select({
+                  productId: coreProducts.productId,
                   productType: coreProducts.productType,
                   structureType: coreProducts.structureType,
                 })
                 .from(coreProducts)
-                .where(eq(coreProducts.productId, orderLine.productId))
-            : [undefined];
+                .where(inArray(coreProducts.productId, productIds))
+            : [];
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
+        const stockLines = [];
+        for (const line of lineValues) {
+          const orderLine = orderLinesMap.get(line.salesOrderLineId);
+          if (!orderLine) {
+            throw new BadRequestException(
+              `Order line '${line.salesOrderLineId}' not found for sales order '${salesOrderId}'`,
+            );
+          }
+          const product = orderLine.productId
+            ? productMap.get(orderLine.productId)
+            : undefined;
 
           const isStocked =
             Boolean(orderLine.productId) &&

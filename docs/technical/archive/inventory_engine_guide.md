@@ -1,3 +1,21 @@
+---
+id: tech-inventory-engine
+title: "Inventory Ledger Engine Guide"
+description: "Double-entry inventory ledger architecture, atomic stock movement mutations, quantityOnHand caching, and outbox event emissions."
+category: "Architecture & Engineering"
+order: 3
+resource: "system"
+action: "read"
+routes:
+  - "/inventory"
+  - "/inventory/transfers"
+  - "/inventory/shipping"
+tags: ["inventory", "ledger", "double-entry", "stock", "warehouse", "mutations"]
+related:
+  - "inventory-management"
+  - "transfers-quarantine"
+---
+
 # HeroBM Core Inventory Engine Guide
 
 This document describes the design, architecture, and core mutation pathways of the new HeroBM Inventory Engine. The engine is built on a double-entry ledger architecture, ensuring high-fidelity traceability for every physical movement of stock.

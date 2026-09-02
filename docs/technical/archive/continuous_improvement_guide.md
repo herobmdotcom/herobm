@@ -1,3 +1,14 @@
+---
+id: tech-continuous-improvement
+title: "Continuous Improvement & Immune System"
+description: "Immune System protocol, advisory lifecycle, AST structural immunization, and regression defense standards."
+category: "Architecture & Engineering"
+order: 11
+resource: "system"
+action: "read"
+tags: ["continuous-improvement", "advisories", "immune-system", "ast", "invariants", "constitution"]
+---
+
 # Continuous Improvement Protocol
 
 As mandated by `CONSTITUTION.MD`, the Composable ERP operates under a strict Continuous Improvement (CI) protocol. This protocol utilizes an "Immune System" approach: bugs, architectural drift, and security flaws are treated as system infections. 

@@ -69,7 +69,7 @@ export class ProductsController {
     private readonly storageService: StorageService,
   ) {}
 
-  @Get('images/*')
+  @Get('images/*path')
   @SkipCasbin()
   @Public()
   @UseGuards(ThrottlerGuard)

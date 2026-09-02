@@ -47,13 +47,13 @@ function generateMarkdown(events: string[]): string {
 id: webhooks-api
 title: "Webhooks API Reference"
 description: "Real-time event subscriptions, payload schemas, event matrix, signature verification, and delivery retry policies."
-category: "Technical"
-order: 32
-resource: "system"
+category: "Developer"
+order: 3
+resource: "developers"
 action: "read"
 routes:
   - "/admin/developers"
-tags: ["webhooks", "api", "events", "integration", "outbox", "developers"]
+tags: ["webhooks", "api", "events", "integration", "outbox", "developers", "hmac"]
 ---
 
 # Webhooks API Reference
@@ -161,13 +161,12 @@ function run() {
   const events = extractOutboxEvents(source);
   const markdown = generateMarkdown(events);
 
-  fs.writeFileSync(userDocFile, markdown, 'utf-8');
-  console.log(`✅ Generated ${userDocFile} (${events.length} events)`);
+  fs.writeFileSync(devDocFile, markdown, 'utf-8');
+  console.log(`✅ Generated ${devDocFile} (${events.length} events)`);
 
-  // Strip frontmatter for dev doc to keep backward compatibility with legacy tests
-  const devDocContent = markdown.replace(/^---[\s\S]*?---\n+/, '');
-  fs.writeFileSync(devDocFile, devDocContent, 'utf-8');
-  console.log(`✅ Updated ${devDocFile}`);
+  if (fs.existsSync(userDocFile)) {
+    fs.writeFileSync(userDocFile, markdown, 'utf-8');
+  }
 }
 
 run();

@@ -13,7 +13,7 @@ describe('AllExceptionsFilter', () => {
   beforeEach(() => {
     filter = new AllExceptionsFilter();
     errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
-    warnSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation();
+    warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
 
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -36,7 +36,7 @@ describe('AllExceptionsFilter', () => {
     warnSpy.mockRestore();
   });
 
-  it('should log HttpException (404) as structured JSON via debug', () => {
+  it('should log HttpException (404) as structured JSON via warn', () => {
     const exception = new HttpException('Not Found', HttpStatus.NOT_FOUND);
 
     filter.catch(exception, mockHost);
@@ -86,7 +86,7 @@ describe('AllExceptionsFilter', () => {
     expect(mockResponse.status).toHaveBeenCalledWith(500);
   });
 
-  it('should log HttpException (403) as debug, not error', () => {
+  it('should log HttpException (403) as warn, not error', () => {
     const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN);
 
     filter.catch(exception, mockHost);

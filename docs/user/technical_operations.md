@@ -2,7 +2,7 @@
 id: technical-operations
 title: "Developers, Outbox & System Health"
 description: "Manage API keys, Webhooks, rate limits, email SMTP outbox, legacy database imports (ABM/Odoo/CSV), and system diagnostics."
-category: "Technical"
+category: "Developer"
 order: 30
 resource: "system"
 action: "read"

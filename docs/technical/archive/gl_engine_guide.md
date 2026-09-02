@@ -1,3 +1,21 @@
+---
+id: tech-gl-engine
+title: "General Ledger Engine Guide"
+description: "Double-entry accounting engine architecture, Chart of Accounts hierarchy, journal posting invariants, and SHA-256 cryptographic chaining."
+category: "Architecture & Engineering"
+order: 2
+resource: "system"
+action: "read"
+routes:
+  - "/gl/journals"
+  - "/gl/accounts"
+  - "/gl/trial-balance"
+tags: ["gl", "accounting", "double-entry", "journal-entries", "coa", "crypto-hash", "finance"]
+related:
+  - "general-ledger"
+  - "balances"
+---
+
 # General Ledger Engine Guide
 
 The NestJS General Ledger (GL) module (`apps/api/src/gl/`) provides a robust, double-entry accounting engine built directly into HeroBM. It replaces the need for an external financial backend (like ERPNext) for core operational accounting.

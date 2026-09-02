@@ -1,3 +1,16 @@
+---
+id: api-authentication
+title: "API Authentication"
+description: "API Key (machine-to-machine) and JWT Bearer token authentication mechanisms, headers, and security best practices."
+category: "Developer"
+order: 1
+resource: "developers"
+action: "read"
+routes:
+  - "/admin/developers"
+tags: ["api", "auth", "jwt", "api-keys", "security", "developers", "integration"]
+---
+
 # Authentication
 
 The HeroBM API supports dual authentication mechanisms: **API Keys** for backend integrations and automated scripts, and **JWT Bearer Tokens** for interactive user sessions.

@@ -55,15 +55,30 @@ This is the body content of the test documentation.
       );
     });
 
-    it('should handle markdown without frontmatter gracefully', () => {
+    it('should handle markdown without frontmatter gracefully and infer category from path', () => {
       const raw = `# Plain Document\n\nThis is plain text without frontmatter.`;
-      const result = parseHelpMarkdown(raw, '/path/to/plain_doc.md');
+      const result = parseHelpMarkdown(
+        raw,
+        '/path/to/docs/technical/plain_doc.md',
+      );
 
       expect(result.id).toBe('plain-doc');
       expect(result.title).toBe('Plain Document');
+      expect(result.category).toBe('Architecture & Engineering');
+      expect(result.resource).toBe('system');
+      expect(result.description).toBe(
+        'This is plain text without frontmatter.',
+      );
       expect(result.routes).toEqual([]);
       expect(result.tags).toEqual([]);
       expect(result.content).toBe(raw);
+
+      const devResult = parseHelpMarkdown(
+        raw,
+        '/path/to/docs/developers/api_helper.md',
+      );
+      expect(devResult.category).toBe('Developer');
+      expect(devResult.resource).toBe('developers');
     });
   });
 
@@ -241,6 +256,38 @@ Admin only doc.
         expect(searchResults.some((r) => r.id === 'inventory-shipping')).toBe(
           true,
         );
+      }
+    });
+
+    it('should successfully load from all doc domains (user, developers, technical)', async () => {
+      const userDir = path.resolve(__dirname, '../../../../docs/user');
+      const devDir = path.resolve(__dirname, '../../../../docs/developers');
+      const techDir = path.resolve(__dirname, '../../../../docs/technical');
+
+      const existingDirs = [userDir, devDir, techDir].filter((d) =>
+        fs.existsSync(d),
+      );
+
+      if (existingDirs.length > 0) {
+        await service.reloadDocs(existingDirs);
+        const allTopics = await service.getTopics('admin');
+        expect(allTopics.length).toBeGreaterThan(30);
+
+        const categories = new Set(allTopics.map((t) => t.category));
+        expect(categories.has('Developer')).toBe(true);
+        expect(categories.has('Architecture & Engineering')).toBe(true);
+
+        // Context route matching for developer docs
+        const devContext = await service.getContextHelp(
+          '/admin/developers',
+          'admin',
+        );
+        expect(devContext.topic).toBeDefined();
+        expect(devContext.topic?.category).toBe('Developer');
+
+        // Search in technical documentation
+        const techSearch = await service.search('Double-Entry', 'admin');
+        expect(techSearch.length).toBeGreaterThan(0);
       }
     });
 

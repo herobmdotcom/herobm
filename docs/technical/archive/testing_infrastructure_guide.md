@@ -1,3 +1,14 @@
+---
+id: tech-testing-infrastructure
+title: "Testing Infrastructure & Quality Assurance"
+description: "5-Tier verification hierarchy, shift-left testing strategy, unit test mocks, PGlite in-memory testing, and AST structural tests."
+category: "Architecture & Engineering"
+order: 7
+resource: "system"
+action: "read"
+tags: ["testing", "qa", "unit-tests", "pglite", "playwright", "structural-tests", "quality-gates"]
+---
+
 # Testing Infrastructure & Quality Assurance Guide
 
 HeroBM relies on a multi-tiered, cross-platform testing strategy to enforce architectural boundaries, security policies, data integrity, and end-to-end user workflows. As mandated by `CONSTITUTION.MD`, the system utilizes an "Immune System" approach where architectural rules and conventions are encoded as automated structural tests.

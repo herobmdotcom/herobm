@@ -21,6 +21,8 @@ interface OpenApiSpec {
   tags?: Array<{ name: string; description?: string }>;
 }
 
+const devDocFile = path.join(projectRoot, 'docs/developers/api-overview.md');
+
 function run() {
   console.log('Generating API Reference Documentation from openapi.json...');
   if (!fs.existsSync(openApiFile)) {
@@ -62,11 +64,11 @@ function run() {
 
   const markdown = `---
 id: api-reference
-title: "REST API Reference"
-description: "RESTful API documentation, authentication, rate limits, error schemas, and endpoint catalog."
-category: "Technical"
-order: 33
-resource: "system"
+title: "REST API Reference & Catalog"
+description: "RESTful API documentation, authentication, rate limits, error schemas, and endpoint catalog across 24 domains."
+category: "Developer"
+order: 4
+resource: "developers"
 action: "read"
 routes:
   - "/admin/developers"
@@ -122,8 +124,12 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 ${tagSections}
 `;
 
-  fs.writeFileSync(userDocFile, markdown, 'utf-8');
-  console.log(`✅ Generated ${userDocFile} (${totalEndpoints} endpoints)`);
+  fs.writeFileSync(devDocFile, markdown, 'utf-8');
+  console.log(`✅ Generated ${devDocFile} (${totalEndpoints} endpoints)`);
+
+  if (fs.existsSync(userDocFile)) {
+    fs.writeFileSync(userDocFile, markdown, 'utf-8');
+  }
 }
 
 run();

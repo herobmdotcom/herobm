@@ -1,3 +1,14 @@
+---
+id: tech-frontend-patterns
+title: "Frontend Architecture & UI Patterns"
+description: "Next.js Ops Portal architecture, Machine Shop design system, ag-Grid integration, client-side data fetching, and state management."
+category: "Architecture & Engineering"
+order: 10
+resource: "system"
+action: "read"
+tags: ["frontend", "nextjs", "react", "ui", "ag-grid", "tailwind", "design-system"]
+---
+
 # Frontend Architecture & UI Patterns
 
 This document defines the strict constraints and established patterns for building user interfaces within the `ops-portal` (Next.js) application. Adhering to these patterns ensures a consistent user experience, identical technical foundations, and a secure interface.
