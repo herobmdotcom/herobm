@@ -1,7 +1,7 @@
 ---
 id: putaway
 title: "Putaway Operations"
-description: "Move received goods from staging areas to permanent warehouse storage bins."
+description: "Move received goods from inbound dock staging areas into permanent warehouse storage bins."
 category: "Inventory"
 order: 13
 resource: "inventory"
@@ -10,15 +10,18 @@ routes:
   - "/inventory/putaway"
 tags: ["putaway", "warehouse", "bins", "storage", "receiving", "stock", "staging"]
 fields:
-  staging_bin_id:
-    title: "Source Staging Bin"
-    summary: "Temporary dock staging coordinate where inbound goods were initially received."
-  target_bin_id:
-    title: "Destination Storage Bin"
-    summary: "Target pickable warehouse bin, shelf, or rack where stock will reside."
+  location_id:
+    title: "Warehouse Facility"
+    summary: "Physical warehouse location where putaway is being performed."
+  source_type:
+    title: "Source Document Type"
+    summary: "Inbound stream: Goods Receipt (GRN), Customer Sales Return (RMA), Inbound Stock Transfer, or Manufacturing Work Order."
   product_id:
     title: "Product"
-    summary: "Item SKU being relocated from the dock."
+    summary: "Item SKU being relocated from dock staging into permanent storage."
+  target_bin_id:
+    title: "Destination Storage Bin"
+    summary: "Target pickable storage bin, bulk floor coordinate, or quarantine bin."
   quantity:
     title: "Putaway Quantity"
     summary: "Number of units transferred into the permanent storage location."
@@ -31,31 +34,34 @@ related:
 
 # Putaway Operations
 
-The **Putaway** module guides warehouse operators in transporting newly received inventory from inbound dock staging areas into optimized storage and pick bins.
+The **Putaway** module guides warehouse operators in transporting newly received inventory from inbound dock staging areas into permanent storage, pick, bulk, or quarantine bins.
 
 ---
 
-## Putaway Logic & Stock Availability
+## Putaway Logic & Workflow
 
 ```mermaid
 flowchart TD
-    A[Goods Received in Dock Staging Bin] --> B{Evaluate Putaway Strategy}
-    B --> C[1. Primary Default Pick Bin]
-    B --> D[2. Existing Product Storage Bin]
-    B --> E[3. Empty Bulk Storage Bin]
-    C & D & E --> F[Transport Goods & Scan Target Bin]
-    F --> G[Stock Activates in Available Pickable Inventory]
+    A[Inbound Items Arrive: PO Receipt, Customer RMA, Transfer, or Work Order] --> B[Items Staged in Dock Staging Bin]
+    B --> C[Putaway Workbench /inventory/putaway]
+    C --> D[Select Pending Line & Review Primary/Available Bins]
+    D --> E{Choose Destination}
+    E -->|Active Stock| F[Select Storage / Pick / Bulk Bin]
+    E -->|Quality / Damage| G[Select Quarantine Bin + Reason]
+    F & G --> H[Confirm Putaway]
+    H --> I[Perpetual Inventory Moves Stock from Dock Staging to Target Bin]
 ```
 
-### 1. Bin Suggestion Algorithm
-When generating putaway tasks, the system evaluates destination storage in priority order:
-1. **Primary Pick Bin**: If configured on the product record, goods are routed to replenish forward pick locations.
-2. **Co-Located Inventory**: Existing storage bins that already contain the same SKU to consolidate warehouse space.
-3. **Empty Storage / Bulk Bins**: Available empty bins within the product's assigned storage zone.
+### 1. Inbound Stream Aggregation
+The putaway queue aggregates pending items waiting in dock staging across all inbound operational streams:
+* **Supplier Deliveries**: Goods received on Purchase Orders via Goods Receipt Notes (GRN).
+* **Customer Returns**: Returned goods accepted through sales return authorizations (RMA).
+* **Inter-Warehouse Transfers**: Inbound transfer shipments received at the dock.
+* **Manufacturing Output**: Finished assemblies completed on production Work Orders.
 
 ### 2. Dock-to-Storage Stock Activation
-* **Staging Phase**: While items reside in `dock` or `staging` bins, they are counted in total **On Hand** stock but are marked non-pickable (`isPickableBin = false`), preventing premature picking before placement.
-* **Putaway Completion**: Confirming putaway transfers stock into an active `storage`, `pick`, or `bulk` bin, **immediately increasing Available Stock** for automated order allocation and picking queues.
+* **Staging Phase**: While items reside in dock staging bins, they are counted in total physical **On Hand** stock but are marked non-pickable (`isPickableBin = false`), preventing premature picking before placement.
+* **Putaway Completion**: Confirming putaway moves stock into an active `storage`, `pick`, or `bulk` bin, **immediately increasing Available Stock** for automated order allocation and picking queues.
 
 ---
 
@@ -63,11 +69,12 @@ When generating putaway tasks, the system evaluates destination storage in prior
 
 ### 1. Completing a Putaway Task
 1. Go to **Inventory** → **Putaway** (`/inventory/putaway`).
-2. Select an open task from the staging queue.
-3. Review the **Product**, **Quantity**, and system-suggested **Target Bin**.
-4. Transport the physical items to the designated location.
-5. Scan the destination **Bin Barcode** to verify correct placement (or select an alternate overflow bin if full).
-6. Click **Complete Putaway** to commit the stock to active inventory.
+2. Select your **Warehouse Facility** (and optional Zone filter).
+3. Select an open line item from the **Pending Putaway** list.
+4. The detail panel displays the product details, pending quantity, current primary bin (if configured), and available bins in that facility.
+5. Select the **Target Storage Bin** (or search by bin code).
+6. (Optional) If relocating damaged goods for inspection, select a **Quarantine Bin** and enter the **Quarantine Reason**.
+7. Click **Complete Putaway** to commit the stock relocation.
 
 ---
 
@@ -75,8 +82,9 @@ When generating putaway tasks, the system evaluates destination storage in prior
 
 | Field | Description |
 | :--- | :--- |
-| **Source Staging Bin** | Inbound dock holding coordinate. |
-| **Product** | Item SKU and description being moved. |
-| **Putaway Quantity** | Physical count moved to the storage location. |
-| **Destination Bin** | Verified storage bin coordinate (e.g. `B-02-C1`). |
-
+| **Reference** | Inbound document reference (e.g. `GRN-...`, `RMA-...`, `TRN-...`, `WO-...`). |
+| **Source Type** | Origin category (`goods_receipt`, `sales_return`, `transfer_receipt`, `work_order`). |
+| **Product** | Item SKU number and description. |
+| **Quantity** | Pending unit count to be moved from staging into permanent bins. |
+| **Destination Bin** | Target storage bin coordinate (e.g. `A-02-B1`). |
+| **Quarantine Reason** | Mandatory reason text required when routing items to a quarantine bin. |

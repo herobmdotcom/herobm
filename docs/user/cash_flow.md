@@ -4,7 +4,7 @@ title: "Statement of Cash Flows"
 description: "Inspect direct operational, investing, and financing cash flows, verify zero-drift general ledger parity, and generate formal cash flow statements."
 category: "Finance"
 order: 24
-resource: "finance"
+resource: "gl"
 action: "read"
 routes:
   - "/general-ledger/cash-flow"

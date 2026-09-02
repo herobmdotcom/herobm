@@ -1,10 +1,10 @@
 ---
 id: work-orders
 title: "Manufacturing & Work Orders"
-description: "Schedule production assembly, issue raw materials from stock, record scrap, and receive finished goods."
+description: "Schedule production assembly, issue raw materials from stock to WIP, roll up assembly costs, and receive finished goods."
 category: "Manufacturing"
 order: 21
-resource: "manufacturing"
+resource: "work-orders"
 action: "read"
 routes:
   - "/manufacturing/work-orders"
@@ -23,15 +23,18 @@ fields:
   completed_quantity:
     title: "Completed Quantity"
     summary: "Actual verified good units produced and received into warehouse stock."
-  scrap_quantity:
-    title: "Scrapped Quantity"
-    summary: "Defective units or spoiled component quantities written off during assembly."
   location_id:
-    title: "Production Warehouse"
-    summary: "Facility where raw materials are consumed and finished goods are stocked."
+    title: "Production Facility"
+    summary: "Warehouse facility where raw materials are consumed and finished goods are stocked."
+  wip_bin_id:
+    title: "WIP Holding Bin"
+    summary: "Dedicated Work-in-Progress staging bin holding picked components during assembly."
+  output_bin_id:
+    title: "Output Destination Bin"
+    summary: "Storage bin where finished manufactured goods are deposited upon completion."
   status:
     title: "Work Order Status"
-    summary: "Production stage (Draft, Released, In-Progress, Completed, Closed)."
+    summary: "Production stage (Draft, Planned, In-Progress, Completed, Cancelled)."
 related:
   - "products"
   - "inventory"
@@ -42,7 +45,7 @@ related:
 
 # Manufacturing & Work Orders
 
-The **Work Orders** module coordinates assembly and manufacturing processes. It consumes raw component stock based on Bill of Materials (BOM) formulas, tracks Work-in-Progress (WIP), and receives capitalized finished goods into inventory.
+The **Work Orders** module coordinates assembly and manufacturing processes. It consumes raw component stock based on Bill of Materials (BOM) formulas, stages Work-in-Progress (WIP), rolls up assembly and additional costs, and receives capitalized finished goods into inventory.
 
 ---
 
@@ -51,32 +54,38 @@ The **Work Orders** module coordinates assembly and manufacturing processes. It 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Work Order
-    Draft --> Released : Release Order (Commit Component Stock)
-    Released --> InProgress : Issue Components to WIP
-    InProgress --> Completed : Receive Finished Goods
-    Completed --> Closed : Finalize Cost Rollup & Variance
+    Draft --> Planned : Plan Assembly (Verify Components)
     Draft --> Cancelled : Cancel
+
+    Planned --> InProgress : Start Assembly (Issue Parts to WIP)
+    Planned --> Draft : Revise Quantities
+    Planned --> Cancelled : Cancel
+
+    InProgress --> Completed : Receive Finished Goods
+    InProgress --> Cancelled : Cancel
+
+    Cancelled --> Draft : Reopen
 ```
 
 ### 1. Bill of Materials (BOM) Component Requirements
-When a work order is released, required component quantities are computed from the multi-level BOM:
+When creating a work order, required component quantities are populated from the product's Bill of Materials:
 
 ```
-Required Component Quantity = Target Quantity * BOM Component Ratio * (1 + Scrap Allowance% / 100)
+Required Component Quantity = Target Quantity * BOM Component Ratio
 ```
 
-* **Stock Commitment**: Advancing to `Released` commits raw materials in storage bins, preventing other sales orders or work orders from claiming those parts.
-* **Component Issue**: Advancing to `In-Progress` physically decrements component counts from storage bins and moves stock value into Work-in-Progress (WIP).
+* **Shortage Detection**: If any raw material component has insufficient stock, the system flags the shortage and logs a linked demand in the **Purchase Demands** queue tagged with the `demandWorkOrderId`.
+* **Component Picking (`work_order_picks`)**: Moving to `Planned` and picking components transfers physical items from standard storage bins into the job's designated **`WIP Holding Bin`**.
 
 ### 2. Finished Good Valuation & Cost Rollup
-When assembly is finalized, the unit cost of the finished product is calculated dynamically:
+When assembly is completed, the total manufacturing cost and finished good unit valuation are calculated:
 
 ```
-Total Manufacturing Cost = Sum(Actual Component Qty Consumed * Component WAC) + Labor & Overhead
+Total Manufacturing Cost = Sum(Actual Component Qty Consumed * Component Unit Cost) + Additional Costs + (Assembly Cost Per Unit * Completed Qty)
 Finished Good Unit Cost = Total Manufacturing Cost / Completed Quantity
 ```
 
-The resulting unit cost becomes the initial Moving WAC for newly manufactured stock batches.
+The resulting unit cost becomes the capitalized Moving WAC baseline for the newly manufactured inventory batch.
 
 ### 3. General Ledger Manufacturing Postings
 
@@ -88,10 +97,7 @@ The resulting unit cost becomes the initial Moving WAC for newly manufactured st
 2. Finished Goods Completion:
    Debit:  Finished Goods Inventory Asset Account (Completed Qty * Finished Unit Cost)
    Credit: Work in Progress (WIP) Asset Account
-
-3. Scrap / Production Loss:
-   Debit:  Manufacturing Scrap / Variance Expense
-   Credit: Work in Progress (WIP) Asset Account
+   Credit: Direct Labor / Assembly Overhead Absorption Account (if applicable)
 ```
 
 ---
@@ -101,12 +107,13 @@ The resulting unit cost becomes the initial Moving WAC for newly manufactured st
 ### 1. Creating and Completing a Work Order
 1. Go to **Manufacturing** → **Work Orders** (`/manufacturing/work-orders`).
 2. Click **New Work Order**.
-3. Select the **Finished Product** and specify the **Target Quantity**.
-4. Review the auto-populated **Bill of Materials (BOM)** components.
-5. Click **Release Order** to commit raw components.
-6. When assembly starts on the floor, click **Start Assembly** (issues parts to WIP).
-7. Upon completion, enter **Completed Quantity** and any **Scrapped Quantity**.
-8. Click **Complete Work Order** to deposit finished units into storage and post capitalized asset entries.
+3. Select the **Finished Product**, destination **Warehouse Facility**, and specify the **Target Quantity**.
+4. The system auto-populates the single-level Bill of Materials component lines and required quantities.
+5. Click **Save as Draft**, then click **Plan Order** to verify component availability.
+6. Pick the required component parts into the designated **WIP Bin**.
+7. Click **Start Assembly** to advance to `In-Progress`.
+8. When production is finished, enter the **Completed Quantity**, select the destination **Output Bin**, and review any additional assembly charges.
+9. Click **Complete Work Order** to deposit finished units into storage and post capitalized asset entries.
 
 ---
 
@@ -115,10 +122,13 @@ The resulting unit cost becomes the initial Moving WAC for newly manufactured st
 | Field | Description |
 | :--- | :--- |
 | **Work Order Number** | Unique production identifier (e.g. `WO-2026-00021`). |
-| **Finished Good** | Assembled product SKU and description. |
+| **Finished Good** | Assembled product SKU and title. |
 | **Target Quantity** | Scheduled production count. |
-| **Completed Quantity** | Actual accepted units manufactured. |
-| **Scrapped Quantity** | Defective or damaged units recorded during assembly. |
-| **Production Warehouse** | Facility where assembly occurs. |
-| **Status** | Stage (`Draft`, `Released`, `In-Progress`, `Completed`, `Closed`). |
-
+| **Completed Quantity** | Actual verified units manufactured. |
+| **Production Facility** | Warehouse location where assembly occurs. |
+| **WIP Bin** | Staging bin holding raw materials during assembly. |
+| **Output Bin** | Permanent storage bin receiving finished units. |
+| **Assembly Cost Per Unit**| Direct labor/assembly rate per completed unit. |
+| **Additional Cost** | Ad-hoc overhead or machine tooling charge. |
+| **Total Cost** | Total capitalized manufacturing value. |
+| **Status** | Stage (`Draft`, `Planned`, `In-Progress`, `Completed`, `Cancelled`). |

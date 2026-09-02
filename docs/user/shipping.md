@@ -1,20 +1,23 @@
 ---
 id: inventory-shipping
 title: "Shipping & Outbound Logistics"
-description: "Pack picked items, execute scan-to-dispatch barcode fulfillment, print carrier consignment labels, process supplier returns (RTV), and complete dispatch."
+description: "Inspect picked items, execute scan-to-dispatch barcode fulfillment, record carrier tracking details, and confirm shipment dispatch."
 category: "Inventory"
 order: 15
-resource: "orders"
+resource: "sales-orders"
 action: "read"
 routes:
   - "/inventory/shipping"
   - "/inventory/shipping/scan-to-dispatch"
   - "/shipments/returns"
-tags: ["shipping", "logistics", "packing", "dispatch", "carriers", "scan-to-dispatch", "barcode", "zebra", "rtv"]
+tags: ["shipping", "logistics", "dispatch", "carriers", "tracking", "scan-to-dispatch", "barcode", "zebra", "rtv"]
 fields:
   shipping_notes:
     title: "Driver Instructions"
-    summary: "Special delivery instructions (e.g. Tailgate required, Gate code)."
+    summary: "Special delivery instructions (e.g. Tailgate required, Gate access code)."
+  tracking_number:
+    title: "Carrier Tracking Number"
+    summary: "External consignment or carrier tracking number recorded for customer reference."
   scanner_input:
     title: "Barcode Scanner Input"
     summary: "Continuous auto-focused input field for USB/Bluetooth hardware scanners and mobile terminals."
@@ -23,7 +26,7 @@ fields:
     summary: "Canonical barcode string encoding order ID, sales order line ID, bin ID, and quantity."
   dispatch_action:
     title: "Ship / Dispatch Action"
-    summary: "Generates shipment record and advances state directly to Dispatched."
+    summary: "Generates the shipment record and advances state directly to Dispatched."
 related:
   - "shipments"
   - "picking"
@@ -33,7 +36,7 @@ related:
 
 # Shipping & Outbound Logistics
 
-The **Shipping** desk is the final checkpoint before goods leave the facility. Operators pack picked orders into shipping cartons, execute rapid scan-to-dispatch workflows, print carrier labels, generate delivery dockets, and confirm final dispatch.
+The **Shipping** desk is the final checkpoint before goods leave the facility. Operators review picked items staged in the shipping area, record carrier tracking numbers and driver instructions, print delivery packing slips, and confirm outbound dispatch.
 
 ---
 
@@ -41,32 +44,35 @@ The **Shipping** desk is the final checkpoint before goods leave the facility. O
 
 ```mermaid
 flowchart TD
-    A[Customer Order Confirmed] --> B[Generate Pick Lists & Zebra Barcodes]
-    B --> C{Fulfillment Channel}
-    C -->|Fast-Track Barcode Station| D[Scan-to-Dispatch Station]
-    C -->|Standard Pack Station| E[Verify Items & Pack Cartons]
-    D -->|Scan Pick Barcodes| F[Auto-Record Picks & Aggregate Order]
-    F -->|One-Click Ship| G[Auto-Generate Shipment & Mark Dispatched]
-    E --> H[Weigh & Measure Parcel]
-    H --> I[Print Carrier Label & Packing Slip]
-    I --> J[Confirm Dispatch]
-    G --> K[Goods Handed to Carrier]
-    J --> K
+    A[Picked Order Staged in SHIPPING Bin] --> B{Fulfillment Workbench}
+    B -->|Standard Workbench| C[Shipping Workbench /inventory/shipping]
+    B -->|Fast-Track Barcode Station| D[Scan-to-Dispatch Station /inventory/shipping/scan-to-dispatch]
+
+    C --> E[Select Order, Enter Tracking & Line Qtys]
+    D --> F[Scan Barcodes to Auto-Pick & Group Order]
+
+    E --> G[Click Ship Order / Ship Partial]
+    F --> G
+
+    G --> H[1. Generate Shipment Record & Mark DISPATCHED]
+    G --> I[2. Relieve Location Inventory & Post COGS to GL]
+    G --> J[3. Print Branded Delivery Docket / Packing Slip PDF]
 ```
 
-### 1. Customer Shipments vs Scan-to-Dispatch vs Supplier Returns (RTV)
-- **Customer Shipments (`/inventory/shipping`)**: Standard packing workbench to inspect picked lines, enter parcel weights, select carriers, and create outbound shipments.
-- **Scan-to-Dispatch (`/inventory/shipping/scan-to-dispatch`)**: High-velocity barcode fulfillment station designed for rapid pick-and-pack operations with handheld barcode scanners.
-- **Supplier Returns (RTV) (`/shipments/returns`)**: Defective or rejected supplier stock is packed and returned to vendors.
+### 1. Shipment Channels
+
+- **Shipping Workbench (`/inventory/shipping`)**: Visual dispatch interface to review open orders ready for shipping, enter carrier tracking details, adjust line quantities for partial shipments, and generate outbound consignments.
+- **Scan-to-Dispatch (`/inventory/shipping/scan-to-dispatch`)**: High-velocity barcode fulfillment station designed for rapid pick-and-pack operations with handheld wireless or USB barcode scanners.
+- **Supplier Returns Dispatch (`/shipments/returns`)**: Staged vendor return lines are reviewed, packed, and marked shipped to decrement inventory and notify procurement.
 
 ---
 
 ## Scan to Dispatch (Fast-Track Barcode Fulfillment)
 
-The **Scan-to-Dispatch** interface (`/inventory/shipping/scan-to-dispatch`) streamlines high-volume warehouse fulfillment by combining line picking confirmation and shipment dispatch into a single scan-driven station.
+The **Scan-to-Dispatch** interface (`/inventory/shipping/scan-to-dispatch`) combines line pick registration and shipment dispatch into a single scan-driven workflow.
 
 ### 1. Hardware Scanner Integration
-- **Hands-Free Autofocus**: The scanner input field maintains continuous focus automatically, even when clicking elsewhere on the page, eliminating the need to use a mouse or keyboard.
+- **Hands-Free Autofocus**: The scanner input field maintains continuous focus automatically, eliminating the need to use a mouse or keyboard between scans.
 - **Auditory Feedback**:
   - **Success Chime (880 Hz)**: Confirms valid barcode scans, line pick registrations, and successful order dispatches.
   - **Error Tone (220 Hz)**: Alerts the operator immediately if an invalid barcode, unallocated line, or system error occurs.
@@ -83,45 +89,29 @@ PICK:{orderId}:{lineId}:{binId}:{quantity}
 - **`binId`**: UUID of the warehouse bin location where the stock was picked.
 - **`quantity`**: Picked unit count (defaults to `1` if omitted).
 
-*(Shorthand format `{orderId}:{lineId}:{binId}:{quantity}` is also supported).*
-
 ### 3. Real-Time Order Cards & Aggregation
 As barcodes are scanned:
-- Scans are automatically grouped into distinct **Order Cards** in the active session list, sorted by most recent activity.
+- Scans are automatically aggregated into distinct **Order Cards** in the active session list, sorted by most recent activity.
 - The interface displays real-time progress indicators:
   - **Fully Picked**: All physical line items on the order have been scanned.
   - **Partially Picked (X / Y lines)**: Indicates remaining unpicked lines.
-- Expanding an order card displays the full list of order lines, bin allocations, picked counts, and individual pick cancellation buttons to correct accidental scans.
+- Expanding an order card displays the full list of order lines, bin allocations, picked counts, and individual pick cancellation buttons.
 
 ### 4. One-Click Automated Dispatch
-- **Ship Order**: Enabled when all lines (or all available physical lines) have been picked. In a single automated action, HeroBM queries the shipping context, creates the shipment record, transitions the shipment state to `DISPATCHED`, and clears the order from the active queue.
-- **Ship Partial**: Available when an order is partially picked and remaining unpicked lines are out of stock, allowing backorder splits without stalling available shipments.
+- **Ship Order**: Enabled when all lines (or all available physical lines) have been picked. In a single automated action, the system queries the shipping context, creates the shipment record, transitions the shipment state to `DISPATCHED`, posts COGS, and clears the order from the active queue.
+- **Ship Partial**: Available when an order is partially picked and remaining lines are on backorder, allowing dispatch of available goods without stalling the customer.
 
 ---
 
 ## Step-by-Step Workflows
 
-### 1. High-Velocity Scan-to-Dispatch Fulfillment
-1. Navigate to **Inventory** → **Shipping** → **Scan to Dispatch** (`/inventory/shipping/scan-to-dispatch`).
-2. Point your USB, Bluetooth, or Zebra hardware barcode scanner at the printed pick list or item barcode.
-3. Scan each item's pick label. Listen for the high-pitched confirmation chime.
-4. Review the aggregated order card. Verify that line quantities match the physical parcel.
-5. Click **Ship Order** (or **Ship Partial** if shipping an available subset).
-6. The system creates the shipment, transitions its state to `DISPATCHED`, displays the generated shipment number, and clears the completed card.
-
-### 2. Standard Packing and Dispatching Customer Goods
-1. Go to **Inventory** → **Shipping** → **Customer Shipments** (`/inventory/shipping`).
-2. Select an order ready from the picking stage.
-3. Verify line items packed into the carton.
-4. Enter the **Package Weight** and select the **Carrier**.
-5. Print the **Packing Slip** and affix the shipping label.
-6. Click **Confirm Dispatch**.
-
-### 3. Processing Supplier Returns (RTV)
-1. Go to **Inventory** → **Shipping** → **Supplier Returns** (`/shipments/returns`).
-2. Select the approved return debit note or purchase return record.
-3. Verify the vendor destination address and return items.
-4. Print the RTV dispatch documentation and confirm shipment to the vendor.
+### 1. Dispatching from the Shipping Workbench
+1. Go to **Inventory** → **Shipping** (`/inventory/shipping`).
+2. Select an order from the **Ready to Ship** or **Partially Picked** tabs.
+3. Review the customer address and picked quantities.
+4. (Optional) Enter the carrier's **Tracking Number** and any special **Driver Instructions**.
+5. Click **Ship Order** (or **Ship Partial** if shipping only a subset of picked lines).
+6. The shipment record is created in `DISPATCHED` state and the packing slip PDF is ready to print.
 
 ---
 
@@ -129,8 +119,9 @@ As barcodes are scanned:
 
 | Field | Description |
 | :--- | :--- |
-| **Scanner Input** | Auto-focused listener receiving scanned barcode strings from hardware scanners. |
-| **Barcode Payload** | Canonical scan-to-pick string (`PICK:{orderId}:{lineId}:{binId}:{quantity}`). |
-| **Shipping Notes** | Special delivery instructions (e.g. Tailgate required, Gate code). |
-| **Shipment Status** | Outbound shipment state (`Draft`, `Packing`, `Dispatched`, `Delivered`). |
-| **Active Orders Queue** | Real-time session list of orders currently being scanned and packed. |
+| **Order Number** | Linked Sales Order number (`ORD-...`). |
+| **Customer** | Name of the recipient account. |
+| **Tracking Number** | Carrier consignment tracking code for freight lookup. |
+| **Driver Notes** | Special freight instructions printed on the delivery docket. |
+| **Shipment Status** | Stage of the shipment (`Draft`, `Dispatched`, `Partially Received`, `Received`, `Cancelled`). |
+| **Available to Ship** | Picked physical units currently staged in the `SHIPPING` bin ready for dispatch. |

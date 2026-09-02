@@ -20,19 +20,19 @@ fields:
     summary: "Specific shelf, rack, or aisle coordinate (e.g. A-04-B2)."
   bin_type:
     title: "Bin Type"
-    summary: "Storage classification (storage, pick, bulk, quarantine, dock, in_transit)."
+    summary: "Storage classification (storage, pick, bulk, staging, quarantine, in_transit, wip)."
   quantity_on_hand:
     title: "On Hand (OH)"
     summary: "Total physical units physically present in the warehouse facility."
   quantity_committed:
     title: "Committed"
-    summary: "Stock allocated to confirmed customer orders and released production work orders."
+    summary: "Stock allocated to confirmed customer orders and active picking queues."
   quantity_available:
     title: "Available (Avail)"
     summary: "Stock free for new customer orders (Pickable Bins minus Committed stock)."
   movement_type:
     title: "Movement Type"
-    summary: "Ledger transaction type: RECEIPT, PICK, DISPATCH, TRANSFER, ADJUSTMENT, RETURN_IN, RETURN_OUT."
+    summary: "Ledger transaction type: INITIAL_IMPORT, PO_RECEIPT, SO_SHIPMENT, RETURN, ADJUSTMENT, TRANSFER."
 related:
   - "products"
   - "transfers-quarantine"
@@ -50,18 +50,18 @@ The **Inventory** module tracks perpetual stock levels across warehouse location
 ## Inventory Calculations & Valuation Rules
 
 ### 1. The Stock Availability Equation
-Availability is calculated dynamically across warehouse storage bins using a strict pickability whitelist:
+Availability is calculated dynamically across warehouse storage bins using the canonical availability function:
 
 ```
-Available Stock = Sum(Pickable Storage Bins) - Allocated Committed Stock
+Available Stock = On Hand - Committed Stock - Reserved Stock
 ```
 
-* **Pickable Bin Whitelist**: Stock is only eligible for customer fulfillment if the storage bin meets three conditions:
+* **Pickable Bin Whitelist**: Stock is only eligible for commercial allocation if the storage bin meets the pickability criteria:
   1. `bin_type` is `storage`, `pick`, or `bulk`.
   2. `is_unavailable = false` (bin is not locked or under maintenance).
   3. `is_bonded = false` (stock is cleared for commercial release).
-* **Non-Pickable Bins**: Items in `quarantine`, `dock/staging`, `in_transit`, or locked bins are visible in physical **On Hand** totals but are strictly **excluded from Available Stock**.
-* **Committed Stock**: Units reserved for `Confirmed` sales orders, active picking carts, and released `In-Progress` manufacturing work orders.
+* **Non-Pickable Bins**: Items in `quarantine`, `staging`, `in_transit`, or `wip` bins are visible in physical **On Hand** totals but are strictly **excluded from Available Stock**.
+* **Committed Stock**: Units reserved for `Confirmed` sales orders, active picking lines, and open production work orders.
 
 ### 2. Perpetual Costing & Valuation Strategies
 
@@ -83,10 +83,12 @@ New WAC = ((Current QOH * Current WAC) + (Qty Received * Actual Unit Cost)) / (C
 
 #### B. Standard Costing & Purchase Price Variance (PPV)
 When using Standard Costing, inventory is capitalized at standard cost regardless of the supplier purchase price:
+
 ```
 Inventory Value Added = Qty Received * Standard Cost
 Purchase Price Variance (PPV) = (Actual Unit Cost - Standard Cost) * Qty Received
 ```
+
 * If `Actual Cost > Standard Cost`, the positive difference debits PPV expense.
 * If `Actual Cost < Standard Cost`, the favorable variance credits PPV expense.
 
@@ -128,9 +130,8 @@ Stock count corrections generate immutable entries in the Perpetual Stock Ledger
 | :--- | :--- |
 | **Warehouse Location** | Facility or site where stock is physically situated. |
 | **Bin Coordinate** | Aisle, rack, and shelf storage location (e.g. `A-04-B2`). |
-| **Bin Type** | Functional category (`storage`, `pick`, `bulk`, `quarantine`, `dock`). |
+| **Bin Type** | Functional category (`storage`, `pick`, `bulk`, `staging`, `quarantine`, `in_transit`, `wip`). |
 | **On Hand** | Total physical quantity residing in the facility. |
 | **Committed** | Quantity reserved for open sales orders and work orders. |
 | **Available** | Free stock in eligible pickable bins ready for new orders. |
-| **Movement Type** | Transaction type in the perpetual ledger (`RECEIPT`, `PICK`, `DISPATCH`, `ADJUSTMENT`). |
-
+| **Movement Type** | Transaction type in the perpetual ledger (`INITIAL_IMPORT`, `PO_RECEIPT`, `SO_SHIPMENT`, `RETURN`, `ADJUSTMENT`, `TRANSFER`). |

@@ -4,10 +4,10 @@ title: "Over-The-Counter (OTC) Sales"
 description: "Process rapid trade counter sales with barcode scanning, direct bin stock deduction, instant tax invoicing, and immediate payment receipts."
 category: "Sales"
 order: 4
+resource: "sales-orders"
+action: "read"
 routes:
   - "/sales-orders/counter"
-resource: "orders"
-action: "read"
 tags: ["sales", "counter", "otc", "pos", "barcode", "fulfillment", "walk-in", "invoices", "payments"]
 fields:
   customer_id:
@@ -45,7 +45,7 @@ related:
 
 The **Over-The-Counter (OTC) Sales** station provides a streamlined, rapid point-of-sale interface tailored for trade counters, pickup desks, and walk-in retail transactions.
 
-Instead of navigating the standard multi-step fulfillment lifecycle (Order → Pick Queue → Dispatch Shipments → AR Invoicing → Payment Allocation), the OTC module unifies all four operational and accounting actions into a single one-click transaction.
+Instead of navigating the standard multi-step fulfillment lifecycle (Order → Pick Queue → Dispatch Shipments → AR Invoicing → Payment Allocation), the OTC module unifies all operational and accounting actions into a single atomic transaction.
 
 ---
 
@@ -81,7 +81,7 @@ flowchart LR
 ## Step-by-Step Counter Workflow
 
 ### 1. Identify the Customer & Location
-1. **Counter Location**: Ensure the correct warehouse/counter location is selected in the top-right header (e.g. `Warehouse (1)`).
+1. **Counter Location**: Ensure the correct warehouse/counter location is selected in the top header.
 2. **Customer**: 
    - For walk-in retail sales, keep the default **Walk-In Customer**.
    - For trade account customers, type in the **Customer** field to search by company name or account number. Negotiated discounts and price tiers are loaded immediately.

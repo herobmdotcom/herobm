@@ -39,15 +39,22 @@ The **Users & Roles** module manages operator accounts, authentication security,
 ```mermaid
 flowchart LR
     User[User Account] -->|Assigned To| Role[Role e.g. Warehouse]
-    Role -->|Enforces| Policy[Casbin Policy Matrix]
+    Role -->|Enforces| Policy[Casbin Policy Matrix in PostgreSQL]
     Policy -->|Grants Permissions| Res[Resource & Action e.g. orders:read, inventory:write]
 ```
 
-### 1. Standard Predefined Roles
-- **Administrator**: Unrestricted access across all modules, configuration, and developer tools.
-- **Sales Representative**: Quotes, Sales Orders, Customer profiles, and Shipments.
-- **Warehouse Operator**: Receiving, Putaway, Bin movements, Picking, and Shipping dispatch.
-- **Finance / Accountant**: Invoices, Credit Notes, General Ledger, Balances, and Bank Reconciliations.
+### 1. Casbin 4-Tuple Model
+HeroBM utilizes a 4-tuple Casbin policy model (`sub, obj, act, eft`) with **Deny-Override** resolution:
+- **`sub` (Subject / Role)**: User identifier or assigned role.
+- **`obj` (Object / Resource)**: Target system resource (e.g. `sales-orders`, `purchase-orders`, `inventory`, `gl`, `reports`).
+- **`act` (Action)**: Standardized authorization action: `read`, `write`, `archive`, `handle`, `invoice`, or `delete`.
+- **`eft` (Effect)**: Explicit authorization effect (`allow` or `deny`).
+
+### 2. Standard Predefined Roles
+- **Administrator**: Full administrative access across all modules, configurations, and developer tools.
+- **Sales Representative**: Quotes, Sales Orders, Customer profiles, and Counter Sales.
+- **Warehouse Operator**: Inbound Receiving, Putaway, Bin movements, Picking, and Shipping dispatch.
+- **Finance / Accountant**: Sales/Supplier Invoices, Credit Notes, General Ledger, Balances, and Bank Reconciliations.
 - **Read-Only Auditor**: Read-only inspection across all operational and financial records.
 
 ---
@@ -64,8 +71,8 @@ flowchart LR
 ### 2. Modifying Role Permissions
 1. Go to **Admin** → **Users** → **Roles & Permissions** (`/admin/users/roles`).
 2. Select the target role.
-3. Toggle permissions on the resource grid (Create, Read, Update, Delete per resource).
-4. Click **Save Permissions**. Changes take effect immediately.
+3. Toggle permissions on the resource grid across standard actions (`read`, `write`, `archive`, `handle`, `invoice`, `delete`).
+4. Click **Save Permissions**. Policies update live in PostgreSQL without requiring an application restart.
 
 ---
 
@@ -76,5 +83,5 @@ flowchart LR
 | **Username** | User login identity. |
 | **Email** | Notifications and account email. |
 | **Role** | Access tier determining permission policies. |
-| **Resource** | System module (e.g. `orders`, `inventory`, `finance`). |
-| **Action** | Allowed verb (`read`, `write`, `delete`, `admin`). |
+| **Resource** | System module (e.g. `sales-orders`, `inventory`, `gl`, `reports`). |
+| **Action** | Allowed verb (`read`, `write`, `archive`, `handle`, `invoice`, `delete`). |

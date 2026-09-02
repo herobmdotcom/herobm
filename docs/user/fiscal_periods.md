@@ -72,7 +72,7 @@ stateDiagram-v2
 - **Reversibility**: Only authorized users with `write` permission on `fiscal-periods` (such as Finance or Admin roles) can explicitly re-open a hard-closed period.
 
 > [!WARNING]
-> **Hard Close Invariant & Database Triggers**: Attempting to post any journal entry or transaction with an effective date in a **Hard Closed** period is rejected directly at the PostgreSQL trigger and GL engine layer (`enforce_fiscal_period_hard_lock`). This prevents retroactive adjustments, backdating, and unauthorized mutations from corrupting published financial statements or breaking the cryptographic hash chain.
+> **Hard Close Invariant & Database Triggers**: Attempting to post any journal entry or transaction with an effective date in a **Hard Closed** period is rejected directly at the PostgreSQL trigger and GL engine layer (`herobm_core.enforce_gl_journal_fiscal_period_lock()`). This prevents retroactive adjustments, backdating, and unauthorized mutations from corrupting published financial statements or breaking the cryptographic hash chain.
 
 ---
 
@@ -131,4 +131,3 @@ All fiscal period transitions are enqueued to the transaction outbox and relayed
 | `fiscal_period.created` | Automatic or manual generation of 12 monthly fiscal periods. | `periodName`, `fiscalYear`, `periodNumber`, `startDate`, `endDate`, `status`, `notes` |
 | `fiscal_period.status_changed` | Transitioning a period between `open`, `soft_locked`, or `hard_closed`. | `periodName`, `fiscalYear`, `periodNumber`, `previousStatus`, `newStatus`, `notes` |
 | `fiscal_period.updated` | Period metadata or notes updated without state transition. | `periodName`, `fiscalYear`, `periodNumber`, `previousStatus`, `newStatus`, `notes` |
-

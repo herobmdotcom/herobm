@@ -26,7 +26,7 @@ fields:
     summary: "Mandatory classification (e.g. Damaged in Transit, Quality Audit, Customer RMA)."
   status:
     title: "Transfer Status"
-    summary: "Stage of the transfer (Draft, In-Transit, Received, Cancelled)."
+    summary: "Stage of the transfer (Draft, Requested, In-Transit, Received, Cancelled)."
 related:
   - "inventory"
   - "receiving"
@@ -45,26 +45,31 @@ The **Transfers & Quarantine** module manages stock relocation between warehouse
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Transfer Order
-    Draft --> InTransit : Dispatch from Origin (In-Transit Bin)
-    InTransit --> Received : Receive at Destination (Active Storage)
+    Draft --> Requested : Request Stock from Origin
     Draft --> Cancelled : Cancel
+
+    Requested --> InTransit : Dispatch from Origin (In-Transit Bin)
+    Requested --> Cancelled : Cancel
+
+    InTransit --> Received : Receive at Destination Storage
+    InTransit --> Cancelled : Abort Transfer
 ```
 
 ### 1. Inter-Warehouse Virtual Bin Accounting
-To ensure perpetual inventory balances remain accurate while goods are moving between physical sites:
-* **Dispatching from Origin**: Picking and dispatching items moves them out of the origin facility's pickable storage bins and into a virtual **`in_transit`** location. Physical on-hand at the origin is decremented immediately, but destination available stock does not increase prematurely.
-* **Receiving at Destination**: When the vehicle arrives at the target facility, dock staff receive the goods, transferring units from `in_transit` into destination storage or dock bins.
+To ensure perpetual inventory balances remain accurate while goods are in transit between physical sites:
+* **Dispatching from Origin**: Picking and dispatching items moves them out of the origin facility's pickable storage bins and into a virtual **`in_transit`** location. Physical on-hand at the origin is decremented immediately, while destination available stock does not increase prematurely.
+* **Receiving at Destination**: When the vehicle arrives at the target facility, dock staff receive the goods, transferring units from `in_transit` into destination storage or dock staging bins.
 
 ### 2. Quarantine Management & Availability Isolation
-* **Isolation Rule**: Any inventory residing in a bin with `bin_type = quarantine` is strictly excluded from `Available Stock` calculations (`isPickableBin = false`). It cannot be reserved by new sales orders or allocated to pick waves.
+* **Isolation Rule**: Any inventory residing in a bin with `bin_type = quarantine` is strictly excluded from `Available Stock` calculations (`isPickableBin = false`). It cannot be reserved by new sales orders or allocated to picking queues.
 * **Three Quarantine Resolution Paths**:
-  1. **Release to Active Stock**: Quality inspection passes; stock is moved from the Quarantine bin into standard `storage` or `pick` bins, immediately restoring Available Stock.
+  1. **Release to Active Stock**: Quality inspection passes; stock is moved from the Quarantine bin into standard `storage`, `pick`, or `bulk` bins, immediately restoring Available Stock.
   2. **Scrap / Write-off**: Items are condemned as unrecoverable waste. The stock count is adjusted to zero and the system posts:
      ```
      Debit:  Inventory Scrap / Shrinkage Expense
      Credit: Inventory Asset Account
      ```
-  3. **Return to Vendor (RTV)**: If supplier defect is identified, the system initiates a linked **Purchase Return** to ship goods back for vendor credit.
+  3. **Return to Vendor (RTV)**: If supplier defect is identified, the system initiates a linked **Purchase Return** (`/purchase-orders/returns`) to ship goods back for vendor credit.
 
 ---
 
@@ -81,10 +86,11 @@ To ensure perpetual inventory balances remain accurate while goods are moving be
 ### 2. Quarantining and Resolving Stock
 1. Go to **Inventory** → **Quarantine** (`/inventory/quarantine`).
 2. Click **Move to Quarantine**.
-3. Select the product, quantity, origin bin, and **Quarantine Reason**.
+3. Select the product, quantity, origin bin, and enter a mandatory **Quarantine Reason**.
 4. After inspection, choose an action:
    - Click **Release from Quarantine** to return units to pickable stock.
    - Click **Write Off / Scrap** to recognize an inventory loss in the General Ledger.
+   - Click **Create Purchase Return** if returning defective items to a vendor.
 
 ---
 
@@ -96,5 +102,4 @@ To ensure perpetual inventory balances remain accurate while goods are moving be
 | **Source Warehouse** | Originating facility and bin. |
 | **Destination Warehouse** | Receiving facility and target storage bin. |
 | **Quarantine Reason** | Quality, damage, or audit reason code for held inventory. |
-| **Status** | Stage (`Draft`, `In-Transit`, `Received`, `Cancelled`). |
-
+| **Status** | Stage (`Draft`, `Requested`, `In-Transit`, `Received`, `Cancelled`). |

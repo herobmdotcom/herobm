@@ -20,10 +20,10 @@ tags: ["developers", "api", "webhooks", "email", "outbox", "import", "health", "
 fields:
   key_hash:
     title: "API Key Hash"
-    summary: "SHA-256 cryptographic hash of the access token stored in the database."
+    summary: "Bcrypt (cost 10) salted cryptographic hash of the access token stored in the database."
   prefix:
     title: "API Key Prefix"
-    summary: "Non-secret prefix (e.g. hbm_live_...) used to identify tokens without storing cleartext."
+    summary: "Public prefix used to identify tokens without storing cleartext."
   target_url:
     title: "Webhook Endpoint"
     summary: "Destination HTTPS URL receiving real-time JSON event payloads."
@@ -52,7 +52,7 @@ The **Technical** section provides enterprise tools for developer API key manage
 ```mermaid
 flowchart LR
     A[Business Action e.g. Order Confirmed] --> B[Atomic Transaction + Outbox Event]
-    B --> C[Transactional sys_outbox Table]
+    B --> C[Transactional herobm_core.outbox Table]
     C --> D[Outbox Dispatch Worker]
     D --> E[HTTP Webhook Endpoints]
     D --> F[SMTP Email Delivery Engine]
@@ -60,18 +60,18 @@ flowchart LR
 ```
 
 ### 1. API Security & Key Hashing Architecture
-* **Cryptographic Token Generation**: API keys are generated using 32 bytes of cryptographically secure random entropy.
-* **One-Time Secret Presentation**: The plaintext token (`hbm_live_...`) is presented to the user **exactly once** in the secure Secret Modal.
-* **Zero Plaintext Storage**: The database stores only the **SHA-256 hash** (`key_hash`) and a 10-character identification prefix (`prefix`). Incoming requests hash the bearer token on-the-fly and match against `key_hash`.
+* **Cryptographic Token Generation**: API keys are generated using 32 bytes of cryptographically secure random entropy (`randomBytes(32).toString('hex')`).
+* **One-Time Secret Presentation**: The plaintext token is presented to the user **exactly once** in the secure Secret Modal.
+* **Bcrypt Hash Storage**: The database stores only a **bcrypt hash (cost 10)** (`key_hash`) and an identification prefix (`prefix`). Incoming requests verify the token against `key_hash` using standard bcrypt comparison.
 
-### 2. Rate Limiting & Sliding Window Controls
-* **Default Throughput**: Configured with a default limit of **120 requests per minute** per API key or IP address.
+### 2. Rate Limiting & Granular Route Throttling
+* **Default Throughput**: Protected by Throttler guards with sensible route limits (e.g. 120 req/min default, 5 req/min on `/auth/login`, 30 req/min on `/auth/me`).
 * **Sliding Window Algorithm**: Tracks request velocity in rolling 60-second intervals.
 * **429 Response Guardrail**: When an integration exceeds its quota, the API rejects requests with HTTP `429 Too Many Requests` and supplies a `Retry-After: <seconds>` response header.
 
 ### 3. Outbox Dispatch & SMTP Queue
-* **Transactional Guarantee**: Outbound notifications and emails are written directly to database outbox tables (`sys_outbox`, `sys_email_outbox`) in the same database transaction as business mutations.
-* **Continuous Background Polling**: Background workers poll pending records with concurrency locks, ensuring at-least-once delivery with exponential retry backoff.
+* **Transactional Guarantee**: Outbound notifications and emails are written directly to database outbox tables (`herobm_core.outbox`, `herobm_core.email_outbox`) in the same database transaction as business mutations.
+* **Continuous Event-Driven Relay**: Background workers process pending records via PostgreSQL `LISTEN/NOTIFY` and concurrency locks, ensuring at-least-once delivery with exponential retry backoff.
 
 ### 4. Database-Level Immutability Architecture
 HeroBM enforces unconditional PostgreSQL `BEFORE DELETE` triggers (`herobm_core.prevent_financial_deletion`) across three compliance tiers:
@@ -102,10 +102,9 @@ HeroBM enforces unconditional PostgreSQL `BEFORE DELETE` triggers (`herobm_core.
 | Field | Description |
 | :--- | :--- |
 | **API Key Name** | Descriptive label identifying the external application or system. |
-| **API Key Prefix** | Public 10-character identifier (e.g. `hbm_live_a1b2`). |
+| **API Key Prefix** | Public identifier prefix. |
 | **Assigned Role** | Casbin RBAC role governing API endpoint authorizations. |
 | **Rate Limit** | Maximum allowed requests per 60-second sliding window. |
 | **Target URL** | Destination HTTPS endpoint receiving webhook payloads. |
 | **Outbox Status** | Delivery state (`Pending`, `Sent`, `Failed`). |
 | **System Version** | Active Git commit hash and release deployment timestamp. |
-

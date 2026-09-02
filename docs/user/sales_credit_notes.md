@@ -4,10 +4,12 @@ title: "Sales Credit Notes"
 description: "Issue credit notes for returns or billing adjustments and allocate credits to open customer invoices."
 category: "Sales"
 order: 8
-resource: "invoices"
+resource: "sales-credit-notes"
 action: "read"
 routes:
   - "/sales-credit-notes"
+  - "/sales-credit-notes/history"
+  - "/sales-credit-notes/operations"
   - "/sales-credit-notes/:id"
 tags: ["credit-notes", "sales", "adjustments", "refunds", "ar", "allocations"]
 fields:
@@ -98,4 +100,4 @@ If a customer requests a cash payout rather than carrying forward account credit
 | **Associated Invoice** | Linked sales invoice if raised for a specific bill correction. |
 | **Total Amount** | Total gross credit value including tax. |
 | **Outstanding Amount** | Unallocated credit balance remaining on the account. |
-
+| **Status** | Stage (`Draft`, `Posted`, `Cancelled`). |

@@ -4,13 +4,12 @@ title: "Sales Orders"
 description: "Create quotes and orders, evaluate customer credit and stock availability, email documents, fulfill items, and invoice."
 category: "Sales"
 order: 4
-resource: "orders"
+resource: "sales-orders"
 action: "read"
 routes:
   - "/sales-orders"
   - "/sales-orders/new"
   - "/sales-orders/:id"
-  - "/sales-orders/:id/edit"
 tags: ["sales", "orders", "quotes", "credit", "inventory", "shipping", "invoices", "email", "analysis-codes"]
 fields:
   customer_id:
@@ -27,7 +26,7 @@ fields:
     summary: "Currency for the order, inherited from the customer account."
   exchange_rate:
     title: "Exchange Rate"
-    summary: "FX rate used to convert order totals to base currency (EUR)."
+    summary: "FX rate used to convert order totals to system base currency."
   terms_description:
     title: "Payment Terms"
     summary: "Due date terms (e.g. Net 30, COD) inherited from the customer."
@@ -173,11 +172,9 @@ Total Financial Exposure = Total Outstanding AR Invoices + Value of Open Orders 
   3. `Customer is on Credit Hold` OR `Customer Group is on Credit Hold`.
 * **Override Authorization**: Authorized supervisors can apply a **Credit Hold Override** with an expiry timestamp and mandatory audit reason.
 
-### 4. Stock Allocation & Inventory Gaps
+### 4. Stock Allocation & Inventory Demands
 * **Immediate Allocation**: Confirming an order converts free available stock into committed stock across storage and pick bins.
-* **Inventory Gap Handling**: If insufficient available stock exists:
-  * **Generate Backorders**: Automatically generates replenishment demands in Purchasing with direct pegging to this sales order line.
-  * **Acknowledge Discrepancy**: Confirms the order to allocate currently available units immediately, leaving the remaining quantity for subsequent fulfillment.
+* **Shortage Handling**: If insufficient available stock exists, available units are allocated immediately and open backorder demands are generated for Purchasing or Work Orders.
 
 ---
 
@@ -216,11 +213,11 @@ For walk-in customers and immediate trade counter collections, navigate to **Sal
 | **Order Number** | Unique order identifier (e.g. `SO-2026-00124`). |
 | **Customer PO** | Customer-provided purchase order reference number. |
 | **Fulfillment Location** | Warehouse facility where stock is allocated and picked. |
-| **Status** | Stage (`Draft`, `Quoted`, `Confirmed`, `Picking`, `Shipped`, `Invoiced`, `Cancelled`). |
+| **Status** | Stage (`Draft`, `Quoted`, `Confirmed`, `Picking`, `Shipped`, `Invoiced`, `Cancelled`, `Archived`). |
 | **Currency & FX Rate** | Transaction currency and exchange rate snapshotted from customer account. |
 | **Unit Price** | Base selling price per unit, pre-filled from customer's price scale (1–4). |
 | **Discount %** | Line percentage discount resolved via the 5-tier discount matrix cascade. |
-| **Tax Category** | Tax rate classification (e.g. 9% GST, Zero-Rated, Exempt). |
+| **Tax Category** | Tax rate classification (e.g. 10% GST, Zero-Rated, Exempt). |
 | **Analysis Codes** | Standardized tags for financial reporting and ledger dimensions. |
 | **Post-Confirmation** | Ad-hoc charge line added after confirmation for freight or handling. |
 | **Credit Override** | Expiry date, approving user, and audit reason for bypassed credit holds. |

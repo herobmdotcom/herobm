@@ -4,8 +4,10 @@ title: "Operations Dashboard"
 description: "Monitor live business metrics and operational shortcuts using configurable widgets."
 category: "Dashboard"
 order: 1
+resource: "dashboard"
+action: "read"
 routes:
-  - "/dashboard"
+  - "/"
 tags: ["dashboard", "home", "metrics", "kpi", "shortcuts", "activity"]
 fields:
   pinned_report_widgets:
@@ -31,7 +33,7 @@ The **Operations Dashboard** is the daily operational cockpit. It provides real-
 
 ```mermaid
 flowchart TD
-    D[Operations Dashboard] --> K1[Configurable KPI Widgets]
+    D[Operations Dashboard /] --> K1[Configurable KPI Widgets]
     D --> K4[Live Activity Stream]
 ```
 

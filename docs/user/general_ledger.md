@@ -4,7 +4,7 @@ title: "General Ledger & Chart of Accounts"
 description: "Manage financial accounts, create manual journal entries, monitor fiscal locking, and generate balanced Trial Balances."
 category: "Finance"
 order: 23
-resource: "finance"
+resource: "gl"
 action: "read"
 routes:
   - "/general-ledger"
@@ -102,7 +102,7 @@ flowchart TD
         D --> E[(gl_journal_entries & gl_journal_lines)]
         E --> F[Trigger: prevent_financial_deletion]
         E --> G[Trigger: prevent_financial_modification]
-        E --> H[Trigger: enforce_fiscal_period_hard_lock]
+        E --> H[Trigger: enforce_gl_journal_fiscal_period_lock]
     end
 
     subgraph Verifier["Continuous Ledger Verification Engine (BullMQ)"]
@@ -132,7 +132,7 @@ Every posted general ledger journal entry is cryptographically bound to the enti
 
 #### B. Database-Level Trigger Protection (Immutability by Default)
 HeroBM enforces immutability directly inside PostgreSQL via native triggers that execute before any SQL statement commits:
-- **`herobm_core.prevent_financial_deletion`**: Strictly blocks `DELETE` operations across all financial tables (`gl_journal_entries`, `gl_journal_lines`, `sales_invoices`, `sales_invoice_lines`, `purchase_invoices`, `purchase_invoice_lines`, `sales_credit_notes`, `purchase_debit_notes`, `payment_entries`, `payment_allocations`, and `inventory_ledger_movements`). Draft unposted records can be discarded, but once posted, records are permanent.
+- **`herobm_core.prevent_financial_deletion`**: Strictly blocks `DELETE` operations across all financial tables (`gl_journal_entries`, `gl_journal_lines`, `sales_invoices`, `sales_invoice_lines`, `purchase_invoices`, `purchase_invoice_lines`, `sales_credit_notes`, `purchase_debit_notes`, `payment_entries`, `payment_allocations`, and `inventory_ledger`). Draft unposted records can be discarded, but once posted, records are permanent.
 - **`herobm_core.prevent_financial_modification`**: Prevents in-place updates to posted monetary amounts, account codes, debit/credit values, and transaction dates.
 - **The "Reversal Only" Accounting Law**: To correct any historical transaction, operators must post an explicit offsetting reversal journal entry or issue a formal credit/debit note. This guarantees a permanent, transparent paper trail for auditors.
 
@@ -148,11 +148,11 @@ If any anomaly or discrepancy is detected, the verification engine immediately r
 
 #### D. Strict Fiscal Period Hard Locking
 Fiscal periods can be placed in `Open`, `Soft Locked`, or `Hard Closed` states:
-- **Hard Closed Periods**: Permanently locked against new postings or backdated adjustments. Database triggers block any write whose transaction date falls within a hard-closed period.
+- **Hard Closed Periods**: Permanently locked against new postings or backdated adjustments. Database triggers (`herobm_core.enforce_gl_journal_fiscal_period_lock()`) block any write whose transaction date falls within a hard-closed period.
 - **Audit Attribution**: All period status changes record the user ID, timestamp, and justification reason.
 
 #### E. Transactional Outbox Event Colocation
-All state transitions and ledger postings atomically insert an audit event into the `sys_outbox` table within the same database transaction (`emitEvent`). This provides an immutable event log recording the actor, timestamp, prior state, new state, and full execution payload for forensic auditing.
+All state transitions and ledger postings atomically insert an audit event into the `herobm_core.outbox` table within the same database transaction (`emitEvent`). This provides an immutable event log recording the actor, timestamp, prior state, new state, and full execution payload for forensic auditing.
 
 ---
 
@@ -190,4 +190,3 @@ All state transitions and ledger postings atomically insert an audit event into 
 | **Debit / Credit** | Double-entry transaction amounts (must balance to zero). |
 | **Journal Entry Number** | Unique audit sequence identifier (e.g. `JRN-2026-00041`). |
 | **Zero-Sum Variance** | Difference check ensuring debits equal credits (`<= 0.005`). |
-

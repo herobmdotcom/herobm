@@ -4,7 +4,7 @@ title: "Sales Returns & RMA"
 description: "Manage customer return authorizations (RMA), restock returned inventory, and issue credit adjustments."
 category: "Sales"
 order: 7
-resource: "orders"
+resource: "sales-returns"
 action: "read"
 routes:
   - "/sales-returns"
@@ -28,7 +28,7 @@ fields:
     summary: "Handling or restocking charge deducted from the customer's credit balance."
   status:
     title: "Return Status"
-    summary: "Stage of the return (Draft, Confirmed, Processed, Cancelled)."
+    summary: "Stage of the return (Draft, Confirmed, Partially Received, Received, Processed, Cancelled)."
 related:
   - "sales-orders"
   - "sales-credit-notes"
@@ -48,10 +48,15 @@ The **Sales Returns** module manages Return Merchandise Authorizations (RMA). It
 stateDiagram-v2
     [*] --> Draft : Create RMA
     Draft --> Confirmed : Authorize RMA
-    Confirmed --> Processed : Receive, Restock & Credit
-    Confirmed --> Draft : Revise Lines
     Draft --> Cancelled : Cancel
+
+    Confirmed --> PartiallyReceived : Partial Dock Arrival
+    Confirmed --> Received : 100% Arrived at Dock
     Confirmed --> Cancelled : Cancel
+
+    PartiallyReceived --> Received : Remaining Lines Arrived
+    Received --> Processed : Restock & Issue Credit Note
+    Processed --> Cancelled : Cancel
 ```
 
 ### 1. Invoicing Invariant & Quantity Validation
@@ -101,8 +106,8 @@ When warehouse staff mark an RMA as **Processed**:
 6. Click **Confirm Return** to generate the official RMA document for the customer.
 
 ### 2. Receiving and Processing Goods
-1. When physical items arrive at the dock, open **Receiving** → **Customer Returns**.
-2. Inspect item condition and assign destination storage bins (or Quarantine bin if damaged).
+1. When physical items arrive at the dock, open **Receiving** → **Customer Returns** (`/receiving/returns`).
+2. Inspect item condition and count received quantities (moves status to `Partially Received` or `Received`).
 3. Click **Process Return** to update perpetual inventory counts and automatically post the Credit Note.
 
 ---
@@ -112,11 +117,10 @@ When warehouse staff mark an RMA as **Processed**:
 | Field | Description |
 | :--- | :--- |
 | **Return Number** | Unique RMA identifier (e.g. `RMA-2026-00018`). |
-| **Sales Order** | Originating invoiced sales order reference. |
+| **Sales Order** | Originating invoiced sales order reference (`ORD-...`). |
 | **Customer** | Account returning the merchandise. |
 | **Returned Quantity** | Authorized unit count (must be `<= unreturned invoiced quantity`). |
 | **Resolution** | Action type: `Refund` (financial credit) or `Replacement`. |
 | **Return Reason** | Quality or commercial reason code. |
 | **Restocking Fee** | Deducted administrative or return handling charge. |
-| **Status** | Stage (`Draft`, `Confirmed`, `Processed`, `Cancelled`). |
-
+| **Status** | Stage (`Draft`, `Confirmed`, `Partially Received`, `Received`, `Processed`, `Cancelled`). |

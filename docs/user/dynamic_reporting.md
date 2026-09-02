@@ -4,7 +4,7 @@ title: "Reporting & PDF Templates"
 description: "Generate operational reports, analyze business data, and design branded PDF documents using Typst."
 category: "Reporting"
 order: 27
-resource: "report"
+resource: "reports"
 action: "read"
 routes:
   - "/reporting"
@@ -48,9 +48,12 @@ View, filter, sort, and aggregate live data across:
 - **Sales**: Product sales velocity, customer rankings, margin analysis.
 - **Inventory**: Stock valuation by warehouse, slow-moving items, stocktake variances.
 - **Finance**: Monthly P&L, Balance Sheet, Aged Receivables & Payables.
+- **Custom Report JSON Configurations**: Custom business reports can be created and managed via **Reporting** → **Configuration** (`/reporting/config`).
 
-### 2. Typst Document Engine
+### 2. Typst Document Engine & PDF Customization
 All printable documents (Quotes, Invoices, Pick Slips, Shipping Labels, Statements, Packing Lists, Purchase Debit Notes) use **Typst** templates. Typst offers high rendering speed, modern syntax, and pixel-perfect typographic control.
+
+* To customize branded document templates (adjust company logo size, font family, footer legal notices), navigate to **Administration** → **Settings** → **PDF Templates** (`/admin/settings/pdf-templates`).
 
 ---
 
@@ -62,10 +65,10 @@ All printable documents (Quotes, Invoices, Pick Slips, Shipping Labels, Statemen
 3. Set your date filters and grouping parameters.
 4. Click **Run Report** to view on screen or **Export to CSV/Excel**.
 
-### 2. Customizing a PDF Template
-1. Go to **Reporting** → **Configuration** (`/reporting/config`).
-2. Click **New Template** (`/reporting/config/new`) or select an existing template to customize (e.g. `Sales Invoice`).
-3. Edit the Typst markup (adjust company logo size, font family, footer legal notices).
+### 2. Customizing a PDF Document Template
+1. Go to **Administration** → **Settings** → **PDF Templates** (`/admin/settings/pdf-templates`).
+2. Select a template to customize (e.g. `Sales Invoice`, `Purchase Order`, `Delivery Docket`).
+3. Edit the Typst markup in the integrated editor.
 4. The live preview pane renders changes in real time.
 5. Click **Save Template**.
 

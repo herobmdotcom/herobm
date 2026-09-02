@@ -4,7 +4,7 @@ title: "Sales Invoices"
 description: "Issue customer invoices, manage payment terms, record tax, and post directly to Accounts Receivable."
 category: "Sales"
 order: 6
-resource: "invoices"
+resource: "sales-invoices"
 action: "read"
 routes:
   - "/sales-invoices"
@@ -41,27 +41,44 @@ related:
 
 # Sales Invoices
 
-The **Sales Invoices** module handles customer billing. Generating and posting an invoice records tax liabilities, posts Accounts Receivable to the General Ledger, and updates order completion states.
+The **Sales Invoices** module handles customer billing. Generating and posting an invoice records tax liabilities, posts Accounts Receivable to the General Ledger, and tracks payment settlement progress.
 
 ---
 
 ## Invoicing Rules & Accounting Integration
 
+```mermaid
+stateDiagram-v2
+    [*] --> Draft : Create Invoice
+    Draft --> Posted : Post to General Ledger
+    Draft --> Cancelled : Discard
+
+    Posted --> PartiallyPaid : Partial Payment Allocated
+    Posted --> Paid : Fully Paid
+    Posted --> Cancelled : Reversal (Credit Adjustment)
+
+    PartiallyPaid --> Paid : Final Settlement
+    PartiallyPaid --> Cancelled : Void Unsettled Balance
+
+    Paid --> Archived : Archiving
+    Cancelled --> Archived : Archiving
+```
+
 ### 1. Generating Invoices from Orders
 - Invoices can be generated directly from confirmed or shipped Sales Orders.
 - **Partial Invoicing**: If an order is delivered in stages, multiple partial invoices can be raised against individual shipments.
-- **Auto-Completion**: When 100% of an order's line items have been billed across invoices, the Sales Order automatically transitions to `invoiced`.
+- **Auto-Completion**: When 100% of an order's line items have been billed across invoices, the parent Sales Order automatically transitions to `invoiced`.
 
 ### 2. General Ledger Posting
 Posting a sales invoice creates an automatic balanced journal entry in the General Ledger:
-- **Debit**: Accounts Receivable (Customer balance increases)
+- **Debit**: Accounts Receivable Control Account (Customer balance increases)
 - **Credit**: Sales Revenue (Product income accounts)
 - **Credit**: Tax / GST Payable (Tax output liability)
 
 ### 3. Tax Compliance & Immutability Guarantees
-- **No Hard Deletions**: Invoices, credit notes, and invoice line items are protected by PostgreSQL database triggers (`herobm_core.prevent_financial_deletion`). Once created, they cannot be deleted or truncated.
+- **No Hard Deletions**: Invoices, credit notes, and invoice line items are protected by database triggers (`herobm_core.prevent_financial_deletion`). Once created, they cannot be deleted or truncated.
 - **Compensating Corrections**: Errors or cancellations must be handled via **Cancellation** (which posts an automatic reversing journal entry) or by issuing a **Sales Credit Note**.
-- **Continuous Sequence Monitoring**: Invoices follow chronological sequential numbering. An automated background verification engine runs scheduled audits to guarantee gapless continuity and timestamp monotonicity.
+- **Sequential Auditing**: Invoices follow chronological sequential numbering. An automated background verification engine runs scheduled audits to guarantee gapless continuity.
 
 ---
 
@@ -82,11 +99,12 @@ Posting a sales invoice creates an automatic balanced journal entry in the Gener
 
 | Field | Description |
 | :--- | :--- |
-| **Invoice Number** | Legal tax invoice identifier. |
+| **Invoice Number** | Legal tax invoice identifier (e.g. `INV-2026-00312`). |
 | **Customer** | Billed customer account. |
-| **Sales Order** | Originating sales order reference. |
+| **Sales Order** | Originating sales order reference (`ORD-...`). |
 | **Invoice Date** | Official billing date. |
 | **Due Date** | Payment settlement deadline based on terms. |
 | **Subtotal** | Net amount before tax. |
 | **Tax Amount** | Calculated GST / VAT. |
 | **Total Amount** | Gross payable amount in customer currency. |
+| **Status** | Stage (`Draft`, `Posted`, `Partially Paid`, `Paid`, `Cancelled`, `Archived`). |

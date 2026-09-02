@@ -22,9 +22,12 @@ fields:
   actor_name:
     title: "Actor / Company Name"
     summary: "Unified business entity profile (Customer, Supplier, Prospect, or Partner)."
-  contact_role:
-    title: "Contact Role"
-    summary: "Functional responsibility: Billing, Delivery, Purchasing, Sales, or General."
+  link_type:
+    title: "Relationship Link Type"
+    summary: "Structural relationship: employee, advisor, or board_member."
+  primary_for:
+    title: "Functional Contact Tags"
+    summary: "Functional responsibilities: billing, shipping, purchasing, sales, general."
   project_title:
     title: "Project Title"
     summary: "Internal initiative or project tracker."
@@ -46,13 +49,15 @@ The **CRM** module tracks client relationships, organizational contacts and func
 ### 1. The Unified Actor Concept
 Instead of maintaining separate, disconnected company records across departments, an **Actor** represents a unified business entity. An Actor can simultaneously serve as a customer, supplier, and partner without duplicating base profile data or address books.
 
-### 2. Contact Roles & Slide-Over Drawer
-Contacts linked to an Actor are assigned functional **Contact Roles**:
-- **Billing / Accounts**: Automatically selected when emailing Sales Invoices or Statements.
-- **Delivery / Logistics**: Automatically selected when dispatching Shipping Dockets and Tracking Numbers.
-- **Purchasing / Procurement**: Automatically selected when transmitting Purchase Orders.
-- **Sales / Commercial**: Assigned to quotes and commercial correspondence.
-- **General / Primary**: Default contact point for general inquiries.
+### 2. Contact Relationships & Functional Routing
+Contacts linked to an Actor are assigned structural relationship types and functional routing tags:
+- **Relationship Type (`link_type`)**: Classifies the contact's organizational standing (`employee`, `advisor`, `board_member`).
+- **Functional Dispatch Tags (`primary_for`)**: Designates automated document routing responsibilities:
+  - `billing`: Automatically targeted when emailing Sales Invoices, Credit Notes, or Statements.
+  - `shipping`: Automatically targeted when dispatching Shipping Dockets and Tracking Numbers.
+  - `purchasing`: Automatically targeted when transmitting Purchase Orders.
+  - `sales`: Assigned to sales quotes and commercial proposals.
+  - `general`: Default contact point for general correspondence.
 
 The **Quick Contact Slide-Over** (`ContactSlideOver`) allows operators to view, create, and update contacts seamlessly from Customer, Supplier, Order, or Shipment screens without leaving their active workflow.
 
@@ -67,9 +72,10 @@ The **Map** view (`/crm/map`) plots customer and prospect physical locations geo
 1. Go to **CRM** → **Contacts** (`/crm/contacts`) or open the **Contacts** tab on any Customer/Supplier record.
 2. Click **New Contact** (`/crm/contacts/new`).
 3. Enter the contact's **First Name**, **Last Name**, **Email**, and **Phone**.
-4. Select the primary **Role** (e.g. `Billing / Accounts`).
-5. Toggle **Primary Contact** if this person should receive standard automated notifications.
-6. Click **Save Contact**.
+4. Select the structural **Relationship Type** (`Employee`, `Advisor`, `Board Member`).
+5. Assign functional **Dispatch Tags** (e.g. `billing`, `shipping`).
+6. Toggle **Primary Contact** if this person should receive default automated notifications.
+7. Click **Save Contact**.
 
 ### 2. Creating a CRM Project
 1. Go to **CRM** → **Projects** (`/crm/projects`).
@@ -86,7 +92,8 @@ The **Map** view (`/crm/map`) plots customer and prospect physical locations geo
 | :--- | :--- |
 | **Actor** | Company or organisation entity. |
 | **Contact Name** | First and last name of the representative. |
-| **Contact Role** | Responsibility: `Billing`, `Delivery`, `Purchasing`, `Sales`, `General`. |
+| **Relationship Type** | Organization link (`employee`, `advisor`, `board_member`). |
+| **Dispatch Tags** | Functional document tags (`billing`, `shipping`, `purchasing`, `sales`, `general`). |
 | **Email & Phone** | Direct electronic communication endpoints. |
 | **Project Title** | Project or initiative name. |
 | **Primary Flag** | Designates the default contact for document emailing. |

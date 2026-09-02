@@ -4,7 +4,7 @@ title: "Sales Quotes"
 description: "Prepare customer price estimates, send branded PDF quotations, and convert quotes to Sales Orders."
 category: "Sales"
 order: 3
-resource: "orders"
+resource: "sales-orders"
 action: "read"
 routes:
   - "/sales-quotes"
@@ -57,9 +57,7 @@ stateDiagram-v2
 ### 2. Stock Allocation vs. Availability Visibility
 * **Draft & Quoted Visibility**: The quote screen displays live On Hand (OH) and Available (Avail) stock across all storage bins, but **does not reserve physical stock**.
 * **Stock Commitment at Confirmation**: Physical inventory is strictly committed when an operator clicks **Confirm Order** (transitioning the record to `Confirmed`).
-* **Inventory Gap Resolution**: If available stock is insufficient at the moment of confirmation:
-  * **Generate Backorders**: Automatically creates demand entries in Purchasing pegged directly to the order.
-  * **Acknowledge Discrepancy**: Confirms the order to allocate available stock immediately and manage shortages manually.
+* **Inventory Gap Resolution**: If available stock is insufficient at the moment of confirmation, the system commits currently available inventory and logs open backorder demands in Purchasing.
 
 ---
 
@@ -85,8 +83,7 @@ stateDiagram-v2
 | Field | Description |
 | :--- | :--- |
 | **Customer** | Customer account receiving the quotation. |
-| **Quote Number** | Unique quote identifier (matches Sales Order number). |
+| **Quote Number** | Unique quote identifier (matches Sales Order number `ORD-...`). |
 | **Currency** | Transaction currency for all quoted prices and totals. |
 | **Price Scale** | Default pricing scale (1–4) used for product list prices. |
 | **Total Amount** | Grand total including calculated taxes. |
-

@@ -4,7 +4,7 @@ title: "Balances & Aging"
 description: "Review Accounts Receivable and Payable aging, customer statement balances, and tax liabilities."
 category: "Finance"
 order: 24
-resource: "finance"
+resource: "gl"
 action: "read"
 routes:
   - "/balances/customers"
@@ -108,4 +108,3 @@ Net Tax Payable / (Refund) = Total Output Tax (Sales Invoices) - Total Input Tax
 | **1–30 / 31–60 / 61–90 / 90+ Days** | Standard overdue aging columns. |
 | **Unallocated Credits** | Open credit notes and prepayments not yet allocated to specific bills. |
 | **Net Tax Position** | Statutory tax liability (`Output Tax - Input Tax`). |
-

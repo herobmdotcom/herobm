@@ -4,7 +4,7 @@ title: "Bank & Subledger Reconciliations"
 description: "Import bank statements, match bank feed lines against ledger payments, and verify continuous subledger parity."
 category: "Finance"
 order: 26
-resource: "finance"
+resource: "gl"
 action: "read"
 routes:
   - "/reconciliations"
@@ -90,7 +90,7 @@ Drift = abs(GL_Inventory_Asset_Balance - Sum(Product Bin On-Hand * Product WAC C
 
 ```mermaid
 flowchart TD
-    A[Import Bank Statement CSV / OFX] --> B[Matching Rules Engine]
+    A[Import Bank Statement CSV] --> B[Matching Rules Engine]
     B -- Exact Match --> C[Auto-Reconcile Payment]
     B -- Rule Pattern Match --> D[Auto-Generate Bank Fee / Interest Entry]
     B -- Unmatched --> E[Manual Match / Split Allocation]
@@ -113,7 +113,7 @@ When the statement ending balance matches the ledger balance (`Difference = 0.00
 
 ### 1. Reconciling a Bank Statement
 1. Go to **Finance** → **Bank Rec'n** → **Statements** (`/reconciliations`).
-2. Click **Import Statement** (`/reconciliations/new`) and upload the bank CSV or OFX statement.
+2. Click **Import Statement** (`/reconciliations/new`) and upload the bank CSV statement.
 3. Review the side-by-side matching grid:
    - Left side: Imported bank statement feed lines.
    - Right side: Open GL payments, deposits, and receipts.
@@ -132,4 +132,3 @@ When the statement ending balance matches the ledger balance (`Difference = 0.00
 | **Statement Ending Balance** | Closing balance from official bank statement. |
 | **GL Ledger Balance** | Sum of all posted cash transactions in HeroBM. |
 | **Variance / Difference** | Unreconciled gap (must reach `0.00` for sign-off). |
-
