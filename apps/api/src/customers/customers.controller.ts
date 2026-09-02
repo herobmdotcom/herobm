@@ -1,0 +1,219 @@
+import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Post,
+  Patch,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
+import { CustomersService } from './customers.service';
+import { CustomersWriteService } from './customers-write.service';
+import { CreditAssessmentService } from './credit-assessment.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EntityType } from '../common/event-types';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
+import {
+  CreateCustomerDto,
+  UpdateCustomerDto,
+  CustomerResponseDto,
+  CreditAssessmentResponseDto,
+  AgedBalanceResponseDto,
+  EmptyBodyDto,
+  EmailDocumentDto,
+} from './dto';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
+
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
+@ApiTags('Customers')
+@Controller('customers')
+@CasbinResource(SystemResource.CUSTOMERS)
+export class CustomersController {
+  constructor(
+    private readonly customersService: CustomersService,
+    private readonly customersWriteService: CustomersWriteService,
+    private readonly creditAssessmentService: CreditAssessmentService,
+    private readonly documentDispatchService: DocumentDispatchService,
+  ) {}
+
+  @Get()
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Customers',
+    description: 'Retrieve a paginated list of customers.',
+  })
+  @ApiFieldMask()
+  @ApiPaginatedResponse(CustomerResponseDto)
+  findAll(@Query() query: PaginationQuery) {
+    return this.customersService.findAll(query);
+  }
+
+  @Get('aged-balances')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Aged Balances',
+    description:
+      'Retrieve aged balances for all customers with outstanding invoices.',
+  })
+  @ApiQuery({
+    name: 'agingBasis',
+    required: false,
+    enum: ['invoiceDate', 'dueDate'],
+  })
+  @ApiQuery({ name: 'quickFilter', required: false, type: String })
+  @ApiPaginatedResponse(AgedBalanceResponseDto)
+  getAgedBalances(
+    @Query() query: PaginationQuery,
+    @Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate',
+    @Query('quickFilter') quickFilter?: string,
+  ) {
+    return this.customersService.getAgedBalances(
+      agingBasis,
+      query,
+      quickFilter,
+    );
+  }
+
+  @Get(':id')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Customer',
+    description: 'Retrieve a single customer by ID.',
+  })
+  @ApiFieldMask()
+  @ApiOkResponse({ type: CustomerResponseDto })
+  findOne(@Param('id') id: string) {
+    return this.customersService.findOne(id);
+  }
+
+  @Get(':id/credit-assessment')
+  @CasbinResource(SystemResource.CREDIT_CONTROL)
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Credit Assessment',
+    description: 'Retrieve the credit assessment for a customer.',
+  })
+  @ApiOkResponse({ type: CreditAssessmentResponseDto })
+  getCreditAssessment(@Param('id') id: string) {
+    return this.creditAssessmentService.assessCredit(id);
+  }
+
+  @Post()
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Customer',
+    description: 'Create a new customer.',
+  })
+  @ApiCreatedResponse({ type: CustomerResponseDto })
+  create(@Body() dto: CreateCustomerDto, @AuthUser() user: JwtUser) {
+    return this.customersWriteService.create(dto, user.username);
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Customer',
+    description: 'Update an existing customer.',
+  })
+  @ApiOkResponse({ type: CustomerResponseDto })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCustomerDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.customersWriteService.update(id, dto, user.username, user.role);
+  }
+
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Archive Customer',
+    description: 'Archive a customer.',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiCreatedResponse({ type: CustomerResponseDto })
+  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.customersWriteService.archive(id, user.username);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Unarchive Customer',
+    description: 'Unarchive a customer.',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiCreatedResponse({ type: CustomerResponseDto })
+  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.customersWriteService.unarchive(id, user.username);
+  }
+
+  @Post(':id/email-document')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Customer Statement Document',
+    description:
+      'Generates a Customer Statement PDF using the active customer statement template/hook and queues an email outbox message to the specified recipient.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailDocument(
+    @Param('id') id: string,
+    @Body() dto: EmailDocumentDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const cust = await this.customersService.findOne(id);
+    if (!cust) {
+      throw new NotFoundException(`Customer '${id}' not found`);
+    }
+
+    const isOverdueNotice =
+      dto.hookSlug === 'customer-overdue-notice' ||
+      dto.contextSlug === DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE;
+
+    const hookSlug =
+      dto.hookSlug ||
+      (isOverdueNotice ? 'customer-overdue-notice' : 'customer-statement');
+
+    const contextSlug =
+      dto.contextSlug ||
+      (isOverdueNotice
+        ? DATA_SOURCE_CONTEXT.CUSTOMER_OVERDUE_NOTICE
+        : DATA_SOURCE_CONTEXT.CUSTOMER_STATEMENT);
+
+    const fallbackFileName = isOverdueNotice
+      ? `OverdueNotice-${cust.customerNumber || id}.pdf`
+      : `Statement-${cust.customerNumber || id}.pdf`;
+
+    return this.documentDispatchService.emailDocument(
+      {
+        targetId: dto.targetId || id,
+        hookSlug,
+        contextSlug,
+        entityType: EntityType.CUSTOMER,
+        entityId: id,
+        emailAddress: dto.emailAddress,
+        subject: dto.subject,
+        body: dto.body,
+        customPdfText: dto.customPdfText,
+        fallbackFileName,
+      },
+      user,
+    );
+  }
+}

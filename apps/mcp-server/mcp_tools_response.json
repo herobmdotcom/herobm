@@ -1,0 +1,132 @@
+{
+  "result": {
+    "tools": [
+      {
+        "name": "list_database_tables",
+        "description": "Lists all available database tables in the public schema",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "get_table_schema",
+        "description": "Returns the exact columns, types, and foreign key relationships for a given PostgreSQL table.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "table_name": {
+              "type": "string",
+              "description": "Name of the table to inspect"
+            }
+          },
+          "required": [
+            "table_name"
+          ]
+        }
+      },
+      {
+        "name": "list_documentation_topics",
+        "description": "Lists all available documentation topics from the docs/ directory",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "read_documentation",
+        "description": "Reads the content of a specific documentation file from the docs/ directory",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "file_path": {
+              "type": "string",
+              "description": "The path to the documentation file (e.g., developers/webhooks.md)"
+            }
+          },
+          "required": [
+            "file_path"
+          ]
+        }
+      },
+      {
+        "name": "list_webhook_events",
+        "description": "Lists all available webhook event topics (e.g., sales_order.created)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "get_webhook_payload_schema",
+        "description": "Gets the payload schema and envelope structure for a given webhook event topic",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "event_topic": {
+              "type": "string",
+              "description": "The event topic (e.g., sales_order.created)"
+            }
+          },
+          "required": [
+            "event_topic"
+          ]
+        }
+      },
+      {
+        "name": "list_api_domains",
+        "description": "Lists all available API domains that can be passed to get_api_endpoints.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "get_api_endpoints",
+        "description": "Get available API endpoints for a given domain. Valid domains are: actor, contact, crm_map, customer, delivery_address, general_ledger, payment, product, project, purchase_invoice, purchase_order, purchase_return, sales_invoice, sales_order, sales_return, supplier, system, tax, transfer_order, warehouse.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "description": "The domain to list endpoints for"
+            }
+          },
+          "required": [
+            "domain"
+          ]
+        }
+      },
+      {
+        "name": "call_herobm_api",
+        "description": "Call a HeroBM API endpoint by its exact name returned by get_api_endpoints.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "endpoint_name": {
+              "type": "string",
+              "description": "The exact endpoint name to call (e.g., purchase_order_create)"
+            },
+            "arguments": {
+              "type": "object",
+              "description": "The arguments (path parameters, query parameters, body) for the endpoint as defined in its schema"
+            }
+          },
+          "required": [
+            "endpoint_name"
+          ]
+        }
+      },
+      {
+        "name": "list_build_targets",
+        "description": "Lists all available Makefile build targets and their descriptions",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ]
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}

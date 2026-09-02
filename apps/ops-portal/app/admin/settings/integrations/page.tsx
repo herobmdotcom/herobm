@@ -1,0 +1,557 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import * as api from '@herobm/sdk';
+import { getErrorMessage, COUNTRIES } from '@herobm/shared';
+import toast from 'react-hot-toast';
+
+
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
+import InlineAlert from '@/components/shared/InlineAlert';
+import { DynamicForm } from '@/components/DynamicForm';
+import { Button } from '@/components/shared/Button';
+import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
+
+interface ProviderConfig {
+  name: string;
+  type?: 'enrichment' | 'tax_engine';
+  supportedCountries?: string[] | 'global';
+  schema: Record<string, unknown>;
+}
+
+type TaxRule = { id: string; country: string; provider: string };
+type EnrichmentRule = { id: string; field: string; country: string; provider: string };
+
+
+
+export default function IntegrationsSettingsPage() {
+  const router = useRouter();
+  const tCommon = useTranslations('common');
+  const tInt = useTranslations('admin.integrations');
+  useDocumentTitle('Integrations & Enrichment');
+
+  const [loading, setLoading] = useState(true);
+  const [providers, setProviders] = useState<ProviderConfig[]>([]);
+  
+  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
+  const [configData, setConfigData] = useState<Record<string, unknown>>({});
+  const [saving, setSaving] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(false);
+
+  // Test Connection State
+  const [testPayload, setTestPayload] = useState<string>('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; data?: unknown; error?: string } | null>(null);
+
+  // Routing Rules State
+  const [appConfig, setAppConfig] = useState<Partial<api.AppConfigResponseDto> | null>(null);
+  const [taxRules, setTaxRules] = useState<TaxRule[]>([]);
+  const [enrichmentRules, setEnrichmentRules] = useState<EnrichmentRule[]>([]);
+
+  useEffect(() => {
+    loadProviders();
+  }, []);
+
+  const loadProviders = async () => {
+    try {
+      setLoading(true);
+      const [provRes, configRes] = await Promise.all([
+        api.enrichmentControllerGetProviders(),
+        api.appConfigControllerGet()
+      ]);
+      setProviders((provRes.data as unknown as ProviderConfig[]) || []);
+      
+      const config = configRes.data;
+      setAppConfig(config);
+      
+      const taxMappingRaw = (config?.taxProviderMappings as unknown as Record<string, string>) || {};
+      const taxRulesArr = Object.entries(taxMappingRaw).map(([country, provider]) => ({ id: country, country, provider }));
+      setTaxRules(taxRulesArr);
+
+      const enrichmentMappingRaw = (config?.enrichmentProviderMappings as unknown as Record<string, Record<string, string>>) || {};
+      const enrichmentRulesArr: EnrichmentRule[] = [];
+      Object.entries(enrichmentMappingRaw).forEach(([field, countryMap]) => {
+        Object.entries(countryMap).forEach(([country, provider]) => {
+          enrichmentRulesArr.push({ id: `${field}-${country}`, field, country, provider });
+        });
+      });
+      setEnrichmentRules(enrichmentRulesArr);
+    } catch (err) {
+      toast.error('Failed to load integrations: ' + getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUpdatedConfigPayload = (newTaxRules: TaxRule[], newEnrichmentRules: EnrichmentRule[]) => {
+    const newTaxMappings: Record<string, string> = {};
+    newTaxRules.forEach(r => {
+      newTaxMappings[r.country.toUpperCase()] = r.provider;
+    });
+    
+    const newEnrichmentMappings: Record<string, Record<string, string>> = {};
+    newEnrichmentRules.forEach(r => {
+      if (!newEnrichmentMappings[r.field]) newEnrichmentMappings[r.field] = {};
+      newEnrichmentMappings[r.field][r.country.toUpperCase()] = r.provider;
+    });
+
+    return {
+      taxProviderMappings: newTaxMappings as unknown as api.AppConfigResponseDtoTaxProviderMappings,
+      enrichmentProviderMappings: newEnrichmentMappings as unknown as api.AppConfigResponseDtoEnrichmentProviderMappings
+    };
+  };
+
+  const saveTaxRule = async (row: TaxRule, isNew: boolean) => {
+    if (!row.country || row.country.trim().length !== 2) {
+      toast.error("Country code must be 2 letters");
+      throw new Error("Invalid country");
+    }
+    if (!row.provider) {
+      toast.error("Provider is required");
+      throw new Error("Invalid provider");
+    }
+    
+    try {
+      const newRules = isNew ? [...taxRules, { ...row, id: row.country }] : taxRules.map(r => r.id === row.id ? row : r);
+      setTaxRules(newRules);
+      
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
+      toast.success('Tax rule saved');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const deleteTaxRule = async (row: TaxRule) => {
+    try {
+      const newRules = taxRules.filter(r => r.id !== row.id);
+      setTaxRules(newRules);
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(newRules, enrichmentRules));
+      toast.success('Tax rule deleted');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const saveEnrichmentRule = async (row: EnrichmentRule, isNew: boolean) => {
+    if (!row.field) {
+      toast.error("Field is required");
+      throw new Error("Invalid field");
+    }
+    if (!row.country || row.country.trim().length !== 2) {
+      toast.error("Country code must be 2 letters");
+      throw new Error("Invalid country");
+    }
+    if (!row.provider) {
+      toast.error("Provider is required");
+      throw new Error("Invalid provider");
+    }
+    
+    try {
+      const newRules = isNew ? [...enrichmentRules, { ...row, id: `${row.field}-${row.country}` }] : enrichmentRules.map(r => r.id === row.id ? row : r);
+      setEnrichmentRules(newRules);
+      
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
+      toast.success('Enrichment rule saved');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const deleteEnrichmentRule = async (row: EnrichmentRule) => {
+    try {
+      const newRules = enrichmentRules.filter(r => r.id !== row.id);
+      setEnrichmentRules(newRules);
+      await api.appConfigControllerUpdate(getUpdatedConfigPayload(taxRules, newRules));
+      toast.success('Enrichment rule deleted');
+      await loadProviders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const toggleProvider = async (provider: ProviderConfig) => {
+    if (expandedProvider === provider.name) {
+      setExpandedProvider(null);
+      return;
+    }
+    
+    setExpandedProvider(provider.name);
+    setTestPayload('');
+    setTestResult(null);
+    setConfigData({});
+    
+    try {
+      setLoadingConfig(true);
+      const res = await api.enrichmentControllerGetConfig({ provider: provider.name });
+      const data = (res.data as Record<string, unknown>) || {};
+      setConfigData(data);
+      if (data.testPayload) {
+        setTestPayload(typeof data.testPayload === 'object' ? JSON.stringify(data.testPayload, null, 2) : (data.testPayload as string));
+      } else if ((provider.schema?.properties as Record<string, Record<string, unknown>>)?.testPayload?.default) {
+        const props = provider.schema.properties as Record<string, Record<string, unknown>>;
+        setTestPayload((props?.testPayload?.default as string) || '');
+      } else {
+        setTestPayload('');
+      }
+    } catch (err) {
+      toast.error('Failed to load configuration: ' + getErrorMessage(err));
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  const handleSaveConfig = async (provider: ProviderConfig) => {
+    try {
+      setSaving(true);
+      const payloadToSave = { config: configData, testPayload };
+      await api.enrichmentControllerUpdateConfig(
+        payloadToSave,
+        { provider: provider.name }
+      );
+      toast.success('Configuration saved');
+    } catch (err) {
+      toast.error('Failed to save configuration: ' + getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTestConnection = async (providerName: string) => {
+    if (!testPayload.trim()) {
+      toast.error('Please enter a test payload or query');
+      return;
+    }
+
+    try {
+      setTesting(true);
+      setTestResult(null);
+      
+      let payload;
+      let isJson = false;
+      try {
+        payload = JSON.parse(testPayload);
+        isJson = true;
+      } catch {
+        // fallback to string payload if not valid JSON
+        payload = testPayload;
+      }
+
+      if (isJson && typeof payload === 'object') {
+        const res = await api.enrichmentControllerTestLookupPost({ payload }, { provider: providerName });
+        // The API returns 200/201 but the payload might indicate a provider error via isValid
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as { error?: unknown })?.error;
+        setTestResult({ success: isSuccess, data: res.data });
+      } else {
+        const res = await api.enrichmentControllerTestLookup({ provider: providerName, query: testPayload });
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as { error?: unknown })?.error;
+        setTestResult({ success: isSuccess, data: res.data });
+      }
+      // Auto-save the test payload to the DB if we're testing
+      if (testPayload.trim()) {
+         try {
+           const currentConfigRes = await api.enrichmentControllerGetConfig({ provider: providerName });
+           const currentData = (currentConfigRes.data as Record<string, unknown>) || {};
+           await api.enrichmentControllerUpdateConfig(
+             { config: currentData, testPayload },
+             { provider: providerName }
+           );
+         } catch (e) {
+           // ignore silently if saving the test payload fails during a test
+         }
+      }
+
+      toast.success('Test successful');
+    } catch (err) {
+      setTestResult({ success: false, error: getErrorMessage(err) });
+      toast.error('Test connection failed');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="Integrations & Enrichment"
+        subtitle="Manage external integrations, data providers, and API keys"
+      />
+      <div className="flex flex-col gap-6">
+        {/* Routing Rules Section */}
+        <div className="card">
+          
+          <div className="grid grid-cols-1 gap-8">
+            {/* Tax Engine Rules */}
+            <div>
+              <InlineSettingsTable<TaxRule>
+                title={
+                  <h3 className="section-heading !mb-0 flex items-center gap-2">
+                    { }
+                    <span className="material-symbols-outlined">account_balance</span>
+                    { }
+                    <span>Tax Engines</span>
+                  </h3>
+                }
+                columns={[
+                  { 
+                    key: 'country', 
+                    title: 'Country', 
+                    type: 'select',
+                    options: [
+                      { value: '', label: 'Select Country...' },
+                      ...COUNTRIES.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))
+                    ]
+                  },
+                  { 
+                    key: 'provider', 
+                    title: 'Provider', 
+                    type: 'select', 
+                    options: (row) => {
+                      const taxProviders = providers.filter(p => p.type === 'tax_engine');
+                      const filtered = row.country ? taxProviders.filter(p => {
+                        const supported = p.supportedCountries;
+                        if (supported === 'global') return true;
+                        if (Array.isArray(supported)) return supported.includes(row.country!);
+                        return true;
+                      }) : taxProviders;
+                      
+                      return [
+                        { value: 'internal', label: 'Internal (Default)' },
+                        ...filtered.map(p => ({ value: p.name, label: p.name }))
+                      ];
+                    }
+                  }
+                ]}
+                data={taxRules}
+                rowKey={(row) => row.id}
+                onSave={saveTaxRule}
+                onDelete={deleteTaxRule}
+                onAdd={() => ({ id: '', country: '', provider: 'internal' })}
+                addLabel={tInt('addRule')}
+              />
+            </div>
+
+            {/* Enrichment Rules */}
+            <div>
+              <InlineSettingsTable<EnrichmentRule>
+                title={
+                  <h3 className="section-heading !mb-0 flex items-center gap-2">
+                    { }
+                    <span className="material-symbols-outlined">data_exploration</span>
+                    { }
+                    <span>Data Enrichment</span>
+                  </h3>
+                }
+                columns={[
+                  { 
+                    key: 'field', 
+                    title: 'Field', 
+                    type: 'select',
+                    options: [
+                      { value: '', label: 'Select Field...' },
+                      { value: 'customer.business_number', label: 'Customer Business Number' },
+                      { value: 'supplier.business_number', label: 'Supplier Business Number' }
+                    ]
+                  },
+                  { 
+                    key: 'country', 
+                    title: 'Country', 
+                    type: 'select',
+                    options: [
+                      { value: '', label: 'Select Country...' },
+                      ...COUNTRIES.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))
+                    ]
+                  },
+                  { 
+                    key: 'provider', 
+                    title: 'Provider', 
+                    type: 'select', 
+                    options: (row) => {
+                      const enrichmentProviders = providers.filter(p => p.type === 'enrichment');
+                      const filtered = row.country ? enrichmentProviders.filter(p => {
+                        const supported = p.supportedCountries;
+                        if (supported === 'global') return true;
+                        if (Array.isArray(supported)) return supported.includes(row.country!);
+                        return true;
+                      }) : enrichmentProviders;
+                      
+                      return [
+                        { value: '', label: 'Select Provider...' },
+                        ...filtered.map(p => ({ value: p.name, label: p.name }))
+                      ];
+                    }
+                  }
+                ]}
+                data={enrichmentRules}
+                rowKey={(row) => row.id}
+                onSave={saveEnrichmentRule}
+                onDelete={deleteEnrichmentRule}
+                onAdd={() => ({ id: '', field: '', country: '', provider: providers[0]?.name || '' })}
+                addLabel={tInt('addRule')}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              <span className="material-symbols-outlined">extension</span>
+              {tInt('availableIntegrations')}
+            </h3>
+          </div>
+          
+          {loading ? (
+            <div className="p-6 text-center text-muted">{tInt('loadingIntegrations')}</div>
+          ) : providers.length === 0 ? (
+            <div className="p-6 text-center text-muted">{tInt('noIntegrationsFound')}</div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {providers.map(p => {
+                const isExpanded = expandedProvider === p.name;
+                
+                return (
+                  <div key={p.name} className="border border-[var(--border)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-card)] transition-colors">
+                    <div 
+                      className={`flex items-center justify-between px-5 py-4 hover:bg-[var(--bg-secondary)] cursor-pointer select-none ${isExpanded ? 'border-b border-[var(--border)]' : ''}`}
+                      onClick={() => toggleProvider(p)}
+                    >
+                      <div className="flex items-center gap-4">
+                        { }
+                        <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${isExpanded ? 'rotate-90' : ''}`}>
+                          chevron_right
+                        </span>
+                        <div>
+                          <div className="font-bold text-sm text-[var(--text-primary)] capitalize font-['Manrope',sans-serif]">
+                            {p.name.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+                            {tInt('externalDataProvider')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                        <Button variant="secondary" size="sm" onClick={() => toggleProvider(p)}>
+                          {isExpanded ? tCommon('close') : tCommon('configure')}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="p-5 flex flex-col gap-6">
+                        
+                        {/* Configuration Section */}
+                        <div>
+                          <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3 font-['Manrope',sans-serif]">
+                            {tInt('configuration')}
+                          </h4>
+                          {loadingConfig ? (
+                            <div className="text-sm text-muted animate-pulse p-4 bg-[var(--bg-secondary)] rounded border border-[var(--border)]">Loading configuration...</div>
+                          ) : (
+                            <div className="flex flex-col gap-4">
+                              <div className="bg-[var(--bg-secondary)] p-5 border border-[var(--border)] rounded-lg">
+                                {(() => {
+                                  const displaySchema = { ...p.schema };
+                                  if (displaySchema.properties) {
+                                    displaySchema.properties = { ...displaySchema.properties };
+                                    delete (displaySchema.properties as Record<string, unknown>).testPayload;
+                                  }
+                                  return (
+                                    <DynamicForm
+                                      schema={displaySchema}
+                                      data={configData}
+                                      onChange={(data) => setConfigData(data)}
+                                    />
+                                  );
+                                })()}
+                              </div>
+                              <div className="flex justify-end">
+                                <Button 
+                                  variant="primary" 
+                                  onClick={() => handleSaveConfig(p)}
+                                  disabled={saving}
+                                >
+                                  {saving ? tCommon('saving') : tInt('saveConfiguration')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <hr className="border-[var(--border)]" />
+
+                        {/* Test Connection Section */}
+                        <div>
+                          <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3 font-['Manrope',sans-serif]">
+                            {tInt('testConnection')}
+                          </h4>
+                          <div className="bg-[var(--bg-secondary)] p-5 border border-[var(--border)] rounded-lg flex flex-col gap-4">
+                            <div>
+                              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                                {tInt('queryOrPayload')}
+                              </label>
+                              <textarea
+                                className="input w-full font-mono text-sm min-h-[100px] resize-y"
+                                placeholder='e.g. "ABN_NUMBER" or { "query": "..." }'
+                                value={testPayload}
+                                onChange={(e) => setTestPayload(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex justify-end">
+                              <Button 
+                                variant="secondary"
+                                onClick={() => handleTestConnection(p.name)}
+                                disabled={testing || !testPayload.trim()}
+                              >
+                                {testing ? tInt('testing') : tInt('runTest')}
+                              </Button>
+                            </div>
+
+                            {/* Test Result */}
+                            {testResult && (
+                              <div className="mt-2">
+                                <InlineAlert
+                                  type={testResult.success ? 'success' : 'error'}
+                                  message={
+                                    <div className="flex flex-col gap-2">
+                                      <span className="font-bold">
+                                        {testResult.success ? tInt('testSuccessful') : tInt('testFailed')}
+                                      </span>
+                                      {testResult.success ? (
+                                        <pre className="text-xs bg-[var(--bg-card)] p-2 rounded overflow-x-auto whitespace-pre-wrap font-mono text-[var(--success)] border border-[var(--border)]">
+                                          {JSON.stringify(testResult.data, null, 2)}
+                                        </pre>
+                                      ) : (
+                                        <span>{testResult.error}</span>
+                                      )}
+                                    </div>
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,202 @@
+{
+  "name": "United States - Standard with Numbers",
+  "country_code": "au",
+  "tree": {
+    "Assets": {
+      "root_type": "Asset",
+      "is_group": 1,
+      "children": {
+        "Current Assets": {
+          "is_group": 1,
+          "account_number": "1000",
+          "children": {
+            "Cash and Cash Equivalents": {
+              "account_number": "1010",
+              "account_type": "Cash"
+            },
+            "Bank Accounts": {
+              "account_number": "1020",
+              "account_type": "Bank",
+              "is_group": 1,
+              "children": {
+                "Operating Account": {
+                  "account_number": "1021",
+                  "account_type": "Bank"
+                }
+              }
+            },
+            "Accounts Receivable": {
+              "account_number": "1100",
+              "account_type": "Receivable"
+            },
+            "Sales Tax Receivable": {
+              "account_number": "1200",
+              "account_type": "Tax",
+              "description": "Input Sales Tax credits"
+            },
+            "Inventory": {
+              "account_number": "1300",
+              "account_type": "Stock"
+            },
+            "Prepaid Expenses": {
+              "account_number": "1400"
+            }
+          }
+        },
+        "Non-Current Assets": {
+          "is_group": 1,
+          "account_number": "1500",
+          "children": {
+            "Property, Plant and Equipment": {
+              "account_number": "1510"
+            },
+            "Accumulated Depreciation": {
+              "account_number": "1520",
+              "account_type": "Depreciation"
+            }
+          }
+        }
+      }
+    },
+    "Liabilities": {
+      "root_type": "Liability",
+      "is_group": 1,
+      "children": {
+        "Current Liabilities": {
+          "is_group": 1,
+          "account_number": "2000",
+          "children": {
+            "Accounts Payable": {
+              "account_number": "2100",
+              "account_type": "Payable"
+            },
+            "Sales Tax Payable": {
+              "account_number": "2200",
+              "account_type": "Tax",
+              "description": "Output Sales Tax collected"
+            },
+            "Payroll Tax Payable": {
+              "account_number": "2300"
+            },
+            "401(k) Payable": {
+              "account_number": "2310"
+            },
+            "Wages Payable": {
+              "account_number": "2400"
+            },
+            "Other Current Liabilities": {
+              "account_number": "2500"
+            }
+          }
+        },
+        "Non-Current Liabilities": {
+          "is_group": 1,
+          "account_number": "2600",
+          "children": {
+            "Long-Term Loans": {
+              "account_number": "2610"
+            }
+          }
+        }
+      }
+    },
+    "Equity": {
+      "root_type": "Equity",
+      "is_group": 1,
+      "children": {
+        "Owner's Equity": {
+          "is_group": 1,
+          "account_number": "3000",
+          "children": {
+            "Share Capital": {
+              "account_number": "3100"
+            },
+            "Retained Earnings": {
+              "account_number": "3200"
+            },
+            "Current Year Earnings": {
+              "account_number": "3300"
+            }
+          }
+        }
+      }
+    },
+    "Revenue": {
+      "root_type": "Income",
+      "is_group": 1,
+      "children": {
+        "Operating Revenue": {
+          "is_group": 1,
+          "account_number": "4000",
+          "children": {
+            "Sales Revenue": {
+              "account_number": "4100"
+            },
+            "Service Revenue": {
+              "account_number": "4200"
+            },
+            "Other Revenue": {
+              "account_number": "4900"
+            }
+          }
+        }
+      }
+    },
+    "Expenses": {
+      "root_type": "Expense",
+      "is_group": 1,
+      "children": {
+        "Cost of Goods Sold": {
+          "is_group": 1,
+          "account_number": "5000",
+          "children": {
+            "COGS - Materials": {
+              "account_number": "5100",
+              "account_type": "Cost of Goods Sold"
+            },
+            "COGS - Freight": {
+              "account_number": "5200"
+            }
+          }
+        },
+        "Operating Expenses": {
+          "is_group": 1,
+          "account_number": "6000",
+          "children": {
+            "Wages and Salaries": {
+              "account_number": "6100"
+            },
+            "401(k) Expense": {
+              "account_number": "6110"
+            },
+            "Rent": {
+              "account_number": "6200"
+            },
+            "Utilities": {
+              "account_number": "6300"
+            },
+            "Insurance": {
+              "account_number": "6400"
+            },
+            "Depreciation Expense": {
+              "account_number": "6500",
+              "account_type": "Depreciation"
+            },
+            "Office Supplies": {
+              "account_number": "6600"
+            },
+            "Professional Fees": {
+              "account_number": "6700"
+            },
+            "Bank Charges": {
+              "account_number": "6800"
+            },
+            "General Expenses": {
+              "account_number": "6900"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,228 @@
+import { locations, zones, bins, appSettings, users } from '@herobm/db-schema';
+import * as bcrypt from 'bcrypt';
+import type { SeedDB } from '../../src/seeds/run';
+
+export async function seedTestLocations(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed test location: MAIN');
+    return;
+  }
+
+  await db
+    .insert(locations)
+    .values({
+      locationId: '10000000-0000-4000-8000-000000000001',
+      code: 'MAIN',
+      name: 'Main Location',
+      source: 'app',
+      createdBy: 'system',
+    })
+    .onConflictDoUpdate({
+      target: locations.locationId,
+      set: { code: 'MAIN', name: 'Main Location' },
+    });
+
+  await db
+    .insert(zones)
+    .values({
+      zoneId: '00000000-0000-4000-8000-000000000001',
+      locationId: '10000000-0000-4000-8000-000000000001',
+      code: 'MAIN-Z1',
+      name: 'Main Zone',
+      source: 'app',
+      createdBy: 'system',
+    })
+    .onConflictDoUpdate({
+      target: zones.zoneId,
+      set: { code: 'MAIN-Z1', name: 'Main Zone' },
+    });
+
+  await db
+    .insert(bins)
+    .values([
+      {
+        binId: '00000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        binNumber: 'RECEIVING',
+        binType: 'staging',
+        source: 'system',
+        isUnavailable: true,
+        isBonded: false,
+        isConsignment: false,
+        createdBy: 'system',
+      },
+      {
+        binId: '00000000-0000-4000-8000-000000000002',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        binNumber: 'SHIPPING',
+        binType: 'staging',
+        source: 'system',
+        isUnavailable: true,
+        isBonded: false,
+        isConsignment: false,
+        createdBy: 'system',
+      },
+      {
+        binId: '00000000-0000-4000-8000-000000000003',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        binNumber: 'MAIN-BIN-1',
+        binType: 'storage',
+        source: 'app',
+        isUnavailable: false,
+        isBonded: false,
+        isConsignment: false,
+        createdBy: 'system',
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db.update(appSettings).set({
+    defaultFulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+  });
+
+  console.log("  Seeded test 'MAIN' location, zone, and bins");
+}
+
+export async function seedTestUsers(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log(
+      '  [DRY RUN] Would seed test users: viewer, sales, finance, warehouse, procurement, system, restricted_user',
+    );
+    return;
+  }
+
+  const adminPass = process.env.ADMIN_PASSWORD || 'password'; // TEST_CREDENTIAL
+  const adminHash = await bcrypt.hash(adminPass, 10);
+  await db
+    .insert(users)
+    .values({
+      username: 'admin',
+      passwordHash: adminHash,
+      role: 'admin',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: adminHash, role: 'admin', isActive: true },
+    });
+
+  const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password'; // TEST_CREDENTIAL
+  const viewerHash = await bcrypt.hash(viewerPass, 10);
+  const salesHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+
+  await db
+    .insert(users)
+    .values({
+      username: 'viewer',
+      passwordHash: viewerHash,
+      role: 'viewer',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: viewerHash, role: 'viewer', isActive: true },
+    });
+
+  await db
+    .insert(users)
+    .values({
+      username: 'sales',
+      passwordHash: salesHash,
+      role: 'sales',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: salesHash, role: 'sales', isActive: true },
+    });
+
+  const financeHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'finance',
+      passwordHash: financeHash,
+      role: 'finance',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: financeHash,
+        role: 'finance',
+        isActive: true,
+      },
+    });
+
+  const warehouseHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'warehouse',
+      passwordHash: warehouseHash,
+      role: 'warehouse',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: warehouseHash,
+        role: 'warehouse',
+        isActive: true,
+      },
+    });
+
+  const procurementHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'procurement',
+      passwordHash: procurementHash,
+      role: 'procurement',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: procurementHash,
+        role: 'procurement',
+        isActive: true,
+      },
+    });
+
+  const systemHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'system',
+      passwordHash: systemHash,
+      role: 'system',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: systemHash, role: 'system', isActive: true },
+    });
+
+  const restrictedHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'restricted_user',
+      passwordHash: restrictedHash,
+      role: 'restricted_user',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: restrictedHash,
+        role: 'restricted_user',
+        isActive: true,
+      },
+    });
+
+  console.log(
+    '  [E2E] Seeded test users: viewer, sales, finance, warehouse, procurement, system, restricted_user',
+  );
+}

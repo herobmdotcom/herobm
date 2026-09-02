@@ -1,0 +1,174 @@
+import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
+import { join } from 'path';
+import { eq, asc, and, ne } from 'drizzle-orm';
+import { OrdersService } from '../orders/orders.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { SalesQuoteData } from './sales-quote.service';
+import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import {
+  salesInvoices,
+  salesInvoiceLines,
+  taxCategories,
+} from '@herobm/db-schema';
+import { SALES_INVOICE_STATE, LineType } from '@herobm/shared';
+import { AppConfigService } from '../settings/app-config.service';
+import { RunHookOptionsDto } from './dto';
+
+@Injectable()
+export class SalesInvoiceService {
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly ordersQueryService: OrdersQueryService,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
+  ) {}
+
+  private readonly logger = new Logger(SalesInvoiceService.name);
+
+  async assembleData(
+    orderId: string,
+    source?: string,
+    invoiceId?: string,
+    options?: RunHookOptionsDto & Record<string, unknown>,
+  ): Promise<SalesQuoteData> {
+    const orderDetail = await resolveOrderDetail(
+      this.ordersQueryService,
+      this.ordersService,
+      orderId,
+      source,
+    );
+
+    const customText = options?.customPdfText || options?.quoteIntroText;
+
+    if (!invoiceId) {
+      const data = assembleOrderData(
+        orderDetail,
+        this.appConfig.homeCurrency(),
+      );
+      if (customText) {
+        data.customPdfText = customText;
+        data.quoteIntroText = customText;
+      }
+      return data;
+    }
+
+    // Fetch the specific invoice and its lines
+    const [invoice] = await this.db
+      .select()
+      .from(salesInvoices)
+      .where(eq(salesInvoices.invoiceId, invoiceId));
+
+    if (!invoice || invoice.salesOrderId !== orderId) {
+      throw new NotFoundException(
+        `Invoice ${invoiceId} not found for order ${orderId}`,
+      );
+    }
+
+    const invLines = await this.db
+      .select()
+      .from(salesInvoiceLines)
+      .where(eq(salesInvoiceLines.invoiceId, invoiceId));
+
+    // Build a lookup: salesOrderLineId → invoiced quantity & price
+    const invLineMap = new Map(
+      invLines.map((il) => [
+        il.salesOrderLineId,
+        {
+          quantity: il.quantityInvoiced,
+          pricePerUnit: il.pricePerUnit,
+        },
+      ]),
+    );
+
+    const filteredLines = orderDetail.lines
+      .filter(
+        (l) =>
+          invLineMap.has(l.salesOrderLineId) ||
+          l.lineType === (LineType.COMMENT as string),
+      )
+      .map((l) => {
+        if (l.lineType === (LineType.COMMENT as string)) {
+          return {
+            ...l,
+            quantity: '0',
+            pricePerUnit: '0',
+            amount: '0',
+            tax: '0',
+            totalAmount: '0',
+          };
+        }
+
+        const inv = invLineMap.get(l.salesOrderLineId)!;
+        const originalQty = parseFloat(l.quantity || '1');
+        const invoicedQty = parseFloat(inv.quantity);
+        const ratio = originalQty > 0 ? invoicedQty / originalQty : 0;
+
+        const proratedAmount = parseFloat(l.amount || '0') * ratio;
+        const proratedTax = parseFloat(l.tax || '0') * ratio;
+
+        return {
+          ...l,
+          quantity: inv.quantity,
+          pricePerUnit: inv.pricePerUnit,
+          amount: proratedAmount.toFixed(2),
+          tax: proratedTax.toFixed(2),
+          totalAmount: (proratedAmount + proratedTax).toFixed(2),
+        };
+      });
+
+    // Build the invoice-specific report data
+    const invoiceData = assembleOrderData(
+      {
+        ...orderDetail,
+        customerName: invoice.customerNameDisplay || orderDetail.customerName,
+        lines: filteredLines,
+      },
+      this.appConfig.homeCurrency(),
+    );
+
+    if (customText) {
+      invoiceData.customPdfText = customText;
+      invoiceData.quoteIntroText = customText;
+    }
+
+    // Compute the full (unfiltered) order total for comparison
+    const fullOrderData = assembleOrderData(
+      orderDetail,
+      this.appConfig.homeCurrency(),
+    );
+
+    // Determine this invoice's ordinal position among all invoices for the order
+    const allOrderInvoices = await this.db
+      .select({
+        invoiceId: salesInvoices.invoiceId,
+        invoiceNumber: salesInvoices.invoiceNumber,
+      })
+      .from(salesInvoices)
+      .where(
+        and(
+          eq(salesInvoices.salesOrderId, orderId),
+          ne(salesInvoices.stateCode, SALES_INVOICE_STATE.CANCELLED),
+        ),
+      )
+      .orderBy(asc(salesInvoices.createdOn));
+
+    const totalInvoices = allOrderInvoices.length;
+    const sequenceNumber =
+      allOrderInvoices.findIndex((i) => i.invoiceId === invoiceId) + 1;
+
+    return {
+      ...invoiceData,
+      invoiceMeta: {
+        invoiceNumber: invoice.invoiceNumber,
+        dueDate: invoice.dueDate
+          ? new Date(invoice.dueDate).toLocaleDateString('en-IE')
+          : null,
+        sequenceNumber,
+        totalInvoices,
+        orderTotal: fullOrderData.summary.totalAmount,
+      },
+    } as SalesQuoteData;
+  }
+}

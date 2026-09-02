@@ -1,0 +1,52 @@
+{
+  "name": "herobm",
+  "version": "0.1.0",
+  "description": "HeroBM: Modern, Real-Time Business Management & Operations Platform",
+  "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/herobmdotcom/herobm/issues"
+  },
+  "packageManager": "npm@11.6.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "extensions/*"
+  ],
+  "scripts": {
+    "seed": "npm run seed -w apps/api",
+    "test": "make test-unit",
+    "verify": "make verify-fast",
+    "typecheck": "make check-types",
+    "lint": "npm run lint -w apps/api -w apps/ops-portal -w packages/db-schema -w packages/shared -w packages/sdk && node scripts/run-on-enabled-extensions.mjs lint",
+    "knip": "knip",
+    "knip-report": "knip --reporter markdown > knip-report.md",
+    "turbo:verify": "turbo run verify-fast",
+    "turbo:test": "turbo run test:unit",
+    "turbo:check": "turbo run typecheck lint"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
+    "@types/es-aggregate-error": "^1.0.6",
+    "knip": "^6.23.0",
+    "turbo": "^2.4.4",
+    "tsx": "^4.23.1"
+  },
+  "overrides": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "dependencies": {
+    "@asyncapi/specs": "^6.11.1",
+    "@nestjs/cli": "^11.0.24",
+    "es-abstract": "^1.24.2",
+    "es-aggregate-error": "^1.0.14",
+    "zod": "^3.24.2"
+  }
+}

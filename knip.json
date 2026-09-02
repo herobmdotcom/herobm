@@ -1,0 +1,67 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-json-bindings.json",
+  "workspaces": {
+    ".": {
+      "ignore": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.e2e-spec.ts",
+        "infra/tests/**",
+        "infra/heavy_tests/**",
+        "infra/test-utils/**",
+        "apps/api/src/common/testing/**",
+        "**/scripts/**",
+        "**/tools/**",
+        "scripts/**",
+        "tools/**",
+        "apps/api/test/**",
+        "apps/api/src/test-utils/**",
+        "**/*test*.*",
+        "**/jest.config.*",
+        "**/jest.setup.*",
+        "apps/ops-portal/e2e/**",
+        "apps/mcp-server/**",
+        "extensions/**",
+        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
+        "apps/ops-portal/app/products/[id]/ProductCostSummary.tsx"
+      ],
+      "ignoreDependencies": [
+        "@asyncapi/specs",
+        "@nestjs/cli",
+        "es-abstract",
+        "es-aggregate-error",
+        "zod",
+        "@csstools/css-parser-algorithms",
+        "@testing-library/*",
+        "jest-*",
+        "supertest",
+        "eslint-*",
+        "@types/*",
+        "dotenv-cli",
+        "cross-env",
+        "ts-loader",
+        "depcheck",
+        "source-map-support",
+        "@nestjs/testing",
+        "ts-morph",
+        "fast-check",
+        "mermaid"
+      ],
+      "ignoreBinaries": [
+        "cross-env",
+        "make"
+      ]
+    },
+    "apps/worker": {
+      "entry": ["src/outbox-relay.ts"]
+    }
+  },
+  "rules": {
+    "exports": "off",
+    "types": "off",
+    "enumMembers": "off",
+    "duplicates": "off"
+  },
+  "jest": false
+}

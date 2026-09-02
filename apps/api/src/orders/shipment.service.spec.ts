@@ -1,0 +1,1013 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { GlService } from '../gl/gl.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrderShipments,
+  salesOrderShipmentLines,
+  products,
+  zones,
+  bins,
+  locations,
+  uomDictionary,
+  customers,
+  taxCategories,
+  inventoryEntries,
+  inventoryLedger,
+  actors,
+  emailOutbox,
+  appSettings,
+} from '@herobm/db-schema';
+import { eq } from 'drizzle-orm';
+import {
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
+  SALES_ORDER_PICK_STATE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  ShipmentState,
+  ACTOR_STATE,
+} from '@herobm/shared';
+import { setupTestModule } from '../../test/utils/test-module';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { CustomersService } from '../customers/customers.service';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EmailService } from '../email/email.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { AppConfigService } from '../settings/app-config.service';
+
+// Shared test data
+const PICKING_ORDER = {
+  salesOrderId: '00000000-0000-4000-8000-000000000001',
+  orderNumber: 'ORD-20260316-0001',
+  stateCode: SALES_ORDER_STATE.PICKING,
+  customerId: '00000000-0000-4000-8000-000000000001',
+  fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+  currencyCode: 'AUD',
+  exchangeRate: '1',
+  discrepanciesAcknowledged: false,
+  source: 'app',
+};
+
+const ORDER_LINE = {
+  salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+  salesOrderId: '00000000-0000-4000-8000-000000000001',
+  lineNumber: 1,
+  productId: '00000000-0000-4000-8000-000000000001',
+  productDescription: 'Widget A',
+  quantity: '10',
+  pricePerUnit: '50.00',
+  amount: '500.00',
+  fulfillmentLocationId: '10000000-0000-4000-8000-000000000001', // Will update in beforeEach
+  taxCategoryId: '00000000-0000-4000-8000-000000000001', // Will update in beforeEach
+};
+
+const MOCK_SHIPMENT = {
+  shipmentId: 'e0000000-0000-4000-8000-000000000001',
+  shipmentNumber: 'SHP-20260316-0001',
+  salesOrderId: '00000000-0000-4000-8000-000000000001',
+  stateCode: SHIPMENT_STATE.DISPATCHED,
+  notes: null,
+  createdBy: 'admin',
+};
+
+const MOCK_SHIPMENT_LINE = {
+  shipmentLineId: '00000000-0000-4000-8000-000000000001',
+  shipmentId: 'e0000000-0000-4000-8000-000000000001',
+  salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+  quantityShipped: '5',
+};
+
+class ShipmentServiceProxy {
+  constructor(
+    private readonly core: ShipmentsCoreService,
+    private readonly write: ShipmentsWriteService,
+    private readonly state: ShipmentsStateService,
+  ) {}
+  generateShipmentNumber(tx?: any) {
+    return this.core.generateShipmentNumber(tx);
+  }
+  findOne(id: string) {
+    return this.core.findOne(id);
+  }
+  findByOrder(id: string) {
+    return this.core.findByOrder(id);
+  }
+  findAll(q: any) {
+    return this.core.findAll(q);
+  }
+  createShipment(id: string, body: any, actor: string) {
+    return this.write.createShipment(id, body, actor);
+  }
+  updateShipment(id: string, body: any, actor: string) {
+    return this.write.updateShipment(id, body, actor);
+  }
+  addShipmentLine(id: string, body: any, actor: string) {
+    return this.write.addShipmentLine(id, body, actor);
+  }
+  updateShipmentLine(id: string, lineId: string, body: any, actor: string) {
+    return this.write.updateShipmentLine(id, lineId, body, actor);
+  }
+  removeShipmentLine(id: string, lineId: string, actor: string) {
+    return this.write.removeShipmentLine(id, lineId, actor);
+  }
+  changeShipmentState(id: string, state: string, actor: string, tx?: any) {
+    return this.state.changeShipmentState(id, state, actor, tx);
+  }
+  cancelShipment(id: string, actor: string) {
+    return this.state.cancelShipment(id, actor);
+  }
+}
+
+describe('ShipmentService', () => {
+  const pg = setupPgliteSuite();
+  let service: ShipmentServiceProxy;
+  let glService: GlService;
+  let appConfigService: AppConfigService;
+
+  let mockInventoryService: any;
+  let mockCustomersService: { findOne: jest.Mock };
+  let mockPdfTemplatesService: { runHook: jest.Mock };
+
+  beforeEach(async () => {
+    mockInventoryService = {
+      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
+    };
+    mockCustomersService = {
+      findOne: jest.fn().mockResolvedValue({
+        contacts: [
+          {
+            contactId: 'contact-del-1',
+            email: 'delivery@customer.com',
+            primaryFor: ['delivery'],
+          },
+          {
+            contactId: 'contact-purch-1',
+            email: 'purchasing@customer.com',
+            primaryFor: ['purchasing'],
+          },
+        ],
+        emailAddress1: 'info@customer.com',
+      }),
+    };
+    mockPdfTemplatesService = {
+      runHook: jest.fn().mockResolvedValue({
+        pdfBuffer: Buffer.from('%PDF-1.4 Mock Shipping Docket Binary Content'),
+        fileName: 'ShippingDocket-SH-0001.pdf',
+      }),
+    };
+
+    const module: TestingModule = await setupTestModule([
+      ShipmentsCoreService,
+      ShipmentsWriteService,
+      ShipmentsStateService,
+      EmailService,
+      DocumentDispatchService,
+      {
+        provide: ShipmentServiceProxy,
+        useFactory: (core, write, state) =>
+          new ShipmentServiceProxy(core, write, state),
+        inject: [
+          ShipmentsCoreService,
+          ShipmentsWriteService,
+          ShipmentsStateService,
+        ],
+      },
+      { provide: InventoryQueryService, useValue: mockInventoryService },
+      { provide: InventoryMovementService, useValue: mockInventoryService },
+      {
+        provide: CustomersService,
+        useValue: mockCustomersService,
+      },
+      {
+        provide: PdfTemplatesService,
+        useValue: mockPdfTemplatesService,
+      },
+    ])
+      .overrideProvider(DRIZZLE)
+      .useValue(pg.db)
+      .compile();
+
+    service = module.get(ShipmentServiceProxy);
+    glService = module.get(GlService);
+    appConfigService = module.get(AppConfigService);
+
+    // Clean only transactional tables
+    await pg.client.exec(`
+      TRUNCATE TABLE herobm_core.email_outbox CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_shipment_lines CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_shipments CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_picks CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_lines CASCADE;
+      TRUNCATE TABLE herobm_core.sales_orders CASCADE;
+      TRUNCATE TABLE herobm_core.products CASCADE;
+      TRUNCATE TABLE herobm_core.inventory_ledger CASCADE;
+      TRUNCATE TABLE herobm_core.inventory_entries CASCADE;
+    `);
+
+    // Fetch dynamic IDs from standard seeds
+    const stdTax = await pg.db.query.taxCategories.findFirst({
+      where: eq(taxCategories.code, 'GST'),
+    });
+    if (stdTax) ORDER_LINE.taxCategoryId = stdTax.taxCategoryId;
+
+    ORDER_LINE.fulfillmentLocationId = '10000000-0000-4000-8000-000000000001';
+    PICKING_ORDER.fulfillmentLocationId =
+      '10000000-0000-4000-8000-000000000001';
+
+    const custActorId = '00000000-0000-4000-8000-000000000002';
+    await pg.db
+      .insert(actors)
+      .values([
+        {
+          stateCode: ACTOR_STATE.ACTIVE,
+          actorId: custActorId,
+          name: 'Test Customer',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
+        },
+      ])
+      .onConflictDoNothing();
+
+    // Since customers isn't seeded with customers by default, let's just insert one or use the org. Let's insert a customer.
+    await pg.db
+      .insert(customers)
+      .values([
+        {
+          customerId: '00000000-0000-4000-8000-000000000001',
+          actorId: custActorId,
+          customerNumber: 'CUST-001',
+          currencyCode: 'AUD',
+          stateCode: CUSTOMER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'system',
+        },
+      ])
+      .onConflictDoNothing();
+
+    // Insert Default Mocks
+    await pg.db
+      .insert(products)
+      .values([
+        {
+          productId: '00000000-0000-4000-8000-000000000001',
+          productNumber: 'PROD-001',
+          name: 'Widget A',
+          productType: 'inventory',
+          baseUom: 'EA',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          source: 'app',
+          structureType: 'standard',
+          createdBy: 'system',
+        },
+      ])
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(taxCategories)
+      .values([
+        {
+          taxCategoryId: '00000000-0000-4000-8000-000000000001',
+          code: 'SHIP_GST',
+          title: 'GST on Income',
+          type: 'sales',
+          rate: '10.00',
+        },
+      ])
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(locations)
+      .values([
+        {
+          locationId: '10000000-0000-4000-8000-000000000001',
+          code: 'LOC1',
+          name: 'Location 1',
+          source: 'app',
+          createdBy: 'system',
+        },
+      ])
+      .onConflictDoNothing();
+    await pg.db.insert(salesOrders).values([PICKING_ORDER]);
+    await pg.db.insert(salesOrderLineItems).values([ORDER_LINE]);
+    await pg.db.insert(salesOrderPicks).values([
+      {
+        pickId: '00000000-0000-4000-8000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+        productId: '00000000-0000-4000-8000-000000000001',
+        quantity: '10',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
+      },
+    ]);
+    await pg.db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
+    await pg.db.insert(salesOrderShipmentLines).values([MOCK_SHIPMENT_LINE]);
+
+    // The test environment already seeds zones and bins via global seed.
+    // The 'SHIPPING' bin has ID '00000000-0000-4000-8000-000000000002'.
+
+    // Insert picked stock for the item so createShipment can dispatch it
+    await pg.db.insert(inventoryEntries).values([
+      {
+        entryId: '00000000-0000-4000-8000-000000000002',
+        entryNumber: 'PICK-001',
+        sourceType: 'SO_PICK',
+        sourceId: '00000000-0000-4000-8000-000000000001', // salesOrderId
+        entryDate: new Date(),
+        createdBy: 'admin',
+        memo: 'Test pick',
+        isReversed: false,
+      },
+      {
+        entryId: 'e0000000-0000-4000-8000-000000000003',
+        entryNumber: 'SHP-001',
+        sourceType: 'SO_SHIPMENT',
+        sourceId: 'e0000000-0000-4000-8000-000000000001', // shipmentId
+        entryDate: new Date(),
+        createdBy: 'admin',
+        memo: 'Test dispatch',
+        isReversed: false,
+      },
+    ]);
+
+    await pg.db.insert(inventoryLedger).values([
+      {
+        ledgerId: '00000000-0000-4000-8000-000000000001',
+        entryId: '00000000-0000-4000-8000-000000000002',
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002', // SHIPPING
+        locationId: '10000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        quantity: '10',
+      },
+      {
+        ledgerId: 'c1000000-0000-4000-8000-000000000002',
+        entryId: 'e0000000-0000-4000-8000-000000000003',
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002', // SHIPPING
+        locationId: '10000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        quantity: '-5', // dispatch deducts quantity
+      },
+    ]);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // =========================================================================
+  // generateShipmentNumber
+  // =========================================================================
+
+  describe('generateShipmentNumber', () => {
+    it('should generate first sequence number if none exist today', async () => {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const num = await service.generateShipmentNumber();
+      expect(num).toBe(`SHP-${today}-0001`);
+    });
+
+    it('should increment the latest sequence number', async () => {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      await pg.db.insert(salesOrderShipments).values([
+        {
+          ...MOCK_SHIPMENT,
+          shipmentId: '10000000-0000-4000-8000-000000000009',
+          shipmentNumber: `SHP-${today}-0005`,
+          stateCode: SHIPMENT_STATE.DRAFT,
+          createdBy: 'system',
+        },
+      ]);
+
+      const num = await service.generateShipmentNumber();
+      expect(num).toBe(`SHP-${today}-0006`);
+    });
+  });
+
+  // =========================================================================
+  // createShipment
+  // =========================================================================
+
+  describe('createShipment', () => {
+    it('should create a shipment when order is in picking state and qty is valid', async () => {
+      // Default mock sets order in 'picking' state, line picked=10.
+      const dto = {
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+      const result = await service.createShipment(
+        '00000000-0000-4000-8000-000000000001',
+        dto,
+        'admin',
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should use unitCost from order line for COGS calculation if present', async () => {
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: '15.50' })
+        .where(
+          eq(
+            salesOrderLineItems.salesOrderLineId,
+            '00000000-0000-4000-8000-000000000002',
+          ),
+        );
+
+      const postSpy = jest
+        .spyOn(glService, 'postJournalEntry')
+        .mockResolvedValue({ journalEntryId: 'jl-001' } as any);
+
+      const dto = {
+        stateCode: SHIPMENT_STATE.DISPATCHED,
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+
+      await service.createShipment(
+        '00000000-0000-4000-8000-000000000001',
+        dto,
+        'admin',
+      );
+
+      // COGS should be exactly 15.50 * 5 = 77.50
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 77.5,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('should fall back to standard valuation if unitCost is null', async () => {
+      // 1. Ensure product standardCost is set in the mock
+      await pg.db
+        .update(products)
+        .set({ standardCost: '10.00' })
+        .where(eq(products.productId, '00000000-0000-4000-8000-000000000001'));
+
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: null })
+        .where(
+          eq(
+            salesOrderLineItems.salesOrderLineId,
+            '00000000-0000-4000-8000-000000000002',
+          ),
+        );
+
+      const postSpy = jest
+        .spyOn(glService, 'postJournalEntry')
+        .mockResolvedValue({ journalEntryId: 'jl-002' } as any);
+
+      const dto = {
+        stateCode: SHIPMENT_STATE.DISPATCHED,
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+
+      await service.createShipment(
+        '00000000-0000-4000-8000-000000000001',
+        dto,
+        'admin',
+      );
+
+      // Standard cost is 10.00, shipped qty 5 -> COGS = 50.00
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            debit: 50,
+          }),
+        ]),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('should reject if order is not in picking state', async () => {
+      await pg.db
+        .update(salesOrders)
+        .set({ stateCode: SALES_ORDER_STATE.DRAFT })
+        .where(
+          eq(salesOrders.salesOrderId, '00000000-0000-4000-8000-000000000001'),
+        );
+      const dto = {
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '5',
+          },
+        ],
+      };
+      await expect(
+        service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject if shipped quantity is greater than available', async () => {
+      // ORDER_LINE has quantityPicked=10. Requesting 15 should fail.
+      const dto = {
+        lines: [
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '15',
+          },
+        ],
+      };
+      await expect(
+        service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    describe('automated dispatch notification', () => {
+      beforeEach(async () => {
+        await pg.db.update(appSettings).set({ smtpHost: 'localhost' });
+        await appConfigService.reload();
+      });
+
+      it('should automatically queue email with shipping docket PDF attachment to primary delivery contact by default', async () => {
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        expect(result).toBeDefined();
+
+        // Allow async background dispatch tick to resolve
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(mockCustomersService.findOne).toHaveBeenCalledWith(
+          '00000000-0000-4000-8000-000000000001',
+        );
+        expect(mockPdfTemplatesService.runHook).toHaveBeenCalledWith(
+          'shipping-docket',
+          result.shipmentId,
+          'shipment',
+          expect.anything(),
+          expect.anything(),
+        );
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(1);
+        expect(outboxEmails[0].toAddress).toBe('delivery@customer.com');
+        expect(outboxEmails[0].subject).toBe(
+          'Shipping Docket: ORD-20260316-0001',
+        );
+        expect(outboxEmails[0].status).toBe('pending');
+        expect(outboxEmails[0].attachments).toEqual([
+          {
+            filename: 'ShippingDocket-SH-0001.pdf',
+            contentType: 'application/pdf',
+            content: Buffer.from(
+              '%PDF-1.4 Mock Shipping Docket Binary Content',
+            ).toString('base64'),
+          },
+        ]);
+      });
+
+      it('should queue email to specific contact when dispatchContactId is configured on sales order', async () => {
+        await pg.db
+          .update(salesOrders)
+          .set({
+            customFields: {
+              dispatchContactId: 'contact-purch-1',
+            },
+          })
+          .where(
+            eq(
+              salesOrders.salesOrderId,
+              '00000000-0000-4000-8000-000000000001',
+            ),
+          );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(1);
+        expect(outboxEmails[0].toAddress).toBe('purchasing@customer.com');
+        expect(outboxEmails[0].attachments).toEqual([
+          {
+            filename: 'ShippingDocket-SH-0001.pdf',
+            contentType: 'application/pdf',
+            content: Buffer.from(
+              '%PDF-1.4 Mock Shipping Docket Binary Content',
+            ).toString('base64'),
+          },
+        ]);
+      });
+
+      it('should NOT queue any email when dispatchContactId is explicitly set to none', async () => {
+        await pg.db
+          .update(salesOrders)
+          .set({
+            customFields: {
+              dispatchContactId: 'none',
+            },
+          })
+          .where(
+            eq(
+              salesOrders.salesOrderId,
+              '00000000-0000-4000-8000-000000000001',
+            ),
+          );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(0);
+        expect(result).toBeDefined();
+      });
+
+      it('should not fail or roll back shipment if document dispatch service fails', async () => {
+        mockPdfTemplatesService.runHook.mockRejectedValueOnce(
+          new Error('Typst rendering failure'),
+        );
+
+        const dto = {
+          lines: [
+            {
+              salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+              quantityShipped: '5',
+            },
+          ],
+        };
+
+        const result = await service.createShipment(
+          '00000000-0000-4000-8000-000000000001',
+          dto,
+          'admin',
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(result).toBeDefined();
+        expect(result.shipmentId).toBeDefined();
+
+        const outboxEmails = await pg.db.select().from(emailOutbox);
+        expect(outboxEmails).toHaveLength(0);
+      });
+    });
+  });
+
+  // =========================================================================
+  // updateShipment
+  // =========================================================================
+
+  describe('updateShipment', () => {
+    it('should allow updating notes on a dispatched shipment', async () => {
+      const result = await service.updateShipment(
+        'e0000000-0000-4000-8000-000000000001',
+        { notes: 'Updated notes' },
+        'admin',
+      );
+      expect(result).toBeDefined();
+    });
+
+    it('should reject updating a cancelled shipment', async () => {
+      await pg.db
+        .update(salesOrderShipments)
+        .set({ stateCode: SHIPMENT_STATE.CANCELLED })
+        .where(
+          eq(
+            salesOrderShipments.shipmentId,
+            'e0000000-0000-4000-8000-000000000001',
+          ),
+        );
+      await expect(
+        service.updateShipment(
+          'e0000000-0000-4000-8000-000000000001',
+          { notes: 'Updated notes' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // addShipmentLine
+  // =========================================================================
+
+  describe('addShipmentLine', () => {
+    it('should reject if shipment is already dispatched', async () => {
+      await expect(
+        service.addShipmentLine(
+          'e0000000-0000-4000-8000-000000000001',
+          {
+            salesOrderLineId: '00000000-0000-4000-8000-000000000002',
+            quantityShipped: '2',
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // updateShipmentLine
+  // =========================================================================
+
+  describe('updateShipmentLine', () => {
+    it('should reject updating a line in a dispatched shipment', async () => {
+      await expect(
+        service.updateShipmentLine(
+          'e0000000-0000-4000-8000-000000000001',
+          'f0000000-0000-4000-8000-000000000001',
+          { quantityShipped: '4' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // changeShipmentState
+  // =========================================================================
+
+  describe('changeShipmentState', () => {
+    async function setupWithState(currentState: string) {
+      await pg.db
+        .update(salesOrderShipments)
+        .set({ stateCode: currentState as ShipmentState })
+        .where(
+          eq(
+            salesOrderShipments.shipmentId,
+            'e0000000-0000-4000-8000-000000000001',
+          ),
+        );
+      // Inventory is already seeded in the global beforeEach
+    }
+
+    it.each([[SHIPMENT_STATE.DISPATCHED, SHIPMENT_STATE.CANCELLED]])(
+      'should reject state-machine transition %s → %s in favor of dedicated endpoint',
+      async (from, to) => {
+        await setupWithState(from);
+        await expect(
+          service.changeShipmentState(
+            'e0000000-0000-4000-8000-000000000001',
+            to,
+            'admin',
+          ),
+        ).rejects.toThrow(BadRequestException);
+      },
+    );
+
+    it.each([[SHIPMENT_STATE.CANCELLED, SHIPMENT_STATE.DISPATCHED]])(
+      'should reject transition %s → %s',
+      async (from, to) => {
+        await setupWithState(from);
+        await expect(
+          service.changeShipmentState(
+            'e0000000-0000-4000-8000-000000000001',
+            to,
+            'admin',
+          ),
+        ).rejects.toThrow(BadRequestException);
+      },
+    );
+
+    it('should reject unknown state name', async () => {
+      await expect(
+        service.changeShipmentState(
+          'e0000000-0000-4000-8000-000000000001',
+          'bogus',
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // removeShipmentLine
+  // =========================================================================
+
+  describe('removeShipmentLine', () => {
+    it('should reject removal from dispatched shipment', async () => {
+      await expect(
+        service.removeShipmentLine(
+          'e0000000-0000-4000-8000-000000000001',
+          'f0000000-0000-4000-8000-000000000001',
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // findOne / findByOrder
+  // =========================================================================
+
+  describe('findOne', () => {
+    it('should return shipment with lines', async () => {
+      const result = await service.findOne(
+        'e0000000-0000-4000-8000-000000000001',
+      );
+      expect(result).toHaveProperty(
+        'shipmentId',
+        'e0000000-0000-4000-8000-000000000001',
+      );
+      expect(result.lines).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException for unknown shipment', async () => {
+      await expect(
+        service.findOne('00000000-0000-4000-8000-000000000999'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findByOrder', () => {
+    it('should return all shipments for an order', async () => {
+      const result = await service.findByOrder(
+        '00000000-0000-4000-8000-000000000001',
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty(
+        'shipmentId',
+        'e0000000-0000-4000-8000-000000000001',
+      );
+      expect(result[0].lines).toHaveLength(1);
+    });
+  });
+
+  describe('UoM Boundary Translation (Reversal)', () => {
+    it('should correctly restore the non-base UoM during shipment cancellation', async () => {
+      // 1. Setup custom UoM
+      await pg.db
+        .insert(uomDictionary)
+        .values({ uomCode: 'PACKS', description: 'Pack of 5' });
+
+      // 2. Setup Sales Order Line with PACKS
+      const [so] = await pg.db
+        .insert(salesOrders)
+        .values({
+          orderNumber: 'SO-PACKS-01',
+          customerId: '00000000-0000-4000-8000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          stateCode: 'confirmed',
+          currencyCode: 'USD',
+          baseTotalAmount: '0',
+          exchangeRate: '1',
+          discrepanciesAcknowledged: false,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
+      const [soLine] = await pg.db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: so.salesOrderId,
+          lineNumber: 1,
+          productId: '00000000-0000-4000-8000-000000000001',
+          unitOfMeasure: 'PACKS',
+          quantity: '10',
+          pricePerUnit: '100',
+          taxCategoryId: '00000000-0000-4000-8000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          amount: '0',
+          tax: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        })
+        .returning();
+
+      // 3. Setup a shipment and shipment line matching it
+      const [shp] = await pg.db
+        .insert(salesOrderShipments)
+        .values({
+          salesOrderId: so.salesOrderId,
+          shipmentNumber: 'SHP-PACKS-01',
+          stateCode: 'dispatched',
+          createdBy: 'system',
+        })
+        .returning();
+
+      await pg.db.insert(salesOrderShipmentLines).values({
+        shipmentId: shp.shipmentId,
+        salesOrderLineId: soLine.salesOrderLineId,
+        quantityShipped: '5',
+      });
+
+      // We also need a pick referencing it so cancellation knows where to put it back
+      await pg.db.insert(salesOrderPicks).values({
+        salesOrderId: so.salesOrderId,
+        salesOrderLineId: soLine.salesOrderLineId,
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002',
+        quantity: '50',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
+        createdBy: 'system',
+      });
+
+      const entryId = '00000000-0000-4000-8000-000000000005';
+      await pg.db.insert(inventoryEntries).values({
+        entryId,
+        entryNumber: 'SHP-PACKS-DISP',
+        sourceType: 'SO_SHIPMENT',
+        sourceId: shp.shipmentId,
+        entryDate: new Date(),
+        createdBy: 'admin',
+        isReversed: false,
+      });
+      await pg.db.insert(inventoryLedger).values({
+        ledgerId: '00000000-0000-4000-8000-000000000006',
+        entryId,
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002',
+        locationId: '10000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        quantity: '-50',
+      });
+
+      // 4. Cancel Shipment
+      await service.cancelShipment(shp.shipmentId, 'admin');
+
+      // 5. Assert the boundary puts the stock back as PACKS, not EA
+      expect(mockInventoryService.recordInventoryMovement).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              uomCode: 'PACKS',
+              quantity: 5, // Restored back to the original pick bin
+            }),
+          ]),
+        }),
+      );
+    });
+  });
+});

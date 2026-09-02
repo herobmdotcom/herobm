@@ -1,0 +1,9 @@
+{
+  "sales_revenue": "Sales Revenue - MOD",
+  "accounts_receivable": "Accounts Receivable - MOD",
+  "cogs": "Cost of Goods Sold - MOD",
+  "inventory": "Inventory - MOD",
+  "gst_liability": "GST Liability - MOD",
+  "accounts_payable": "Accounts Payable - MOD",
+  "grni": "Goods Received Not Invoiced - MOD"
+}

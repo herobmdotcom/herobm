@@ -1,0 +1,66 @@
+'use client';
+
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import DataGrid from '@/components/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
+import { formatAmount } from '@herobm/shared';
+
+export default function ReconciliationsPage() {
+  const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('title'));
+  const router = useRouter();
+
+  const columns = useMemo<ColDef[]>(() => [
+    { field: 'statementDate', headerName: t('columns.statementDate'), width: 140 },
+    { field: 'accountName', headerName: t('columns.glAccount'), flex: 1 },
+    { 
+      field: 'statementBalance', 
+      headerName: t('columns.statementBalance'), 
+      width: 180,
+      valueFormatter: (params) => {
+        if (params.value == null) return '';
+        return formatAmount(Number(params.value), 'AUD');
+      }
+    },
+    { 
+      field: 'status', 
+      headerName: t('columns.status'), 
+      width: 120,
+      valueFormatter: (params) => {
+        if (!params.value) return '';
+        const isPosted = params.value === 'posted';
+        return isPosted ? tCommon('states.posted') : tCommon('states.draft');
+      }
+    }
+  ], [t, tCommon]);
+
+  return (
+    <div className="h-full flex flex-col bg-[var(--bg-primary)]">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DataGrid
+          endpoint="/api/gl/reconciliations"
+          columns={columns}
+          fetchAll={true}
+          rowHref={(row: unknown) => `/reconciliations/${(row as { reconciliationId: string }).reconciliationId}`}
+          pageTitle={t('title')}
+          defaultSortModel={[{ colId: 'statementDate', sort: 'desc' }]}
+          headerActions={
+            <div className="flex gap-2">
+              <Button variant="primary"
+                onClick={() => router.push('/reconciliations/new')}
+                className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
+              >
+                {t('newReconciliation')}
+              </Button>
+            </div>
+          }
+        />
+      </div>
+    </div>
+  );
+}

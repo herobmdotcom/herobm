@@ -1,0 +1,251 @@
+'use client';
+
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useTranslations } from 'next-intl';
+
+import { useState, useEffect, useMemo } from 'react';
+import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
+import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
+import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
+import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
+import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
+import { Button } from '@/components/shared/Button';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
+
+export default function AccountGroupsAdmin() {
+  useDocumentTitle('Customer Groups');
+  const t = useTranslations('admin.customerGroups');
+  const tCommon = useTranslations('admin.common');
+  const tGlobalCommon = useTranslations('common');
+  const [groups, setGroups] = useState<api.CustomerGroupResponseDto[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
+  const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
+  const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
+  const [matrixRules, setMatrixRules] = useState<api.DiscountMatrixResponseDto[]>([]);
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [discountGroup, setDiscountGroup] = useState<Partial<api.CustomerGroupResponseDto> | null>(null);
+  const [financialGroup, setFinancialGroup] = useState<Partial<api.CustomerGroupResponseDto> | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [data, customers, cc, act, rules, taxPositionsData, tradingTermsData] = await Promise.all([
+        api.customerGroupsControllerFindAll().then(r => r.data || []),
+        api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
+        api.costCentersControllerFindAll().then(r => r.data || []),
+        api.activitiesControllerFindAll().then(r => r.data || []),
+        api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || []),
+        api.taxPositionsControllerFindAll().then(r => r.data || []),
+        api.tradingTermsControllerFindAll().then(r => r.data || [])
+      ]);
+      const sorted = [...data].sort((a: api.CustomerGroupResponseDto, b: api.CustomerGroupResponseDto) => 
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+      );
+      setGroups(sorted);
+      setGlAccounts(customers);
+      setCostCenters(cc);
+      setActivities(act);
+      setMatrixRules(rules);
+      setTaxPositions(taxPositionsData);
+      setTradingTerms(tradingTermsData);
+    } catch (err: unknown) {
+      toast.error('Failed to load groups: ' + getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
+  const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
+  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.tradingTermsId, label: `${t.code} - ${t.description}` })), [tradingTerms]);
+
+  const columns: InlineTableColumn<api.CustomerGroupResponseDto>[] = useMemo(() => [
+    { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
+    { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
+    {
+      key: 'stateCode',
+      title: tGlobalCommon('columns.state'),
+      type: 'custom',
+      width: 140,
+      render: (row, isEditing, onChange) => {
+        const isActive = !row.stateCode || [CUSTOMER_STATE.ACTIVE as string, 'legacy'].includes(String(row.stateCode).toLowerCase());
+        return (
+          <div className="flex items-center gap-2">
+            <div
+              className={isEditing ? 'cursor-pointer' : 'cursor-default'}
+              onClick={() => {
+                if (!isEditing || !onChange) return;
+                onChange(isActive ? CUSTOMER_STATE.INACTIVE : CUSTOMER_STATE.ACTIVE);
+              }}
+            >
+              <div
+                className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${isActive ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'} ${isEditing ? 'opacity-100' : 'opacity-70'}`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${isActive ? 'left-[21px]' : 'left-[3px]'}`}
+                />
+              </div>
+            </div>
+            <span className={`text-xs font-semibold ${isActive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+              {isActive ? tGlobalCommon('states.active') : tGlobalCommon('states.inactive')}
+            </span>
+          </div>
+        );
+      }
+    },
+    { 
+      key: 'customerGroupId', 
+      title: t('discountRules'), 
+      width: 140,
+      render: (row, isEditing) => {
+        if (isEditing) {
+          return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
+        }
+        return (
+          <Button 
+            variant="secondary" 
+            size="xs" 
+            className="relative"
+            onClick={() => setDiscountGroup(row)}
+          >
+            {t('manage')}
+            {matrixRules.some((r: api.DiscountMatrixResponseDto) => r.customerGroupId === row.customerGroupId) && (
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
+            )}
+          </Button>
+        );
+      }
+    },
+    { 
+      key: 'financials', 
+      title: tCommon('financialDefaults'), 
+      width: 140,
+      render: (row, isEditing) => {
+        if (isEditing) {
+          return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
+        }
+        return (
+          <Button 
+            variant="secondary" 
+            size="xs" 
+            className="relative"
+            onClick={() => setFinancialGroup(row)}
+          >
+            {t('manage')}
+          </Button>
+        );
+      }
+    }
+  ], [tCommon, t, matrixRules]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  const handleSave = async (payload: any, isNew: boolean) => {
+    if (!payload.groupCode || !payload.name) {
+      toast.error('Code and Name are required');
+      throw new Error('Code and Name are required');
+    }
+    try {
+      const formattedPayload = {
+        ...payload,
+        defaultArAccountId: payload.defaultArAccountId || null,
+        defaultRevenueAccountId: payload.defaultRevenueAccountId || null,
+        defaultCostCenterId: payload.defaultCostCenterId || null,
+        defaultActivityId: payload.defaultActivityId || null,
+        taxPositionId: payload.taxPositionId || null,
+        tradingTermsId: payload.tradingTermsId || null,
+        creditLimit: payload.creditLimit || null,
+        earlyPaymentDiscount: payload.earlyPaymentDiscount || null,
+        earlyPaymentDiscountDays: payload.earlyPaymentDiscountDays || null,
+      };
+
+      if (!isNew) {
+        await api.customerGroupsControllerUpdate(payload.customerGroupId, formattedPayload);
+        toast.success('Group updated');
+      } else {
+        await api.customerGroupsControllerCreate(formattedPayload);
+        toast.success('Group created');
+      }
+      loadData();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const handleDelete = async (row: api.CustomerGroupResponseDto) => {
+    if(!confirm(tGlobalCommon('confirmDelete'))) return;
+    try {
+      await api.customerGroupsControllerRemove(row.customerGroupId);
+      toast.success(t('toasts.deleted'));
+      loadData();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  return (
+    <div className="flex-1 w-full h-full bg-[var(--bg-primary)] px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader 
+        title={t('title')} 
+        subtitle={t('subtitle')} 
+      />
+
+      <div className="card mb-6">
+        <InlineSettingsTable
+          title={<span className="text-[var(--text-muted)] uppercase tracking-wider text-sm font-semibold">{t('definedGroups')}</span>}
+          columns={columns}
+          data={groups}
+          rowKey={row => row.customerGroupId}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onAdd={() => ({
+            groupCode: '',
+            name: '',
+            defaultArAccountId: '',
+            defaultRevenueAccountId: '',
+            defaultCostCenterId: '',
+            defaultActivityId: '',
+            earlyPaymentDiscount: '',
+            earlyPaymentDiscountDays: undefined,
+            customerGroupId: '',
+            stateCode: CUSTOMER_STATE.ACTIVE,
+          })}
+          addLabel={t('newGroup')}
+          emptyLabel={loading ? null : t('noGroups')}
+        />
+      </div>
+
+      <DiscountMatrixSlideOver
+        open={!!discountGroup}
+        onClose={() => setDiscountGroup(null)}
+        ownerLabel={discountGroup ? `${discountGroup.groupCode} — ${discountGroup.name}` : ''}
+        customerGroupId={discountGroup?.customerGroupId}
+      />
+
+      <FinancialDefaultsSlideOver
+        isOpen={!!financialGroup}
+        onClose={() => setFinancialGroup(null)}
+        groupType="customer"
+        ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
+        data={financialGroup}
+        onSave={async (d) => {
+          await api.customerGroupsControllerUpdate(d.customerGroupId as string, d);
+          setGroups((prev) => prev.map((g) => (g.customerGroupId === d.customerGroupId ? { ...g, ...d } : g)));
+        }}
+        glAccountOptions={glAccountOptions}
+        costCenterOptions={costCenterOptions}
+        activityOptions={activityOptions}
+        taxPositionOptions={taxPositionOptions}
+        tradingTermsOptions={tradingTermsOptions}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,768 @@
+'use client';
+
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import toast from 'react-hot-toast';
+import { Button } from '@/components/shared/Button';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
+import StateBadge from '@/components/StateBadge';
+import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
+import EntityBanner from '@/components/shared/EntityBanner';
+import LocationSelect from '@/components/shared/LocationSelect';
+import Tabs from '@/components/shared/Tabs';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { ValidState } from '@/types/states';
+import { WORK_ORDER_STATE, PUTAWAY_STATUS, compareBinNumbers } from '@herobm/shared';
+import { reportError } from '@/lib/api';
+import {
+  workOrdersControllerFindOne,
+  workOrdersControllerRelease,
+  workOrdersControllerCompleteBuild,
+  workOrdersControllerCancel,
+  workOrdersControllerUpdate,
+  workOrdersControllerUpdateComponent,
+  inventoryControllerFindBinsByLocation,
+  inventoryControllerFindByProductIdsBulk,
+} from '@herobm/sdk';
+import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
+
+import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
+
+interface WorkOrderComponent {
+  workOrderComponentId: string;
+  productId: string;
+  productName: string;
+  productNumber: string;
+  expectedQuantity: string;
+  currentQuantity?: string | null;
+  unitCost?: string | null;
+}
+
+interface WorkOrderDetail {
+  workOrderId: string;
+  orderNumber: string;
+  productId: string;
+  productName: string;
+  productNumber: string;
+  targetQuantity: string;
+  completedQuantity: string;
+  locationId: string;
+  locationName: string;
+  wipBinId?: string | null;
+  wipBinName?: string | null;
+  outputBinId?: string | null;
+  outputBinName?: string | null;
+  stateCode: string;
+  putawayStatus?: string | null;
+  assemblyCostPerUnit?: string | null;
+  additionalCost?: string | null;
+  totalCost?: string | null;
+  createdBy?: string | null;
+  createdOn?: string | Date | null;
+  components: WorkOrderComponent[];
+  events?: TimelineEvent[];
+}
+
+interface InventoryBin {
+  binId: string;
+  binNumber: string;
+  binType: string;
+  zoneId?: string;
+  zoneCode?: string;
+}
+
+export default function WorkOrderDetails({ workOrderId }: { workOrderId: string }) {
+  const tCommon = useTranslations('common');
+  const tWork = useTranslations('workOrders');
+  const [data, setData] = useState<WorkOrderDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Edit State
+  const [dto, setDto] = useState<Partial<WorkOrderDetail>>({});
+  const [selectedZone, setSelectedZone] = useState('all');
+  const [availableBins, setAvailableBins] = useState<InventoryBin[]>([]);
+  const [loadingBins, setLoadingBins] = useState(false);
+
+  // Availability state
+  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+  const [inventoryLevels, setInventoryLevels] = useState<InventoryItem[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+
+  useDocumentTitle(
+    data
+      ? data.productName
+        ? `${data.orderNumber} - ${data.productName}`
+        : data.orderNumber
+      : null,
+  );
+
+  const fetchWorkOrder = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      const res = await workOrdersControllerFindOne(workOrderId);
+      if (res && res.data) {
+        setData(res.data as unknown as WorkOrderDetail);
+      } else {
+        setError('Work Order not found');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch work order details';
+      setError(msg);
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  }, [workOrderId]);
+
+  useEffect(() => {
+    if (workOrderId) {
+      fetchWorkOrder();
+    }
+  }, [workOrderId, fetchWorkOrder]);
+
+  useEffect(() => {
+    if (data) {
+      setDto({
+        targetQuantity: data.targetQuantity,
+        locationId: data.locationId,
+        wipBinId: data.wipBinId || '',
+        outputBinId: data.outputBinId || '',
+        assemblyCostPerUnit: data.assemblyCostPerUnit || '',
+        additionalCost: data.additionalCost || '',
+      });
+    }
+  }, [data]);
+
+  useEffect(() => {
+    setSelectedZone('all');
+    if (!dto.locationId) {
+      setAvailableBins([]);
+      return;
+    }
+    setLoadingBins(true);
+    inventoryControllerFindBinsByLocation(dto.locationId)
+      .then((res) => {
+        setAvailableBins((res?.data || []) as unknown as InventoryBin[]);
+      })
+      .catch((err) => {
+        reportError(err, 'WorkOrderDetails_fetchBins');
+        setAvailableBins([]);
+      })
+      .finally(() => setLoadingBins(false));
+  }, [dto.locationId]);
+
+  // Extract unique zones for the selected location
+  const availableZones = useMemo(() => {
+    const zonesSet = new Set<string>();
+    availableBins.forEach((b) => {
+      if (b.zoneCode) zonesSet.add(b.zoneCode);
+    });
+    return Array.from(zonesSet).sort();
+  }, [availableBins]);
+
+  // Filter and naturally sort bins based on selected zone
+  const filteredBins = useMemo(() => {
+    const list = selectedZone === 'all'
+      ? [...availableBins]
+      : availableBins.filter((b) => b.zoneCode === selectedZone);
+    return list.sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
+  }, [availableBins, selectedZone]);
+
+  // Group filtered bins by zone for optgroups
+  const binsByZone = useMemo(() => {
+    const map = new Map<string, InventoryBin[]>();
+    filteredBins.forEach((bin) => {
+      const zCode = bin.zoneCode || 'General';
+      if (!map.has(zCode)) map.set(zCode, []);
+      map.get(zCode)!.push(bin);
+    });
+    return map;
+  }, [filteredBins]);
+
+  // Fetch stock availability for Work Order component lines
+  useEffect(() => {
+    if (!data?.components || data.components.length === 0) {
+      setInventoryLevels([]);
+      return;
+    }
+    const productIds = data.components
+      .map((c) => c.productId)
+      .filter((id) => id && id !== '00000000-0000-0000-0000-000000000000');
+
+    if (productIds.length === 0) {
+      setInventoryLevels([]);
+      return;
+    }
+
+    setInventoryLoading(true);
+    inventoryControllerFindByProductIdsBulk({ productIds, locationId: data.locationId || undefined })
+      .then((res) => {
+        setInventoryLevels((res?.data || []) as unknown as InventoryItem[]);
+      })
+      .catch((err) => {
+        reportError(err, 'WorkOrderDetails_fetchInventory');
+        setInventoryLevels([]);
+      })
+      .finally(() => setInventoryLoading(false));
+  }, [data?.components, data?.locationId]);
+
+  const updateField = (field: keyof WorkOrderDetail, value: string | null) => {
+    setDto((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveField = async (field: keyof WorkOrderDetail, value: string | null) => {
+    if (!workOrderId || data?.[field] === value) return;
+    try {
+      setActionLoading(true);
+      const payload: Record<string, unknown> = { [field]: value === '' || value === null ? null : value };
+      
+      // If changing location, clear out the wip bin & output bin if no longer valid
+      if (field === 'locationId') {
+        payload.wipBinId = null;
+        payload.outputBinId = null;
+        updateField('wipBinId', '');
+        updateField('outputBinId', '');
+      }
+      
+      await workOrdersControllerUpdate(workOrderId, payload);
+      toast.success('Work Order updated');
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update field');
+      if (data) {
+        setDto((prev) => ({ ...prev, [field]: data[field] || '' }));
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const saveComponentField = useCallback(async (componentId: string, field: string, value: string) => {
+    if (!workOrderId) return;
+    try {
+      setActionLoading(true);
+      const payload: Record<string, unknown> = { [field]: value === '' || value === null ? null : value };
+      await workOrdersControllerUpdateComponent(workOrderId, componentId, payload);
+      toast.success('Component updated');
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update component');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [workOrderId, fetchWorkOrder]);
+
+  const handleRelease = async () => {
+    if (!data?.wipBinId || !data?.outputBinId) {
+      toast.error(tWork('errors.binsRequired'));
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await workOrdersControllerRelease(workOrderId, {});
+      toast.success('Work Order released for production.');
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to release Work Order');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      setActionLoading(true);
+      await workOrdersControllerCompleteBuild(workOrderId, {});
+      const binName = data?.outputBinName || data?.wipBinName || 'Unassigned';
+      toast.success(`Production credited to bin ${binName}`);
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to complete production');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      setActionLoading(true);
+      await workOrdersControllerCancel(workOrderId, {});
+      toast.success('Work Order cancelled.');
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel Work Order');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const componentColumns: DataTableColumn<WorkOrderComponent>[] = useMemo(
+    () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 40,
+        render: (_, i) => <span className="text-[var(--text-muted)] font-normal relative">{i + 1}</span>,
+      },
+      {
+        id: 'sku',
+        header: 'Product SKU',
+        width: 160,
+        render: (comp) => (
+          <span className="font-semibold text-xs">
+            <Link
+              href={`/products/${comp.productId}`}
+              className="text-[var(--accent)] hover:underline no-underline"
+            >
+              {comp.productNumber}
+            </Link>
+          </span>
+        ),
+      },
+      {
+        id: 'name',
+        header: 'Component Name',
+        render: (comp) => <span className="text-xs">{comp.productName}</span>,
+      },
+      {
+        id: 'expectedQty',
+        header: 'Expected Qty',
+        width: 130,
+        align: 'right',
+        render: (comp) => {
+          const stockWarn = getComponentStockWarning(comp.productId, data?.locationId, comp.expectedQuantity, inventoryLevels);
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {stockWarn && (
+                <span
+                  className={`material-symbols-outlined cursor-help text-[15px] ${stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600'}`}
+                  title={stockWarn.title}
+                >
+                  {stockWarn.icon}
+                </span>
+              )}
+              <span className={`tabular-nums font-semibold ${stockWarn ? (stockWarn.type === 'shortage' ? 'text-red-600' : 'text-amber-600') : ''}`}>
+                {comp.expectedQuantity}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'currentQty',
+        header: 'Current Qty',
+        width: 130,
+        align: 'right',
+        render: (comp) => {
+          const current = parseFloat(comp.currentQuantity || '0');
+          const expected = parseFloat(comp.expectedQuantity || '0');
+          const isComplete = current >= expected && expected > 0;
+          return (
+            <span
+              className={`font-semibold tabular-nums ${
+                isComplete
+                  ? 'text-emerald-600'
+                  : current > 0
+                  ? 'text-amber-600'
+                  : 'text-slate-500'
+              }`}
+            >
+              {comp.currentQuantity || '0'}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'unitCost',
+        header: 'Unit Cost',
+        width: 130,
+        align: 'right',
+        render: (comp) => {
+          if (data?.stateCode === WORK_ORDER_STATE.DRAFT) {
+            return (
+              <input
+                className="input w-full text-right h-8 text-sm !py-1"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={comp.unitCost || ''}
+                placeholder="Auto"
+                onBlur={(e) => {
+                  if (e.target.value !== (comp.unitCost || '')) {
+                    saveComponentField(comp.workOrderComponentId, 'unitCost', e.target.value);
+                  }
+                }}
+                disabled={actionLoading}
+              />
+            );
+          }
+          const cost = comp.unitCost ? `$${parseFloat(comp.unitCost).toFixed(2)}` : 'Auto';
+          return <span className="tabular-nums text-[var(--text-muted)]">{cost}</span>;
+        },
+      },
+    ],
+    [data?.stateCode, data?.locationId, inventoryLevels, actionLoading, saveComponentField]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center flex-1 p-8">
+        <p className="text-[var(--text-muted)]">{tCommon('loading')}</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 p-8 max-w-xl mx-auto">
+        <EntityBanner type="error" title={error || 'Work Order not found'} />
+      </div>
+    );
+  }
+
+  const isEditable = data.stateCode === WORK_ORDER_STATE.DRAFT;
+  const wipBinValue = data.wipBinName ? data.wipBinName : 'Unassigned';
+  const outputBinValue = data.outputBinName
+    ? data.outputBinName
+    : data.wipBinName
+    ? `${data.wipBinName} (Same as WIP)`
+    : 'Unassigned';
+
+  const isDraftOrPlanned =
+    data.stateCode === WORK_ORDER_STATE.DRAFT || data.stateCode === WORK_ORDER_STATE.PLANNED;
+  const isInProgress = data.stateCode === WORK_ORDER_STATE.IN_PROGRESS;
+  const isCompleted = data.stateCode === WORK_ORDER_STATE.COMPLETED;
+  const isCancelled = data.stateCode === WORK_ORDER_STATE.CANCELLED;
+
+  return (
+    <DetailsLayout
+      header={
+        <EntityHeader
+          title={data.orderNumber}
+          subtitle={`Output: ${data.productNumber} (${data.productName}) · Target Qty: ${data.targetQuantity}`}
+          badges={<StateBadge state={data.stateCode as ValidState} />}
+          actions={
+            <div className="flex items-center gap-2">
+              {isDraftOrPlanned && (
+                <Button variant="primary" size="sm" onClick={handleRelease} disabled={actionLoading}>
+                  Release Order
+                </Button>
+              )}
+
+              {isInProgress && (
+                <Button variant="primary" size="sm" onClick={handleComplete} disabled={actionLoading}>
+                  Complete Production
+                </Button>
+              )}
+
+
+              {!isCompleted && !isCancelled && (
+                <Button variant="danger" size="sm" onClick={handleCancel} disabled={actionLoading}>
+                  {tCommon('cancel')}
+                </Button>
+              )}
+            </div>
+          }
+        />
+      }
+    >
+      <div className="flex flex-col gap-6">
+        {/* Primary Order Information Card */}
+        <div className="card">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h3 className="section-heading mb-0">
+              <span className="material-symbols-outlined">
+                receipt_long
+              </span>
+              Work Order Details
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Output Product
+              </label>
+              <p className="text-sm truncate font-medium pt-1.5">
+                <Link href={`/products/${data.productId}`} className="hover:underline text-[var(--accent)] no-underline">
+                  {data.productNumber} ({data.productName})
+                </Link>
+              </p>
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Target Quantity
+              </label>
+              {isEditable ? (
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="input w-full"
+                  disabled={actionLoading}
+                  value={dto.targetQuantity || ''}
+                  onChange={(e) => updateField('targetQuantity', e.target.value)}
+                  onBlur={(e) => saveField('targetQuantity', e.target.value)}
+                />
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {data.targetQuantity}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Completed Quantity
+              </label>
+              <p className="text-sm truncate font-medium pt-1.5">
+                {data.completedQuantity}
+              </p>
+            </div>
+
+            {data.putawayStatus && (
+              <div className="min-w-0">
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  Putaway Status
+                </label>
+                <div className="pt-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${
+                    data.putawayStatus === PUTAWAY_STATUS.COMPLETED
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : data.putawayStatus === PUTAWAY_STATUS.QUARANTINED
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-sky-100 text-sky-800'
+                  }`}>
+                    {data.putawayStatus.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Fulfillment Location
+              </label>
+              {isEditable ? (
+                <LocationSelect
+                  value={dto.locationId || ''}
+                  disabled={actionLoading}
+                  onChange={(val) => {
+                    const nextVal = val || '';
+                    updateField('locationId', nextVal);
+                    saveField('locationId', nextVal);
+                  }}
+                  placeholder={tCommon('selectEllipsis')}
+                />
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {data.locationName}
+                </p>
+              )}
+            </div>
+
+            {isEditable && (
+              <div className="min-w-0">
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  Storage Zone
+                </label>
+                <select
+                  className="input w-full"
+                  value={selectedZone}
+                  onChange={(e) => {
+                    setSelectedZone(e.target.value);
+                  }}
+                  disabled={!dto.locationId || loadingBins || actionLoading || availableZones.length === 0}
+                >
+                  <option value="all">All Zones</option>
+                  {availableZones.map((zCode) => (
+                    <option key={zCode} value={zCode}>
+                      Zone: {zCode}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                WIP Bin
+              </label>
+              {isEditable ? (
+                <select
+                  className="input w-full"
+                  value={dto.wipBinId || ''}
+                  onChange={(e) => {
+                    updateField('wipBinId', e.target.value);
+                    saveField('wipBinId', e.target.value);
+                  }}
+                  disabled={!dto.locationId || loadingBins || actionLoading}
+                >
+                  <option value="">{tWork('placeholders.unassigned')}</option>
+                  {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                    <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                      {binGroup.map((bin) => (
+                        <option key={bin.binId} value={bin.binId}>
+                          {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {wipBinValue}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tWork('labels.outputBin')}
+              </label>
+              {isEditable ? (
+                <select
+                  className="input w-full"
+                  value={dto.outputBinId || ''}
+                  onChange={(e) => {
+                    updateField('outputBinId', e.target.value);
+                    saveField('outputBinId', e.target.value);
+                  }}
+                  disabled={!dto.locationId || loadingBins || actionLoading}
+                >
+                  <option value="">{tWork('placeholders.unassigned')}</option>
+                  {Array.from(binsByZone.entries()).map(([zoneName, binGroup]) => (
+                    <optgroup key={zoneName} label={`Zone: ${zoneName}`}>
+                      {binGroup.map((bin) => (
+                        <option key={bin.binId} value={bin.binId}>
+                          {bin.binNumber} {bin.binType ? `(${bin.binType === 'wip' ? 'Work in Progress' : bin.binType.toUpperCase()})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {outputBinValue}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tWork('labels.assemblyCostPerUnit')}
+              </label>
+              {isEditable ? (
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input w-full"
+                  disabled={actionLoading}
+                  placeholder={tWork('placeholders.assemblyCostPerUnit')}
+                  value={dto.assemblyCostPerUnit || ''}
+                  onChange={(e) => updateField('assemblyCostPerUnit', e.target.value)}
+                  onBlur={(e) => saveField('assemblyCostPerUnit', e.target.value)}
+                />
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {data.assemblyCostPerUnit ? `$${parseFloat(data.assemblyCostPerUnit).toFixed(2)}` : '—'}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tWork('labels.additionalCost')}
+              </label>
+              {isEditable ? (
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input w-full"
+                  disabled={actionLoading}
+                  placeholder={tWork('placeholders.additionalCost')}
+                  value={dto.additionalCost || ''}
+                  onChange={(e) => updateField('additionalCost', e.target.value)}
+                  onBlur={(e) => saveField('additionalCost', e.target.value)}
+                />
+              ) : (
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {data.additionalCost ? `$${parseFloat(data.additionalCost).toFixed(2)}` : '—'}
+                </p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                {tWork('labels.totalCost')}
+              </label>
+              <p className="text-sm truncate font-semibold text-[var(--accent)] pt-1.5">
+                ${parseFloat(data.totalCost || '0').toFixed(2)}
+              </p>
+            </div>
+            
+            {data.createdOn && (
+              <div className="min-w-0">
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  Created On
+                </label>
+                <p className="text-sm truncate font-medium pt-1.5">
+                  {new Date(data.createdOn).toLocaleString()} {tCommon('by')} {data.createdBy || '—'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bill of Materials / Components Section */}
+        <div className="card">
+          <h3 className="section-heading mb-4">
+            <span className="material-symbols-outlined">inventory_2</span>
+            {tWork('lineItems')}
+          </h3>
+          <div className="mb-4">
+            <Tabs<'lines' | 'availability'>
+              tabs={[
+                { id: 'lines', label: 'Component Lines' },
+                { id: 'availability', label: 'Stock Availability' },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+            />
+          </div>
+
+          {activeTab === 'lines' ? (
+            <DataTable
+              columns={componentColumns}
+              data={data.components || []}
+              keyExtractor={(comp) => comp.workOrderComponentId}
+              emptyMessage="No components listed for this Work Order."
+            />
+          ) : (
+            <WorkOrderAvailabilityTab
+              locationId={data.locationId}
+              components={(data.components || []).map((c) => ({
+                productId: c.productId,
+                productNumber: c.productNumber,
+                productDescription: c.productName,
+                expectedQuantity: c.expectedQuantity,
+              }))}
+              inventoryData={inventoryLevels}
+              loading={inventoryLoading}
+            />
+          )}
+        </div>
+
+        {/* Activity / Event Audit Timeline */}
+        <div className="card">
+          <ActivityTimeline events={(data.events || []) as unknown as TimelineEvent[]} />
+        </div>
+      </div>
+    </DetailsLayout>
+  );
+}

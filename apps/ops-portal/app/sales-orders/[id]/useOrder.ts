@@ -1,0 +1,579 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { reportError, ApiError } from '@/lib/api';
+import * as api from '@herobm/sdk';
+import { toast } from 'react-hot-toast';
+import { 
+    SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
+    SALES_ORDER_STATE,
+    CUSTOM_LINE_ID,
+    LineType
+} from '@herobm/shared';
+
+import type {
+    OrderDetail, TaxCategory, InventoryLevel,
+    OrderReturn, SalesInvoice,
+} from './types';
+import type { Product } from '@/components/shared/ProductSearchInput';
+
+/* ── New-invoice-line shape ──────────────────────────────────────── */
+export interface NewInvoiceLine {
+    salesOrderLineId: string;
+    quantityToInvoice: string;
+    maxQuantity: number;
+}
+
+/* ── New-return-line shape ───────────────────────────────────────── */
+export interface NewReturnLine {
+    salesOrderLineId: string;
+    quantityReturned: string;
+    reason: string;
+    returnFee: string;
+    feeMode: 'absolute' | 'percentage';
+    originalAmount: number;
+}
+
+/* ── Hook ────────────────────────────────────────────────────────── */
+
+export function useOrder(id: string) {
+    const router = useRouter();
+    const tCommon = useTranslations('common');
+    const tToast = useTranslations('toast');
+    const tConfirm = useTranslations('confirm');
+
+    /* ── Core state ──────────────────────────────────────────────── */
+    const [order, setOrder] = useState<OrderDetail | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, _setError] = useState('');
+    const setError = (msg: string) => {
+        _setError(msg);
+        if (msg) toast.error(msg);
+    };
+    const [saving, setSaving] = useState(false);
+
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
+
+    useEffect(() => {
+        api.inventoryControllerFindAllLocations()
+            .then((res) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+                const payload = (res as any).data;
+                const arr = Array.isArray(payload) ? payload : (payload?.data || []);
+                setLocations(arr as api.InventoryLocationResponseDto[]);
+            })
+            .catch((err) => reportError(err, 'Locations_Fetch'));
+    }, []);
+
+    /* ── Editable header fields ──────────────────────────────────── */
+    const [editName, setEditName] = useState('');
+    const [editPO, setEditPO] = useState('');
+    const [editNotes, setEditNotes] = useState('');
+    const [editAnalysisCode, setEditAnalysisCode] = useState('');
+    const [editFulfillmentLocationId, setEditFulfillmentLocationId] = useState('');
+    const [headerDirty, setHeaderDirty] = useState(false);
+    const [discrepanciesAcknowledged, setDiscrepanciesAcknowledged] = useState(false);
+
+    /* ── Delivery Addresses & Shipping Notes ─────────────────────── */
+    const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
+    const [customerContacts, setCustomerContacts] = useState<api.ContactResponseDto[]>([]);
+    const [editDispatchContactId, setEditDispatchContactId] = useState<string>('');
+    const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
+    const [customerName, setCustomerName] = useState<string>('');
+    const [editShippingNotes, setEditShippingNotes] = useState('');
+    const [editDeliveryCompanyName, setEditDeliveryCompanyName] = useState('');
+    const [editDeliveryName, setEditDeliveryName] = useState('');
+    const [editDeliveryPhone, setEditDeliveryPhone] = useState('');
+    const [editDeliveryAddressLine1, setEditDeliveryAddressLine1] = useState('');
+    const [editDeliveryAddressLine2, setEditDeliveryAddressLine2] = useState('');
+    const [editDeliveryCity, setEditDeliveryCity] = useState('');
+    const [editDeliveryState, setEditDeliveryState] = useState('');
+    const [editDeliveryPostalCode, setEditDeliveryPostalCode] = useState('');
+    const [editDeliveryCountry, setEditDeliveryCountry] = useState('');
+
+    /* ── GST categories ──────────────────────────────────────────── */
+    const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
+
+    /* ── Tab state for line items / availability / backorders ────── */
+    const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'backorders'>('lines');
+    const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
+    const [inventoryLoading, setInventoryLoading] = useState(false);
+
+    /* ── Returns state ───────────────────────────────────────────── */
+    const [returns, setReturns] = useState<OrderReturn[]>([]);
+    const [returnsLoading, setReturnsLoading] = useState(false);
+    const [showCreateReturn, setShowCreateReturn] = useState(false);
+    const [newReturnNotes, setNewReturnNotes] = useState('');
+    const [newReturnLines, setNewReturnLines] = useState<NewReturnLine[]>([]);
+
+    /* ── Invoices state ──────────────────────────────────────────── */
+    const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
+    const [invoicing, setInvoicing] = useState(false);
+    const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const [pickingSummary, setPickingSummary] = useState<any | null>(null);
+    const [newInvoiceNotes, setNewInvoiceNotes] = useState('');
+    const [newInvoiceLines, setNewInvoiceLines] = useState<NewInvoiceLine[]>([]);
+
+    /* ── Data loaders ────────────────────────────────────────────── */
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
+        if (showSpinner) setLoading(true);
+        try {
+            const [response, pData] = await Promise.all([
+                api.ordersControllerFindOne(encodeURIComponent(id)),
+                api.orderPickingControllerGetPickingSummary(encodeURIComponent(id)).catch(() => null),
+            ]);
+            const orderData = response.data as unknown as OrderDetail;
+            if (orderData && !orderData.lines) {
+                orderData.lines = [];
+            }
+            setOrder(orderData);
+            setEditName(orderData?.name || '');
+            setEditPO(orderData?.customerOrderNumber || '');
+            setEditNotes(orderData?.notes || '');
+            setEditAnalysisCode((orderData?.customFields as Record<string, string>)?.analysisCode || '');
+            setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
+            setEditShippingNotes(orderData?.shippingNotes || '');
+            setEditDeliveryCompanyName(orderData?.deliveryCompanyName || '');
+            setEditDeliveryName(orderData?.deliveryName || '');
+            setEditDeliveryPhone(orderData?.deliveryPhone || '');
+            setEditDeliveryAddressLine1(orderData?.deliveryAddressLine1 || '');
+            setEditDeliveryAddressLine2(orderData?.deliveryAddressLine2 || '');
+            setEditDeliveryCity(orderData?.deliveryCity || '');
+            setEditDeliveryState(orderData?.deliveryState || '');
+            setEditDeliveryPostalCode(orderData?.deliveryPostalCode || '');
+            setEditDeliveryCountry(orderData?.deliveryCountry || '');
+            setDiscrepanciesAcknowledged(orderData?.discrepanciesAcknowledged || false);
+            setPickingSummary(pData?.data);
+            const customFields = (orderData?.customFields || {}) as Record<string, unknown>;
+            setEditDispatchContactId((customFields.dispatchContactId as string) || '');
+            setHeaderDirty(false);
+
+            if (orderData?.customerId) {
+                api.customersControllerFindOne(orderData.customerId)
+                    .then((res) => {
+                        const customer = res.data;
+                        setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
+                        setCustomerContacts((customer.contacts as unknown as api.ContactResponseDto[]) || []);
+                        setCustomerCountry(customer.billingAddressCountry || undefined);
+                        setCustomerName(customer.name || '');
+                    })
+                    .catch(() => {
+                        setCustomerDeliveryAddresses([]);
+                        setCustomerContacts([]);
+                        setCustomerCountry(undefined);
+                        setCustomerName('');
+                    });
+            }
+
+            if (autoTransitions && autoTransitions.length > 0) {
+                const tr = autoTransitions[0];
+                toast.success(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as Parameters<typeof tCommon>[0]), reason: tr.reason.toLowerCase() }));
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
+        } finally {
+            if (showSpinner) setLoading(false);
+        }
+    };
+
+    const loadReturns = async () => {
+        setReturnsLoading(true);
+        try {
+            const res = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
+            setReturns(res.data as unknown as OrderReturn[] || []);
+        } catch {
+            // fallback to empty array if sub-resource fails to load
+            setReturns([]);
+        } finally {
+            setReturnsLoading(false);
+        }
+    };
+
+    const loadInvoices = async () => {
+        try {
+            const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
+            setInvoices((res.data as unknown as SalesInvoice[]) || []);
+        } catch {
+            // fallback to empty array if sub-resource fails to load
+            setInvoices([]);
+        }
+    };
+
+    /* ── Effects ─────────────────────────────────────────────────── */
+
+    // Initial load
+    useEffect(() => {
+        loadOrder();
+        api.taxCategoriesControllerFindAll()
+            .then(res => setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[] || []))
+            .catch(err => reportError(err, 'OrderDetailPage'));
+    }, [id]);
+
+    // Load returns and invoices when order state involves invoicing
+    useEffect(() => {
+        if ([SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
+            loadInvoices();
+        }
+        if ([
+            SALES_ORDER_STATE.CONFIRMED,
+            SALES_ORDER_STATE.PICKING,
+            SALES_ORDER_STATE.SHIPPED,
+            SALES_ORDER_STATE.INVOICED
+        ].some(s => s === order?.stateCode)) {
+            loadReturns();
+        }
+    }, [order?.stateCode]);
+
+    // Load inventory for highlighting shortages
+    useEffect(() => {
+        if (!order || order.lines.length === 0) return;
+        
+        const productIds = [...new Set(order.lines.map((l) => l.productId).filter((id): id is string => Boolean(id)))];
+        if (productIds.length === 0) return;
+        
+        setInventoryLoading(true);
+        api.inventoryControllerFindByProductIdsBulk({ productIds })
+            .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data) as InventoryLevel[]))
+            .catch((err: unknown) => reportError(err, 'OrderDetailPage'))
+            .finally(() => setInventoryLoading(false));
+    }, [activeTab, order]);
+
+    // Track header changes
+    useEffect(() => {
+        if (!order) return;
+        const changed =
+            editName !== (order.name || '') ||
+            editPO !== (order.customerOrderNumber || '') ||
+            editNotes !== (order.notes || '') ||
+            editAnalysisCode !== ((order.customFields as Record<string, string>)?.analysisCode || '') ||
+            editFulfillmentLocationId !== (order.fulfillmentLocationId || '') ||
+            editShippingNotes !== (order.shippingNotes || '') ||
+            editDeliveryCompanyName !== (order.deliveryCompanyName || '') ||
+            editDeliveryName !== (order.deliveryName || '') ||
+            editDeliveryPhone !== (order.deliveryPhone || '') ||
+            editDeliveryAddressLine1 !== (order.deliveryAddressLine1 || '') ||
+            editDeliveryAddressLine2 !== (order.deliveryAddressLine2 || '') ||
+            editDeliveryCity !== (order.deliveryCity || '') ||
+            editDeliveryState !== (order.deliveryState || '') ||
+            editDeliveryPostalCode !== (order.deliveryPostalCode || '') ||
+            editDeliveryCountry !== (order.deliveryCountry || '');
+        setHeaderDirty(changed);
+    }, [
+        editName, editPO, editNotes, editAnalysisCode, editFulfillmentLocationId, editNotes,
+        editShippingNotes, editDeliveryCompanyName, editDeliveryName, editDeliveryPhone,
+        editDeliveryAddressLine1, editDeliveryAddressLine2,
+        editDeliveryCity, editDeliveryState, editDeliveryPostalCode, editDeliveryCountry,
+        order
+    ]);
+
+    /* ── Mutations ───────────────────────────────────────────────── */
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const saveHeader = async (overrides?: any) => {
+        if (!headerDirty && !overrides) return;
+        setSaving(true);
+        try {
+            await api.ordersControllerUpdate(id, {
+                name: editName ?? undefined,
+                customerOrderNumber: editPO ?? undefined,
+                notes: editNotes ?? undefined,
+                fulfillmentLocationId: editFulfillmentLocationId || undefined, // keep || for UUID to prevent "" errors
+                shippingNotes: editShippingNotes ?? undefined,
+                deliveryCompanyName: editDeliveryCompanyName ?? undefined,
+                deliveryName: editDeliveryName ?? undefined,
+                deliveryPhone: editDeliveryPhone ?? undefined,
+                deliveryAddressLine1: editDeliveryAddressLine1 ?? undefined,
+                deliveryAddressLine2: editDeliveryAddressLine2 ?? undefined,
+                deliveryCity: editDeliveryCity ?? undefined,
+                deliveryState: editDeliveryState ?? undefined,
+                deliveryPostalCode: editDeliveryPostalCode ?? undefined,
+                deliveryCountry: editDeliveryCountry ?? undefined,
+                customFields: { analysisCode: editAnalysisCode || undefined },
+                ...(overrides || {})
+            });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const changeState = async (newState: string, generateBackorders?: boolean, acknowledged?: boolean) => {
+        try {
+            await api.ordersControllerChangeState(id, { 
+                stateCode: newState, 
+                generateBackorders,
+                discrepanciesAcknowledged: acknowledged
+            });
+            toast.success(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }));
+            await loadOrder(undefined, false);
+        } catch (err: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+            const anyErr = err as any;
+            const isApiError = anyErr && (anyErr.status === 409 || anyErr.name === 'ApiError');
+            if (isApiError && anyErr.data?.message === 'INVENTORY_GAP') {
+                return anyErr.data.gaps;
+            }
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
+            throw err;
+        }
+    };
+
+    const calculateTaxes = async () => {
+        setSaving(true);
+        try {
+            await api.ordersControllerTriggerTaxCalculation(encodeURIComponent(id), {});
+            await loadOrder(undefined, false);
+            toast.success('Taxes calculated successfully');
+        } catch (err) {
+            reportError(err, 'OrderDetailPage');
+            const msg = err instanceof ApiError ? err.message : 'Tax calculation failed';
+            toast.error(msg);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const archiveOrder = async () => {
+        if (!confirm(tConfirm('archiveOrder'))) return;
+        setSaving(true);
+        try {
+            await api.ordersControllerArchive(id, { body: {} });
+            toast.success(tToast('orderArchived'));
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToArchive'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const unarchiveOrder = async () => {
+        setSaving(true);
+        try {
+            await api.ordersControllerUnarchive(id, { body: {} });
+            toast.success(tToast('orderUnarchived'));
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUnarchive'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+
+
+    const updateLine = async (lineId: string, field: string, value: string) => {
+        setSaving(true);
+        try {
+            await api.ordersControllerUpdateLine(id, lineId, { [field]: value });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
+        setSaving(true);
+        try {
+            await api.ordersControllerUpdateLine(id, lineId, payload);
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const removeLine = async (lineId: string) => {
+        if (!confirm(tConfirm('removeLine'))) return;
+        setSaving(true);
+        setError('');
+        try {
+            await api.ordersControllerRemoveLine(id, lineId);
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    const addLineFromProduct = async (p: Record<string, any>) => {
+        if (!order) return;
+        const exists = order.lines.some((l) => l.productId === p.productId);
+        if (exists) {
+            toast(tToast('productAlreadyInOrder', { productNumber: p.productNumber }));
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            const payload = {
+                productId: p.productId,
+                productDescription: p.name,
+                quantity: '1',
+                pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
+                unitOfMeasure: 'EA',
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
+            } else {
+                await api.ordersControllerAddLine(id, payload);
+            }
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const addBlankLine = async () => {
+        setSaving(true);
+        try {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            const payload = {
+                productId: CUSTOM_LINE_ID,
+                productDescription: isPostConf ? 'Additional Charge' : '',
+                quantity: '1',
+                pricePerUnit: '0.00',
+                unitOfMeasure: 'EA',
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
+            } else {
+                await api.ordersControllerAddLine(id, payload);
+            }
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const addPostConfirmationBlankLine = async () => {
+        setSaving(true);
+        try {
+            await api.ordersControllerAddPostConfirmationLine(id, {
+                productId: CUSTOM_LINE_ID,
+                productDescription: 'Additional Charge',
+                quantity: '1',
+                pricePerUnit: '0.00',
+                discountPercentage: '0',
+                unitOfMeasure: 'EA',
+            });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const addCommentLine = async () => {
+        setSaving(true);
+        try {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LineType DTO compatibility
+            const payload: any = {
+                lineType: LineType.COMMENT,
+                productDescription: '',
+                quantity: '0',
+                pricePerUnit: '0',
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
+            } else {
+                await api.ordersControllerAddLine(id, payload);
+            }
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    /* ── Computed values ─────────────────────────────────────────── */
+
+    const isOrderDetailsEditable =
+        !([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.ARCHIVED] as string[]).includes((order?.stateCode as string) ?? '');
+
+    const isOrderLinesEditable = order?.stateCode === SALES_ORDER_STATE.DRAFT;
+
+    const isHeaderEditable = order?.stateCode !== SALES_ORDER_STATE.ARCHIVED && order?.stateCode !== SALES_ORDER_STATE.CANCELLED;
+
+    const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
+
+    const subtotal = order?.lines?.reduce(
+        (sum, l) => sum + parseFloat(l.amount || '0'), 0,
+    ) ?? 0;
+
+    const totalTax = order?.lines?.reduce(
+        (sum, l) => sum + parseFloat(l.tax || '0'), 0,
+    ) ?? 0;
+
+    /* ── Return ──────────────────────────────────────────────────── */
+
+    return {
+        // Core
+        order, loading, error, setError, saving, setSaving, locations,
+
+        // Header editing
+        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editAnalysisCode, setEditAnalysisCode, headerDirty,
+
+        // GST
+        taxCategories,
+
+        // Tabs
+        activeTab, setActiveTab, inventoryData, inventoryLoading,
+
+        // Returns
+        returns, returnsLoading, showCreateReturn, setShowCreateReturn,
+        newReturnNotes, setNewReturnNotes, newReturnLines, setNewReturnLines,
+
+        // Invoices
+        invoices, invoicing, setInvoicing, showCreateInvoice, setShowCreateInvoice,
+        pickingSummary, newInvoiceNotes, setNewInvoiceNotes,
+        newInvoiceLines, setNewInvoiceLines,
+
+        // Computed
+        isOrderDetailsEditable, isOrderLinesEditable,
+        allowedTransitions, subtotal, totalTax,
+
+        // Mutations
+        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
+        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
+        loadOrder, loadReturns, loadInvoices,
+        editFulfillmentLocationId, setEditFulfillmentLocationId,
+        customerDeliveryAddresses,
+        customerContacts,
+        editDispatchContactId, setEditDispatchContactId,
+        customerCountry,
+        customerName,
+        editShippingNotes, setEditShippingNotes,
+        editDeliveryCompanyName, setEditDeliveryCompanyName,
+        editDeliveryName, setEditDeliveryName,
+        editDeliveryPhone, setEditDeliveryPhone,
+        editDeliveryAddressLine1, setEditDeliveryAddressLine1,
+        editDeliveryAddressLine2, setEditDeliveryAddressLine2,
+        editDeliveryCity, setEditDeliveryCity,
+        editDeliveryState, setEditDeliveryState,
+        editDeliveryPostalCode, setEditDeliveryPostalCode,
+        editDeliveryCountry, setEditDeliveryCountry,
+        discrepanciesAcknowledged, setDiscrepanciesAcknowledged
+    };
+}

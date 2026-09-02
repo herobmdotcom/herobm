@@ -1,0 +1,220 @@
+{
+  "reports": [
+    {
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "slug": "sales-order-quote",
+      "name": "Sales Quote",
+      "filename": "sales-quote.typ",
+      "output_name_pattern": "Quote-${quoteNumber}.pdf",
+      "hook": "sales-order-quote",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000002",
+      "slug": "picking-slip-template",
+      "name": "Picking Slip",
+      "filename": "picking-slip.typ",
+      "output_name_pattern": "PickingSlip-${orderNumber}.pdf",
+      "hook": "picking-slip",
+      "context": "picking-slip",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000003",
+      "slug": "sales-invoice-template",
+      "name": "Sales Invoice",
+      "filename": "sales-invoice.typ",
+      "output_name_pattern": "Invoice-${orderNumber}.pdf",
+      "hook": "sales-invoice",
+      "context": "sales-invoice",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000004",
+      "slug": "sales-return-credit",
+      "name": "Sales Credit Note",
+      "filename": "sales-credit.typ",
+      "output_name_pattern": "Credit-${returnMeta.returnNumber}.pdf",
+      "hook": "sales-return-credit",
+      "context": "sales-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000005",
+      "slug": "pro-forma-invoice-template",
+      "name": "Pro-forma Invoice",
+      "filename": "pro-forma-invoice.typ",
+      "output_name_pattern": "ProForma-${orderNumber}.pdf",
+      "hook": "pro-forma-invoice",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000010",
+      "slug": "theme-external",
+      "name": "External Reports Theme",
+      "filename": "theme-external.typ",
+      "output_name_pattern": "Theme-External.pdf",
+      "context": "theme",
+      "type": "internal"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000011",
+      "slug": "theme-internal",
+      "name": "Internal Reports Theme",
+      "filename": "theme-internal.typ",
+      "output_name_pattern": "Theme-Internal.pdf",
+      "type": "internal"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000006",
+      "slug": "return-slip-template",
+      "name": "Return Slip",
+      "filename": "return-slip.typ",
+      "output_name_pattern": "ReturnSlip-${returnNumber}.pdf",
+      "hook": "return-slip",
+      "context": "sales-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000007",
+      "slug": "sales-order-confirmation-template",
+      "name": "Sales Order Confirmation",
+      "filename": "sales-order-confirmation.typ",
+      "output_name_pattern": "OrderConfirmation-${orderNumber}.pdf",
+      "hook": "sales-order-confirmation",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000008",
+      "slug": "shipping-docket-template",
+      "name": "Shipping Docket",
+      "filename": "shipping-docket.typ",
+      "output_name_pattern": "ShippingDocket-${shipmentNumber}.pdf",
+      "hook": "shipping-docket",
+      "context": "shipment",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000014",
+      "slug": "shipping-label-template",
+      "name": "Shipping Label",
+      "filename": "shipping-label.typ",
+      "output_name_pattern": "ShippingLabel-${shipmentNumber}.pdf",
+      "hook": "shipping-label",
+      "context": "shipment",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000012",
+      "slug": "picking-labels-zebra",
+      "name": "Zebra Picking Labels",
+      "filename": "picking-labels-zebra.typ",
+      "output_name_pattern": "PickingLabels-${orderNumber}.pdf",
+      "context": "picking-slip",
+      "type": "template"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000013",
+      "slug": "purchase-order",
+      "name": "Purchase Order",
+      "filename": "purchase-order.typ",
+      "output_name_pattern": "PurchaseOrder-${orderNumber}.pdf",
+      "hook": "purchase-order",
+      "context": "purchase-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000015",
+      "slug": "purchase-return-slip",
+      "name": "Purchase Return Slip",
+      "filename": "purchase-return-slip.typ",
+      "output_name_pattern": "PurchaseReturn-${returnNumber}.pdf",
+      "hook": "purchase-return",
+      "context": "purchase-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000016",
+      "slug": "purchase-debit-note-template",
+      "name": "Purchase Debit Note",
+      "filename": "purchase-debit-note.typ",
+      "output_name_pattern": "DebitNote-${debitNoteNumber}.pdf",
+      "hook": "purchase-debit-note",
+      "context": "purchase-debit-note",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000017",
+      "slug": "customer-statement",
+      "name": "Customer Statement of Account",
+      "filename": "customer-statement.typ",
+      "output_name_pattern": "Statement-${customerNumber}.pdf",
+      "hook": "customer-statement",
+      "context": "customer-statement",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000018",
+      "slug": "supplier-remittance-advice",
+      "name": "Supplier Remittance Advice",
+      "filename": "supplier-remittance-advice.typ",
+      "output_name_pattern": "Remittance-${paymentNumber}.pdf",
+      "hook": "supplier-remittance-advice",
+      "context": "supplier-remittance-advice",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000019",
+      "slug": "customer-payment-receipt",
+      "name": "Customer Payment Receipt",
+      "filename": "customer-payment-receipt.typ",
+      "output_name_pattern": "Receipt-${paymentNumber}.pdf",
+      "hook": "customer-payment-receipt",
+      "context": "customer-payment-receipt",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000020",
+      "slug": "customer-overdue-notice",
+      "name": "Customer Overdue Payment Notice",
+      "filename": "customer-overdue-notice.typ",
+      "output_name_pattern": "OverdueNotice-${customerNumber}.pdf",
+      "hook": "customer-overdue-notice",
+      "context": "customer-overdue-notice",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000021",
+      "slug": "period-close-audit",
+      "name": "Formal Period Close / Audit Snapshot",
+      "filename": "period-close-audit.typ",
+      "output_name_pattern": "PeriodClose-${period.periodName}.pdf",
+      "hook": "period-close-audit",
+      "context": "period-close-audit",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000022",
+      "slug": "cash-flow-statement",
+      "name": "Statement of Cash Flows",
+      "filename": "cash-flow-statement.typ",
+      "output_name_pattern": "CashFlowStatement-${period.startDate}-to-${period.endDate}.pdf",
+      "hook": "cash-flow-statement",
+      "context": "cash-flow-statement",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000023",
+      "slug": "accounting-codes",
+      "name": "Accounting Codes Cheat Sheet",
+      "filename": "accounting-codes.typ",
+      "output_name_pattern": "AccountingCodes-${generatedAt}.pdf",
+      "hook": "accounting-codes",
+      "context": "accounting-codes",
+      "type": "hook"
+    }
+  ]
+}

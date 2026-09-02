@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "rootDirs": ["./src", "../../extensions"],
+    "paths": {
+      "@api/*": ["./src/*"],
+      "@herobm/shared": ["../../packages/shared/dist/index"],
+      "@herobm/shared/*": ["../../packages/shared/dist/*"],
+      "@extensions/*": ["../../extensions/*"],
+      "@test/*": ["./test/*"]
+    },
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "debug_find_one.ts",
+    "test-login.ts",
+    "drizzle.config.ts",
+    "./tools",
+    "**/*.js",
+    "src/extensions/**/ui/**/*",
+    "**/*.tsx"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}

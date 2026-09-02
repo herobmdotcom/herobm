@@ -1,0 +1,313 @@
+import { readFileSync } from 'fs';
+import { join, resolve } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { eq, inArray } from 'drizzle-orm';
+import {
+  pdfTemplates,
+  pdfTemplateHooks,
+  pdfTemplateContexts,
+} from '@herobm/db-schema';
+import type { SeedDB } from '../run';
+
+interface SeedData {
+  slug: string;
+  name: string;
+  contexts?: string[];
+  hook?: string;
+  description: string;
+  outputPattern: string;
+  templatePath?: string;
+  templateString?: string;
+}
+
+const SEEDS: SeedData[] = [
+  {
+    slug: 'sales-invoice',
+    name: 'Standard Sales Invoice',
+    contexts: ['sales-invoice'],
+    description:
+      'System default template for generating Sales Invoices and rendering AR Ledger entries.',
+    templatePath: '../../../../tools/seeds/reports/sales-invoice.typ',
+    outputPattern: 'Invoice-${orderNumber}.pdf',
+  },
+  {
+    slug: 'sales-order-quote',
+    name: 'Standard Sales Quote',
+    contexts: ['sales-order'],
+    description: 'System default template for generating Sales Quotes.',
+    templatePath: '../../../../tools/seeds/reports/sales-quote.typ',
+    outputPattern: 'Quote-${orderNumber}.pdf',
+  },
+  {
+    slug: 'sales-order-confirmation',
+    name: 'Standard Order Confirmation',
+    contexts: ['sales-order'],
+    description:
+      'System default template for generating Sales Order Confirmations.',
+    templatePath:
+      '../../../../tools/seeds/reports/sales-order-confirmation.typ',
+    outputPattern: 'Confirmation-${orderNumber}.pdf',
+  },
+  {
+    slug: 'pro-forma-invoice',
+    name: 'Standard Pro Forma Invoice',
+    contexts: ['sales-order'],
+    description:
+      'System default template for generating Pro Forma Invoices for confirmed orders.',
+    templatePath: '../../../../tools/seeds/reports/pro-forma-invoice.typ',
+    outputPattern: 'ProForma-${orderNumber}.pdf',
+  },
+  {
+    slug: 'sales-return',
+    name: 'Standard Return Credit Note',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Credit Notes for returned customer goods.',
+    templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
+    outputPattern: 'Credit-${returnNumber}.pdf',
+  },
+  {
+    slug: 'return-slip',
+    name: 'Standard Return Slip',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Return Slips for customers.',
+    templatePath: '../../../../tools/seeds/reports/return-slip.typ',
+    outputPattern: 'Return-Slip-${returnMeta.returnNumber}.pdf',
+  },
+  {
+    slug: 'shipping-docket',
+    name: 'Standard Shipping Docket',
+    contexts: ['shipment'],
+    description:
+      'System default template for generating Shipping Dockets that accompany dispatched goods.',
+    templatePath: '../../../../tools/seeds/reports/shipping-docket.typ',
+    outputPattern: 'Docket-${shipmentNumber}.pdf',
+  },
+  {
+    slug: 'shipping-label',
+    name: 'Standard Shipping Label',
+    contexts: ['shipment'],
+    description:
+      'System default template for generating Shipping Labels for dispatched packages.',
+    templatePath: '../../../../tools/seeds/reports/shipping-label.typ',
+    outputPattern: 'Label-${shipmentNumber}.pdf',
+  },
+  {
+    slug: 'sales-return-credit',
+    name: 'Standard Sales Credit',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Sales Credit Notes against returns.',
+    templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
+    outputPattern: 'Credit-${returnMeta.returnNumber}.pdf',
+  },
+  {
+    slug: 'picking-slip',
+    name: 'Standard Picking Slip',
+    contexts: ['picking-slip'],
+    description:
+      'System default template for generating warehouse Picking Slips and Back-order reports.',
+    templatePath: '../../../../tools/seeds/reports/picking-slip.typ',
+    outputPattern: 'Picking-Slip-${orderNumber}.pdf',
+  },
+  {
+    slug: 'theme-external',
+    name: 'External Reports Theme',
+    contexts: ['theme'],
+    description:
+      'Standard global wrapper for external documents with Organization info in headers/footers.',
+    templatePath: '../../../../tools/seeds/reports/theme-external.typ',
+    outputPattern: 'Theme-External.pdf',
+  },
+  {
+    slug: 'theme-internal',
+    name: 'Internal Reports Theme',
+    contexts: ['theme'],
+    description:
+      'Standard wrapper for internal business documents requiring a confidential or internal-only header.',
+    templatePath: '../../../../tools/seeds/reports/theme-internal.typ',
+    outputPattern: 'Theme-Internal.pdf',
+  },
+  {
+    slug: 'purchase-order',
+    name: 'Standard Purchase Order',
+    contexts: ['purchase-order'],
+    description: 'System default template for generating Purchase Orders.',
+    templatePath: '../../../../tools/seeds/reports/purchase-order.typ',
+    outputPattern: 'PurchaseOrder-${orderNumber}.pdf',
+  },
+  {
+    slug: 'purchase-return-slip',
+    name: 'Purchase Return Slip',
+    contexts: ['purchase-return'],
+    hook: 'purchase-return',
+    description:
+      'System default template for generating Purchase Return slips for suppliers.',
+    templatePath: '../../../../tools/seeds/reports/purchase-return-slip.typ',
+    outputPattern: 'PurchaseReturn-${returnNumber}.pdf',
+  },
+  {
+    slug: 'purchase-debit-note-template',
+    name: 'Purchase Debit Note',
+    contexts: ['purchase-debit-note'],
+    hook: 'purchase-debit-note',
+    description:
+      'System default template for generating Purchase Debit Notes against supplier returns.',
+    templatePath: '../../../../tools/seeds/reports/purchase-debit-note.typ',
+    outputPattern: 'DebitNote-${debitNoteNumber}.pdf',
+  },
+  {
+    slug: 'customer-statement',
+    name: 'Customer Statement of Account',
+    contexts: ['customer-statement'],
+    hook: 'customer-statement',
+    description:
+      'System default template for generating Customer Statements of Account and aged debtor analysis.',
+    templatePath: '../../../../tools/seeds/reports/customer-statement.typ',
+    outputPattern: 'Statement-${customerNumber}.pdf',
+  },
+  {
+    slug: 'supplier-remittance-advice',
+    name: 'Supplier Remittance Advice',
+    contexts: ['supplier-remittance-advice'],
+    hook: 'supplier-remittance-advice',
+    description:
+      'System default template for generating Supplier Remittance Advice slips.',
+    templatePath:
+      '../../../../tools/seeds/reports/supplier-remittance-advice.typ',
+    outputPattern: 'Remittance-${paymentNumber}.pdf',
+  },
+  {
+    slug: 'customer-payment-receipt',
+    name: 'Customer Payment Receipt',
+    contexts: ['customer-payment-receipt'],
+    hook: 'customer-payment-receipt',
+    description:
+      'System default template for generating Customer Payment Receipts for received funds.',
+    templatePath:
+      '../../../../tools/seeds/reports/customer-payment-receipt.typ',
+    outputPattern: 'Receipt-${paymentNumber}.pdf',
+  },
+  {
+    slug: 'customer-overdue-notice',
+    name: 'Customer Overdue Payment Notice',
+    contexts: ['customer-overdue-notice'],
+    hook: 'customer-overdue-notice',
+    description:
+      'System default template for generating Customer Overdue Payment Notices for overdue balances.',
+    templatePath: '../../../../tools/seeds/reports/customer-overdue-notice.typ',
+    outputPattern: 'OverdueNotice-${customerNumber}.pdf',
+  },
+  {
+    slug: 'period-close-audit',
+    name: 'Formal Period Close / Audit Snapshot',
+    contexts: ['period-close-audit'],
+    hook: 'period-close-audit',
+    description:
+      'System default template for generating Formal Period Close and Audit PDF Snapshots of the Trial Balance and Balance Sheet.',
+    templatePath: '../../../../tools/seeds/reports/period-close-audit.typ',
+    outputPattern: 'PeriodClose-${period.periodName}.pdf',
+  },
+  {
+    slug: 'cash-flow-statement',
+    name: 'Statement of Cash Flows',
+    contexts: ['cash-flow-statement'],
+    hook: 'cash-flow-statement',
+    description:
+      'System default template for generating formal Statement of Cash Flows (Operating, Investing, and Financing activities).',
+    templatePath: '../../../../tools/seeds/reports/cash-flow-statement.typ',
+    outputPattern:
+      'CashFlowStatement-${period.startDate}-to-${period.endDate}.pdf',
+  },
+  {
+    slug: 'accounting-codes',
+    name: 'Accounting Codes Cheat Sheet',
+    contexts: ['accounting-codes'],
+    hook: 'accounting-codes',
+    description:
+      'System default template for generating Accounting Codes Cheat Sheet (Chart of Accounts, Cost Centers, Activities).',
+    templatePath: '../../../../tools/seeds/reports/accounting-codes.typ',
+    outputPattern: 'AccountingCodes-${generatedAt}.pdf',
+  },
+];
+
+export async function seedDynamicReports(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed dynamic reports');
+    return;
+  }
+  try {
+    console.log('Seeding Dynamic Reports...');
+
+    for (const seedData of SEEDS) {
+      // 1. Read the Typst file
+      let typstContent = '';
+      if (seedData.templateString) {
+        typstContent = seedData.templateString;
+      } else if (seedData.templatePath) {
+        const absolutePath = join(__dirname, seedData.templatePath);
+        try {
+          typstContent = readFileSync(absolutePath, 'utf8');
+        } catch (e) {
+          throw new Error(
+            `Failed to read template for ${seedData.slug} at ${absolutePath}`,
+          );
+        }
+      }
+
+      // 2. Remove any existing reports with the same slug
+      const existing = await db
+        .select({ id: pdfTemplates.id })
+        .from(pdfTemplates)
+        .where(eq(pdfTemplates.slug, seedData.slug));
+
+      if (existing.length > 0) {
+        console.log(`Removing existing ${seedData.slug} reports...`);
+        const ids = existing.map((e) => e.id);
+        await db
+          .delete(pdfTemplateHooks)
+          .where(inArray(pdfTemplateHooks.reportId, ids));
+        await db
+          .delete(pdfTemplateContexts)
+          .where(inArray(pdfTemplateContexts.templateId, ids));
+        await db.delete(pdfTemplates).where(inArray(pdfTemplates.id, ids));
+      }
+      // 3. Insert the new Template
+      const newTemplateId = uuidv4();
+      await db.insert(pdfTemplates).values({
+        id: newTemplateId,
+        slug: seedData.slug,
+        name: seedData.name,
+        description: seedData.description,
+        template: typstContent,
+        outputNamePattern: seedData.outputPattern,
+      });
+      console.log(`✅ Created Template: ${seedData.name}`);
+
+      // 5. Seed report contexts
+      if (seedData.contexts && Array.isArray(seedData.contexts)) {
+        for (const ctx of seedData.contexts) {
+          await db
+            .insert(pdfTemplateContexts)
+            .values({
+              templateId: newTemplateId,
+              context: ctx,
+            })
+            .onConflictDoNothing();
+
+          await db.insert(pdfTemplateHooks).values({
+            hookSlug: seedData.hook || seedData.slug,
+            reportId: newTemplateId,
+            contextSlug: ctx,
+          });
+        }
+      }
+    }
+
+    console.log('  Dynamic reports seeding completed successfully!');
+  } catch (error) {
+    console.error('Error seeding dynamic reports:', error);
+    throw error;
+  }
+}

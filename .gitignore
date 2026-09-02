@@ -1,0 +1,136 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+docker-compose.override.yml
+# Knip Output
+knip-report.md
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# dlt
+pipelines/abm_extract/.dlt/
+*.pipeline_data/
+
+# Pipeline logs (Promtail-ingested, not committed)
+logs/
+
+# dbt
+pipelines/abm_transform/target/
+pipelines/abm_transform/dbt_packages/
+pipelines/abm_transform/logs/
+
+# Temp files (agents MUST write temp output here, not in app dirs)
+/tmp/
+*.tsbuildinfo
+/scratch/
+brain/
+apps/tmp/
+apps/api/tmp/
+
+# Next.js
+.next/
+
+# Turborepo & local caches
+.turbo/
+.cache/
+
+# Test coverage
+coverage/
+
+# Playwright
+.playwright/
+playwright-report/
+test-results/
+.auth/
+
+# Temp data files
+events*.json
+
+# Scratch files (one-off scripts, build artifacts, debug output)
+# These MUST be created in /tmp/ per convention, but catch strays
+*.bat
+*.csv
+diff*.txt
+build_log.txt
+build_output.txt
+compile_errors.txt
+lint.txt
+tsc.log
+e2e-*-output.txt
+tmp_*.txt
+query_erpnext.js
+db_writes_report.md
+docs_summary_temp.md
+portal-test-out.txt
+index.html
+Makefile.test
+.cursorrules
+# Environment Profiles & Runtime State
+.active_profile
+.env.*
+.setup-token
+.startup_choice
+.test_target
+.test_single
+
+# PGlite Snapshots
+.pglite-snapshot.bin
+*.pglite-snapshot.bin
+*.test-snapshot.bin
+
+# ABM State
+.abm_resume_state
+
+# Linting
+.eslintcache
+eslint-report.json
+
+# Backups
+postgres*.tar.gz
+redis*.tar.gz
+*.tar.gz
+*.tar
+
+# Tools
+tools/license-keys.js
+tools/demo/
+
+# Generated
+apps/ops-portal/lib/generated/
+docs/technical/schema_reference.md
+docs/reports/
+
+# Persistent Storage / Uploads
+/data/storage/*
+!/data/storage/**/.gitkeep
+
+# Agent Rules
+.agents/rules/windows_commands.md
+
+# TLS / SSL Certificates
+certs/
+*.pem
+*.key
+*.crt

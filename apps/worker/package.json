@@ -1,0 +1,45 @@
+{
+  "name": "worker",
+  "version": "0.1.0",
+  "description": "HeroBM: Background Outbox Relay & Event Processing Worker",
+  "private": true,
+  "author": "Norbe Systems <support@herobm.com>",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://herobm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herobmdotcom/herobm.git",
+    "directory": "apps/worker"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/outbox-relay.js",
+    "start:prod": "node dist/outbox-relay.js",
+    "dev": "nodemon -w src -e ts --exec ts-node src/outbox-relay.ts",
+    "test": "vitest run src/",
+    "test:unit": "vitest run src/",
+    "test:e2e": "vitest run test/"
+  },
+  "dependencies": {
+    "@herobm/db-schema": "*",
+    "@herobm/shared": "*",
+    "@opentelemetry/api": "^1.9.1",
+    "bullmq": "^4.14.0",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.2",
+    "express": "^4.19.0",
+    "nodemailer": "^8.0.10",
+    "pino": "^10.3.1",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7",
+    "@types/nodemailer": "^8.0.0",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "paths": {
+      "@herobm/shared": ["../../packages/shared/dist/index"],
+      "@herobm/shared/*": ["../../packages/shared/dist/*"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*"]
+}

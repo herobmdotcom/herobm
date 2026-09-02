@@ -1,0 +1,551 @@
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import {
+  bankStatementLines,
+  glJournalLines,
+  glJournalEntries,
+  glAccounts,
+  glMatchGroups,
+  reconciliationRules,
+} from '@herobm/db-schema';
+import { eq, and, desc, inArray, SQL } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
+import { GlService } from './gl.service';
+import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+
+@Injectable()
+export class BankStatementService {
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly glService: GlService,
+  ) {}
+
+  async getLines(glAccountId: string, isReconciled?: boolean) {
+    let conditions: SQL<unknown> | undefined = eq(
+      bankStatementLines.glAccountId,
+      glAccountId,
+    );
+    if (isReconciled !== undefined) {
+      conditions = and(
+        conditions,
+        eq(bankStatementLines.isReconciled, isReconciled),
+      );
+    }
+
+    const lines = await this.db
+      .select({
+        lineId: bankStatementLines.lineId,
+        date: bankStatementLines.date,
+        description: bankStatementLines.description,
+        amount: bankStatementLines.amount,
+        reference: bankStatementLines.reference,
+        isReconciled: bankStatementLines.isReconciled,
+        matchGroupId: bankStatementLines.matchGroupId,
+        matchedJournalLineId: bankStatementLines.matchedJournalLineId,
+        matchedJournalLine: {
+          debit: glJournalLines.debit,
+          credit: glJournalLines.credit,
+          memo: glJournalLines.memo,
+          entryDate: glJournalEntries.entryDate,
+          isReconciled: glJournalLines.isReconciled,
+        },
+      })
+      .from(bankStatementLines)
+      .leftJoin(
+        glJournalLines,
+        eq(
+          bankStatementLines.matchedJournalLineId,
+          glJournalLines.journalLineId,
+        ),
+      )
+      .leftJoin(
+        glJournalEntries,
+        eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
+      )
+      .where(conditions)
+      .orderBy(desc(bankStatementLines.date));
+
+    return lines;
+  }
+
+  async confirmMatch(lineId: string, actor: string, reconciliationId?: string) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      const line = bsLine[0];
+      if (line.isReconciled)
+        throw new BadRequestException('Line is already reconciled');
+      if (!line.matchedJournalLineId)
+        throw new BadRequestException('No matched journal line to confirm');
+
+      const jl = await tx
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      if (!jl.length)
+        throw new NotFoundException('Matched journal line not found');
+
+      // Update journal line to cleared (isReconciled or linked to draft)
+      if (reconciliationId) {
+        await tx
+          .update(glJournalLines)
+          .set({ reconciliationId })
+          .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      } else {
+        await tx
+          .update(glJournalLines)
+          .set({ isReconciled: true })
+          .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      }
+
+      // Update bank statement line to reconciled
+      await tx
+        .update(bankStatementLines)
+        .set({ isReconciled: true })
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: {
+          isReconciled: true,
+          matchedJournalLineId: line.matchedJournalLineId,
+        },
+        actor,
+      });
+
+      return { success: true };
+    });
+  }
+
+  async manualMatch(
+    lineId: string,
+    journalLineId: string,
+    actor: string,
+    reconciliationId?: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      if (bsLine[0].isReconciled)
+        throw new BadRequestException('Line is already reconciled');
+
+      const jl = await tx
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalLineId, journalLineId));
+      if (!jl.length) throw new NotFoundException('Journal line not found');
+
+      // Update journal line
+      if (reconciliationId) {
+        await tx
+          .update(glJournalLines)
+          .set({ reconciliationId })
+          .where(eq(glJournalLines.journalLineId, journalLineId));
+      } else {
+        await tx
+          .update(glJournalLines)
+          .set({ isReconciled: true })
+          .where(eq(glJournalLines.journalLineId, journalLineId));
+      }
+
+      // Link and reconcile bank statement line
+      await tx
+        .update(bankStatementLines)
+        .set({ matchedJournalLineId: journalLineId, isReconciled: true })
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: { isReconciled: true, matchedJournalLineId: journalLineId },
+        actor,
+      });
+
+      return { success: true };
+    });
+  }
+
+  async createLinesBulk(dtos: CreateBankStatementLineDto[], actor: string) {
+    if (!dtos.length) return { success: true };
+
+    return await this.db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(bankStatementLines)
+        .values(
+          dtos.map((d) => ({
+            glAccountId: d.glAccountId,
+            date: d.date,
+            description: d.description,
+            amount: String(d.amount),
+            reference: d.reference,
+            isReconciled: false,
+          })),
+        )
+        .returning();
+
+      for (const row of inserted) {
+        await emitEvent(tx, {
+          entityType: EntityType.BANK_STATEMENT_LINE,
+          entityId: row.lineId,
+          eventType: EventType.CREATED,
+          entityDisplayName: `Statement Line ${row.lineId}`,
+          payload: {
+            glAccountId: row.glAccountId,
+            date: row.date,
+            description: row.description,
+            amount: row.amount,
+          },
+          actor,
+        });
+      }
+
+      return { success: true };
+    });
+  }
+
+  async matchBulk(
+    bankLineIds: string[],
+    journalLineIds: string[],
+    reconciliationId: string,
+    actor: string,
+  ) {
+    if (!bankLineIds.length || !journalLineIds.length) {
+      throw new BadRequestException(
+        'Must provide both bank lines and journal lines',
+      );
+    }
+
+    return this.db.transaction(async (tx) => {
+      // 1. Verify bank lines
+      const bLines = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(inArray(bankStatementLines.lineId, bankLineIds));
+
+      if (bLines.length !== bankLineIds.length) {
+        throw new NotFoundException('One or more bank lines not found');
+      }
+      if (bLines.some((l) => l.isReconciled)) {
+        throw new BadRequestException(
+          'One or more bank lines are already reconciled',
+        );
+      }
+
+      // 2. Verify journal lines
+      const jLines = await tx
+        .select()
+        .from(glJournalLines)
+        .where(inArray(glJournalLines.journalLineId, journalLineIds));
+
+      if (jLines.length !== journalLineIds.length) {
+        throw new NotFoundException('One or more journal lines not found');
+      }
+      if (jLines.some((l) => l.isReconciled || l.reconciliationId)) {
+        throw new BadRequestException(
+          'One or more journal lines are already reconciled or assigned',
+        );
+      }
+
+      // 3. Verify sums match exactly
+      const sumBank = bLines.reduce((acc, l) => acc + Number(l.amount), 0);
+      const sumJournal = jLines.reduce(
+        (acc, l) => acc + Number(l.debit) - Number(l.credit),
+        0,
+      );
+
+      // Using a small epsilon to avoid floating point precision issues
+      if (Math.abs(sumBank - sumJournal) > 0.001) {
+        throw new BadRequestException(
+          `Sums do not match (Bank: ${sumBank}, Journal: ${sumJournal})`,
+        );
+      }
+
+      const matchGroupId = uuidv4();
+
+      // 3.5 Record match group
+      await tx.insert(glMatchGroups).values({
+        matchGroupId,
+        matchType: 'manual',
+        createdBy: actor,
+      });
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_MATCH_GROUP,
+        entityId: matchGroupId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `Match Group (Manual)`,
+        payload: { matchType: 'manual' },
+        actor,
+      });
+
+      // 4. Update journal lines
+      await tx
+        .update(glJournalLines)
+        .set({
+          reconciliationId,
+          matchGroupId,
+        })
+        .where(inArray(glJournalLines.journalLineId, journalLineIds));
+
+      // 5. Update bank lines
+      await tx
+        .update(bankStatementLines)
+        .set({
+          isReconciled: true,
+          matchedJournalLineId: null, // Legacy, clear it
+          matchGroupId,
+        })
+        .where(inArray(bankStatementLines.lineId, bankLineIds));
+
+      for (const id of bankLineIds) {
+        await emitEvent(tx, {
+          entityType: EntityType.BANK_STATEMENT_LINE,
+          entityId: id,
+          eventType: EventType.UPDATED,
+          entityDisplayName: `Statement Line ${id}`,
+          payload: { isReconciled: true, matchGroupId },
+          actor,
+        });
+      }
+
+      return { success: true };
+    });
+  }
+
+  async unmatch(matchGroupId: string, actor: string) {
+    if (!matchGroupId)
+      throw new BadRequestException('matchGroupId is required');
+
+    return this.db.transaction(async (tx) => {
+      const jLines = await tx
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.matchGroupId, matchGroupId));
+
+      await tx
+        .update(bankStatementLines)
+        .set({ isReconciled: false, matchGroupId: null })
+        .where(eq(bankStatementLines.matchGroupId, matchGroupId));
+
+      if (jLines.length > 0) {
+        await tx
+          .update(glJournalLines)
+          .set({
+            isReconciled: false,
+            matchGroupId: null,
+            reconciliationId: null,
+          })
+          .where(eq(glJournalLines.matchGroupId, matchGroupId));
+
+        await tx
+          .delete(glMatchGroups)
+          .where(eq(glMatchGroups.matchGroupId, matchGroupId));
+
+        const entryIds = [...new Set(jLines.map((jl) => jl.journalEntryId))];
+        const entries = await tx
+          .select()
+          .from(glJournalEntries)
+          .where(inArray(glJournalEntries.journalEntryId, entryIds));
+
+        for (const entry of entries) {
+          if (
+            entry.sourceType === JOURNAL_ENTRY_SOURCE_TYPE.MANUAL &&
+            entry.memo?.startsWith('Auto-reconciled:')
+          ) {
+            const linesToReverse = await tx
+              .select()
+              .from(glJournalLines)
+              .where(eq(glJournalLines.journalEntryId, entry.journalEntryId));
+
+            const glAccIds = [
+              ...new Set(linesToReverse.map((l) => l.glAccountId)),
+            ];
+            const accs = await tx
+              .select()
+              .from(glAccounts)
+              .where(inArray(glAccounts.glAccountId, glAccIds));
+            const accMap = new Map(
+              accs.map((a) => [a.glAccountId, a.accountCode]),
+            );
+
+            const jeLines = linesToReverse.map((line) => ({
+              accountCode: accMap.get(line.glAccountId)!,
+              debit: Number(line.credit),
+              credit: Number(line.debit),
+              memo: `Reversal of: ${line.memo}`,
+            }));
+
+            const meta = {
+              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
+              memo: `Reversal of Auto-reconciled entry: ${entry.entryNumber}`,
+              entryDate: new Date().toISOString().split('T')[0],
+              actor,
+            };
+
+            const reversalEntry = await this.glService.postJournalEntry(
+              jeLines,
+              meta,
+              tx,
+            );
+
+            await tx
+              .update(glJournalEntries)
+              .set({
+                isReversed: true,
+                reversedBy: reversalEntry.journalEntryId,
+              })
+              .where(eq(glJournalEntries.journalEntryId, entry.journalEntryId));
+
+            await tx
+              .update(glJournalEntries)
+              .set({
+                isReversed: true,
+              })
+              .where(
+                eq(
+                  glJournalEntries.journalEntryId,
+                  reversalEntry.journalEntryId,
+                ),
+              );
+          }
+        }
+      }
+
+      for (const line of jLines) {
+        if (line.journalLineId) {
+          // Journal lines aren't emitted as individual entities usually, skip or emit?
+          // We can omit journal line individual updates
+        }
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_MATCH_GROUP,
+        entityId: matchGroupId,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Match Group ${matchGroupId}`,
+        payload: { deleted: true },
+        actor,
+      });
+
+      return { success: true };
+    });
+  }
+
+  async deleteLine(lineId: string, actor: string) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      const line = bsLine[0];
+      if (line.isReconciled || line.matchGroupId)
+        throw new BadRequestException(
+          'Cannot delete a reconciled line. Unmatch it first.',
+        );
+
+      await tx
+        .delete(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: { deleted: true },
+        actor,
+      });
+
+      return { success: true };
+    });
+  }
+
+  async getMatchGroup(matchGroupId: string) {
+    const records = await this.db
+      .select({
+        matchGroup: glMatchGroups,
+        ruleName: reconciliationRules.conditionValue,
+      })
+      .from(glMatchGroups)
+      .leftJoin(
+        reconciliationRules,
+        eq(glMatchGroups.ruleId, reconciliationRules.ruleId),
+      )
+      .where(eq(glMatchGroups.matchGroupId, matchGroupId));
+
+    if (!records.length) {
+      return null;
+    }
+
+    const bLines = await this.db
+      .select({
+        lineId: bankStatementLines.lineId,
+        date: bankStatementLines.date,
+        description: bankStatementLines.description,
+        amount: bankStatementLines.amount,
+      })
+      .from(bankStatementLines)
+      .where(eq(bankStatementLines.matchGroupId, matchGroupId));
+
+    const jLines = await this.db
+      .select({
+        journalLineId: glJournalLines.journalLineId,
+        entryDate: glJournalEntries.entryDate,
+        memo: glJournalLines.memo,
+        entryMemo: glJournalEntries.memo,
+        debit: glJournalLines.debit,
+        credit: glJournalLines.credit,
+      })
+      .from(glJournalLines)
+      .innerJoin(
+        glJournalEntries,
+        eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
+      )
+      .where(eq(glJournalLines.matchGroupId, matchGroupId));
+
+    const { matchGroup, ruleName } = records[0];
+    return {
+      matchGroupId: matchGroup.matchGroupId,
+      matchType: matchGroup.matchType,
+      ruleName: ruleName || null,
+      createdBy: matchGroup.createdBy,
+      createdOn: matchGroup.createdOn,
+      bankLines: bLines.map((l) => ({
+        ...l,
+        amount: Number(l.amount),
+      })),
+      ledgerLines: jLines.map((l) => ({
+        ...l,
+        debit: Number(l.debit),
+        credit: Number(l.credit),
+      })),
+    };
+  }
+}

@@ -1,0 +1,122 @@
+name: herobm-test
+services:
+  pipeline-runner-test:
+    image: localhost/herobm_pipeline-test:latest
+    container_name: pipeline-runner-test
+    env_file: .env
+    ports:
+      - "${BIND_IP:-127.0.0.1}:8005:8001"
+    environment:
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
+      WEBHOOK_URL: "http://custom-api-test:3000/internal/setup/webhook"
+      VENV_PYTHON: "python3"
+      DBT: "dbt"
+    networks:
+      - app-net
+
+  custom-api-test:
+    image: localhost/herobm_api-test:latest
+    container_name: custom-api-test
+    env_file: .env
+    ports:
+      - "3005:3000"
+    environment:
+      PORT: "3000"
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      REDIS_HOST: redis-test
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
+      PIPELINE_RUNNER_URL: http://pipeline-runner-test:8001
+      PIPELINE_WEBHOOK_URL: http://custom-api-test:3000/internal/setup/webhook
+      WEBHOOK_URL: http://custom-api-test:3000/internal/setup/webhook
+    networks:
+      - app-net
+
+  worker-test:
+    image: localhost/herobm_worker-test:latest
+    container_name: worker-test
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      REDIS_HOST: redis-test
+    networks:
+      - app-net
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+
+  webhook-catcher:
+    image: docker.io/library/node:22-alpine
+    container_name: webhook-catcher
+    command: node -e "const fs=require('fs'); require('http').createServer((req,res)=>{let b='';req.on('data',c=>b+=c);req.on('end',()=>{if(b){const evt=JSON.stringify({headers:req.headers,body:JSON.parse(b),rawBody:b});fs.appendFileSync('/app/logs/webhooks.log', evt+'\\n');}res.end('OK')})}).listen(8089, '0.0.0.0')"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-net
+
+  maildev-test:
+    image: maildev/maildev
+    container_name: maildev-test
+    ports:
+      - "1081:1080"
+      - "1026:1025"
+    networks:
+      - app-net
+
+  postgres-test:
+    image: docker.io/library/postgres:16-alpine
+    container_name: postgres-test
+    hostname: postgres-test
+    command: ["postgres"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:5434:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+  redis-test:
+    image: docker.io/library/redis:7-alpine
+    container_name: redis-test
+    hostname: redis-test
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "${BIND_IP:-127.0.0.1}:6380:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    name: ${APP_NETWORK_NAME:-herobm_app-net}
+    external: true
+
+volumes:
+  postgres_test_data:
+  redis_test_data:

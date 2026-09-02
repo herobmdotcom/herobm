@@ -1,0 +1,566 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { GlController } from './gl.controller';
+import { GlService } from './gl.service';
+import { CoaLoaderService } from './coa-loader.service';
+import { FxRevaluationService } from './fx-revaluation.service';
+import { CashFlowService } from './cash-flow.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { GLAccountType } from '@herobm/shared';
+import { JwtUser } from '../auth/auth-user.decorator';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CreateJournalEntryDto } from './dto';
+
+/**
+ * Unit tests for the GL Controller.
+ *
+ * Coverage targets:
+ * - All 9 endpoints delegate to correct service method with correct args
+ * - Query parameter parsing (format, limit, dates)
+ * - Manual JE translates body to JournalMeta correctly
+ * - Seed uses default filename when not provided
+ */
+
+describe('GlController', () => {
+  let controller: GlController;
+  let glService: Partial<Record<keyof GlService, jest.Mock>>;
+  let coaLoader: Partial<Record<keyof CoaLoaderService, jest.Mock>>;
+
+  beforeEach(async () => {
+    glService = {
+      getChartOfAccounts: jest.fn().mockResolvedValue([{ name: 'Assets' }]),
+      getAccountsList: jest.fn().mockResolvedValue([{ accountCode: '1100' }]),
+      createAccount: jest.fn().mockResolvedValue({ glAccountId: 'new-id' }),
+      updateAccount: jest.fn().mockResolvedValue({ glAccountId: 'upd-id' }),
+      getJournalEntries: jest.fn().mockResolvedValue([]),
+      getJournalEntry: jest.fn().mockResolvedValue({ journalEntryId: 'je-1' }),
+      postJournalEntry: jest.fn().mockResolvedValue({ entryNumber: 'JE-001' }),
+      getTrialBalance: jest.fn().mockResolvedValue([]),
+      getGeneralLedger: jest.fn().mockResolvedValue([]),
+      getSettings: jest.fn().mockResolvedValue({ baseCurrency: 'AUD' }),
+      updateSettings: jest
+        .fn()
+        .mockResolvedValue({ defaultArAccountId: 'ar-id-123' }),
+      getIntegrityAudit: jest.fn().mockResolvedValue({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      }),
+      runIntegrityAudit: jest.fn().mockResolvedValue({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      }),
+    };
+
+    coaLoader = {
+      loadFromFile: jest
+        .fn()
+        .mockResolvedValue({ created: 30, skipped: false }),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [GlController],
+      providers: [
+        { provide: GlService, useValue: glService },
+        {
+          provide: 'CASBIN_ENFORCER',
+          useValue: { enforce: jest.fn().mockResolvedValue(true) },
+        },
+        { provide: CoaLoaderService, useValue: coaLoader },
+        { provide: AppConfigService, useValue: { reload: jest.fn() } },
+        {
+          provide: FxRevaluationService,
+          useValue: {
+            generateCandidates: jest.fn(),
+            commitRevaluation: jest.fn(),
+          },
+        },
+        {
+          provide: CashFlowService,
+          useValue: {
+            getCashFlowStatement: jest.fn().mockResolvedValue({
+              period: { startDate: '2026-08-01', endDate: '2026-08-31' },
+              operatingActivities: {
+                title: 'Operating',
+                lines: [],
+                netCash: 1000,
+              },
+              investingActivities: {
+                title: 'Investing',
+                lines: [],
+                netCash: 0,
+              },
+              financingActivities: {
+                title: 'Financing',
+                lines: [],
+                netCash: 0,
+              },
+              reconciliation: {
+                beginningCash: 10000,
+                netChangeInCash: 1000,
+                endingCash: 11000,
+                glCashBalance: 11000,
+                drift: 0,
+                isReconciled: true,
+              },
+            }),
+            getCashFlowDrilldown: jest.fn().mockResolvedValue({
+              lineId: 'op-customers',
+              lineName: 'Cash Receipts from Customers',
+              category: 'operating',
+              totalAmount: 1000,
+              transactions: [],
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    controller = module.get<GlController>(GlController);
+  });
+
+  // =========================================================================
+  // Accounts
+  // =========================================================================
+
+  describe('GET /gl/accounts', () => {
+    it('should return tree format when format=tree', async () => {
+      const result = await controller.getAccounts('tree');
+      expect(glService.getChartOfAccounts).toHaveBeenCalled();
+      expect(result).toEqual([{ name: 'Assets' }]);
+    });
+
+    it('should return flat list when no format specified', async () => {
+      const result = await controller.getAccounts();
+      expect(glService.getAccountsList).toHaveBeenCalled();
+      expect(result).toEqual([{ accountCode: '1100' }]);
+    });
+
+    it('should return flat list for unknown format values', async () => {
+      await controller.getAccounts('whatever' as unknown as 'tree');
+      expect(glService.getAccountsList).toHaveBeenCalled();
+      expect(glService.getChartOfAccounts).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /gl/accounts', () => {
+    it('should delegate to createAccount with body', async () => {
+      const body: {
+        accountCode: string;
+        name: string;
+        accountType: GLAccountType;
+      } = {
+        accountCode: '9000',
+        name: 'Test',
+        accountType: 'asset',
+      };
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.createAccount(body, mockUser as unknown as JwtUser);
+      expect(glService.createAccount).toHaveBeenCalledWith(body, 'test-user');
+    });
+
+    it('should pass parentAccountId and isGroup when provided', async () => {
+      const body: {
+        accountCode: string;
+        name: string;
+        accountType: GLAccountType;
+        parentAccountId: string;
+        isGroup: boolean;
+        currencyCode: string;
+      } = {
+        accountCode: '9001',
+        name: 'Child',
+        accountType: 'expense',
+        parentAccountId: 'parent-uuid',
+        isGroup: true,
+        currencyCode: 'USD',
+      };
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.createAccount(body, mockUser as unknown as JwtUser);
+      expect(glService.createAccount).toHaveBeenCalledWith(body, 'test-user');
+    });
+  });
+
+  describe('PATCH /gl/accounts/:id', () => {
+    it('should delegate to updateAccount with id and body', async () => {
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.updateAccount(
+        'uuid-1',
+        { name: 'New Name' },
+        mockUser as unknown as JwtUser,
+      );
+      expect(glService.updateAccount).toHaveBeenCalledWith(
+        'uuid-1',
+        {
+          name: 'New Name',
+        },
+        'test-user',
+      );
+    });
+
+    it('should support isActive updates', async () => {
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.updateAccount(
+        'uuid-2',
+        { isActive: false },
+        mockUser as unknown as JwtUser,
+      );
+      expect(glService.updateAccount).toHaveBeenCalledWith(
+        'uuid-2',
+        {
+          isActive: false,
+        },
+        'test-user',
+      );
+    });
+  });
+
+  // =========================================================================
+  // Journal Entries
+  // =========================================================================
+
+  describe('GET /gl/journal-entries', () => {
+    it('should call getJournalEntries with no filters', async () => {
+      await controller.getJournalEntries();
+      expect(glService.getJournalEntries).toHaveBeenCalledWith({
+        fromDate: undefined,
+        toDate: undefined,
+        sourceType: undefined,
+        entryNumber: undefined,
+        limit: undefined,
+        page: undefined,
+      });
+    });
+
+    it('should pass date range and source type filters', async () => {
+      await controller.getJournalEntries(
+        '2026-01-01',
+        '2026-03-31',
+        'sales_invoice',
+      );
+      expect(glService.getJournalEntries).toHaveBeenCalledWith({
+        fromDate: '2026-01-01',
+        toDate: '2026-03-31',
+        sourceType: 'sales_invoice',
+        entryNumber: undefined,
+        limit: undefined,
+        page: undefined,
+      });
+    });
+
+    it('should parse limit string to integer', async () => {
+      await controller.getJournalEntries(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        '25',
+      );
+      expect(glService.getJournalEntries).toHaveBeenCalledWith({
+        fromDate: undefined,
+        toDate: undefined,
+        sourceType: undefined,
+        sourceId: undefined,
+        entryNumber: undefined,
+        limit: 25,
+        page: undefined,
+      });
+    });
+  });
+
+  describe('GET /gl/journal-entries/:id', () => {
+    it('should delegate to getJournalEntry', async () => {
+      const result = await controller.getJournalEntry('je-uuid-1');
+      expect(glService.getJournalEntry).toHaveBeenCalledWith('je-uuid-1');
+      expect(result.journalEntryId).toBe('je-1');
+    });
+  });
+
+  describe('POST /gl/journal-entries', () => {
+    it('should create manual journal entry with correct meta', async () => {
+      const body = {
+        journalEntryId: 'je-uuid-1',
+        lines: [
+          { accountCode: '1100', debit: 100, credit: 0 },
+          { accountCode: '4100', debit: 0, credit: 100 },
+        ],
+        memo: 'Test JE',
+        entryDate: '2026-03-22',
+        actor: 'admin',
+      };
+
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+        { username: 'admin', userId: 'user-1' } as JwtUser,
+      );
+
+      expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
+        sourceType: 'manual',
+        memo: 'Test JE',
+        entryDate: '2026-03-22',
+        actor: 'admin',
+        journalEntryId: 'je-uuid-1',
+      });
+    });
+
+    it('should set sourceType to manual and actor to system if no user provided', async () => {
+      const body = {
+        journalEntryId: 'je-uuid-2',
+        lines: [
+          { accountCode: '1100', debit: 50, credit: 0 },
+          { accountCode: '4100', debit: 0, credit: 50 },
+        ],
+      };
+
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+        undefined,
+      );
+
+      expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
+        sourceType: 'manual',
+        memo: undefined,
+        entryDate: undefined,
+        actor: 'system',
+        journalEntryId: 'je-uuid-2',
+      });
+    });
+
+    it('should forward custom user-selectable sourceType (opening_balance, adjustment, payroll, tax_settlement)', async () => {
+      const body = {
+        journalEntryId: 'je-uuid-3',
+        sourceType: 'opening_balance',
+        lines: [
+          { accountCode: '1100', debit: 50000, credit: 0 },
+          { accountCode: '3999', debit: 0, credit: 50000 },
+        ],
+        memo: 'Opening Take-On',
+      };
+
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+        { username: 'cfo', userId: 'user-2' } as JwtUser,
+      );
+
+      expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
+        sourceType: 'opening_balance',
+        memo: 'Opening Take-On',
+        entryDate: undefined,
+        actor: 'cfo',
+        journalEntryId: 'je-uuid-3',
+      });
+    });
+  });
+
+  // =========================================================================
+  // Reports
+  // =========================================================================
+
+  describe('GET /gl/trial-balance', () => {
+    it('should call getTrialBalance without date filter', async () => {
+      await controller.getTrialBalance();
+      expect(glService.getTrialBalance).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should pass asOf date filter', async () => {
+      await controller.getTrialBalance('2026-06-30');
+      expect(glService.getTrialBalance).toHaveBeenCalledWith(
+        '2026-06-30',
+        undefined,
+      );
+    });
+  });
+
+  describe('GET /gl/general-ledger', () => {
+    it('should call getGeneralLedger with no filters', async () => {
+      await controller.getGeneralLedger();
+      expect(glService.getGeneralLedger).toHaveBeenCalledWith({
+        accountCode: undefined,
+        fromDate: undefined,
+        toDate: undefined,
+        limit: undefined,
+      });
+    });
+
+    it('should pass all filter parameters', async () => {
+      await controller.getGeneralLedger(
+        '1100',
+        '2026-01-01',
+        '2026-12-31',
+        '50',
+      );
+      expect(glService.getGeneralLedger).toHaveBeenCalledWith({
+        accountCode: '1100',
+        fromDate: '2026-01-01',
+        toDate: '2026-12-31',
+        limit: 50,
+      });
+    });
+  });
+
+  describe('GET /gl/cash-flow', () => {
+    it('should delegate to cashFlowService with parsed parameters', async () => {
+      const res = await controller.getCashFlow(
+        '2026-08-01',
+        '2026-08-31',
+        '2026-08',
+        '2026',
+        '8',
+        '2026-07-01',
+        '2026-07-31',
+      );
+      expect(res).toBeDefined();
+      expect(res.reconciliation.isReconciled).toBe(true);
+    });
+  });
+
+  describe('GET /gl/cash-flow/drilldown', () => {
+    it('should delegate to cashFlowService with lineId and dates', async () => {
+      const res = await controller.getCashFlowDrilldown(
+        'op-customers',
+        '2026-08-01',
+        '2026-08-31',
+      );
+      expect(res).toBeDefined();
+      expect(res.lineId).toBe('op-customers');
+    });
+  });
+
+  // =========================================================================
+  // Settings & Seed
+  // =========================================================================
+
+  describe('GET /gl/settings', () => {
+    it('should return GL settings', async () => {
+      const result = await controller.getSettings();
+      expect(glService.getSettings).toHaveBeenCalled();
+      expect(result.baseCurrency).toBe('AUD');
+    });
+  });
+
+  describe('PATCH /gl/settings', () => {
+    it('should delegate updateSettings with payload', async () => {
+      const payload = { defaultArAccountId: 'ar-id-123' };
+      const result = await controller.updateSettings(payload);
+      expect(glService.updateSettings).toHaveBeenCalledWith(payload);
+      expect(result).toEqual({ defaultArAccountId: 'ar-id-123' });
+    });
+  });
+
+  describe('POST /gl/seed', () => {
+    it('should use default filename when not specified', async () => {
+      await controller.seedChartOfAccounts(
+        {} as unknown as Parameters<typeof controller.seedChartOfAccounts>[0],
+      );
+      expect(coaLoader.loadFromFile).toHaveBeenCalledWith('au_standard.json');
+    });
+
+    it('should use custom filename when provided', async () => {
+      await controller.seedChartOfAccounts({ filename: 'nz_standard.json' });
+      expect(coaLoader.loadFromFile).toHaveBeenCalledWith('nz_standard.json');
+    });
+
+    it('should use default when body is empty object', async () => {
+      await controller.seedChartOfAccounts({});
+      expect(coaLoader.loadFromFile).toHaveBeenCalledWith('au_standard.json');
+    });
+
+    it('should return loader result', async () => {
+      const result = await controller.seedChartOfAccounts(
+        {} as unknown as Parameters<typeof controller.seedChartOfAccounts>[0],
+      );
+      expect(result).toEqual({ created: 30, skipped: false });
+    });
+  });
+
+  describe('CreateJournalEntryDto validation', () => {
+    it('should pass validation with valid user-selectable sourceTypes', async () => {
+      const validTypes = [
+        'manual',
+        'opening_balance',
+        'adjustment',
+        'payroll',
+        'tax_settlement',
+      ];
+      for (const type of validTypes) {
+        const dto = plainToInstance(CreateJournalEntryDto, {
+          lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+          sourceType: type,
+        });
+        const errors = await validate(dto);
+        const sourceErrors = errors.filter(
+          (e: any) => e.property === 'sourceType',
+        );
+        expect(sourceErrors).toHaveLength(0);
+      }
+    });
+
+    it('should pass validation when sourceType is omitted (optional field)', async () => {
+      const dto = plainToInstance(CreateJournalEntryDto, {
+        lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+      });
+      const errors = await validate(dto);
+      const sourceErrors = errors.filter(
+        (e: any) => e.property === 'sourceType',
+      );
+      expect(sourceErrors).toHaveLength(0);
+    });
+
+    it('should fail validation when an invalid sourceType is supplied', async () => {
+      const dto = plainToInstance(CreateJournalEntryDto, {
+        lines: [{ accountCode: '1100', debit: 100, credit: 0 }],
+        sourceType: 'sales_invoice', // System-automated type, not user-creatable
+      });
+      const errors = await validate(dto);
+      const sourceErrors = errors.filter(
+        (e: any) => e.property === 'sourceType',
+      );
+      expect(sourceErrors.length).toBeGreaterThan(0);
+      expect(sourceErrors[0].constraints?.isIn).toBeDefined();
+    });
+  });
+
+  describe('Ledger Integrity Audit endpoints', () => {
+    it('getLatestIntegrityAudit should delegate to glService.getIntegrityAudit()', async () => {
+      const result = await controller.getLatestIntegrityAudit();
+      expect(glService.getIntegrityAudit).toHaveBeenCalledWith();
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
+    });
+
+    it('runIntegrityAudit should delegate to glService.runIntegrityAudit()', async () => {
+      const result = await controller.runIntegrityAudit();
+      expect(glService.runIntegrityAudit).toHaveBeenCalledWith();
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
+    });
+
+    it('getIntegrityAuditById should delegate to glService.getIntegrityAudit(eventId)', async () => {
+      const eventId = 'test-event-uuid';
+      const result = await controller.getIntegrityAuditById(eventId);
+      expect(glService.getIntegrityAudit).toHaveBeenCalledWith(eventId);
+      expect(result).toEqual({
+        hasAudit: true,
+        anomaliesCount: 0,
+        anomalies: [],
+      });
+    });
+  });
+});

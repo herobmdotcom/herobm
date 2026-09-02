@@ -1,0 +1,982 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.badge-draft { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-quoted { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-confirmed { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-ordered { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-picking { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-shipped { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-partially_received { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-received { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-dispatched { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-processed { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-invoiced { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-submitted { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-paid { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-partially_paid { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-posted { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-cancelled { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-discontinued { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-archived { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-legacy { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-abm { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-app { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-planned { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-released { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-in_progress { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-completed { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-active { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-inactive { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+/* Semantic Badges mapped to the new natural palette */
+.badge-success { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-warning { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-danger { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-info { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-secondary { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-overdue { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+
+/* Utility Modifiers */
+.badge-sm {
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Disable increment/decrement spinners on number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Form inputs & Selects */
+.input, .select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: border-color 150ms;
+}
+
+.input-sm {
+  padding: 4px 8px;
+  height: 32px;
+}
+
+.input:focus, .select:focus {
+  border-color: var(--accent);
+}
+
+.input::placeholder, .select::placeholder {
+  color: var(--text-muted);
+}
+
+.input:disabled, .select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
+/* WebKit Autofill in Dark Theme */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Add custom dropdown arrow for select elements */
+.select:not([multiple]):not([size]),
+select.input:not([multiple]):not([size]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms;
+  border: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text, #ffffff);
+  font-weight: 700;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--danger, #ef4444);
+  transition: .2s;
+  border-radius: 20px;
+}
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+
+}
+.switch input:checked + .switch-slider {
+  background-color: var(--success, #22c55e);
+}
+.switch input:checked + .switch-slider:before {
+  transform: translateX(16px);
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Standardized Section Headings */
+.section-heading {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 600; /* font-semibold */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@layer base {
+  h1 {
+    font-weight: 700;
+  }
+  .material-symbols-outlined {
+    font-size: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
+}
+
+.material-symbols-outlined.indicator-icon {
+  font-size: 18px !important;
+  width: 20px;
+  height: 20px;
+}
+
+.section-heading .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--accent);
+}
+
+/* Detail pages token scoping */
+.detail-content {
+  color: var(--text-primary);
+}
+
+/* Tables (for line items) */
+.table-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table-lines th {
+  text-align: left;
+  padding: 6px 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-lines td {
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.table-lines th:first-child,
+.table-lines td:first-child {
+  padding-left: 8px;
+}
+
+.table-lines th:last-child,
+.table-lines td:last-child {
+  padding-right: 8px;
+}
+
+.table-lines input,
+.table-lines select,
+.table-lines .input,
+.table-lines .select {
+  font-size: 12px;
+  padding: 4px 6px;
+  height: 28px;
+}
+
+.table-lines select.input,
+.table-lines .select {
+  padding-right: 18px;
+  background-position: right 4px center;
+  background-size: 0.85em 0.85em;
+}
+
+.table-lines tr:hover td {
+  background: rgba(0, 180, 156, 0.06);
+}
+
+/* Scrollable area — scrollbar sits at window edge */
+.scroll-area {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  padding-right: 2rem; /* space between content and scrollbar */
+}
+
+
+/* HeroBM Global Theme */
+
+:root {
+  color-scheme: light;
+  /* Soft Tech Colors - Light Theme */
+  --bg-primary: #F2F4F6;
+  --bg-secondary: #E9ECEF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8F9FA;
+  --text-primary: #041627;
+  --text-secondary: #44474C;
+  --text-muted: #5d6f82;
+  --border: rgba(196, 198, 205, 0.4);
+  --accent: #006b5c;
+  --accent-hover: #005145;
+  --accent-text: #ffffff;
+  --accent-glow: #FFFFFF;
+  --brand-navy: #041627;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+.dark,
+.herobm-dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Machine Shop Dark Theme - Swapped for Maximum Text Contrast on Tables */
+  --bg-primary: #101726; /* Calm, elevated canvas & page background */
+  --bg-secondary: #141d30; /* Table header bar, toolbar, and section background */
+  --bg-card: #080d16; /* Deepest pitch dark technical navy for table rows & cards */
+  --bg-card-hover: #0f1828; /* Subtle row and card hover */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.06);
+  --accent: #00b49c;
+  --accent-hover: #00d4b8;
+  --accent-text: #021a16;
+  --accent-glow: rgba(0, 180, 156, 0.25);
+  --brand-navy: #f8fafc;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+/* Dark mode high-contrast luminous badges */
+.dark .badge-confirmed,
+.dark .badge-ordered,
+.dark .badge-active,
+.dark .badge-planned,
+.dark .badge-released,
+.dark .badge-success {
+  background: rgba(0, 180, 156, 0.18);
+  color: #2dd4bf;
+}
+.dark .badge-draft,
+.dark .badge-quoted,
+.dark .badge-secondary,
+.dark .badge-inactive,
+.dark .badge-archived,
+.dark .badge-legacy,
+.dark .badge-abm {
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
+}
+.dark .badge-picking,
+.dark .badge-partially_received,
+.dark .badge-partially_paid,
+.dark .badge-in_progress,
+.dark .badge-warning {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+}
+.dark .badge-shipped,
+.dark .badge-received,
+.dark .badge-dispatched,
+.dark .badge-processed,
+.dark .badge-invoiced,
+.dark .badge-completed,
+.dark .badge-posted,
+.dark .badge-paid,
+.dark .badge-info {
+  background: rgba(45, 212, 191, 0.18);
+  color: #2dd4bf;
+}
+.dark .badge-cancelled,
+.dark .badge-discontinued,
+.dark .badge-app,
+.dark .badge-danger {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+.dark .badge-overdue {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+}
+
+/* Base resets */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Collapsible card chevron rotation ────────────────────────────────── */
+details summary::-webkit-details-marker { display: none; }
+details[open] > summary .details-chevron {
+  transform: rotate(90deg);
+}
+
+/* Active Sidebar Item Shadow Match */
+aside nav a[style*="var(--accent-glow)"] {
+
+}
+
+h2 {
+  font-family: 'Manrope', sans-serif;
+}
+
+
+/* DataGrid toolbar inputs and buttons — scoped to grid wrapper only */
+.ag-theme-alpine-dark select,
+.ag-theme-alpine-dark .ag-wrapper.ag-picker-field-wrapper,
+.ag-theme-alpine-dark .ag-wrapper.ag-text-field-input-wrapper,
+.ag-theme-alpine-dark .ag-wrapper.ag-number-field-input-wrapper {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden;
+  color: var(--text-primary) !important;
+}
+
+.ag-theme-alpine-dark .ag-picker-field {
+  border: none !important; /* Prevents the double border on the outer component */
+  padding: 0 !important;
+}
+
+.ag-theme-alpine-dark .ag-picker-field .ag-wrapper {
+  padding: 0 12px !important;
+  cursor: pointer !important;
+  width: 100% !important;
+}
+
+.ag-theme-alpine-dark .ag-picker-field-display {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.ag-theme-alpine-dark input[type="text"],
+.ag-theme-alpine-dark input[type="number"],
+.ag-theme-alpine-dark input[type="tel"],
+.ag-theme-alpine-dark input[type="date"] {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: inherit !important;
+  padding: 8px 16px 8px 32px !important; /* pl-8 equivalent for icons */
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+  width: 100% !important;
+}
+
+/* Unify focus state: single glow, no double AG Grid blue border */
+.ag-theme-alpine-dark .ag-wrapper:focus-within {
+  border-color: var(--accent) !important;
+  outline: none !important;
+}
+
+/* DataGrid overrides */
+.ag-theme-alpine-dark {
+  --ag-background-color: var(--bg-card) !important;
+  --ag-header-background-color: var(--bg-secondary) !important;
+  --ag-header-foreground-color: var(--text-secondary) !important;
+  --ag-odd-row-background-color: transparent !important;
+  --ag-even-row-background-color: var(--bg-card-hover) !important;
+  --ag-borders: none !important;
+  --ag-borders-critical: none !important;
+  --ag-borders-secondary: none !important;
+  --ag-border-color: transparent !important;
+  --ag-row-border-color: var(--border) !important;
+  --ag-foreground-color: var(--text-primary) !important;
+  --ag-row-hover-color: var(--bg-secondary) !important;
+  --ag-font-family: 'Inter', sans-serif !important;
+  --ag-font-size: 13px !important;
+  --ag-header-cell-hover-background-color: transparent !important;
+  --ag-row-height: 48px !important;
+  --ag-header-height: 48px !important;
+  --ag-border-radius: 0 !important;
+  --ag-wrapper-border-radius: 0 !important;
+  
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: hidden;
+  flex: 1; /* Take remaining space */
+}
+
+/* Filter popups and menus */
+.ag-theme-alpine-dark .ag-popup-content-wrapper,
+.ag-theme-alpine-dark .ag-menu,
+.ag-theme-alpine-dark .ag-filter-wrapper {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+}
+
+.ag-theme-alpine-dark .ag-tabs-header {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* Explicit fallback for grid wrappers */
+.ag-root-wrapper,
+.ag-root-wrapper-body {
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+/* Force header text color */
+.ag-theme-alpine-dark .ag-header-cell,
+.ag-theme-alpine-dark .ag-header-cell-text {
+  color: var(--text-secondary) !important;
+  font-family: 'Manrope', sans-serif !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.ag-theme-alpine-dark .ag-header {
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  background-color: var(--bg-secondary) !important;
+  border-radius: 0 !important;
+}
+
+/* Header row border radius mimicking the mock */
+.ag-theme-alpine-dark .ag-header-row {
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+.ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid var(--border) !important;
+  transition: background-color 0.15s ease;
+}
+
+.ag-theme-alpine-dark .ag-row:hover {
+  background-color: var(--bg-secondary) !important;
+  cursor: pointer;
+}
+
+.ag-theme-alpine-dark .ag-cell {
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+/* Universal sleek dark scrollbars */
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.dark *:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.48) transparent;
+}
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* AG Grid Dark Scrollbars */
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport,
+.ag-theme-alpine-dark .ag-virtual-list-viewport {
+  scrollbar-color: rgba(148, 163, 184, 0.3) var(--bg-card) !important;
+  scrollbar-width: thin !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-track {
+  background: var(--bg-card) !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28) !important;
+  border-radius: 9999px !important;
+  border: 2px solid var(--bg-card) !important;
+  background-clip: content-box !important;
+}
+
+.ag-theme-alpine-dark .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-alpine-dark .ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-alpine-dark .ag-virtual-list-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6) !important;
+}
+
+/* Fix missing background on pinned columns causing text bleed-through when scrolling */
+.ag-pinned-left-cols-container .ag-cell,
+.ag-cell-pinned-left {
+  background-color: var(--bg-card) !important;
+}
+
+/* Ensure pinned headers match the rest of the header row */
+.ag-pinned-left-header,
+.ag-header-cell.ag-header-cell-pinned-left {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* ── Compact Density Mode ────────────────────────────────────────────── */
+[data-density="compact"] {
+  --spacing-density-card: 12px;
+  --spacing-density-gap: 8px;
+  --spacing-density-section-gap: 6px;
+}
+
+/* Compact DataGrid */
+[data-density="compact"] .ag-theme-alpine-dark {
+  --ag-row-height: 34px !important;
+  --ag-header-height: 32px !important;
+  --ag-font-size: 12px !important;
+  --ag-cell-horizontal-padding: 10px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-cell {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 12px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-header-cell,
+[data-density="compact"] .ag-theme-alpine-dark .ag-header-cell-text {
+  font-size: 10px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark .ag-picker-field-wrapper,
+[data-density="compact"] .ag-theme-alpine-dark .ag-text-field-input-wrapper,
+[data-density="compact"] .ag-theme-alpine-dark .ag-number-field-input-wrapper {
+  min-height: 30px !important;
+}
+
+[data-density="compact"] .ag-theme-alpine-dark input[type="text"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="number"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="tel"],
+[data-density="compact"] .ag-theme-alpine-dark input[type="date"] {
+  padding: 4px 12px 4px 28px !important;
+  font-size: 12px !important;
+}
+
+/* Compact Form inputs & Buttons */
+[data-density="compact"] .input,
+[data-density="compact"] .select {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+}
+
+[data-density="compact"] .btn {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  gap: 4px !important;
+}
+
+[data-density="compact"] .btn-sm {
+  padding: 2px 6px !important;
+  font-size: 11px !important;
+}
+
+/* Compact Table Lines */
+[data-density="compact"] .table-lines th {
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+}
+
+[data-density="compact"] .table-lines td {
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+}
+
+/* Compact Cards & Section Headings */
+[data-density="compact"] .card {
+  padding: 12px !important;
+  border-radius: 8px !important;
+}
+
+[data-density="compact"] .section-heading {
+  margin-bottom: 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Compact Page Section Spacing */
+[data-density="compact"] .flex-col:has(> .card),
+[data-density="compact"] .flex-col:has(> [id*="-section"]),
+[data-density="compact"] .flex-col:has(> div > .card),
+[data-density="compact"] .flex.flex-col:has(> .card),
+[data-density="compact"] .flex.flex-col:has(> [id*="-section"]),
+[data-density="compact"] .flex.flex-col:has(> div > .card) {
+  gap: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .space-y-4:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-5:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-6:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-8:has(> .card) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-4:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-5:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-6:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]),
+[data-density="compact"] .space-y-8:has(> [id*="-section"]) > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card.mb-4,
+[data-density="compact"] .card.mb-6,
+[data-density="compact"] .card.mb-8 {
+  margin-bottom: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card.mt-4,
+[data-density="compact"] .card.mt-6,
+[data-density="compact"] .card.mt-8 {
+  margin-top: var(--spacing-density-section-gap, 6px) !important;
+}
+
+[data-density="compact"] .card + .card {
+  margin-top: var(--spacing-density-section-gap, 6px);
+}
+
+/* ── Utility: hide elements in print ─────────────────────────────────── */
+.print-hidden {
+  /* no-op on screen; hidden by @media print below */
+}
+
+/* ── React Phone Number Input Overrides ── */
+.PhoneInputInput {
+  @apply bg-transparent outline-none w-full ml-2 border-none ring-0  focus:outline-none focus:ring-0 focus:border-none;
+}
+
+/* ── Print Stylesheet ────────────────────────────────────────────────── */
+@media print {
+
+  /* ── 1. HIDE UI CHROME ──────────────────────────────────────────────── */
+  .print-hidden,
+  #print-page-btn,
+  aside,
+  nav,
+  [data-sidebar],
+  .details-chevron {
+    display: none !important;
+  }
+
+  /* Hide buttons/selects but NOT inside the main content details/summary */
+  button,
+  .btn,
+  select,
+  [class^="badge-return"] {
+    display: none !important;
+  }
+
+  /* ── 2. FLATTEN THE FULL DOM HEIGHT CHAIN ────────────────────────────
+     The Shell → DetailsLayout hierarchy creates nested flex containers 
+     with fixed viewport heights (h-screen, h-full) and scroll boundaries 
+     (overflow-hidden, overflow-y-auto). In Tailwind v4, targeting these 
+     by class selector (e.g. .h-screen) fails because they are compiled 
+     as atomic CSS in a layer with higher specificity. We use attribute 
+     selectors [class*="..."] to match the literal class string on the 
+     DOM element instead. ──────────────────────────────────────────────── */
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Kill all fixed heights and scroll traps at every nesting level */
+  [class*="h-screen"],
+  [class*="h-full"],
+  [class*="min-h-0"],
+  [class*="min-h-["],
+  [class*="overflow-hidden"],
+  [class*="overflow-y-auto"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Kill flex column containers that create viewport-sized blocks */
+  [class*="flex"][class*="flex-col"][class*="h-screen"],
+  [class*="flex"][class*="flex-col"][class*="h-full"],
+  [class*="flex"][class*="flex-col"][class*="overflow-hidden"] {
+    display: block !important;
+  }
+
+  /* Remove the sidebar gutter */
+  [class*="ml-60"] {
+    margin-left: 0 !important;
+  }
+
+  /* Ensure .detail-content and its children flow naturally */
+  .detail-content,
+  .detail-content > div {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    flex: none !important;
+  }
+
+  /* ── 3. CARDS & INPUTS ──────────────────────────────────────────────── */
+  .card {
+    border: none !important;
+
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 0 1.5rem 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  input, 
+  textarea,
+  .input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    outline: none !important;
+
+    appearance: none !important;
+    resize: none !important;
+  }
+
+  /* ── 4. TABLES ──────────────────────────────────────────────────────── */
+  .table-lines tr {
+    page-break-inside: avoid;
+  }
+
+  /* ag-Grid — basic print support */
+  .ag-theme-alpine-dark {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .ag-body-viewport {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* ── 5. LINKS & BADGES ──────────────────────────────────────────────── */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  .badge {
+    border: 1px solid currentColor !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .section-heading .material-symbols-outlined {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* ── 6. ACTIVITY TIMELINE ───────────────────────────────────────────── */
+  /* Clean up details styling; expansion is handled by React (isPrinting) */
+  details {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 0 1rem 0 !important;
+  }
+
+  details summary {
+    pointer-events: none !important;
+    list-style: none !important;
+  }
+
+  details summary::-webkit-details-marker {
+    display: none !important;
+  }
+
+  /* ── 7. PAGE SETUP ──────────────────────────────────────────────────── */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+}
+
+/* Hide scrollbar for elements with hide-scrollbar class */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

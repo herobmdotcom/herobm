@@ -1,0 +1,269 @@
+name: herobm
+services:
+  herobm-ui:
+    image: localhost/herobm_ops-portal:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.portal
+    container_name: herobm-ui
+    restart: unless-stopped
+    environment:
+      API_URL: http://herobm-api:3001
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${FE_PORT:-8000}:3000"
+    depends_on:
+      herobm-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000', (r) => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  herobm-nginx:
+    image: docker.io/library/nginx:alpine
+    container_name: herobm-nginx
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${NGINX_PORT:-8080}:80"
+      - "${BIND_IP:-127.0.0.1}:${NGINX_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${SSL_CERT_DIR:-./certs}:/etc/nginx/certs:ro
+    depends_on:
+      herobm-ui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/nginx-health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  postgres-custom:
+    image: docker.io/library/postgres:16-alpine
+    container_name: postgres-custom
+    hostname: postgres-custom
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "max_locks_per_transaction=256"
+    shm_size: 1gb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./configs/postgres:/docker-entrypoint-initdb.d:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      app-net:
+        aliases:
+          - postgres-custom
+
+  herobm-api:
+    image: localhost/herobm_custom-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: herobm-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3001"
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      JWT_SECRET: ${JWT_SECRET}
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
+      TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH
+      PIPELINE_RUNNER_URL: http://herobm-pipeline:8001
+      WEBHOOK_URL: http://herobm-api:3001/internal/setup/webhook
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${API_PORT:-3001}:3001"
+    volumes:
+      - ./logs:/app/logs
+      - ${STORAGE_PATH:-./data/storage}:/app/data/storage:rw
+    depends_on:
+      postgres-custom:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3001/api/health', (r) => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-net
+      - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  redis-broker:
+    image: docker.io/library/redis:7-alpine
+    container_name: redis-broker
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  herobm-outbox:
+    image: localhost/outbox-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: herobm-outbox
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      REDIS_HOST: redis-broker
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:9092:9091"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres-custom:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+    networks:
+      - app-net
+      - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  herobm-pipeline:
+    profiles:
+      - ext
+      - pipeline
+    image: localhost/herobm_pipeline-runner:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    container_name: herobm-pipeline
+    restart: unless-stopped
+    env_file: .env
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      PIPELINE_SECRET: ${PIPELINE_SECRET}
+      WEBHOOK_URL: "http://herobm-api:3001/internal/setup/webhook"
+      VENV_PYTHON: "python3"
+      DBT: "dbt"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres-custom:
+        condition: service_healthy
+    networks:
+      - app-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+
+
+  # --- Maildev (Local Dev Only) ---
+  maildev:
+    image: maildev/maildev
+    container_name: maildev
+    profiles:
+      - dev
+    ports:
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1025:1025"
+    networks:
+      - app-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+
+
+networks:
+  app-net:
+    driver: bridge
+  monitoring-net:
+    driver: bridge

@@ -1,0 +1,33 @@
+extends: "spectral:oas"
+
+rules:
+  operation-2xx-response:
+    description: "Operations must have at least one 2xx response."
+    given: "$.paths.*[get,post,put,patch,delete]"
+    then:
+      field: "responses"
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          anyOf:
+            - required: ["200"]
+            - required: ["201"]
+            - required: ["204"]
+    severity: error
+  
+  operation-2xx-schema:
+    description: "200 and 201 responses must have a schema (unless 204)."
+    given: "$.paths.*[get,post,put,patch,delete].responses[?(@property === '200' || @property === '201')]"
+    then:
+      field: "content['application/json'].schema"
+      function: truthy
+    severity: error
+
+  operation-request-body-required:
+    description: "POST, PUT, and PATCH operations must define a requestBody to ensure the SDK generates a body argument (prevents empty body hacks)."
+    given: "$.paths.*[post,put,patch]"
+    then:
+      field: requestBody
+      function: truthy
+    severity: error

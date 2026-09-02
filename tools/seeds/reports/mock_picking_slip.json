@@ -1,0 +1,24 @@
+{
+  "backOrderLines": [
+    {
+      "qtyToOrder": 5,
+      "description": "High Performance Widget",
+      "productCode": "PRD-X99"
+    }
+  ],
+  "pickingLines": [
+    {
+      "qtyToPick": 5,
+      "binNumber": "A1",
+      "description": "High Performance Widget",
+      "productCode": "PRD-X99"
+    }
+  ],
+  "header": {
+    "orderNumber": "SO-1000",
+    "orderDate": "2026-03-25",
+    "customerName": "Test Client Ltda",
+    "customerOrderNumber": "PO-999"
+  },
+  "generatedAt": "2026-03-25 10:00:00"
+}

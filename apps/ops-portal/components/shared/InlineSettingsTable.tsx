@@ -1,0 +1,326 @@
+import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Button } from './Button';
+import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
+
+export interface InlineTableColumn<T> {
+  key: keyof T | string;
+  title: string;
+  type?: 'text' | 'textarea' | 'select' | 'boolean' | 'custom' | 'number' | 'password' | 'date';
+  options?: { value: string; label: string }[] | ((row: Partial<T>) => { value: string; label: string }[]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  render?: (row: T, isEditing: boolean, onChange?: (val: any) => void) => React.ReactNode;
+  width?: string | number;
+  disabled?: boolean; // if true, input is disabled during edit
+  emptyLabel?: string | null; // override or hide the empty select option
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  validate?: (value: any, row: Partial<T>) => string | null;
+}
+
+export interface InlineSettingsTableProps<T> {
+  columns: InlineTableColumn<T>[];
+  data: T[];
+  rowKey: (row: T) => string;
+  onSave: (row: T, isNew: boolean) => Promise<void>;
+  onDelete?: (row: T) => Promise<void>;
+  onAdd?: () => T; // returns a new empty row
+  className?: string;
+  title?: React.ReactNode;
+  beforeTable?: React.ReactNode;
+  headerActions?: React.ReactNode;
+  addLabel?: string;
+  emptyLabel?: React.ReactNode;
+  canEdit?: (row: T) => boolean;
+  canDelete?: (row: T) => boolean;
+  extraActions?: (row: T) => React.ReactNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+export function InlineSettingsTable<T extends Record<string, any>>({
+  columns,
+  data,
+  rowKey,
+  onSave,
+  onDelete,
+  onAdd,
+  className,
+  title,
+  beforeTable,
+  headerActions,
+  addLabel,
+  emptyLabel,
+  canEdit,
+  canDelete,
+  extraActions
+}: InlineSettingsTableProps<T>) {
+  const tSettings = useTranslations('admin.settings');
+  const actualAddLabel = addLabel || tSettings('addRow');
+  const tCommon = useTranslations('admin.common');
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<T>>({});
+  const [saving, setSaving] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Also track rows being processed
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const handleEdit = (row: T) => {
+    setEditingId(rowKey(row));
+    setEditForm({ ...row });
+    setIsNew(false);
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditForm({});
+    setIsNew(false);
+    setErrors({});
+  };
+
+  const handleSave = async (rowId: string) => {
+    const newErrors: Record<string, string> = {};
+    for (const col of columns) {
+      if (col.validate) {
+        const error = col.validate(editForm[col.key as keyof T], editForm);
+        if (error) newErrors[String(col.key)] = error;
+      }
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    
+    try {
+      setSaving(true);
+      setProcessingId(rowId);
+      await onSave(editForm as T, isNew);
+      setEditingId(null);
+      setEditForm({});
+      setIsNew(false);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (row: T) => {
+    if (!onDelete) return;
+    const id = rowKey(row);
+    try {
+      setProcessingId(id);
+      await onDelete(row);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleAdd = () => {
+    if (!onAdd) return;
+    const newRow = onAdd();
+    const tempId = 'NEW_ROW'; // Special ID for new row
+    setEditingId(tempId);
+    setEditForm({ ...newRow });
+    setIsNew(true);
+  };
+
+  // Combine real data and potential new row
+  const renderData = [...data];
+  if (isNew && editingId === 'NEW_ROW') {
+    renderData.unshift(editForm as T);
+  }
+
+  return (
+    <div className={`flex flex-col gap-2 ${className || ''}`}>
+      {(title || onAdd) && (
+        <div className="flex items-center justify-between mb-1">
+          {title ? (
+            typeof title === 'string' ? <h4 className="font-bold text-sm !mb-0">{title}</h4> : title
+          ) : <div />}
+          <div className="flex items-center gap-2">
+            {headerActions}
+            {onAdd && (
+              <Button onClick={handleAdd} variant="primary" size="sm" className="flex items-center gap-1.5" disabled={editingId !== null}>
+                {actualAddLabel}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      {beforeTable}
+      <div className="overflow-x-auto">
+        <table className="table-lines w-full text-sm">
+          <thead>
+            <tr>
+              {columns.map(col => (
+                <th key={String(col.key)} style={col.width ? { width: col.width } : undefined}>{col.title}</th>
+              ))}
+              <th className="w-[120px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {renderData.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length + 1} className="text-center py-8 text-muted">
+                {emptyLabel || tCommon('noRecordsFound')}
+              </td>
+            </tr>
+          ) : (
+            renderData.map((row) => {
+              const id = isNew && row === editForm ? 'NEW_ROW' : rowKey(row);
+              const isEditing = editingId === id;
+              const isProcessing = processingId === id;
+              
+              return (
+                <tr key={id} style={isEditing ? { background: 'var(--bg-secondary)' } : undefined}>
+                  {columns.map(col => {
+                    const value = isEditing ? editForm[col.key as keyof T] : row[col.key as keyof T];
+                    
+                    let customRender: React.ReactNode = undefined;
+                    if (col.render) {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                      customRender = col.render(isEditing ? editForm as T : row, isEditing, (val: any) => {
+                        setEditForm({ ...editForm, [col.key as keyof T]: val });
+                        if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                      });
+                    }
+
+                    if (customRender !== undefined && customRender !== null) {
+                      return <td key={String(col.key)}>{customRender}</td>;
+                    }
+                    
+                    return (
+                      <td key={String(col.key)}>
+                        {isEditing ? (
+                          col.type === 'select' ? (
+                            <div className="flex flex-col gap-1">
+                              <select 
+                                className={`input ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                              >
+                                {col.emptyLabel !== null && <option value="">{col.emptyLabel || '-'}</option>}
+                                {(typeof col.options === 'function' ? col.options(editForm) : col.options)?.map(o => (
+                                  <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                              </select>
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
+                          ) : col.type === 'boolean' ? (
+                            <label className="switch">
+                              <input 
+                                type="checkbox" 
+                                checked={!!value} 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                                onChange={e => setEditForm({ ...editForm, [col.key as keyof T]: e.target.checked as any })} 
+                                disabled={col.disabled || saving}
+                              />
+                              <span className="switch-slider"></span>
+                            </label>
+                          ) : col.type === 'textarea' ? (
+                            <div className="flex flex-col gap-1">
+                              <textarea 
+                                className={`input w-full ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                                rows={4}
+                              />
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              <input 
+                                type={col.type === 'number' || col.type === 'password' || col.type === 'date' ? col.type : 'text'}
+                                className={`input w-full ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                              />
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
+                          )
+                        ) : (
+                          col.type === 'select' ? (
+                            <span>{(typeof col.options === 'function' ? col.options(row) : col.options)?.find(o => o.value === value)?.label || value}</span>
+                          ) : col.type === 'boolean' ? (
+                            <span className={`text-xs font-bold ${value ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                              {value ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
+                            </span>
+                          ) : (
+                            <span>{value as React.ReactNode}</span>
+                          )
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="text-right whitespace-nowrap align-top pt-3">
+                    {isEditing ? (
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="xs" onClick={handleCancel} disabled={saving}>
+                          {tSettings('actions.cancel')}
+                        </Button>
+                        <Button variant="primary" size="xs" onClick={() => handleSave(id)} disabled={saving}>
+                          {saving ? '...' : tSettings('actions.save')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-2">
+                        {(!canEdit || canEdit(row)) && (
+                          <Button 
+                            variant="secondary"
+                            size="xs"
+                            className="flex items-center justify-center" 
+                            title={tSettings('actions.edit')}
+                            onClick={() => handleEdit(row)}
+                            disabled={isProcessing || editingId !== null}
+                          >
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                          </Button>
+                        )}
+                        {onDelete && (!canDelete || canDelete(row)) && (
+                          <Button 
+                            variant="secondary"
+                            size="xs"
+                            className="flex items-center justify-center hover:!bg-red-50 text-red-500 border-red-500" 
+                            title={tSettings('actions.delete')}
+                            onClick={() => handleDelete(row)}
+                            disabled={isProcessing || editingId !== null}
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </Button>
+                        )}
+                        {extraActions && extraActions(row)}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  );
+}

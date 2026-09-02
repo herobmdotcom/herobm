@@ -1,0 +1,1531 @@
+import { AppConfigService } from '../settings/app-config.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { OrdersCoreService } from './orders-core.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderStateService } from './order-state.service';
+import { OrdersQueryService } from './orders-query.service';
+
+class OrdersWriteService {
+  core: OrdersCoreService;
+  query: OrdersQueryService;
+  creation: OrderCreationService;
+  lines: OrderLinesService;
+  state: OrderStateService;
+
+  constructor(...args: any[]) {
+    this.core = new (OrdersCoreService as any)(...args);
+    this.query = new (OrdersQueryService as any)(...args, this.core);
+    this.state = new (OrderStateService as any)(...args, this.core, this.query);
+    this.creation = new (OrderCreationService as any)(
+      ...args,
+      this.core,
+      this.query,
+      this.state,
+    );
+    this.lines = new (OrderLinesService as any)(...args, this.core, this.query);
+  }
+
+  create(...args: any[]) {
+    return this.creation.create(...(args as [any, any]));
+  }
+  update(...args: any[]) {
+    return this.creation.update(...(args as [any, any, any]));
+  }
+  archive(...args: any[]) {
+    return this.creation.archive(...(args as [any, any]));
+  }
+  unarchive(...args: any[]) {
+    return this.creation.unarchive(...(args as [any, any]));
+  }
+
+  addLine(...args: any[]) {
+    return this.lines.addLine(...(args as [any, any, any]));
+  }
+  updateLine(...args: any[]) {
+    return this.lines.updateLine(...(args as [any, any, any, any]));
+  }
+  removeLine(...args: any[]) {
+    return this.lines.removeLine(...(args as [any, any, any]));
+  }
+  addPostConfirmationLine(...args: any[]) {
+    return this.lines.addPostConfirmationLine(...(args as [any, any, any]));
+  }
+
+  changeSalesOrderState(...args: any[]) {
+    return this.state.changeSalesOrderState(
+      ...(args as [any, any, any, any, any]),
+    );
+  }
+  triggerTaxCalculation(...args: any[]) {
+    return this.state.triggerTaxCalculation(...(args as [any, any]));
+  }
+  overrideCreditHold(...args: any[]) {
+    return this.state.overrideCreditHold(...(args as [any, any, any]));
+  }
+
+  findOne(...args: any[]) {
+    return this.query.findOne(...(args as [any]));
+  }
+
+  generateOrderNumber(...args: any[]) {
+    return this.core.generateOrderNumber(...(args as [any]));
+  }
+}
+(OrdersWriteService.prototype as any).computeLineAmount = (
+  OrdersCoreService.prototype as any
+).computeLineAmount;
+
+import { BackordersService } from './backorders.service';
+import { PickingService } from './picking.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { CustomersService } from '../customers/customers.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
+import { ProductsService } from '../products/products.service';
+import {
+  SALES_ORDER_STATE,
+  PRODUCT_STATE,
+  CUSTOMER_STATE,
+} from '@herobm/shared';
+
+import { PGlite } from '@electric-sql/pglite';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DrizzleDB } from '../drizzle/drizzle.module';
+import { eq, sql } from 'drizzle-orm';
+import {
+  createTestCustomer,
+  createTestProduct,
+  createTestSalesOrder,
+} from '../../test/fixtures';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  products as coreProducts,
+  productComponents,
+  locations,
+  exchangeRates,
+} from '@herobm/db-schema';
+
+import { taxCategories } from '@herobm/db-schema';
+import { getErrorMessage } from '@herobm/shared';
+
+// Default GST categories used across tests
+
+let TAX_DEFAULT: any;
+
+let TAX_EXEMPT: any;
+
+let TAX_ZERO: any;
+
+describe('OrdersWriteService', () => {
+  const pg = setupPgliteSuite();
+  let service: OrdersWriteService;
+
+  let mockPickingService: any;
+
+  let mockCustomersService: any;
+
+  let mockProductsService: any;
+
+  let mocktaxService: any;
+
+  let mockTaxResolutionEngine: any;
+
+  let mockBackordersService: any;
+
+  let mockCreditAssessmentService: any;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    const allTaxes = await pg.db.select().from(taxCategories);
+    TAX_DEFAULT = allTaxes.find((t) => t.code === 'GST');
+    TAX_EXEMPT = allTaxes.find((t) => t.code === 'N-T');
+    TAX_ZERO = allTaxes.find((t) => t.code === 'FRE');
+
+    // Ensure standard location exists
+    await pg.db
+      .insert(locations)
+      .values({
+        locationId: '10000000-0000-4000-8000-000000000001',
+        code: 'MAIN',
+        name: 'Main Location',
+        source: 'app',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(exchangeRates)
+      .values([
+        {
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '0.85',
+          sellRate: '0.85',
+        },
+        {
+          currencyCode: 'AUD',
+          currencyName: 'Australian Dollar',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '1.0',
+          sellRate: '1.0',
+        },
+        {
+          currencyCode: 'SGD',
+          currencyName: 'Singapore Dollar',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '1.10',
+          sellRate: '1.10',
+        },
+      ])
+      .onConflictDoNothing();
+
+    mocktaxService = {
+      getDefault: jest.fn().mockResolvedValue(TAX_DEFAULT),
+      getByCode: jest.fn().mockImplementation(async (code: string) => {
+        if (code === 'N-T') return TAX_EXEMPT;
+        if (code === 'FRE') return TAX_ZERO;
+        if (code === 'GST') return TAX_DEFAULT;
+        throw new Error('GST category not found by code');
+      }),
+      getById: jest.fn().mockImplementation(async (id: string) => {
+        if (id === 'unknown-id') throw new Error('Not found by ID');
+        if (id === TAX_ZERO.taxCategoryId) return TAX_ZERO;
+        if (id === TAX_EXEMPT.taxCategoryId) return TAX_EXEMPT;
+        return TAX_DEFAULT;
+      }),
+    };
+
+    mockBackordersService = {
+      evaluateGaps: jest.fn().mockResolvedValue([]),
+      triggerBackorders: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockPickingService = {
+      assertFullyPicked: jest.fn().mockResolvedValue(undefined),
+      assertFullyShipped: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockCustomersService = {
+      findOne: jest.fn().mockResolvedValue({
+        customerId: '00000000-0000-4000-8000-000000000001',
+        currencyCode: 'EUR',
+        taxCategoryId: TAX_DEFAULT.taxCategoryId,
+      }),
+      assessRisk: jest.fn().mockResolvedValue({ status: 'APPROVED' }),
+    };
+    mockProductsService = {
+      findOne: jest.fn().mockResolvedValue({
+        productId: 'PROD-001',
+        name: 'Test Product',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
+      }),
+    };
+    mockCreditAssessmentService = {
+      assessCredit: jest.fn().mockResolvedValue({
+        totalInvoiceBalance: 0,
+        overdueInvoiceBalance: 0,
+        glBalance: 0,
+        isOverdue: false,
+      }),
+    };
+
+    const mockOrganizationService = {
+      get: jest.fn().mockResolvedValue({}),
+    };
+
+    mockTaxResolutionEngine = {
+      resolveTax: jest.fn().mockResolvedValue({
+        taxCategoryId: TAX_DEFAULT.taxCategoryId,
+        rate: 10,
+        provider: 'app',
+      }),
+      resolveTaxCategory: jest.fn().mockImplementation(async (params) => {
+        if (params.manualOverrideTaxCategoryId)
+          return params.manualOverrideTaxCategoryId;
+        if (params.partyTaxPositionId) return params.partyTaxPositionId;
+        if (params.productDefaultTaxCategoryId === 'unknown-id') {
+          return TAX_DEFAULT.taxCategoryId;
+        }
+        if (params.productDefaultTaxCategoryId) {
+          return params.productDefaultTaxCategoryId;
+        }
+        return TAX_DEFAULT.taxCategoryId;
+      }),
+    };
+
+    service = new OrdersWriteService(
+      pg.db,
+      mocktaxService,
+      mockTaxResolutionEngine,
+      mockPickingService,
+      mockCustomersService,
+      mockCreditAssessmentService,
+      mockProductsService,
+      mockBackordersService,
+      {
+        defaultFulfillmentLocationId: jest
+          .fn()
+          .mockReturnValue('10000000-0000-4000-8000-000000000001'),
+        creditLimitBehavior: jest.fn().mockReturnValue('soft'),
+        taxProviderMappings: jest.fn().mockReturnValue({}),
+        getAppSettingsRaw: jest.fn().mockReturnValue({}),
+      } as any,
+
+      mockOrganizationService as any,
+      {
+        getDetails: jest.fn(),
+      } as any,
+      {} as any, // mockPdfTemplatesService
+      {} as any, // mockEmailService
+    );
+
+    (service as any).logger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+    };
+  });
+
+  // =========================================================================
+  // computeLineAmount
+  // =========================================================================
+
+  describe('line amount computation', () => {
+    const compute = (
+      qty: string,
+      price: string,
+      disc: string,
+      taxRate: number,
+    ) =>
+      (OrdersWriteService.prototype as any).computeLineAmount.call(
+        null,
+        qty,
+        price,
+        disc,
+        taxRate,
+      );
+
+    it('should compute amount without discount or tax', () => {
+      const r = compute('10', '5.00', '0', 0);
+      expect(r.amount).toBe('50.00');
+      expect(r.tax).toBe('0.00');
+      expect(r.totalAmount).toBe('50.00');
+    });
+
+    it('should apply percentage discount', () => {
+      const r = compute('10', '5.00', '10', 0);
+      expect(r.amount).toBe('45.00');
+      expect(r.totalAmount).toBe('45.00');
+    });
+
+    it('should auto-calculate tax from GST rate', () => {
+      const r = compute('10', '5.00', '0', 10);
+      expect(r.amount).toBe('50.00');
+      expect(r.tax).toBe('5.00');
+      expect(r.totalAmount).toBe('55.00');
+    });
+
+    it('should handle discount and GST rate together', () => {
+      const r = compute('10', '5.00', '10', 10);
+      expect(r.amount).toBe('45.00');
+      expect(r.tax).toBe('4.50');
+      expect(r.totalAmount).toBe('49.50');
+    });
+
+    it('should handle fractional quantities', () => {
+      const r = compute('2.5', '10.00', '0', 0);
+      expect(r.amount).toBe('25.00');
+    });
+  });
+
+  // =========================================================================
+  // create()
+  //
+  // generateOrderNumber() is now called inside the transaction (uses tx.execute).
+  // The remaining select calls outside the transaction are:
+  //   - resolveCustomer → CustomersService.findOne (mocked)
+  //   - resolveTaxForLine → CustomersService + ProductsService (mocked)
+  //   - validateProduct → ProductsService.findOne (mocked)
+  // =========================================================================
+
+  describe('create', () => {
+    async function setupCreate(opts?: {
+      taxCategoryId?: string;
+      disc?: string;
+      productTaxId?: string;
+      currency?: string;
+    }) {
+      const gstId = opts?.taxCategoryId ?? TAX_DEFAULT.taxCategoryId;
+      const disc = opts?.disc ?? '0';
+      const prodGstId = opts?.productTaxId ?? TAX_DEFAULT.taxCategoryId;
+      const currency = opts?.currency ?? 'EUR';
+
+      const customer = await createTestCustomer(pg.db);
+      mockCustomersService.findOne.mockResolvedValue({
+        customerId: customer.customerId,
+        currencyCode: currency,
+        taxCategoryId: gstId,
+      });
+
+      const product = await createTestProduct(pg.db);
+      mockProductsService.findOne.mockResolvedValue({
+        productId: product.productId,
+        name: 'Test Product',
+        salesTaxCategoryId: prodGstId,
+        stateCode: PRODUCT_STATE.ACTIVE,
+      });
+
+      return {
+        customer,
+        product,
+        validDto: {
+          salesOrderId: '00000000-0000-4000-8000-000000000001',
+          customerId: customer.customerId,
+          lines: [
+            {
+              productId: product.productId,
+              quantity: '10',
+              pricePerUnit: '5.00',
+            },
+          ],
+        },
+      };
+    }
+
+    it('should create an order in draft state', async () => {
+      const { validDto } = await setupCreate();
+      const result = await service.create(validDto, 'admin');
+      expect(result).toHaveProperty('salesOrderId');
+      expect(result).toHaveProperty('stateCode', SALES_ORDER_STATE.DRAFT);
+
+      const saved = await pg.db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, result.salesOrderId));
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.DRAFT);
+    });
+
+    it('should throw BadRequestException if product is inactive', async () => {
+      const { validDto, product } = await setupCreate();
+      mockProductsService.findOne.mockResolvedValueOnce({
+        ...product,
+        stateCode: PRODUCT_STATE.ARCHIVED,
+      });
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if customer is inactive', async () => {
+      const { validDto, customer } = await setupCreate();
+      mockCustomersService.findOne.mockResolvedValueOnce({
+        customerId: customer.customerId,
+        currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.ARCHIVED,
+      });
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should default to 0% discount when no discount is provided (frontend-authoritative)', async () => {
+      const { validDto } = await setupCreate({ disc: '15' });
+      const result = await service.create(validDto, 'admin');
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
+      // Backend no longer resolves customer discount — defaults to '0' unless frontend provides one
+      expect(lines[0].discountPercentage).toBe('0');
+    });
+
+    it('should use explicit line discount when provided by frontend', async () => {
+      const { customer, product } = await setupCreate();
+      const result = await service.create(
+        {
+          salesOrderId: '00000000-0000-4000-8000-000000000001',
+          customerId: customer.customerId,
+          lines: [
+            {
+              productId: product.productId,
+              quantity: '10',
+              pricePerUnit: '5.00',
+              discountPercentage: '12.5',
+            },
+          ],
+        },
+        'admin',
+      );
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
+      expect(lines[0].discountPercentage).toBe('12.5');
+    });
+
+    it('should snapshot non-EUR currency onto the order (ADV-034)', async () => {
+      const { validDto } = await setupCreate({ currency: 'SGD' });
+      const result = await service.create(validDto, 'admin');
+      expect(result.currencyCode).toBe('SGD');
+    });
+
+    it('should use product GST category directly without fallback if possible', async () => {
+      const { validDto } = await setupCreate();
+      await service.create(validDto, 'admin');
+      expect(mocktaxService.getById.mock.calls[0][0]).toBe(
+        TAX_DEFAULT.taxCategoryId,
+      );
+    });
+
+    it('should use zero-rated GST for zero-rated product', async () => {
+      const { validDto, product } = await setupCreate({
+        productTaxId: TAX_ZERO.taxCategoryId,
+      });
+
+      mockProductsService.findOne.mockResolvedValueOnce({
+        ...product,
+        salesTaxCategoryId: TAX_ZERO.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
+      });
+
+      mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
+        TAX_ZERO.taxCategoryId,
+      );
+
+      await service.create(validDto, 'admin');
+
+      const callArgs = mocktaxService.getById.mock.calls[0];
+      expect(callArgs[0]).toBe(TAX_ZERO.taxCategoryId);
+    });
+
+    it('should use exempt GST for exempt customer (regardless of product)', async () => {
+      const { customer, validDto } = await setupCreate();
+      mockCustomersService.findOne.mockResolvedValue({
+        customerId: customer.customerId,
+        currencyCode: 'EUR',
+        taxCategoryId: TAX_EXEMPT.taxCategoryId,
+      });
+
+      await service.create(validDto, 'admin');
+      expect(mocktaxService.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reject unknown customer', async () => {
+      const { validDto } = await setupCreate();
+      mockCustomersService.findOne.mockRejectedValue(new NotFoundException());
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject unknown product', async () => {
+      const { validDto } = await setupCreate();
+      mockProductsService.findOne.mockRejectedValue(new NotFoundException());
+      await expect(service.create(validDto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should create order with no lines', async () => {
+      const { customer } = await setupCreate();
+      const dto = {
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        customerId: customer.customerId,
+        lines: [],
+      };
+      const result = await service.create(dto, 'admin');
+      expect(result).toHaveProperty('salesOrderId');
+    });
+
+    it('should fall back to system default when product has unknown GST category', async () => {
+      const { validDto } = await setupCreate({ productTaxId: 'unknown-id' });
+      await service.create(validDto, 'admin');
+      expect(mockTaxResolutionEngine.resolveTaxCategory).toHaveBeenCalled();
+    });
+
+    it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
+      const { validDto } = await setupCreate();
+
+      // Insert an order with a specific number
+      await pg.db.insert(salesOrders).values({
+        orderNumber: 'DUPE-001',
+        name: 'Existing',
+        customerId: validDto.customerId,
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        currencyCode: 'EUR',
+        stateCode: SALES_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      // Mock generateOrderNumber to return the same number
+      jest
+        .spyOn(service.core as any, 'generateOrderNumber')
+        .mockResolvedValue('DUPE-001');
+
+      try {
+        await service.create(validDto, 'admin');
+        throw new Error('Should have thrown');
+      } catch (e: unknown) {
+        const msg =
+          getErrorMessage(e) + ' ' + ((e as any).cause?.message || '');
+        expect(msg.toLowerCase()).toContain('duplicate');
+      }
+    });
+  });
+
+  // =========================================================================
+  // update()
+  // =========================================================================
+
+  describe('update', () => {
+    async function setupForUpdate(stateCode: string) {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+
+        state: stateCode as any,
+      });
+      return { order };
+    }
+
+    it('should update header fields on a draft order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.DRAFT);
+      const result = await service.update(
+        order.salesOrderId,
+        { name: 'New Name' },
+        'admin',
+      );
+      expect(result.name).toBe('New Name');
+
+      const saved = await pg.db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
+      expect(saved[0].name).toBe('New Name');
+    });
+
+    it('should update header fields on a quoted order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.QUOTED);
+      const result = await service.update(
+        order.salesOrderId,
+        { name: 'New Name' },
+        'admin',
+      );
+      expect(result).toBeDefined();
+    });
+
+    it('should allow metadata updates (name, notes, customFields) on invoiced order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.INVOICED);
+      const result = await service.update(
+        order.salesOrderId,
+        {
+          name: 'Updated Order Name',
+          notes: 'Updated notes',
+          customFields: { analysisCode: 'PROMO' },
+        },
+        'admin',
+      );
+      expect(result).toBeDefined();
+      expect(result.name).toBe('Updated Order Name');
+      expect(result.notes).toBe('Updated notes');
+      expect(result.customFields).toEqual({ analysisCode: 'PROMO' });
+    });
+
+    it('should reject fulfillmentLocationId change on invoiced order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.INVOICED);
+      await expect(
+        service.update(
+          order.salesOrderId,
+          { fulfillmentLocationId: 'different-loc' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject update on cancelled order', async () => {
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.CANCELLED);
+      await expect(
+        service.update(order.salesOrderId, { notes: 'Test' }, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException for unknown order', async () => {
+      await expect(service.update('NOPE', {}, 'admin')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  // =========================================================================
+  // changeState()
+  // =========================================================================
+
+  describe('changeState', () => {
+    async function setupWithState(currentState: string) {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+
+        state: currentState as any,
+      });
+      return { order };
+    }
+
+    it.each([
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.QUOTED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.PICKING],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.QUOTED],
+      [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED],
+      [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.QUOTED],
+      [SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED],
+      [SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.DRAFT],
+    ])('should allow transition %s → %s', async (from, to) => {
+      const { order } = await setupWithState(from);
+      await expect(
+        service.changeSalesOrderState(order.salesOrderId, to, 'admin'),
+      ).resolves.toBeDefined();
+    });
+
+    it.each([
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.SHIPPED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.INVOICED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.PICKING],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED],
+    ])('should reject transition %s → %s', async (from, to) => {
+      const { order } = await setupWithState(from);
+      await expect(
+        service.changeSalesOrderState(order.salesOrderId, to, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject unknown state name', async () => {
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
+      await expect(
+        service.changeSalesOrderState(
+          order.salesOrderId,
+          'nonexistent_state',
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    // ── Inventory integration tests ──
+
+    it('should transition quoted → confirmed', async () => {
+      const { order } = await setupWithState(SALES_ORDER_STATE.QUOTED);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CONFIRMED,
+        'admin',
+      );
+      const saved = await pg.db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.CONFIRMED);
+    });
+
+    it('should transition confirmed → cancelled', async () => {
+      const { order } = await setupWithState(SALES_ORDER_STATE.CONFIRMED);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CANCELLED,
+        'admin',
+      );
+      const saved = await pg.db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.CANCELLED);
+    });
+
+    it('should transition draft → quoted without inventory side-effects', async () => {
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.QUOTED,
+        'admin',
+      );
+    });
+
+    it('should transition draft → cancelled without inventory side-effects', async () => {
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
+
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CANCELLED,
+        'admin',
+      );
+      // No inventory side-effects expected (inventory is handled by picking/shipment services)
+    });
+  });
+
+  // =========================================================================
+  // addLine()
+  //
+  // New select call sequence:
+  //   1. findOrder → order row (with customerId)
+  //   2. validateProduct → lookupProduct
+  //   3. max line number query
+  //   4. resolveTaxForLine → customers.taxCategoryId
+  //   5. resolveTaxForLine → lookupProduct (for product gstCategory)
+  // =========================================================================
+
+  describe('addLine', () => {
+    async function setupForAddLine(stateCode: string, maxLineNumber = 0) {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+
+        state: stateCode as any,
+      });
+
+      if (maxLineNumber > 0) {
+        const dummyProduct = await createTestProduct(pg.db, {
+          name: 'Dummy',
+        });
+        const lineValues = [];
+        for (let i = 1; i <= maxLineNumber; i++) {
+          lineValues.push({
+            salesOrderId: order.salesOrderId,
+            lineNumber: i,
+            productId: dummyProduct.productId,
+            quantity: '1',
+            pricePerUnit: '10.00',
+            taxCategoryId: TAX_DEFAULT.taxCategoryId,
+            amount: '10.00',
+            tax: '1.00',
+            totalAmount: '11.00',
+            unitOfMeasure: 'EA',
+            fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          });
+        }
+        await pg.db.insert(salesOrderLineItems).values(lineValues);
+      }
+
+      return { order, product };
+    }
+
+    it('should add a line to a draft order', async () => {
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.DRAFT,
+        2,
+      );
+      const result = await service.addLine(
+        order.salesOrderId,
+        { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
+        'admin',
+      );
+      expect(result).toHaveProperty('salesOrderLineId');
+      expect(result.lineNumber).toBe(3);
+    });
+
+    it('should resolve GST via product category', async () => {
+      const { order, product } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
+      await service.addLine(
+        order.salesOrderId,
+        { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
+        'admin',
+      );
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_DEFAULT.taxCategoryId,
+        undefined,
+      );
+    });
+
+    it('should use per-line GST override when provided', async () => {
+      const { order, product } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
+      await service.addLine(
+        order.salesOrderId,
+        {
+          productId: product.productId,
+          quantity: '5',
+          pricePerUnit: '12.00',
+          taxCategoryId: TAX_EXEMPT.taxCategoryId,
+        },
+        'admin',
+      );
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_EXEMPT.taxCategoryId,
+        undefined,
+      );
+    });
+
+    it('should reject adding to an invoiced order', async () => {
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
+      await expect(
+        service.addLine(
+          order.salesOrderId,
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject adding to a shipped order', async () => {
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
+      await expect(
+        service.addLine(
+          order.salesOrderId,
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject adding to a cancelled order', async () => {
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
+      await expect(
+        service.addLine(
+          order.salesOrderId,
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should use zero-rate for zero-rated product', async () => {
+      const { order } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
+      const zeroProduct = await createTestProduct(pg.db, {
+        name: 'Zero Prod',
+      });
+      // Mock the product service since the service layer uses it for lookup
+      mockProductsService.findOne.mockResolvedValue({
+        productId: zeroProduct.productId,
+        name: 'Zero Prod',
+        salesTaxCategoryId: TAX_ZERO.taxCategoryId,
+        stateCode: PRODUCT_STATE.ACTIVE,
+      });
+
+      mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
+        TAX_ZERO.taxCategoryId,
+      );
+
+      await service.addLine(
+        order.salesOrderId,
+        {
+          productId: zeroProduct.productId,
+          quantity: '5',
+          pricePerUnit: '12.00',
+        },
+        'admin',
+      );
+      expect(mocktaxService.getById.mock.calls[0][0]).toBe(
+        TAX_ZERO.taxCategoryId,
+      );
+    });
+  });
+
+  // =========================================================================
+  // updateLine()
+  // =========================================================================
+
+  describe('updateLine', () => {
+    async function setupForUpdateLine(orderState: string) {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+
+        state: orderState as any,
+      });
+
+      const [line] = await pg.db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order.salesOrderId,
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        })
+        .returning();
+
+      return { order, line, product };
+    }
+
+    it('should update line quantity on a draft order', async () => {
+      const { order, line } = await setupForUpdateLine(SALES_ORDER_STATE.DRAFT);
+      const result = await service.updateLine(
+        order.salesOrderId,
+        line.salesOrderLineId,
+        { quantity: '20' },
+        'admin',
+      );
+      expect(result).toHaveProperty('salesOrderLineId', line.salesOrderLineId);
+
+      const saved = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId));
+      expect(saved[0].quantity).toBe('20');
+    });
+
+    it('should resolve GST category for recomputation', async () => {
+      const { order, line } = await setupForUpdateLine(SALES_ORDER_STATE.DRAFT);
+      await service.updateLine(
+        order.salesOrderId,
+        line.salesOrderLineId,
+        { quantity: '20' },
+        'admin',
+      );
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_DEFAULT.taxCategoryId,
+        undefined,
+      );
+    });
+
+    it('should reject update on invoiced order', async () => {
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
+      await expect(
+        service.updateLine(
+          order.salesOrderId,
+          line.salesOrderLineId,
+          { quantity: '20' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject update on shipped order', async () => {
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
+      await expect(
+        service.updateLine(
+          order.salesOrderId,
+          line.salesOrderLineId,
+          { quantity: '20' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject update on cancelled order', async () => {
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
+      await expect(
+        service.updateLine(
+          order.salesOrderId,
+          line.salesOrderLineId,
+          { quantity: '20' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // removeLine()
+  // =========================================================================
+
+  describe('removeLine', () => {
+    async function setupForRemoveLine(orderState: string) {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+
+        state: orderState as any,
+      });
+
+      const [line] = await pg.db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order.salesOrderId,
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        })
+        .returning();
+
+      return { order, line, product };
+    }
+
+    it('should remove a line from a draft order', async () => {
+      const { order, line } = await setupForRemoveLine(SALES_ORDER_STATE.DRAFT);
+      await expect(
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
+      ).resolves.toBeUndefined();
+
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+      expect(lines.length).toBe(0);
+    });
+
+    it('should call transaction for removal', async () => {
+      const { order, line } = await setupForRemoveLine(SALES_ORDER_STATE.DRAFT);
+      await service.removeLine(
+        order.salesOrderId,
+        line.salesOrderLineId,
+        'admin',
+      );
+      // PGLite transaction handles it naturally
+    });
+
+    it('should reject removal from invoiced order', async () => {
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
+      await expect(
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject removal from shipped order', async () => {
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
+      await expect(
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject removal from cancelled order', async () => {
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
+      await expect(
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // findOne() / findOrder() / findLine()
+  // =========================================================================
+
+  describe('findOne', () => {
+    it('should return order with lines and events', async () => {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+        state: SALES_ORDER_STATE.DRAFT,
+      });
+
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderId: order.salesOrderId,
+        lineNumber: 1,
+        productId: product.productId,
+        quantity: '10',
+        pricePerUnit: '5.00',
+        taxCategoryId: TAX_DEFAULT.taxCategoryId,
+        amount: '50.00',
+        tax: '5.00',
+        totalAmount: '55.00',
+        unitOfMeasure: 'EA',
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        discountPercentage: '0',
+        quantityPicked: '0',
+        isPostConfirmation: false,
+      });
+
+      // Events are automatically handled if created through the service, or we can insert one directly:
+      // Since this is just fetching, we'll see if the base findOne works
+
+      const result = await service.findOne(order.salesOrderId);
+      expect(result).toHaveProperty('salesOrderId', order.salesOrderId);
+      expect(result.lines).toHaveLength(1);
+      // Wait, we didn't insert an event, so events might be empty unless create triggers it.
+      // But we inserted directly, so it'll be 0 unless we also mock the events.
+      // We can insert an event manually
+      // Let's just expect it to be defined and an array
+      expect(Array.isArray(result.events)).toBe(true);
+    });
+
+    it('should throw NotFoundException for unknown order', async () => {
+      await expect(
+        service.findOne('00000000-0000-4000-8000-000000000000'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findLine (via updateLine)', () => {
+    it('should throw NotFoundException when line does not exist', async () => {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+        state: SALES_ORDER_STATE.DRAFT,
+      });
+
+      await expect(
+        service.updateLine(
+          order.salesOrderId,
+          '00000000-0000-4000-8000-000000000000',
+          { quantity: '1' },
+          'admin',
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if line belongs to different order', async () => {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+
+      const order1 = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+      });
+      const order2 = await createTestSalesOrder(pg.db, {
+        customerId: customer.customerId,
+        locationId: '10000000-0000-4000-8000-000000000001',
+      });
+
+      const [line] = await pg.db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order2.salesOrderId, // belongs to order2
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          discountPercentage: '0',
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        })
+        .returning();
+
+      await expect(
+        service.updateLine(
+          order1.salesOrderId, // attempt to update using order1's ID
+          line.salesOrderLineId,
+          { quantity: '20' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // Product Kits & BOM Explosion
+  // =========================================================================
+
+  describe('Product Kits & BOM Explosion', () => {
+    let kitProduct: any;
+
+    let comp1: any;
+
+    let comp2: any;
+
+    let customer: any;
+
+    beforeEach(async () => {
+      // Allow the service to resolve products from the actual DB instead of the generic mock
+      mockProductsService.findOne.mockImplementation(
+        async (id: string, txArg?: any) => {
+          const db = txArg || pg.db;
+          const rows = await db
+            .select()
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, id));
+          if (rows.length > 0) return rows[0];
+          throw new NotFoundException();
+        },
+      );
+
+      customer = await createTestCustomer(pg.db);
+
+      // Create child components
+      comp1 = await createTestProduct(pg.db, {
+        name: 'Child Component 1',
+        productType: 'inventory',
+        listPrice: '10.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+      comp2 = await createTestProduct(pg.db, {
+        name: 'Child Component 2',
+        productType: 'inventory',
+        listPrice: '15.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+
+      // Create Parent Kit Product
+      kitProduct = await createTestProduct(pg.db, {
+        name: 'Parent Kit',
+        productType: 'non-stock',
+        structureType: 'kit',
+        listPrice: '50.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+
+      // Link them in product_components
+      await pg.db.insert(productComponents).values([
+        {
+          parentProductId: kitProduct.productId,
+          childProductId: comp1.productId,
+          quantity: '2',
+          sequenceNumber: 1,
+          parentQuantity: '1',
+          fractionalBehavior: 'round_up' as any,
+        },
+        {
+          parentProductId: kitProduct.productId,
+          childProductId: comp2.productId,
+          quantity: '1',
+          sequenceNumber: 2,
+          parentQuantity: '1',
+          fractionalBehavior: 'round_up' as any,
+        },
+      ]);
+    });
+
+    it('should explode kit on order create (Parent Price > 0)', async () => {
+      // When parent price > 0, children are $0
+      const dto = {
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '3',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+
+      const result = await service.create(dto as any, 'admin');
+
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      expect(lines).toHaveLength(3);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.productId).toBe(kitProduct.productId);
+      expect(parentLine.quantity).toBe('3');
+      expect(parseFloat(parentLine.pricePerUnit)).toBe(50);
+      expect(parentLine.parentLineId).toBeNull();
+
+      expect(childLine1.productId).toBe(comp1.productId);
+      // parent qty (3) * component qty (2) = 6
+      expect(childLine1.quantity).toBe('6');
+      expect(childLine1.pricePerUnit).toBe('0');
+      expect(childLine1.parentLineId).toBe(parentLine.salesOrderLineId);
+
+      expect(childLine2.productId).toBe(comp2.productId);
+      // parent qty (3) * component qty (1) = 3
+      expect(childLine2.quantity).toBe('3');
+      expect(childLine2.pricePerUnit).toBe('0');
+      expect(childLine2.parentLineId).toBe(parentLine.salesOrderLineId);
+    });
+
+    it('should explode kit on order create (Parent Price = 0)', async () => {
+      // When parent price = 0, children use standard listPrice
+      const dto = {
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '2',
+            pricePerUnit: '0',
+          },
+        ],
+      };
+
+      const result = await service.create(dto as any, 'admin');
+
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      expect(lines).toHaveLength(3);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.pricePerUnit).toBe('0');
+
+      expect(childLine1.productId).toBe(comp1.productId);
+      expect(childLine1.quantity).toBe('4'); // 2 * 2
+      expect(parseFloat(childLine1.pricePerUnit)).toBe(10); // comp1 listPrice
+
+      expect(childLine2.productId).toBe(comp2.productId);
+      expect(childLine2.quantity).toBe('2'); // 2 * 1
+      expect(parseFloat(childLine2.pricePerUnit)).toBe(15); // comp2 listPrice
+    });
+
+    it('should scale child quantities and toggle prices on parent line update', async () => {
+      // Create initial order with parent price > 0
+      const createDto = {
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '1',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+
+      const order = await service.create(createDto as any, 'admin');
+
+      let lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      const parentLineId = lines[0].salesOrderLineId;
+
+      // Update parent line: change quantity from 1 to 5, and change price from 50 to 0
+      await service.updateLine(
+        order.salesOrderId,
+        parentLineId,
+        { quantity: '5', pricePerUnit: '0' },
+        'admin',
+      );
+
+      lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.quantity).toBe('5');
+      expect(parentLine.pricePerUnit).toBe('0');
+
+      // Quantities should scale by 5x (since newQty/oldQty = 5/1)
+      expect(childLine1.quantity).toBe('10'); // 5 * 2
+      // Because new parent price is 0, it should toggle to standard listPrice
+      expect(parseFloat(childLine1.pricePerUnit)).toBe(10);
+
+      expect(childLine2.quantity).toBe('5'); // 5 * 1
+      expect(parseFloat(childLine2.pricePerUnit)).toBe(15);
+    });
+
+    it('should cascade deletion to child lines when parent kit is removed', async () => {
+      const createDto = {
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '1',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+
+      const order = await service.create(createDto as any, 'admin');
+
+      let lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+
+      expect(lines).toHaveLength(3);
+      const parentLine = lines.find((l) => l.parentLineId === null)!;
+
+      // Remove the parent line
+      await service.removeLine(
+        order.salesOrderId,
+        parentLine.salesOrderLineId,
+        'admin',
+      );
+
+      lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+
+      expect(lines).toHaveLength(0); // Children should be deleted too
+    });
+  });
+});

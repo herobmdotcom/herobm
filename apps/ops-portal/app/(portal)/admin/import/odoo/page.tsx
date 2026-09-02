@@ -1,0 +1,576 @@
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/shared/Button';
+import * as api from '@herobm/sdk';
+import { reportError } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
+import { ExecuteEltDtoSource } from '@herobm/sdk';
+import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
+import { getErrorMessage } from '@herobm/shared';
+
+type Step = 'config' | 'preview' | 'executing' | 'finalisation';
+
+function cleanTranslation(val: unknown): string {
+  if (!val) return '';
+  if (typeof val === 'object') {
+    const obj = val as Record<string, string>;
+    return obj['en_US'] || obj['en_GB'] || obj['en_AU'] || Object.values(obj)[0] || '';
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const jsonStr = trimmed.replace(/'/g, '"');
+        const parsed = JSON.parse(jsonStr);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return cleanTranslation(parsed);
+        }
+      } catch {
+        // fallback regex parsing when json parse fails
+        const match = trimmed.match(/:\s*['"]([^'"]+)['"]/);
+        if (match) return match[1];
+      }
+    }
+    return trimmed;
+  }
+  return String(val);
+}
+
+export default function OdooImportPage() {
+  const router = useRouter();
+  const t = useTranslations('setup.dataImport');
+  const tExt = useTranslations('setup.extraction');
+  
+  const [step, setStep] = useState<Step>('config');
+  const [loading, setLoading] = useState(false);
+  
+  const [config, setConfig] = useState({
+    host: '',
+    port: '5432',
+    database: '',
+    username: '',
+    password: '',
+    resumeExtraction: false,
+    defaultLocationCode: '',
+    baseCurrency: 'EUR',
+    defaultTaxCategoryCode: ''
+  });
+  
+  const [logs, setLogs] = useState<string[]>([]);
+  const [status, setStatus] = useState<'pending' | 'starting' | 'running' | 'completed' | 'failed'>('pending');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [completedTables, setCompletedTables] = useState<string[] | null>(null);
+  const [odooLocations, setOdooLocations] = useState<{ code: string; name: string }[]>([]);
+  const [odooTaxCategories, setOdooTaxCategories] = useState<{ code: string; name: string; rate: number }[]>([]);
+  const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
+  const [stopping, setStopping] = useState(false);
+  
+  const jobIdRef = useRef<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const isAutoScrollRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    if (isAutoScrollRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView();
+    }
+  }, [logs, status, errorMsg]);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    isAutoScrollRef.current = scrollHeight - scrollTop - clientHeight < 60;
+  };
+
+  useEffect(() => {
+    api.setupControllerGetActiveJob()
+      .then((res) => {
+        if (res.data.jobId && res.data.type === 'odoo') {
+          jobIdRef.current = res.data.jobId;
+          setStep('executing');
+          startPolling(res.data.jobId);
+        }
+      })
+      .catch((err) => reportError(err, 'AdminImportOdooPage.getActiveJob'));
+  }, []);
+
+  useEffect(() => {
+    if (step === 'preview') {
+      api.setupControllerGetResumeStateOdoo()
+        .then((res) => setCompletedTables(res.data.completedTables || []))
+        .catch(() => setCompletedTables([]));
+    }
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, [step]);
+
+  const isFormValid = config.host.trim() !== '' && 
+                      config.port.trim() !== '' && 
+                      config.database.trim() !== '' && 
+                      config.username.trim() !== '';
+
+  const handleTestConnection = async () => {
+    try {
+      setLoading(true);
+      const res = await api.setupControllerTestOdoo({
+        host: config.host,
+        port: parseInt(config.port, 10),
+        database: config.database,
+        username: config.username,
+        password: config.password,
+      });
+      const result = res.data;
+      
+      if (result.success === false) {
+        toast.error(result.message || tExt('toasts.connectionFailed'));
+      } else {
+        toast.success(result.message || tExt('toasts.connectionVerified'));
+        const preview = result.preview as Record<string, unknown> | undefined;
+        const locs = ((preview?.locations || []) as { code: string; name: string }[]).map(l => ({
+          ...l,
+          name: cleanTranslation(l.name),
+        }));
+        setOdooLocations(locs);
+        if (locs.length > 0) {
+           setConfig(prev => ({ ...prev, defaultLocationCode: locs[0].code }));
+        }
+        const mappedCurr = getCurrencyByAbmCode(preview?.baseCurrencyAbmCode as number);
+        if (mappedCurr !== undefined && preview?.baseCurrencyCode !== undefined) {
+           setConfig(prev => ({ ...prev, baseCurrency: cleanTranslation(preview!.baseCurrencyCode) }));
+        }
+        
+        const taxes = ((preview?.taxCategories || []) as { code: string; name: string; rate: number }[]).map(t => ({
+          ...t,
+          name: cleanTranslation(t.name),
+        }));
+        setOdooTaxCategories(taxes);
+        if (taxes.length > 0) {
+          // Find tax category with highest rate > 0
+          const sortedTaxes = [...taxes].sort((a, b) => b.rate - a.rate);
+          const highestTax = sortedTaxes.find(t => t.rate > 0) || sortedTaxes[0];
+          setConfig(prev => ({ ...prev, defaultTaxCategoryCode: highestTax.code }));
+        }
+        
+        setStep('preview');
+      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || tExt('toasts.apiError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartElt = async () => {
+    try {
+      const executePayload = {
+        dbConfig: {
+          host: config.host,
+          database: config.database,
+          username: config.username,
+          password: config.password,
+          port: parseInt(config.port, 10)
+        },
+        source: ExecuteEltDtoSource.odoo,
+        resumeExtraction: config.resumeExtraction,
+        defaultLocationCode: config.defaultLocationCode,
+        baseCurrency: config.baseCurrency,
+        defaultTaxCategoryCode: config.defaultTaxCategoryCode,
+      };
+
+      setStep('executing');
+      setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
+      setStatus('starting');
+
+      const res = await api.setupControllerExecuteElt(executePayload);
+      jobIdRef.current = res.data.jobId;
+      setStatus('running');
+      startPolling(res.data.jobId);
+    } catch (err: unknown) {
+      setStatus('failed');
+      setErrorMsg(getErrorMessage(err) || 'Failed to start ELT execution.');
+      setLogs(prev => [...prev, `[ERROR]: Failed to start ELT execution.`]);
+    }
+  };
+
+  const handleStopJob = async () => {
+    if (!jobIdRef.current) return;
+    try {
+      setStopping(true);
+      await api.setupControllerStopJob(jobIdRef.current);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to stop job');
+    } finally {
+      setStopping(false);
+    }
+  };
+
+  const startPolling = (jobId: string) => {
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const progressRes = await api.setupControllerGetProgress(jobId);
+        const progress = progressRes.data;
+        if (progress) {
+          if (progress.logs && progress.logs.length > 0) {
+             setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progress.logs]);
+          }
+          
+          if (progress.status === 'completed' || progress.status === 'done') {
+            setStatus('completed');
+            clearInterval(pollTimerRef.current);
+            try {
+              const stateRes = await api.setupControllerGetResumeStateOdoo();
+              const count = stateRes.data.completedTables?.length || 0;
+              setLogs(prev => [...prev, `Extraction finished. Successfully extracted ${count} tables.`]);
+            } catch(e) { /* ignore */ }
+          } else if (progress.status === 'failed') {
+            setStatus('failed');
+            // Extract error from logs if available, else generic error
+            const errorLog = progress.logs?.find((l: string) => l.includes('[ERROR]')) || 'Execution failed on backend.';
+            setErrorMsg(errorLog);
+            clearInterval(pollTimerRef.current);
+            try {
+              const stateRes = await api.setupControllerGetResumeStateOdoo();
+              const count = stateRes.data.completedTables?.length || 0;
+              setLogs(prev => [...prev, `Job stopped or failed. Safely extracted ${count} tables before terminating.`]);
+            } catch(e) { /* ignore */ }
+          }
+        }
+      } catch (err: unknown) {
+        if ((err as { status?: number })?.status === 404 || getErrorMessage(err)?.includes('not found') || getErrorMessage(err)?.toLowerCase().includes('job not found')) {
+          setStatus('failed');
+          setErrorMsg('Job not found. The server might have restarted.');
+          clearInterval(pollTimerRef.current);
+        } else if ((err as { status?: number })?.status === 409) {
+          reportError(err, 'Polling error');
+        }
+      }
+    }, 2000);
+  };
+
+  return (
+    <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
+      <div className="flex flex-col items-center justify-center text-center mb-8">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
+          {step === 'config' ? t('connectSourceSystem') : 
+           step === 'finalisation' ? t('titleFinalisation') :
+           status === 'pending' ? t('titlePending') :
+           status === 'failed' ? t('titleFailed') : 
+           status === 'completed' ? t('titleCompleted') : 
+           t('titleRunning')}
+        </h1>
+        <p className="text-[var(--text-muted)]">
+          {step === 'config' ? t('connectSourceSystemDescOdoo') :
+           step === 'finalisation' ? t('descFinalisation') :
+           status === 'pending' ? t('descPending') :
+           status === 'failed' ? t('descFailed') : 
+           status === 'completed' ? t('descCompleted') : 
+           t('descRunning')}
+        </p>
+      </div>
+
+      {step === 'config' && (
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.host')}</label>
+              <input
+                type="text"
+                className="input w-full"
+                placeholder="localhost"
+                value={config.host}
+                onChange={(e) => setConfig({ ...config, host: e.target.value })}
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.port')}</label>
+              <input
+                type="text"
+                className="input w-full"
+                placeholder="5432"
+                value={config.port}
+                onChange={(e) => setConfig({ ...config, port: e.target.value })}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.database')}</label>
+            <input
+              type="text"
+              className="input w-full"
+              placeholder="odoo"
+              value={config.database}
+              onChange={(e) => setConfig({ ...config, database: e.target.value })}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.username')}</label>
+              <input
+                type="text"
+                className="input w-full"
+                placeholder="odoo"
+                value={config.username}
+                onChange={(e) => setConfig({ ...config, username: e.target.value })}
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 tracking-wide uppercase">{tExt('fields.password')}</label>
+              <input
+                type="password"
+                className="input w-full"
+                value={config.password || ''}
+                onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6 flex items-center justify-end border-t border-[var(--border)]">
+            <Button
+              variant="primary"
+              onClick={handleTestConnection}
+              disabled={!isFormValid || loading}
+              className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
+            >
+              {loading ? tExt('testing') : tExt('testConnection')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 'preview' && (
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+          
+          <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-[var(--border)]">
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('defaultLocation')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('defaultLocationDescOdoo')}</p>
+              <select
+                className="select w-full"
+                value={config.defaultLocationCode}
+                onChange={(e) => setConfig({ ...config, defaultLocationCode: e.target.value })}
+              >
+                {odooLocations.map(loc => (
+                  <option key={loc.code} value={loc.code}>{loc.name} ({loc.code})</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('systemBaseCurrency')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('systemBaseCurrencyDescOdoo')}</p>
+              <select
+                className="select w-full"
+                value={config.baseCurrency}
+                onChange={(e) => setConfig({ ...config, baseCurrency: e.target.value })}
+              >
+                {CURRENCIES.map(curr => (
+                  <option key={curr.code} value={curr.code}>{curr.name} ({curr.code})</option>
+                ))}
+              </select>
+            </div>
+            
+            {odooTaxCategories.length > 0 && (
+              <div className="col-span-2 mt-2">
+                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('defaultTaxCategory')}</h2>
+                <p className="text-sm text-[var(--text-muted)] mb-4">{t('defaultTaxCategoryDesc')}</p>
+                <select
+                  className="select w-full"
+                  value={config.defaultTaxCategoryCode}
+                  onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
+                >
+                  {odooTaxCategories.map(tax => (
+                    <option key={tax.code} value={tax.code}>{t('taxFormat', { name: tax.name, rate: tax.rate, code: tax.code })}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('sections.executionOptions')}</h2>
+          
+          <div className="flex flex-col gap-4 mb-8">
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.resumeExtraction}>
+              <input 
+                type="radio" 
+                name="resumeMode" 
+                checked={config.resumeExtraction === true}
+                onChange={() => setConfig({ ...config, resumeExtraction: true })}
+                className="mt-1 accent-[var(--accent)]" 
+              />
+              <div>
+                <div className="font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  {t('options.resumeModeTitle')}
+                  {completedTables !== null && (
+                    <span className="bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold px-2 py-0.5 rounded-full">
+                      {t('options.tablesCached', { count: completedTables.length })}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-[var(--text-muted)]">{t('options.resumeModeDesc')}</div>
+                
+                {completedTables !== null && completedTables.length > 0 && (
+                  <div className="mt-3 text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded p-2 max-h-24 overflow-y-auto">
+                    <strong>{t('options.alreadyStaged')}</strong> 
+                    {completedTables.join(', ')}
+                  </div>
+                )}
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={!config.resumeExtraction}>
+              <input 
+                type="radio" 
+                name="resumeMode" 
+                checked={config.resumeExtraction === false}
+                onChange={() => setConfig({ ...config, resumeExtraction: false })}
+                className="mt-1 accent-[var(--accent)]" 
+              />
+              <div>
+                <div className="font-bold text-[var(--text-primary)]">{t('options.fullExtractionTitle')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('options.fullExtractionDesc')}</div>
+              </div>
+            </label>
+          </div>
+
+          <div className="flex justify-between border-t border-[var(--border)] pt-6">
+            <Button variant="ghost"
+              onClick={() => setStep('config')}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium"
+            >
+              {t('back')}
+            </Button>
+            <Button variant="primary"
+              onClick={handleStartElt}
+              className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
+            >
+              {t('buttons.startExecution')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 'executing' && (
+      <div className="bg-[#0f172a] rounded-xl overflow-hidden flex-1 mb-6 flex flex-col font-mono text-sm border border-slate-800 animate-in fade-in">
+        <div className="bg-[#1e293b] px-4 py-3 flex items-center gap-2 border-b border-slate-800">
+          <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+          <div className="ml-4 text-slate-400 text-xs font-medium flex-1">{t('sections.terminal')}</div>
+          {status === 'running' && (
+            <Button variant="ghost" 
+              onClick={handleStopJob}
+              disabled={stopping}
+              className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
+            >
+              {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              {stopping ? 'Stopping...' : 'Stop Job'}
+            </Button>
+          )}
+        </div>
+        <div 
+          ref={scrollContainerRef} 
+          onScroll={handleScroll} 
+          className="p-6 flex-1 overflow-y-auto"
+        >
+          {logs.map((log, i) => (
+            <div key={i} className="flex gap-4 mb-3 text-slate-300">
+              <span className="text-[#0ea5e9] select-none">{'>'}</span>
+              <span>{log}</span>
+            </div>
+          ))}
+          {status === 'running' && (
+            <div className="flex gap-4 mb-3">
+              <span className="text-[#0ea5e9] select-none">{'>'}</span>
+              <span className="w-2.5 h-4 bg-[#10b981] animate-pulse"></span>
+            </div>
+          )}
+          {status === 'failed' && errorMsg && (
+            <div className="flex gap-4 mb-3 text-red-400">
+              <span className="text-[#0ea5e9] select-none">{'>'}</span>
+              <span>{t('errors.criticalError', { message: errorMsg })}</span>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+      )}
+
+      {step === 'finalisation' && (
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          </div>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t('importSuccessful')}</h2>
+          <p className="text-[var(--text-muted)] mb-8">{t('dbPopulated')}</p>
+
+          {importSummary && (
+            <div className="grid grid-cols-3 gap-6 mb-8 text-left">
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('products')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.products.toLocaleString()}</div>
+              </div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('customers')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.customers.toLocaleString()}</div>
+              </div>
+              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+                <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('orders')}</div>
+                <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.orders.toLocaleString()}</div>
+              </div>
+            </div>
+          )}
+
+          <Button variant="primary"
+            onClick={() => router.push('/')}
+            className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors w-full"
+          >
+            {t('buttons.goToDashboard')}
+          </Button>
+        </div>
+      )}
+      
+      {step === 'executing' && status === 'completed' && (
+        <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
+           <Button variant="primary"
+            onClick={() => {
+              api.setupControllerGetImportSummary().then((summaryRes) => {
+                 setImportSummary(summaryRes.data);
+                 setStep('finalisation');
+              }).catch(err => {
+                 toast.error('Failed to load import summary: ' + getErrorMessage(err));
+                 reportError(err, 'OdooImportPage.pollProgress.importSummary');
+                 setStep('finalisation');
+              });
+            }}
+            className="btn btn-primary px-8 py-3 rounded-lg font-bold transition-colors"
+           >
+             {t('buttons.continueToSummary')}
+           </Button>
+        </div>
+      )}
+
+      {step === 'executing' && status === 'failed' && (
+        <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
+           <Button variant="secondary"
+            onClick={() => { setStep('config'); setStatus('pending'); }}
+            className="btn btn-secondary px-8 py-3 rounded-lg font-bold transition-colors"
+           >
+             {t('buttons.retryImport')}
+           </Button>
+        </div>
+      )}
+    </div>
+  );
+}
