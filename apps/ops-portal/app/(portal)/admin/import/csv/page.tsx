@@ -160,7 +160,7 @@ export default function CsvImportPage() {
   return (
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
           {step === 'config' ? t('titleConfig') : 
            step === 'preview' ? t('titlePreview') :
            step === 'finalisation' ? t('titleFinalisation') :
@@ -169,7 +169,7 @@ export default function CsvImportPage() {
            status === 'completed' ? t('titleCompleted') : 
            t('titleRunning')}
         </h1>
-        <p className="text-slate-500">
+        <p className="text-[var(--text-muted)]">
           {step === 'config' ? t('descConfig') :
            step === 'preview' ? t('descPreview') :
            step === 'finalisation' ? t('descFinalisation') :
@@ -439,13 +439,13 @@ export default function CsvImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <Button variant="secondary"
             onClick={() => { setStep('config'); setStatus('pending'); }}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
+            className="btn btn-secondary px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('retryImport')}
            </Button>
            <Button variant="ghost"
             onClick={() => router.push('/')}
-            className="text-slate-500 hover:text-slate-800 underline"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] underline"
           >
             {t('returnToDashboard')}
           </Button>
