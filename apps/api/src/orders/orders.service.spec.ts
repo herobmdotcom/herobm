@@ -15,6 +15,7 @@ import {
   actors,
   salesInvoices,
   salesInvoiceLines,
+  opportunities,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -23,6 +24,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ACTOR_STATE,
+  OPPORTUNITY_STATE,
 } from '@herobm/shared';
 
 describe('OrdersService', () => {
@@ -548,6 +550,51 @@ describe('OrdersService', () => {
       expect(
         customerResult.some((r: any) => r.customerName === 'Acme Corp'),
       ).toBe(true);
+    });
+  });
+
+  describe('findAll with opportunityId filter', () => {
+    it('should filter sales orders by opportunityId and return opportunity metadata', async () => {
+      // Create Opportunity
+      const [opp] = await pg.db
+        .insert(opportunities)
+        .values({
+          stateCode: OPPORTUNITY_STATE.ACTIVE,
+          name: 'Metro Rail Project',
+          type: 'commercial',
+          status: 'proposal',
+        })
+        .returning();
+
+      // Create linked sales order
+      const [linkedOrder] = await pg.db
+        .insert(salesOrders)
+        .values({
+          orderNumber: 'ORD-OPP-001',
+          name: 'Linked Quote',
+          customerId: ACCOUNT_ID,
+          opportunityId: opp.opportunityId,
+          stateCode: SALES_ORDER_STATE.DRAFT,
+          source: 'app',
+          createdBy: 'admin',
+          fulfillmentLocationId: LOCATION_ID,
+          currencyCode: 'EUR',
+          exchangeRate: '1.0',
+          discrepanciesAcknowledged: false,
+        })
+        .returning();
+
+      // Query with opportunityId filter
+      const result = await service.findAll({
+        opportunityId: opp.opportunityId,
+        page: 1,
+        limit: 10,
+      } as any);
+
+      expect(result.data.length).toBe(1);
+      expect(result.data[0].id).toBe(linkedOrder.salesOrderId);
+      expect(result.data[0].opportunityId).toBe(opp.opportunityId);
+      expect(result.data[0].opportunityName).toBe('Metro Rail Project');
     });
   });
 });

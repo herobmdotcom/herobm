@@ -7,15 +7,18 @@ import {
   numeric,
 } from 'drizzle-orm/pg-core';
 import { herobmCore, validCurrencyCheck } from './core.schema';
-import { users } from './index';
+import { users } from './system.schema';
 import { glAccounts, costCenters, activities } from './gl.schema';
 import { taxPositions } from './tax.schema';
 import {
   ActorState,
   ContactState,
-  ProjectState,
+  OpportunityState,
   CustomerState,
   SupplierState,
+  CrmActivityType,
+  CrmActivityStatus,
+  CrmActivityPriority,
 } from '@herobm/shared';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +30,7 @@ export const actors = herobmCore.table('actors', {
     .$type<ActorState>()
     .notNull(),
   name: text('name').notNull(),
+  ownerId: uuid('owner_id').references(() => users.userId),
   legalStatus: text('legal_status'),
   headquartersAddressLine1: text('headquarters_address_line1'),
   headquartersAddressLine2: text('headquarters_address_line2'),
@@ -106,34 +110,40 @@ export const actorActorLinks = herobmCore.table('actor_actor_links', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const projects = herobmCore.table('projects', {
-  projectId: uuid('project_id').primaryKey().defaultRandom(),
+export const opportunities = herobmCore.table('opportunities', {
+  opportunityId: uuid('opportunity_id').primaryKey().defaultRandom(),
   stateCode: text('state_code')
-    .$type<ProjectState>()
+    .$type<OpportunityState>()
     .notNull(),
   name: text('name').notNull(),
   status: text('status').notNull(),
   type: text('type').notNull(),
+  estimatedValue: numeric('estimated_value'),
+  currencyCode: text('currency_code'),
+  targetCloseDate: timestamp('target_close_date', { withTimezone: true }),
+  probability: integer('probability'),
+  actualValue: numeric('actual_value'),
+  description: text('description'),
   ownerId: uuid('owner_id').references(() => users.userId),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 
-export const projectNotes = herobmCore.table('project_notes', {
+export const opportunityNotes = herobmCore.table('opportunity_notes', {
   noteId: uuid('note_id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id')
+  opportunityId: uuid('opportunity_id')
     .notNull()
-    .references(() => projects.projectId),
+    .references(() => opportunities.opportunityId),
   content: text('content').notNull(),
   createdById: uuid('created_by_id').references(() => users.userId),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const projectActors = herobmCore.table('project_actors', {
-  projectActorId: uuid('project_actor_id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id')
+export const opportunityActors = herobmCore.table('opportunity_actors', {
+  opportunityActorId: uuid('opportunity_actor_id').primaryKey().defaultRandom(),
+  opportunityId: uuid('opportunity_id')
     .notNull()
-    .references(() => projects.projectId),
+    .references(() => opportunities.opportunityId),
   actorId: uuid('actor_id')
     .notNull()
     .references(() => actors.actorId),
@@ -141,11 +151,11 @@ export const projectActors = herobmCore.table('project_actors', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const projectContacts = herobmCore.table('project_contacts', {
-  projectContactId: uuid('project_contact_id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id')
+export const opportunityContacts = herobmCore.table('opportunity_contacts', {
+  opportunityContactId: uuid('opportunity_contact_id').primaryKey().defaultRandom(),
+  opportunityId: uuid('opportunity_id')
     .notNull()
-    .references(() => projects.projectId),
+    .references(() => opportunities.opportunityId),
   contactId: uuid('contact_id')
     .notNull()
     .references(() => contacts.contactId),
@@ -364,3 +374,37 @@ export const customerDeliveryAddresses = herobmCore.table(
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },
 );
+
+// ---------------------------------------------------------------------------
+// crmActivities (Human Interactions & Follow-up Tasks)
+// ---------------------------------------------------------------------------
+export const crmActivities = herobmCore.table('crm_activities', {
+  activityId: uuid('activity_id').primaryKey().defaultRandom(),
+  type: text('type').$type<CrmActivityType>().notNull(),
+  subject: text('subject').notNull(),
+  description: text('description'),
+  status: text('status').$type<CrmActivityStatus>().notNull(),
+  priority: text('priority').$type<CrmActivityPriority>().notNull(),
+  actorId: uuid('actor_id').references(() => actors.actorId),
+  opportunityId: uuid('opportunity_id').references(() => opportunities.opportunityId),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  assignedToUserId: uuid('assigned_to_user_id').references(() => users.userId),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  completedByUserId: uuid('completed_by_user_id').references(() => users.userId),
+  createdBy: text('created_by').notNull(),
+  createdById: uuid('created_by_id').references(() => users.userId),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+export const crmActivityContacts = herobmCore.table('crm_activity_contacts', {
+  activityContactId: uuid('activity_contact_id').primaryKey().defaultRandom(),
+  activityId: uuid('activity_id')
+    .notNull()
+    .references(() => crmActivities.activityId, { onDelete: 'cascade' }),
+  contactId: uuid('contact_id')
+    .notNull()
+    .references(() => contacts.contactId, { onDelete: 'cascade' }),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+

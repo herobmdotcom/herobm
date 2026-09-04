@@ -49,6 +49,7 @@ export {
   TRANSFER_ORDER_PICK_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  OPPORTUNITY_STATE,
   PROJECT_STATE,
   ACTOR_STATE,
   CONTACT_STATE,
@@ -105,6 +106,7 @@ export type {
   ProductState,
   ActorState,
   ContactState,
+  OpportunityState,
   ProjectState,
   ReconciliationState,
   WorkOrderState,
@@ -208,4 +210,5 @@ export * from './contacts';
 export * from './event-types';
 export * from './ledger-hash';
 export * from './tax';
+export * from './crm';
 

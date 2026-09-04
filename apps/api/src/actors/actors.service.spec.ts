@@ -5,6 +5,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   actors,
   actorContactLinks,
+  actorActorLinks,
   actorNotes,
   contacts,
   users,
@@ -20,6 +21,7 @@ describe('ActorsService', () => {
   const mockUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
+    await pg.db.delete(actorActorLinks);
     await pg.db.delete(actorContactLinks);
     await pg.db.delete(actorNotes);
     await pg.db.delete(actors);
@@ -96,6 +98,24 @@ describe('ActorsService', () => {
       expect(dbRecord).toBeDefined();
       expect(dbRecord?.isTaxRegistered).toBe(false);
     });
+
+    it('should create an actor with an assigned ownerId', async () => {
+      const dto = {
+        name: 'Actor With Owner',
+        ownerId: mockUserId,
+      };
+
+      const result = await service.createActor(dto, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(result.ownerId).toBe(mockUserId);
+
+      const dbRecord = await pg.db.query.actors.findFirst({
+        where: eq(actors.actorId, result.actorId),
+      });
+
+      expect(dbRecord?.ownerId).toBe(mockUserId);
+    });
   });
 
   describe('getActor', () => {
@@ -113,6 +133,25 @@ describe('ActorsService', () => {
 
       expect(result.actorId).toBe(actor.actorId);
       expect(result.name).toBe('Existing Actor');
+    });
+
+    it('should return an actor by ID with populated owner details', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Existing Actor with Owner',
+          isTaxRegistered: false,
+          ownerId: mockUserId,
+        })
+        .returning();
+
+      const result = await service.getActor(actor.actorId);
+
+      expect(result.actorId).toBe(actor.actorId);
+      expect(result.ownerId).toBe(mockUserId);
+      expect(result.owner).toBeDefined();
+      expect(result.ownerDisplayName).toBe('Mock User');
     });
 
     it('should throw NotFoundException if actor not found', async () => {
@@ -148,6 +187,31 @@ describe('ActorsService', () => {
         where: eq(actors.actorId, actor.actorId),
       });
       expect(dbRecord?.name).toBe('New Name');
+    });
+
+    it('should assign and clear an actor owner', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Actor to assign',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const updated = await service.updateActor(
+        actor.actorId,
+        { ownerId: mockUserId },
+        mockUserId,
+      );
+      expect(updated.ownerId).toBe(mockUserId);
+
+      const unassigned = await service.updateActor(
+        actor.actorId,
+        { ownerId: null },
+        mockUserId,
+      );
+      expect(unassigned.ownerId).toBeNull();
     });
 
     it('should throw NotFoundException if actor to update does not exist', async () => {
@@ -312,6 +376,132 @@ describe('ActorsService', () => {
         where: eq(actorContactLinks.actorId, actor.actorId),
       });
       expect(finalLinks.length).toBe(0);
+    });
+  });
+
+  describe('actorActorLinks', () => {
+    it('should add, get, and remove actor links', async () => {
+      const [actorA] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Parent Corp',
+          industry: 'Finance',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [actorB] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Subsidiary Inc',
+          industry: 'Tech',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      // Add link
+      const link = await service.addActorLink(
+        actorA.actorId,
+        {
+          targetActorId: actorB.actorId,
+          linkType: 'subsidiary',
+        },
+        mockUserId,
+      );
+
+      expect(link).toBeDefined();
+      expect(link.sourceActorId).toBe(actorA.actorId);
+      expect(link.targetActorId).toBe(actorB.actorId);
+      expect(link.linkType).toBe('subsidiary');
+      expect(link.targetActor?.name).toBe('Subsidiary Inc');
+
+      // Get links from Actor A's perspective
+      const linksA = await service.getActorLinks(actorA.actorId);
+      expect(linksA.length).toBe(1);
+      expect(linksA[0].linkId).toBe(link.linkId);
+
+      // Get links from Actor B's perspective (it was target)
+      const linksB = await service.getActorLinks(actorB.actorId);
+      expect(linksB.length).toBe(1);
+      expect(linksB[0].linkId).toBe(link.linkId);
+      expect(linksB[0].sourceActor?.name).toBe('Parent Corp');
+
+      // Remove link
+      await service.removeActorLink(actorA.actorId, link.linkId, mockUserId);
+
+      const linksAfter = await service.getActorLinks(actorA.actorId);
+      expect(linksAfter.length).toBe(0);
+    });
+
+    it('should disallow linking an actor to itself', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Solo Corp',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      await expect(
+        service.addActorLink(
+          actor.actorId,
+          {
+            targetActorId: actor.actorId,
+            linkType: 'subsidiary',
+          },
+          mockUserId,
+        ),
+      ).rejects.toThrow('Cannot link an actor to itself');
+    });
+  });
+
+  describe('getActors', () => {
+    it('should filter actors by ownerId and return ownerDisplayName', async () => {
+      const [assignedActor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Assigned Actor',
+          isTaxRegistered: false,
+          ownerId: mockUserId,
+        })
+        .returning();
+
+      const [unassignedActor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Unassigned Actor',
+          isTaxRegistered: false,
+          ownerId: null,
+        })
+        .returning();
+
+      // Filter by specific ownerId
+      const ownerList = await service.getActors({ ownerId: mockUserId });
+      expect(
+        ownerList.data.some((a) => a.actorId === assignedActor.actorId),
+      ).toBe(true);
+      expect(
+        ownerList.data.some((a) => a.actorId === unassignedActor.actorId),
+      ).toBe(false);
+
+      const found = ownerList.data.find(
+        (a) => a.actorId === assignedActor.actorId,
+      );
+      expect(found?.ownerDisplayName).toBe('Mock User');
+
+      // Filter by unassigned
+      const unassignedList = await service.getActors({ ownerId: 'unassigned' });
+      expect(
+        unassignedList.data.some((a) => a.actorId === unassignedActor.actorId),
+      ).toBe(true);
+      expect(
+        unassignedList.data.some((a) => a.actorId === assignedActor.actorId),
+      ).toBe(false);
     });
   });
 });

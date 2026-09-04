@@ -290,4 +290,34 @@ describe('OrderDetailsCard - Document Actions', () => {
       'sales-order'
     );
   });
+
+  it('renders linked opportunity with navigation link when opportunityId is present', () => {
+    render(
+      <OrderDetailsCard
+        order={{
+          ...mockOrder,
+          opportunityId: 'opp-456',
+          opportunityName: 'Metro Rail Expansion',
+        }}
+        isOrderDetailsEditable={false}
+        editName="Test Order"
+        setEditName={jest.fn()}
+        editPO="PO-123"
+        setEditPO={jest.fn()}
+        editNotes=""
+        setEditNotes={jest.fn()}
+        editAnalysisCode="PROMO"
+        setEditAnalysisCode={jest.fn()}
+        saveHeader={jest.fn()}
+        onEmailDocumentClick={jest.fn()}
+        reportError={jest.fn()}
+        setError={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText('Opportunity')).toBeInTheDocument();
+    const oppLink = screen.getByRole('link', { name: 'Metro Rail Expansion' });
+    expect(oppLink).toBeInTheDocument();
+    expect(oppLink).toHaveAttribute('href', '/crm/opportunities/opp-456');
+  });
 });

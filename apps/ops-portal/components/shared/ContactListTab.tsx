@@ -12,7 +12,7 @@ export type ContactLinkWithDetails = any;
 
 interface ContactListTabProps {
   entityId: string;
-  entityType: 'actor' | 'customer' | 'supplier' | 'project';
+  entityType: 'actor' | 'customer' | 'supplier' | 'opportunity';
   contacts: ContactLinkWithDetails[];
   onContactAdded: () => void;
 }
@@ -26,8 +26,8 @@ export function ContactListTab({ entityId, entityType, contacts, onContactAdded 
   const handleUnlink = async (contactId: string, contactName: string) => {
     if (!window.confirm(`Are you sure you want to unlink ${contactName}?`)) return;
     try {
-      if (entityType === 'project') {
-        await api.projectsControllerRemoveContact(entityId, contactId);
+      if (entityType === 'opportunity') {
+        await api.opportunitiesControllerDeleteContact(entityId, contactId);
       } else {
         // actor, customer, or supplier
         let actorId = entityId;
@@ -93,7 +93,7 @@ export function ContactListTab({ entityId, entityType, contacts, onContactAdded 
           {sortedContacts.length > 0 ? sortedContacts.map((link) => {
             const contact = link.contact;
             if (!contact) return null;
-            const rawRoles = entityType === 'project' ? (link.roles || []) : (link.primaryFor || []);
+            const rawRoles = entityType === 'opportunity' ? (link.roles || []) : (link.primaryFor || []);
             const roles = rawRoles.map((r: unknown) => typeof r === 'object' && r !== null && 'value' in r ? String((r as Record<string, unknown>).value) : String(r));
             return (
               <ContactCard

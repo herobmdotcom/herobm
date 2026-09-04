@@ -41,6 +41,7 @@ import {
   AddSupplierDto,
   CreateProductDto,
   UpdateProductDto,
+  CopyProductDto,
   LinkBinDto,
   ProductResponseDto,
   ProductCostSummaryResponseDto,
@@ -191,6 +192,23 @@ export class ProductsController {
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.update(id, dto, user.username);
+  }
+
+  @Post(':id/copy')
+  @ApiBody({ type: CopyProductDto, required: false })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Copy Product',
+    description:
+      'Create a new instance of an existing product with its configuration, UoMs, suppliers, and components.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
+  copy(
+    @Param('id') id: string,
+    @Body() dto: CopyProductDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.copy(id, dto, user.username);
   }
 
   @Post(':id/archive')

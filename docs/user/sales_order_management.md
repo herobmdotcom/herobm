@@ -24,12 +24,16 @@ fields:
   fulfillment_location_id:
     title: "Fulfillment Warehouse"
     summary: "Warehouse facility from which items will be allocated, picked, and dispatched."
+  opportunity_id:
+    title: "Sales Opportunity"
+    summary: "Associated CRM sales deal tracking commercial revenue rollups."
   state_code:
     title: "Order Status"
     summary: "Order state (Draft, Quoted, Confirmed, Picking, Shipped, Invoiced, Cancelled, Archived)."
 related:
   - "sales-quotes"
   - "customers"
+  - "crm"
   - "picking"
   - "inventory-shipping"
   - "sales-invoices"
@@ -91,6 +95,11 @@ The order engine continuously monitors warehouse events to advance order states 
 * Orders lock in the customer's trading currency and the active exchange rate to the system base currency upon creation.
 * Invoices, line totals, and taxes are calculated in the customer's currency, with base currency equivalents tracked for financial reporting.
 
+### 4. CRM Opportunity Linkage & Deal Conversion
+* Sales orders can be linked directly to a CRM **Opportunity** (`opportunityId`).
+* When converting a winning deal directly from the CRM Opportunity pipeline, the link is established automatically.
+* The order details card features a direct navigation link to the associated opportunity, and the order's booked value feeds the live deal revenue metric in the CRM module.
+
 ---
 
 ## Step-by-Step Workflows
@@ -100,9 +109,10 @@ The order engine continuously monitors warehouse events to advance order states 
 2. Click **New Sales Order** (`/sales-orders/new`).
 3. Select the **Customer**. Price scale, currency, and tax positions load automatically.
 4. Set the **Required Delivery Date** and **Fulfillment Warehouse**.
-5. Add items, quantities, and line discounts.
-6. Click **Confirm Order**. The system allocates inventory and queues the order for picking.
-7. Click **Email Order Confirmation** to send the branded Typst PDF confirmation.
+5. (Optional) Select or link an active **CRM Opportunity** to attribute booked revenue to a sales deal.
+6. Add items, quantities, and line discounts.
+7. Click **Confirm Order**. The system allocates inventory and queues the order for picking.
+8. Click **Email Order Confirmation** to send the branded Typst PDF confirmation.
 
 ---
 
@@ -114,6 +124,7 @@ The order engine continuously monitors warehouse events to advance order states 
 | **Order Number** | Unique order reference (`ORD-...`). |
 | **Required Date** | Promised delivery date. |
 | **Fulfillment Location** | Dispatch warehouse facility. |
+| **Opportunity** | CRM sales deal associated with the order. |
 | **Order Status** | Stage (`Draft`, `Quoted`, `Confirmed`, `Picking`, `Shipped`, `Invoiced`, `Cancelled`, `Archived`). |
 | **Gross Margin %** | Calculated margin based on current WAC. |
 | **Credit Hold** | Indicator showing if customer has an active credit block. |

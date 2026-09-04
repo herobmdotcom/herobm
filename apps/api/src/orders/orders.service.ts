@@ -12,6 +12,7 @@ import {
   actors,
   salesInvoices,
   salesInvoiceLines,
+  opportunities,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -41,6 +42,8 @@ export interface UnifiedOrderRow {
   createdOn: string | null;
   totalPrice: string | null;
   currencyCode: string | null;
+  opportunityId?: string | null;
+  opportunityName?: string | null;
   productQuantity?: number;
   productQuantityShipped?: number;
 }
@@ -564,6 +567,7 @@ export class OrdersService implements OnModuleInit {
       days,
       states,
       productId,
+      opportunityId,
     } = parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -609,6 +613,10 @@ export class OrdersService implements OnModuleInit {
           eq(coreAccounts.sourceId, customerId),
         ),
       );
+    }
+
+    if (opportunityId) {
+      conditions.push(eq(salesOrders.opportunityId, opportunityId));
     }
 
     if (String(days).toLowerCase() === 'mtd') {
@@ -678,6 +686,8 @@ export class OrdersService implements OnModuleInit {
         createdOn: salesOrders.createdOn,
         currencyCode: salesOrders.currencyCode,
         customFields: salesOrders.customFields,
+        opportunityId: salesOrders.opportunityId,
+        opportunityName: opportunities.name,
         score: scoreSql,
       })
       .from(salesOrders)
@@ -686,6 +696,10 @@ export class OrdersService implements OnModuleInit {
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        opportunities,
+        eq(salesOrders.opportunityId, opportunities.opportunityId),
+      )
       .$dynamic();
 
     if (whereClause) {
@@ -817,6 +831,8 @@ export class OrdersService implements OnModuleInit {
       createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
       totalPrice: totalMap.get(r.id) ?? null,
       currencyCode: r.currencyCode ?? 'EUR',
+      opportunityId: r.opportunityId ?? null,
+      opportunityName: r.opportunityName ?? null,
       ...(productId
         ? {
             productQuantity: productQuantityMap.get(r.id) ?? 0,

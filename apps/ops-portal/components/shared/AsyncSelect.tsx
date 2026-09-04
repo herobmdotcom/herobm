@@ -149,7 +149,7 @@ export default function AsyncSelect<T>({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-3 text-xs cursor-pointer text-gray-400 hover:text-gray-600 !w-4 !h-4"
+            className="absolute right-3 text-xs cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] !w-4 !h-4"
             onClick={handleClear}
           >
             <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />

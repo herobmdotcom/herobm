@@ -719,6 +719,18 @@
         "unrealisedFxLoss": "Unrealised FX Loss",
         "website": "Website"
       },
+      "logo": {
+        "change": "Change logo",
+        "confirmRemove": "Are you sure you want to remove the company logo?",
+        "description": "Upload a branded logo for printed PDF reports and system documents (max 5MB).",
+        "maxSize": "Logo must be an image (JPG, PNG, WebP, GIF, SVG) and under 5MB",
+        "remove": "Remove logo",
+        "removeSuccess": "Company logo removed successfully",
+        "title": "Company Logo",
+        "upload": "Upload logo",
+        "uploadError": "Failed to upload company logo",
+        "uploadSuccess": "Company logo uploaded successfully"
+      },
       "macroTypes": {
         "general": "General",
         "pickingSlip": "Picking Slip",
@@ -1608,6 +1620,99 @@
       "setAvailable": "Set to Available"
     }
   },
+  "crm": {
+    "activities": {
+      "actions": {
+        "cancel": "Cancel",
+        "complete": "Mark Complete",
+        "create": "Log Interaction",
+        "delete": "Delete",
+        "edit": "Edit",
+        "logCall": "Log Call",
+        "logEmail": "Log Email",
+        "logInteraction": "Log Interaction",
+        "logMeeting": "Log Meeting",
+        "markComplete": "Mark Complete",
+        "markOpen": "Mark as Open",
+        "newTask": "New Task",
+        "reopen": "Reopen Task",
+        "saving": "Saving..."
+      },
+      "empty": "No activities or tasks logged yet.",
+      "fields": {
+        "assignedTo": "Assignee",
+        "contact": "Contact",
+        "description": "Notes / Minutes / Details",
+        "dueDate": "Due Date",
+        "priority": "Priority",
+        "status": "Status",
+        "subject": "Subject",
+        "type": "Type"
+      },
+      "filter": {
+        "activitiesOnly": "Interactions & Tasks",
+        "all": "All Activity",
+        "auditOnly": "System Logs",
+        "interactions": "Interactions",
+        "tasks": "Tasks"
+      },
+      "metadata": {
+        "completedOn": "Completed on {date}",
+        "loggedBy": "Logged by {user}",
+        "unknownUser": "User"
+      },
+      "modal": {
+        "titleCall": "Log Phone Call",
+        "titleEmail": "Log Email",
+        "titleGeneric": "Log Activity",
+        "titleMeeting": "Log Meeting Minutes",
+        "titleTask": "Create Follow-up Task"
+      },
+      "priorities": {
+        "high": "High",
+        "low": "Low",
+        "medium": "Medium",
+        "urgent": "Urgent"
+      },
+      "status": {
+        "cancelled": "Cancelled",
+        "completed": "Completed",
+        "open": "Open",
+        "scheduled": "Scheduled"
+      },
+      "subtitle": "External interactions, communications, and follow-ups",
+      "tasks": {
+        "allTasks": "All Tasks",
+        "completed": "Completed",
+        "due": "Due",
+        "dueToday": "Due Today",
+        "myTasks": "My Tasks",
+        "noOpenTasks": "No open tasks.",
+        "overdue": "Overdue",
+        "upcoming": "Upcoming"
+      },
+      "title": "Activities",
+      "toasts": {
+        "completed": "Task marked as completed",
+        "created": "Activity logged successfully",
+        "deleted": "Activity deleted",
+        "failedToComplete": "Failed to complete task",
+        "failedToCreate": "Failed to log activity",
+        "failedToDelete": "Failed to delete activity",
+        "failedToLoad": "Failed to load activities",
+        "failedToUpdate": "Failed to update activity",
+        "reopened": "Task marked as open",
+        "updated": "Activity updated"
+      },
+      "types": {
+        "call": "Phone Call",
+        "email": "Email",
+        "meeting": "Meeting",
+        "note": "Note",
+        "task": "Follow-up Task"
+      }
+    }
+  },
   "custom": "Custom",
   "customItem": "Custom Item",
   "customers": {
@@ -1806,6 +1911,26 @@
       "inventoryLevels": "Inventory Levels",
       "orderLines": "Order Lines",
       "products": "Products"
+    },
+    "tasks": {
+      "allOpen": "All Open Tasks",
+      "assignedTo": "Assigned to",
+      "completed": "Completed",
+      "createTask": "Create Task",
+      "due": "Due",
+      "dueToday": "Due Today",
+      "empty": "No pending follow-ups. You're all caught up! ✨",
+      "failedToComplete": "Failed to update task",
+      "failedToLoad": "Failed to load tasks",
+      "myTasks": "My Tasks",
+      "newTask": "New Task",
+      "openCount": "{count} open",
+      "overdue": "Overdue",
+      "priority": "Priority",
+      "taskCompleted": "Task completed",
+      "title": "My Tasks",
+      "upcoming": "Upcoming",
+      "viewAll": "View All"
     },
     "timeline": {
       "configureInfo": "Select which business events you want to see in your recent events feed.",
@@ -2988,7 +3113,8 @@
     "baseUom": "Base UoM",
     "baseUomLabel": "(Base: {uom})",
     "buttons": {
-      "addProduct": "Add Product"
+      "addProduct": "Add Product",
+      "copyProduct": "Copy Product"
     },
     "cards": {
       "classification": "Classification",
@@ -3027,6 +3153,15 @@
     "componentProduct": "Component Product",
     "confirmRemoveComponent": "Are you sure you want to remove this component?",
     "confirmRemoveConversion": "Remove {uomCode} conversion?",
+    "copyModal": {
+      "cancel": "Cancel",
+      "copy": "Copy Product",
+      "copying": "Copying...",
+      "description": "Create a new product instance based on {productNumber} - {name}.",
+      "productName": "Product Name",
+      "productNumber": "Product # (SKU)",
+      "title": "Copy Product"
+    },
     "costSummary": {
       "discount": "Disc.",
       "lastPurchase": "Last Purchase",
@@ -3140,7 +3275,8 @@
       "componentRemoved": "Component removed",
       "componentUpdated": "Component updated successfully",
       "conversionAdded": "Conversion added",
-      "conversionRemoved": "Conversion removed"
+      "conversionRemoved": "Conversion removed",
+      "productCopied": "Product copied successfully"
     },
     "types": {
       "freight": "Freight",

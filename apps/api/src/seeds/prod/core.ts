@@ -6,6 +6,8 @@ import {
   ACTOR_STATE,
   DEFAULT_ACTOR_CONTACT_ROLES,
   ACTOR_CONTACT_ROLE,
+  DEFAULT_OPPORTUNITY_STAGES,
+  DEFAULT_OPPORTUNITY_TYPES,
 } from '@herobm/shared';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -1668,8 +1670,22 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       console.log(
         '  Updated existing app_settings with default salesAnalysisCodes.',
       );
-    } else {
-      console.log('  SKIP: app_settings record already exists.');
+    }
+    if (!row.opportunityStages || row.opportunityStages.length === 0) {
+      await db.update(appSettings).set({
+        opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
+      });
+      console.log(
+        '  Updated existing app_settings with default opportunityStages.',
+      );
+    }
+    if (!row.opportunityTypes || row.opportunityTypes.length === 0) {
+      await db.update(appSettings).set({
+        opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
+      });
+      console.log(
+        '  Updated existing app_settings with default opportunityTypes.',
+      );
     }
     return;
   }
@@ -1687,6 +1703,8 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       setupCompletedAt: now,
       systemIdentifier: sid,
       actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
+      opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
+      opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
       salesAnalysisCodes: [
         { value: 'DEFAULT', order: 1 },
         { value: 'PROMO', order: 2 },

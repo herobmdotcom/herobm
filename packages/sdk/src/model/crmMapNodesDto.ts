@@ -7,10 +7,10 @@
  */
 import type { CrmMapActorNodeDto } from './crmMapActorNodeDto';
 import type { CrmMapContactNodeDto } from './crmMapContactNodeDto';
-import type { CrmMapProjectNodeDto } from './crmMapProjectNodeDto';
+import type { CrmMapOpportunityNodeDto } from './crmMapOpportunityNodeDto';
 
 export interface CrmMapNodesDto {
   actors: CrmMapActorNodeDto[];
   contacts: CrmMapContactNodeDto[];
-  projects: CrmMapProjectNodeDto[];
+  opportunities: CrmMapOpportunityNodeDto[];
 }

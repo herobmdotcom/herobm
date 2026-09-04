@@ -23,13 +23,14 @@ import {
   customers,
   suppliers,
   actors,
-  projects,
-  projectContacts,
+  opportunities,
+  opportunityContacts,
+  masterDataEvents,
 } from '@herobm/db-schema';
 import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { CONTACT_STATE } from '@herobm/shared';
+import { CONTACT_STATE, ContactEntityType } from '@herobm/shared';
 import {
   PaginationQuery,
   parsePagination,
@@ -152,11 +153,28 @@ export class ContactsService {
   async getContact(id: string): Promise<ContactResponseDto> {
     const contact = await this.db.query.contacts.findFirst({
       where: eq(contacts.contactId, id),
+      with: {
+        actorContactLinks: {
+          with: {
+            actor: true,
+          },
+        },
+      },
     });
     if (!contact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
-    return this.mapToDto(contact);
+    const events = await this.db
+      .select()
+      .from(masterDataEvents)
+      .where(eq(masterDataEvents.entityId, id))
+      .orderBy(sql`${masterDataEvents.createdOn} DESC`);
+
+    return {
+      ...this.mapToDto(contact),
+      events,
+      actorContactLinks: contact.actorContactLinks || [],
+    } as unknown as ContactResponseDto;
   }
 
   async createContact(
@@ -165,9 +183,9 @@ export class ContactsService {
   ): Promise<ContactResponseDto> {
     return await this.db.transaction(async (tx) => {
       let targetActorId: string | null = null;
-      let targetProjectId: string | null = null;
+      let targetOpportunityId: string | null = null;
 
-      if (dto.entityType === 'customer' && dto.entityId) {
+      if (dto.entityType === ContactEntityType.CUSTOMER && dto.entityId) {
         const customer = await tx.query.customers.findFirst({
           where: eq(customers.customerId, dto.entityId),
         });
@@ -180,7 +198,23 @@ export class ContactsService {
             `Customer has no actor_id assigned yet.`,
           );
         targetActorId = customer.actorId;
-      } else if (dto.entityType === 'actor' && dto.entityId) {
+      } else if (
+        dto.entityType === ContactEntityType.SUPPLIER &&
+        dto.entityId
+      ) {
+        const supplier = await tx.query.suppliers.findFirst({
+          where: eq(suppliers.vendorId, dto.entityId),
+        });
+        if (!supplier)
+          throw new NotFoundException(
+            `Supplier with ID ${dto.entityId} not found`,
+          );
+        if (!supplier.actorId)
+          throw new BadRequestException(
+            `Supplier has no actor_id assigned yet.`,
+          );
+        targetActorId = supplier.actorId;
+      } else if (dto.entityType === ContactEntityType.ACTOR && dto.entityId) {
         const actor = await tx.query.actors.findFirst({
           where: eq(actors.actorId, dto.entityId),
         });
@@ -189,15 +223,18 @@ export class ContactsService {
             `Actor with ID ${dto.entityId} not found`,
           );
         targetActorId = actor.actorId;
-      } else if (dto.entityType === 'project' && dto.entityId) {
-        const project = await tx.query.projects.findFirst({
-          where: eq(projects.projectId, dto.entityId),
+      } else if (
+        dto.entityType === ContactEntityType.OPPORTUNITY &&
+        dto.entityId
+      ) {
+        const opportunity = await tx.query.opportunities.findFirst({
+          where: eq(opportunities.opportunityId, dto.entityId),
         });
-        if (!project)
+        if (!opportunity)
           throw new NotFoundException(
-            `Project with ID ${dto.entityId} not found`,
+            `Opportunity with ID ${dto.entityId} not found`,
           );
-        targetProjectId = project.projectId;
+        targetOpportunityId = opportunity.opportunityId;
       }
 
       const [newContact] = await tx
@@ -223,11 +260,11 @@ export class ContactsService {
         });
       }
 
-      if (targetProjectId) {
-        await tx.insert(projectContacts).values({
-          projectId: targetProjectId,
+      if (targetOpportunityId) {
+        await tx.insert(opportunityContacts).values({
+          opportunityId: targetOpportunityId,
           contactId: newContact.contactId,
-          roles: dto.projectRoles || [],
+          roles: dto.opportunityRoles || dto.projectRoles || [],
         });
       }
 

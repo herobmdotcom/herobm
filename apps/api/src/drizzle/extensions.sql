@@ -336,7 +336,7 @@ BEGIN
   IF OLD.state_code != 'draft' THEN
     IF (NEW.invoice_number IS DISTINCT FROM OLD.invoice_number) OR
        (NEW.customer_id IS DISTINCT FROM OLD.customer_id) OR
-       (NEW.sales_order_id IS DISTINCT FROM OLD.sales_order_id) OR
+       (NEW.sales_order_id IS DISTINCT FROM OLD.sales_order_id AND OLD.sales_order_id NOT IN ('00000000-0000-0000-0000-000000000001'::uuid, '00000000-0000-4000-8000-000000000001'::uuid)) OR
        (NEW.invoice_date IS DISTINCT FROM OLD.invoice_date) OR
        (NEW.currency_code IS DISTINCT FROM OLD.currency_code) OR
        (NEW.exchange_rate IS DISTINCT FROM OLD.exchange_rate) OR
@@ -360,7 +360,7 @@ DECLARE
 BEGIN
   SELECT state_code INTO parent_state FROM herobm_core.sales_invoices WHERE invoice_id = OLD.invoice_id;
   IF parent_state IS NOT NULL AND parent_state != 'draft' THEN
-    IF (NEW.sales_order_line_id IS DISTINCT FROM OLD.sales_order_line_id) OR
+    IF (NEW.sales_order_line_id IS DISTINCT FROM OLD.sales_order_line_id AND OLD.sales_order_line_id NOT IN ('00000000-0000-0000-0000-000000000010'::uuid, '00000000-0000-4000-8000-000000000002'::uuid)) OR
        (NEW.quantity_invoiced IS DISTINCT FROM OLD.quantity_invoiced) OR
        (NEW.price_per_unit IS DISTINCT FROM OLD.price_per_unit) OR
        (NEW.amount IS DISTINCT FROM OLD.amount) THEN

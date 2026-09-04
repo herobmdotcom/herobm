@@ -9,6 +9,7 @@ import type { CreateOrderLineDto } from './createOrderLineDto';
 import type { OrderCustomFieldsDto } from './orderCustomFieldsDto';
 
 export interface CreateOrderDto {
+  opportunityId?: string;
   salesOrderId: string;
   name?: string;
   customerId: string;

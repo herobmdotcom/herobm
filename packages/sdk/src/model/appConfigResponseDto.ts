@@ -29,6 +29,10 @@ export interface AppConfigResponseDto {
   defaultSupplierTaxPositionId?: string;
   actorTags?: OrderedSettingDto[];
   actorContactRoles?: OrderedSettingDto[];
+  opportunityContactRoles?: OrderedSettingDto[];
+  opportunityActorRoles?: OrderedSettingDto[];
+  opportunityStages?: OrderedSettingDto[];
+  opportunityTypes?: OrderedSettingDto[];
   projectContactRoles?: OrderedSettingDto[];
   projectActorRoles?: OrderedSettingDto[];
   projectStatuses?: OrderedSettingDto[];

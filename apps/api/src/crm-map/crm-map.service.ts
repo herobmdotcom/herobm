@@ -4,11 +4,11 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   actors,
   contacts,
-  projects,
+  opportunities,
   actorActorLinks,
   actorContactLinks,
-  projectActors,
-  projectContacts,
+  opportunityActors,
+  opportunityContacts,
 } from '@herobm/db-schema';
 
 @Injectable()
@@ -20,12 +20,12 @@ export class CrmMapService {
   async getMapData(focalNodeId?: string, maxDistance: number = 2) {
     const allActors = await this.db.select().from(actors);
     const allContacts = await this.db.select().from(contacts);
-    const allProjects = await this.db.select().from(projects);
+    const allOpportunities = await this.db.select().from(opportunities);
 
     const aALinks = await this.db.select().from(actorActorLinks);
     const aCLinks = await this.db.select().from(actorContactLinks);
-    const pALinks = await this.db.select().from(projectActors);
-    const pCLinks = await this.db.select().from(projectContacts);
+    const oALinks = await this.db.select().from(opportunityActors);
+    const oCLinks = await this.db.select().from(opportunityContacts);
 
     if (!focalNodeId) {
       const referralActorActor = allActors
@@ -45,13 +45,13 @@ export class CrmMapService {
         nodes: {
           actors: allActors,
           contacts: allContacts,
-          projects: allProjects,
+          opportunities: allOpportunities,
         },
         edges: {
           actorActor: aALinks,
           actorContact: aCLinks,
-          projectActor: pALinks,
-          projectContact: pCLinks,
+          opportunityActor: oALinks,
+          opportunityContact: oCLinks,
           referralActorActor,
           referralContactActor,
         },
@@ -75,8 +75,8 @@ export class CrmMapService {
 
     aALinks.forEach((e) => addEdge(e.sourceActorId, e.targetActorId));
     aCLinks.forEach((e) => addEdge(e.actorId, e.contactId));
-    pALinks.forEach((e) => addEdge(e.projectId, e.actorId));
-    pCLinks.forEach((e) => addEdge(e.projectId, e.contactId));
+    oALinks.forEach((e) => addEdge(e.opportunityId, e.actorId));
+    oCLinks.forEach((e) => addEdge(e.opportunityId, e.contactId));
 
     allActors.forEach((a) => {
       if (a.referredByActorId) addEdge(a.actorId, a.referredByActorId);
@@ -104,8 +104,8 @@ export class CrmMapService {
     const filteredContacts = allContacts.filter((n) =>
       visitedNodes.has(n.contactId),
     );
-    const filteredProjects = allProjects.filter((n) =>
-      visitedNodes.has(n.projectId),
+    const filteredOpportunities = allOpportunities.filter((n) =>
+      visitedNodes.has(n.opportunityId),
     );
 
     // Filter edges (only keep edges where BOTH source and target are in visitedNodes)
@@ -116,11 +116,11 @@ export class CrmMapService {
     const filteredACLinks = aCLinks.filter(
       (e) => visitedNodes.has(e.actorId) && visitedNodes.has(e.contactId),
     );
-    const filteredPALinks = pALinks.filter(
-      (e) => visitedNodes.has(e.projectId) && visitedNodes.has(e.actorId),
+    const filteredOALinks = oALinks.filter(
+      (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.actorId),
     );
-    const filteredPCLinks = pCLinks.filter(
-      (e) => visitedNodes.has(e.projectId) && visitedNodes.has(e.contactId),
+    const filteredOCLinks = oCLinks.filter(
+      (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.contactId),
     );
 
     const referralActorActor = filteredActors
@@ -145,13 +145,13 @@ export class CrmMapService {
       nodes: {
         actors: filteredActors,
         contacts: filteredContacts,
-        projects: filteredProjects,
+        opportunities: filteredOpportunities,
       },
       edges: {
         actorActor: filteredAALinks,
         actorContact: filteredACLinks,
-        projectActor: filteredPALinks,
-        projectContact: filteredPCLinks,
+        opportunityActor: filteredOALinks,
+        opportunityContact: filteredOCLinks,
         referralActorActor,
         referralContactActor,
       },

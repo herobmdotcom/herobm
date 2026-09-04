@@ -27,4 +27,6 @@ export interface UpdateActorDto {
   referredByActorId?: string;
   referredByContactId?: string;
   referralNote?: string;
+  /** @nullable */
+  ownerId?: string | null;
 }

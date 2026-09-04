@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/shared/Button';
 import { reportError } from '@/lib/api';
@@ -26,6 +26,7 @@ export default function ActorForm({ isNew = true, actorId }: ActorFormProps) {
 
   const defaultCountry = organization?.country || '';
 
+  const [users, setUsers] = useState<api.UserResponseDto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
     name: '',
@@ -33,7 +34,21 @@ export default function ActorForm({ isNew = true, actorId }: ActorFormProps) {
     headquartersCountry: defaultCountry,
     email: '',
     isTaxRegistered: false,
+    ownerId: '',
   });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await api.usersControllerFindAll();
+        setUsers(res.data || []);
+      } catch (err) {
+        reportError(err, 'ActorForm - loadUsers');
+        toast.error('Failed to load users: ' + getErrorMessage(err));
+      }
+    };
+    loadUsers();
+  }, []);
 
   const updateField = (field: string, value: unknown) => {
     setDto((prev) => ({ ...prev, [field]: value }));
@@ -176,6 +191,28 @@ export default function ActorForm({ isNew = true, actorId }: ActorFormProps) {
                   placeholder="contact@example.com"
                   disabled={submitting}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="actor-owner-select" className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  Account Owner
+                </label>
+                <select
+                  id="actor-owner-select"
+                  className="input"
+                  value={dto.ownerId}
+                  onChange={(e) => updateField('ownerId', e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">-- Unassigned --</option>
+                  {users.map((u: api.UserResponseDto) => (
+                    <option key={(u as unknown as { userId: string }).userId || u.userId} value={(u as unknown as { userId: string }).userId || u.userId}>
+                      {u.displayName || u.username}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

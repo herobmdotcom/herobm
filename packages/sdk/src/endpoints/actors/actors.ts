@@ -6,12 +6,14 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  ActorLinkResponseDto,
   ActorNoteResponseDto,
   ActorResponseDto,
   ActorsControllerFindAll200,
   ActorsControllerFindAllParams,
   CreateActorContactDto,
   CreateActorDto,
+  CreateActorLinkDto,
   CreateActorNoteDto,
   EmptyBodyDto,
   SuccessResponseDto,
@@ -480,6 +482,118 @@ export const actorsControllerRemoveNote = async (id: string,
     noteId: string, options?: RequestInit): Promise<actorsControllerRemoveNoteResponse> => {
   
   return customFetch<actorsControllerRemoveNoteResponse>(getActorsControllerRemoveNoteUrl(id,noteId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve corporate links (parent, subsidiary, partner, referrer) for an actor.
+ * @summary Get Actor Links
+ */
+export type actorsControllerGetLinksResponse200 = {
+  data: ActorLinkResponseDto[]
+  status: 200
+}
+    
+export type actorsControllerGetLinksResponseSuccess = (actorsControllerGetLinksResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerGetLinksResponse = (actorsControllerGetLinksResponseSuccess)
+
+export const getActorsControllerGetLinksUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/links`
+}
+
+export const actorsControllerGetLinks = async (id: string, options?: RequestInit): Promise<actorsControllerGetLinksResponse> => {
+  
+  return customFetch<actorsControllerGetLinksResponse>(getActorsControllerGetLinksUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Create a link to another actor (parent, subsidiary, partner, referrer).
+ * @summary Add Actor Link
+ */
+export type actorsControllerAddLinkResponse201 = {
+  data: ActorLinkResponseDto
+  status: 201
+}
+    
+export type actorsControllerAddLinkResponseSuccess = (actorsControllerAddLinkResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerAddLinkResponse = (actorsControllerAddLinkResponseSuccess)
+
+export const getActorsControllerAddLinkUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/links`
+}
+
+export const actorsControllerAddLink = async (id: string,
+    createActorLinkDto: CreateActorLinkDto, options?: RequestInit): Promise<actorsControllerAddLinkResponse> => {
+  
+  return customFetch<actorsControllerAddLinkResponse>(getActorsControllerAddLinkUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActorLinkDto,)
+  }
+);}
+
+
+/**
+ * Remove an actor link.
+ * @summary Remove Actor Link
+ */
+export type actorsControllerRemoveLinkResponse200 = {
+  data: SuccessResponseDto
+  status: 200
+}
+    
+export type actorsControllerRemoveLinkResponseSuccess = (actorsControllerRemoveLinkResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerRemoveLinkResponse = (actorsControllerRemoveLinkResponseSuccess)
+
+export const getActorsControllerRemoveLinkUrl = (id: string,
+    linkId: string,) => {
+
+
+  
+
+  return `/actors/${id}/links/${linkId}`
+}
+
+export const actorsControllerRemoveLink = async (id: string,
+    linkId: string, options?: RequestInit): Promise<actorsControllerRemoveLinkResponse> => {
+  
+  return customFetch<actorsControllerRemoveLinkResponse>(getActorsControllerRemoveLinkUrl(id,linkId),
   {      
     ...options,
     method: 'DELETE'

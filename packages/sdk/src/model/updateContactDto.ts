@@ -17,5 +17,6 @@ export interface UpdateContactDto {
   jobTitle?: string;
   isPrimary?: boolean;
   primaryFor?: string[];
+  opportunityRole?: string;
   projectRole?: string;
 }

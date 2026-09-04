@@ -73,6 +73,10 @@ The **Groups & System Settings** module provides centralized configuration acros
 * **PDF Templates** (`/admin/settings/pdf-templates`): Customize modern Typst layouts for Sales Orders, Quotes, Invoices, Pick Slips, Delivery Dockets, and Debit Notes.
 * **PDF Hooks** (`/admin/settings/pdf-hooks`): Connect system event triggers to specific PDF template renderings.
 
+### 5. CRM Pipeline & Opportunity Settings (`/admin/settings/crm`)
+* **Pipeline Stages (`projectStatuses`)**: Define ordered stages representing the sales journey (e.g. Discovery, Proposal, Negotiation, Won, Lost) that populate the CRM Opportunities Kanban board.
+* **Opportunity Types (`projectTypes`)**: Configure classification categories for deals (e.g. New Business, Renewal, Expansion, Consulting).
+
 ---
 
 ## Step-by-Step Workflows
@@ -101,3 +105,5 @@ The **Groups & System Settings** module provides centralized configuration acros
 | **Product Group** | Inventory category setting revenue and COGS accounts. |
 | **Trading Terms** | Due date calculation rule (e.g. `Net 30`). |
 | **Analysis Codes** | Financial tags for multidimensional reporting. |
+| **Pipeline Stages** | Configurable stages for sales opportunities in the CRM Kanban board. |
+

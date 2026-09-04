@@ -70,6 +70,16 @@ export class PaginationQuery {
   @IsString()
   productId?: string;
 
+  /** Optional filter by opportunity ID */
+  @IsOptional()
+  @IsString()
+  opportunityId?: string;
+
+  /** Optional filter by project ID (alias for opportunityId) */
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
   /** Field to sort by */
   @IsOptional()
   @IsString()

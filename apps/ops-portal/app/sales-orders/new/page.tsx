@@ -16,7 +16,7 @@ const parseInitialPhone = (val: string) => {
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { Button } from '@/components/shared/Button';
 import DetailsLayout from '@/components/shared/DetailsLayout';
@@ -139,6 +139,9 @@ export default function NewOrderPage() {
   const tSales = useTranslations();
   const tCommon = useTranslations('common');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialOpportunityId = searchParams.get('opportunityId') || searchParams.get('projectId') || '';
+  const [opportunityId, setOpportunityId] = useState(initialOpportunityId);
 
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -466,6 +469,7 @@ export default function NewOrderPage() {
         deliveryState: deliveryState || undefined,
         deliveryPostalCode: deliveryPostalCode || undefined,
         deliveryCountry: deliveryCountry || undefined,
+        opportunityId: opportunityId || undefined,
         customFields: analysisCode ? { analysisCode } : undefined,
         lines: lines
           .filter((l) => l.productId || l.lineType === LineType.COMMENT)

@@ -5,11 +5,20 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { ActorResponseDtoOwner } from './actorResponseDtoOwner';
 import type { ActorNoteResponseDto } from './actorNoteResponseDto';
 import type { ActorResponseDtoActorContactLinksItem } from './actorResponseDtoActorContactLinksItem';
 import type { ActorResponseDtoEventsItem } from './actorResponseDtoEventsItem';
+import type { ActorResponseDtoCustomersItem } from './actorResponseDtoCustomersItem';
+import type { ActorResponseDtoSuppliersItem } from './actorResponseDtoSuppliersItem';
 
 export interface ActorResponseDto {
+  /** @nullable */
+  ownerId?: string | null;
+  /** @nullable */
+  owner?: ActorResponseDtoOwner;
+  /** @nullable */
+  ownerDisplayName?: string | null;
   actorId: string;
   stateCode: string;
   name: string;
@@ -45,4 +54,6 @@ export interface ActorResponseDto {
   referredByContactName?: string | null;
   /** @nullable */
   referralNote?: string | null;
+  customers?: ActorResponseDtoCustomersItem[];
+  suppliers?: ActorResponseDtoSuppliersItem[];
 }

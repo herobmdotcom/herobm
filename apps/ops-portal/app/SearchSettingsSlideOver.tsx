@@ -14,6 +14,7 @@ export const DEFAULT_SEARCH_ENTITIES: string[] = [
   'sales_invoice',
   'purchase_invoice',
   'work_order',
+  'opportunity',
 ];
 
 export const ALL_SEARCH_ENTITIES: string[] = [
@@ -33,7 +34,7 @@ export const ALL_SEARCH_ENTITIES: string[] = [
   'transfer_order',
   'work_order',
   'contact',
-  'project',
+  'opportunity',
   'payment',
 ];
 
@@ -152,7 +153,7 @@ export default function SearchSettingsSlideOver({
             {tSidebar('finance')}
           </div>
           <OptionRow entity="contact" />
-          <OptionRow entity="project" />
+          <OptionRow entity="opportunity" />
           <OptionRow entity="payment" />
         </div>
       </div>

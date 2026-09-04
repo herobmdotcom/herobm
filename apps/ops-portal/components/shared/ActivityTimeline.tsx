@@ -176,7 +176,7 @@ export default function ActivityTimeline({
                             creditNote: '/sales-credit-notes',
                             debitNote: '/purchase-debit-notes',
                             quote: '/sales-quotes',
-                            project: '/crm/projects',
+                            project: '/crm/opportunities',
                             actor: '/crm/actors',
                             contact: '/crm/contacts',
                             workOrder: '/manufacturing/work-orders',

@@ -23,7 +23,7 @@ interface ContactSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
   entityId?: string;
-  entityType?: 'customer' | 'supplier' | 'actor' | 'project';
+  entityType?: 'customer' | 'supplier' | 'actor' | 'opportunity';
   contactId?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic wrapper for API usage @typescript-eslint/no-explicit-any
   existingData?: Partial<any>;
@@ -151,16 +151,16 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
 
         // Link or update link metadata
         if (entityId && entityType) {
-          if (entityType === 'project') {
+          if (entityType === 'opportunity') {
             if (!contactId && selectedContact) {
               // Linking for the first time
-              await api.projectsControllerAddContact(entityId, { 
+              await api.opportunitiesControllerAddContact(entityId, { 
                 contactId: finalContactId, 
                 roles: dto.projectRoles.length > 0 ? dto.projectRoles : undefined 
               });
             } else if (contactId) {
               // Updating existing link
-              await api.projectsControllerUpdateContact(entityId, finalContactId, { 
+              await api.opportunitiesControllerUpdateContact(entityId, finalContactId, { 
                 roles: dto.projectRoles.length > 0 ? dto.projectRoles : undefined 
               });
             }
@@ -229,7 +229,6 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             type="submit"
             form="contact-form"
             variant="primary"
-            className="bg-[var(--accent)] hover:opacity-90 border-none text-white"
             loading={saving}
           >
             {saving ? tCommon('saving') : tCommon('save')}
@@ -240,7 +239,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
       <form id="contact-form" onSubmit={handleSave} className="flex flex-col gap-5 h-full pb-6">
         
         {!contactId && (
-          <div className="bg-gray-50 -mx-6 px-6 py-4 border-b border-gray-100 mb-2">
+          <div className="bg-[var(--bg-secondary)] -mx-6 px-6 py-4 border-b border-[var(--border)] mb-2">
             <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               Search Existing Contact
             </label>
@@ -317,7 +316,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
               onChange={(value) => setDto({ ...dto, phone: value || '' })}
             />
             {dto.phone && !isValidPhoneNumber(dto.phone) && (
-              <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5 font-medium">
+              <p className="text-xs text-amber-500 mt-1.5 flex items-center gap-1.5 font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
@@ -337,7 +336,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
               onChange={(value) => setDto({ ...dto, mobile: value || '' })}
             />
             {dto.mobile && !isValidPhoneNumber(dto.mobile) && (
-              <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5 font-medium">
+              <p className="text-xs text-amber-500 mt-1.5 flex items-center gap-1.5 font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
@@ -348,8 +347,8 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
         </div>
 
         {/* Link Metadata Fields */}
-        {entityType && entityType !== 'project' && (
-          <div className="mt-2 pt-4 border-t border-gray-100">
+        {entityType && entityType !== 'opportunity' && (
+          <div className="mt-2 pt-4 border-t border-[var(--border)]">
             <label className="block text-sm font-medium mb-3 text-[var(--text-muted)]">
               Actor Roles
             </label>
@@ -368,30 +367,18 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
                     <label key={r.value} className="flex items-center gap-3 cursor-pointer group">
                       <input 
                         type="checkbox" 
-                        className="checkbox checkbox-sm checkbox-primary"
+                        className="w-4 h-4 rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
                         checked={isChecked}
                         onChange={(e) => {
+                          const val = r.value.toLowerCase();
                           if (e.target.checked) {
-                            setDto({
-                              ...dto,
-                              primaryFor: [
-                                ...dto.primaryFor.filter(
-                                  (p) => p.toLowerCase() !== r.value.toLowerCase(),
-                                ),
-                                r.value.toLowerCase(),
-                              ],
-                            });
+                            setDto({ ...dto, primaryFor: [...dto.primaryFor, val] });
                           } else {
-                            setDto({
-                              ...dto,
-                              primaryFor: dto.primaryFor.filter(
-                                (p) => p.toLowerCase() !== r.value.toLowerCase(),
-                              ),
-                            });
+                            setDto({ ...dto, primaryFor: dto.primaryFor.filter(x => x !== val) });
                           }
                         }}
                       />
-                      <span className="text-sm capitalize group-hover:text-gray-900 transition-colors">{r.value}</span>
+                      <span className="text-sm capitalize text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">{r.value}</span>
                     </label>
                   );
                 })}
@@ -399,17 +386,17 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
           </div>
         )}
 
-        {entityType === 'project' && (
-          <div className="mt-2 pt-4 border-t border-gray-100">
+        {entityType === 'opportunity' && (
+          <div className="mt-2 pt-4 border-t border-[var(--border)]">
             <label className="block text-sm font-medium mb-3 text-[var(--text-muted)]">
-              Project Roles
+              Opportunity Roles
             </label>
             <div className="flex flex-col gap-3">
-              {[...(appSettings?.projectContactRoles || [])].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => (
+              {[...(appSettings?.opportunityContactRoles || appSettings?.projectContactRoles || [])].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => (
                 <label key={r.value} className="flex items-center gap-3 cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="checkbox checkbox-sm checkbox-primary"
+                    className="w-4 h-4 rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
                     checked={dto.projectRoles.includes(r.value)}
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -419,7 +406,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
                       }
                     }}
                   />
-                  <span className="text-sm capitalize group-hover:text-gray-900 transition-colors">{r.value}</span>
+                  <span className="text-sm capitalize text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">{r.value}</span>
                 </label>
               ))}
             </div>

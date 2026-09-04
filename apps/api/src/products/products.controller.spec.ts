@@ -25,6 +25,7 @@ describe('ProductsController', () => {
   const mockWriteService = {
     create: jest.fn(),
     update: jest.fn(),
+    copy: jest.fn(),
   };
 
   const mockStorageService = {
@@ -101,6 +102,20 @@ describe('ProductsController', () => {
       const result = await controller.getCostSummary('P001');
       expect(result).toEqual(mockCostSummary);
       expect(mockService.getCostSummary).toHaveBeenCalledWith('P001');
+    });
+  });
+
+  describe('copy', () => {
+    it('should call productsWriteService.copy with ID, DTO, and actor', async () => {
+      const mockCopied = { productId: 'P002', name: 'Widget (Copy)' };
+      mockWriteService.copy.mockResolvedValue(mockCopied);
+
+      const dto = { productNumber: 'P002', name: 'Widget (Copy)' };
+      const user = { username: 'admin' } as any;
+
+      const result = await controller.copy('P001', dto, user);
+      expect(result).toEqual(mockCopied);
+      expect(mockWriteService.copy).toHaveBeenCalledWith('P001', dto, 'admin');
     });
   });
 });

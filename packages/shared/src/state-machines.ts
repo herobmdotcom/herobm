@@ -384,11 +384,13 @@ export const CONTACT_STATE = {
   ARCHIVED: 'archived',
 } as const;
 
-export const PROJECT_STATE = {
+export const OPPORTUNITY_STATE = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   ARCHIVED: 'archived',
 } as const;
+
+export const PROJECT_STATE = OPPORTUNITY_STATE;
 
 export const PRODUCT_TRANSITIONS: Record<string, string[]> = {
   [PRODUCT_STATE.DRAFT]: [PRODUCT_STATE.ACTIVE, PRODUCT_STATE.ARCHIVED],
@@ -436,7 +438,8 @@ export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
 export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
 export type ActorState = typeof ACTOR_STATE[keyof typeof ACTOR_STATE];
 export type ContactState = typeof CONTACT_STATE[keyof typeof CONTACT_STATE];
-export type ProjectState = typeof PROJECT_STATE[keyof typeof PROJECT_STATE];
+export type OpportunityState = typeof OPPORTUNITY_STATE[keyof typeof OPPORTUNITY_STATE];
+export type ProjectState = OpportunityState;
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
 export type PurchaseReturnShipmentState = typeof PURCHASE_RETURN_SHIPMENT_STATE[keyof typeof PURCHASE_RETURN_SHIPMENT_STATE];
 export type PurchaseDebitNoteState = typeof PURCHASE_DEBIT_NOTE_STATE[keyof typeof PURCHASE_DEBIT_NOTE_STATE];

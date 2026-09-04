@@ -19,7 +19,7 @@ import {
   transferOrders as coreTransferOrders,
   workOrders as coreWorkOrders,
   contacts as coreContacts,
-  projects as coreProjects,
+  opportunities as coreOpportunities,
   paymentEntries as corePayments,
   salesOrderLineItems as coreSalesOrderLines,
   actors as coreActors,
@@ -42,6 +42,7 @@ export type SearchEntityType =
   | 'transfer_order'
   | 'work_order'
   | 'contact'
+  | 'opportunity'
   | 'project'
   | 'payment';
 
@@ -559,25 +560,25 @@ export class DashboardService {
       );
     }
 
-    // 17. Projects
-    if (selectedTypes.has('project')) {
+    // 17. Opportunities
+    if (selectedTypes.has('opportunity') || selectedTypes.has('project')) {
       searchQueries.push(
         this.db
           .select({
-            id: coreProjects.projectId,
-            label: coreProjects.name,
-            subtitle: sql<string>`COALESCE(${coreProjects.type} || ' • ' || ${coreProjects.status}, '')`,
+            id: coreOpportunities.opportunityId,
+            label: coreOpportunities.name,
+            subtitle: sql<string>`COALESCE(${coreOpportunities.type} || ' • ' || ${coreOpportunities.status}, '')`,
           })
-          .from(coreProjects)
-          .where(ilike(coreProjects.name, term))
+          .from(coreOpportunities)
+          .where(ilike(coreOpportunities.name, term))
           .limit(5)
           .then((rows) =>
             rows.map((r) => ({
               id: r.id,
-              type: 'project' as const,
+              type: 'opportunity' as const,
               label: r.label,
               subtitle: r.subtitle,
-              href: `/crm/projects/${r.id}`,
+              href: `/crm/opportunities/${r.id}`,
             })),
           ),
       );

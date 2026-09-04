@@ -41,12 +41,9 @@ export class CrmMapContactNodeDto {
   lastName?: string;
 }
 
-export class CrmMapProjectNodeDto {
+export class CrmMapOpportunityNodeDto {
   @ApiProperty()
-  projectId!: string;
-
-  @ApiPropertyOptional()
-  title?: string;
+  opportunityId!: string;
 
   @ApiPropertyOptional()
   name?: string;
@@ -71,9 +68,9 @@ export class CrmMapActorContactLinkDto {
   primaryFor?: string[];
 }
 
-export class CrmMapProjectActorLinkDto {
+export class CrmMapOpportunityActorLinkDto {
   @ApiProperty()
-  projectId!: string;
+  opportunityId!: string;
 
   @ApiProperty()
   actorId!: string;
@@ -82,9 +79,9 @@ export class CrmMapProjectActorLinkDto {
   roles?: string[];
 }
 
-export class CrmMapProjectContactLinkDto {
+export class CrmMapOpportunityContactLinkDto {
   @ApiProperty()
-  projectId!: string;
+  opportunityId!: string;
 
   @ApiProperty()
   contactId!: string;
@@ -100,8 +97,8 @@ export class CrmMapNodesDto {
   @ApiProperty({ type: [CrmMapContactNodeDto] })
   contacts!: CrmMapContactNodeDto[];
 
-  @ApiProperty({ type: [CrmMapProjectNodeDto] })
-  projects!: CrmMapProjectNodeDto[];
+  @ApiProperty({ type: [CrmMapOpportunityNodeDto] })
+  opportunities!: CrmMapOpportunityNodeDto[];
 }
 
 export class CrmMapEdgesDto {
@@ -111,11 +108,11 @@ export class CrmMapEdgesDto {
   @ApiProperty({ type: [CrmMapActorContactLinkDto] })
   actorContact!: CrmMapActorContactLinkDto[];
 
-  @ApiProperty({ type: [CrmMapProjectActorLinkDto] })
-  projectActor!: CrmMapProjectActorLinkDto[];
+  @ApiProperty({ type: [CrmMapOpportunityActorLinkDto] })
+  opportunityActor!: CrmMapOpportunityActorLinkDto[];
 
-  @ApiProperty({ type: [CrmMapProjectContactLinkDto] })
-  projectContact!: CrmMapProjectContactLinkDto[];
+  @ApiProperty({ type: [CrmMapOpportunityContactLinkDto] })
+  opportunityContact!: CrmMapOpportunityContactLinkDto[];
 
   @ApiPropertyOptional({ type: [CrmMapActorActorLinkDto] })
   referralActorActor?: CrmMapActorActorLinkDto[];

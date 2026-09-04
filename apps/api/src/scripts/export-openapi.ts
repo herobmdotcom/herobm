@@ -24,6 +24,7 @@ async function bootstrap() {
     .addTag('Contacts', 'Customer and supplier contacts')
     .addTag('Delivery Addresses', 'Delivery locations')
     .addTag('System', 'System configuration')
+    .addTag('Storage', 'Image and file storage')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

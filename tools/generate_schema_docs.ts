@@ -76,6 +76,11 @@ const DOMAIN_GROUPS: DomainGroup[] = [
       'actor_contact_links',
       'actor_actor_links',
       'actor_notes',
+      'opportunities',
+      'opportunity_notes',
+      'opportunity_actors',
+      'opportunity_contacts',
+      'crm_activities',
       'projects',
       'project_notes',
       'project_actors',
@@ -434,7 +439,7 @@ function generateMarkdown(snapshot: Snapshot, rowCounts: Record<string, number>)
 
   // 3. Core ER Lineage Mermaid Diagram
   const coreTables = [
-    'actors', 'contacts', 'customers', 'suppliers', 'products',
+    'actors', 'contacts', 'customers', 'suppliers', 'products', 'opportunities',
     'sales_orders', 'sales_order_line_items', 'sales_invoices', 'sales_order_shipments',
     'purchase_orders', 'purchase_order_line_items', 'purchase_invoices', 'goods_received',
     'locations', 'bins', 'inventory_entries', 'inventory_ledger',
@@ -456,6 +461,7 @@ flowchart TD
         contacts["contacts"]
         customers["customers"]
         suppliers["suppliers"]
+        opportunities["opportunities"]
     end
 
     subgraph Catalog ["Catalog"]

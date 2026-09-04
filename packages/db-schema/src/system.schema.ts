@@ -12,7 +12,7 @@ import { herobmCore } from './core.schema';
 
 import { locations } from './inventory.schema';
 import { taxPositions, taxCategories } from './tax.schema';
-import { tradingTerms } from './index';
+import { tradingTerms } from './crm.schema';
 
 export const outbox = herobmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey().defaultRandom(),
@@ -157,16 +157,16 @@ export const appSettings = herobmCore.table('app_settings', {
   actorContactRoles: jsonb('actor_contact_roles').$type<
     { value: string; order: number }[]
   >(),
-  projectContactRoles: jsonb('project_contact_roles').$type<
+  opportunityContactRoles: jsonb('opportunity_contact_roles').$type<
     { value: string; order: number }[]
   >(),
-  projectActorRoles: jsonb('project_actor_roles').$type<
+  opportunityActorRoles: jsonb('opportunity_actor_roles').$type<
     { value: string; order: number }[]
   >(),
-  projectStatuses:
-    jsonb('project_statuses').$type<{ value: string; order: number }[]>(),
-  projectTypes:
-    jsonb('project_types').$type<{ value: string; order: number }[]>(),
+  opportunityStages:
+    jsonb('opportunity_stages').$type<{ value: string; order: number }[]>(),
+  opportunityTypes:
+    jsonb('opportunity_types').$type<{ value: string; order: number }[]>(),
   referralModes:
     jsonb('referral_modes').$type<{ value: string; order: number }[]>(),
   salesAnalysisCodes:

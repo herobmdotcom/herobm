@@ -9,13 +9,24 @@ import {
 } from '@nestjs/common';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { pdfTemplates, pdfTemplateHooks } from '@herobm/db-schema';
+import {
+  pdfTemplates,
+  pdfTemplateHooks,
+  organization,
+} from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
+import { StorageService } from '../common/storage/storage.service';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 
 jest.mock('../common/utils/security.util', () => ({
   verifySystemHealth: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+  hashSync: jest.fn(),
 }));
 
 // Mock fs and child_process for Typst compilation testing
@@ -30,6 +41,13 @@ jest.mock('fs', () => {
       return actualFs.readFileSync(p, opts);
     }),
     unlinkSync: jest.fn(),
+    copyFileSync: jest.fn(),
+    readdirSync: jest.fn().mockImplementation((p, opts) => {
+      if (p.toString().includes('migrations')) {
+        return actualFs.readdirSync(p, opts);
+      }
+      return [];
+    }),
     existsSync: jest.fn().mockImplementation((p) => {
       if (
         p.toString().includes('au_standard') ||
@@ -59,12 +77,14 @@ describe('PdfTemplatesService', () => {
   let service: PdfTemplatesService;
   let mockRegistry: any;
   let mockEnforcer: any;
+  let mockStorageService: any;
 
   const TEST_REPORT_ID = '00000000-0000-4000-8000-000000000001';
 
   beforeEach(async () => {
     await pg.db.delete(pdfTemplateHooks);
     await pg.db.delete(pdfTemplates);
+    await pg.db.delete(organization);
 
     mockRegistry = {
       getProvider: jest.fn(),
@@ -77,12 +97,21 @@ describe('PdfTemplatesService', () => {
       enforce: jest.fn().mockResolvedValue(true),
     };
 
+    mockStorageService = {
+      resolveFilePath: jest.fn().mockImplementation((relPath: string) => ({
+        fullPath: `/data/storage/${relPath}`,
+        exists: true,
+      })),
+      getStorageRoot: jest.fn().mockReturnValue('/data/storage'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PdfTemplatesService,
         { provide: DRIZZLE, useValue: pg.db },
         { provide: DataSourcesRegistry, useValue: mockRegistry },
         { provide: CASBIN_ENFORCER, useValue: mockEnforcer },
+        { provide: StorageService, useValue: mockStorageService },
       ],
     }).compile();
 
@@ -268,6 +297,51 @@ describe('PdfTemplatesService', () => {
           role: 'guest',
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should stage logo file and include _org.logoFile in Typst data when logo is configured', async () => {
+      await pg.db.insert(organization).values({
+        name: 'Acme Test Corp',
+        logoUrl: 'organization/acme_logo.png',
+      });
+
+      const result = await service.renderPreview('body', { test: true });
+      expect(result).toBeDefined();
+
+      expect(mockStorageService.resolveFilePath).toHaveBeenCalledWith(
+        'organization/acme_logo.png',
+      );
+      expect(fs.copyFileSync).toHaveBeenCalled();
+
+      // Verify that the written JSON data contains _org with logoFile
+      const jsonCalls = (fs.writeFileSync as jest.Mock).mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].endsWith('.json'),
+      );
+      const writeCall = jsonCalls[jsonCalls.length - 1];
+      expect(writeCall).toBeDefined();
+      const writtenJson = JSON.parse(writeCall[1]);
+      expect(writtenJson._org).toBeDefined();
+      expect(writtenJson._org.name).toBe('Acme Test Corp');
+      expect(writtenJson._org.logoFile).toMatch(/_logo\.png$/);
+    });
+
+    it('should not include logoFile when organization has no logoUrl', async () => {
+      await pg.db.insert(organization).values({
+        name: 'Plain Corp',
+        logoUrl: '',
+      });
+
+      const result = await service.renderPreview('body', { test: true });
+      expect(result).toBeDefined();
+
+      const jsonCalls = (fs.writeFileSync as jest.Mock).mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].endsWith('.json'),
+      );
+      const writeCall = jsonCalls[jsonCalls.length - 1];
+      expect(writeCall).toBeDefined();
+      const writtenJson = JSON.parse(writeCall[1]);
+      expect(writtenJson._org).toBeDefined();
+      expect(writtenJson._org.logoFile).toBeUndefined();
     });
   });
 });

@@ -87,6 +87,7 @@ async function bootstrap() {
       )
       .addTag('Global Notes', 'Global cross-domain notes')
       .addTag('Help', 'In-app user documentation and field guides')
+      .addTag('Storage', 'Image and file storage')
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);

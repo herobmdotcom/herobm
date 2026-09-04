@@ -28,6 +28,8 @@ import {
   salesEvents,
   customers as coreAccounts,
   customerGroups,
+  actors,
+  opportunities,
   products as coreProducts,
   backorders,
   purchaseOrders,
@@ -37,7 +39,6 @@ import {
   productComponents,
   tradingTerms,
   taxCategories,
-  actors,
 } from '@herobm/db-schema';
 import {
   CreateOrderDto,
@@ -243,6 +244,7 @@ export class OrdersQueryService {
         customerName: actors.name,
         country: actors.headquartersCountry,
         isCreditBlocked: getCreditBlockedSql(),
+        opportunityName: opportunities.name,
       })
       .from(salesOrders)
       .leftJoin(
@@ -253,6 +255,10 @@ export class OrdersQueryService {
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
+      )
+      .leftJoin(
+        opportunities,
+        eq(salesOrders.opportunityId, opportunities.opportunityId),
       )
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);
@@ -265,6 +271,7 @@ export class OrdersQueryService {
       customerName: rows[0].customerName,
       country: rows[0].country,
       isCreditBlocked: rows[0].isCreditBlocked,
+      opportunityName: rows[0].opportunityName ?? null,
     };
   }
 

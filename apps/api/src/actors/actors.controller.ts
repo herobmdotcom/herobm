@@ -26,10 +26,13 @@ import {
   UpdateActorContactDto,
   CreateActorContactDto,
   CreateActorNoteDto,
+  CreateActorLinkDto,
+  ActorLinkResponseDto,
   EmptyBodyDto,
   SuccessResponseDto,
+  ActorQueryDto,
 } from './dto';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
+import { ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 import { SystemResource } from '@herobm/shared';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
@@ -56,7 +59,7 @@ export class ActorsController {
   })
   @ApiFieldMask()
   @ApiPaginatedResponse(ActorResponseDto)
-  findAll(@Query() query: PaginationQuery) {
+  findAll(@Query() query: ActorQueryDto) {
     return this.actorsService.getActors(query);
   }
 
@@ -191,5 +194,48 @@ export class ActorsController {
     @AuthUser() user: JwtUser,
   ) {
     return this.actorsService.removeContact(id, contactId, user.userId);
+  }
+
+  @Get(':id/links')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Actor Links',
+    description:
+      'Retrieve corporate links (parent, subsidiary, partner, referrer) for an actor.',
+  })
+  @ApiOkResponse({ type: [ActorLinkResponseDto] })
+  getLinks(@Param('id') id: string) {
+    return this.actorsService.getActorLinks(id);
+  }
+
+  @Post(':id/links')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Actor Link',
+    description:
+      'Create a link to another actor (parent, subsidiary, partner, referrer).',
+  })
+  @ApiCreatedResponse({ type: ActorLinkResponseDto })
+  addLink(
+    @Param('id') id: string,
+    @Body() dto: CreateActorLinkDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.addActorLink(id, dto, user.userId);
+  }
+
+  @Delete(':id/links/:linkId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Actor Link',
+    description: 'Remove an actor link.',
+  })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  removeLink(
+    @Param('id') id: string,
+    @Param('linkId') linkId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.removeActorLink(id, linkId, user.userId);
   }
 }

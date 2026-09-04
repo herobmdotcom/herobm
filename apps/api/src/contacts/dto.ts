@@ -8,14 +8,15 @@ import {
   IsIn,
   IsArray,
   Matches,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ContactEntityType } from '@herobm/shared';
 
 export class CreateContactDto {
   @IsOptional()
-  @IsString()
-  @IsIn(['customer', 'actor', 'project'])
-  entityType?: 'customer' | 'actor' | 'project';
+  @IsEnum(ContactEntityType)
+  entityType?: ContactEntityType | `${ContactEntityType}`;
 
   @IsOptional()
   @IsUUID()
@@ -83,6 +84,12 @@ export class CreateContactDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  opportunityRoles?: string[];
+
+  /** @deprecated use opportunityRoles */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   projectRoles?: string[];
 }
 
@@ -136,7 +143,7 @@ export class UpdateContactDto {
   @IsString()
   jobTitle?: string;
 
-  /** @deprecated use primaryFor or projectRole instead */
+  /** @deprecated use primaryFor or opportunityRole instead */
   @IsOptional()
   @IsBoolean()
   isPrimary?: boolean;
@@ -146,6 +153,11 @@ export class UpdateContactDto {
   @IsString({ each: true })
   primaryFor?: string[];
 
+  @IsOptional()
+  @IsString()
+  opportunityRole?: string;
+
+  /** @deprecated use opportunityRole */
   @IsOptional()
   @IsString()
   projectRole?: string;
@@ -169,6 +181,8 @@ export class ContactResponseDto {
   mobile?: string | null;
   jobTitle?: string | null;
   primaryFor?: string[];
+  actorContactLinks?: unknown[];
+  events?: unknown[];
   createdOn!: Date | null;
   modifiedOn!: Date | null;
 }

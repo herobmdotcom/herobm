@@ -8,6 +8,41 @@
       "when": 1788263853535,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788460505715,
+      "tag": "0001_create_opportunities",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788460664491,
+      "tag": "0002_add_actors_owner_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788461263804,
+      "tag": "0003_add_opportunity_to_sales_orders",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788509899569,
+      "tag": "0004_add_crm_activity_contacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788510000000,
+      "tag": "0005_remove_legacy_projects",
+      "breakpoints": true
     }
   ]
 }

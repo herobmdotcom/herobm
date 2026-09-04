@@ -475,6 +475,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -661,6 +677,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -2132,6 +2164,88 @@
         ]
       }
     },
+    "/settings/organization/logo": {
+      "post": {
+        "description": "Upload and set the company logo image (max 5MB).",
+        "operationId": "OrganizationController_uploadLogo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload Organization Logo",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "Remove the company logo image.",
+        "operationId": "OrganizationController_removeLogo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Organization Logo",
+        "tags": [
+          "System"
+        ]
+      },
+      "get": {
+        "description": "Publicly stream the company logo image.",
+        "operationId": "OrganizationController_streamLogo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logo binary content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream Organization Logo",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/settings/app": {
       "get": {
         "description": "get operation",
@@ -2872,6 +2986,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -3080,6 +3210,48 @@
           }
         },
         "summary": "Get Product Cost Summary",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/{id}/copy": {
+      "post": {
+        "description": "Create a new instance of an existing product with its configuration, UoMs, suppliers, and components.",
+        "operationId": "ProductsController_copy",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Copy Product",
         "tags": [
           "Products"
         ]
@@ -3968,6 +4140,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -4210,6 +4398,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -7450,6 +7654,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -9184,6 +9404,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -9369,6 +9605,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -10178,6 +10430,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -11416,6 +11684,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -11579,6 +11863,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -12371,6 +12671,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -12616,6 +12932,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13603,6 +13935,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -13796,6 +14144,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -13970,6 +14334,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -14219,6 +14599,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -14457,6 +14853,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -15116,6 +15528,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -16826,6 +17254,150 @@
         ]
       }
     },
+    "/storage/images/{path}": {
+      "get": {
+        "description": "Publicly stream an image from storage with caching headers.",
+        "operationId": "StorageController_streamImage",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "Image relative storage path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image binary content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream Storage Image",
+        "tags": [
+          "Storage"
+        ]
+      },
+      "delete": {
+        "description": "Delete an image from storage.",
+        "operationId": "StorageController_deleteImage",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "Image relative storage path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageDeleteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Storage Image",
+        "tags": [
+          "Storage"
+        ]
+      }
+    },
+    "/storage/images": {
+      "post": {
+        "description": "Upload an image into a storage category (default: reports, max 5MB).",
+        "operationId": "StorageController_uploadImage",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Storage category (default: reports)",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageFileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload Storage Image",
+        "tags": [
+          "Storage"
+        ]
+      },
+      "get": {
+        "description": "List images within a storage category (e.g. reports, organization).",
+        "operationId": "StorageController_listImages",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Storage category (default: reports)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageFileResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Storage Images",
+        "tags": [
+          "Storage"
+        ]
+      }
+    },
     "/data-sources": {
       "get": {
         "description": "Retrieves a list of all available data sources registered in the system.",
@@ -17833,6 +18405,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -17988,6 +18576,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -19461,6 +20065,22 @@
             }
           },
           {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -19900,6 +20520,14 @@
         "operationId": "ActorsController_findAll",
         "parameters": [
           {
+            "name": "ownerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",
@@ -19989,6 +20617,22 @@
           },
           {
             "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
             "required": false,
             "in": "query",
             "schema": {
@@ -20474,17 +21118,59 @@
         ]
       }
     },
-    "/projects": {
+    "/actors/{id}/links": {
+      "get": {
+        "description": "Retrieve corporate links (parent, subsidiary, partner, referrer) for an actor.",
+        "operationId": "ActorsController_getLinks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActorLinkResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Actor Links",
+        "tags": [
+          "Actors"
+        ]
+      },
       "post": {
-        "description": "Create Project",
-        "operationId": "ProjectsController_create",
-        "parameters": [],
+        "description": "Create a link to another actor (parent, subsidiary, partner, referrer).",
+        "operationId": "ActorsController_addLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProjectDto"
+                "$ref": "#/components/schemas/CreateActorLinkDto"
               }
             }
           }
@@ -20495,21 +21181,865 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
+                  "$ref": "#/components/schemas/ActorLinkResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Create Project",
+        "summary": "Add Actor Link",
         "tags": [
-          "Projects"
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/links/{linkId}": {
+      "delete": {
+        "description": "Remove an actor link.",
+        "operationId": "ActorsController_removeLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "linkId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Actor Link",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/opportunities": {
+      "post": {
+        "description": "Create Opportunity",
+        "operationId": "OpportunitiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOpportunityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Opportunity",
+        "tags": [
+          "Opportunities"
         ]
       },
       "get": {
-        "description": "Get all Projects",
-        "operationId": "ProjectsController_findAll",
+        "description": "Get all Opportunities with filtering and pagination",
+        "operationId": "OpportunitiesController_findAll",
         "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OpportunityResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all Opportunities",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}": {
+      "get": {
+        "description": "Get Opportunity by ID with linked actors, contacts, and notes",
+        "operationId": "OpportunitiesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Opportunity by ID",
+        "tags": [
+          "Opportunities"
+        ]
+      },
+      "patch": {
+        "description": "Update Opportunity",
+        "operationId": "OpportunitiesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOpportunityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Opportunity",
+        "tags": [
+          "Opportunities"
+        ]
+      },
+      "delete": {
+        "description": "Deletes an opportunity permanently",
+        "operationId": "OpportunitiesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Opportunity",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/archive": {
+      "post": {
+        "description": "Archives an opportunity",
+        "operationId": "OpportunitiesController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Archive Opportunity",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/unarchive": {
+      "post": {
+        "description": "Unarchives an opportunity",
+        "operationId": "OpportunitiesController_unarchive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unarchive Opportunity",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/notes": {
+      "post": {
+        "description": "Adds a note to an opportunity",
+        "operationId": "OpportunitiesController_addNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOpportunityNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityNoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Opportunity Note",
+        "tags": [
+          "Opportunities"
+        ]
+      },
+      "get": {
+        "description": "Gets all notes for an opportunity",
+        "operationId": "OpportunitiesController_getNotes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpportunityNoteResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Opportunity Notes",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/notes/{noteId}": {
+      "delete": {
+        "description": "Deletes a note from an opportunity",
+        "operationId": "OpportunitiesController_deleteNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Opportunity Note",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/contacts": {
+      "post": {
+        "description": "Links a contact to an opportunity",
+        "operationId": "OpportunitiesController_addContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOpportunityContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Opportunity Contact",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/contacts/{contactId}": {
+      "put": {
+        "description": "Updates roles for a linked contact",
+        "operationId": "OpportunitiesController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOpportunityContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Opportunity Contact Roles",
+        "tags": [
+          "Opportunities"
+        ]
+      },
+      "delete": {
+        "description": "Unlinks a contact from an opportunity",
+        "operationId": "OpportunitiesController_deleteContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Opportunity Contact",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/actors": {
+      "post": {
+        "description": "Links an actor company to an opportunity",
+        "operationId": "OpportunitiesController_addActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOpportunityActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Opportunity Actor",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/{id}/actors/{actorId}": {
+      "put": {
+        "description": "Updates roles for a linked actor",
+        "operationId": "OpportunitiesController_updateActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOpportunityActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Opportunity Actor Roles",
+        "tags": [
+          "Opportunities"
+        ]
+      },
+      "delete": {
+        "description": "Unlinks an actor from an opportunity",
+        "operationId": "OpportunitiesController_deleteActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Opportunity Actor",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/crm-activities": {
+      "post": {
+        "description": "Logs a new interaction (Call, Meeting, Email, Task) against an Actor, Contact, or Project.",
+        "operationId": "CrmActivitiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCrmActivityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmActivityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create CRM Activity",
+        "tags": [
+          "CRM Activities"
+        ]
+      },
+      "get": {
+        "description": "Retrieves CRM activities and tasks with filtering by entity, assignee, and status.",
+        "operationId": "CrmActivitiesController_findAll",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "assignedToUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "call",
+                "meeting",
+                "email",
+                "task",
+                "note"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "completed",
+                "cancelled",
+                "scheduled"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "urgent"
+              ]
+            }
+          },
+          {
+            "name": "myTasks",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "q",
             "required": false,
@@ -20607,6 +22137,14 @@
             }
           },
           {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -20638,7 +22176,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/ProjectResponseDto"
+                            "$ref": "#/components/schemas/CrmActivityResponseDto"
                           }
                         }
                       },
@@ -20652,16 +22190,21 @@
             }
           }
         },
-        "summary": "Get all Projects",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List CRM Activities",
         "tags": [
-          "Projects"
+          "CRM Activities"
         ]
       }
     },
-    "/projects/{id}": {
+    "/crm-activities/{id}": {
       "get": {
-        "description": "Get Project by ID",
-        "operationId": "ProjectsController_findOne",
+        "description": "Retrieves a single CRM activity by unique identifier.",
+        "operationId": "CrmActivitiesController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -20678,20 +22221,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
+                  "$ref": "#/components/schemas/CrmActivityResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Get Project by ID",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get CRM Activity",
         "tags": [
-          "Projects"
+          "CRM Activities"
         ]
       },
       "patch": {
-        "description": "Update Project",
-        "operationId": "ProjectsController_update",
+        "description": "Modifies an existing interaction or task.",
+        "operationId": "CrmActivitiesController_update",
         "parameters": [
           {
             "name": "id",
@@ -20707,7 +22255,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProjectDto"
+                "$ref": "#/components/schemas/UpdateCrmActivityDto"
               }
             }
           }
@@ -20718,20 +22266,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
+                  "$ref": "#/components/schemas/CrmActivityResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Update Project",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update CRM Activity",
         "tags": [
-          "Projects"
+          "CRM Activities"
         ]
       },
       "delete": {
-        "description": "Delete Project",
-        "operationId": "ProjectsController_remove",
+        "description": "Permanently removes a CRM activity or task.",
+        "operationId": "CrmActivitiesController_remove",
         "parameters": [
           {
             "name": "id",
@@ -20748,22 +22301,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               }
             }
           }
         },
-        "summary": "Delete Project",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete CRM Activity",
         "tags": [
-          "Projects"
+          "CRM Activities"
         ]
       }
     },
-    "/projects/{id}/archive": {
-      "post": {
-        "description": "Archives a project",
-        "operationId": "ProjectsController_archive",
+    "/crm-activities/{id}/complete": {
+      "patch": {
+        "description": "Quickly marks a CRM task as completed.",
+        "operationId": "CrmActivitiesController_complete",
         "parameters": [
           {
             "name": "id",
@@ -20790,419 +22352,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
+                  "$ref": "#/components/schemas/CrmActivityResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Archive Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/unarchive": {
-      "post": {
-        "description": "Unarchives a project",
-        "operationId": "ProjectsController_unarchive",
-        "parameters": [
+        "security": [
           {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
+            "bearer": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Unarchive Project",
+        "summary": "Complete Task",
         "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/notes": {
-      "post": {
-        "description": "Add Note to Project",
-        "operationId": "ProjectsController_addNote",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectNoteDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectNoteResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Note to Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/notes/{noteId}": {
-      "delete": {
-        "description": "Delete Note from Project",
-        "operationId": "ProjectsController_removeNote",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Delete Note from Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/contacts": {
-      "post": {
-        "description": "Add Contact to Project",
-        "operationId": "ProjectsController_addContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectContactDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Contact to Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/contacts/{contactId}": {
-      "delete": {
-        "description": "Remove Contact from Project",
-        "operationId": "ProjectsController_removeContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Remove Contact from Project",
-        "tags": [
-          "Projects"
-        ]
-      },
-      "patch": {
-        "description": "Update Contact Role on Project",
-        "operationId": "ProjectsController_updateContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProjectContactDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Contact Role on Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/actors": {
-      "post": {
-        "description": "Add Actor to Project",
-        "operationId": "ProjectsController_addActor",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectActorDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Actor to Project",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/projects/{id}/actors/{actorId}": {
-      "put": {
-        "description": "Update Actor Role on Project",
-        "operationId": "ProjectsController_updateActor",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "actorId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProjectActorDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Actor Role on Project",
-        "tags": [
-          "Projects"
-        ]
-      },
-      "delete": {
-        "description": "Remove Actor from Project",
-        "operationId": "ProjectsController_removeActor",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "actorId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Remove Actor from Project",
-        "tags": [
-          "Projects"
+          "CRM Activities"
         ]
       }
     },
@@ -21397,6 +22560,14 @@
       "description": "Project management"
     },
     {
+      "name": "Opportunities",
+      "description": "Opportunities and pipeline"
+    },
+    {
+      "name": "CRM Activities",
+      "description": "CRM activity logging and tasks"
+    },
+    {
       "name": "CRM Map",
       "description": "CRM interactive map"
     },
@@ -21479,6 +22650,10 @@
     {
       "name": "Help",
       "description": "In-app user documentation and field guides"
+    },
+    {
+      "name": "Storage",
+      "description": "Image and file storage"
     }
   ],
   "servers": [
@@ -23015,6 +24190,30 @@
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
+          "opportunityContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityStages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
           "projectContactRoles": {
             "type": "array",
             "items": {
@@ -23121,6 +24320,30 @@
             }
           },
           "actorContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityStages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "opportunityTypes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -23783,6 +25006,19 @@
           "defaultPurchaseUomId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "CopyProductDto": {
+        "type": "object",
+        "properties": {
+          "productNumber": {
+            "type": "string",
+            "description": "Optional new unique SKU. If omitted, will be auto-generated with -COPY suffix."
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional new product name. If omitted, defaults to source name with (Copy)."
           }
         }
       },
@@ -27522,6 +28758,10 @@
       "CreateOrderDto": {
         "type": "object",
         "properties": {
+          "opportunityId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "salesOrderId": {
             "type": "string",
             "format": "uuid"
@@ -27769,6 +29009,10 @@
       "UpdateOrderDto": {
         "type": "object",
         "properties": {
+          "opportunityId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "name": {
             "type": "string"
           },
@@ -29071,8 +30315,7 @@
           },
           "currencyCode": {
             "type": "string",
-            "description": "Base currency code",
-            "example": "AUD"
+            "description": "Base currency code"
           },
           "categories": {
             "description": "Breakdown of turnover and taxes by configured tax category",
@@ -31108,6 +32351,7 @@
               "transfer_order",
               "work_order",
               "contact",
+              "opportunity",
               "project",
               "payment"
             ]
@@ -32360,6 +33604,45 @@
         "required": [
           "binId",
           "quantity"
+        ]
+      },
+      "StorageFileResponseDto": {
+        "type": "object",
+        "properties": {
+          "storagePath": {
+            "type": "string",
+            "description": "Relative path to the stored file"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Original filename"
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME type of the file"
+          },
+          "byteSize": {
+            "type": "number",
+            "description": "File size in bytes"
+          }
+        },
+        "required": [
+          "storagePath",
+          "fileName",
+          "mimeType",
+          "byteSize"
+        ]
+      },
+      "StorageDeleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates whether the deletion succeeded"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "DataSourceItemDto": {
@@ -33914,6 +35197,18 @@
               "type": "string"
             }
           },
+          "actorContactLinks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "createdOn": {
             "format": "date-time",
             "type": "string",
@@ -33941,8 +35236,9 @@
             "type": "string",
             "enum": [
               "customer",
+              "supplier",
               "actor",
-              "project"
+              "opportunity"
             ]
           },
           "entityId": {
@@ -33974,6 +35270,12 @@
             "type": "boolean"
           },
           "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "opportunityRoles": {
             "type": "array",
             "items": {
               "type": "string"
@@ -34023,6 +35325,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "opportunityRole": {
+            "type": "string"
           },
           "projectRole": {
             "type": "string"
@@ -34290,10 +35595,37 @@
           },
           "referralNote": {
             "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
           "name"
+        ]
+      },
+      "ActorOwnerDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "username"
         ]
       },
       "ActorNoteResponseDto": {
@@ -34326,6 +35658,23 @@
       "ActorResponseDto": {
         "type": "object",
         "properties": {
+          "ownerId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "owner": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorOwnerDto"
+              }
+            ]
+          },
+          "ownerDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
           "actorId": {
             "type": "string",
             "format": "uuid"
@@ -34435,6 +35784,18 @@
           "referralNote": {
             "type": "string",
             "nullable": true
+          },
+          "customers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "suppliers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -34514,6 +35875,11 @@
           },
           "referralNote": {
             "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
           }
         }
       },
@@ -34560,7 +35926,88 @@
           "content"
         ]
       },
-      "CreateProjectDto": {
+      "ActorLinkPartnerDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "actorId",
+          "name"
+        ]
+      },
+      "ActorLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": "string"
+          },
+          "sourceActorId": {
+            "type": "string"
+          },
+          "targetActorId": {
+            "type": "string"
+          },
+          "linkType": {
+            "type": "string",
+            "enum": [
+              "parent_company",
+              "subsidiary",
+              "partner",
+              "referrer"
+            ]
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "targetActor": {
+            "$ref": "#/components/schemas/ActorLinkPartnerDto"
+          },
+          "sourceActor": {
+            "$ref": "#/components/schemas/ActorLinkPartnerDto"
+          }
+        },
+        "required": [
+          "linkId",
+          "sourceActorId",
+          "targetActorId",
+          "linkType",
+          "createdOn"
+        ]
+      },
+      "CreateActorLinkDto": {
+        "type": "object",
+        "properties": {
+          "targetActorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkType": {
+            "type": "string",
+            "enum": [
+              "parent_company",
+              "subsidiary",
+              "partner",
+              "referrer"
+            ]
+          }
+        },
+        "required": [
+          "targetActorId",
+          "linkType"
+        ]
+      },
+      "CreateOpportunityDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -34575,6 +36022,26 @@
           "ownerId": {
             "type": "string",
             "format": "uuid"
+          },
+          "estimatedValue": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "targetCloseDate": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "actualValue": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
           }
         },
         "required": [
@@ -34582,7 +36049,7 @@
           "type"
         ]
       },
-      "ProjectNoteResponseDto": {
+      "OpportunityNoteResponseDto": {
         "type": "object",
         "properties": {
           "noteId": {
@@ -34609,10 +36076,10 @@
           "createdOn"
         ]
       },
-      "ProjectResponseDto": {
+      "OpportunityResponseDto": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "opportunityId": {
             "type": "string",
             "format": "uuid"
           },
@@ -34628,6 +36095,31 @@
           "type": {
             "type": "string"
           },
+          "estimatedValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetCloseDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "probability": {
+            "type": "number",
+            "nullable": true
+          },
+          "actualValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
           "createdOn": {
             "format": "date-time",
             "type": "string"
@@ -34638,6 +36130,7 @@
           },
           "ownerId": {
             "type": "string",
+            "nullable": true,
             "format": "uuid"
           },
           "owner": {
@@ -34646,16 +36139,32 @@
           "notes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ProjectNoteResponseDto"
+              "$ref": "#/components/schemas/OpportunityNoteResponseDto"
             }
           },
-          "projectActors": {
+          "opportunityActors": {
             "type": "array",
             "items": {
               "type": "object"
             }
           },
-          "projectContacts": {
+          "opportunityContacts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "dealRevenue": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total deal revenue calculated live from linked sales quote line items"
+          },
+          "quoteCount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total number of linked sales quotes"
+          },
+          "events": {
             "type": "array",
             "items": {
               "type": "object"
@@ -34663,7 +36172,7 @@
           }
         },
         "required": [
-          "projectId",
+          "opportunityId",
           "stateCode",
           "name",
           "status",
@@ -34672,7 +36181,7 @@
           "modifiedOn"
         ]
       },
-      "UpdateProjectDto": {
+      "UpdateOpportunityDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -34687,10 +36196,30 @@
           "ownerId": {
             "type": "string",
             "format": "uuid"
+          },
+          "estimatedValue": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "targetCloseDate": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "actualValue": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
           }
         }
       },
-      "CreateProjectNoteDto": {
+      "CreateOpportunityNoteDto": {
         "type": "object",
         "properties": {
           "content": {
@@ -34701,7 +36230,7 @@
           "content"
         ]
       },
-      "CreateProjectContactDto": {
+      "CreateOpportunityContactDto": {
         "type": "object",
         "properties": {
           "contactId": {
@@ -34719,7 +36248,7 @@
           "contactId"
         ]
       },
-      "UpdateProjectContactDto": {
+      "UpdateOpportunityContactDto": {
         "type": "object",
         "properties": {
           "roles": {
@@ -34730,7 +36259,7 @@
           }
         }
       },
-      "CreateProjectActorDto": {
+      "CreateOpportunityActorDto": {
         "type": "object",
         "properties": {
           "actorId": {
@@ -34748,7 +36277,7 @@
           "actorId"
         ]
       },
-      "UpdateProjectActorDto": {
+      "UpdateOpportunityActorDto": {
         "type": "object",
         "properties": {
           "roles": {
@@ -34756,6 +36285,250 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "CreateCrmActivityDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "call",
+              "meeting",
+              "email",
+              "task",
+              "note"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed",
+              "cancelled",
+              "scheduled"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "opportunityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "assignedToUserId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "subject",
+          "status",
+          "priority"
+        ]
+      },
+      "ActivityContactDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "contactId",
+          "fullName"
+        ]
+      },
+      "CrmActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "activityId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityContactDto"
+            }
+          },
+          "opportunityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "assignedToUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "completedByUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "opportunityName": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedToName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "activityId",
+          "type",
+          "subject",
+          "status",
+          "priority",
+          "createdBy",
+          "createdOn",
+          "modifiedOn"
+        ]
+      },
+      "UpdateCrmActivityDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "call",
+              "meeting",
+              "email",
+              "task",
+              "note"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed",
+              "cancelled",
+              "scheduled"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "opportunityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "assignedToUserId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -34794,13 +36567,10 @@
           "contactId"
         ]
       },
-      "CrmMapProjectNodeDto": {
+      "CrmMapOpportunityNodeDto": {
         "type": "object",
         "properties": {
-          "projectId": {
-            "type": "string"
-          },
-          "title": {
+          "opportunityId": {
             "type": "string"
           },
           "name": {
@@ -34808,7 +36578,7 @@
           }
         },
         "required": [
-          "projectId"
+          "opportunityId"
         ]
       },
       "CrmMapNodesDto": {
@@ -34826,17 +36596,17 @@
               "$ref": "#/components/schemas/CrmMapContactNodeDto"
             }
           },
-          "projects": {
+          "opportunities": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapProjectNodeDto"
+              "$ref": "#/components/schemas/CrmMapOpportunityNodeDto"
             }
           }
         },
         "required": [
           "actors",
           "contacts",
-          "projects"
+          "opportunities"
         ]
       },
       "CrmMapActorActorLinkDto": {
@@ -34875,10 +36645,10 @@
           "contactId"
         ]
       },
-      "CrmMapProjectActorLinkDto": {
+      "CrmMapOpportunityActorLinkDto": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "opportunityId": {
             "type": "string"
           },
           "actorId": {
@@ -34892,14 +36662,14 @@
           }
         },
         "required": [
-          "projectId",
+          "opportunityId",
           "actorId"
         ]
       },
-      "CrmMapProjectContactLinkDto": {
+      "CrmMapOpportunityContactLinkDto": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "opportunityId": {
             "type": "string"
           },
           "contactId": {
@@ -34913,7 +36683,7 @@
           }
         },
         "required": [
-          "projectId",
+          "opportunityId",
           "contactId"
         ]
       },
@@ -34932,16 +36702,16 @@
               "$ref": "#/components/schemas/CrmMapActorContactLinkDto"
             }
           },
-          "projectActor": {
+          "opportunityActor": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapProjectActorLinkDto"
+              "$ref": "#/components/schemas/CrmMapOpportunityActorLinkDto"
             }
           },
-          "projectContact": {
+          "opportunityContact": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapProjectContactLinkDto"
+              "$ref": "#/components/schemas/CrmMapOpportunityContactLinkDto"
             }
           },
           "referralActorActor": {
@@ -34960,8 +36730,8 @@
         "required": [
           "actorActor",
           "actorContact",
-          "projectActor",
-          "projectContact"
+          "opportunityActor",
+          "opportunityContact"
         ]
       },
       "CrmMapResponseDto": {

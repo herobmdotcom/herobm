@@ -38,6 +38,8 @@ export class StorageService {
     this.ensureDirectory(path.join(this.storageRoot, 'products'));
     this.ensureDirectory(path.join(this.storageRoot, 'products', 'uploads'));
     this.ensureDirectory(path.join(this.storageRoot, 'products', 'abm')); // Kept for legacy fallback
+    this.ensureDirectory(path.join(this.storageRoot, 'organization'));
+    this.ensureDirectory(path.join(this.storageRoot, 'reports'));
   }
 
   public getStorageRoot(): string {
@@ -86,6 +88,85 @@ export class StorageService {
       mimeType: file.mimetype,
       byteSize: file.size,
     };
+  }
+
+  /**
+   * Save an uploaded image file under a specific storage category (e.g. 'reports', 'organization', 'products').
+   */
+  async saveImage(
+    category: string,
+    file: Express.Multer.File,
+    subDirectory?: string,
+  ): Promise<SavedFileMetadata> {
+    const safeCategory = category.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSubDir = subDirectory
+      ? subDirectory.replace(/[^a-zA-Z0-9_-]/g, '_')
+      : '';
+    const uploadDir = safeSubDir
+      ? path.join(this.storageRoot, safeCategory, safeSubDir)
+      : path.join(this.storageRoot, safeCategory);
+    this.ensureDirectory(uploadDir);
+
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const baseName = path
+      .basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeFileName = `${Date.now()}_${baseName}${ext}`;
+    const destinationPath = path.join(uploadDir, safeFileName);
+
+    await fs.promises.writeFile(destinationPath, file.buffer);
+
+    const relativeStoragePath = safeSubDir
+      ? `${safeCategory}/${safeSubDir}/${safeFileName}`
+      : `${safeCategory}/${safeFileName}`;
+
+    return {
+      storagePath: relativeStoragePath,
+      fileName: file.originalname,
+      mimeType: file.mimetype,
+      byteSize: file.size,
+    };
+  }
+
+  /**
+   * List image files in a specific storage category.
+   */
+  async listImages(category: string): Promise<SavedFileMetadata[]> {
+    const safeCategory = category.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetDir = path.join(this.storageRoot, safeCategory);
+    if (!fs.existsSync(targetDir)) {
+      return [];
+    }
+
+    const mimeTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+    };
+
+    const results: SavedFileMetadata[] = [];
+    const files = await fs.promises.readdir(targetDir, { withFileTypes: true });
+
+    for (const file of files) {
+      if (file.isFile()) {
+        const ext = path.extname(file.name).toLowerCase();
+        if (mimeTypes[ext]) {
+          const fullPath = path.join(targetDir, file.name);
+          const stat = await fs.promises.stat(fullPath);
+          results.push({
+            storagePath: `${safeCategory}/${file.name}`,
+            fileName: file.name.replace(/^\d+_/, ''),
+            mimeType: mimeTypes[ext],
+            byteSize: stat.size,
+          });
+        }
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -151,12 +232,25 @@ export class StorageService {
    * Delete an uploaded file if it exists inside the uploads directory.
    */
   async deleteFile(relativePath: string): Promise<boolean> {
-    const { fullPath, exists } = this.resolveFilePath(relativePath);
+    let fullPath: string | null = null;
+    let exists = false;
+    try {
+      const resolved = this.resolveFilePath(relativePath);
+      fullPath = resolved.fullPath;
+      exists = resolved.exists;
+    } catch {
+      return false;
+    }
     if (!exists || !fullPath) return false;
 
-    // Safety guard: only allow deleting files in the uploads/ directory
-    const uploadsDir = path.resolve(this.storageRoot, 'products', 'uploads');
-    if (!fullPath.startsWith(uploadsDir)) {
+    // Safety guard: only allow deleting files within designated upload subdirectories
+    const allowedDirs = [
+      path.resolve(this.storageRoot, 'products', 'uploads'),
+      path.resolve(this.storageRoot, 'organization'),
+      path.resolve(this.storageRoot, 'reports'),
+    ];
+    const isAllowed = allowedDirs.some((dir) => fullPath.startsWith(dir));
+    if (!isAllowed) {
       return false;
     }
 

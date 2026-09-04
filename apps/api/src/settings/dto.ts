@@ -268,11 +268,23 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   actorContactRoles?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  opportunityContactRoles?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  opportunityActorRoles?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  opportunityStages?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  opportunityTypes?: OrderedSettingDto[];
+  /** @deprecated use opportunityContactRoles */
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
   projectContactRoles?: OrderedSettingDto[];
+  /** @deprecated use opportunityActorRoles */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   projectActorRoles?: OrderedSettingDto[];
+  /** @deprecated use opportunityStages */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   projectStatuses?: OrderedSettingDto[];
+  /** @deprecated use opportunityTypes */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   projectTypes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
@@ -378,8 +390,38 @@ export class UpdateAppConfigDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
+  opportunityContactRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  opportunityActorRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  opportunityStages?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  opportunityTypes?: OrderedSettingDto[];
+
+  /** @deprecated use opportunityContactRoles */
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
   projectContactRoles?: OrderedSettingDto[];
 
+  /** @deprecated use opportunityActorRoles */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
   @IsArray()
@@ -394,6 +436,7 @@ export class UpdateAppConfigDto {
   @Type(() => OrderedSettingDto)
   referralModes?: OrderedSettingDto[];
 
+  /** @deprecated use opportunityStages */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
   @IsArray()
@@ -401,6 +444,7 @@ export class UpdateAppConfigDto {
   @Type(() => OrderedSettingDto)
   projectStatuses?: OrderedSettingDto[];
 
+  /** @deprecated use opportunityTypes */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
   @IsArray()

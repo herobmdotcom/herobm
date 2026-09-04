@@ -12,10 +12,12 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import PageNav from '@/components/shared/PageNav';
 import { Button } from '@/components/shared/Button';
-import { ProjectsTab } from '@/components/shared/ProjectsTab';
+import { OpportunitiesTab } from '@/components/shared/OpportunitiesTab';
+import { ContactAffiliationsTab } from './components/ContactAffiliationsTab';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
 import { CONTACT_STATE, SystemResource, hasPermission, getErrorMessage } from '@herobm/shared';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
 
 interface ContactFormDto {
   firstName: string;
@@ -122,11 +124,11 @@ function GeneralInfoTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Created On</label>
-              <input type="text" className="input w-full bg-gray-50" value={dto.createdOn ? new Date(dto.createdOn).toLocaleString() : ''} disabled />
+              <input type="text" className="input w-full" value={dto.createdOn ? new Date(dto.createdOn).toLocaleString() : ''} disabled />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Last Modified</label>
-              <input type="text" className="input w-full bg-gray-50" value={dto.modifiedOn ? new Date(dto.modifiedOn).toLocaleString() : ''} disabled />
+              <input type="text" className="input w-full" value={dto.modifiedOn ? new Date(dto.modifiedOn).toLocaleString() : ''} disabled />
             </div>
           </div>
         </div>
@@ -140,8 +142,8 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
   const searchParams = useSearchParams();
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
-  const initialTab = (searchParams.get('tab') as 'overview' | 'projects') || 'overview';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const initialTab = (searchParams.get('tab') as 'overview' | 'projects' | 'affiliations' | 'opportunities') || 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'affiliations' | 'opportunities'>(initialTab);
 
   const {
     entity: contact,
@@ -208,15 +210,23 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       onClick: () => setActiveTab("overview"),
       subtargets: [
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activities-section', label: 'Activities', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activities-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: 'System Log', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ],
     },
     {
-      id: "tab-projects",
-      label: "Projects",
+      id: "tab-affiliations",
+      label: "Affiliated Companies",
       isSubPage: true,
-      isActive: activeTab === "projects",
-      onClick: () => setActiveTab("projects"),
+      isActive: activeTab === "affiliations",
+      onClick: () => setActiveTab("affiliations"),
+    },
+    {
+      id: "tab-opportunities",
+      label: "Opportunities",
+      isSubPage: true,
+      isActive: activeTab === "opportunities" || activeTab === "projects",
+      onClick: () => setActiveTab("opportunities"),
     },
   ];
 
@@ -266,13 +276,30 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
                 loading={loading} 
               />
             </div>
+            <div id="activities-section">
+              <CrmActivitiesSection
+                entityType="contact"
+                entityId={contactId}
+                entityName={`${contact?.firstName || ''} ${contact?.lastName || ''}`.trim()}
+                onActivityLogged={loadContact}
+              />
+            </div>
             <div id="activity-section" className="card">
-              <ActivityTimeline events={(contact as { events?: React.ComponentProps<typeof ActivityTimeline>['events'] })?.events || []} />
+              <ActivityTimeline
+                events={(contact as { events?: React.ComponentProps<typeof ActivityTimeline>['events'] })?.events || []}
+              />
             </div>
           </div>
         )}
-        {activeTab === 'projects' && (
-          <ProjectsTab entityId={contactId} entityType="contact" />
+        {activeTab === 'affiliations' && (
+          <ContactAffiliationsTab
+            contactId={contactId}
+            contact={contact}
+            onAffiliationUpdated={loadContact}
+          />
+        )}
+        {(activeTab === 'opportunities' || activeTab === 'projects') && (
+          <OpportunitiesTab entityId={contactId} entityType="contact" />
         )}
       </>
     </DetailsLayout>

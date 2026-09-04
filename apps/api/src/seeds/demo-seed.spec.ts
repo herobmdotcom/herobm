@@ -16,9 +16,9 @@ import {
   actorContactLinks,
   actorActorLinks,
   actorNotes,
-  projects,
-  projectActors,
-  projectNotes,
+  opportunities,
+  opportunityActors,
+  opportunityNotes,
   customerGroups,
   customers,
   customerDeliveryAddresses,
@@ -176,15 +176,15 @@ describe('Demo Seed Verification Suite', () => {
     const seededActorNotes = await ctx.db.select().from(actorNotes);
     expect(seededActorNotes.length).toBeGreaterThanOrEqual(1);
 
-    // 6. Assert CRM Projects
-    const seededProjects = await ctx.db.select().from(projects);
-    expect(seededProjects.length).toBeGreaterThanOrEqual(2);
+    // 6. Assert CRM Opportunities
+    const seededOpportunities = await ctx.db.select().from(opportunities);
+    expect(seededOpportunities.length).toBeGreaterThanOrEqual(2);
 
-    const seededProjActors = await ctx.db.select().from(projectActors);
-    expect(seededProjActors.length).toBeGreaterThanOrEqual(3);
+    const seededOppActors = await ctx.db.select().from(opportunityActors);
+    expect(seededOppActors.length).toBeGreaterThanOrEqual(3);
 
-    const seededProjNotes = await ctx.db.select().from(projectNotes);
-    expect(seededProjNotes.length).toBeGreaterThanOrEqual(1);
+    const seededOppNotes = await ctx.db.select().from(opportunityNotes);
+    expect(seededOppNotes.length).toBeGreaterThanOrEqual(1);
 
     // 7. Assert Manufacturing Work Orders & Pending Picks
     const seededWorkOrders = await ctx.db.select().from(workOrders);

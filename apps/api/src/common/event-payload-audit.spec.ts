@@ -23,8 +23,13 @@ const INCLUDED_IDS = new Set([
 // Ids that represent internal records, relations, or workflows and do NOT need a Name field
 const EXCLUDED_IDS = new Set([
   'actorId',
+  'sourceActorId',
+  'targetActorId',
   'contactId',
+  'linkId',
   'projectId',
+  'opportunityId',
+  'assignedToUserId',
   'noteId',
   'entityId',
   'salesOrderId',
@@ -81,6 +86,7 @@ const EXCLUDED_IDS = new Set([
   'feedbackId',
   'itemId',
   'periodId',
+  'copiedFromProductId',
 ]);
 
 describe('Event Payload Enrichment Audit', () => {

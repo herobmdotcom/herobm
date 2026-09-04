@@ -31,18 +31,22 @@ import { StorageService } from '../common/storage/storage.service';
 import {
   CreateProductDto,
   UpdateProductDto,
+  CopyProductDto,
   AddSupplierDto,
   LinkBinDto,
 } from './dto';
 
+import { ProductCopyService } from './product-copy.service';
+
 @Injectable()
 export class ProductsWriteService {
+  private readonly logger = new Logger(ProductsWriteService.name);
+
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly storageService: StorageService,
+    private readonly productCopyService: ProductCopyService,
   ) {}
-
-  private readonly logger = new Logger(ProductsWriteService.name);
 
   async create(dto: CreateProductDto, actor: string) {
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -896,5 +900,17 @@ export class ProductsWriteService {
     }
 
     return { removed: true };
+  }
+
+  /**
+   * Copy an existing product to a new instance.
+   */
+  async copy(
+    productId: string,
+    dto: CopyProductDto,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    return this.productCopyService.copy(productId, dto, actor, tx);
   }
 }

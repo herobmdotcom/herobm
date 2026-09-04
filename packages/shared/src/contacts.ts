@@ -17,3 +17,12 @@ export const DEFAULT_ACTOR_CONTACT_ROLES: Array<{
   { value: 'Billing', order: 3 },
   { value: 'Delivery', order: 4 },
 ];
+
+export enum ContactEntityType {
+  CUSTOMER = 'customer',
+  SUPPLIER = 'supplier',
+  ACTOR = 'actor',
+  OPPORTUNITY = 'opportunity',
+}
+
+export const CONTACT_ENTITY_TYPE = ContactEntityType;

@@ -810,8 +810,91 @@ h2 {
 }
 
 /* ── React Phone Number Input Overrides ── */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+}
+
 .PhoneInputInput {
-  @apply bg-transparent outline-none w-full ml-2 border-none ring-0  focus:outline-none focus:ring-0 focus:border-none;
+  @apply bg-transparent outline-none w-full ml-2 border-none ring-0 focus:outline-none focus:ring-0 focus:border-none;
+  color: var(--text-primary);
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  margin-right: 0.25rem;
+}
+
+.PhoneInputCountrySelect {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.PhoneInputCountrySelect option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.PhoneInputCountrySelectArrow {
+  border-color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ── React Flow Theme Overrides ── */
+.react-flow {
+  background-color: var(--bg-primary);
+}
+
+.react-flow__controls {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+  fill: var(--text-secondary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-card-hover) !important;
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+.react-flow__minimap {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.6) !important;
+}
+
+.react-flow__minimap-node {
+  fill: var(--bg-secondary) !important;
+  stroke: var(--border) !important;
+}
+
+.react-flow__edge-text {
+  fill: var(--text-primary) !important;
+  font-size: 11px !important;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--bg-card) !important;
+  stroke: var(--border) !important;
 }
 
 /* ── Print Stylesheet ────────────────────────────────────────────────── */

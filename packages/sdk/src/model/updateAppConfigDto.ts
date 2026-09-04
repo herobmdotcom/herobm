@@ -29,6 +29,10 @@ export interface UpdateAppConfigDto {
   enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
   actorTags?: OrderedSettingDto[];
   actorContactRoles?: OrderedSettingDto[];
+  opportunityContactRoles?: OrderedSettingDto[];
+  opportunityActorRoles?: OrderedSettingDto[];
+  opportunityStages?: OrderedSettingDto[];
+  opportunityTypes?: OrderedSettingDto[];
   projectContactRoles?: OrderedSettingDto[];
   projectActorRoles?: OrderedSettingDto[];
   referralModes?: OrderedSettingDto[];

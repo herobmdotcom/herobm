@@ -27,6 +27,7 @@ export const SearchResultDtoType = {
   transfer_order: 'transfer_order',
   work_order: 'work_order',
   contact: 'contact',
+  opportunity: 'opportunity',
   project: 'project',
   payment: 'payment',
 } as const;

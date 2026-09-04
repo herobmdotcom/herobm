@@ -767,6 +767,9 @@ test-abm:
 test-odoo:
 	@$(NPX) tsx pipelines/odoo_transform/test/run-odoo-tests.ts
 
+test-data:
+	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
+
 check-all: check-types check-lint
 
 test-deps:

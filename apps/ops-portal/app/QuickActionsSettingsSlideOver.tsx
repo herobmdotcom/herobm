@@ -118,8 +118,8 @@ export const PRESET_QUICK_ACTIONS: Omit<QuickActionItem, 'enabled'>[] = [
     id: 'create_project',
     title: 'createProject',
     description: 'createProjectDesc',
-    href: '/crm/projects/new',
-    icon: 'folder',
+    href: '/crm/opportunities/new',
+    icon: 'trending_up',
   },
   {
     id: 'record_payment',

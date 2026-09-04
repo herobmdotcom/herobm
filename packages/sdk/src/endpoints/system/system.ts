@@ -82,6 +82,7 @@ import type {
   MacrosControllerFindAllParams,
   MacrosControllerFindOneParams,
   MeResponseDto,
+  OrganizationControllerUploadLogoBody,
   OrganizationResponseDto,
   PdfTemplatesControllerRunHookParams,
   PreviewReportDto,
@@ -1423,6 +1424,119 @@ export const organizationControllerUpdate = async (updateOrganizationDto: Update
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateOrganizationDto,)
+  }
+);}
+
+
+/**
+ * Upload and set the company logo image (max 5MB).
+ * @summary Upload Organization Logo
+ */
+export type organizationControllerUploadLogoResponse200 = {
+  data: OrganizationResponseDto
+  status: 200
+}
+    
+export type organizationControllerUploadLogoResponseSuccess = (organizationControllerUploadLogoResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationControllerUploadLogoResponse = (organizationControllerUploadLogoResponseSuccess)
+
+export const getOrganizationControllerUploadLogoUrl = () => {
+
+
+  
+
+  return `/settings/organization/logo`
+}
+
+export const organizationControllerUploadLogo = async (organizationControllerUploadLogoBody: OrganizationControllerUploadLogoBody, options?: RequestInit): Promise<organizationControllerUploadLogoResponse> => {
+    const formData = new FormData();
+if(organizationControllerUploadLogoBody.file !== undefined) {
+ formData.append(`file`, organizationControllerUploadLogoBody.file)
+ }
+
+  return customFetch<organizationControllerUploadLogoResponse>(getOrganizationControllerUploadLogoUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    ,
+    body: 
+      formData,
+  }
+);}
+
+
+/**
+ * Remove the company logo image.
+ * @summary Remove Organization Logo
+ */
+export type organizationControllerRemoveLogoResponse200 = {
+  data: OrganizationResponseDto
+  status: 200
+}
+    
+export type organizationControllerRemoveLogoResponseSuccess = (organizationControllerRemoveLogoResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationControllerRemoveLogoResponse = (organizationControllerRemoveLogoResponseSuccess)
+
+export const getOrganizationControllerRemoveLogoUrl = () => {
+
+
+  
+
+  return `/settings/organization/logo`
+}
+
+export const organizationControllerRemoveLogo = async ( options?: RequestInit): Promise<organizationControllerRemoveLogoResponse> => {
+  
+  return customFetch<organizationControllerRemoveLogoResponse>(getOrganizationControllerRemoveLogoUrl(),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * Publicly stream the company logo image.
+ * @summary Stream Organization Logo
+ */
+export type organizationControllerStreamLogoResponse200 = {
+  data: Blob
+  status: 200
+}
+    
+export type organizationControllerStreamLogoResponseSuccess = (organizationControllerStreamLogoResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationControllerStreamLogoResponse = (organizationControllerStreamLogoResponseSuccess)
+
+export const getOrganizationControllerStreamLogoUrl = () => {
+
+
+  
+
+  return `/settings/organization/logo`
+}
+
+export const organizationControllerStreamLogo = async ( options?: RequestInit): Promise<organizationControllerStreamLogoResponse> => {
+  
+  return customFetch<organizationControllerStreamLogoResponse>(getOrganizationControllerStreamLogoUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

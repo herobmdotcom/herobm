@@ -19,12 +19,16 @@ fields:
   margin_percent:
     title: "Real-Time Gross Margin"
     summary: "Calculated profit margin ((Price - Cost) / Price) updated dynamically per line."
+  opportunity_id:
+    title: "Sales Opportunity"
+    summary: "Associated CRM sales deal tracking commercial revenue rollups."
   state_code:
     title: "Quote Status"
     summary: "State within the order pipeline (Draft or Quoted)."
 related:
   - "sales-orders"
   - "customers"
+  - "crm"
   - "products"
   - "dynamic-reporting"
 ---
@@ -56,6 +60,10 @@ stateDiagram-v2
 * **Real-Time Margin Tracking**: As products and discounts are entered, each line calculates real-time gross margin based on the product's active Moving Weighted Average Cost (WAC).
 * **Credit Limit Verification**: The system evaluates total customer exposure (Open Invoices + Unbilled Confirmed Orders + This Quote) against their pre-configured credit limit.
 
+### 3. CRM Opportunity Linkage
+* Quotes can be initiated directly from a CRM **Opportunity** via `/sales-quotes/new?opportunityId=<id>`.
+* The quote total automatically rolls up into the opportunity's **Live Deal Revenue**, providing real-time visibility into pipeline performance.
+
 ---
 
 ## Step-by-Step Workflows
@@ -64,10 +72,11 @@ stateDiagram-v2
 1. Go to **Sales** → **Quotes** (`/sales-quotes`).
 2. Click **New Quote** (opens the order workbench at `/sales-orders/new`).
 3. Select the **Customer**. Price scale, currency, and tax positions load automatically.
-4. Set the **Expiry Date** (`valid_until`).
-5. Add items, enter negotiated prices or line discounts.
-6. Click **Save as Quote** (sets status to `Quoted`).
-7. Click **Email** to send the branded Typst PDF quotation directly to the customer.
+4. (Optional) Select or link an active **CRM Opportunity**.
+5. Set the **Expiry Date** (`valid_until`).
+6. Add items, enter negotiated prices or line discounts.
+7. Click **Save as Quote** (sets status to `Quoted`).
+8. Click **Email** to send the branded Typst PDF quotation directly to the customer.
 
 ### 2. Converting a Quote to a Confirmed Order
 1. Open the winning quote.
@@ -82,6 +91,8 @@ stateDiagram-v2
 | :--- | :--- |
 | **Customer** | Account receiving the quotation. |
 | **Quote Number** | Unique identifier (`ORD-...`). |
+| **Opportunity** | CRM sales deal associated with the quotation. |
 | **Expiry Date** | Commercial validity cut-off date. |
 | **Gross Margin %** | Calculated profitability metric (`(Price - WAC) / Price`). |
 | **Status** | Stage (`Draft`, `Quoted`, `Confirmed`, `Cancelled`). |
+

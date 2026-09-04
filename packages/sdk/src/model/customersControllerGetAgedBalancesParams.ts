@@ -21,6 +21,8 @@ vendorId?: string;
 days?: Object;
 purchaseOrderId?: string;
 productId?: string;
+opportunityId?: string;
+projectId?: string;
 sort?: string;
 sortDirection?: Object;
 agingBasis?: CustomersControllerGetAgedBalancesAgingBasis;

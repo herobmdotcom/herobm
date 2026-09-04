@@ -13,6 +13,34 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-09-03] - Comprehensive CRM Enhancements: Opportunities, Corporate Hierarchy, Activities & Relationship Map
+
+**Topics Updated:**
+- **`docs/user/crm.md`**:
+  - Completely rewritten to reflect modern CRM feature suite.
+  - Documented Unified Actor model with Account Owner assignment (`owner_id`) and list filter options ("All Owners", "My Accounts", "Unassigned").
+  - Documented Dual Commercial Accounts tab on Actor details (Customer standing with embedded Sales Orders grid, Supplier standing with embedded Purchase Orders grid, and 1-click commercial profile creation).
+  - Documented Corporate Hierarchy & Group Trees (`ActorHierarchyTab`) for parent companies, subsidiaries, and strategic partners with reciprocal relationship perspective mapping.
+  - Documented Sales Opportunities Pipeline (`/crm/opportunities`): configurable stages, interactive Kanban board with stage drag-and-drop, DataGrid list view, win probabilities, target close dates, deal valuation, and deal description.
+  - Documented Commercial & Quotes tab on Opportunities: real-time live deal revenue rollup, linked quotes and orders grid, and direct deal conversion actions ("Convert to Order", "Quote").
+  - Documented Multi-Entity Stakeholders and Contacts mapping on opportunities, plus internal opportunity notes.
+  - Documented Contacts & Multi-Company Affiliations (`ContactAffiliationsTab`): linking individual representatives across multiple Actor firms with functional dispatch tags (`billing`, `shipping`, `purchasing`, `sales`, `general`) and structural roles (`employee`, `advisor`, `board_member`).
+  - Documented Human Activities & Follow-up Tasks (`crm_activities`): unified activity timeline combining human interactions (calls, emails, meetings, tasks, notes) with system audit logs, quick interaction logging modal, timeline filtering, and inline task completion.
+  - Documented Operations Dashboard Tasks widget (`DashboardTasksWidget`): My Tasks vs All Open Tasks, priority flags, overdue highlighting, and fast task creation.
+  - Documented Interactive Relationship Graph & Network Map (`/crm/map`): ReactFlow-powered visual network of Actors, Contacts, and Opportunities, focal Actor search with URL parameter loading (`?actorId=...`), dynamic node expansion (`+`), minimap, and click-through navigation.
+- **`docs/user/dashboard.md`**:
+  - Documented Follow-up Tasks Widget (`DashboardTasksWidget`) on the Operations Dashboard homepage.
+- **`docs/user/sales_order_management.md`**:
+  - Documented CRM Opportunity linkage (`opportunity_id`) on sales orders, order details navigation link, and deal conversion workflow.
+- **`docs/user/sales_quotes.md`**:
+  - Documented CRM Opportunity linkage (`opportunity_id`) on sales quotes and live deal revenue aggregation.
+- **`docs/user/admin_groups_settings.md`**:
+  - Documented CRM Pipeline Settings (`/admin/settings/crm`) for pipeline stages (`projectStatuses`) and opportunity types (`projectTypes`).
+- **`docs/user/database_schema.md`**:
+  - Regenerated schema documentation including `herobm_core.opportunities`, `herobm_core.opportunity_actors`, `herobm_core.opportunity_contacts`, `herobm_core.opportunity_notes`, and `herobm_core.crm_activities`, plus `actors.owner_id` and `sales_orders.opportunity_id`.
+
+---
+
 ## [2026-09-01] - Chart of Accounts Local File Upload & Preset Import Documentation
 
 **Topics Updated:**
