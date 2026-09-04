@@ -148,7 +148,7 @@ export default function OpportunityCommercialTab({
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Simple Commercial Stat Card */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-sm">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div>
             <span className="text-xs text-[var(--text-muted)] block uppercase font-medium tracking-wider">
