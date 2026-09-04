@@ -80,7 +80,7 @@ export function OpportunityKanbanBoard({
   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 pt-1 min-h-[calc(100vh-220px)] items-stretch">
+    <div className="h-full flex gap-4 overflow-x-auto pb-2 pt-1 items-stretch min-h-[450px]">
       {stages.map((stage) => {
         const stageKey = stage.value.toLowerCase();
         const items = grouped.get(stageKey) || [];
@@ -93,7 +93,7 @@ export function OpportunityKanbanBoard({
             onDragOver={(e) => handleDragOver(e, stage.value)}
             onDragLeave={(e) => handleDragLeave(e, stage.value)}
             onDrop={(e) => handleDrop(e, stage.value)}
-            className={`flex flex-col flex-1 min-w-[280px] max-w-[340px] rounded-xl border transition-colors ${
+            className={`flex flex-col flex-1 min-w-[280px] max-w-[340px] h-full rounded-xl border transition-colors ${
               isOver
                 ? 'border-[var(--accent)] bg-[var(--accent-subtle)]'
                 : 'border-[var(--border)] bg-[var(--surface-subtle)]'
@@ -117,7 +117,7 @@ export function OpportunityKanbanBoard({
             </div>
 
             {/* Cards Container */}
-            <div className="flex-1 p-2.5 flex flex-col gap-2.5 overflow-y-auto max-h-[calc(100vh-290px)]">
+            <div className="flex-1 min-h-0 p-2.5 flex flex-col gap-2.5 overflow-y-auto">
               {items.map((opp) => (
                 <OpportunityKanbanCard
                   key={opp.opportunityId}

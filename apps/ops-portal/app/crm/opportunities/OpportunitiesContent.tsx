@@ -9,10 +9,12 @@ import type { ColDef } from 'ag-grid-community';
 import * as api from '@herobm/sdk';
 import type { OpportunityResponseDto } from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
+import { useTranslations } from 'next-intl';
 import { OpportunityKanbanBoard } from './components/OpportunityKanbanBoard';
 import { toast } from 'react-hot-toast';
 
 export default function OpportunitiesContent() {
+  const tGrid = useTranslations('common.grid');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [opportunities, setOpportunities] = useState<OpportunityResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -105,7 +107,7 @@ export default function OpportunitiesContent() {
           return new Intl.NumberFormat(undefined, {
             style: 'currency',
             currency: curr,
-            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           }).format(num);
         },
       },
@@ -129,85 +131,115 @@ export default function OpportunitiesContent() {
         valueFormatter: (p) => formatLocalDate(p.value),
       },
     ],
-    [],
+    [baseCurrency],
   );
 
-  return (
-    <div className="flex flex-col gap-4 p-6">
-      {/* Top Action Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-            Opportunities
-          </h1>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Manage your sales deals, revenue forecasts, and pipeline stages
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* View Mode Toggle */}
-          <div className="flex items-center rounded-lg border border-[var(--border)] p-0.5 bg-[var(--surface-muted)]">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'kanban'
-                  ? '!bg-[var(--surface)] !text-[var(--text-primary)] shadow-sm'
-                  : '!text-[var(--text-secondary)] hover:!text-[var(--text-primary)]'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">view_kanban</span>
-              Kanban
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'list'
-                  ? '!bg-[var(--surface)] !text-[var(--text-primary)] shadow-sm'
-                  : '!text-[var(--text-secondary)] hover:!text-[var(--text-primary)]'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">format_list_bulleted</span>
-              List
-            </Button>
-          </div>
-
-          <Button asChild variant="primary">
-            <Link href="/crm/opportunities/new">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
-              <span className="material-symbols-outlined text-[18px] mr-1.5">add</span>
-              New Opportunity
-            </Link>
-          </Button>
-        </div>
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      {/* View Mode Toggle */}
+      <div className="flex items-center rounded-lg border border-[var(--border)] p-0.5 bg-[var(--surface-muted)]">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setViewMode('kanban')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            viewMode === 'kanban'
+              ? '!bg-[var(--surface)] !text-[var(--text-primary)] shadow-sm'
+              : '!text-[var(--text-secondary)] hover:!text-[var(--text-primary)]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">view_kanban</span>
+          Kanban
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setViewMode('list')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            viewMode === 'list'
+              ? '!bg-[var(--surface)] !text-[var(--text-primary)] shadow-sm'
+              : '!text-[var(--text-secondary)] hover:!text-[var(--text-primary)]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">format_list_bulleted</span>
+          List
+        </Button>
       </div>
 
-      {/* Main Content Area */}
-      {viewMode === 'kanban' ? (
-        <OpportunityKanbanBoard
-          opportunities={opportunities}
-          stages={stages}
-          onMoveStage={handleMoveStage}
-          loading={loading}
-        />
-      ) : (
-        <DataGrid
-          endpoint="/api/opportunities"
-          columns={columns}
-          gridKey="crm-opportunities"
-          searchPlaceholder="Search opportunities..."
-          exportFileName="opportunities"
-          rowIdField="opportunityId"
-          rowHref={(row) => `/crm/opportunities/${row.opportunityId}`}
-          defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
-        />
-      )}
+      <Button asChild variant="primary">
+        <Link href="/crm/opportunities/new">
+          {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
+          <span className="material-symbols-outlined text-[18px] mr-1.5">add</span>
+          New Opportunity
+        </Link>
+      </Button>
+    </div>
+  );
+
+  if (viewMode === 'list') {
+    return (
+      <DataGrid
+        endpoint="/api/opportunities"
+        columns={columns}
+        gridKey="crm-opportunities"
+        searchPlaceholder="Search opportunities..."
+        exportFileName="opportunities"
+        rowIdField="opportunityId"
+        rowHref={(row) => `/crm/opportunities/${row.opportunityId}`}
+        pageTitle="Opportunities"
+        defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
+        headerActions={headerActions}
+      />
+    );
+  }
+
+  return (
+    <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
+      <div className="relative lg:h-full flex flex-col">
+        <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-[var(--bg-card)] lg:rounded-xl lg:border lg:border-[var(--border)] lg:overflow-hidden transition-all">
+          {/* Header matching standard template */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 pt-4 pb-2 lg:pt-4 lg:pb-2 gap-4">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
+              <div className="flex items-center justify-between w-full lg:w-auto gap-4 min-w-0">
+                <div className="flex items-center gap-4 min-w-0">
+                  <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] truncate min-w-0">
+                    Opportunities
+                  </h2>
+                  <div className="hidden lg:block h-5 w-px bg-[var(--border)] shrink-0" />
+                  <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md shrink-0">
+                    <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase">
+                      {tGrid('rowCountLabel')}
+                    </span>
+                    <span className="text-[11px] font-mono font-bold text-[var(--text-primary)]">
+                      {loading ? '...' : opportunities.length.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {/* Mobile header actions */}
+                <div className="lg:hidden flex-1 flex items-center justify-end min-w-0 ml-4">
+                  {headerActions}
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex items-center justify-end gap-3">
+              {headerActions}
+            </div>
+          </div>
+
+          {/* Kanban Board Area */}
+          <div className="flex-1 min-h-0 p-4 lg:px-6 lg:pb-6 overflow-hidden">
+            <OpportunityKanbanBoard
+              opportunities={opportunities}
+              stages={stages}
+              onMoveStage={handleMoveStage}
+              loading={loading}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
