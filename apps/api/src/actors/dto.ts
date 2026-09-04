@@ -420,10 +420,7 @@ export class ActorLinkResponseDto {
 
 export class EmptyBodyDto {}
 
-export class SuccessResponseDto {
-  @SwaggerApiProperty()
-  success!: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';
 
 export class ActorQueryDto extends PaginationQuery {
   @SwaggerApiProperty({ required: false, type: String })

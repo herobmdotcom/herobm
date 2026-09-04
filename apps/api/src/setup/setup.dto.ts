@@ -369,8 +369,4 @@ export class SetupValidationDto {
   dataCounts: Record<string, number>;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty()
-  @IsBoolean()
-  success: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';

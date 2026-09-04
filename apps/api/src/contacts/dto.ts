@@ -189,6 +189,4 @@ export class ContactResponseDto {
 
 export class EmptyBodyDto {}
 
-export class SuccessResponseDto {
-  success!: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';

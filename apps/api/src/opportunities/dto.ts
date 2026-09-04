@@ -269,10 +269,7 @@ export class OpportunityResponseDto {
 
 export class EmptyBodyDto {}
 
-export class SuccessResponseDto {
-  @ApiProperty()
-  success!: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';
 
 export class OpportunityQueryDto {
   @ApiPropertyOptional({ required: false, type: String })

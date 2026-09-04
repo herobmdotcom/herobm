@@ -21,7 +21,4 @@ export class WebhookPayloadDto {
   status!: string;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty()
-  success!: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';
