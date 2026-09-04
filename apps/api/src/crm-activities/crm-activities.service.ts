@@ -23,7 +23,11 @@ import {
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { parsePagination, PaginatedResponse } from '../common/pagination';
+import {
+  parsePagination,
+  withCursorPagination,
+  PaginatedResponse,
+} from '../common/pagination';
 import {
   CreateCrmActivityDto,
   UpdateCrmActivityDto,
@@ -172,7 +176,8 @@ export class CrmActivitiesService {
     tx?: DrizzleDB,
   ): Promise<PaginatedResponse<CrmActivityResponseDto>> {
     const db = tx || this.db;
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, cursor, direction, searchTerm } =
+      parsePagination(query);
 
     const conditions = [];
 
@@ -270,17 +275,50 @@ export class CrmActivitiesService {
 
     const total = countResult?.count ?? 0;
 
-    const rows = await (whereClause ? baseQuery.where(whereClause) : baseQuery)
-      .orderBy(
-        // Open tasks first
-        sql`CASE WHEN ${crmActivities.status} = 'open' THEN 0 ELSE 1 END`,
-        // Then by due date (nearest first for open tasks)
-        asc(crmActivities.dueDate),
-        // Then by modified date desc
-        desc(crmActivities.modifiedOn),
-      )
-      .limit(limit)
-      .offset(offset);
+    const qb = whereClause ? baseQuery.where(whereClause) : baseQuery;
+
+    const {
+      data: rows,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor as {
+        modifiedOn: string;
+        activityId: string;
+      } | null,
+      direction,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
+      applyWhere: (q: any, c: any, dir: any) => {
+        const op = dir === 'next' ? sql`<` : sql`>`;
+        const idOp = dir === 'next' ? sql`>` : sql`<`;
+        const cursorCond = or(
+          sql`${crmActivities.modifiedOn} ${op} ${c.modifiedOn}`,
+          and(
+            sql`${crmActivities.modifiedOn} = ${c.modifiedOn}`,
+            sql`${crmActivities.activityId} ${idOp} ${c.activityId}`,
+          ),
+        );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
+      applyOrderBy: (q: any, dir: any) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        const idFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(crmActivities.modifiedOn),
+          idFn(crmActivities.activityId),
+        );
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
+      encodeRow: (row: any) => ({
+        modifiedOn: row.modifiedOn
+          ? new Date(row.modifiedOn).toISOString()
+          : new Date().toISOString(),
+        activityId: row.activityId,
+      }),
+    });
 
     let contactsByActivityId = new Map<string, ActivityContactDto[]>();
     if (rows.length > 0) {
@@ -323,6 +361,8 @@ export class CrmActivitiesService {
       page,
       limit,
       total,
+      nextCursor,
+      prevCursor,
     };
   }
 

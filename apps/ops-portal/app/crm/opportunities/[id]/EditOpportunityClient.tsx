@@ -560,7 +560,10 @@ export default function EditOpportunityClient({ id }: { id: string }) {
         const list = Array.isArray(u) ? u : (u as unknown as { data: api.UserResponseDto[] })?.data || [];
         setUsers(list);
       })
-      .catch(() => {});
+      .catch((e) => {
+        reportError(e, 'EditOpportunityClient - fetch users');
+        toast.error('Failed to load users: ' + getErrorMessage(e));
+      });
   }, []);
 
   const archiveOpportunity = async () => {

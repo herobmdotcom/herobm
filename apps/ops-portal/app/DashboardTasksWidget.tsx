@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import type { CrmActivityResponseDto } from '@herobm/sdk';
 import { formatLocalDate } from '@/lib/date';
+import { reportError } from '@/lib/api';
 import LogActivityModal from '@/components/shared/LogActivityModal';
 import { Button } from '@/components/shared/Button';
 
@@ -21,14 +22,15 @@ export default function DashboardTasksWidget() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.crmActivitiesControllerFindAll({
+      const { data: responseBody } = await api.crmActivitiesControllerFindAll({
         status: 'open',
         ...(filter === 'mine' ? { myTasks: 'true' } : { type: 'task' }),
         limit: 10,
       });
-      setTasks(res.data.data || []);
-    } catch {
-      // ignore
+      setTasks(responseBody.data || []);
+    } catch (err) {
+      toast.error(t('failedToLoad'));
+      reportError(err, 'DashboardTasksWidget - fetchTasks');
     } finally {
       setLoading(false);
     }

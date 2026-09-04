@@ -45,7 +45,7 @@ export function ActorCommercialTab({ actorId, actor }: ActorCommercialTabProps) 
   const creditLimitDisplay = customer?.creditLimit
     ? formatAmount(Number(customer.creditLimit), customer.currencyCode || 'USD')
     : 'Unlimited';
-  const creditHoldDisplay = customer?.isOnCreditHold ? 'Yes' : 'No';
+  const creditHoldDisplay = customer?.isSalesBlocked ? 'Yes' : 'No';
 
   const supplierStatus = supplier?.stateCode || SUPPLIER_STATE.ACTIVE;
   const supplierNumber = supplier?.vendorNumber || '—';

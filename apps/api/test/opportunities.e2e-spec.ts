@@ -165,9 +165,9 @@ describe('Opportunities (e2e)', () => {
       ).toBeDefined();
     });
 
-    it('PATCH /api/opportunities/:id/contacts/:contactId — updates contact role (admin)', async () => {
+    it('PUT /api/opportunities/:id/contacts/:contactId — updates contact role (admin)', async () => {
       const res = await request(app.getHttpServer())
-        .patch(
+        .put(
           `/api/opportunities/${createdOpportunityId}/contacts/${createdContactId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)

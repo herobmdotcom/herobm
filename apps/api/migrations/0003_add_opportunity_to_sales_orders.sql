@@ -1,3 +1,0 @@
-ALTER TABLE "herobm_core"."sales_orders" ADD COLUMN IF NOT EXISTS "opportunity_id" uuid;--> statement-breakpoint
-ALTER TABLE "herobm_core"."sales_orders" ADD CONSTRAINT "sales_orders_opportunity_id_opportunities_opportunity_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "herobm_core"."opportunities"("opportunity_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_sales_orders_opportunity_id" ON "herobm_core"."sales_orders" USING btree ("opportunity_id");
