@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import type { OpportunityResponseDto } from '@herobm/sdk';
 import { OpportunityKanbanCard } from './OpportunityKanbanCard';
 import { useSettings } from '@/components/SettingsProvider';
+import { Button } from '@/components/shared/Button';
 
 interface StageConfig {
   value: string;
@@ -78,6 +80,27 @@ export function OpportunityKanbanBoard({
       maximumFractionDigits: 0,
     }).format(total);
   };
+
+  if (stages.length === 0) {
+    return (
+      <div className="h-full min-h-[450px] flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-subtle)]">
+        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+          <span className="material-symbols-outlined text-[28px]">view_kanban</span>
+        </div>
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-1">
+          No Opportunity Stages Configured
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] max-w-md mb-6 leading-relaxed">
+          The Kanban pipeline requires opportunity stages to group and track your deals. Please configure stages in CRM Settings to enable this view.
+        </p>
+        <Button asChild variant="primary" size="sm">
+          <Link href="/admin/settings/crm">
+            Configure CRM Settings
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex gap-4 overflow-x-auto pb-2 pt-1 items-stretch min-h-[450px]">

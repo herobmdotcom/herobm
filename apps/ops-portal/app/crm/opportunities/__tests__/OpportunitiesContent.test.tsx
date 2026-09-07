@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import OpportunitiesContent from '../OpportunitiesContent';
 import * as api from '@herobm/sdk';
 
@@ -11,14 +11,16 @@ jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+let mockAppSettings: Record<string, unknown> = {
+  opportunityStages: [
+    { value: 'prospect', order: 1 },
+    { value: 'won', order: 2 },
+  ],
+};
+
 jest.mock('@/components/SettingsProvider', () => ({
   useSettings: () => ({
-    app: {
-      opportunityStages: [
-        { value: 'prospect', order: 1 },
-        { value: 'won', order: 2 },
-      ],
-    },
+    app: mockAppSettings,
     baseCurrency: 'USD',
   }),
 }));
@@ -43,6 +45,12 @@ jest.mock('@/components/shared/DataGrid', () => {
 describe('OpportunitiesContent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAppSettings = {
+      opportunityStages: [
+        { value: 'prospect', order: 1 },
+        { value: 'won', order: 2 },
+      ],
+    };
     (api.opportunitiesControllerFindAll as jest.Mock).mockResolvedValue({
       data: {
         data: [
@@ -122,5 +130,20 @@ describe('OpportunitiesContent', () => {
     expect(updatedListBtn.className).toContain('dark:!bg-white/20');
     expect(updatedListBtn.className).toContain('dark:!text-white');
     expect(updatedKanbanBtn.className).toContain('!bg-transparent');
+  });
+
+  it('renders warning banner when CRM settings have not been configured', async () => {
+    mockAppSettings = { opportunityStages: [] };
+    render(<OpportunitiesContent />);
+
+    const warningBanner = screen.getByTestId('crm-settings-warning');
+    expect(warningBanner).toBeInTheDocument();
+    expect(within(warningBanner).getByText('CRM Settings Required')).toBeInTheDocument();
+    expect(within(warningBanner).getByText('Configure CRM Settings')).toBeInTheDocument();
+  });
+
+  it('does not render warning banner when CRM opportunityStages are configured', async () => {
+    render(<OpportunitiesContent />);
+    expect(screen.queryByTestId('crm-settings-warning')).not.toBeInTheDocument();
   });
 });

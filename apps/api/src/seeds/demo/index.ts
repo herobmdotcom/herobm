@@ -85,6 +85,7 @@ import {
   inventoryEvents,
   warehouseEvents,
   financialEvents,
+  appSettings,
 } from '@herobm/db-schema';
 import {
   BIN_TYPE,
@@ -126,6 +127,13 @@ import {
   CRM_ACTIVITY_TYPE,
   CRM_ACTIVITY_STATUS,
   CRM_ACTIVITY_PRIORITY,
+  DEFAULT_OPPORTUNITY_STAGES,
+  DEFAULT_OPPORTUNITY_TYPES,
+  DEFAULT_OPPORTUNITY_CONTACT_ROLES,
+  DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+  DEFAULT_ACTOR_CONTACT_ROLES,
+  DEFAULT_ACTOR_TAGS,
+  DEFAULT_REFERRAL_MODES,
 } from '@herobm/shared';
 
 // Import standard setup functions
@@ -3853,6 +3861,48 @@ async function confirmExecution(): Promise<boolean> {
   });
 }
 
+async function seedDemoAppSettings(db: SeedDB) {
+  const existing = await db.select().from(appSettings).limit(1);
+  const crmSettings = {
+    opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
+    opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
+    opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
+    opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+    actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
+    actorTags: DEFAULT_ACTOR_TAGS,
+    referralModes: DEFAULT_REFERRAL_MODES,
+  };
+
+  if (existing.length > 0) {
+    await db.update(appSettings).set(crmSettings);
+    console.log(
+      '  Updated app_settings with demo CRM stages, types, and roles.',
+    );
+  } else {
+    const now = new Date();
+    const timeHex = now.getTime().toString(16).padStart(12, '0');
+    const sid = `${crypto.randomUUID()}-${timeHex}`;
+    await db.insert(appSettings).values({
+      inventoryValuationMethod: 'weighted_average',
+      inventoryAccountingMode: 'perpetual',
+      creditLimitBehavior: 'soft',
+      setupCompletedAt: now,
+      systemIdentifier: sid,
+      apiRateLimit: '100',
+      salesAnalysisCodes: [
+        { value: 'DEFAULT', order: 1 },
+        { value: 'PROMO', order: 2 },
+        { value: 'WHOLESALE', order: 3 },
+        { value: 'RETAIL', order: 4 },
+      ],
+      ...crmSettings,
+    });
+    console.log(
+      '  Seeded app_settings with demo CRM stages, types, and roles.',
+    );
+  }
+}
+
 export async function runDemoSeeds(
   db: SeedDB,
   dryRun = false,
@@ -3881,6 +3931,7 @@ export async function runDemoSeeds(
 
     // 1. Run the framework baseline seeds (Users, App settings, Casbin, Reports)
     await runProdSeeds(db, dryRun);
+    await seedDemoAppSettings(db);
     await seedCoaAccounts(db, false, region);
     await seedCoaSettings(db, false, region);
 

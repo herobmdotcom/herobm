@@ -41,7 +41,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
                   {/* Sidebar Container */}
                   <div
-                    className={`fixed inset-y-0 left-0 z-[9999] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:block print:hidden ${
+                    className={`fixed inset-y-0 left-0 z-[9999] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col h-full min-h-0 print:hidden ${
                       isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
                   >

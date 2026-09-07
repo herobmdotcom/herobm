@@ -178,26 +178,59 @@ export default function OpportunitiesContent() {
     </div>
   );
 
+  const hasConfiguredStages = stages.length > 0;
+
+  const crmWarningBanner = !hasConfiguredStages ? (
+    <div
+      data-testid="crm-settings-warning"
+      className="mb-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs shrink-0"
+    >
+      <div className="flex items-center gap-3">
+        <span className="material-symbols-outlined text-[24px] text-amber-600 dark:text-amber-400 shrink-0">
+          warning
+        </span>
+        <div>
+          <h4 className="text-sm font-semibold">CRM Settings Required</h4>
+          <p className="text-xs text-amber-700 dark:text-amber-400/90">
+            Opportunity stages have not been defined. Configure stages in CRM Settings to manage deals and enable the Kanban pipeline.
+          </p>
+        </div>
+      </div>
+      <Button asChild variant="secondary" size="sm" className="shrink-0 border-amber-500/40 hover:bg-amber-500/20 text-xs font-semibold">
+        <Link href="/admin/settings/crm">
+          Configure CRM Settings
+          <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+        </Link>
+      </Button>
+    </div>
+  ) : null;
+
   if (viewMode === 'list') {
     return (
-      <DataGrid
-        endpoint="/api/opportunities"
-        columns={columns}
-        gridKey="crm-opportunities"
-        searchPlaceholder="Search opportunities..."
-        exportFileName="opportunities"
-        rowIdField="opportunityId"
-        rowHref={(row) => `/crm/opportunities/${row.opportunityId}`}
-        pageTitle="Opportunities"
-        defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
-        headerActions={headerActions}
-      />
+      <div className="h-full flex flex-col">
+        {crmWarningBanner && <div className="p-4 lg:px-6 lg:pt-6 pb-0">{crmWarningBanner}</div>}
+        <div className="flex-1 min-h-0">
+          <DataGrid
+            endpoint="/api/opportunities"
+            columns={columns}
+            gridKey="crm-opportunities"
+            searchPlaceholder="Search opportunities..."
+            exportFileName="opportunities"
+            rowIdField="opportunityId"
+            rowHref={(row) => `/crm/opportunities/${row.opportunityId}`}
+            pageTitle="Opportunities"
+            defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
+            headerActions={headerActions}
+          />
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
-      <div className="relative lg:h-full flex flex-col">
+      {crmWarningBanner}
+      <div className="relative lg:h-full flex flex-col min-h-0">
         <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-[var(--bg-card)] lg:rounded-xl lg:border lg:border-[var(--border)] lg:overflow-hidden transition-all">
           {/* Header matching standard template */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 pt-4 pb-2 lg:pt-4 lg:pb-2 gap-4">

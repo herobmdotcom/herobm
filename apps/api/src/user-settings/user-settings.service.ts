@@ -20,14 +20,14 @@ export class UserSettingsService {
         .insert(userSettings)
         .values({
           userId,
-          preferences: { density: 'comfortable' },
+          preferences: { density: 'comfortable', theme: 'dark' },
         })
         .returning();
       settings = inserted;
     } else if (!settings.preferences) {
       settings = {
         ...settings,
-        preferences: { density: 'comfortable' },
+        preferences: { density: 'comfortable', theme: 'dark' },
       };
     }
 

@@ -45,7 +45,10 @@ describe('UserSettingsService', () => {
     const settings = await service.getSettings(mockUserId);
     expect(settings).toBeDefined();
     expect(settings.userId).toBe(mockUserId);
-    expect(settings.preferences).toEqual({ density: 'comfortable' });
+    expect(settings.preferences).toEqual({
+      density: 'comfortable',
+      theme: 'dark',
+    });
     expect(settings.createdAt).toBeDefined();
   });
 
@@ -67,6 +70,7 @@ describe('UserSettingsService', () => {
     expect(updated.preferences).toEqual({
       density: 'compact',
       defaultLandingPage: '/sales-orders',
+      theme: 'dark',
     });
     expect(updated.dashboardConfig).toEqual({
       pinned: ['report-1'],
@@ -79,6 +83,7 @@ describe('UserSettingsService', () => {
     expect(persisted?.preferences).toEqual({
       density: 'compact',
       defaultLandingPage: '/sales-orders',
+      theme: 'dark',
     });
   });
 });

@@ -58,3 +58,53 @@ export const DEFAULT_OPPORTUNITY_TYPES: Array<{
   { value: 'Supply Agreement', order: 3 },
   { value: 'Services / Consulting', order: 4 },
 ];
+
+export const DEFAULT_OPPORTUNITY_CONTACT_ROLES: Array<{
+  value: string;
+  order: number;
+}> = [
+  { value: 'Decision Maker', order: 1 },
+  { value: 'Procurement Lead', order: 2 },
+  { value: 'Project Manager', order: 3 },
+  { value: 'Technical Director', order: 4 },
+  { value: 'Operations Director', order: 5 },
+  { value: 'Primary Stakeholder', order: 6 },
+  { value: 'Lead Estimator', order: 7 },
+];
+
+export const DEFAULT_OPPORTUNITY_ACTOR_ROLES: Array<{
+  value: string;
+  order: number;
+}> = [
+  { value: 'General Contractor', order: 1 },
+  { value: 'Primary Builder', order: 2 },
+  { value: 'Procurement Partner', order: 3 },
+  { value: 'Supplier Consortium Partner', order: 4 },
+  { value: 'Prime Contractor', order: 5 },
+  { value: 'EPC Contractor', order: 6 },
+  { value: 'Preferred Tool Supplier', order: 7 },
+  { value: 'Maintenance Contractor', order: 8 },
+  { value: 'Bidder', order: 9 },
+];
+
+export const DEFAULT_ACTOR_TAGS: Array<{
+  value: string;
+  order: number;
+}> = [
+  { value: 'Key Account', order: 1 },
+  { value: 'High Growth', order: 2 },
+  { value: 'Enterprise', order: 3 },
+  { value: 'Government', order: 4 },
+  { value: 'Strategic Partner', order: 5 },
+];
+
+export const DEFAULT_REFERRAL_MODES: Array<{
+  value: string;
+  order: number;
+}> = [
+  { value: 'Word of Mouth', order: 1 },
+  { value: 'Partner Referral', order: 2 },
+  { value: 'Existing Customer', order: 3 },
+  { value: 'Website / Inbound', order: 4 },
+  { value: 'Trade Show / Event', order: 5 },
+];

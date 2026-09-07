@@ -8,6 +8,10 @@ import {
   ACTOR_CONTACT_ROLE,
   DEFAULT_OPPORTUNITY_STAGES,
   DEFAULT_OPPORTUNITY_TYPES,
+  DEFAULT_OPPORTUNITY_CONTACT_ROLES,
+  DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+  DEFAULT_ACTOR_TAGS,
+  DEFAULT_REFERRAL_MODES,
 } from '@herobm/shared';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -85,8 +89,8 @@ export async function runCoreSeeds(db: SeedDB, dryRun = false) {
   await seedOrganization(db, dryRun);
   await seedBaseGlSettings(db, dryRun);
   await seedCoaAccounts(db, dryRun, 'au_standard');
-  await seedCoaSettings(db, dryRun, 'au_standard');
   await seedAppSettings(db, dryRun);
+  await seedCoaSettings(db, dryRun, 'au_standard');
   await seedFinancialDimensions(db, dryRun);
   await seedReports(db, dryRun);
 
@@ -1687,6 +1691,39 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         '  Updated existing app_settings with default opportunityTypes.',
       );
     }
+    if (
+      !row.opportunityContactRoles ||
+      row.opportunityContactRoles.length === 0
+    ) {
+      await db.update(appSettings).set({
+        opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
+      });
+      console.log(
+        '  Updated existing app_settings with default opportunityContactRoles.',
+      );
+    }
+    if (!row.opportunityActorRoles || row.opportunityActorRoles.length === 0) {
+      await db.update(appSettings).set({
+        opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+      });
+      console.log(
+        '  Updated existing app_settings with default opportunityActorRoles.',
+      );
+    }
+    if (!row.actorTags || row.actorTags.length === 0) {
+      await db.update(appSettings).set({
+        actorTags: DEFAULT_ACTOR_TAGS,
+      });
+      console.log('  Updated existing app_settings with default actorTags.');
+    }
+    if (!row.referralModes || row.referralModes.length === 0) {
+      await db.update(appSettings).set({
+        referralModes: DEFAULT_REFERRAL_MODES,
+      });
+      console.log(
+        '  Updated existing app_settings with default referralModes.',
+      );
+    }
     return;
   }
 
@@ -1705,6 +1742,10 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
       opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
       opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
+      opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
+      opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+      actorTags: DEFAULT_ACTOR_TAGS,
+      referralModes: DEFAULT_REFERRAL_MODES,
       salesAnalysisCodes: [
         { value: 'DEFAULT', order: 1 },
         { value: 'PROMO', order: 2 },

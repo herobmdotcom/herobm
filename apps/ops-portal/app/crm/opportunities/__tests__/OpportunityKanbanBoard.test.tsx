@@ -106,4 +106,17 @@ describe('OpportunityKanbanBoard', () => {
 
     expect(handleMoveStage).toHaveBeenCalledWith('opp-1', 'won');
   });
+
+  it('renders informative empty state when no stages are configured', () => {
+    render(
+      <OpportunityKanbanBoard
+        opportunities={mockOpportunities}
+        stages={[]}
+        onMoveStage={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('No Opportunity Stages Configured')).toBeInTheDocument();
+    expect(screen.getByText('Configure CRM Settings')).toBeInTheDocument();
+  });
 });

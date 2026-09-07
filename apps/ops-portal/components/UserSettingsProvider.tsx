@@ -13,7 +13,7 @@ function isSystemDark(): boolean {
 }
 
 function readStoredPreferences(): UserPreferences {
-  if (typeof window === 'undefined') return { density: 'comfortable', theme: 'system' };
+  if (typeof window === 'undefined') return { density: 'comfortable', theme: 'dark' };
   try {
     const raw = localStorage.getItem(PREFS_STORAGE_KEY);
     if (raw) {
@@ -21,7 +21,7 @@ function readStoredPreferences(): UserPreferences {
       if (parsed && typeof parsed === 'object') {
         return {
           density: parsed.density === 'compact' ? 'compact' : 'comfortable',
-          theme: parsed.theme === 'dark' ? 'dark' : parsed.theme === 'light' ? 'light' : 'system',
+          theme: parsed.theme === 'light' ? 'light' : parsed.theme === 'system' ? 'system' : 'dark',
           ...parsed,
         };
       }
@@ -29,7 +29,7 @@ function readStoredPreferences(): UserPreferences {
   } catch {
     // ignore JSON parsing/storage access error
   }
-  return { density: 'comfortable', theme: 'system' };
+  return { density: 'comfortable', theme: 'dark' };
 }
 
 function writeStoredPreferences(prefs: UserPreferences): void {
@@ -87,10 +87,10 @@ interface UserSettingsContextType {
 
 const UserSettingsContext = createContext<UserSettingsContextType>({
   settings: null,
-  preferences: { density: 'comfortable', theme: 'system' },
+  preferences: { density: 'comfortable', theme: 'dark' },
   density: 'comfortable',
-  theme: 'system',
-  isDarkMode: false,
+  theme: 'dark',
+  isDarkMode: true,
   isLoading: true,
   updatePreferences: async () => {},
   updateDashboardConfig: async () => {},
@@ -106,7 +106,7 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
   const [settings, setSettings] = useState<api.UserSettingsResponseDto | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(() => readStoredPreferences());
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    const currentTheme = preferences.theme || 'system';
+    const currentTheme = preferences.theme || 'dark';
     return currentTheme === 'dark' || (currentTheme === 'system' && isSystemDark());
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -115,7 +115,7 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     applyLocaleToDom();
     applyDensityToDom(preferences.density || 'comfortable');
-    const dark = applyThemeToDom(preferences.theme || 'system');
+    const dark = applyThemeToDom(preferences.theme || 'dark');
     setIsDarkMode(dark);
   }, [preferences.density, preferences.theme]);
 
@@ -140,13 +140,13 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
         setSettings(res.data);
         const serverPrefs: UserPreferences = {
           density: 'comfortable',
-          theme: 'system',
+          theme: 'dark',
           ...((res.data.preferences as UserPreferences) || {}),
         };
         setPreferences(serverPrefs);
         writeStoredPreferences(serverPrefs);
         applyDensityToDom(serverPrefs.density || 'comfortable');
-        const dark = applyThemeToDom(serverPrefs.theme || 'system');
+        const dark = applyThemeToDom(serverPrefs.theme || 'dark');
         setIsDarkMode(dark);
       }
     } catch (err: unknown) {

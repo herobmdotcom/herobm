@@ -122,7 +122,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       className="w-60 h-full flex flex-col print:hidden bg-[var(--bg-primary)] text-[var(--text-primary)] border-r border-[var(--border)] select-none"
     >
       {/* Brand Header */}
-      <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-primary)]">
+      <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-primary)] shrink-0">
         <Link href="/" className="flex items-center gap-2.5 no-underline hover:opacity-85 transition-opacity">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent)] text-white font-extrabold text-sm shadow-xs">
             H
@@ -139,7 +139,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3 bg-[var(--bg-primary)]">
+      <nav className="flex-1 min-h-0 px-3 py-3 overflow-y-auto space-y-3 bg-[var(--bg-primary)]">
         {sections.map((section, si) => {
           const sectionKey = section.label || `unlabeled-${si}`;
           const isExpanded = !section.label || expanded[sectionKey];
@@ -245,7 +245,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
       </nav>
 
       {/* Footer: User Button & Help Button */}
-      <div className="px-3 py-3 border-t border-[var(--border)] flex items-center gap-2 bg-[var(--bg-primary)] relative">
+      <div className="px-3 py-3 border-t border-[var(--border)] flex items-center gap-2 bg-[var(--bg-primary)] relative shrink-0">
         {/* User Menu Popover */}
         {isMenuOpen && (
           <div

@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   var p = localStorage.getItem('herobm_user_prefs');
   var prefs = p ? JSON.parse(p) : {};
   if (prefs.density) { document.documentElement.setAttribute('data-density', prefs.density); }
-  var theme = prefs.theme || 'system';
+  var theme = prefs.theme || 'dark';
   var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   if (isDark) {
     document.documentElement.classList.add('dark', 'herobm-dark');

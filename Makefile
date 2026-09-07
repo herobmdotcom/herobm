@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm
 
 
 define HELP_TEXT
@@ -66,12 +66,58 @@ Verification & Quality Gates:
      REUSE=1              - Reuse already-running test containers (fast iteration)
      NO_TEARDOWN=1        - Keep test containers alive after tests pass
      SKIP_STRUCTURAL=1    - Skip AST invariant checks
+
+ Demo Video Generation:
+   make demo-help      - Display guide and instructions for demo recording suite
+   make demo-auth      - Interactive browser to authenticate and store session profile
+   make demo-sales-order - Generate automated human-actor Sales Order flow video
+   make demo-crm       - Generate automated human-actor CRM showcase video (Dark Mode)
 =========================================
 endef
 export HELP_TEXT
 
+define DEMO_HELP_TEXT
+HeroBM Demo Video Suite & Automation:
+=========================================
+Overview:
+  Automated video recording and showcase scripts using Playwright and
+  the HumanActor engine (natural mouse curves, typing cadence, smooth scrolling).
+  Recordings are saved to tmp/videos/ as high-definition .webm files.
+
+Available Make Targets:
+  make demo-help        - Display this demo suite documentation
+  make demo-auth        - Launch browser to authenticate & save session to tmp/demo-browser-profile
+  make seed-demo        - Seed database with full CRM demo dataset (opportunities, quotes, tasks)
+  make demo-crm         - Run automated CRM showcase video generator (Dark Mode)
+  make demo-sales-order - Run automated Sales Order workflow video generator
+
+Configuration & Environment Variables:
+  DEMO_BASE_URL         - Target portal URL (default: https://herobm-dev.exe.xyz)
+  DEMO_USERNAME         - Portal login username (default: demo)
+  DEMO_PASSWORD         - Portal login password (default: demodemo)
+  DEMO_HEADED           - Headed visual browser mode (default: true; set false for headless)
+  ENV_FILE              - Custom env file path to load (e.g. .env.volzau)
+
+Workflow:
+  1. Setup Authentication (Required once or when session expires):
+       make demo-auth
+     (Logs in via SSO / exe.dev proxy; press ENTER in terminal to save session)
+
+  2. Seed Demo Data (Optional / remote update):
+       make seed-demo
+
+  3. Generate Videos:
+       make demo-crm           -> tmp/videos/crm-demo-<timestamp>.webm
+       make demo-sales-order   -> tmp/videos/sales-order-demo-<timestamp>.webm
+=========================================
+endef
+export DEMO_HELP_TEXT
+
 help:
 	@node -e "console.log(process.env.HELP_TEXT)"
+
+demo-help:
+	@node -e "console.log(process.env.DEMO_HELP_TEXT)"
 # Environment Profile Resolution
 # 1. Command Line explicit (make ... PROFILE=staging)
 # 2. Directory context file (.active_profile)
@@ -537,8 +583,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.2-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.2-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -812,4 +858,13 @@ build-all:
 	node scripts/run-on-enabled-extensions.mjs build
 
 clean-dev: clean-build
+
+demo-auth:
+	@$(NPX) tsx tools/demo/auth-session.ts
+
+demo-sales-order:
+	@$(NPX) tsx tools/demo/sales-order-demo.ts
+
+demo-crm:
+	@$(NPX) tsx tools/demo/crm-demo.ts
 

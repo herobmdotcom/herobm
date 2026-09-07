@@ -105,7 +105,7 @@ describe('UserSettingsProvider', () => {
     expect(screen.getByTestId('density').textContent).toBe('compact');
     expect(document.documentElement.getAttribute('data-density')).toBe('compact');
     expect(mockUpdateSettings).toHaveBeenCalledWith({
-      preferences: { density: 'compact', theme: 'system' },
+      preferences: { density: 'compact', theme: 'dark' },
     });
   });
 
