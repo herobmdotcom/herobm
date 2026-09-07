@@ -1,6 +1,6 @@
 {
   "name": "@herobm/db-schema",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "HeroBM: Canonical Drizzle ORM database schemas",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",

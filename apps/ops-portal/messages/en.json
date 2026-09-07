@@ -1305,6 +1305,7 @@
     "grid": {
       "all": "All",
       "clearCustomView": "X",
+      "clearSearch": "Clear search",
       "columns": "Columns",
       "customViewMessage": "All records",
       "export": "Export",

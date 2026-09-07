@@ -129,6 +129,58 @@ describe('DataGrid', () => {
       expect(grid.getAttribute('data-page-size')).toBe('200');
     });
   });
+
+  it('does not render clear button when search is empty', async () => {
+    render(
+      <DataGrid
+        rowData={[{ id: '1', name: 'Widget' }]}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        searchPlaceholder="Search items..."
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('Search items...');
+    expect(input).toHaveValue('');
+    expect(screen.queryByRole('button', { name: /clearSearch/i })).toBeNull();
+  });
+
+  it('renders clear button when search has text, and clicking it clears search and refocuses input', async () => {
+    const user = userEvent.setup();
+    render(
+      <DataGrid
+        rowData={[{ id: '1', name: 'Widget' }]}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        searchPlaceholder="Search items..."
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('Search items...');
+    await user.type(input, 'Widget');
+
+    expect(input).toHaveValue('Widget');
+    const clearButton = screen.getByRole('button', { name: /clearSearch/i });
+    expect(clearButton).toBeInTheDocument();
+
+    await user.click(clearButton);
+
+    expect(input).toHaveValue('');
+    expect(screen.queryByRole('button', { name: /clearSearch/i })).toBeNull();
+    expect(input).toHaveFocus();
+  });
+
+  it('renders clear button when initialSearch is provided', async () => {
+    render(
+      <DataGrid
+        rowData={[{ id: '1', name: 'Widget' }]}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        initialSearch="initial query"
+      />,
+    );
+
+    const input = screen.getByDisplayValue('initial query');
+    expect(input).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /clearSearch/i })).toBeInTheDocument();
+  });
 });
 
 /* ── localStorage helper tests ────────────────────────────────────── */

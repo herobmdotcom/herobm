@@ -637,6 +637,7 @@
   "common.filters.last90Days",
   "common.filters.monthToDate",
   "common.grid",
+  "common.grid.clearSearch",
   "common.grid.columns",
   "common.grid.export",
   "common.grid.exportCsv",

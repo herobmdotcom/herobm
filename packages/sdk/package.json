@@ -1,6 +1,6 @@
 {
   "name": "@herobm/sdk",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "HeroBM: TypeScript Client SDK generated from OpenAPI",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",

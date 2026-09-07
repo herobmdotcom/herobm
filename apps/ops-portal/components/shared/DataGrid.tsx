@@ -147,6 +147,7 @@ export default function DataGrid<T>({
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -853,12 +854,19 @@ export default function DataGrid<T>({
     [onRowClicked, rowHref, gridKey, router],
   );
 
+  const handleClearSearch = useCallback(() => {
+    setSearch('');
+    setCursor(null);
+    resetScroll();
+    searchInputRef.current?.focus();
+  }, [resetScroll]);
+
   const searchInputNode = hideSearch ? null : (
     <div className="relative flex items-center w-full">
-
-      <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
+      <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none select-none">search</span>
       <input
-        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-[var(--text-muted)] focus:placeholder-[var(--text-muted)] lg:pr-4 focus:pr-4' : 'pr-4'}`}
+        ref={searchInputRef}
+        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] ${!search ? 'pr-0 placeholder-transparent lg:placeholder-[var(--text-muted)] focus:placeholder-[var(--text-muted)] lg:pr-4 focus:pr-4' : 'pr-8'}`}
         placeholder={searchPlaceholder ?? "Search…"}
         value={search}
         onChange={(e) => {
@@ -870,6 +878,19 @@ export default function DataGrid<T>({
           setSearch(e.target.value.trim());
         }}
       />
+      {Boolean(search) && (
+        <Button
+          type="button"
+          variant="ghost"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={handleClearSearch}
+          aria-label={tGrid('clearSearch')}
+          title={tGrid('clearSearch')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer bg-transparent !border-0 p-1 w-6 h-6 shadow-none flex items-center justify-center rounded-full"
+        >
+          <span className="material-symbols-outlined text-[16px] leading-none select-none">close</span>
+        </Button>
+      )}
     </div>
   );
 

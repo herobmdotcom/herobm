@@ -18,7 +18,10 @@ import {
   actorNotes,
   opportunities,
   opportunityActors,
+  opportunityContacts,
   opportunityNotes,
+  crmActivities,
+  crmActivityContacts,
   customerGroups,
   customers,
   customerDeliveryAddresses,
@@ -87,6 +90,7 @@ import {
   SALES_ORDER_PICK_STATE,
 } from '@herobm/shared';
 import type { SeedDB } from './run';
+import { executeLedgerIntegrityAudit } from '../gl/gl-integrity-audit.utils';
 
 describe('Demo Seed Verification Suite', () => {
   const ctx = setupPgliteSuite();
@@ -176,15 +180,30 @@ describe('Demo Seed Verification Suite', () => {
     const seededActorNotes = await ctx.db.select().from(actorNotes);
     expect(seededActorNotes.length).toBeGreaterThanOrEqual(1);
 
-    // 6. Assert CRM Opportunities
+    // 6. Assert CRM Opportunities & Activities
     const seededOpportunities = await ctx.db.select().from(opportunities);
-    expect(seededOpportunities.length).toBeGreaterThanOrEqual(2);
+    expect(seededOpportunities.length).toBeGreaterThanOrEqual(10);
 
     const seededOppActors = await ctx.db.select().from(opportunityActors);
-    expect(seededOppActors.length).toBeGreaterThanOrEqual(3);
+    expect(seededOppActors.length).toBeGreaterThanOrEqual(10);
+
+    const seededOppContacts = await ctx.db.select().from(opportunityContacts);
+    expect(seededOppContacts.length).toBeGreaterThanOrEqual(5);
 
     const seededOppNotes = await ctx.db.select().from(opportunityNotes);
-    expect(seededOppNotes.length).toBeGreaterThanOrEqual(1);
+    expect(seededOppNotes.length).toBeGreaterThanOrEqual(5);
+
+    const seededActivities = await ctx.db.select().from(crmActivities);
+    expect(seededActivities.length).toBeGreaterThanOrEqual(16);
+    const openTasks = seededActivities.filter(
+      (a) => a.status === 'open' && a.type === 'task',
+    );
+    expect(openTasks.length).toBeGreaterThanOrEqual(4);
+
+    const seededActivityContacts = await ctx.db
+      .select()
+      .from(crmActivityContacts);
+    expect(seededActivityContacts.length).toBeGreaterThanOrEqual(5);
 
     // 7. Assert Manufacturing Work Orders & Pending Picks
     const seededWorkOrders = await ctx.db.select().from(workOrders);
@@ -316,9 +335,9 @@ describe('Demo Seed Verification Suite', () => {
       .from(purchaseDebitNoteShipments);
     expect(seededDebitShipments.length).toBe(3);
 
-    // 10. Assert Sales Orders Across Operational Queues (Picking, Shipping, Shipped)
+    // 10. Assert Sales Orders Across Operational Queues (Picking, Shipping, Shipped, Quotes)
     const seededSOs = await ctx.db.select().from(salesOrders);
-    expect(seededSOs.length).toBe(70);
+    expect(seededSOs.length).toBe(73);
 
     // Picking Queue Orders (Confirmed)
     const confirmedSOs = seededSOs.filter(
@@ -337,6 +356,16 @@ describe('Demo Seed Verification Suite', () => {
       (so) => so.stateCode === SALES_ORDER_STATE.SHIPPED,
     );
     expect(shippedSOs.length).toBe(35);
+
+    // Live Sales Quotes
+    const quotedSOs = seededSOs.filter(
+      (so) => so.stateCode === SALES_ORDER_STATE.QUOTED,
+    );
+    expect(quotedSOs.length).toBe(3);
+
+    // Assert CRM Opportunity Links
+    const oppLinkedSOs = seededSOs.filter((so) => so.opportunityId !== null);
+    expect(oppLinkedSOs.length).toBeGreaterThanOrEqual(10);
 
     const seededSOLines = await ctx.db.select().from(salesOrderLineItems);
     expect(seededSOLines.length).toBeGreaterThanOrEqual(100);
@@ -399,14 +428,14 @@ describe('Demo Seed Verification Suite', () => {
 
     // 14. Assert GL Journal Entries & Segment Dimensions
     const seededJournals = await ctx.db.select().from(glJournalEntries);
-    expect(seededJournals.length).toBe(5);
+    expect(seededJournals.length).toBeGreaterThanOrEqual(75);
 
     const seededJournalLines = await ctx.db.select().from(glJournalLines);
-    expect(seededJournalLines.length).toBe(10);
-    for (const jl of seededJournalLines) {
-      expect(jl.costCenterId).toBeDefined();
-      expect(jl.activityId).toBeDefined();
-    }
+    expect(seededJournalLines.length).toBeGreaterThanOrEqual(150);
+    const linesWithDimensions = seededJournalLines.filter(
+      (jl) => jl.costCenterId !== null && jl.activityId !== null,
+    );
+    expect(linesWithDimensions.length).toBeGreaterThanOrEqual(10);
 
     // 15. Assert Double-Entry Inventory Ledger & Stock Levels
     const stockEntries = await ctx.db.select().from(inventoryEntries);
@@ -439,5 +468,12 @@ describe('Demo Seed Verification Suite', () => {
 
     const finEvents = await ctx.db.select().from(financialEvents);
     expect(finEvents.length).toBeGreaterThan(0);
+
+    // 17. Assert General Ledger Cryptographic Integrity & Sequence Continuity
+    const auditReport = await executeLedgerIntegrityAudit(ctx.db as any);
+    expect(auditReport.anomaliesCount).toBe(0);
+    expect(auditReport.anomalies).toEqual([]);
+    expect(auditReport.verifiedInvoicesCount).toBe(35);
+    expect(auditReport.verifiedJournalsCount).toBeGreaterThanOrEqual(75);
   });
 });

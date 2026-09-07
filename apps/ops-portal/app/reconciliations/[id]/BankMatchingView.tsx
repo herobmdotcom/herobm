@@ -312,6 +312,9 @@ export default function BankMatchingView({
                         .options-btn-wrapper > div > button:first-child span {
                           margin-right: 0 !important;
                         }
+                        .search-wrapper > div {
+                          width: 180px !important;
+                        }
                         .search-wrapper input {
                           height: 32px !important;
                           width: 180px !important;
@@ -428,6 +431,9 @@ export default function BankMatchingView({
                         .options-btn-wrapper > div > button:first-child span.material-symbols-outlined {
                           font-size: 18px !important;
                           margin: 0 !important;
+                        }
+                        .search-wrapper > div {
+                          width: 140px !important;
                         }
                         .search-wrapper input {
                           height: 32px !important;

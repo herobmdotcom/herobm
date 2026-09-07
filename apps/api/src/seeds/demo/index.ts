@@ -76,6 +76,9 @@ import {
   exchangeRates,
   taxCategories,
   tradingTerms,
+  crmActivities,
+  crmActivityContacts,
+  users,
   masterDataEvents,
   procurementEvents,
   salesEvents,
@@ -117,12 +120,20 @@ import {
   CONTACT_STATE,
   OPPORTUNITY_STATE,
   PROJECT_STATE,
+  GENESIS_HASH,
+  computeCanonicalPayloadHash,
+  computeEntryHash,
+  CRM_ACTIVITY_TYPE,
+  CRM_ACTIVITY_STATUS,
+  CRM_ACTIVITY_PRIORITY,
 } from '@herobm/shared';
 
 // Import standard setup functions
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
 import { runProdSeeds } from '../prod';
 import type { SeedDB } from '../run';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { executeLedgerIntegrityAudit } from '../../gl/gl-integrity-audit.utils';
 
 function uuid() {
   return crypto.randomUUID();
@@ -165,6 +176,7 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.customer_delivery_addresses, herobm_core.customers, herobm_core.customer_groups,
       herobm_core.suppliers, herobm_core.supplier_groups,
       herobm_core.actor_contact_links, herobm_core.actor_actor_links, herobm_core.actor_notes, herobm_core.contacts,
+      herobm_core.crm_activity_contacts, herobm_core.crm_activities,
       herobm_core.opportunity_actors, herobm_core.opportunity_contacts, herobm_core.opportunity_notes, herobm_core.opportunities,
       herobm_core.actors,
       herobm_core.bins, herobm_core.zones, herobm_core.locations,
@@ -212,6 +224,7 @@ export interface MasterActorSupplier {
   number: string;
   name: string;
   currencyCode: string;
+  contactId: string;
 }
 
 export interface MasterActorCustomer {
@@ -221,6 +234,7 @@ export interface MasterActorCustomer {
   name: string;
   customerGroupId: string;
   currencyCode: string;
+  contactId: string;
 }
 
 export interface MasterData {
@@ -239,6 +253,18 @@ export interface MasterData {
   inventoryAccountId: string;
   costCenterId: string;
   activityId: string;
+  opps: {
+    opp1: string;
+    opp2: string;
+    opp3: string;
+    opp4: string;
+    opp5: string;
+    opp6: string;
+    opp7: string;
+    opp8: string;
+    opp9: string;
+    opp10: string;
+  };
 }
 
 export async function seedMasterData(
@@ -976,6 +1002,7 @@ export async function seedMasterData(
       number: s.number,
       name: s.name,
       currencyCode: s.currency,
+      contactId,
     });
   }
 
@@ -1204,6 +1231,7 @@ export async function seedMasterData(
       name: c.name,
       customerGroupId: c.groupId,
       currencyCode: baseCurrency,
+      contactId,
     });
   }
 
@@ -1230,74 +1258,736 @@ export async function seedMasterData(
       .onConflictDoNothing();
   }
 
-  // 10. Major CRM Opportunities
-  const projectId1 = uuid();
-  const projectId2 = uuid();
+  // 10. Major CRM Opportunities & Activities
+  const [adminUser] = await db
+    .select({ userId: users.userId, username: users.username })
+    .from(users)
+    .where(eq(users.username, 'admin'))
+    .limit(1);
+  const adminUserId = adminUser?.userId || null;
+
+  const opp1 = uuid(); // Pacific Northwest Clean Energy Complex (Prospect)
+  const opp2 = uuid(); // Austin Tech Campus Expansion - Phase 2 (Prospect)
+  const opp3 = uuid(); // Chicago Transit Authority Station Modernization (Qualification)
+  const opp4 = uuid(); // Midwest Automated Distribution Center (Qualification)
+  const opp5 = uuid(); // Downtown Commercial Highrise Tower B (Proposal)
+  const opp6 = uuid(); // Texas Gulf Coast Refinery Turnaround (Proposal)
+  const opp7 = uuid(); // Metro Rail Expansion 2026 (Negotiation)
+  const opp8 = uuid(); // Rocky Mountain Solar Farm Installation (Negotiation)
+  const opp9 = uuid(); // Phoenix Sky Harbor Concourse Expansion (Won)
+  const opp10 = uuid(); // Southwest Regional Logistics Park (Lost)
+
+  const nowTimestamp = new Date();
 
   await db
     .insert(opportunities)
     .values([
       {
-        opportunityId: projectId1,
-        name: 'Metro Rail Expansion 2026',
-        status: 'In Progress',
-        type: 'Commercial Infrastructure',
-        estimatedValue: '450000',
+        opportunityId: opp1,
+        name: 'Pacific Northwest Clean Energy Complex',
+        status: 'Prospect',
+        type: 'Commercial',
+        estimatedValue: '385000.00',
         currencyCode: baseCurrency,
-        targetCloseDate: new Date('2026-11-30'),
-        probability: 70,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 150 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 20,
         description:
-          'Multi-station power tool and safety gear supply contract.',
+          'Solar farm auxiliary building electrical gear and cordless tooling supply agreement.',
         stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
       },
       {
-        opportunityId: projectId2,
-        name: 'Downtown Commercial Highrise Tower B',
-        status: 'Planning',
-        type: 'Highrise Construction',
-        estimatedValue: '820000',
+        opportunityId: opp2,
+        name: 'Austin Tech Campus Expansion - Phase 2',
+        status: 'Prospect',
+        type: 'Infrastructure',
+        estimatedValue: '540000.00',
         currencyCode: baseCurrency,
-        targetCloseDate: new Date('2027-02-15'),
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 180 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 25,
+        description:
+          'High-density commercial office buildout requiring industrial fastening systems and safety gear.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp3,
+        name: 'Chicago Transit Authority Station Modernization',
+        status: 'Qualification',
+        type: 'Infrastructure',
+        estimatedValue: '295000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 120 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 40,
+        description:
+          'Transit platform renovation tooling and heavy-duty demolition hammer kits.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp4,
+        name: 'Midwest Automated Distribution Center',
+        status: 'Qualification',
+        type: 'Commercial',
+        estimatedValue: '620000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 90 * 24 * 60 * 60 * 1000,
+        ),
         probability: 45,
         description:
-          'Structural reinforcement and specialized tooling equipment.',
+          'Logistics center fit-out package: pneumatic nailers, cordless drills, and technician tool storage.',
         stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp5,
+        name: 'Downtown Commercial Highrise Tower B',
+        status: 'Proposal',
+        type: 'Infrastructure',
+        estimatedValue: '820000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 60 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 60,
+        description:
+          'Structural reinforcement and specialized tooling equipment for 42-story commercial tower.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp6,
+        name: 'Texas Gulf Coast Refinery Turnaround',
+        status: 'Proposal',
+        type: 'Supply Agreement',
+        estimatedValue: '475000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 50 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 65,
+        description:
+          'Annual scheduled maintenance turnaround supply package: non-sparking safety tools and impact drivers.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp7,
+        name: 'Metro Rail Expansion 2026',
+        status: 'Negotiation',
+        type: 'Infrastructure',
+        estimatedValue: '450000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 30 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 85,
+        description:
+          'Multi-station power tool and safety gear supply contract for regional light rail expansion.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp8,
+        name: 'Rocky Mountain Solar Farm Installation',
+        status: 'Negotiation',
+        type: 'Supply Agreement',
+        estimatedValue: '310000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() + 25 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 80,
+        description:
+          'Utility-scale tracker torque tooling and high-volume fastening packages.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp9,
+        name: 'Phoenix Sky Harbor Terminal 4 Concourse Upgrade',
+        status: 'Won',
+        type: 'Commercial',
+        estimatedValue: '560000.00',
+        actualValue: '560000.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() - 30 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 100,
+        description:
+          'Airport concourse expansion tooling contract won. Active phased delivery through Southwest distribution hub.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
+      },
+      {
+        opportunityId: opp10,
+        name: 'Southwest Regional Logistics Park - Phase 1',
+        status: 'Lost',
+        type: 'Commercial',
+        estimatedValue: '340000.00',
+        actualValue: '0.00',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date(
+          nowTimestamp.getTime() - 60 * 24 * 60 * 60 * 1000,
+        ),
+        probability: 0,
+        description:
+          'Industrial warehouse tool fleet procurement. Lost to regional competitor on financing terms.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
+        ownerId: adminUserId,
       },
     ])
     .onConflictDoNothing();
 
+  // Opportunity Actors
   await db
     .insert(opportunityActors)
     .values([
       {
         opportunityActorId: uuid(),
-        opportunityId: projectId1,
+        opportunityId: opp1,
+        actorId: custs[4].actorId, // PNW Contractors
+        roles: ['General Contractor', 'Primary Builder'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp2,
+        actorId: custs[1].actorId, // BuildIt Retail
+        roles: ['Primary Builder', 'Procurement Partner'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp3,
+        actorId: custs[0].actorId, // Home Hardware
+        roles: ['Supplier Consortium Partner'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp4,
+        actorId: custs[0].actorId, // Home Hardware
+        roles: ['General Contractor'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp5,
+        actorId: custs[3].actorId, // Texas Builders Group
+        roles: ['Structural Subcontractor'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp6,
+        actorId: custs[3].actorId, // Texas Builders Group
+        roles: ['Maintenance Contractor'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp7,
         actorId: custs[2].actorId, // Apex Construction
         roles: ['General Contractor', 'Primary Builder'],
       },
       {
         opportunityActorId: uuid(),
-        opportunityId: projectId1,
+        opportunityId: opp7,
         actorId: sups[0].actorId, // Milwaukee Tool
         roles: ['Preferred Tool Supplier'],
       },
       {
         opportunityActorId: uuid(),
-        opportunityId: projectId2,
-        actorId: custs[3].actorId, // Texas Builders Group
-        roles: ['Structural Subcontractor'],
+        opportunityId: opp8,
+        actorId: custs[2].actorId, // Apex Construction
+        roles: ['EPC Contractor'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp9,
+        actorId: custs[2].actorId, // Apex Construction
+        roles: ['Prime Contractor'],
+      },
+      {
+        opportunityActorId: uuid(),
+        opportunityId: opp10,
+        actorId: custs[1].actorId, // BuildIt Retail
+        roles: ['Bidder'],
       },
     ])
     .onConflictDoNothing();
 
+  // Opportunity Contacts
+  await db
+    .insert(opportunityContacts)
+    .values([
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp1,
+        contactId: custs[4].contactId,
+        roles: ['Decision Maker', 'Operations Director'],
+      },
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp2,
+        contactId: custs[1].contactId,
+        roles: ['Procurement Lead'],
+      },
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp3,
+        contactId: custs[0].contactId,
+        roles: ['Project Manager'],
+      },
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp5,
+        contactId: custs[3].contactId,
+        roles: ['Technical Director'],
+      },
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp7,
+        contactId: custs[2].contactId,
+        roles: ['Primary Stakeholder', 'Lead Estimator'],
+      },
+      {
+        opportunityContactId: uuid(),
+        opportunityId: opp9,
+        contactId: custs[2].contactId,
+        roles: ['Contract Signatory'],
+      },
+    ])
+    .onConflictDoNothing();
+
+  // Opportunity Notes
   await db
     .insert(opportunityNotes)
-    .values({
-      noteId: uuid(),
-      opportunityId: projectId1,
-      content:
-        'Phase 1 Tool Deliveries scheduled for West Coast Hub pickup. 20V Max saws and battery packs allocated.',
-    })
+    .values([
+      {
+        noteId: uuid(),
+        opportunityId: opp1,
+        content:
+          'Exploratory scope completed. Client requested product compatibility matrix for outdoor industrial installations and extended cold-weather battery testing.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp3,
+        content:
+          'Budget line item approved by municipal transit authority. Needs Buy American compliance documentation and UL certification records attached.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp5,
+        content:
+          'Formal proposal submitted with tiered volume discounting. Engineering department reviewing customized staging delivery requirements for Downtown Hub.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp7,
+        content:
+          'Phase 1 Tool Deliveries scheduled for West Coast Hub pickup. 20V Max saws, impact wrenches, and rapid charger packs allocated.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp8,
+        content:
+          'Agreed on 10% volume discount tier for cordless torque packages. Awaiting final master services agreement signature from VP of Operations.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp9,
+        content:
+          'Contract awarded and fully signed! First order batch fulfilled and dispatched with positive receiving confirmation from Phoenix staging yard.',
+        createdById: adminUserId,
+      },
+      {
+        noteId: uuid(),
+        opportunityId: opp10,
+        content:
+          'Post-mortem review: Competitor undercut on third-party battery leasing options. Recommended packaging battery warranty in all future bids.',
+        createdById: adminUserId,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // CRM Activities (Tasks, Meetings, Calls, Emails, Notes)
+  const act1 = uuid();
+  const act2 = uuid();
+  const act3 = uuid();
+  const act4 = uuid();
+  const act5 = uuid();
+  const act6 = uuid();
+  const act7 = uuid();
+  const act8 = uuid();
+  const act9 = uuid();
+  const act10 = uuid();
+  const act11 = uuid();
+  const act12 = uuid();
+  const act13 = uuid();
+  const act14 = uuid();
+  const act15 = uuid();
+  const act16 = uuid();
+
+  await db
+    .insert(crmActivities)
+    .values([
+      // Open Tasks (populates Dashboard Tasks widget for admin)
+      {
+        activityId: act1,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Finalize Metro Rail Phase 1 delivery schedule',
+        description:
+          'Coordinate with West Coast distribution warehouse for pickup window and confirm packaging serials.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.URGENT,
+        actorId: custs[2].actorId,
+        opportunityId: opp7,
+        dueDate: new Date(nowTimestamp.getTime() + 1 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act2,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Review Downtown Highrise battery load test results',
+        description:
+          'Analyze structural contractor feedback on cordless concrete cut-off saws and pack runtimes.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.HIGH,
+        actorId: custs[3].actorId,
+        opportunityId: opp5,
+        dueDate: new Date(nowTimestamp.getTime() + 3 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act3,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Send CTA Buy American compliance certificate',
+        description:
+          'Provide certified COO documents for commercial drill presses and demolition kits.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[0].actorId,
+        opportunityId: opp3,
+        dueDate: new Date(nowTimestamp.getTime() + 5 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 4 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 4 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act4,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Prepare Q3 pricing amendment for Texas Builders',
+        description:
+          'Apply tiered 15% discount structure on bulk carbide blade replenishment shipments.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.HIGH,
+        actorId: custs[3].actorId,
+        opportunityId: opp6,
+        dueDate: new Date(nowTimestamp.getTime() + 7 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act5,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Schedule on-site tool demonstration for Austin Tech Campus',
+        description:
+          'Arrange field specialist demo of brushless rotary hammers with Austin project team.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[1].actorId,
+        opportunityId: opp2,
+        dueDate: new Date(nowTimestamp.getTime() + 10 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 6 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 6 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act6,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Follow up on signed MSA for Rocky Mountain Solar',
+        description:
+          'Contact legal counsel to verify execution of terms and liability insurance schedule.',
+        status: CRM_ACTIVITY_STATUS.OPEN,
+        priority: CRM_ACTIVITY_PRIORITY.URGENT,
+        actorId: custs[2].actorId,
+        opportunityId: opp8,
+        dueDate: new Date(nowTimestamp.getTime() - 1 * 24 * 60 * 60 * 1000), // overdue task
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 7 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 1 * 24 * 60 * 60 * 1000),
+      },
+      // Completed Tasks
+      {
+        activityId: act7,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject: 'Conduct initial credit check for Apex Construction',
+        description:
+          'Reviewed D&B rating and approved $150,000 credit limit with Net 30 terms.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[2].actorId,
+        opportunityId: opp7,
+        dueDate: new Date(nowTimestamp.getTime() - 15 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(
+          nowTimestamp.getTime() - 14 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 20 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 14 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act8,
+        type: CRM_ACTIVITY_TYPE.TASK,
+        subject:
+          'Deliver product catalog and wholesale rate sheet to PNW Contractors',
+        description:
+          'Transmitted complete 2026 commercial tooling catalog via digital portal.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.LOW,
+        actorId: custs[4].actorId,
+        opportunityId: opp1,
+        dueDate: new Date(nowTimestamp.getTime() - 25 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(
+          nowTimestamp.getTime() - 24 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 30 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 24 * 24 * 60 * 60 * 1000),
+      },
+      // Calls
+      {
+        activityId: act9,
+        type: CRM_ACTIVITY_TYPE.CALL,
+        subject: 'Pricing negotiation check-in with Carlos Mendoza',
+        description:
+          'Discussed high-volume rebate thresholds and warranty coverage periods for rail contract.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.HIGH,
+        actorId: custs[2].actorId,
+        opportunityId: opp7,
+        completedAt: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act10,
+        type: CRM_ACTIVITY_TYPE.CALL,
+        subject:
+          'Technical discovery call with Amanda Clark regarding power pack specs',
+        description:
+          'Reviewed battery compatibility across pneumatic and brushless fastening tools.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[1].actorId,
+        opportunityId: opp2,
+        completedAt: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act11,
+        type: CRM_ACTIVITY_TYPE.CALL,
+        subject: 'Scheduled follow-up call with Brian Oster on warranty terms',
+        description:
+          'Quarterly review call to address replacement turnaround SLA for job site repairs.',
+        status: CRM_ACTIVITY_STATUS.SCHEDULED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[4].actorId,
+        opportunityId: opp1,
+        dueDate: new Date(nowTimestamp.getTime() + 4 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
+      },
+      // Meetings
+      {
+        activityId: act12,
+        type: CRM_ACTIVITY_TYPE.MEETING,
+        subject:
+          'Executive contract review meeting with General Contractor leadership',
+        description:
+          'Final walkthrough of terms and conditions with executive management team.',
+        status: CRM_ACTIVITY_STATUS.SCHEDULED,
+        priority: CRM_ACTIVITY_PRIORITY.HIGH,
+        actorId: custs[2].actorId,
+        opportunityId: opp7,
+        dueDate: new Date(nowTimestamp.getTime() + 2 * 24 * 60 * 60 * 1000),
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act13,
+        type: CRM_ACTIVITY_TYPE.MEETING,
+        subject:
+          'On-site safety inspection and heavy tool demo at Phoenix staging yard',
+        description:
+          'Demonstrated dust extraction vacuum attachments and anti-kickback grinders to safety crew.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[2].actorId,
+        opportunityId: opp9,
+        completedAt: new Date(
+          nowTimestamp.getTime() - 35 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 40 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 35 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act14,
+        type: CRM_ACTIVITY_TYPE.MEETING,
+        subject: 'RFP kickoff and scope alignment meeting with CTA engineers',
+        description:
+          'Reviewed equipment tolerances and vibration damping metrics for station refurbishment.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[0].actorId,
+        opportunityId: opp3,
+        completedAt: new Date(
+          nowTimestamp.getTime() - 18 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 20 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 18 * 24 * 60 * 60 * 1000),
+      },
+      // Emails
+      {
+        activityId: act15,
+        type: CRM_ACTIVITY_TYPE.EMAIL,
+        subject:
+          'Transmitted formal RFP proposal documentation and tiered volume matrix',
+        description:
+          'Sent proposal PDF packet including delivery logistics and warranty riders.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
+        actorId: custs[3].actorId,
+        opportunityId: opp5,
+        completedAt: new Date(
+          nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000),
+      },
+      {
+        activityId: act16,
+        type: CRM_ACTIVITY_TYPE.EMAIL,
+        subject:
+          'Formal contract award confirmation and delivery dispatch notification',
+        description:
+          'Confirmed signed contract execution and initiated first order fulfillment release.',
+        status: CRM_ACTIVITY_STATUS.COMPLETED,
+        priority: CRM_ACTIVITY_PRIORITY.HIGH,
+        actorId: custs[2].actorId,
+        opportunityId: opp9,
+        completedAt: new Date(
+          nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000,
+        ),
+        completedByUserId: adminUserId,
+        assignedToUserId: adminUserId,
+        createdBy: 'admin',
+        createdById: adminUserId,
+        createdOn: new Date(nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000),
+        modifiedOn: new Date(nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000),
+      },
+    ])
+    .onConflictDoNothing();
+
+  // CRM Activity Contacts
+  await db
+    .insert(crmActivityContacts)
+    .values([
+      {
+        activityContactId: uuid(),
+        activityId: act1,
+        contactId: custs[2].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act2,
+        contactId: custs[3].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act3,
+        contactId: custs[0].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act9,
+        contactId: custs[2].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act10,
+        contactId: custs[1].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act11,
+        contactId: custs[4].contactId,
+      },
+      {
+        activityContactId: uuid(),
+        activityId: act12,
+        contactId: custs[2].contactId,
+      },
+    ])
     .onConflictDoNothing();
 
   // Record Master Data Audit Event
@@ -1314,7 +2004,8 @@ export async function seedMasterData(
         supplierCount: sups.length,
         customerCount: custs.length,
         productCount: prods.length + kitProds.length,
-        projectCount: 2,
+        projectCount: 10,
+        activityCount: 16,
       },
       actor: 'system',
     })
@@ -1337,6 +2028,18 @@ export async function seedMasterData(
     inventoryAccountId,
     costCenterId,
     activityId,
+    opps: {
+      opp1,
+      opp2,
+      opp3,
+      opp4,
+      opp5,
+      opp6,
+      opp7,
+      opp8,
+      opp9,
+      opp10,
+    },
   };
 }
 
@@ -1376,6 +2079,100 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   const stockLevels: Record<string, number> = {};
   const getStockKey = (binId: string, productId: string) =>
     `${binId}_${productId}`;
+
+  // General Ledger Sequential Numbering & Cryptographic Chaining
+  let glSeqNumber = 1;
+  let prevEntryHash = GENESIS_HASH;
+
+  async function postJournalEntry(entry: {
+    entryNumber: string;
+    entryDate: Date;
+    sourceType: string;
+    sourceId?: string | null;
+    memo: string;
+    createdBy?: string;
+    lines: Array<{
+      glAccountId: string;
+      debit: number;
+      credit: number;
+      costCenterId?: string | null;
+      activityId?: string | null;
+      partyType?: string | null;
+      partyId?: string | null;
+      memo?: string;
+      isReconciled?: boolean;
+    }>;
+  }) {
+    const journalEntryId = uuid();
+    const dateStr = entry.entryDate.toISOString().split('T')[0];
+
+    const lineValues = entry.lines.map((l) => ({
+      glAccountId: l.glAccountId,
+      debit: Number(l.debit || 0).toFixed(2),
+      credit: Number(l.credit || 0).toFixed(2),
+      costCenterId: l.costCenterId || null,
+      activityId: l.activityId || null,
+      partyType: l.partyType || null,
+      partyId: l.partyId || null,
+      memo: l.memo || entry.memo,
+      isReconciled: l.isReconciled ?? true,
+    }));
+
+    const payloadHash = computeCanonicalPayloadHash({
+      sequenceNumber: glSeqNumber,
+      entryNumber: entry.entryNumber,
+      entryDate: dateStr,
+      sourceType: entry.sourceType,
+      sourceId: entry.sourceId || null,
+      memo: entry.memo || null,
+      lines: lineValues,
+    });
+
+    const entryHash = computeEntryHash(prevEntryHash, payloadHash);
+
+    await db
+      .insert(glJournalEntries)
+      .values({
+        journalEntryId,
+        sequenceNumber: glSeqNumber,
+        entryNumber: entry.entryNumber,
+        entryDate: dateStr,
+        memo: entry.memo,
+        sourceType: entry.sourceType,
+        sourceId: entry.sourceId || null,
+        prevHash: prevEntryHash,
+        entryHash,
+        isReversed: false,
+        createdBy: entry.createdBy || 'system',
+      })
+      .onConflictDoNothing();
+
+    for (const l of lineValues) {
+      await db
+        .insert(glJournalLines)
+        .values({
+          journalLineId: uuid(),
+          journalEntryId,
+          glAccountId: l.glAccountId,
+          partyType: l.partyType,
+          partyId: l.partyId,
+          debit: l.debit,
+          credit: l.credit,
+          foreignDebit: l.debit,
+          foreignCredit: l.credit,
+          costCenterId: l.costCenterId,
+          activityId: l.activityId,
+          memo: l.memo,
+          isReconciled: l.isReconciled,
+        })
+        .onConflictDoNothing();
+    }
+
+    prevEntryHash = entryHash;
+    glSeqNumber++;
+
+    return journalEntryId;
+  }
 
   // =========================================================================
   // 1. PURCHASE ORDERS & INBOUND RECEIPTS (25 POs)
@@ -2110,17 +2907,25 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       | 'picking_partial'
       | 'picking_blocked'
       | 'shipping_ready'
-      | 'shipping_partial';
+      | 'shipping_partial'
+      | 'quoted';
     location: MasterLocation;
     customer: MasterActorCustomer;
+    orderDate?: Date;
+    opportunityId?: string;
+    name?: string;
   }) {
-    const { scenario, location, customer } = options;
+    const { scenario, location, customer, orderDate, opportunityId, name } =
+      options;
     const soId = uuid();
-    const soNumber = `SO-${soCounter++}`;
-    const soDate = randomDate(oneYearAgo, now);
+    const isQuoted = scenario === 'quoted';
+    const soNumber = isQuoted ? `SQ-${soCounter++}` : `SO-${soCounter++}`;
+    const soDate = orderDate || randomDate(oneYearAgo, now);
 
     let soState: SalesOrderState = SALES_ORDER_STATE.SHIPPED;
-    if (
+    if (isQuoted) {
+      soState = SALES_ORDER_STATE.QUOTED;
+    } else if (
       scenario === 'picking_ready' ||
       scenario === 'picking_partial' ||
       scenario === 'picking_blocked'
@@ -2214,6 +3019,19 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         pickedQty: 0,
         isPicked: false,
       });
+    } else if (scenario === 'quoted') {
+      linesToInsert.push({
+        prod: data.prods[0],
+        qty: 6,
+        pickedQty: 0,
+        isPicked: false,
+      });
+      linesToInsert.push({
+        prod: data.prods[1],
+        qty: 4,
+        pickedQty: 0,
+        isPicked: false,
+      });
     }
 
     let soTotalAmount = 0;
@@ -2260,8 +3078,12 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       .values({
         salesOrderId: soId,
         orderNumber: soNumber,
+        name: name || null,
+        opportunityId: opportunityId || null,
         customerId: customer.customerId,
-        customerOrderNumber: `PO-${customer.number}-${soCounter}`,
+        customerOrderNumber: isQuoted
+          ? `RFQ-${customer.number}-${soCounter}`
+          : `PO-${customer.number}-${soCounter}`,
         fulfillmentLocationId: location.id,
         stateCode: soState,
         currencyCode: data.baseCurrency,
@@ -2486,24 +3308,101 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         date: soDate,
         lines: invLines,
       });
+
+      // GL Journal Entry for Sales Invoice (Revenue Recognition & AR)
+      const jeNumber = `JE-AR-${invNumber}`;
+      await postJournalEntry({
+        entryNumber: jeNumber,
+        entryDate: soDate,
+        sourceType: 'sales_invoice',
+        sourceId: invId,
+        memo: `Sales Invoice ${invNumber} for ${customer.name}`,
+        createdBy: 'billing_clerk',
+        lines: [
+          {
+            glAccountId: data.arAccountId,
+            debit: soTotalAmount,
+            credit: 0,
+            partyType: 'customer',
+            partyId: customer.customerId,
+            memo: `Accounts Receivable for ${customer.name}`,
+          },
+          {
+            glAccountId: data.salesAccountId,
+            debit: 0,
+            credit: soTotalAmount,
+            costCenterId: data.costCenterId,
+            activityId: data.activityId,
+            memo: `Revenue from Sales Order ${soNumber}`,
+          },
+        ],
+      });
     }
   }
 
   // 1. Generate 35 Historical Shipped & Invoiced Orders
+  // Space out dates strictly chronologically to ensure invoice monotonicity and zero sequence gaps
+  const startTime = oneYearAgo.getTime();
+  const endTime = now.getTime() - 14 * 24 * 60 * 60 * 1000;
+  const timeStep = (endTime - startTime) / 35;
+
   for (let i = 0; i < 35; i++) {
+    const orderDate = new Date(startTime + i * timeStep + 1000 * 60 * i);
+    const customer = data.custs[i % data.custs.length];
+    let opportunityId: string | undefined;
+    let name: string | undefined;
+
+    if (i === 2) {
+      opportunityId = data.opps.opp9;
+      name = 'Phoenix Sky Harbor Concourse Phase 1 Delivery';
+    } else if (i === 7) {
+      opportunityId = data.opps.opp9;
+      name = 'Sky Harbor Terminal 4 Heavy Tooling Package';
+    } else if (i === 12) {
+      opportunityId = data.opps.opp7;
+      name = 'Metro Rail Track Fasteners Initial Batch';
+    } else if (i === 3) {
+      opportunityId = data.opps.opp5;
+      name = 'Downtown Tower B Structural Core Tooling';
+    } else if (i === 8) {
+      opportunityId = data.opps.opp6;
+      name = 'Refinery Turnaround Non-Sparking Safety Tools';
+    } else if (i === 0) {
+      opportunityId = data.opps.opp3;
+      name = 'CTA Platform Renovation Demolition Hammers';
+    } else if (i === 1) {
+      opportunityId = data.opps.opp2;
+      name = 'Austin Tech Campus Phase 2 Initial Fasteners';
+    } else if (i === 4) {
+      opportunityId = data.opps.opp1;
+      name = 'Clean Energy Complex Electrical Gear';
+    }
+
     await createCustomSalesOrder({
       scenario: 'shipped',
       location: data.locs[i % data.locs.length],
-      customer: data.custs[i % data.custs.length],
+      customer,
+      orderDate,
+      opportunityId,
+      name,
     });
   }
 
   // 2. Generate 12 Picking Ready Orders (4 per location)
   for (let i = 0; i < 12; i++) {
+    const customer = data.custs[i % data.custs.length];
+    let opportunityId: string | undefined;
+    let name: string | undefined;
+    if (i === 3) {
+      opportunityId = data.opps.opp5;
+      name = 'Tower B Level 15-30 Fitout Tooling';
+    }
     await createCustomSalesOrder({
       scenario: 'picking_ready',
       location: data.locs[i % data.locs.length],
-      customer: data.custs[i % data.custs.length],
+      customer,
+      opportunityId,
+      name,
     });
   }
 
@@ -2527,10 +3426,19 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
 
   // 5. Generate 9 Shipping Ready Orders (3 per location)
   for (let i = 0; i < 9; i++) {
+    const customer = data.custs[i % data.custs.length];
+    let opportunityId: string | undefined;
+    let name: string | undefined;
+    if (i === 2) {
+      opportunityId = data.opps.opp7;
+      name = 'Metro Rail Phase 1 Tool Delivery';
+    }
     await createCustomSalesOrder({
       scenario: 'shipping_ready',
       location: data.locs[i % data.locs.length],
-      customer: data.custs[i % data.custs.length],
+      customer,
+      opportunityId,
+      name,
     });
   }
 
@@ -2542,6 +3450,29 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       customer: data.custs[i % data.custs.length],
     });
   }
+
+  // 7. Generate 3 Live Sales Quotes linked to CRM Opportunities
+  await createCustomSalesOrder({
+    scenario: 'quoted',
+    location: data.locs[0],
+    customer: data.custs[2], // Apex Construction
+    opportunityId: data.opps.opp7, // Metro Rail Expansion 2026
+    name: 'Metro Rail Phase 2 Rapid Charger & Battery Quote',
+  });
+  await createCustomSalesOrder({
+    scenario: 'quoted',
+    location: data.locs[1],
+    customer: data.custs[3], // Texas Builders
+    opportunityId: data.opps.opp5, // Downtown Highrise Tower B
+    name: 'Downtown Tower B Secondary Level Fitout Quote',
+  });
+  await createCustomSalesOrder({
+    scenario: 'quoted',
+    location: data.locs[2],
+    customer: data.custs[0], // Home Hardware
+    opportunityId: data.opps.opp3, // CTA Station Modernization
+    name: 'CTA Station Modernization Buy American Drill Package',
+  });
 
   // =========================================================================
   // 6. SALES RETURNS & SALES CREDIT NOTES (4 Returns)
@@ -2715,6 +3646,33 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         baseOutstandingAmount: '0.00',
       })
       .where(eq(salesInvoices.invoiceId, inv.invoiceId));
+
+    // Post GL Journal Entry for Customer Receipt (Debit Bank, Credit AR)
+    const pmtJeNumber = `JE-PMT-${pmtNumber}`;
+    await postJournalEntry({
+      entryNumber: pmtJeNumber,
+      entryDate: inv.date,
+      sourceType: 'payment_entry',
+      sourceId: pmtId,
+      memo: `Customer Payment ${pmtNumber} from ${inv.customerName}`,
+      createdBy: 'finance_ar',
+      lines: [
+        {
+          glAccountId: data.bankAccountId,
+          debit: pmtAmount,
+          credit: 0,
+          memo: `Cash receipt into operating bank account`,
+        },
+        {
+          glAccountId: data.arAccountId,
+          debit: 0,
+          credit: pmtAmount,
+          partyType: 'customer',
+          partyId: inv.customerId,
+          memo: `Clear AR for Invoice ${inv.invoiceId}`,
+        },
+      ],
+    });
   }
 
   // Supplier Disbursements against AP Invoices
@@ -2784,59 +3742,35 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   // 9. GENERAL LEDGER JOURNALS & DIMENSION POSTINGS
   // =========================================================================
   for (let i = 0; i < 5; i++) {
-    const jnlId = uuid();
     const jnlNumber = `JE-2026-${jnlCounter++}`;
     const jnlDate = randomDate(oneYearAgo, now);
     const amount = randomInt(500, 2500);
 
-    await db
-      .insert(glJournalEntries)
-      .values({
-        journalEntryId: jnlId,
-        entryNumber: jnlNumber,
-        entryDate: jnlDate.toISOString().split('T')[0],
-        memo: `Operating Overhead Allocation & Monthly Warehouse Utilities #${jnlCounter}`,
-        sourceType: 'adjustment',
-        isReversed: false,
-        createdBy: 'chief_accountant',
-      })
-      .onConflictDoNothing();
-
-    // Debit Expense / Overhead
-    await db
-      .insert(glJournalLines)
-      .values({
-        journalLineId: uuid(),
-        journalEntryId: jnlId,
-        glAccountId: data.cogsAccountId,
-        debit: amount.toFixed(2),
-        credit: '0.00',
-        foreignDebit: amount.toFixed(2),
-        foreignCredit: '0.00',
-        isReconciled: true,
-        costCenterId: data.costCenterId,
-        activityId: data.activityId,
-        memo: 'Facility power & machinery maintenance debit',
-      })
-      .onConflictDoNothing();
-
-    // Credit Cash / Bank
-    await db
-      .insert(glJournalLines)
-      .values({
-        journalLineId: uuid(),
-        journalEntryId: jnlId,
-        glAccountId: data.bankAccountId,
-        debit: '0.00',
-        credit: amount.toFixed(2),
-        foreignDebit: '0.00',
-        foreignCredit: amount.toFixed(2),
-        isReconciled: true,
-        costCenterId: data.costCenterId,
-        activityId: data.activityId,
-        memo: 'Operating account payment credit',
-      })
-      .onConflictDoNothing();
+    await postJournalEntry({
+      entryNumber: jnlNumber,
+      entryDate: jnlDate,
+      sourceType: 'adjustment',
+      memo: `Operating Overhead Allocation & Monthly Warehouse Utilities #${jnlCounter}`,
+      createdBy: 'chief_accountant',
+      lines: [
+        {
+          glAccountId: data.cogsAccountId,
+          debit: amount,
+          credit: 0,
+          costCenterId: data.costCenterId,
+          activityId: data.activityId,
+          memo: 'Facility power & machinery maintenance debit',
+        },
+        {
+          glAccountId: data.bankAccountId,
+          debit: 0,
+          credit: amount,
+          costCenterId: data.costCenterId,
+          activityId: data.activityId,
+          memo: 'Operating account payment credit',
+        },
+      ],
+    });
   }
 
   // Log Financial & Warehouse Audit Events
@@ -2882,6 +3816,22 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       actor: 'system',
     })
     .onConflictDoNothing();
+
+  // 10. Ledger Integrity Audit Verification
+  console.log('Verifying General Ledger integrity audit...');
+  const auditReport = await executeLedgerIntegrityAudit(
+    db as unknown as DrizzleDB,
+  );
+  if (auditReport.anomaliesCount > 0) {
+    console.warn(
+      `Ledger integrity audit reported ${auditReport.anomaliesCount} anomalies:`,
+      JSON.stringify(auditReport.anomalies, null, 2),
+    );
+  } else {
+    console.log(
+      `Ledger integrity audit verified: 0 anomalies across ${auditReport.verifiedJournalsCount} journals and ${auditReport.verifiedInvoicesCount} invoices.`,
+    );
+  }
 
   console.log('Multi-domain enterprise transactions generated successfully.');
 }
