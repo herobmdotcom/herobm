@@ -31,16 +31,11 @@ import { products } from './products.schema';
 import { locations, bins } from './inventory.schema';
 import { taxCategories } from './tax.schema';
 import { workOrders, workOrderComponents } from './manufacturing.schema';
-import {
-  customers,
-  bins as coreBins,
-  suppliers,
-  glAccounts,
-  purchaseOrders,
-  purchaseOrderLineItems,
-  transferOrders,
-  transferOrderLines,
-} from './index';
+import { customers, suppliers, opportunities } from './crm.schema';
+import { glAccounts } from './gl.schema';
+import { purchaseOrders, purchaseOrderLineItems } from './purchasing.schema';
+import { transferOrders, transferOrderLines } from './inventory.schema';
+
 
 // ---------------------------------------------------------------------------
 // sales_orders  (CDM: SalesOrder)
@@ -86,6 +81,9 @@ export const salesOrders = herobmCore.table(
     }),
     creditHoldOverrideBy: text('credit_hold_override_by'),
     creditHoldOverrideReason: text('credit_hold_override_reason'),
+    opportunityId: uuid('opportunity_id').references(
+      () => opportunities.opportunityId,
+    ),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -101,6 +99,7 @@ export const salesOrders = herobmCore.table(
       ),
     ),
     customerIdx: index('idx_sales_orders_customer_id').on(t.customerId),
+    opportunityIdx: index('idx_sales_orders_opportunity_id').on(t.opportunityId),
     fulfillmentLocationIdx: index(
       'idx_sales_orders_fulfillment_location_id',
     ).on(t.fulfillmentLocationId),

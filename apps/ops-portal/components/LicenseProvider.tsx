@@ -1,8 +1,8 @@
-/* eslint-disable no-restricted-syntax -- External API integration boundaries where exact types are unknown. */
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { licenseControllerGetStatus } from '@herobm/sdk';
+import { reportError } from '@/lib/api';
 
 export type LicenseState = 'active' | 'warning' | 'read_only';
 
@@ -33,7 +33,7 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       const res = await licenseControllerGetStatus();
       setStatus(res.data as unknown as LicenseStatus);
     } catch (err) {
-      console.error('Failed to load license status', err);
+      reportError(err, 'LicenseProvider');
     } finally {
       setIsLoading(false);
     }

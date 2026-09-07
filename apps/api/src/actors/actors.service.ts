@@ -1,4 +1,10 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import {
   eq,
   ilike,
@@ -19,9 +25,11 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   actors,
   actorContactLinks,
+  actorActorLinks,
   actorNotes,
   masterDataEvents,
   contacts,
+  users,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -34,6 +42,10 @@ import {
   CreateActorContactDto,
   CreateActorNoteDto,
   ActorNoteResponseDto,
+  CreateActorLinkDto,
+  ActorLinkResponseDto,
+  SuccessResponseDto,
+  ActorQueryDto,
 } from './dto';
 
 @Injectable()
@@ -106,6 +118,7 @@ export class ActorsService {
     const actor = await this.db.query.actors.findFirst({
       where: eq(actors.actorId, id),
       with: {
+        owner: true,
         notes: {
           with: {
             createdBy: true,
@@ -116,6 +129,8 @@ export class ActorsService {
             contact: true,
           },
         },
+        customers: true,
+        suppliers: true,
         referredByActor: true,
         referredByContact: true,
       },
@@ -134,6 +149,7 @@ export class ActorsService {
     const actorWithRefs = actor as typeof actor & {
       referredByActor?: { name: string } | null;
       referredByContact?: { fullName: string } | null;
+      owner?: { displayName?: string | null; username: string } | null;
     };
 
     const result = {
@@ -141,12 +157,16 @@ export class ActorsService {
       events,
       referredByActorName: actorWithRefs.referredByActor?.name || null,
       referredByContactName: actorWithRefs.referredByContact?.fullName || null,
+      ownerDisplayName:
+        actorWithRefs.owner?.displayName ||
+        actorWithRefs.owner?.username ||
+        null,
     };
 
     return result as unknown as ActorResponseDto;
   }
 
-  async getActors(query?: PaginationQuery) {
+  async getActors(query?: ActorQueryDto) {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
@@ -171,14 +191,26 @@ export class ActorsService {
       conditions.push(sql`${actors.stateCode} != ${ACTOR_STATE.ARCHIVED}`);
     }
 
+    if (query?.ownerId) {
+      if (query.ownerId === 'unassigned') {
+        conditions.push(sql`${actors.ownerId} IS NULL`);
+      } else {
+        conditions.push(eq(actors.ownerId, query.ownerId));
+      }
+    }
+
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     let qb = this.db
       .select({
         ...getTableColumns(actors),
         score: scoreSql,
+        ownerDisplayName: sql<
+          string | null
+        >`COALESCE(${users.displayName}, ${users.username})`,
       })
       .from(actors)
+      .leftJoin(users, eq(actors.ownerId, users.userId))
       .$dynamic();
 
     if (whereClause) {
@@ -537,6 +569,150 @@ export class ActorsService {
         contactName: contact
           ? `${contact.firstName} ${contact.lastName}`.trim()
           : undefined,
+      },
+      actor: userId,
+    });
+
+    await this.touchActor(actorId);
+
+    return { success: true };
+  }
+
+  async getActorLinks(actorId: string): Promise<ActorLinkResponseDto[]> {
+    const actor = await this.db.query.actors.findFirst({
+      where: eq(actors.actorId, actorId),
+    });
+    if (!actor) {
+      throw new NotFoundException(`Actor with ID ${actorId} not found`);
+    }
+
+    const links = await this.db.query.actorActorLinks.findMany({
+      where: or(
+        eq(actorActorLinks.sourceActorId, actorId),
+        eq(actorActorLinks.targetActorId, actorId),
+      ),
+      with: {
+        sourceActor: {
+          columns: {
+            actorId: true,
+            name: true,
+            industry: true,
+          },
+        },
+        targetActor: {
+          columns: {
+            actorId: true,
+            name: true,
+            industry: true,
+          },
+        },
+      },
+      orderBy: [desc(actorActorLinks.createdOn)],
+    });
+
+    return links as unknown as ActorLinkResponseDto[];
+  }
+
+  async addActorLink(
+    sourceActorId: string,
+    dto: CreateActorLinkDto,
+    userId: string,
+  ): Promise<ActorLinkResponseDto> {
+    if (sourceActorId === dto.targetActorId) {
+      throw new BadRequestException('Cannot link an actor to itself');
+    }
+
+    const [source, target] = await Promise.all([
+      this.db.query.actors.findFirst({
+        where: eq(actors.actorId, sourceActorId),
+      }),
+      this.db.query.actors.findFirst({
+        where: eq(actors.actorId, dto.targetActorId),
+      }),
+    ]);
+
+    if (!source) {
+      throw new NotFoundException(`Actor with ID ${sourceActorId} not found`);
+    }
+    if (!target) {
+      throw new NotFoundException(
+        `Target actor with ID ${dto.targetActorId} not found`,
+      );
+    }
+
+    const [newLink] = await this.db
+      .insert(actorActorLinks)
+      .values({
+        sourceActorId,
+        targetActorId: dto.targetActorId,
+        linkType: dto.linkType,
+      })
+      .returning();
+
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR,
+      entityId: sourceActorId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Actor',
+      payload: {
+        action: 'actor_link_added',
+        linkId: newLink.linkId,
+        sourceActorId,
+        targetActorId: dto.targetActorId,
+        linkType: dto.linkType,
+      },
+      actor: userId,
+    });
+
+    await this.touchActor(sourceActorId);
+
+    const fetched = await this.db.query.actorActorLinks.findFirst({
+      where: eq(actorActorLinks.linkId, newLink.linkId),
+      with: {
+        sourceActor: {
+          columns: { actorId: true, name: true, industry: true },
+        },
+        targetActor: {
+          columns: { actorId: true, name: true, industry: true },
+        },
+      },
+    });
+
+    return fetched as unknown as ActorLinkResponseDto;
+  }
+
+  async removeActorLink(
+    actorId: string,
+    linkId: string,
+    userId: string,
+  ): Promise<SuccessResponseDto> {
+    const [deleted] = await this.db
+      .delete(actorActorLinks)
+      .where(
+        and(
+          eq(actorActorLinks.linkId, linkId),
+          or(
+            eq(actorActorLinks.sourceActorId, actorId),
+            eq(actorActorLinks.targetActorId, actorId),
+          ),
+        ),
+      )
+      .returning();
+
+    if (!deleted) {
+      throw new NotFoundException(
+        `Link with ID ${linkId} not found for actor ${actorId}`,
+      );
+    }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.ACTOR,
+      entityId: actorId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Actor',
+      payload: {
+        action: 'actor_link_removed',
+        linkId,
       },
       actor: userId,
     });

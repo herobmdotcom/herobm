@@ -371,67 +371,84 @@ export class BankStatementService {
           .from(glJournalEntries)
           .where(inArray(glJournalEntries.journalEntryId, entryIds));
 
-        for (const entry of entries) {
-          if (
+        const autoReconciledEntries = entries.filter(
+          (entry) =>
             entry.sourceType === JOURNAL_ENTRY_SOURCE_TYPE.MANUAL &&
-            entry.memo?.startsWith('Auto-reconciled:')
-          ) {
-            const linesToReverse = await tx
-              .select()
-              .from(glJournalLines)
-              .where(eq(glJournalLines.journalEntryId, entry.journalEntryId));
+            entry.memo?.startsWith('Auto-reconciled:'),
+        );
 
-            const glAccIds = [
-              ...new Set(linesToReverse.map((l) => l.glAccountId)),
-            ];
-            const accs = await tx
-              .select()
-              .from(glAccounts)
-              .where(inArray(glAccounts.glAccountId, glAccIds));
-            const accMap = new Map(
-              accs.map((a) => [a.glAccountId, a.accountCode]),
+        const autoEntryIds = autoReconciledEntries.map((e) => e.journalEntryId);
+
+        const allLinesToReverse =
+          autoEntryIds.length > 0
+            ? await tx
+                .select()
+                .from(glJournalLines)
+                .where(inArray(glJournalLines.journalEntryId, autoEntryIds))
+            : [];
+
+        const linesByEntryId = new Map<string, typeof allLinesToReverse>();
+        for (const l of allLinesToReverse) {
+          const list = linesByEntryId.get(l.journalEntryId) || [];
+          list.push(l);
+          linesByEntryId.set(l.journalEntryId, list);
+        }
+
+        const allGlAccIds = [
+          ...new Set(allLinesToReverse.map((l) => l.glAccountId)),
+        ];
+
+        const allAccs =
+          allGlAccIds.length > 0
+            ? await tx
+                .select()
+                .from(glAccounts)
+                .where(inArray(glAccounts.glAccountId, allGlAccIds))
+            : [];
+
+        const accMap = new Map(
+          allAccs.map((a) => [a.glAccountId, a.accountCode]),
+        );
+
+        for (const entry of autoReconciledEntries) {
+          const linesToReverse = linesByEntryId.get(entry.journalEntryId) || [];
+
+          const jeLines = linesToReverse.map((line) => ({
+            accountCode: accMap.get(line.glAccountId)!,
+            debit: Number(line.credit),
+            credit: Number(line.debit),
+            memo: `Reversal of: ${line.memo}`,
+          }));
+
+          const meta = {
+            sourceType: JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
+            memo: `Reversal of Auto-reconciled entry: ${entry.entryNumber}`,
+            entryDate: new Date().toISOString().split('T')[0],
+            actor,
+          };
+
+          const reversalEntry = await this.glService.postJournalEntry(
+            jeLines,
+            meta,
+            tx,
+          );
+
+          await tx
+            .update(glJournalEntries)
+            .set({
+              isReversed: true,
+              reversedBy: reversalEntry.journalEntryId,
+            })
+            .where(eq(glJournalEntries.journalEntryId, entry.journalEntryId));
+
+          await tx
+            .update(glJournalEntries)
+            .set({
+              isReversed: true,
+            })
+            .where(
+              eq(glJournalEntries.journalEntryId, reversalEntry.journalEntryId),
             );
-
-            const jeLines = linesToReverse.map((line) => ({
-              accountCode: accMap.get(line.glAccountId)!,
-              debit: Number(line.credit),
-              credit: Number(line.debit),
-              memo: `Reversal of: ${line.memo}`,
-            }));
-
-            const meta = {
-              sourceType: JOURNAL_ENTRY_SOURCE_TYPE.MANUAL,
-              memo: `Reversal of Auto-reconciled entry: ${entry.entryNumber}`,
-              entryDate: new Date().toISOString().split('T')[0],
-              actor,
-            };
-
-            const reversalEntry = await this.glService.postJournalEntry(
-              jeLines,
-              meta,
-              tx,
-            );
-
-            await tx
-              .update(glJournalEntries)
-              .set({
-                isReversed: true,
-                reversedBy: reversalEntry.journalEntryId,
-              })
-              .where(eq(glJournalEntries.journalEntryId, entry.journalEntryId));
-
-            await tx
-              .update(glJournalEntries)
-              .set({
-                isReversed: true,
-              })
-              .where(
-                eq(
-                  glJournalEntries.journalEntryId,
-                  reversalEntry.journalEntryId,
-                ),
-              );
-          }
         }
       }
 

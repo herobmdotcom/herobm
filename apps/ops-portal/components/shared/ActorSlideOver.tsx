@@ -11,7 +11,8 @@ import { useSettings } from '@/components/SettingsProvider';
 interface ActorSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  projectId: string;
+  opportunityId?: string;
+  projectId?: string;
   onSaved: () => void;
   editingActor?: {
     actorId: string;
@@ -25,21 +26,23 @@ interface ActorSlideOverProps {
 export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
   isOpen,
   onClose,
+  opportunityId,
   projectId,
   onSaved,
   editingActor,
 }) => {
+  const targetOpportunityId = opportunityId || projectId || '';
   const tCommon = useTranslations('common');
   const [saving, setSaving] = useState(false);
   const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
   const { app } = useSettings();
-  const projectRoles = app?.projectActorRoles || [];
+  const actorRoles = app?.opportunityActorRoles || app?.projectActorRoles || [];
   
   const [dto, setDto] = useState({
     name: '',
     industry: '',
     email: '',
-    projectRoles: [] as string[],
+    actorRoles: [] as string[],
   });
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
           name: editingActor.name || '',
           industry: editingActor.industry || '',
           email: editingActor.email || '',
-          projectRoles: editingActor.roles || [],
+          actorRoles: editingActor.roles || [],
         });
         setSelectedActor({
           actorId: editingActor.actorId,
@@ -62,7 +65,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
           name: '',
           industry: '',
           email: '',
-          projectRoles: [],
+          actorRoles: [],
         });
         setSelectedActor(null);
       }
@@ -76,7 +79,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
         name: '',
         industry: '',
         email: '',
-        projectRoles: dto.projectRoles,
+        actorRoles: dto.actorRoles,
       });
       return;
     }
@@ -85,7 +88,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
       name: actor.name || '',
       industry: actor.industry || '',
       email: actor.email || '',
-      projectRoles: dto.projectRoles,
+      actorRoles: dto.actorRoles,
     });
   };
 
@@ -137,15 +140,15 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
         
         if (editingActor && editingActor.actorId === finalActorId) {
           // Update existing link
-          await api.projectsControllerUpdateActor(projectId, finalActorId, {
-            roles: dto.projectRoles.length > 0 ? dto.projectRoles : undefined
+          await api.opportunitiesControllerUpdateActor(targetOpportunityId, finalActorId, {
+            roles: dto.actorRoles.length > 0 ? dto.actorRoles : undefined
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO typing bypass
           } as any);
         } else {
-          // Link to project
-          await api.projectsControllerAddActor(projectId, { 
+          // Link to opportunity
+          await api.opportunitiesControllerAddActor(targetOpportunityId, { 
             actorId: finalActorId, 
-            roles: dto.projectRoles.length > 0 ? dto.projectRoles : undefined 
+            roles: dto.actorRoles.length > 0 ? dto.actorRoles : undefined 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO typing bypass
           } as any);
         }
@@ -187,7 +190,7 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
       <form id="actor-form" onSubmit={handleSave} className="flex flex-col gap-5 h-full pb-6">
         
         {!editingActor && (
-          <div className="bg-gray-50 -mx-6 px-6 py-4 border-b border-gray-100 mb-2">
+          <div className="bg-[var(--bg-secondary)] -mx-6 px-6 py-4 border-b border-[var(--border)] mb-2">
             <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               Search Existing Actor
             </label>
@@ -239,20 +242,20 @@ export const ActorSlideOver: React.FC<ActorSlideOverProps> = ({
 
         <div className="mt-2 pt-4 border-t border-gray-100">
           <label className="block text-sm font-medium mb-3 text-[var(--text-muted)]">
-            Project Roles
+            Roles
           </label>
           <div className="flex flex-col gap-3">
-            {[...projectRoles].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => (
+            {[...actorRoles].sort((a, b) => Number(a.order) - Number(b.order)).map((r) => (
               <label key={r.value} className="flex items-center gap-3 cursor-pointer group">
                 <input 
                   type="checkbox" 
                   className="checkbox checkbox-sm checkbox-primary"
-                  checked={dto.projectRoles.includes(r.value)}
+                  checked={dto.actorRoles.includes(r.value)}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setDto({ ...dto, projectRoles: [...dto.projectRoles, r.value] });
+                      setDto({ ...dto, actorRoles: [...dto.actorRoles, r.value] });
                     } else {
-                      setDto({ ...dto, projectRoles: dto.projectRoles.filter(x => x !== r.value) });
+                      setDto({ ...dto, actorRoles: dto.actorRoles.filter(x => x !== r.value) });
                     }
                   }}
                 />

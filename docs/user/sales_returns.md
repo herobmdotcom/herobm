@@ -8,7 +8,6 @@ resource: "sales-returns"
 action: "read"
 routes:
   - "/sales-returns"
-  - "/sales-returns/new"
   - "/sales-returns/:id"
 tags: ["sales-returns", "rma", "credit-notes", "returns", "restocking", "inspections", "customers"]
 fields:
@@ -79,7 +78,7 @@ When receiving returned items:
 
 ### 1. Authorizing a Customer Return (RMA)
 1. Go to **Sales** → **Returns** (`/sales-returns`).
-2. Click **New Return** (`/sales-returns/new`).
+2. Click **Create Return** (or initiate from the originating Sales Order).
 3. Select the originating **Sales Order** and **Customer**.
 4. Choose the return lines, quantities, and return reason (e.g. Defective, Wrong Size, Customer Changed Mind).
 5. Click **Confirm Return** to generate the official RMA document and email it to the customer.

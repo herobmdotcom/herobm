@@ -1,4 +1,4 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsUUID,
   IsString,
@@ -120,6 +120,26 @@ export class BaseProductDto {
 export class CreateProductDto extends BaseProductDto {}
 
 export class UpdateProductDto extends PartialType(BaseProductDto) {}
+
+export class CopyProductDto {
+  @ApiPropertyOptional({
+    description:
+      'Optional new unique SKU. If omitted, will be auto-generated with -COPY suffix.',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  productNumber?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional new product name. If omitted, defaults to source name with (Copy).',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  name?: string;
+}
 
 export class BaseProductGroupDto {
   @IsString()

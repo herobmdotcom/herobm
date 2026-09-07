@@ -30,8 +30,6 @@ setup('authenticate', async ({ page }) => {
   }
 
   console.log(`Attempting login for user: "${username}"`);
-  console.log(`Password length: ${password.length}`);
-  console.log(`Password starts with: ${password.substring(0, 3)}... and ends with: ...${password.substring(password.length - 3)}`);
   await page.getByPlaceholder('Username').fill(username);
   await page.getByPlaceholder('Password').fill(password);
   

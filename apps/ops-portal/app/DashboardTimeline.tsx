@@ -78,9 +78,12 @@ export const EVENT_ICONS: Record<
   'contact.created': { icon: 'contacts', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/crm/contacts' },
   'contact.updated': { icon: 'edit', colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10', path: '/crm/contacts' },
   'contact.deleted': { icon: 'delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/contacts' },
-  'project.created': { icon: 'folder', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/projects' },
-  'project.updated': { icon: 'folder_open', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/projects' },
-  'project.deleted': { icon: 'folder_delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/projects' },
+  'opportunity.created': { icon: 'trending_up', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
+  'opportunity.updated': { icon: 'trending_up', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
+  'opportunity.deleted': { icon: 'delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/opportunities' },
+  'project.created': { icon: 'folder', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
+  'project.updated': { icon: 'folder_open', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
+  'project.deleted': { icon: 'folder_delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/opportunities' },
   'actor.created': { icon: 'business', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/actors' },
   'actor.updated': { icon: 'edit', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/actors' },
 
@@ -247,9 +250,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
 
   if (events.length === 0) {
     return (
-      <div className="p-8 text-center text-[14px] opacity-60 rounded-2xl border flex flex-col items-center justify-center gap-2 bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]">
-        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-        <span className="material-symbols-outlined text-[32px] opacity-50">history</span>
+      <div className="p-3.5 sm:p-4 rounded-xl border bg-[var(--bg-card)] border-[var(--border)] text-center text-[12px] text-[var(--text-muted)] leading-tight">
         {t('empty')}
       </div>
     );

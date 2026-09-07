@@ -7,7 +7,9 @@ order: 28
 resource: "admin"
 action: "read"
 routes:
-  - "/admin/settings/groups"
+  - "/admin/customer-groups"
+  - "/admin/product-groups"
+  - "/admin/supplier-groups"
   - "/admin/settings/financial"
   - "/admin/settings/pdf-templates"
   - "/admin/settings/pdf-templates/new"
@@ -16,9 +18,6 @@ routes:
   - "/admin/settings/integrations"
   - "/admin/settings/license"
   - "/admin/settings/system"
-  - "/admin/customer-groups"
-  - "/admin/product-groups"
-  - "/admin/supplier-groups"
   - "/admin/email/settings"
   - "/admin/email/outbox"
 tags: ["admin", "settings", "groups", "financial", "email", "pdf", "templates", "analysis-codes", "tax"]
@@ -53,11 +52,11 @@ The **Groups & System Settings** module provides centralized configuration acros
 
 ## Configuration Areas
 
-### 1. Groups & Analysis Codes (`/admin/settings/groups`)
-* **Customer Groups**: Segment clients by trade type (e.g. Retail, Wholesale, Key Accounts) and assign default Price Scales (1 to 4) and Accounts Receivable control accounts.
-* **Supplier Groups**: Categorize vendors (e.g. Domestic Freight, Raw Material Vendors, Overseas Mills) and assign default Accounts Payable accounts.
-* **Product Groups**: Hierarchical catalogue classifications defining default Sales Income, Cost of Goods Sold (COGS), and Inventory Asset accounts.
-* **Analysis Codes**: Configurable multidimensional reporting codes applied to operational transactions for segmental reporting.
+### 1. Group Management & Analysis Codes
+* **Customer Groups** (`/admin/customer-groups`): Segment clients by trade type (e.g. Retail, Wholesale, Key Accounts) and assign default Price Scales (1 to 4) and Accounts Receivable control accounts.
+* **Supplier Groups** (`/admin/supplier-groups`): Categorize vendors (e.g. Domestic Freight, Raw Material Vendors, Overseas Mills) and assign default Accounts Payable accounts.
+* **Product Groups** (`/admin/product-groups`): Hierarchical catalogue classifications defining default Sales Income, Cost of Goods Sold (COGS), and Inventory Asset accounts.
+* **Analysis Codes** (`/admin/settings/system#sales-analysis-codes-section`): Configurable multidimensional reporting codes applied to operational transactions for segmental reporting.
 * **Trading Terms**: Standard credit terms (Net 30, Net 60, COD, Prepayment) determining due dates on invoices and purchase orders.
 
 ### 2. Financial Settings (`/admin/settings/financial`)
@@ -73,6 +72,10 @@ The **Groups & System Settings** module provides centralized configuration acros
 ### 4. PDF Document Templates & Hooks
 * **PDF Templates** (`/admin/settings/pdf-templates`): Customize modern Typst layouts for Sales Orders, Quotes, Invoices, Pick Slips, Delivery Dockets, and Debit Notes.
 * **PDF Hooks** (`/admin/settings/pdf-hooks`): Connect system event triggers to specific PDF template renderings.
+
+### 5. CRM Pipeline & Opportunity Settings (`/admin/settings/crm`)
+* **Pipeline Stages (`projectStatuses`)**: Define ordered stages representing the sales journey (e.g. Discovery, Proposal, Negotiation, Won, Lost) that populate the CRM Opportunities Kanban board.
+* **Opportunity Types (`projectTypes`)**: Configure classification categories for deals (e.g. New Business, Renewal, Expansion, Consulting).
 
 ---
 
@@ -102,3 +105,5 @@ The **Groups & System Settings** module provides centralized configuration acros
 | **Product Group** | Inventory category setting revenue and COGS accounts. |
 | **Trading Terms** | Due date calculation rule (e.g. `Net 30`). |
 | **Analysis Codes** | Financial tags for multidimensional reporting. |
+| **Pipeline Stages** | Configurable stages for sales opportunities in the CRM Kanban board. |
+

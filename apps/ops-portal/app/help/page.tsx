@@ -83,11 +83,36 @@ function HelpContent() {
     );
   });
 
+  const CATEGORY_ORDER = [
+    'Overview',
+    'Dashboard',
+    'Sales',
+    'Inventory',
+    'Purchasing',
+    'Manufacturing',
+    'CRM',
+    'Finance',
+    'Reporting',
+    'Administration',
+    'Developer',
+    'Architecture & Engineering',
+    'Miscellaneous',
+  ];
+
   const categoriesMap: Record<string, HelpTopicSummary[]> = {};
   filteredTopics.forEach((topicItem) => {
-    const cat = topicItem.category || 'General';
+    const cat = topicItem.category || 'Miscellaneous';
     if (!categoriesMap[cat]) categoriesMap[cat] = [];
     categoriesMap[cat].push(topicItem);
+  });
+
+  const sortedCategoryEntries = Object.entries(categoriesMap).sort(([a], [b]) => {
+    const idxA = CATEGORY_ORDER.indexOf(a);
+    const idxB = CATEGORY_ORDER.indexOf(b);
+    const orderA = idxA !== -1 ? idxA : 99;
+    const orderB = idxB !== -1 ? idxB : 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
   });
 
   return (
@@ -119,7 +144,7 @@ function HelpContent() {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-4">
-          {Object.entries(categoriesMap).map(([category, items]) => (
+          {sortedCategoryEntries.map(([category, items]) => (
             <div key={category} className="space-y-1">
               <h2 className="px-2 py-1 text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 {category}

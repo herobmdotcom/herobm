@@ -7,7 +7,6 @@ order: 12
 resource: "orders"
 action: "read"
 routes:
-  - "/inventory/receiving"
   - "/receiving"
   - "/receiving/new"
   - "/receiving/returns"
@@ -43,7 +42,7 @@ The **Receiving** module handles inbound shipments from suppliers at the warehou
 
 ```mermaid
 flowchart TD
-    A[Supplier Delivery Arrives at Dock] --> B[Receiving Queue /inventory/receiving]
+    A[Supplier Delivery Arrives at Dock] --> B[Receiving Queue /receiving]
     B --> C[Inspect Physical Items & Quantities]
     C --> D{Damage or Discrepancy?}
     D -- Damaged Items --> E[Route to QUARANTINE Bin]
@@ -83,7 +82,7 @@ If items arrive broken, defective, or fail inspection, the dock operator enters 
 ## Step-by-Step Workflows
 
 ### 1. Receiving a Purchase Order Delivery
-1. Go to **Inventory** → **Receiving** (`/inventory/receiving`).
+1. Go to **Receiving** (`/receiving`).
 2. Select the purchase order from the expected delivery queue (or search by PO number).
 3. Review order lines and verify physical carton counts.
 4. Enter the **Received Quantity** for sound items.

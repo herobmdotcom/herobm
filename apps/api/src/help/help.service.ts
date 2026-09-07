@@ -21,9 +21,9 @@ import { parseHelpMarkdown } from './help-parser';
 export class HelpService implements OnModuleInit {
   private readonly logger = new Logger(HelpService.name);
   private topics: Map<string, HelpTopic> = new Map();
-  private docsDir: string = '';
+  private docsDirs: string[] = [];
   private lastScanTime = 0;
-  private readonly CACHE_TTL_MS = 1000;
+  private readonly CACHE_TTL_MS = 300000; // 5 minutes
 
   constructor(
     @Optional()
@@ -32,70 +32,103 @@ export class HelpService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    this.resolveDocsDir();
+    this.resolveDocsDirs();
     await this.reloadDocs();
   }
 
   private async ensureFreshDocs(): Promise<void> {
     const now = Date.now();
     if (now - this.lastScanTime > this.CACHE_TTL_MS || this.topics.size === 0) {
-      await this.reloadDocs(this.docsDir);
+      await this.reloadDocs(
+        this.docsDirs.length > 0 ? this.docsDirs : undefined,
+      );
       this.lastScanTime = now;
     }
   }
 
   public resolveDocsDir(customDir?: string): string {
-    if (customDir && fs.existsSync(customDir)) {
-      this.docsDir = customDir;
-      return this.docsDir;
-    }
+    const dirs = this.resolveDocsDirs(customDir);
+    return dirs[0] || '';
+  }
 
-    if (this.docsDir && fs.existsSync(this.docsDir)) {
-      return this.docsDir;
-    }
-
-    const candidatePaths = [
-      path.resolve(process.cwd(), 'docs/user'),
-      path.resolve(__dirname, '../../../docs/user'),
-      path.resolve(__dirname, '../../../../docs/user'),
-      path.resolve(process.cwd(), '../../docs/user'),
-    ];
-
-    for (const p of candidatePaths) {
-      if (fs.existsSync(p)) {
-        this.docsDir = p;
-        return this.docsDir;
+  public resolveDocsDirs(customDirs?: string | string[]): string[] {
+    if (customDirs) {
+      const array = Array.isArray(customDirs) ? customDirs : [customDirs];
+      const existing = array.filter((d) => fs.existsSync(d));
+      if (existing.length > 0) {
+        this.docsDirs = existing;
+        return this.docsDirs;
       }
     }
 
-    this.docsDir = candidatePaths[0];
-    return this.docsDir;
+    if (
+      this.docsDirs.length > 0 &&
+      this.docsDirs.every((d) => fs.existsSync(d))
+    ) {
+      return this.docsDirs;
+    }
+
+    const candidateRoots = [
+      path.resolve(process.cwd(), 'docs'),
+      path.resolve(__dirname, '../../../docs'),
+      path.resolve(__dirname, '../../../../docs'),
+      path.resolve(process.cwd(), '../../docs'),
+    ];
+
+    for (const root of candidateRoots) {
+      if (fs.existsSync(root)) {
+        const subDirs = ['user', 'developers', 'technical']
+          .map((sub) => path.join(root, sub))
+          .filter((d) => fs.existsSync(d));
+
+        if (subDirs.length > 0) {
+          this.docsDirs = subDirs;
+          return this.docsDirs;
+        }
+
+        this.docsDirs = [root];
+        return this.docsDirs;
+      }
+    }
+
+    // Fallback if root not found
+    this.docsDirs = [path.resolve(process.cwd(), 'docs/user')];
+    return this.docsDirs;
   }
 
-  public async reloadDocs(customDir?: string): Promise<void> {
-    const dir = customDir || this.docsDir || this.resolveDocsDir();
+  public async reloadDocs(customDirs?: string | string[]): Promise<void> {
+    const dirs = customDirs
+      ? Array.isArray(customDirs)
+        ? customDirs
+        : [customDirs]
+      : this.resolveDocsDirs();
+
     this.topics.clear();
     this.lastScanTime = Date.now();
 
-    if (!fs.existsSync(dir)) {
-      this.logger.warn(`User docs directory not found at: ${dir}`);
-      return;
-    }
+    for (const dir of dirs) {
+      if (!fs.existsSync(dir)) {
+        this.logger.warn(`Documentation directory not found at: ${dir}`);
+        continue;
+      }
 
-    const files = this.scanDirForMarkdown(dir);
-    for (const filePath of files) {
-      try {
-        const rawContent = fs.readFileSync(filePath, 'utf-8');
-        const topic = parseHelpMarkdown(rawContent, filePath);
-        this.topics.set(topic.id, topic);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Failed to parse help file ${filePath}: ${message}`);
+      const files = this.scanDirForMarkdown(dir);
+      for (const filePath of files) {
+        try {
+          const rawContent = fs.readFileSync(filePath, 'utf-8');
+          const topic = parseHelpMarkdown(rawContent, filePath);
+          this.topics.set(topic.id, topic);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.error(
+            `Failed to parse help file ${filePath}: ${message}`,
+          );
+        }
       }
     }
 
-    this.logger.log(
-      `Loaded ${this.topics.size} user documentation topics from ${dir}`,
+    this.logger.debug(
+      `Loaded ${this.topics.size} documentation topics from ${dirs.join(', ')}`,
     );
   }
 
@@ -105,11 +138,23 @@ export class HelpService implements OnModuleInit {
 
     const list = fs.readdirSync(dir);
     for (const item of list) {
+      if (
+        item === 'archive' ||
+        item === 'node_modules' ||
+        item.startsWith('.')
+      ) {
+        continue;
+      }
+
       const fullPath = path.join(dir, item);
       const stat = fs.statSync(fullPath);
       if (stat && stat.isDirectory()) {
         results = results.concat(this.scanDirForMarkdown(fullPath));
       } else if (fullPath.endsWith('.md') || fullPath.endsWith('.mdx')) {
+        // Skip massive 800KB+ generated Widdershins file from in-memory interactive help drawer
+        if (item === 'api-reference.md' && stat.size > 200000) {
+          continue;
+        }
         results.push(fullPath);
       }
     }
@@ -256,6 +301,22 @@ export class HelpService implements OnModuleInit {
     return related;
   }
 
+  public static readonly CATEGORY_ORDER: readonly string[] = [
+    'Overview',
+    'Dashboard',
+    'Sales',
+    'Inventory',
+    'Purchasing',
+    'Manufacturing',
+    'CRM',
+    'Finance',
+    'Reporting',
+    'Administration',
+    'Developer',
+    'Architecture & Engineering',
+    'Miscellaneous',
+  ];
+
   /**
    * Retrieves all available topics as a structured list / tree.
    */
@@ -268,7 +329,7 @@ export class HelpService implements OnModuleInit {
         results.push({
           id: topic.id,
           title: topic.title,
-          category: topic.category || 'General',
+          category: topic.category || 'Miscellaneous',
           description: topic.description,
           order: topic.order ?? 999,
           routes: topic.routes || [],
@@ -278,6 +339,12 @@ export class HelpService implements OnModuleInit {
     }
 
     return results.sort((a, b) => {
+      const idxA = HelpService.CATEGORY_ORDER.indexOf(a.category);
+      const idxB = HelpService.CATEGORY_ORDER.indexOf(b.category);
+      const catOrderA = idxA !== -1 ? idxA : 990;
+      const catOrderB = idxB !== -1 ? idxB : 990;
+      if (catOrderA !== catOrderB) return catOrderA - catOrderB;
+
       const orderA = a.order ?? 999;
       const orderB = b.order ?? 999;
       if (orderA !== orderB) return orderA - orderB;

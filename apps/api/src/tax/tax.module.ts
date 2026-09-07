@@ -5,8 +5,8 @@ import { TaxPositionsService } from './tax-positions.service';
 import { TaxPositionsController } from './tax-positions.controller';
 import { TaxPositionMappingsController } from './tax-position-mappings.controller';
 import { TaxResolutionEngine } from './tax-resolution.engine';
-import { TaxBasService } from './tax-bas.service';
-import { TaxBasController } from './tax-bas.controller';
+import { TaxReportsService } from './tax-reports.service';
+import { TaxReportsController } from './tax-reports.controller';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 
 @Module({
@@ -15,19 +15,19 @@ import { DrizzleModule } from '../drizzle/drizzle.module';
     TaxCategoriesController,
     TaxPositionMappingsController,
     TaxPositionsController,
-    TaxBasController,
+    TaxReportsController,
   ],
   providers: [
     TaxCategoriesService,
     TaxPositionsService,
     TaxResolutionEngine,
-    TaxBasService,
+    TaxReportsService,
   ],
   exports: [
     TaxCategoriesService,
     TaxPositionsService,
     TaxResolutionEngine,
-    TaxBasService,
+    TaxReportsService,
   ],
 })
 export class TaxModule {}

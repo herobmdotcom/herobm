@@ -38,12 +38,14 @@ async function generateDocs() {
   const config = new DocumentBuilder()
     .setTitle('HeroBM API')
     .setDescription('Core API System endpoints')
-    .setVersion('1.0')
+    .setVersion('1.1')
     .addBearerAuth()
     .addServer('http://localhost:3000', 'Local Development Server')
     .addTag('System', 'System configuration, webhooks, auth, and setup')
     .addTag('Actors', 'CRM Actors')
     .addTag('Projects', 'Project management')
+    .addTag('Opportunities', 'Opportunities and pipeline')
+    .addTag('CRM Activities', 'CRM activity logging and tasks')
     .addTag('CRM Map', 'CRM interactive map')
     .addTag('Customers', 'Customer management and CRM')
     .addTag('Contacts', 'Customer and supplier contacts')
@@ -71,6 +73,7 @@ async function generateDocs() {
     )
     .addTag('Global Notes', 'Global cross-domain notes')
     .addTag('Help', 'In-app user documentation and field guides')
+    .addTag('Storage', 'Image and file storage')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

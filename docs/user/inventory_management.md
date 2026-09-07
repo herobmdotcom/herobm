@@ -1,7 +1,7 @@
 ---
 id: inventory-management
 title: "Inventory & Bin Management"
-description: "Monitor multi-warehouse stock balances, manage bin hierarchies, execute stocktakes, and audit perpetual ledger movements."
+description: "Monitor multi-warehouse stock balances, manage bin hierarchies, execute stock adjustments, and audit perpetual ledger movements."
 category: "Inventory"
 order: 11
 resource: "inventory"
@@ -11,13 +11,12 @@ routes:
   - "/inventory/locations"
   - "/inventory/bins"
   - "/inventory/ledger"
-  - "/inventory/stocktakes"
-tags: ["inventory", "stock", "bins", "valuation", "wac", "stocktakes", "warehouse"]
+tags: ["inventory", "stock", "bins", "valuation", "wac", "warehouse"]
 fields:
   location_id:
     title: "Warehouse Location"
     summary: "Physical distribution center or branch facility."
-  bin_code:
+  bin_number:
     title: "Bin Identifier"
     summary: "Coordinate location (e.g. A01-R02-S3-B)."
   bin_type:
@@ -39,7 +38,7 @@ related:
 
 # Inventory & Bin Management
 
-The **Inventory & Bin Management** module provides perpetual inventory visibility across all warehouse facilities, managing stock balances, multi-zone bin structures, and physical stocktake adjustments.
+The **Inventory & Bin Management** module provides perpetual inventory visibility across all warehouse facilities, managing stock balances, multi-zone bin structures, and physical stock ledger movements.
 
 ---
 
@@ -77,8 +76,18 @@ Available Quantity = On-Hand Stock - Allocated Order Reservations - Quarantine S
 ```
 
 * **On-Hand**: Physical inventory present in warehouse storage, pick, and bulk bins.
-* **Allocated**: Units committed to confirmed customer sales orders awaiting picking/dispatch.
+* **Allocated / Committed**: Units committed to confirmed customer sales orders awaiting picking/dispatch.
 * **Quarantine**: Units in quarantine bins awaiting inspection or return.
+
+### 3. On-Order Stock Calculation (Incoming POs)
+The system tracks incoming inventory from suppliers based on active Purchase Orders:
+
+```
+On-Order Quantity = SUM(max(0, PO Line Ordered Qty - PO Line Received Qty))
+```
+
+* **Procurement State Scope**: Only Purchase Orders in active incoming states (`ordered`, `partially_received`) contribute to On Order. Orders in `draft`, `received` (fully received), `invoiced`, `cancelled`, `closed_short`, or `archived` states are excluded.
+* **Non-Negative Guarantee**: Over-receipts (where delivered quantity exceeds ordered quantity) clamp at `0` remaining incoming units, guaranteeing that On Order balances never become negative.
 
 ---
 
@@ -92,12 +101,10 @@ Available Quantity = On-Hand Stock - Allocated Order Reservations - Quarantine S
 5. Enter the **Quantity Change** (+/-) and select a reason code (e.g. Found Stock, Breakage).
 6. Click **Confirm Adjustment**. The inventory ledger updates immediately, and the balancing expense posts to the General Ledger.
 
-### 2. Conducting a Stocktake
-1. Go to **Inventory** → **Stocktakes** (`/inventory/stocktakes`).
-2. Click **New Stocktake** and select the warehouse or zone.
-3. Warehouse staff count physical items and enter counts into the stocktake sheet.
-4. Review calculated variances.
-5. Click **Post Stocktake** to apply inventory adjustments atomically.
+### 2. Auditing the Perpetual Inventory Ledger
+1. Go to **Inventory** → **Ledger** (`/inventory/ledger`).
+2. Filter transactions by date range, warehouse location, or transaction type (`receipt`, `dispatch`, `adjustment`, `transfer`).
+3. Inspect the audit trail of perpetual stock movements, unit cost valuations, and linked General Ledger journal entry IDs.
 
 ---
 
@@ -109,6 +116,7 @@ Available Quantity = On-Hand Stock - Allocated Order Reservations - Quarantine S
 | **Warehouse** | Physical facility location. |
 | **Bin Location** | Shelf/rack address (`storage`, `pick`, `bulk`, `staging`, `quarantine`). |
 | **On Hand** | Total physical count present in bins. |
-| **Allocated** | Units reserved for confirmed customer orders. |
-| **Available** | Net sellable stock (`On Hand - Allocated - Quarantine`). |
+| **Committed / Allocated** | Units reserved for confirmed customer orders. |
+| **Available** | Net sellable stock (`On Hand - Committed - Quarantine`). |
+| **On Order** | Pending incoming units from open Purchase Orders (`ordered`, `partially_received`). |
 | **WAC Unit Cost** | Current Moving Weighted Average Cost valuation. |

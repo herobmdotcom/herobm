@@ -384,11 +384,13 @@ export const CONTACT_STATE = {
   ARCHIVED: 'archived',
 } as const;
 
-export const PROJECT_STATE = {
+export const OPPORTUNITY_STATE = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   ARCHIVED: 'archived',
 } as const;
+
+export const PROJECT_STATE = OPPORTUNITY_STATE;
 
 export const PRODUCT_TRANSITIONS: Record<string, string[]> = {
   [PRODUCT_STATE.DRAFT]: [PRODUCT_STATE.ACTIVE, PRODUCT_STATE.ARCHIVED],
@@ -436,7 +438,8 @@ export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
 export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
 export type ActorState = typeof ACTOR_STATE[keyof typeof ACTOR_STATE];
 export type ContactState = typeof CONTACT_STATE[keyof typeof CONTACT_STATE];
-export type ProjectState = typeof PROJECT_STATE[keyof typeof PROJECT_STATE];
+export type OpportunityState = typeof OPPORTUNITY_STATE[keyof typeof OPPORTUNITY_STATE];
+export type ProjectState = OpportunityState;
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
 export type PurchaseReturnShipmentState = typeof PURCHASE_RETURN_SHIPMENT_STATE[keyof typeof PURCHASE_RETURN_SHIPMENT_STATE];
 export type PurchaseDebitNoteState = typeof PURCHASE_DEBIT_NOTE_STATE[keyof typeof PURCHASE_DEBIT_NOTE_STATE];
@@ -477,6 +480,24 @@ export const OPEN_PURCHASE_ORDER_STATES: PurchaseOrderState[] = [
   PURCHASE_ORDER_STATE.ORDERED,
   PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
 ];
+
+/**
+ * Purchase order states representing active pending incoming inventory ("On Order").
+ * Excludes `draft` because unissued draft POs have not yet been placed with suppliers.
+ */
+export const ON_ORDER_PURCHASE_ORDER_STATES: readonly PurchaseOrderState[] = [
+  PURCHASE_ORDER_STATE.ORDERED,
+  PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+] as const;
+
+/**
+ * Sales order states representing active pending outbound commitments ("Committed").
+ * Excludes `draft`/`quoted` (unconfirmed) and `shipped`/`invoiced` (already deducted from physical QOH).
+ */
+export const COMMITTED_SALES_ORDER_STATES: readonly SalesOrderState[] = [
+  SALES_ORDER_STATE.CONFIRMED,
+  SALES_ORDER_STATE.PICKING,
+] as const;
 
 
 export const PURCHASE_INVOICE_LIFECYCLE: Record<string, number> = {
@@ -605,4 +626,14 @@ export function isBackTransition(
 /** Capitalise the first letter of a string. */
 export function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Check whether a purchase order state represents active on-order inventory. */
+export function isOnOrderPurchaseOrderState(state: string): boolean {
+  return (ON_ORDER_PURCHASE_ORDER_STATES as readonly string[]).includes(state);
+}
+
+/** Check whether a sales order state represents committed outbound demand. */
+export function isCommittedSalesOrderState(state: string): boolean {
+  return (COMMITTED_SALES_ORDER_STATES as readonly string[]).includes(state);
 }

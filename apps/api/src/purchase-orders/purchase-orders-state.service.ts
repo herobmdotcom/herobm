@@ -14,7 +14,7 @@ import {
   purchaseInvoiceLines,
   procurementEvents,
 } from '@herobm/db-schema';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, inArray } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -141,35 +141,59 @@ export class PurchaseOrdersStateService {
     }
 
     if (stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT) {
-      for (const line of existing.lines) {
-        const received = parseFloat(line.quantityReceived || '0');
-        if (received > 0) {
-          const [{ totalInvoiced }] = await db
-            .select({
-              totalInvoiced:
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
-            })
-            .from(purchaseInvoiceLines)
-            .innerJoin(
-              purchaseInvoices,
-              eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
-            )
-            .where(
-              and(
-                eq(
-                  purchaseInvoiceLines.purchaseOrderLineId,
-                  line.purchaseOrderLineId,
+      const receivedLines = (existing.lines || []).filter(
+        (l: {
+          quantityReceived?: string | null;
+          purchaseOrderLineId: string;
+        }) => parseFloat(l.quantityReceived || '0') > 0,
+      );
+      const receivedPoLineIds = receivedLines.map(
+        (l: { purchaseOrderLineId: string }) => l.purchaseOrderLineId,
+      );
+
+      const invoicedRows =
+        receivedPoLineIds.length > 0
+          ? await db
+              .select({
+                purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
+                totalInvoiced:
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+                  sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+              })
+              .from(purchaseInvoiceLines)
+              .innerJoin(
+                purchaseInvoices,
+                eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
+              )
+              .where(
+                and(
+                  inArray(
+                    purchaseInvoiceLines.purchaseOrderLineId,
+                    receivedPoLineIds,
+                  ),
+                  eq(
+                    purchaseInvoices.stateCode,
+                    PURCHASE_INVOICE_STATE.INVOICED,
+                  ),
                 ),
-                eq(purchaseInvoices.stateCode, PURCHASE_INVOICE_STATE.INVOICED),
-              ),
-            );
-          const invoiced = parseFloat(totalInvoiced || '0');
-          if (received > invoiced + 0.001) {
-            throw new BadRequestException(
-              `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`,
-            );
-          }
+              )
+              .groupBy(purchaseInvoiceLines.purchaseOrderLineId)
+          : [];
+
+      const invoicedMap = new Map(
+        invoicedRows.map((r) => [
+          r.purchaseOrderLineId,
+          parseFloat(r.totalInvoiced || '0'),
+        ]),
+      );
+
+      for (const line of receivedLines) {
+        const received = parseFloat(line.quantityReceived || '0');
+        const invoiced = invoicedMap.get(line.purchaseOrderLineId) || 0;
+        if (received > invoiced + 0.001) {
+          throw new BadRequestException(
+            `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`,
+          );
         }
       }
     }

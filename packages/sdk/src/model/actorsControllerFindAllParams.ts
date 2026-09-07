@@ -8,6 +8,7 @@
 import type { Object } from './object';
 
 export type ActorsControllerFindAllParams = {
+ownerId?: string;
 q?: string;
 page?: number;
 cursor?: string;
@@ -20,6 +21,8 @@ vendorId?: string;
 days?: Object;
 purchaseOrderId?: string;
 productId?: string;
+opportunityId?: string;
+projectId?: string;
 sort?: string;
 sortDirection?: Object;
 /**

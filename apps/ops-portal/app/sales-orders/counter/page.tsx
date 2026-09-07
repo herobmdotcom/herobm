@@ -784,7 +784,7 @@ export default function CounterSalesPage() {
                 onClick={addCustomLine}
                 className="text-xs font-medium py-1 px-2.5"
               >
-                + {tSales('buttons.customLine')}
+                {tSales('buttons.customLine')}
               </Button>
               <Button
                 variant="secondary"
@@ -792,7 +792,7 @@ export default function CounterSalesPage() {
                 onClick={addCommentLine}
                 className="text-xs font-medium py-1 px-2.5"
               >
-                + {tSales('buttons.commentLine')}
+                {tSales('buttons.commentLine')}
               </Button>
               {lines.length > 0 && (
                 <Button

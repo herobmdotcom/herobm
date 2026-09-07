@@ -32,6 +32,7 @@ jest.mock('react-hot-toast', () => ({
 }));
 
 jest.mock('@herobm/sdk', () => ({
+  setSdkConfig: jest.fn(),
   glControllerGetFiscalPeriods: jest.fn(),
   glControllerUpdateFiscalPeriodStatus: jest.fn(),
   pdfTemplatesControllerRunHook: jest.fn(),

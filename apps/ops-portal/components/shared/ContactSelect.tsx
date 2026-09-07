@@ -22,6 +22,7 @@ interface ContactSelectProps {
   required?: boolean;
   initialSearchTerm?: string;
   excludeId?: string | null;
+  clearOnSelect?: boolean;
 }
 
 export default function ContactSelect({
@@ -33,6 +34,7 @@ export default function ContactSelect({
   required,
   initialSearchTerm,
   excludeId,
+  clearOnSelect,
 }: ContactSelectProps) {
   const t = useTranslations('common');
 
@@ -44,6 +46,7 @@ export default function ContactSelect({
       disabled={disabled}
       required={required}
       className={className}
+      clearOnSelect={clearOnSelect}
       onSearch={async (term) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
         const res = await api.contactsControllerFindAll({ q: term, limit: 10 } as any);

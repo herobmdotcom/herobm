@@ -26,6 +26,7 @@ import { ProductPurchaseOrdersTab } from './ProductPurchaseOrdersTab';
 import { ProductSalesTab } from './ProductSalesTab';
 import { ProductCostSummary } from './ProductCostSummary';
 import ProductImageUploader from '@/components/products/ProductImageUploader';
+import CopyProductModal from '@/components/products/CopyProductModal';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 
@@ -43,8 +44,10 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.PRODUCTS, 'archive');
+  const canWrite = hasPermission(permissions, SystemResource.PRODUCTS, 'write');
 
   const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit' | 'purchase-orders' | 'sales'>('details');
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
 
   const {
     product,
@@ -219,11 +222,22 @@ export default function ProductDetailPage() {
           {/* Identity and Product Image Row */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
             <div id="info-section" className="card lg:col-span-3">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
-                <span className="material-symbols-outlined">badge</span>
-                {t('products.cards.identity')}
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="section-heading !mb-0">
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                  <span className="material-symbols-outlined">badge</span>
+                  {t('products.cards.identity')}
+                </h3>
+                {canWrite && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsCopyModalOpen(true)}
+                  >
+                    {t('products.buttons.copyProduct')}
+                  </Button>
+                )}
+              </div>
               <div className="grid grid-cols-1 gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
@@ -756,6 +770,18 @@ export default function ProductDetailPage() {
         </div>
 
       </div>
+      )}
+
+      {product && (
+        <CopyProductModal
+          product={{
+            productId: product.productId,
+            productNumber: product.productNumber,
+            name: product.name,
+          }}
+          isOpen={isCopyModalOpen}
+          onClose={() => setIsCopyModalOpen(false)}
+        />
       )}
     </DetailsLayout>
   );

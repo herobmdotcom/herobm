@@ -2,7 +2,7 @@
 id: import-pipelines
 title: "Data Import Pipelines (ELT)"
 description: "Architecture, step-by-step model building, schema mapping, and best practices for dlt and dbt data ingestion pipelines."
-category: "Technical"
+category: "Developer"
 order: 31
 resource: "system"
 action: "read"

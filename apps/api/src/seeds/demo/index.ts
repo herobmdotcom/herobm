@@ -18,10 +18,10 @@ import {
   actorContactLinks,
   actorActorLinks,
   actorNotes,
-  projects,
-  projectActors,
-  projectContacts,
-  projectNotes,
+  opportunities,
+  opportunityActors,
+  opportunityContacts,
+  opportunityNotes,
   customerGroups,
   customers,
   customerDeliveryAddresses,
@@ -115,6 +115,7 @@ import {
   PRODUCT_STATE,
   ACTOR_STATE,
   CONTACT_STATE,
+  OPPORTUNITY_STATE,
   PROJECT_STATE,
 } from '@herobm/shared';
 
@@ -164,7 +165,7 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.customer_delivery_addresses, herobm_core.customers, herobm_core.customer_groups,
       herobm_core.suppliers, herobm_core.supplier_groups,
       herobm_core.actor_contact_links, herobm_core.actor_actor_links, herobm_core.actor_notes, herobm_core.contacts,
-      herobm_core.project_actors, herobm_core.project_contacts, herobm_core.project_notes, herobm_core.projects,
+      herobm_core.opportunity_actors, herobm_core.opportunity_contacts, herobm_core.opportunity_notes, herobm_core.opportunities,
       herobm_core.actors,
       herobm_core.bins, herobm_core.zones, herobm_core.locations,
       herobm_core.exchange_rates,
@@ -1229,48 +1230,60 @@ export async function seedMasterData(
       .onConflictDoNothing();
   }
 
-  // 10. Major CRM Construction Projects
+  // 10. Major CRM Opportunities
   const projectId1 = uuid();
   const projectId2 = uuid();
 
   await db
-    .insert(projects)
+    .insert(opportunities)
     .values([
       {
-        projectId: projectId1,
-        name: 'Project Metro Rail Expansion 2026',
+        opportunityId: projectId1,
+        name: 'Metro Rail Expansion 2026',
         status: 'In Progress',
         type: 'Commercial Infrastructure',
-        stateCode: PROJECT_STATE.ACTIVE,
+        estimatedValue: '450000',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date('2026-11-30'),
+        probability: 70,
+        description:
+          'Multi-station power tool and safety gear supply contract.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
       },
       {
-        projectId: projectId2,
+        opportunityId: projectId2,
         name: 'Downtown Commercial Highrise Tower B',
         status: 'Planning',
         type: 'Highrise Construction',
-        stateCode: PROJECT_STATE.ACTIVE,
+        estimatedValue: '820000',
+        currencyCode: baseCurrency,
+        targetCloseDate: new Date('2027-02-15'),
+        probability: 45,
+        description:
+          'Structural reinforcement and specialized tooling equipment.',
+        stateCode: OPPORTUNITY_STATE.ACTIVE,
       },
     ])
     .onConflictDoNothing();
 
   await db
-    .insert(projectActors)
+    .insert(opportunityActors)
     .values([
       {
-        projectActorId: uuid(),
-        projectId: projectId1,
+        opportunityActorId: uuid(),
+        opportunityId: projectId1,
         actorId: custs[2].actorId, // Apex Construction
         roles: ['General Contractor', 'Primary Builder'],
       },
       {
-        projectActorId: uuid(),
-        projectId: projectId1,
+        opportunityActorId: uuid(),
+        opportunityId: projectId1,
         actorId: sups[0].actorId, // Milwaukee Tool
         roles: ['Preferred Tool Supplier'],
       },
       {
-        projectActorId: uuid(),
-        projectId: projectId2,
+        opportunityActorId: uuid(),
+        opportunityId: projectId2,
         actorId: custs[3].actorId, // Texas Builders Group
         roles: ['Structural Subcontractor'],
       },
@@ -1278,10 +1291,10 @@ export async function seedMasterData(
     .onConflictDoNothing();
 
   await db
-    .insert(projectNotes)
+    .insert(opportunityNotes)
     .values({
       noteId: uuid(),
-      projectId: projectId1,
+      opportunityId: projectId1,
       content:
         'Phase 1 Tool Deliveries scheduled for West Coast Hub pickup. 20V Max saws and battery packs allocated.',
     })

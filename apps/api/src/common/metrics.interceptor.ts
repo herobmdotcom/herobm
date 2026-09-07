@@ -80,7 +80,7 @@ export class MetricsInterceptor implements NestInterceptor {
           httpRequestDuration.record(duration, attributes);
           httpRequestTotal.add(1, attributes);
 
-          this.logger.warn(
+          this.logger.debug(
             `${method} ${url} ${statusCode} ${(duration * 1000).toFixed(0)}ms — ${err.message}`,
           );
         },

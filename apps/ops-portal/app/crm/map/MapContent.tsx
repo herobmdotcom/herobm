@@ -8,6 +8,7 @@ import * as api from '@herobm/sdk';
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   ReactFlow,
   useNodesState,
@@ -101,6 +102,7 @@ export interface NodeData {
   contactId?: string;
   firstName?: string;
   lastName?: string;
+  opportunityId?: string;
   projectId?: string;
   industry?: string;
   title?: string;
@@ -113,6 +115,7 @@ export interface EdgeData {
   targetActorId?: string;
   actorId?: string;
   contactId?: string;
+  opportunityId?: string;
   projectId?: string;
   fromId?: string;
   toId?: string;
@@ -143,7 +146,7 @@ const ActorNode = ({ data }: NodeProps<CustomNode>) => (
     
     <Button 
       onClick={() => data.onExpand?.(data.rawId!)} 
-      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
+      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border)] text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
       +
@@ -170,7 +173,7 @@ const ContactNode = ({ data }: NodeProps<CustomNode>) => (
 
     <Button 
       onClick={() => data.onExpand?.(data.rawId!)} 
-      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
+      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border)] text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
       +
@@ -178,7 +181,7 @@ const ContactNode = ({ data }: NodeProps<CustomNode>) => (
   </div>
 );
 
-const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
+const OpportunityNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-lg relative group w-[250px] min-h-[80px] flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border)]">
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
@@ -190,14 +193,14 @@ const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
     <Handle type="source" position={Position.Right} id="right-source" className="opacity-0" />
 
     <div className="flex items-center justify-center font-bold text-sm relative z-10 w-full px-6 overflow-hidden text-[var(--text-primary)]">
-      <Link href={`/crm/projects/${data.rawId}`} className="hover:underline line-clamp-2 w-full text-center" title={data.label}>
-        📁 {data.label}
+      <Link href={`/crm/opportunities/${data.rawId}`} className="hover:underline line-clamp-2 w-full text-center" title={data.label}>
+        📈 {data.label}
       </Link>
     </div>
 
     <Button 
       onClick={() => data.onExpand?.(data.rawId!)} 
-      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
+      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border)] text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
       title="Expand connections"
     >
       +
@@ -205,16 +208,27 @@ const ProjectNode = ({ data }: NodeProps<CustomNode>) => (
   </div>
 );
 
+const ProjectNode = OpportunityNode;
+
 const nodeTypes = {
   actor: ActorNode as any,
   contact: ContactNode as any,
+  opportunity: OpportunityNode as any,
   project: ProjectNode as any,
 };
 
 import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
 
 export default function MapContent() {
-  const [focalNodeId, setFocalNodeId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const queryActorId = searchParams.get('actorId') || searchParams.get('focalNodeId') || '';
+  const [focalNodeId, setFocalNodeId] = useState<string>(queryActorId);
+
+  useEffect(() => {
+    if (queryActorId && queryActorId !== focalNodeId) {
+      setFocalNodeId(queryActorId);
+    }
+  }, [queryActorId]);
   
   // Fetch graph data
   const { data: mapData, isLoading, error } = useSWR(
@@ -224,6 +238,10 @@ export default function MapContent() {
       return data;
     }
   );
+
+  const focalActorName = useMemo(() => {
+    return mapData?.nodes?.actors?.find((a) => a.actorId === focalNodeId)?.name || '';
+  }, [mapData, focalNodeId]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -260,12 +278,14 @@ export default function MapContent() {
       });
     });
 
-    payload.nodes.projects?.forEach((p) => {
+    const opps = (payload.nodes as any).opportunities || (payload.nodes as any).projects || [];
+    opps.forEach((p: any) => {
+      const oppId = p.opportunityId || p.projectId;
       newNodes.push({
-        id: `project-${p.projectId}`,
-        type: 'project',
+        id: `opportunity-${oppId}`,
+        type: 'opportunity',
         position: { x: 0, y: 0 },
-        data: { label: p.title || p.name || 'Project', rawId: p.projectId, onExpand: onExpandCb },
+        data: { label: p.title || p.name || 'Opportunity', rawId: oppId, onExpand: onExpandCb },
       });
     });
 
@@ -287,19 +307,23 @@ export default function MapContent() {
       });
     });
 
-    payload.edges.projectActor?.forEach((e) => {
+    const oppActors = (payload.edges as any).opportunityActor || (payload.edges as any).projectActor || [];
+    oppActors.forEach((e: any) => {
+      const oppId = e.opportunityId || e.projectId;
       newEdges.push({
-        id: `pa-${e.projectId}-${e.actorId}`,
-        source: `project-${e.projectId}`,
+        id: `pa-${oppId}-${e.actorId}`,
+        source: `opportunity-${oppId}`,
         target: `actor-${e.actorId}`,
         label: e.roles?.length ? e.roles.join(', ') : undefined,
       });
     });
 
-    payload.edges.projectContact?.forEach((e) => {
+    const oppContacts = (payload.edges as any).opportunityContact || (payload.edges as any).projectContact || [];
+    oppContacts.forEach((e: any) => {
+      const oppId = e.opportunityId || e.projectId;
       newEdges.push({
-        id: `pc-${e.projectId}-${e.contactId}`,
-        source: `project-${e.projectId}`,
+        id: `pc-${oppId}-${e.contactId}`,
+        source: `opportunity-${oppId}`,
         target: `contact-${e.contactId}`,
         label: e.roles?.length ? e.roles.join(', ') : undefined,
       });
@@ -377,6 +401,7 @@ export default function MapContent() {
           <div className="w-80">
             <ActorSelect 
               value={focalNodeId}
+              initialSearchTerm={focalActorName}
               onChange={(actor: Actor | null) => setFocalNodeId(actor?.actorId || '')}
               placeholder="Search for an Actor..."
             />
@@ -407,11 +432,16 @@ export default function MapContent() {
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
             fitView
-            className="bg-white"
+            className="bg-[var(--bg-primary)]"
           >
-            <Background color="#ccc" gap={16} />
-            <Controls />
-            <MiniMap />
+            <Background color="var(--border)" gap={16} />
+            <Controls className="!bg-[var(--bg-card)] !border-[var(--border)] !shadow-xl !rounded-lg overflow-hidden" />
+            <MiniMap 
+              className="!bg-[var(--bg-card)] !border-[var(--border)] !shadow-xl !rounded-lg overflow-hidden" 
+              zoomable 
+              pannable 
+              maskColor="rgba(0, 0, 0, 0.6)"
+            />
           </ReactFlow>
         )}
       </div>

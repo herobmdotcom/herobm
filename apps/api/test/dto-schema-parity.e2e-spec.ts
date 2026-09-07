@@ -18,7 +18,7 @@ describe('DTO-Schema Reflection Parity (e2e)', () => {
 
     const config = new DocumentBuilder()
       .setTitle('HeroBM API')
-      .setVersion('1.0')
+      .setVersion('1.1')
       .build();
     document = SwaggerModule.createDocument(app, config);
   });

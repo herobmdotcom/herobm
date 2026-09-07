@@ -1,3 +1,16 @@
+---
+id: api-rate-limiting
+title: "Rate Limiting & Throttling"
+description: "Rate limit tiers, sliding window throttling, HTTP 429 response headers, and exponential backoff strategies."
+category: "Developer"
+order: 2
+resource: "developers"
+action: "read"
+routes:
+  - "/admin/developers"
+tags: ["rate-limiting", "throttling", "429", "backoff", "api", "security", "developers"]
+---
+
 # Rate Limiting
 
 The HeroBM API enforces rate limiting across public and authenticated endpoints to protect system stability and prevent denial-of-service or brute-force attacks.

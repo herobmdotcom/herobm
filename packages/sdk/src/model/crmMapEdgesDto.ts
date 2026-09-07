@@ -7,14 +7,14 @@
  */
 import type { CrmMapActorActorLinkDto } from './crmMapActorActorLinkDto';
 import type { CrmMapActorContactLinkDto } from './crmMapActorContactLinkDto';
-import type { CrmMapProjectActorLinkDto } from './crmMapProjectActorLinkDto';
-import type { CrmMapProjectContactLinkDto } from './crmMapProjectContactLinkDto';
+import type { CrmMapOpportunityActorLinkDto } from './crmMapOpportunityActorLinkDto';
+import type { CrmMapOpportunityContactLinkDto } from './crmMapOpportunityContactLinkDto';
 
 export interface CrmMapEdgesDto {
   actorActor: CrmMapActorActorLinkDto[];
   actorContact: CrmMapActorContactLinkDto[];
-  projectActor: CrmMapProjectActorLinkDto[];
-  projectContact: CrmMapProjectContactLinkDto[];
+  opportunityActor: CrmMapOpportunityActorLinkDto[];
+  opportunityContact: CrmMapOpportunityContactLinkDto[];
   referralActorActor?: CrmMapActorActorLinkDto[];
   referralContactActor?: CrmMapActorContactLinkDto[];
 }

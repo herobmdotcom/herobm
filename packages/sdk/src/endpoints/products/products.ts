@@ -9,6 +9,7 @@ import type {
   AddProductComponentDto,
   AddProductUomDto,
   AddSupplierDto,
+  CopyProductDto,
   CreateProductDto,
   CreateProductGroupDto,
   EmptyBodyDto,
@@ -272,6 +273,44 @@ export const productsControllerGetCostSummary = async (id: string,
     method: 'GET'
     
     
+  }
+);}
+
+
+/**
+ * Create a new instance of an existing product with its configuration, UoMs, suppliers, and components.
+ * @summary Copy Product
+ */
+export type productsControllerCopyResponse201 = {
+  data: ProductResponseDto
+  status: 201
+}
+    
+export type productsControllerCopyResponseSuccess = (productsControllerCopyResponse201) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerCopyResponse = (productsControllerCopyResponseSuccess)
+
+export const getProductsControllerCopyUrl = (id: string,) => {
+
+
+  
+
+  return `/products/${id}/copy`
+}
+
+export const productsControllerCopy = async (id: string,
+    copyProductDto?: CopyProductDto, options?: RequestInit): Promise<productsControllerCopyResponse> => {
+  
+  return customFetch<productsControllerCopyResponse>(getProductsControllerCopyUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      copyProductDto,)
   }
 );}
 

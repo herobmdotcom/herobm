@@ -22,7 +22,7 @@ fields:
     summary: "Consignment tracking code provided by the carrier."
   status:
     title: "Shipment Status"
-    summary: "Current shipment stage (Draft, Packing, Dispatched, Delivered, Cancelled)."
+    summary: "Current shipment stage (Draft, Dispatched, Partially Received, Received, Cancelled)."
 related:
   - "sales-orders"
   - "inventory-shipping"
@@ -40,18 +40,20 @@ The **Shipments** module tracks the physical packaging and dispatch of goods to 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Shipment
-    Draft --> Packing : Start Packing
-    Packing --> Dispatched : Hand Over to Carrier
-    Dispatched --> Delivered : Customer Receives
+    Draft --> Dispatched : Hand Over to Carrier / Dispatch
+    Dispatched --> PartiallyReceived : Partial Inbound Delivery
+    Dispatched --> Received : Final Receipt Confirmed
+    PartiallyReceived --> Received : Complete Delivery
     Draft --> Cancelled : Cancel
-    Packing --> Cancelled : Cancel
+    Dispatched --> Cancelled : Void / Return to Depot
+    PartiallyReceived --> Cancelled : Void
 ```
 
 ### Key Rules
 1. **Partial Shipments Supported**: Multiple shipments can be created against a single sales order when fulfilling in batches.
 2. **Auto-Transition to Shipped**: When all line items on a sales order have been 100% dispatched across shipments, the sales order automatically updates from `picking` to `shipped`.
 3. **Fast-Track Barcode Dispatch**: For high-volume warehouse fulfillment, operators can bypass manual shipment entry by using the [Scan-to-Dispatch](./shipping.md) station (`/inventory/shipping/scan-to-dispatch`) to automatically create and dispatch shipments upon scanning.
-4. **Reverting Shipments**: If a shipment is cancelled before delivery, the committed quantities are released back to the warehouse, and if the order is no longer 100% shipped, its status reverts to `picking`.
+4. **Reverting Shipments**: If a shipment is cancelled before delivery receipt, the committed quantities are released back to the warehouse, and if the order is no longer 100% shipped, its status reverts to `picking`.
 
 ---
 
@@ -86,6 +88,6 @@ stateDiagram-v2
 | **Shipment Number** | Unique shipment tracking identifier. |
 | **Sales Order** | The parent sales order being fulfilled. |
 | **Tracking Number** | Waybill / tracking number for online tracking. |
-| **Status** | Stage in dispatch workflow (`Draft`, `Packing`, `Dispatched`, `Delivered`). |
+| **Status** | Stage in dispatch workflow (`Draft`, `Dispatched`, `Partially Received`, `Received`, `Cancelled`). |
 | **Delivery Address** | Destination physical address for delivery. |
 | **Shipping Notes** | Special instructions for the delivery driver. |

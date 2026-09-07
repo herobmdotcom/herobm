@@ -8,6 +8,7 @@
 import type { OrderCustomFieldsDto } from './orderCustomFieldsDto';
 
 export interface UpdateOrderDto {
+  opportunityId?: string;
   name?: string;
   customerOrderNumber?: string;
   notes?: string;

@@ -5,6 +5,8 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { ContactResponseDtoActorContactLinksItem } from './contactResponseDtoActorContactLinksItem';
+import type { ContactResponseDtoEventsItem } from './contactResponseDtoEventsItem';
 
 export interface ContactResponseDto {
   contactId: string;
@@ -22,6 +24,8 @@ export interface ContactResponseDto {
   /** @nullable */
   jobTitle?: string | null;
   primaryFor?: string[];
+  actorContactLinks?: ContactResponseDtoActorContactLinksItem[];
+  events?: ContactResponseDtoEventsItem[];
   /** @nullable */
   createdOn: string | null;
   /** @nullable */

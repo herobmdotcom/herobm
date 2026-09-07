@@ -6,6 +6,11 @@ import * as util from 'util';
 @Injectable()
 export class FileLoggerService extends ConsoleLogger {
   private readonly logFilePath: string;
+  private writeStream: fs.WriteStream | null = null;
+  private bytesWrittenSinceCheck = 0;
+  private isRotating = false;
+  private static readonly ROTATION_THRESHOLD = 20 * 1024 * 1024; // 20 MB
+  private static readonly CHECK_INTERVAL_BYTES = 100 * 1024; // Check every 100KB
 
   constructor(context?: string, filename = 'api.log') {
     super(context || 'App');
@@ -19,6 +24,59 @@ export class FileLoggerService extends ConsoleLogger {
       }
     }
     this.logFilePath = path.join(logDir, filename);
+    this.initWriteStream();
+  }
+
+  private initWriteStream(): void {
+    try {
+      if (this.writeStream) {
+        this.writeStream.removeAllListeners();
+        this.writeStream.end();
+      }
+      this.writeStream = fs.createWriteStream(this.logFilePath, {
+        flags: 'a',
+        encoding: 'utf8',
+      });
+      this.writeStream.on('error', () => {
+        // Silently handle stream errors without crashing
+      });
+    } catch {
+      this.writeStream = null;
+    }
+  }
+
+  private checkAndRotate(): void {
+    if (this.isRotating) return;
+    fs.stat(this.logFilePath, (err, stats) => {
+      if (!err && stats.size > FileLoggerService.ROTATION_THRESHOLD) {
+        this.isRotating = true;
+        const backupPath = `${this.logFilePath}.1`;
+        try {
+          if (this.writeStream) {
+            this.writeStream.end(() => {
+              try {
+                if (fs.existsSync(backupPath)) {
+                  fs.unlinkSync(backupPath);
+                }
+                fs.renameSync(this.logFilePath, backupPath);
+              } catch {
+                try {
+                  fs.writeFileSync(this.logFilePath, '');
+                } catch {
+                  // Ignored
+                }
+              } finally {
+                this.isRotating = false;
+                this.initWriteStream();
+              }
+            });
+            return;
+          }
+        } catch {
+          this.isRotating = false;
+        }
+      }
+    });
   }
 
   private appendLog(level: string, message: unknown, context?: string) {
@@ -40,24 +98,31 @@ export class FileLoggerService extends ConsoleLogger {
     }
 
     const logLine = `[${timestamp}] [${level.toUpperCase()}] [${ctx}] ${msgStr}\n`;
-    try {
-      fs.appendFileSync(this.logFilePath, logLine);
 
-      // Rotate if larger than 20MB
-      const stats = fs.statSync(this.logFilePath);
-      if (stats.size > 20 * 1024 * 1024) {
-        const backupPath = `${this.logFilePath}.1`;
-        try {
-          if (fs.existsSync(backupPath)) {
-            fs.unlinkSync(backupPath);
-          }
-          fs.renameSync(this.logFilePath, backupPath);
-        } catch {
-          fs.writeFileSync(this.logFilePath, '');
+    if (!this.writeStream) {
+      this.initWriteStream();
+    }
+
+    if (this.writeStream && !this.isRotating) {
+      try {
+        this.writeStream.write(logLine);
+        this.bytesWrittenSinceCheck += Buffer.byteLength(logLine, 'utf8');
+        if (
+          this.bytesWrittenSinceCheck > FileLoggerService.CHECK_INTERVAL_BYTES
+        ) {
+          this.bytesWrittenSinceCheck = 0;
+          this.checkAndRotate();
         }
+      } catch {
+        // Silently fail if stream is temporarily unavailable
       }
-    } catch {
-      // Silently fail if file system is inaccessible
+    }
+  }
+
+  close(): void {
+    if (this.writeStream) {
+      this.writeStream.end();
+      this.writeStream = null;
     }
   }
 

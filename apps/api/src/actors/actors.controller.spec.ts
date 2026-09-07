@@ -38,6 +38,9 @@ describe('ActorsController', () => {
     removeContact: jest.fn().mockResolvedValue({ success: true }),
     addNote: jest.fn().mockResolvedValue({ noteId: 'N001' }),
     removeNote: jest.fn().mockResolvedValue({ success: true }),
+    getActorLinks: jest.fn().mockResolvedValue([{ linkId: 'L001' }]),
+    addActorLink: jest.fn().mockResolvedValue({ linkId: 'L001' }),
+    removeActorLink: jest.fn().mockResolvedValue({ success: true }),
   };
 
   beforeEach(async () => {
@@ -61,6 +64,12 @@ describe('ActorsController', () => {
       expect(result).toEqual(mockResult);
       expect(mockService.getActors).toHaveBeenCalledWith(query);
     });
+
+    it('should forward ownerId query filter to service', async () => {
+      const query = { page: 1, limit: 50, ownerId: 'user-123' };
+      await controller.findAll(query);
+      expect(mockService.getActors).toHaveBeenCalledWith(query);
+    });
   });
 
   describe('findOne', () => {
@@ -81,6 +90,15 @@ describe('ActorsController', () => {
         mockUser.userId,
       );
     });
+
+    it('should create an actor with ownerId', async () => {
+      const dto = { name: 'Actor with Owner', ownerId: 'user-123' };
+      await controller.create(dto, mockUser);
+      expect(mockService.createActor).toHaveBeenCalledWith(
+        dto,
+        mockUser.userId,
+      );
+    });
   });
 
   describe('update', () => {
@@ -88,6 +106,16 @@ describe('ActorsController', () => {
       const dto = { name: 'Actor Updated' };
       const result = await controller.update('A001', dto, mockUser);
       expect(result).toEqual({ actorId: 'A001', name: 'Actor Updated' });
+      expect(mockService.updateActor).toHaveBeenCalledWith(
+        'A001',
+        dto,
+        mockUser.userId,
+      );
+    });
+
+    it('should update an actor with ownerId or unassign', async () => {
+      const dto = { ownerId: 'user-456' };
+      await controller.update('A001', dto, mockUser);
       expect(mockService.updateActor).toHaveBeenCalledWith(
         'A001',
         dto,
@@ -171,6 +199,38 @@ describe('ActorsController', () => {
       expect(mockService.removeNote).toHaveBeenCalledWith(
         'A001',
         'N001',
+        mockUser.userId,
+      );
+    });
+  });
+
+  describe('links', () => {
+    it('should get actor links', async () => {
+      const result = await controller.getLinks('A001');
+      expect(result).toEqual([{ linkId: 'L001' }]);
+      expect(mockService.getActorLinks).toHaveBeenCalledWith('A001');
+    });
+
+    it('should add actor link', async () => {
+      const dto = {
+        targetActorId: 'A002',
+        linkType: 'subsidiary' as const,
+      };
+      const result = await controller.addLink('A001', dto, mockUser);
+      expect(result).toEqual({ linkId: 'L001' });
+      expect(mockService.addActorLink).toHaveBeenCalledWith(
+        'A001',
+        dto,
+        mockUser.userId,
+      );
+    });
+
+    it('should remove actor link', async () => {
+      const result = await controller.removeLink('A001', 'L001', mockUser);
+      expect(result).toEqual({ success: true });
+      expect(mockService.removeActorLink).toHaveBeenCalledWith(
+        'A001',
+        'L001',
         mockUser.userId,
       );
     });

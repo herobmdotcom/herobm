@@ -12,14 +12,8 @@ import {
 import { sql } from 'drizzle-orm';
 import { SupplierState, ProductState } from '@herobm/shared';
 import { herobmCore } from './core.schema';
-import {
-  glAccounts,
-  costCenters,
-  activities,
-  customerGroups,
-  customers,
-  suppliers,
-} from './index';
+import { glAccounts, costCenters, activities } from './gl.schema';
+import { customerGroups, customers, suppliers } from './crm.schema';
 import { taxCategories } from './tax.schema';
 
 // ---------------------------------------------------------------------------

@@ -73,8 +73,13 @@ COPY --from=builder --chown=node:node /app/packages/sdk/package.json ./packages/
 # Copy built API app and necessary runtime assets
 COPY --from=builder --chown=node:node /app/apps/api ./apps/api
 
-# Ensure app directories and runtime temp dirs are owned by non-root node user
-RUN mkdir -p /app/apps/api/tmp && chown -R node:node /app
+# Ensure app directories, storage directories and runtime temp dirs are owned by non-root node user
+RUN mkdir -p /app/apps/api/tmp \
+    /app/data/storage/products/uploads \
+    /app/data/storage/products/abm \
+    /app/data/storage/organization \
+    /app/data/storage/reports \
+    && chown -R node:node /app
 
 USER node
 

@@ -76,6 +76,11 @@ const DOMAIN_GROUPS: DomainGroup[] = [
       'actor_contact_links',
       'actor_actor_links',
       'actor_notes',
+      'opportunities',
+      'opportunity_notes',
+      'opportunity_actors',
+      'opportunity_contacts',
+      'crm_activities',
       'projects',
       'project_notes',
       'project_actors',
@@ -434,7 +439,7 @@ function generateMarkdown(snapshot: Snapshot, rowCounts: Record<string, number>)
 
   // 3. Core ER Lineage Mermaid Diagram
   const coreTables = [
-    'actors', 'contacts', 'customers', 'suppliers', 'products',
+    'actors', 'contacts', 'customers', 'suppliers', 'products', 'opportunities',
     'sales_orders', 'sales_order_line_items', 'sales_invoices', 'sales_order_shipments',
     'purchase_orders', 'purchase_order_line_items', 'purchase_invoices', 'goods_received',
     'locations', 'bins', 'inventory_entries', 'inventory_ledger',
@@ -456,6 +461,7 @@ flowchart TD
         contacts["contacts"]
         customers["customers"]
         suppliers["suppliers"]
+        opportunities["opportunities"]
     end
 
     subgraph Catalog ["Catalog"]
@@ -531,7 +537,7 @@ ${Array.from(mermaidEdges).join('\n')}
 id: database-schema
 title: "Database Schema Reference"
 description: "Comprehensive relational database schema reference, entity definitions, table columns, data types, constraints, and entity-relationship lineage for herobm_core."
-category: "Technical"
+category: "Developer"
 order: 31
 resource: "system"
 action: "read"
@@ -618,15 +624,15 @@ export function run() {
 
   const markdown = generateMarkdown(snapshot, rowCounts);
 
-  // 1. Write user documentation file
+  // 1. Write canonical documentation file
   fs.writeFileSync(userDocFile, markdown, 'utf-8');
-  console.log(`✅ Generated User Help Doc: ${userDocFile}`);
+  console.log(`✅ Generated Database Schema Reference: ${userDocFile}`);
 
-  // 2. Write developer technical reference doc (clean markdown)
-  const devDocContent = markdown.replace(/^---[\s\S]*?---\n+/, '');
-  fs.mkdirSync(path.dirname(devDocFile), { recursive: true });
-  fs.writeFileSync(devDocFile, devDocContent, 'utf-8');
-  console.log(`✅ Generated Technical Doc: ${devDocFile}`);
+  // 2. Remove obsolete duplicate in technical/ if it exists
+  if (fs.existsSync(devDocFile)) {
+    fs.unlinkSync(devDocFile);
+    console.log(`🗑️ Removed duplicate ${devDocFile}`);
+  }
 }
 
 if (process.argv[1] && (process.argv[1].endsWith('generate_schema_docs.ts') || process.argv[1].endsWith('generate_schema_docs.js'))) {

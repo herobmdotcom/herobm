@@ -6,16 +6,16 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  BasSummaryRowDto,
   CreateTaxCategoryDto,
   CreateTaxPositionDto,
   CreateTaxPositionMappingDto,
-  TaxBasControllerGetBasSummaryParams,
   TaxCategoriesControllerFindAllParams,
   TaxCategoriesControllerFindOneParams,
   TaxCategoryResponseDto,
   TaxPositionMappingResponseDto,
   TaxPositionResponseDto,
+  TaxReportResponseDto,
+  TaxReportsControllerGetTaxReportParams,
   UpdateTaxCategoryDto,
   UpdateTaxPositionDto
 } from '../../model';
@@ -517,22 +517,22 @@ export const taxPositionsControllerRemove = async (id: string, options?: Request
 
 
 /**
- * Returns the formatted ATO BAS summary for the specified date range
- * @summary Get ATO BAS Summary Report Data
+ * Returns generic VAT/GST tax balances summary and country-specific statutory reports (ATO BAS, HMRC VAT, IRAS GST, USt-VA, NZ GST, US Sales Tax).
+ * @summary Get Tax Balances & Statutory Report Data
  */
-export type taxBasControllerGetBasSummaryResponse200 = {
-  data: BasSummaryRowDto[]
+export type taxReportsControllerGetTaxReportResponse200 = {
+  data: TaxReportResponseDto
   status: 200
 }
     
-export type taxBasControllerGetBasSummaryResponseSuccess = (taxBasControllerGetBasSummaryResponse200) & {
+export type taxReportsControllerGetTaxReportResponseSuccess = (taxReportsControllerGetTaxReportResponse200) & {
   headers: Headers;
 };
 ;
 
-export type taxBasControllerGetBasSummaryResponse = (taxBasControllerGetBasSummaryResponseSuccess)
+export type taxReportsControllerGetTaxReportResponse = (taxReportsControllerGetTaxReportResponseSuccess)
 
-export const getTaxBasControllerGetBasSummaryUrl = (params?: TaxBasControllerGetBasSummaryParams,) => {
+export const getTaxReportsControllerGetTaxReportUrl = (params?: TaxReportsControllerGetTaxReportParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -544,12 +544,12 @@ export const getTaxBasControllerGetBasSummaryUrl = (params?: TaxBasControllerGet
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/tax/bas-summary?${stringifiedParams}` : `/tax/bas-summary`
+  return stringifiedParams.length > 0 ? `/tax/reports?${stringifiedParams}` : `/tax/reports`
 }
 
-export const taxBasControllerGetBasSummary = async (params?: TaxBasControllerGetBasSummaryParams, options?: RequestInit): Promise<taxBasControllerGetBasSummaryResponse> => {
+export const taxReportsControllerGetTaxReport = async (params?: TaxReportsControllerGetTaxReportParams, options?: RequestInit): Promise<taxReportsControllerGetTaxReportResponse> => {
   
-  return customFetch<taxBasControllerGetBasSummaryResponse>(getTaxBasControllerGetBasSummaryUrl(params),
+  return customFetch<taxReportsControllerGetTaxReportResponse>(getTaxReportsControllerGetTaxReportUrl(params),
   {      
     ...options,
     method: 'GET'

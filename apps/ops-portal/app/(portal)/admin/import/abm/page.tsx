@@ -349,10 +349,10 @@ export default function AdminImportPage() {
             </div>
             
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('systemBaseCurrency')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('systemBaseCurrencyDesc')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('systemBaseCurrency')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('systemBaseCurrencyDesc')}</p>
               <select
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                className="select w-full"
                 value={config.baseCurrency}
                 onChange={(e) => setConfig({ ...config, baseCurrency: e.target.value })}
               >
@@ -364,10 +364,10 @@ export default function AdminImportPage() {
             
             {abmTaxCategories.length > 0 && (
               <div className="col-span-2 mt-2">
-                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory')}</h2>
-                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc')}</p>
+                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('defaultTaxCategory')}</h2>
+                <p className="text-sm text-[var(--text-muted)] mb-4">{t('defaultTaxCategoryDesc')}</p>
                 <select
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                  className="select w-full"
                   value={config.defaultTaxCategoryCode}
                   onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
                 >
@@ -379,24 +379,24 @@ export default function AdminImportPage() {
             )}
             
             <div className="col-span-2 mt-2">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.legacyInvoicesTitle')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('options.legacyInvoicesDesc')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('options.legacyInvoicesTitle')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('options.legacyInvoicesDesc')}</p>
               
               <div className="flex flex-col gap-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-5 h-5 text-[#006b5c] rounded border-slate-300 focus:ring-[#006b5c]"
+                    className="w-5 h-5 accent-[var(--accent)] rounded border-[var(--border)]"
                     checked={config.enableLegacyInvoicesRule}
                     onChange={(e) => setConfig({ ...config, enableLegacyInvoicesRule: e.target.checked })}
                   />
-                  <span className="text-slate-700 font-medium">Apply paid status to older legacy invoices</span>
+                  <span className="text-[var(--text-secondary)] font-medium">Apply paid status to older legacy invoices</span>
                 </label>
                 
                 {config.enableLegacyInvoicesRule && (
                   <input
                     type="date"
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                    className="input w-full"
                     value={config.legacyInvoicesPaidBeforeDate}
                     onChange={(e) => setConfig({ ...config, legacyInvoicesPaidBeforeDate: e.target.value })}
                   />
@@ -405,65 +405,65 @@ export default function AdminImportPage() {
             </div>
 
             <div className="col-span-2 mt-2">
-              <h2 className="text-xl font-bold text-slate-800 mb-2">{t('options.glCutoffTitle')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('options.glCutoffDesc')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t('options.glCutoffTitle')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('options.glCutoffDesc')}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.glCutoffMode === 'start_of_month'}>
+                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'start_of_month'}>
                   <input 
                     type="radio" 
                     name="glCutoffMode" 
                     checked={config.glCutoffMode === 'start_of_month'}
                     onChange={() => setConfig({ ...config, glCutoffMode: 'start_of_month' })}
-                    className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                    className="mt-1 accent-[var(--accent)]" 
                   />
                   <div>
-                    <div className="font-bold text-slate-800">{t('options.glCutoffStartOfMonthTitle')}</div>
-                    <div className="text-sm text-slate-500">{t('options.glCutoffStartOfMonthDesc')}</div>
+                    <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffStartOfMonthTitle')}</div>
+                    <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffStartOfMonthDesc')}</div>
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.glCutoffMode === 'current_date'}>
+                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'current_date'}>
                   <input 
                     type="radio" 
                     name="glCutoffMode" 
                     checked={config.glCutoffMode === 'current_date'}
                     onChange={() => setConfig({ ...config, glCutoffMode: 'current_date' })}
-                    className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                    className="mt-1 accent-[var(--accent)]" 
                   />
                   <div>
-                    <div className="font-bold text-slate-800">{t('options.glCutoffCurrentDateTitle')}</div>
-                    <div className="text-sm text-slate-500">{t('options.glCutoffCurrentDateDesc')}</div>
+                    <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffCurrentDateTitle')}</div>
+                    <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffCurrentDateDesc')}</div>
                   </div>
                 </label>
               </div>
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions')}</h2>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('sections.executionOptions')}</h2>
           
           <div className="flex flex-col gap-4 mb-8">
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.extractionMode === 'resume'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.extractionMode === 'resume'}>
               <input 
                 type="radio" 
                 name="extractionMode" 
                 checked={config.extractionMode === 'resume'}
                 onChange={() => setConfig({ ...config, extractionMode: 'resume' })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800 flex items-center gap-2">
+                <div className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                   {t('options.resumeModeTitle')}
                   {completedTables !== null && (
-                    <span className="bg-[#006b5c]/10 text-[#006b5c] text-xs font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold px-2 py-0.5 rounded-full">
                       {t('options.tablesCached', { count: completedTables.length })}
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-slate-500">{t('options.resumeModeDesc')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{t('options.resumeModeDesc')}</div>
                 
                 {completedTables !== null && completedTables.length > 0 && (
-                  <div className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 border border-slate-100 rounded p-2 max-h-24 overflow-y-auto">
+                  <div className="mt-3 text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded p-2 max-h-24 overflow-y-auto">
                     <strong>{t('options.alreadyStaged')}</strong> 
                     {completedTables.join(', ')}
                   </div>
@@ -471,27 +471,27 @@ export default function AdminImportPage() {
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.extractionMode === 'skip'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.extractionMode === 'skip'}>
               <input 
                 type="radio" 
                 name="extractionMode" 
                 checked={config.extractionMode === 'skip'}
                 onChange={() => setConfig({ ...config, extractionMode: 'skip' })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{tExt('skip')}</div>
-                <div className="text-sm text-slate-500">{tExt('skipDesc')}</div>
+                <div className="font-bold text-[var(--text-primary)]">{tExt('skip')}</div>
+                <div className="text-sm text-[var(--text-muted)]">{tExt('skipDesc')}</div>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.extractionMode === 'full'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.extractionMode === 'full'}>
               <input 
                 type="radio" 
                 name="extractionMode" 
                 checked={config.extractionMode === 'full'}
                 onChange={() => setConfig({ ...config, extractionMode: 'full' })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                className="mt-1 accent-[var(--accent)]" 
               />
               <div>
                 <div className="font-bold text-[var(--text-primary)]">{t('options.fullExtractionTitle')}</div>

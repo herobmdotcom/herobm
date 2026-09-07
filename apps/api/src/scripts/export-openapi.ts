@@ -14,7 +14,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('HeroBM API')
     .setDescription('Core Forgeron API System endpoints')
-    .setVersion('1.0')
+    .setVersion('1.1')
     .addTag('Auth', 'Authentication and Authorization')
     .addTag('GL', 'General Ledger')
     .addTag('BankFeeds', 'Bank statement feeds')
@@ -24,6 +24,7 @@ async function bootstrap() {
     .addTag('Contacts', 'Customer and supplier contacts')
     .addTag('Delivery Addresses', 'Delivery locations')
     .addTag('System', 'System configuration')
+    .addTag('Storage', 'Image and file storage')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

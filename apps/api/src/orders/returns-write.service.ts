@@ -227,46 +227,52 @@ export class ReturnsWriteService {
           .returning();
 
         // Insert return lines
-        const lineValues = await Promise.all(
-          dto.lines.map(async (line) => {
-            const [lineDetails] = await innerTx
-              .select({
-                productNumber: coreProducts.productNumber,
-                productName: coreProducts.name,
-                productDescription: salesOrderLineItems.productDescription,
-                pricePerUnit: salesOrderLineItems.pricePerUnit,
-                discountPercentage: salesOrderLineItems.discountPercentage,
-                taxCategoryId: salesOrderLineItems.taxCategoryId,
-              })
-              .from(salesOrderLineItems)
-              .leftJoin(
-                coreProducts,
-                eq(salesOrderLineItems.productId, coreProducts.productId),
-              )
-              .where(
-                eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId),
-              )
-              .limit(1);
+        const soLineIds = dto.lines.map((l) => l.salesOrderLineId);
+        const lineDetailRows =
+          soLineIds.length > 0
+            ? await innerTx
+                .select({
+                  salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+                  productNumber: coreProducts.productNumber,
+                  productName: coreProducts.name,
+                  productDescription: salesOrderLineItems.productDescription,
+                  pricePerUnit: salesOrderLineItems.pricePerUnit,
+                  discountPercentage: salesOrderLineItems.discountPercentage,
+                  taxCategoryId: salesOrderLineItems.taxCategoryId,
+                })
+                .from(salesOrderLineItems)
+                .leftJoin(
+                  coreProducts,
+                  eq(salesOrderLineItems.productId, coreProducts.productId),
+                )
+                .where(inArray(salesOrderLineItems.salesOrderLineId, soLineIds))
+            : [];
 
-            return {
-              returnId: ret.returnId,
-              salesOrderLineId: line.salesOrderLineId,
-              quantityReturned: line.quantityReturned,
-              reason: line.reason,
-              resolution: line.resolution || RETURN_RESOLUTION.REFUND,
-              returnFee: line.returnFee ?? '0',
-              putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
-              productNumber: lineDetails?.productNumber || null,
-              productName:
-                lineDetails?.productName ||
-                lineDetails?.productDescription ||
-                null,
-              pricePerUnit: lineDetails?.pricePerUnit || '0',
-              discountPercentage: lineDetails?.discountPercentage || '0',
-              taxCategoryId: lineDetails?.taxCategoryId || null,
-            };
-          }),
+        const lineDetailMap = new Map(
+          lineDetailRows.map((ld) => [ld.salesOrderLineId, ld]),
         );
+
+        const lineValues = dto.lines.map((line) => {
+          const lineDetails = lineDetailMap.get(line.salesOrderLineId);
+
+          return {
+            returnId: ret.returnId,
+            salesOrderLineId: line.salesOrderLineId,
+            quantityReturned: line.quantityReturned,
+            reason: line.reason,
+            resolution: line.resolution || RETURN_RESOLUTION.REFUND,
+            returnFee: line.returnFee ?? '0',
+            putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+            productNumber: lineDetails?.productNumber || null,
+            productName:
+              lineDetails?.productName ||
+              lineDetails?.productDescription ||
+              null,
+            pricePerUnit: lineDetails?.pricePerUnit || '0',
+            discountPercentage: lineDetails?.discountPercentage || '0',
+            taxCategoryId: lineDetails?.taxCategoryId || null,
+          };
+        });
 
         if (lineValues.length > 0) {
           await innerTx.insert(salesOrderReturnLines).values(lineValues);
@@ -605,6 +611,37 @@ export class ReturnsWriteService {
           this.appConfig.valuationMethod(),
         );
 
+        const soLineIds = returnLines.map((rl) => rl.salesOrderLineId);
+        const orderLineRows =
+          soLineIds.length > 0
+            ? await innerTx
+                .select()
+                .from(salesOrderLineItems)
+                .where(inArray(salesOrderLineItems.salesOrderLineId, soLineIds))
+            : [];
+
+        const orderLineMap = new Map(
+          orderLineRows.map((ol) => [ol.salesOrderLineId, ol]),
+        );
+
+        const productIds = [
+          ...new Set(
+            orderLineRows
+              .map((ol) => ol.productId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+
+        const productRows =
+          productIds.length > 0
+            ? await innerTx
+                .select()
+                .from(coreProducts)
+                .where(inArray(coreProducts.productId, productIds))
+            : [];
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
         for (const rl of returnLines) {
           const newlyReceived = linesToReceive.get(rl.returnLineId) || 0;
           if (newlyReceived > 0) {
@@ -617,14 +654,7 @@ export class ReturnsWriteService {
               );
             }
 
-            const orderLine = await innerTx
-              .select()
-              .from(salesOrderLineItems)
-              .where(
-                eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
-              )
-              .limit(1)
-              .then((r) => r[0]);
+            const orderLine = orderLineMap.get(rl.salesOrderLineId);
 
             if (orderLine) {
               stockLines.push({
@@ -634,10 +664,9 @@ export class ReturnsWriteService {
               });
 
               // Calculate COGS
-              const [product] = await innerTx
-                .select()
-                .from(coreProducts)
-                .where(eq(coreProducts.productId, orderLine.productId!));
+              const product = orderLine.productId
+                ? productMap.get(orderLine.productId)
+                : undefined;
 
               if (product) {
                 const cost =
@@ -1092,29 +1121,43 @@ export class ReturnsWriteService {
       .where(eq(salesOrderReturns.salesOrderId, salesOrderId))
       .orderBy(salesOrderReturns.createdOn);
 
-    // Fetch lines and credit note number for each return
-    const result = [];
-    for (const ret of returns) {
-      const lines = await this.db
-        .select()
-        .from(salesOrderReturnLines)
-        .where(eq(salesOrderReturnLines.returnId, ret.returnId));
+    const returnIds = returns.map((r) => r.returnId);
+    const [allLines, allCreditNotes] =
+      returnIds.length > 0
+        ? await Promise.all([
+            this.db
+              .select()
+              .from(salesOrderReturnLines)
+              .where(inArray(salesOrderReturnLines.returnId, returnIds)),
+            this.db
+              .select({
+                returnId: salesCreditNotes.returnId,
+                creditNoteNumber: salesCreditNotes.creditNoteNumber,
+              })
+              .from(salesCreditNotes)
+              .where(inArray(salesCreditNotes.returnId, returnIds)),
+          ])
+        : [[], []];
 
-      // Look up associated credit note (if return is processed)
-      const [creditNote] = await this.db
-        .select({ creditNoteNumber: salesCreditNotes.creditNoteNumber })
-        .from(salesCreditNotes)
-        .where(eq(salesCreditNotes.returnId, ret.returnId))
-        .limit(1);
-
-      result.push({
-        ...ret,
-        lines,
-        creditNoteNumber: creditNote?.creditNoteNumber ?? null,
-      });
+    const linesByReturnId = new Map<string, typeof allLines>();
+    for (const l of allLines) {
+      const list = linesByReturnId.get(l.returnId) || [];
+      list.push(l);
+      linesByReturnId.set(l.returnId, list);
     }
 
-    return result;
+    const creditNoteByReturnId = new Map<string, string>();
+    for (const cn of allCreditNotes) {
+      if (cn.returnId) {
+        creditNoteByReturnId.set(cn.returnId, cn.creditNoteNumber);
+      }
+    }
+
+    return returns.map((ret) => ({
+      ...ret,
+      lines: linesByReturnId.get(ret.returnId) || [],
+      creditNoteNumber: creditNoteByReturnId.get(ret.returnId) ?? null,
+    }));
   }
 
   /**

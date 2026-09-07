@@ -14,7 +14,13 @@ function CsvExportContent() {
   const t = useTranslations('setup.dataExport');
 
   const [tables, setTables] = useState<
-    { id: string; name: string; uniqueKey: string; columns: string[] }[]
+    {
+      id: string;
+      name: string;
+      uniqueKey: string;
+      columns: string[];
+      exportOnly?: boolean;
+    }[]
   >([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [includeArchived, setIncludeArchived] = useState<boolean>(false);
@@ -97,7 +103,7 @@ function CsvExportContent() {
         <p className="text-[var(--text-muted)] max-w-xl">{t('subtitle')}</p>
       </div>
 
-      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 shadow-sm">
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-bold text-[var(--text-primary)]">
@@ -118,7 +124,7 @@ function CsvExportContent() {
             />
           </div>
 
-          <div className="max-h-72 overflow-y-auto border border-[var(--border)] rounded-lg divide-y divide-[var(--border)] bg-[var(--bg-secondary)]">
+          <div className="max-h-72 overflow-y-auto border border-[var(--border)] rounded-lg divide-y divide-[var(--border)] bg-[var(--bg-card)]">
             {filteredTables.map((tbl) => {
               const isSelected = tbl.id === selectedTable;
               return (
@@ -163,7 +169,7 @@ function CsvExportContent() {
         </div>
 
         {activeTable && (
-          <div className="mb-6 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
+          <div className="mb-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 {t('options')}
@@ -235,7 +241,7 @@ function CsvExportContent() {
                   {activeTable.columns.map((col) => (
                     <span
                       key={col}
-                      className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded text-[var(--text-primary)]"
+                      className="px-1.5 py-0.5 bg-[var(--bg-card)] border border-[var(--border)] rounded text-[var(--text-primary)]"
                     >
                       {col}
                     </span>

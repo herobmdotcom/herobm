@@ -44,12 +44,37 @@ export function HelpDrawer() {
 
   if (!isOpen) return null;
 
+  const CATEGORY_ORDER = [
+    'Overview',
+    'Dashboard',
+    'Sales',
+    'Inventory',
+    'Purchasing',
+    'Manufacturing',
+    'CRM',
+    'Finance',
+    'Reporting',
+    'Administration',
+    'Developer',
+    'Architecture & Engineering',
+    'Miscellaneous',
+  ];
+
   // Group topics by category for the TOC view
   const categoriesMap: Record<string, typeof topics> = {};
   topics.forEach((topic) => {
-    const cat = topic.category ? topic.category : 'General';
+    const cat = topic.category ? topic.category : 'Miscellaneous';
     if (!categoriesMap[cat]) categoriesMap[cat] = [];
     categoriesMap[cat].push(topic);
+  });
+
+  const sortedCategoryEntries = Object.entries(categoriesMap).sort(([a], [b]) => {
+    const idxA = CATEGORY_ORDER.indexOf(a);
+    const idxB = CATEGORY_ORDER.indexOf(b);
+    const orderA = idxA !== -1 ? idxA : 99;
+    const orderB = idxB !== -1 ? idxB : 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
   });
 
   const isViewingSubTopic = Boolean(activeTopic && contextTopic && activeTopic.id !== contextTopic.id);
@@ -322,7 +347,7 @@ export function HelpDrawer() {
                   </span>
                 </div>
 
-                {Object.entries(categoriesMap).map(([category, items]) => (
+                {sortedCategoryEntries.map(([category, items]) => (
                   <div key={category} className="space-y-2">
                     <h4 className="text-xs font-extrabold text-[var(--accent)] uppercase tracking-wider flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px]">folder</span>

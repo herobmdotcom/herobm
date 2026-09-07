@@ -27,4 +27,5 @@ export interface CreateActorDto {
   referredByActorId?: string;
   referredByContactId?: string;
   referralNote?: string;
+  ownerId?: string;
 }

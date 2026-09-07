@@ -243,6 +243,11 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => OrderCustomFieldsDto)
   customFields?: OrderCustomFieldsDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  opportunityId?: string;
 }
 
 export class UpdateOrderDto {
@@ -306,6 +311,11 @@ export class UpdateOrderDto {
   @ValidateNested()
   @Type(() => OrderCustomFieldsDto)
   customFields?: OrderCustomFieldsDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  opportunityId?: string;
 }
 
 // ── Return DTOs ──

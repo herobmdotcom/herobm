@@ -40,7 +40,7 @@ export default function DashboardTimelineSection({
         </Button>
       </div>
 
-      <div className="flex-1 min-h-[400px]">
+      <div className="flex-1">
         {isLoaded && <DashboardTimeline enabledEvents={enabledEvents} />}
       </div>
     </div>

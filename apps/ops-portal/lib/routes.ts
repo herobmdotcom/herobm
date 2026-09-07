@@ -122,10 +122,15 @@ export const routes = {
       detail: (id: string) => `/crm/contacts/${id}`,
       new: () => '/crm/contacts/new',
     },
+    opportunities: {
+      list: () => '/crm/opportunities',
+      detail: (id: string) => `/crm/opportunities/${id}`,
+      new: () => '/crm/opportunities/new',
+    },
     projects: {
-      list: () => '/crm/projects',
-      detail: (id: string) => `/crm/projects/${id}`,
-      new: () => '/crm/projects/new',
+      list: () => '/crm/opportunities',
+      detail: (id: string) => `/crm/opportunities/${id}`,
+      new: () => '/crm/opportunities/new',
     },
     map: () => '/crm/map',
   },

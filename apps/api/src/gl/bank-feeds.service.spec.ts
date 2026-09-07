@@ -300,7 +300,12 @@ describe('BankFeedsService', () => {
       dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
       dbMock.where.mockResolvedValueOnce(lines);
       dbMock.where.mockImplementation(() => {
-        return Promise.resolve([{ code: '2000-TARGET', id: 'target-acc-1' }]);
+        return Promise.resolve(
+          rules.map((r) => ({
+            code: '2000-TARGET',
+            id: (r.targetGlAccountId as string) || 'target-acc-1',
+          })),
+        );
       });
       dbMock.innerJoin.mockReturnValue({
         where: jest.fn().mockResolvedValue([]),

@@ -3,6 +3,7 @@ import { ContactsController } from './contacts.controller';
 import { ContactsService } from './contacts.service';
 import { PaginationQuery } from '../common/pagination';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { ContactEntityType } from '@herobm/shared';
 
 describe('ContactsController', () => {
   let controller: ContactsController;
@@ -81,7 +82,7 @@ describe('ContactsController', () => {
       const dto = {
         firstName: 'John',
         lastName: 'Doe',
-        entityType: 'actor' as const,
+        entityType: ContactEntityType.ACTOR,
         entityId: 'A001',
       };
       const result = await controller.create(dto, mockUser);

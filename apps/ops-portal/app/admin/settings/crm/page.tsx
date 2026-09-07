@@ -49,7 +49,7 @@ export default function CRMSettingsPage() {
 
   const navSections = useMemo(() => [
     { id: 'roles-section', label: 'Roles', show: true },
-    { id: 'projects-section', label: 'Projects', show: true },
+    { id: 'opportunities-section', label: 'Opportunities', show: true },
     { id: 'referrals-section', label: 'Referrals', show: true },
   ], []);
 
@@ -96,39 +96,38 @@ export default function CRMSettingsPage() {
               onChange={(newRoles) => updateAppField('actorContactRoles', newRoles)}
             />
             <OrderedSettingEditor
-              title="Project Contact Roles"
+              title="Opportunity Contact Roles"
               columnTitle="Role"
-              items={appForm?.projectContactRoles || []}
-              onChange={(newRoles) => updateAppField('projectContactRoles', newRoles)}
+              items={appForm?.opportunityContactRoles || appForm?.projectContactRoles || []}
+              onChange={(newRoles) => updateAppField('opportunityContactRoles', newRoles)}
             />
             <OrderedSettingEditor
-              title="Project Actor Roles"
+              title="Opportunity Stakeholder Roles"
               columnTitle="Role"
-              items={appForm?.projectActorRoles || []}
-              onChange={(newRoles) => updateAppField('projectActorRoles', newRoles)}
+              items={appForm?.opportunityActorRoles || appForm?.projectActorRoles || []}
+              onChange={(newRoles) => updateAppField('opportunityActorRoles', newRoles)}
             />
           </div>
         </div>
 
-        {/* ── Projects Settings ─────────────────────────────────────────────── */}
-        <div id="projects-section" className="card">
+        {/* ── Opportunities Settings ─────────────────────────────────────────────── */}
+        <div id="opportunities-section" className="card">
           <h3 className="section-heading flex items-center gap-2 mb-6">
-
-            <span className="material-symbols-outlined">folder</span>
-            Projects
+            <span className="material-symbols-outlined">trending_up</span>
+            Opportunities
           </h3>
           <div className="flex flex-col gap-8">
             <OrderedSettingEditor
-              title="Project Statuses"
-              columnTitle="Status"
-              items={appForm?.projectStatuses || []}
-              onChange={(newStatuses) => updateAppField('projectStatuses', newStatuses)}
+              title="Opportunity Stages"
+              columnTitle="Stage"
+              items={appForm?.opportunityStages || appForm?.projectStatuses || []}
+              onChange={(newStatuses) => updateAppField('opportunityStages', newStatuses)}
             />
             <OrderedSettingEditor
-              title="Project Types"
+              title="Opportunity Types"
               columnTitle="Type"
-              items={appForm?.projectTypes || []}
-              onChange={(newTypes) => updateAppField('projectTypes', newTypes)}
+              items={appForm?.opportunityTypes || appForm?.projectTypes || []}
+              onChange={(newTypes) => updateAppField('opportunityTypes', newTypes)}
             />
           </div>
         </div>

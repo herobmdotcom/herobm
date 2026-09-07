@@ -146,6 +146,11 @@ export default tseslint.config(
           // ADV-061: Forbid Type Assertions on stateCode Columns
           selector: "CallExpression[callee.name=/^(eq|inArray|set)$/] TSAsExpression > MemberExpression[property.name='stateCode'], CallExpression[callee.name=/^(eq|inArray|set)$/] ObjectExpression > Property[key.name='stateCode'] > TSAsExpression",
           message: "ADV-061: Do not use type assertions on stateCode columns in Drizzle queries. Ensure the schema uses .$type<SpecificState>()."
+        },
+        {
+          // ADV-053: Direct console.* calls prohibited in API services
+          selector: "ClassDeclaration[id.name=/.*Service$/] CallExpression[callee.object.name='console'][callee.property.name=/^(log|warn|error|info|debug)$/]",
+          message: "ADV-053: Direct console.* calls are prohibited in API services. Inject and use a NestJS Logger instance for structured and file-persisted logging."
         }
       ]
     },

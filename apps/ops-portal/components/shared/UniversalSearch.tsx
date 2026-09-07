@@ -25,6 +25,7 @@ export interface SearchResult {
     | 'transfer_order'
     | 'work_order'
     | 'contact'
+    | 'opportunity'
     | 'project'
     | 'payment';
   label: string;
@@ -49,6 +50,7 @@ const TYPE_ORDER: SearchResult['type'][] = [
   'transfer_order',
   'work_order',
   'contact',
+  'opportunity',
   'project',
   'payment',
 ];
@@ -70,6 +72,7 @@ const TYPE_ICONS: Record<SearchResult['type'], string> = {
   transfer_order: 'sync_alt',
   work_order: 'build',
   contact: 'contacts',
+  opportunity: 'folder',
   project: 'folder',
   payment: 'payments',
 };

@@ -1,11 +1,10 @@
-import { Metadata } from 'next';
-import EditProjectClient from './EditProjectClient';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Project',
-};
+interface Props {
+  params: Promise<{ id: string }>;
+}
 
-export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditProjectPage({ params }: Props) {
   const { id } = await params;
-  return <EditProjectClient projectId={id} />;
+  redirect(`/crm/opportunities/${id}`);
 }

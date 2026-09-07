@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { getErrorMessage, compareBinNumbers } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
+import Tabs from '@/components/shared/Tabs';
 import { formatLocationDisplay, formatQuantity } from '@/lib/formatters';
 
 interface ProductInventoryTabProps {
@@ -38,55 +39,26 @@ export function ProductInventoryTab({
   const [availableBins, setAvailableBins] = useState<api.InventoryBinResponseDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [inventoryLevels, setInventoryLevels] = useState<api.InventoryResponseDto[]>([]);
-  const [buildableQuantity, setBuildableQuantity] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [kitComponents, setKitComponents] = useState<KitComponentItem[]>([]);
+  const [viewMode, setViewMode] = useState<'built' | 'components'>('built');
 
   useEffect(() => {
     const fetchInventoryData = async () => {
       try {
         let productIdsToFetch: string[] = [productId];
-        let kitComponentsList: KitComponentItem[] = [];
         
         if (product?.structureType === 'kit') {
           const componentsData = await api.productsControllerGetComponents(productId);
           const comps = (componentsData.data && 'data' in (componentsData.data as object) ? (componentsData.data as { data: unknown }).data : componentsData.data) as KitComponentItem[];
           if (comps?.length) {
-            kitComponentsList = comps;
             setKitComponents(comps);
             productIdsToFetch = [productId, ...comps.map((c) => c.childProductId).filter(Boolean)];
           }
         }
         
         const invDataRes = await api.inventoryControllerFindByProductIdsBulk({ productIds: productIdsToFetch });
-        const invLevels = invDataRes?.data || [];
-        setInventoryLevels(invLevels);
-        
-        if (product?.structureType === 'kit' && kitComponentsList.length && invLevels.length) {
-          // Group inventory by location to ensure we only count kits that can be physically built at a single site
-          const inventoryByLocation: Record<string, Record<string, number>> = {};
-          invLevels.forEach(lvl => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing
-            const locationId = (lvl as any).locationId;
-            if (!locationId) return;
-            if (!inventoryByLocation[locationId]) inventoryByLocation[locationId] = {};
-            inventoryByLocation[locationId][lvl.productId] = (inventoryByLocation[locationId][lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
-          });
-
-          let totalBuildable = 0;
-          for (const locId in inventoryByLocation) {
-            const locInv = inventoryByLocation[locId];
-            const maxBuildableAtLoc = kitComponentsList.map(c => {
-              // Ensure we don't calculate negative buildable quantities if stock is negative
-              const available = Math.max(0, locInv[c.childProductId] || 0);
-              return Math.floor(available / (c.parentQuantity || 1));
-            });
-            totalBuildable += Math.min(...maxBuildableAtLoc);
-          }
-          setBuildableQuantity(totalBuildable);
-        } else {
-          setBuildableQuantity(null);
-        }
+        setInventoryLevels(invDataRes?.data || []);
       } catch (err) {
         toast.error('Failed to load inventory levels: ' + getErrorMessage(err));
         reportError(err, 'ProductInventoryTab');
@@ -120,36 +92,34 @@ export function ProductInventoryTab({
   
   const filteredBuildableQuantity = useMemo(() => {
     if (product?.structureType !== 'kit' || !kitComponents.length || !inventoryLevels.length) return null;
-    
-    const inventoryByLocation: Record<string, Record<string, number>> = {};
-    inventoryLevels.forEach(lvl => {
+
+    const filteredLevels = selectedLocation
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing
-      const locationId = (lvl as any).locationId;
-      if (!locationId) return;
-      if (!inventoryByLocation[locationId]) inventoryByLocation[locationId] = {};
-      inventoryByLocation[locationId][lvl.productId] = (inventoryByLocation[locationId][lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
+      ? inventoryLevels.filter(l => (l as any).locationId === selectedLocation)
+      : inventoryLevels;
+
+    const buildablePerComponent = kitComponents.map(c => {
+      const compLevels = filteredLevels.filter(l => l.productId === c.childProductId);
+      const totalAvailable = compLevels.reduce((sum, l) => sum + (parseFloat(l.quantityAvailable as string) || 0), 0);
+      return Math.floor(Math.max(0, totalAvailable) / (c.parentQuantity || 1));
     });
 
-    let totalBuildable = 0;
-    for (const locId in inventoryByLocation) {
-      if (selectedLocation && selectedLocation !== locId) continue;
-      const locInv = inventoryByLocation[locId];
-      const maxBuildableAtLoc = kitComponents.map(c => {
-        const available = Math.max(0, locInv[c.childProductId] || 0);
-        return Math.floor(available / (c.parentQuantity || 1));
-      });
-      totalBuildable += Math.min(...maxBuildableAtLoc);
-    }
-    return totalBuildable;
+    return Math.min(...buildablePerComponent);
   }, [product?.structureType, kitComponents, inventoryLevels, selectedLocation]);
 
   const unifiedInventory = useMemo(() => {
     if (!product || !inventoryLevels) return [];
 
+    // Filter to only include inventory levels for the parent product, preventing kit component bleed
+    const parentLevels = inventoryLevels.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
+      (lvl: any) => !lvl.productId || lvl.productId === productId,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
     const locMap = new Map<string, any>();
 
-    inventoryLevels.forEach(lvl => {
+    parentLevels.forEach(lvl => {
       const loc = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
         locationId: (lvl as any).locationId,
@@ -215,191 +185,219 @@ export function ProductInventoryTab({
       }))
       .sort((a, b) => a.locationNo?.localeCompare(b.locationNo));
 
-  }, [inventoryLevels, product]);
+  }, [inventoryLevels, product, productId]);
+
+  const isTrackedKit = product?.structureType === 'kit' && product?.productType === 'inventory';
+  const activeView = isTrackedKit ? viewMode : (product?.structureType === 'kit' ? 'components' : 'built');
 
   return (
     <div className="w-full pb-6">
       <div className="z-10 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden transition-all">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-4 flex-1">
+        <div className={`px-6 pt-4 ${isTrackedKit ? '' : 'pb-4 border-b border-[var(--border)]'}`}>
+          <div className={`flex items-center justify-between ${isTrackedKit ? 'mb-3' : ''}`}>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] shrink-0 font-['Manrope',sans-serif]">
               {t('products.inventoryLevels')}
-              {product?.productType === 'non-stock' && filteredBuildableQuantity !== null && (
-                <span className="ml-3 badge badge-success text-[13px] font-bold">
-                  {t('products.availableToAssemble', { quantity: filteredBuildableQuantity })}
-                </span>
-              )}
             </h2>
           </div>
-          {!addingBinLink && isEditable && product?.productType !== 'non-stock' && (
-            <Button
-              size="sm"
-              variant="primary"
-              className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
-              onClick={() => setAddingBinLink(true)}
-              disabled={saving}
-            >
-              {t('products.storage.addBinLink')}
-            </Button>
+          {isTrackedKit && (
+            <Tabs<'built' | 'components'>
+              tabs={[
+                {
+                  id: 'built',
+                  label: t('products.tabs.built'),
+                },
+                {
+                  id: 'components',
+                  label: t('products.tabs.kitComponents'),
+                },
+              ]}
+              activeTab={viewMode}
+              onChange={(tab) => {
+                setViewMode(tab);
+                setAddingBinLink(false);
+              }}
+            />
           )}
         </div>
 
-        {addingBinLink && (
-          <div className="flex flex-wrap items-end gap-3 p-5 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
-            <div className="flex-[1_1_200px]">
-              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.location')}</label>
-              <select
-                className="input w-full"
-                value={newBinLink.locationId}
-                onChange={(e) => setNewBinLink({ ...newBinLink, locationId: e.target.value, binId: '' })}
+        {activeView === 'components' ? (
+          <>
+            <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-card)]">
+              <select 
+                className="input input-sm !w-auto" 
+                value={selectedLocation} 
+                onChange={(e) => setSelectedLocation(e.target.value)}
               >
-                <option value="">{t('common.selectEllipsis')}</option>
+                <option value="">{t('common.filters.allLocations')}</option>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
                 {locations.map((loc: any) => (
-                  <option key={loc.locationId} value={loc.locationId}>
-                    {formatLocationDisplay(loc)}
-                  </option>
+                  <option key={loc.locationId} value={loc.locationId}>{formatLocationDisplay(loc)}</option>
                 ))}
               </select>
+              {filteredBuildableQuantity !== null && (
+                <span className="badge badge-success text-[13px] font-bold">
+                  {t('products.availableToAssemble', { quantity: filteredBuildableQuantity })}
+                </span>
+              )}
             </div>
-            <div className="flex-[1_1_150px]">
-              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.bin')}</label>
-              <select
-                className="input w-full"
-                disabled={!newBinLink.locationId}
-                value={newBinLink.binId}
-                onChange={(e) => setNewBinLink({ ...newBinLink, binId: e.target.value })}
-              >
-                <option value="">{t('common.selectEllipsis')}</option>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
-                {availableBins.map((b: any) => (
-                  <option key={b.binId} value={b.binId}>
-                    {b.binNumber}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-[90px]">
-              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.minQty')}</label>
-              <input
-                className="input text-right"
-                type="number"
-                min="0"
-                value={newBinLink.minQty}
-                onChange={(e) => setNewBinLink({ ...newBinLink, minQty: e.target.value })}
-              />
-            </div>
-            <div className="w-[90px]">
-              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.maxQty')}</label>
-              <input
-                className="input text-right"
-                type="number"
-                min="0"
-                value={newBinLink.maxQty}
-                onChange={(e) => setNewBinLink({ ...newBinLink, maxQty: e.target.value })}
-              />
-            </div>
-            <div className="w-[80px]">
-              <label className="block text-xs font-medium mb-2 text-[var(--text-muted)]">{t('products.storage.columns.primary')}</label>
-              <label className="switch mt-1">
-                <input 
-                  type="checkbox" 
-                  checked={newBinLink.isPrimaryPerLocation}
-                  onChange={(e) => setNewBinLink({ ...newBinLink, isPrimaryPerLocation: e.target.checked })}
-                />
-                <span className="switch-slider"></span>
-              </label>
-            </div>
-            
-            <div className="flex gap-2.5">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)]"
-                onClick={() => {
-                  setAddingBinLink(false);
-                  setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
-                }}
-                disabled={saving}
-              >
-                {tCommon('buttons.cancel')}
-              </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                className="bg-[#006b5c] hover:bg-[#005246] border-none px-6"
-                disabled={!newBinLink.locationId || !newBinLink.binId || saving}
-                onClick={async () => {
-                  try {
-                    setSaving(true);
-                    await api.productsControllerLinkDefaultBin(productId, newBinLink);
-                    toast.success(t('products.storage.toastLinkAdded'));
-                    setAddingBinLink(false);
-                    setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
-                    await onRefresh();
-                  } catch (err: unknown) {
-                    toast.error(getErrorMessage(err));
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {tCommon('buttons.save')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="overflow-x-auto">
-          {product?.structureType === 'kit' && product?.productType === 'non-stock' ? (
-            <>
-              <div className="flex justify-end px-6 py-4 border-b border-[var(--border)]">
-                <select 
-                  className="input input-sm w-64" 
-                  value={selectedLocation} 
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                >
-                  <option value="">{t('common.filters.allLocations')}</option>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
-                  {locations.map((loc: any) => (
-                    <option key={loc.locationId} value={loc.locationId}>{formatLocationDisplay(loc)}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-[13px]">
-              <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
-                <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
-                  <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
-                  <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-b-0">
-                {kitComponents.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-[var(--text-muted)] text-sm">{t('common.noMatchingResults')}</td>
+                <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
+                  <tr className="border-b border-[var(--border)]">
+                    <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
+                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
+                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
                   </tr>
-                ) : (
-                  kitComponents.map(comp => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-                    const compInv = inventoryLevels.filter(l => l.productId === comp.childProductId && (!selectedLocation || (l as any).locationId === selectedLocation));
-                    const totalAvail = compInv.reduce((sum, l) => sum + (parseFloat(l.quantityAvailable as string) || 0), 0);
-                    return (
-                      <tr key={comp.childProductId} className="bg-[var(--bg-card)] border-b border-[var(--border)]">
-                        <td className="py-3 px-6">
-                          <div className="text-[var(--text-primary)] font-medium">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium text-[var(--text-secondary)]">{formatQuantity(comp.parentQuantity || 1)}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-[var(--accent)]">{formatQuantity(totalAvail)}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-            </>
-          ) : (
-            <table className="w-full text-left border-collapse text-[13px]">
+                </thead>
+                <tbody className="[&_tr:last-child]:border-b-0">
+                  {kitComponents.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-[var(--text-muted)] text-sm">{t('common.noMatchingResults')}</td>
+                    </tr>
+                  ) : (
+                    kitComponents.map(comp => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
+                      const compInv = inventoryLevels.filter(l => l.productId === comp.childProductId && (!selectedLocation || (l as any).locationId === selectedLocation));
+                      const totalAvail = compInv.reduce((sum, l) => sum + (parseFloat(l.quantityAvailable as string) || 0), 0);
+                      return (
+                        <tr key={comp.childProductId} className="bg-[var(--bg-card)] border-b border-[var(--border)]">
+                          <td className="py-3 px-6">
+                            <div className="text-[var(--text-primary)] font-medium">{comp.productNumber || tCommon('unknown')} - {comp.name || tCommon('unknown')}</div>
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-[var(--text-secondary)]">{formatQuantity(comp.parentQuantity || 1)}</td>
+                          <td className="py-3 px-4 text-right font-semibold text-[var(--accent)]">{formatQuantity(totalAvail)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <>
+            {!addingBinLink && isEditable && product?.productType !== 'non-stock' && (
+              <div className="flex justify-end px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-card)]">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
+                  onClick={() => setAddingBinLink(true)}
+                  disabled={saving}
+                >
+                  {t('products.storage.addBinLink')}
+                </Button>
+              </div>
+            )}
+
+            {addingBinLink && (
+              <div className="flex flex-wrap items-end gap-3 p-5 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
+                <div className="flex-[1_1_200px]">
+                  <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.location')}</label>
+                  <select
+                    className="input w-full"
+                    value={newBinLink.locationId}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, locationId: e.target.value, binId: '' })}
+                  >
+                    <option value="">{t('common.selectEllipsis')}</option>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
+                    {locations.map((loc: any) => (
+                      <option key={loc.locationId} value={loc.locationId}>
+                        {formatLocationDisplay(loc)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-[1_1_150px]">
+                  <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.bin')}</label>
+                  <select
+                    className="input w-full"
+                    disabled={!newBinLink.locationId}
+                    value={newBinLink.binId}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, binId: e.target.value })}
+                  >
+                    <option value="">{t('common.selectEllipsis')}</option>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
+                    {availableBins.map((b: any) => (
+                      <option key={b.binId} value={b.binId}>
+                        {b.binNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-[90px]">
+                  <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.minQty')}</label>
+                  <input
+                    className="input text-right"
+                    type="number"
+                    min="0"
+                    value={newBinLink.minQty}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, minQty: e.target.value })}
+                  />
+                </div>
+                <div className="w-[90px]">
+                  <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">{t('products.storage.columns.maxQty')}</label>
+                  <input
+                    className="input text-right"
+                    type="number"
+                    min="0"
+                    value={newBinLink.maxQty}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, maxQty: e.target.value })}
+                  />
+                </div>
+                <div className="w-[80px]">
+                  <label className="block text-xs font-medium mb-2 text-[var(--text-muted)]">{t('products.storage.columns.primary')}</label>
+                  <label className="switch mt-1">
+                    <input 
+                      type="checkbox" 
+                      checked={newBinLink.isPrimaryPerLocation}
+                      onChange={(e) => setNewBinLink({ ...newBinLink, isPrimaryPerLocation: e.target.checked })}
+                    />
+                    <span className="switch-slider"></span>
+                  </label>
+                </div>
+                
+                <div className="flex gap-2.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)]"
+                    onClick={() => {
+                      setAddingBinLink(false);
+                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
+                    }}
+                    disabled={saving}
+                  >
+                    {tCommon('buttons.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="bg-[#006b5c] hover:bg-[#005246] border-none px-6"
+                    disabled={!newBinLink.locationId || !newBinLink.binId || saving}
+                    onClick={async () => {
+                      try {
+                        setSaving(true);
+                        await api.productsControllerLinkDefaultBin(productId, newBinLink);
+                        toast.success(t('products.storage.toastLinkAdded'));
+                        setAddingBinLink(false);
+                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
+                        await onRefresh();
+                      } catch (err: unknown) {
+                        toast.error(getErrorMessage(err));
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    {tCommon('buttons.save')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-[13px]">
             <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
               <tr className="border-b border-[var(--border)]">
                 <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
@@ -575,9 +573,10 @@ export function ProductInventoryTab({
               )}
             </tbody>
           </table>
-          )}
         </div>
-      </div>
-    </div>
+      </>
+    )}
+  </div>
+</div>
   );
 }

@@ -20,5 +20,6 @@ export interface CreateContactDto {
   jobTitle?: string;
   isPrimary?: boolean;
   primaryFor?: string[];
+  opportunityRoles?: string[];
   projectRoles?: string[];
 }

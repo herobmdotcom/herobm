@@ -185,10 +185,30 @@ export default function SystemLogsPage() {
             <>
               {lines.map((line, idx) => {
                 let colorClass = 'text-[#d4d4d4]';
-                if (line.includes('[WARN]')) colorClass = 'text-amber-500';
-                else if (line.includes('[ERROR]') || line.includes('Error:')) colorClass = 'text-red-400';
-                else if (line.includes('[DEBUG]')) colorClass = 'text-gray-400';
-                else if (line.includes('[INFO]')) colorClass = 'text-blue-400';
+                if (line.includes('[WARN]') || line.includes('"level":"warn"') || line.includes('"level":40')) {
+                  colorClass = 'text-amber-500';
+                } else if (
+                  line.includes('[ERROR]') ||
+                  line.includes('"level":"error"') ||
+                  line.includes('"level":50') ||
+                  line.includes('Error:')
+                ) {
+                  colorClass = 'text-red-400';
+                } else if (
+                  line.includes('[DEBUG]') ||
+                  line.includes('[VERBOSE]') ||
+                  line.includes('"level":"debug"') ||
+                  line.includes('"level":20')
+                ) {
+                  colorClass = 'text-gray-400';
+                } else if (
+                  line.includes('[INFO]') ||
+                  line.includes('[LOG]') ||
+                  line.includes('"level":"info"') ||
+                  line.includes('"level":30')
+                ) {
+                  colorClass = 'text-blue-400';
+                }
                 
                 return (
                   <div key={idx} className={`whitespace-pre-wrap break-all ${colorClass}`}>

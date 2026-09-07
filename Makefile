@@ -146,11 +146,13 @@ DBT_DIR = pipelines/$(SOURCE)_transform
 # This only runs on Linux/macOS to avoid impacting Windows hosts.
 check-postgres-logs:
 ifneq ($(OS),Windows_NT)
-	@mkdir -p ./logs ./data/storage/products/uploads
-	-@chmod -R 777 ./logs 2>/dev/null || chmod -R a+rwx ./logs 2>/dev/null || true
-	-@chmod -R a+rX ./data/storage 2>/dev/null || true
-	-@podman unshare chmod -R 777 ./logs 2>/dev/null || true
-	-@podman unshare chmod -R a+rX ./data/storage 2>/dev/null || true
+	@mkdir -p ./logs \
+		./data/storage/products/uploads \
+		./data/storage/products/abm \
+		./data/storage/organization \
+		./data/storage/reports
+	-@chmod -R 777 ./logs ./data/storage 2>/dev/null || chmod -R a+rwx ./logs ./data/storage 2>/dev/null || true
+	-@podman unshare chmod -R 777 ./logs ./data/storage 2>/dev/null || true
 endif
 
 # --------------------------------------------------------------------------
@@ -259,7 +261,7 @@ endif
 clean-db:
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
 	@echo "Resetting herobm_core and dbt transformation schemas..."
-	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS dbt_abm_transform CASCADE; DROP SCHEMA IF EXISTS dbt_odoo_transform CASCADE; CREATE SCHEMA herobm_core;"
+	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS abm_staging CASCADE; DROP SCHEMA IF EXISTS abm_intermediate CASCADE; DROP SCHEMA IF EXISTS odoo_staging CASCADE; DROP SCHEMA IF EXISTS odoo_intermediate CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
 	$(MAKE) seed
 
@@ -535,8 +537,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.0.1-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v0.1.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -766,6 +768,9 @@ test-abm:
 
 test-odoo:
 	@$(NPX) tsx pipelines/odoo_transform/test/run-odoo-tests.ts
+
+test-data:
+	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
 check-all: check-types check-lint
 

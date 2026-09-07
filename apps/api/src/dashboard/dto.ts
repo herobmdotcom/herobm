@@ -33,6 +33,7 @@ export class SearchResultDto {
       'transfer_order',
       'work_order',
       'contact',
+      'opportunity',
       'project',
       'payment',
     ],

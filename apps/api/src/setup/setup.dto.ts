@@ -331,6 +331,10 @@ export class CsvMetadataDto {
 
   @IsString({ each: true })
   columns: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  exportOnly?: boolean;
 }
 
 export class ExecuteCsvDto {
@@ -369,8 +373,4 @@ export class SetupValidationDto {
   dataCounts: Record<string, number>;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty()
-  @IsBoolean()
-  success: boolean;
-}
+export { SuccessResponseDto } from '../common/dto/success-response.dto';

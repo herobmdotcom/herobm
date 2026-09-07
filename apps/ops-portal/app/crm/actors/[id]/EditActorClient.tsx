@@ -17,14 +17,17 @@ import { ContactSlideOver } from '@/components/shared/ContactSlideOver';
 import DataGrid from '@/components/shared/DataGrid';
 import { ContactCard } from '@/components/shared/ContactCard';
 import { ContactListTab } from '@/components/shared/ContactListTab';
-import { ProjectsTab } from '@/components/shared/ProjectsTab';
+import { OpportunitiesTab } from '@/components/shared/OpportunitiesTab';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
 import { COUNTRIES, getErrorMessage } from '@herobm/shared';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useSettings } from '@/components/SettingsProvider';
 import { ACTOR_STATE, SystemResource, hasPermission } from '@herobm/shared';
 import ActorSelect, { type Actor } from '@/components/shared/ActorSelect';
 import ContactSelect, { type Contact } from '@/components/shared/ContactSelect';
+import { ActorCommercialTab } from './components/ActorCommercialTab';
+import { ActorHierarchyTab } from './components/ActorHierarchyTab';
 
 interface ActorFormDto {
   name: string;
@@ -51,20 +54,21 @@ interface ActorFormDto {
   referredByActorName?: string | null;
   referredByContactName?: string | null;
   referralNote?: string | null;
+  ownerId?: string | null;
 }
-
-
 
 function GeneralInfoTab({
   dto,
   updateField,
   saveField,
-  loading
+  loading,
+  users,
 }: {
   dto: ActorFormDto;
   updateField: (field: keyof ActorFormDto, value: unknown) => void;
   saveField: (field: keyof api.UpdateActorDto, value: unknown) => void;
   loading: boolean;
+  users: api.UserResponseDto[];
 }) {
   const { app } = useSettings();
   const actorTags = app?.actorTags || [];
@@ -157,6 +161,26 @@ function GeneralInfoTab({
                   })()}
                 </span>
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Account Owner</label>
+              <select
+                className="input w-full"
+                value={dto.ownerId || ''}
+                onChange={(e) => {
+                  const val = e.target.value || null;
+                  updateField('ownerId', val);
+                  saveField('ownerId', val);
+                }}
+                disabled={loading}
+              >
+                <option value="">-- Unassigned --</option>
+                {users.map((u: api.UserResponseDto) => (
+                  <option key={(u as unknown as { userId: string }).userId || u.userId} value={(u as unknown as { userId: string }).userId || u.userId}>
+                    {u.displayName || u.username}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -275,7 +299,7 @@ function GeneralInfoTab({
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[var(--border)] pt-4 mt-2">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
               <input
@@ -426,17 +450,17 @@ function NotesTab({ actorId, notes, onNoteAdded }: { actorId: string; notes: api
 
         <div className="flex flex-col gap-6 mt-4">
           {sortedNotes.length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No notes found.</p>
+            <p className="text-sm text-[var(--text-muted)] italic">No notes found.</p>
           ) : (
             sortedNotes.map(note => (
-              <div key={note.noteId} className="border-b border-gray-200 last:border-b-0 pb-6 last:pb-0">
-                <div className="flex items-center gap-1 mb-2 text-xs font-medium text-gray-600">
+              <div key={note.noteId} className="border-b border-[var(--border)] last:border-b-0 pb-6 last:pb-0">
+                <div className="flex items-center gap-1 mb-2 text-xs font-medium text-[var(--text-muted)]">
                   <span>{new Date(note.createdOn).toLocaleString()}</span>
                   <span>-</span>
 
                   <span>{((note.createdBy as Record<string, unknown>)?.displayName as string) || ((note.createdBy as Record<string, unknown>)?.username as string) || note.createdById || t('system')}</span>
                 </div>
-                <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                <div className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">
                   {note.content}
                 </div>
               </div>
@@ -458,6 +482,20 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
   const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [users, setUsers] = useState<api.UserResponseDto[]>([]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await api.usersControllerFindAll();
+        setUsers(res.data || []);
+      } catch (e) {
+        reportError(e, 'EditActorClient - loadUsers');
+        toast.error('Failed to load users: ' + getErrorMessage(e));
+      }
+    };
+    loadUsers();
+  }, []);
 
   const {
     entity: actor,
@@ -495,6 +533,7 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       referredByContactId: data.referredByContactId || null,
       referredByActorName: data.referredByActorName || null,
       referredByContactName: data.referredByContactName || null,
+      ownerId: data.ownerId || '',
     }),
   });
 
@@ -542,8 +581,23 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'address-section', label: 'Address', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('address-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'notes-section', label: 'Notes', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activities-section', label: 'Activities', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activities-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: 'System Log', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ],
+    },
+    {
+      id: "tab-commercial",
+      label: "Commercial Accounts",
+      isSubPage: true,
+      isActive: activeTab === "commercial",
+      onClick: () => setActiveTab("commercial"),
+    },
+    {
+      id: "tab-hierarchy",
+      label: "Corporate Hierarchy",
+      isSubPage: true,
+      isActive: activeTab === "hierarchy",
+      onClick: () => setActiveTab("hierarchy"),
     },
     {
       id: "tab-contacts",
@@ -553,11 +607,11 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
       onClick: () => setActiveTab("contacts"),
     },
     {
-      id: "tab-projects",
-      label: "Projects",
+      id: "tab-opportunities",
+      label: "Opportunities",
       isSubPage: true,
-      isActive: activeTab === "projects",
-      onClick: () => setActiveTab("projects"),
+      isActive: activeTab === "opportunities" || activeTab === "projects",
+      onClick: () => setActiveTab("opportunities"),
     },
     ...extensionTabs.filter(t => t.target === 'actors').map(ext => ({
       id: `tab-${ext.id}`,
@@ -607,19 +661,35 @@ export default function EditActorClient({ actorId }: { actorId: string }) {
         {activeTab === 'overview' && dto && (
           <div className="flex flex-col gap-6 max-w-5xl">
             <div id="info-section">
-              <GeneralInfoTab dto={dto} updateField={(f, v) => updateField(f as keyof ActorFormDto, v)} saveField={(f, v) => saveFieldWrapper(f as keyof api.UpdateActorDto, v)} loading={loading} />
+              <GeneralInfoTab dto={dto} updateField={(f, v) => updateField(f as keyof ActorFormDto, v)} saveField={(f, v) => saveFieldWrapper(f as keyof api.UpdateActorDto, v)} loading={loading} users={users} />
             </div>
             <NotesTab actorId={actorId} notes={actor?.notes || []} onNoteAdded={loadActor} />
+            <div id="activities-section">
+              <CrmActivitiesSection
+                entityType="actor"
+                entityId={actorId}
+                entityName={actor?.name}
+                onActivityLogged={loadActor}
+              />
+            </div>
             <div id="activity-section" className="card">
-              <ActivityTimeline events={(actor as unknown as { events?: React.ComponentProps<typeof ActivityTimeline>['events'] })?.events || []} />
+              <ActivityTimeline
+                events={(actor as unknown as { events?: React.ComponentProps<typeof ActivityTimeline>['events'] })?.events || []}
+              />
             </div>
           </div>
+        )}
+        {activeTab === 'commercial' && (
+          <ActorCommercialTab actorId={actorId} actor={actor} />
+        )}
+        {activeTab === 'hierarchy' && (
+          <ActorHierarchyTab actorId={actorId} />
         )}
         {activeTab === 'contacts' && (
           <ContactListTab entityId={actorId} entityType="actor" contacts={actor?.actorContactLinks || []} onContactAdded={loadActor} />
         )}
-        {activeTab === 'projects' && (
-          <ProjectsTab entityId={actorId} entityType="actor" />
+        {(activeTab === 'opportunities' || activeTab === 'projects') && (
+          <OpportunitiesTab entityId={actorId} entityType="actor" />
         )}
 
         {extensionTabs.filter(t => t.target === 'actors').map(ext => {

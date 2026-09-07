@@ -17,7 +17,7 @@ fields:
   email:
     title: "Email Address"
     summary: "Contact email for notifications and password recovery."
-  role_name:
+  role:
     title: "Assigned Role"
     summary: "System role (e.g. Administrator, Sales Manager, Warehouse Staff, Accountant, Read-Only)."
   is_active:

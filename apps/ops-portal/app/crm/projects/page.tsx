@@ -1,10 +1,5 @@
-import ProjectsContent from './ProjectsContent';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Projects',
-};
+import { redirect } from 'next/navigation';
 
 export default function ProjectsPage() {
-  return <ProjectsContent />;
+  redirect('/crm/opportunities');
 }

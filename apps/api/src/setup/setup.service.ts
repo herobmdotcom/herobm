@@ -36,9 +36,14 @@ import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import * as bcrypt from 'bcrypt';
 import { parse } from 'csv-parse';
-import * as schema from '@herobm/db-schema';
 import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
+import { buildCsvRegistry, CsvRegistryEntry } from './setup-csv-registry';
+import {
+  getAllCsvProjections,
+  getCsvProjection,
+  hasCsvProjection,
+} from './setup-csv-projections';
 
 @Injectable()
 export class SetupService {
@@ -360,149 +365,7 @@ export class SetupService {
     }
   }
 
-  // --- CSV Import ---
-  private csvRegistry = [
-    {
-      id: 'customers',
-      name: 'Customers',
-      table: schema.customers,
-      uniqueKey: 'customer_number',
-    },
-    {
-      id: 'customer_groups',
-      name: 'Customer Groups',
-      table: schema.customerGroups,
-      uniqueKey: 'code',
-    },
-    {
-      id: 'products',
-      name: 'Products',
-      table: schema.products,
-      uniqueKey: 'product_code',
-    },
-    {
-      id: 'product_groups',
-      name: 'Product Groups',
-      table: schema.productGroups,
-      uniqueKey: 'code',
-    },
-    {
-      id: 'product_components',
-      name: 'Product Components',
-      table: schema.productComponents,
-      uniqueKey: 'component_id',
-    },
-    {
-      id: 'locations',
-      name: 'Locations',
-      table: schema.locations,
-      uniqueKey: 'code',
-    },
-    { id: 'zones', name: 'Zones', table: schema.zones, uniqueKey: 'code' },
-    { id: 'bins', name: 'Bins', table: schema.bins, uniqueKey: 'code' },
-    {
-      id: 'product_default_bins',
-      name: 'Product Default Bins',
-      table: schema.productDefaultBins,
-      uniqueKey: 'product_default_bin_id',
-    },
-    {
-      id: 'suppliers',
-      name: 'Suppliers',
-      table: schema.suppliers,
-      uniqueKey: 'code',
-    },
-    {
-      id: 'supplier_groups',
-      name: 'Supplier Groups',
-      table: schema.supplierGroups,
-      uniqueKey: 'code',
-    },
-    {
-      id: 'discount_matrix',
-      name: 'Discount Matrix',
-      table: schema.discountMatrix,
-      uniqueKey: 'discount_matrix_id',
-    },
-    {
-      id: 'exchange_rates',
-      name: 'Exchange Rates',
-      table: schema.exchangeRates,
-      uniqueKey: 'currency_code',
-    },
-    {
-      id: 'sales_orders',
-      name: 'Sales Orders',
-      table: schema.salesOrders,
-      uniqueKey: 'order_number',
-    },
-    {
-      id: 'sales_order_lines',
-      name: 'Sales Order Lines',
-      table: schema.salesOrderLineItems,
-      uniqueKey: 'sales_order_line_id',
-    },
-    {
-      id: 'purchase_orders',
-      name: 'Purchase Orders',
-      table: schema.purchaseOrders,
-      uniqueKey: 'order_number',
-    },
-    {
-      id: 'purchase_order_lines',
-      name: 'Purchase Order Lines',
-      table: schema.purchaseOrderLineItems,
-      uniqueKey: 'purchase_order_line_id',
-    },
-    {
-      id: 'transfer_orders',
-      name: 'Transfer Orders',
-      table: schema.transferOrders,
-      uniqueKey: 'order_number',
-    },
-    {
-      id: 'transfer_order_lines',
-      name: 'Transfer Order Lines',
-      table: schema.transferOrderLines,
-      uniqueKey: 'transfer_order_line_id',
-    },
-    {
-      id: 'sales_credit_notes',
-      name: 'Sales Credit Notes',
-      table: schema.salesCreditNotes,
-      uniqueKey: 'credit_note_number',
-    },
-    {
-      id: 'sales_credit_note_lines',
-      name: 'Sales Credit Note Lines',
-      table: schema.salesCreditNoteLines,
-      uniqueKey: 'credit_note_line_id',
-    },
-    {
-      id: 'sales_order_returns',
-      name: 'Sales Order Returns',
-      table: schema.salesOrderReturns,
-      uniqueKey: 'return_number',
-    },
-    {
-      id: 'sales_order_return_lines',
-      name: 'Sales Order Return Lines',
-      table: schema.salesOrderReturnLines,
-      uniqueKey: 'return_line_id',
-    },
-    {
-      id: 'purchase_order_returns',
-      name: 'Purchase Order Returns',
-      table: schema.purchaseOrderReturns,
-      uniqueKey: 'return_number',
-    },
-    {
-      id: 'purchase_order_return_lines',
-      name: 'Purchase Order Return Lines',
-      table: schema.purchaseOrderReturnLines,
-      uniqueKey: 'return_line_id',
-    },
-  ];
+  private readonly csvRegistry: CsvRegistryEntry[] = buildCsvRegistry();
 
   async getCsvMetadata() {
     const excludedColumns = [
@@ -512,37 +375,48 @@ export class SetupService {
       'updated_on',
     ];
 
-    return this.csvRegistry
-      .map((t) => {
-        const cols = getTableColumns(t.table);
-        const columns = Object.keys(cols)
-          .map((k) => {
-            const col = (
-              cols as Record<
-                string,
-                { name: string; notNull: boolean; hasDefault: boolean }
-              >
-            )[k];
-            return {
-              name: col.name,
-              notNull: col.notNull,
-              hasDefault: col.hasDefault,
-            };
-          })
-          .filter((c) => !excludedColumns.includes(c.name))
-          .map((c) => {
-            const isRequired = c.notNull && !c.hasDefault;
-            return isRequired ? `${c.name}*` : c.name;
-          });
+    const baseTables = this.csvRegistry.map((t) => {
+      const cols = getTableColumns(t.table);
+      const columns = Object.keys(cols)
+        .map((k) => {
+          const col = (
+            cols as Record<
+              string,
+              { name: string; notNull: boolean; hasDefault: boolean }
+            >
+          )[k];
+          return {
+            name: col.name,
+            notNull: col.notNull,
+            hasDefault: col.hasDefault,
+          };
+        })
+        .filter((c) => !excludedColumns.includes(c.name))
+        .map((c) => {
+          const isRequired = c.notNull && !c.hasDefault;
+          return isRequired ? `${c.name}*` : c.name;
+        });
 
-        return {
-          id: t.id,
-          name: t.name,
-          uniqueKey: t.uniqueKey,
-          columns,
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+      return {
+        id: t.id,
+        name: t.name,
+        uniqueKey: t.uniqueKey,
+        columns,
+        exportOnly: false,
+      };
+    });
+
+    const projectionTables = getAllCsvProjections().map((p) => ({
+      id: p.id,
+      name: p.name,
+      uniqueKey: p.uniqueKey,
+      columns: p.columns,
+      exportOnly: true,
+    }));
+
+    return [...baseTables, ...projectionTables].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
   }
 
   private formatCsvCell(val: unknown): string {
@@ -597,6 +471,46 @@ export class SetupService {
     res?: Response,
     username: string = 'system',
   ): Promise<string | void> {
+    const projection = getCsvProjection(tableName);
+    if (projection) {
+      const { headers, rows } = await projection.execute(this.db, options);
+      const lines: string[] = [headers.join(',')];
+      for (const row of rows) {
+        const line = headers.map((h) => this.formatCsvCell(row[h])).join(',');
+        lines.push(line);
+      }
+      const csvContent = lines.join('\n') + '\n';
+
+      if (res) {
+        const dateStr = new Date().toISOString().slice(0, 10);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${tableName}_export_${dateStr}.csv"`,
+        );
+        res.write(csvContent);
+        res.end();
+      }
+
+      await this.db.insert(systemEvents).values({
+        entityType: 'system',
+        entityId: '00000000-0000-0000-0000-000000000000',
+        eventType: 'csv_export_generated',
+        entityDisplayName: `CSV Export: ${projection.name}`,
+        payload: {
+          table: tableName,
+          rowCount: rows.length,
+          includeArchived: !!options.includeArchived,
+        },
+        actor: username || 'system',
+      });
+
+      if (!res) {
+        return csvContent;
+      }
+      return;
+    }
+
     const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
     if (!registryEntry) throw new BadRequestException('Unsupported table');
 
@@ -687,6 +601,11 @@ export class SetupService {
     strategy: string,
     file: Express.Multer.File,
   ) {
+    if (hasCsvProjection(tableName)) {
+      throw new BadRequestException(
+        'Extended views are export-only and cannot be imported directly',
+      );
+    }
     const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
     if (!registryEntry) throw new BadRequestException('Unsupported table');
 
@@ -871,6 +790,12 @@ export class SetupService {
       const conflictTarget =
         entry.table[uniqueKeyProp] ||
         (tableCols as Record<string, unknown>)[uniqueKeyProp];
+
+      if ((strategy === 'upsert' || strategy === 'ignore') && !conflictTarget) {
+        throw new BadRequestException(
+          `Cannot execute ${strategy} import: no conflict target found for ${entry.id}`,
+        );
+      }
 
       if (strategy === 'upsert') {
         // Build set object for DO UPDATE
@@ -1308,7 +1233,7 @@ export class SetupService {
         'source' in requestPayload
           ? `${requestPayload.source}:${requestPayload.stage}`
           : requestPayload.command;
-      console.log(
+      this.logger.log(
         `[Job ${jobId}] Sending POST to pipeline-runner/run for ${desc}...`,
       );
       const runnerUrl =
@@ -1349,12 +1274,14 @@ export class SetupService {
         }),
       })
         .then(async (response) => {
-          console.log(
+          this.logger.log(
             `[Job ${jobId}] pipeline-runner/run responded with status ${response.status}`,
           );
           if (!response.ok) {
             const body = await response.text();
-            console.error(`[Job ${jobId}] Failed to trigger sidecar: ${body}`);
+            this.logger.error(
+              `[Job ${jobId}] Failed to trigger sidecar: ${body}`,
+            );
             delete this.jobResolvers[jobId];
             reject(
               new Error(
@@ -1367,7 +1294,7 @@ export class SetupService {
           }
         })
         .catch((err) => {
-          console.error(
+          this.logger.error(
             `[Job ${jobId}] fetch to pipeline-runner/run failed completely:`,
             err,
           );

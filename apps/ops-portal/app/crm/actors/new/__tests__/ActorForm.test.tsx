@@ -51,6 +51,7 @@ jest.mock('@herobm/sdk', () => ({
   actorsControllerCreate: jest.fn(),
   actorsControllerFindAll: jest.fn().mockResolvedValue({ data: [] }),
   contactsControllerFindAll: jest.fn().mockResolvedValue({ data: [] }),
+  usersControllerFindAll: jest.fn().mockResolvedValue({ data: [] }),
 }));
 
 describe('ActorForm', () => {
@@ -107,6 +108,46 @@ describe('ActorForm', () => {
         })
       );
       expect(mockPush).toHaveBeenCalledWith('/crm/actors/act-999');
+    });
+  });
+
+  it('renders Account Owner select with unassigned default and submits selected ownerId', async () => {
+    (api.usersControllerFindAll as jest.Mock).mockResolvedValue({
+      data: [
+        { userId: 'user-1', displayName: 'Jane Doe', username: 'jdoe' },
+        { userId: 'user-2', displayName: null, username: 'jsmith' },
+      ],
+    });
+    (api.actorsControllerCreate as jest.Mock).mockResolvedValue({
+      data: { actorId: 'act-1000' },
+    });
+
+    render(<ActorForm isNew />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+      expect(screen.getByText('jsmith')).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByPlaceholderText('e.g. Acme Holdings');
+    fireEvent.change(nameInput, { target: { value: 'Owned Corp' } });
+
+    const ownerSelect = screen.getByLabelText('Account Owner');
+    expect(ownerSelect).toHaveValue('');
+
+    fireEvent.change(ownerSelect, { target: { value: 'user-1' } });
+    expect(ownerSelect).toHaveValue('user-1');
+
+    const createBtn = screen.getByRole('button', { name: 'Create Actor' });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(api.actorsControllerCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Owned Corp',
+          ownerId: 'user-1',
+        })
+      );
     });
   });
 });

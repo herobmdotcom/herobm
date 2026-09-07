@@ -10,6 +10,7 @@ import QuickActionsSettingsSlideOver from './QuickActionsSettingsSlideOver';
 import DashboardQuickActions from './DashboardQuickActions';
 import DashboardPinnedReportsSection from './DashboardPinnedReportsSection';
 import DashboardTimelineSection from './DashboardTimelineSection';
+import DashboardTasksWidget from './DashboardTasksWidget';
 import { useDashboardData } from './useDashboardData';
 
 export default function DashboardContent() {
@@ -57,6 +58,8 @@ export default function DashboardContent() {
               quickActions={quickActions}
               onOpenSettings={() => setIsQuickActionsSettingsOpen(true)}
             />
+
+            <DashboardTasksWidget />
 
             <DashboardTimelineSection
               enabledEvents={enabledEvents}

@@ -12,7 +12,7 @@ import {
   glMatchGroups,
   glSettings,
 } from '@herobm/db-schema';
-import { eq, asc, and, gte, lte } from 'drizzle-orm';
+import { eq, asc, and, gte, lte, inArray } from 'drizzle-orm';
 import {
   CreateMappingProfileDto,
   UpdateMappingProfileDto,
@@ -443,6 +443,27 @@ export class BankFeedsService {
           ),
         );
 
+      // Pre-fetch valid target GL accounts for all active rules
+      const ruleTargetAccountIds = [
+        ...new Set(
+          rules
+            .map((r) => r.targetGlAccountId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+
+      const validTargetAccountRows =
+        ruleTargetAccountIds.length > 0
+          ? await tx
+              .select({ id: glAccounts.glAccountId })
+              .from(glAccounts)
+              .where(inArray(glAccounts.glAccountId, ruleTargetAccountIds))
+          : [];
+
+      const validTargetAccountSet = new Set(
+        validTargetAccountRows.map((a) => a.id),
+      );
+
       for (const line of lines) {
         if (ignoredStatementLineIds?.includes(line.lineId)) {
           unmatchedCount++;
@@ -530,14 +551,7 @@ export class BankFeedsService {
         }
 
         if (matchedRule) {
-          const targetAccs = await tx
-            .select({
-              id: glAccounts.glAccountId,
-            })
-            .from(glAccounts)
-            .where(eq(glAccounts.glAccountId, matchedRule.targetGlAccountId));
-
-          if (targetAccs.length) {
+          if (validTargetAccountSet.has(matchedRule.targetGlAccountId)) {
             const isDeposit = amount > 0;
             const absAmount = Math.abs(amount);
 
@@ -602,6 +616,7 @@ export class BankFeedsService {
             });
 
             // Find the journal line that hits the bank account
+            // n-plus-one-ignore: single journal line lookup post-JE-creation
             const bankJeLine = await tx
               .select()
               .from(glJournalLines)
@@ -659,6 +674,7 @@ export class BankFeedsService {
         const minDateIso = minDate.toISOString().split('T')[0];
         const maxDateIso = maxDate.toISOString().split('T')[0];
 
+        // n-plus-one-ignore: line-by-line date tolerance search for smart matching
         const queryMatches = await tx
           .select({
             journalLineId: glJournalLines.journalLineId,

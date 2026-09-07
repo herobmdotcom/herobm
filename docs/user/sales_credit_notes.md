@@ -8,9 +8,7 @@ resource: "sales-credit-notes"
 action: "read"
 routes:
   - "/sales-credit-notes"
-  - "/sales-credit-notes/new"
-  - "/sales-credit-notes/history"
-  - "/sales-credit-notes/operations"
+  - "/sales-credit-notes/:id"
 tags: ["credit-notes", "sales", "ar", "refunds", "returns", "reversals", "allocations", "email", "pdf"]
 fields:
   credit_note_number:
@@ -72,7 +70,7 @@ Credit: Accounts Receivable Control        (Total Gross Credit)
 
 ### 1. Creating and Posting a Credit Note
 1. Go to **Sales** → **Credit Notes** (`/sales-credit-notes`).
-2. Click **New Credit Note** (`/sales-credit-notes/new`).
+2. Click **Create Credit Note** to open the creation drawer slide-over.
 3. Select the **Customer** and optional originating **Sales Invoice / Return**.
 4. Add line items, reason codes, and credit values.
 5. Click **Post Credit Note** to commit to the General Ledger.

@@ -8,6 +8,7 @@ resource: "customers"
 action: "read"
 routes:
   - "/customers"
+  - "/customers/new"
   - "/customers/:id"
 tags: ["customers", "accounts", "credit", "terms", "contacts", "addresses", "risk"]
 fields:

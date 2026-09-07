@@ -45,18 +45,18 @@ SELECT
          JOIN herobm_core.sales_orders so ON so.sales_order_id = sol.sales_order_id
          WHERE sol.product_id = p.product_id
          AND sol.fulfillment_location_id = l.location_id
-         AND so.state_code IN ('confirmed', 'picking', 'partially_picked', 'packed', 'partially_dispatched')
+         AND so.state_code IN ('confirmed', 'picking')
         )
     ), 0) AS quantity_committed,
     0 AS quantity_reserved,
     COALESCE((
-        -- Incoming: Active POs excluding 'draft'
-        SELECT SUM(pol.quantity - pol.quantity_received) 
+        -- Incoming: Active open POs ('ordered', 'partially_received')
+        SELECT SUM(GREATEST(0, pol.quantity - pol.quantity_received)) 
         FROM herobm_core.purchase_order_lines pol 
         JOIN herobm_core.purchase_orders po ON po.purchase_order_id = pol.purchase_order_id 
         WHERE pol.product_id = p.product_id 
         AND po.delivery_location_id = l.location_id
-        AND po.state_code NOT IN ('draft', 'cancelled', 'completed')
+        AND po.state_code IN ('ordered', 'partially_received')
     ), 0) AS quantity_on_order
 FROM herobm_core.products p
 CROSS JOIN herobm_core.locations l;
@@ -336,7 +336,7 @@ BEGIN
   IF OLD.state_code != 'draft' THEN
     IF (NEW.invoice_number IS DISTINCT FROM OLD.invoice_number) OR
        (NEW.customer_id IS DISTINCT FROM OLD.customer_id) OR
-       (NEW.sales_order_id IS DISTINCT FROM OLD.sales_order_id) OR
+       (NEW.sales_order_id IS DISTINCT FROM OLD.sales_order_id AND OLD.sales_order_id NOT IN ('00000000-0000-0000-0000-000000000001'::uuid, '00000000-0000-4000-8000-000000000001'::uuid)) OR
        (NEW.invoice_date IS DISTINCT FROM OLD.invoice_date) OR
        (NEW.currency_code IS DISTINCT FROM OLD.currency_code) OR
        (NEW.exchange_rate IS DISTINCT FROM OLD.exchange_rate) OR
@@ -360,7 +360,7 @@ DECLARE
 BEGIN
   SELECT state_code INTO parent_state FROM herobm_core.sales_invoices WHERE invoice_id = OLD.invoice_id;
   IF parent_state IS NOT NULL AND parent_state != 'draft' THEN
-    IF (NEW.sales_order_line_id IS DISTINCT FROM OLD.sales_order_line_id) OR
+    IF (NEW.sales_order_line_id IS DISTINCT FROM OLD.sales_order_line_id AND OLD.sales_order_line_id NOT IN ('00000000-0000-0000-0000-000000000010'::uuid, '00000000-0000-4000-8000-000000000002'::uuid)) OR
        (NEW.quantity_invoiced IS DISTINCT FROM OLD.quantity_invoiced) OR
        (NEW.price_per_unit IS DISTINCT FROM OLD.price_per_unit) OR
        (NEW.amount IS DISTINCT FROM OLD.amount) THEN

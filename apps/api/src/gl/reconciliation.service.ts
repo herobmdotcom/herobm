@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Inject,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -29,6 +30,8 @@ import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class ReconciliationService {
+  private readonly logger = new Logger(ReconciliationService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
@@ -53,7 +56,7 @@ export class ReconciliationService {
         )
         .orderBy(asc(glReconciliations.createdOn));
     } catch (err) {
-      console.error('getReconciliations error:', err);
+      this.logger.error('getReconciliations error:', err);
       throw err;
     }
   }

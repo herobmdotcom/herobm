@@ -26,7 +26,8 @@ import {
 } from '@herobm/shared';
 
 import { herobmCore, validCurrencyCheck } from './core.schema';
-import { suppliers, glAccounts } from './index';
+import { suppliers } from './crm.schema';
+import { glAccounts } from './gl.schema';
 import { locations, bins } from './inventory.schema';
 import { products } from './products.schema';
 import { taxCategories } from './tax.schema';

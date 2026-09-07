@@ -769,13 +769,40 @@ export class GoodsReceivedWriteService {
       }
 
       // Revert PO States
+      const poIds = Array.from(updatedPoIds);
+      const [allPoLines, allPOs] =
+        poIds.length > 0
+          ? await Promise.all([
+              tx
+                .select({
+                  purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+                  quantityReceived: purchaseOrderLineItems.quantityReceived,
+                })
+                .from(purchaseOrderLineItems)
+                .where(inArray(purchaseOrderLineItems.purchaseOrderId, poIds)),
+              tx
+                .select({
+                  purchaseOrderId: purchaseOrders.purchaseOrderId,
+                  orderNumber: purchaseOrders.orderNumber,
+                })
+                .from(purchaseOrders)
+                .where(inArray(purchaseOrders.purchaseOrderId, poIds)),
+            ])
+          : [[], []];
+
+      const linesByPoId = new Map<string, typeof allPoLines>();
+      for (const l of allPoLines) {
+        const list = linesByPoId.get(l.purchaseOrderId) || [];
+        list.push(l);
+        linesByPoId.set(l.purchaseOrderId, list);
+      }
+
+      const poMap = new Map(
+        allPOs.map((p) => [p.purchaseOrderId, p.orderNumber]),
+      );
+
       for (const poId of updatedPoIds) {
-        const lines = await tx
-          .select({
-            quantityReceived: purchaseOrderLineItems.quantityReceived,
-          })
-          .from(purchaseOrderLineItems)
-          .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+        const lines = linesByPoId.get(poId) || [];
 
         const totalReceived = lines.reduce(
           (sum, l) => sum + parseFloat(l.quantityReceived || '0'),
@@ -797,16 +824,13 @@ export class GoodsReceivedWriteService {
           true,
         );
 
-        const [po] = await tx
-          .select({ orderNumber: purchaseOrders.orderNumber })
-          .from(purchaseOrders)
-          .where(eq(purchaseOrders.purchaseOrderId, poId));
+        const orderNumber = poMap.get(poId) || '';
         // @herobm-skip-audit - DB write is performed via raw tx.execute, false positive
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,
           eventType: EventType.STATUS_CHANGED,
-          entityDisplayName: po.orderNumber,
+          entityDisplayName: orderNumber,
           payload: {
             rule: 'cancel_receipt_revert',
             from: PURCHASE_ORDER_STATE.RECEIVED,

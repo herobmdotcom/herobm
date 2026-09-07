@@ -51,6 +51,10 @@ export interface OrderDetail {
     customerOrderNumber: string | null;
     fulfillmentLocationId?: string | null;
     stateCode: string;
+    opportunityId?: string | null;
+    opportunityName?: string | null;
+    projectId?: string | null;
+    projectName?: string | null;
     taxProvider?: string | null;
     currencyCode: string;
     notes: string | null;

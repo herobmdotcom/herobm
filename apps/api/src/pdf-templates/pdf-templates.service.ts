@@ -31,6 +31,8 @@ import type { Enforcer } from 'casbin';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
+import { StorageService } from '../common/storage/storage.service';
+
 const execAsync = promisify(exec);
 
 @Injectable()
@@ -42,6 +44,7 @@ export class PdfTemplatesService {
     private readonly registry: DataSourcesRegistry,
     @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
     @Optional() private readonly env?: EnvService,
+    @Optional() private readonly storageService?: StorageService,
   ) {}
 
   async runHook(
@@ -393,8 +396,57 @@ export class PdfTemplatesService {
 
     // Fetch and inject organization
     const orgQuery = await this.db.select().from(organization).limit(1);
-    const orgData = orgQuery.length > 0 ? orgQuery[0] : {};
-    const finalData = { ...data, _org: orgData };
+    const orgData = orgQuery.length > 0 ? orgQuery[0] : null;
+
+    let logoFileInWorkDir: string | null = null;
+    let logoFileName: string | null = null;
+
+    if (orgData?.logoUrl && this.storageService) {
+      const cleanPath = orgData.logoUrl
+        .replace(/^(\/api)?\/storage\/images\//, '')
+        .replace(/^(\/api)?\/products\/images\//, '');
+      const { fullPath, exists } =
+        this.storageService.resolveFilePath(cleanPath);
+      if (exists && fullPath) {
+        const ext = path.extname(fullPath) || '.png';
+        logoFileName = `${jobId}_logo${ext}`;
+        logoFileInWorkDir = path.join(workDir, logoFileName);
+        fs.copyFileSync(fullPath, logoFileInWorkDir);
+      }
+    }
+
+    const finalOrg = {
+      ...(orgData || {}),
+      ...(logoFileName ? { logoFile: logoFileName } : {}),
+    };
+    const finalData = { ...data, _org: finalOrg };
+
+    // Stage generic report assets into workDir/reports if available
+    if (this.storageService) {
+      const reportsStorageDir = path.join(
+        this.storageService.getStorageRoot(),
+        'reports',
+      );
+      const reportsWorkDir = path.join(workDir, 'reports');
+      if (fs.existsSync(reportsStorageDir)) {
+        if (!fs.existsSync(reportsWorkDir)) {
+          fs.mkdirSync(reportsWorkDir, { recursive: true });
+        }
+        const reportAssets = fs.readdirSync(reportsStorageDir);
+        for (const asset of reportAssets) {
+          const src = path.join(reportsStorageDir, asset);
+          const dest = path.join(reportsWorkDir, asset);
+          if (fs.statSync(src).isFile()) {
+            if (
+              !fs.existsSync(dest) ||
+              fs.statSync(src).mtimeMs > fs.statSync(dest).mtimeMs
+            ) {
+              fs.copyFileSync(src, dest);
+            }
+          }
+        }
+      }
+    }
 
     // Fetch shared fragments (e.g. fragments/themes)
     const fragments = await this.db.query.pdfTemplates.findMany({
@@ -449,6 +501,9 @@ export class PdfTemplatesService {
       if (fs.existsSync(typstFile)) fs.unlinkSync(typstFile);
       if (fs.existsSync(dataFile)) fs.unlinkSync(dataFile);
       if (fs.existsSync(pdfFile)) fs.unlinkSync(pdfFile);
+      if (logoFileInWorkDir && fs.existsSync(logoFileInWorkDir)) {
+        fs.unlinkSync(logoFileInWorkDir);
+      }
       for (const fPath of fragmentFiles) {
         if (fs.existsSync(fPath)) fs.unlinkSync(fPath);
       }

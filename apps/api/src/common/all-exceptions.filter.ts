@@ -75,9 +75,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (isServerError) {
-      this.logger.error(JSON.stringify(logPayload));
+      this.logger.error(JSON.stringify(logPayload), stack);
     } else {
-      this.logger.debug(JSON.stringify(logPayload));
+      this.logger.warn(JSON.stringify(logPayload));
     }
 
     // If the exception has a rich object response (e.g. { message: 'INVENTORY_GAP', gaps: [...] }) we want to pass that out.

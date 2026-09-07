@@ -3,28 +3,23 @@
   "workspaces": {
     ".": {
       "ignore": [
-        "**/*.test.ts",
-        "**/*.test.tsx",
         "**/*.spec.ts",
         "**/*.e2e-spec.ts",
-        "infra/tests/**",
-        "infra/heavy_tests/**",
-        "infra/test-utils/**",
-        "apps/api/src/common/testing/**",
-        "**/scripts/**",
-        "**/tools/**",
-        "scripts/**",
-        "tools/**",
-        "apps/api/test/**",
-        "apps/api/src/test-utils/**",
         "**/*test*.*",
         "**/jest.config.*",
         "**/jest.setup.*",
+        "infra/tests/**",
+        "infra/heavy_tests/**",
+        "infra/test-utils/**",
+        "apps/api/test/**",
+        "apps/api/src/test-utils/**",
+        "apps/api/src/common/testing/**",
         "apps/ops-portal/e2e/**",
         "apps/mcp-server/**",
+        "**/scripts/**",
+        "**/tools/**",
         "extensions/**",
-        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
-        "apps/ops-portal/app/products/[id]/ProductCostSummary.tsx"
+        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx"
       ],
       "ignoreDependencies": [
         "@asyncapi/specs",

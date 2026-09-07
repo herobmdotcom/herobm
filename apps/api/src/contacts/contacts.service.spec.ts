@@ -6,14 +6,21 @@ import {
   contacts,
   actorContactLinks,
   actors,
-  projects,
-  projectContacts,
+  suppliers,
+  opportunities,
+  opportunityContacts,
 } from '@herobm/db-schema';
 import { NotFoundException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { PROJECT_STATE, CONTACT_STATE, ACTOR_STATE } from '@herobm/shared';
+import {
+  OPPORTUNITY_STATE,
+  CONTACT_STATE,
+  ACTOR_STATE,
+  SUPPLIER_STATE,
+  ContactEntityType,
+} from '@herobm/shared';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -26,8 +33,9 @@ describe('ContactsService', () => {
 
   beforeEach(async () => {
     await pg.db.delete(actorContactLinks);
-    await pg.db.delete(projectContacts);
-    await pg.db.delete(projects);
+    await pg.db.delete(opportunityContacts);
+    await pg.db.delete(opportunities);
+    await pg.db.delete(suppliers);
     await pg.db.delete(actors);
     await pg.db.delete(contacts);
     jest.clearAllMocks();
@@ -76,7 +84,7 @@ describe('ContactsService', () => {
         {
           firstName: 'Jane',
           lastName: 'Smith',
-          entityType: 'actor',
+          entityType: ContactEntityType.ACTOR,
           entityId: actor.actorId,
           primaryFor: ['billing'],
         },
@@ -93,14 +101,59 @@ describe('ContactsService', () => {
       expect(links[0].primaryFor).toEqual(['billing']);
     });
 
-    it('should create a contact and link to a project', async () => {
-      const [project] = await pg.db
-        .insert(projects)
+    it('should create a contact and link to a supplier (ADV-181)', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
         .values({
-          stateCode: PROJECT_STATE.ACTIVE,
-          name: 'Test Project',
-          type: 'internal',
-          status: PROJECT_STATE.ACTIVE,
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Supplier Actor',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [supplier] = await pg.db
+        .insert(suppliers)
+        .values({
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          actorId: actor.actorId,
+          vendorNumber: 'VEND-999',
+          currencyCode: 'USD',
+          source: 'app',
+          createdBy: 'system',
+          isPurchasingBlocked: false,
+          isPaymentBlocked: false,
+        })
+        .returning();
+
+      const result = await service.createContact(
+        {
+          firstName: 'Supplier',
+          lastName: 'Rep',
+          entityType: ContactEntityType.SUPPLIER,
+          entityId: supplier.vendorId,
+          primaryFor: ['purchasing'],
+        },
+        mockUserId,
+      );
+
+      expect(result.contactId).toBeDefined();
+
+      const links = await pg.db.query.actorContactLinks.findMany({
+        where: eq(actorContactLinks.contactId, result.contactId),
+      });
+      expect(links.length).toBe(1);
+      expect(links[0].actorId).toBe(actor.actorId);
+      expect(links[0].primaryFor).toEqual(['purchasing']);
+    });
+
+    it('should create a contact and link to an opportunity', async () => {
+      const [opportunity] = await pg.db
+        .insert(opportunities)
+        .values({
+          stateCode: OPPORTUNITY_STATE.ACTIVE,
+          name: 'Test Opportunity',
+          type: 'new_business',
+          status: OPPORTUNITY_STATE.ACTIVE,
         })
         .returning();
 
@@ -108,20 +161,20 @@ describe('ContactsService', () => {
         {
           firstName: 'Project',
           lastName: 'Manager',
-          entityType: 'project',
-          entityId: project.projectId,
-          projectRoles: ['manager'],
+          entityType: ContactEntityType.OPPORTUNITY,
+          entityId: opportunity.opportunityId,
+          opportunityRoles: ['manager'],
         },
         mockUserId,
       );
 
       expect(result.contactId).toBeDefined();
 
-      const links = await pg.db.query.projectContacts.findMany({
-        where: eq(projectContacts.contactId, result.contactId),
+      const links = await pg.db.query.opportunityContacts.findMany({
+        where: eq(opportunityContacts.contactId, result.contactId),
       });
       expect(links.length).toBe(1);
-      expect(links[0].projectId).toBe(project.projectId);
+      expect(links[0].opportunityId).toBe(opportunity.opportunityId);
       expect(links[0].roles).toEqual(['manager']);
     });
 
@@ -131,7 +184,7 @@ describe('ContactsService', () => {
           {
             firstName: 'No',
             lastName: 'Actor',
-            entityType: 'actor',
+            entityType: ContactEntityType.ACTOR,
             entityId: randomUUID(),
           },
           mockUserId,
@@ -297,6 +350,51 @@ describe('ContactsService', () => {
         where: eq(contacts.contactId, contact.contactId),
       });
       expect(dbRecord?.stateCode).toBe(CONTACT_STATE.ACTIVE);
+    });
+  });
+
+  describe('getContact', () => {
+    it('should retrieve a contact with linked actors', async () => {
+      const [actor] = await pg.db
+        .insert(actors)
+        .values({
+          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Affiliated Corp',
+          industry: 'Logistics',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [contact] = await pg.db
+        .insert(contacts)
+        .values({
+          stateCode: CONTACT_STATE.ACTIVE,
+          firstName: 'Alice',
+          lastName: 'Wonderland',
+        })
+        .returning();
+
+      await pg.db.insert(actorContactLinks).values({
+        actorId: actor.actorId,
+        contactId: contact.contactId,
+        linkType: 'employee',
+        primaryFor: ['billing', 'shipping'],
+      });
+
+      const res = await service.getContact(contact.contactId);
+      expect(res.contactId).toBe(contact.contactId);
+      expect(res.firstName).toBe('Alice');
+      expect((res as any).actorContactLinks).toBeDefined();
+      expect((res as any).actorContactLinks.length).toBe(1);
+      expect((res as any).actorContactLinks[0].actor?.name).toBe(
+        'Affiliated Corp',
+      );
+    });
+
+    it('should throw NotFoundException if contact does not exist', async () => {
+      await expect(service.getContact(randomUUID())).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

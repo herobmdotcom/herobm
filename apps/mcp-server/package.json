@@ -1,6 +1,6 @@
 {
   "name": "@herobm/mcp-server",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "HeroBM: Model Context Protocol (MCP) Server for AI Automation Agents",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",

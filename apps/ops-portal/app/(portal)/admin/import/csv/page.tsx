@@ -16,7 +16,15 @@ export default function CsvImportPage() {
   const t = useTranslations('setup.dataImport');
   
   const [step, setStep] = useState<Step>('config');
-  const [tables, setTables] = useState<{ id: string; name: string; uniqueKey: string; columns: string[] }[]>([]);
+  const [tables, setTables] = useState<
+    {
+      id: string;
+      name: string;
+      uniqueKey: string;
+      columns: string[];
+      exportOnly?: boolean;
+    }[]
+  >([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -47,12 +55,24 @@ export default function CsvImportPage() {
   };
 
   useEffect(() => {
-    api.setupControllerGetCsvMetadata().then((res) => {
-      const arr = res.data;
-      const sorted = [...arr].sort((a, b) => a.name.localeCompare(b.name));
-      setTables(sorted);
-      if (sorted.length > 0) setSelectedTable(sorted[0].id);
-    }).catch(() => toast.error('Failed to load table metadata'));
+    api
+      .setupControllerGetCsvMetadata()
+      .then((res) => {
+        const arr = res.data;
+        const filtered = (
+          arr as Array<{
+            id: string;
+            name: string;
+            uniqueKey: string;
+            columns: string[];
+            exportOnly?: boolean;
+          }>
+        ).filter((t) => !t.exportOnly);
+        const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+        setTables(sorted);
+        if (sorted.length > 0) setSelectedTable(sorted[0].id);
+      })
+      .catch(() => toast.error('Failed to load table metadata'));
   }, []);
 
   const filteredTables = useMemo(() => {
@@ -160,7 +180,7 @@ export default function CsvImportPage() {
   return (
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
           {step === 'config' ? t('titleConfig') : 
            step === 'preview' ? t('titlePreview') :
            step === 'finalisation' ? t('titleFinalisation') :
@@ -169,7 +189,7 @@ export default function CsvImportPage() {
            status === 'completed' ? t('titleCompleted') : 
            t('titleRunning')}
         </h1>
-        <p className="text-slate-500">
+        <p className="text-[var(--text-muted)]">
           {step === 'config' ? t('descConfig') :
            step === 'preview' ? t('descPreview') :
            step === 'finalisation' ? t('descFinalisation') :
@@ -181,7 +201,7 @@ export default function CsvImportPage() {
       </div>
 
       {step === 'config' && (
-        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in shadow-sm">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-bold text-[var(--text-primary)]">
@@ -202,7 +222,7 @@ export default function CsvImportPage() {
               />
             </div>
 
-            <div className="max-h-72 overflow-y-auto border border-[var(--border)] rounded-lg divide-y divide-[var(--border)] bg-[var(--bg-secondary)]">
+            <div className="max-h-72 overflow-y-auto border border-[var(--border)] rounded-lg divide-y divide-[var(--border)] bg-[var(--bg-card)]">
               {filteredTables.map((tbl) => {
                 const isSelected = tbl.id === selectedTable;
                 return (
@@ -286,7 +306,7 @@ export default function CsvImportPage() {
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('fileUpload')}</h2>
             
             <div className="flex items-center gap-4">
-              <label className="cursor-pointer bg-[var(--bg-secondary)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2">
+              <label className="cursor-pointer bg-[var(--bg-card)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2">
                 <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                 {t('chooseFile')}
                 <input
@@ -304,7 +324,7 @@ export default function CsvImportPage() {
 
           <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('mergeStrategy')}</h2>
           <div className="flex flex-col gap-4 mb-8">
-            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'insert'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-card-hover)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'insert'}>
               <input 
                 type="radio" 
                 name="strategy" 
@@ -318,7 +338,7 @@ export default function CsvImportPage() {
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'ignore'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-card-hover)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'ignore'}>
               <input 
                 type="radio" 
                 name="strategy" 
@@ -332,7 +352,7 @@ export default function CsvImportPage() {
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'upsert'}>
+            <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-card-hover)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={strategy === 'upsert'}>
               <input 
                 type="radio" 
                 name="strategy" 
@@ -411,15 +431,15 @@ export default function CsvImportPage() {
 
           {importSummary && (
             <div className="grid grid-cols-3 gap-6 mb-8 text-left">
-              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+              <div className="p-6 bg-[var(--bg-card)] rounded-lg border border-[var(--border)]">
                 <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('products')}</div>
                 <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.products.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+              <div className="p-6 bg-[var(--bg-card)] rounded-lg border border-[var(--border)]">
                 <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('customers')}</div>
                 <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.customers.toLocaleString()}</div>
               </div>
-              <div className="p-6 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
+              <div className="p-6 bg-[var(--bg-card)] rounded-lg border border-[var(--border)]">
                 <div className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">{t('orders')}</div>
                 <div className="text-3xl font-bold text-[var(--text-primary)]">{importSummary.orders.toLocaleString()}</div>
               </div>
@@ -439,13 +459,13 @@ export default function CsvImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <Button variant="secondary"
             onClick={() => { setStep('config'); setStatus('pending'); }}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
+            className="btn btn-secondary px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('retryImport')}
            </Button>
            <Button variant="ghost"
             onClick={() => router.push('/')}
-            className="text-slate-500 hover:text-slate-800 underline"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] underline"
           >
             {t('returnToDashboard')}
           </Button>

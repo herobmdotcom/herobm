@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
@@ -198,22 +198,58 @@ export class ShipmentsStateService {
           .where(eq(salesOrderShipmentLines.shipmentId, shipmentId));
 
         // Resolve productIds from order lines
-        const stockLines = [];
-        for (const sl of shipmentLines) {
-          const orderLine = await findOrderLine(
-            innerTx,
-            sl.salesOrderLineId,
-            shipment.salesOrderId,
-          );
-          const [product] = orderLine.productId
+        const soLineIds = shipmentLines.map((sl) => sl.salesOrderLineId);
+        const orderLineRows =
+          soLineIds.length > 0
+            ? await innerTx
+                .select()
+                .from(salesOrderLineItems)
+                .where(
+                  and(
+                    inArray(salesOrderLineItems.salesOrderLineId, soLineIds),
+                    eq(salesOrderLineItems.salesOrderId, shipment.salesOrderId),
+                  ),
+                )
+            : [];
+
+        const orderLinesMap = new Map<string, (typeof orderLineRows)[0]>();
+        for (const ol of orderLineRows) {
+          orderLinesMap.set(ol.salesOrderLineId, ol);
+        }
+
+        const productIds = [
+          ...new Set(
+            orderLineRows
+              .map((ol) => ol.productId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+
+        const productRows =
+          productIds.length > 0
             ? await innerTx
                 .select({
+                  productId: coreProducts.productId,
                   productType: coreProducts.productType,
                   structureType: coreProducts.structureType,
                 })
                 .from(coreProducts)
-                .where(eq(coreProducts.productId, orderLine.productId))
-            : [undefined];
+                .where(inArray(coreProducts.productId, productIds))
+            : [];
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
+        const stockLines = [];
+        for (const sl of shipmentLines) {
+          const orderLine = orderLinesMap.get(sl.salesOrderLineId);
+          if (!orderLine) {
+            throw new BadRequestException(
+              `Order line '${sl.salesOrderLineId}' not found for shipment '${shipment.salesOrderId}'`,
+            );
+          }
+          const product = orderLine.productId
+            ? productMap.get(orderLine.productId)
+            : undefined;
 
           const isStocked =
             Boolean(orderLine.productId) &&
@@ -328,17 +364,37 @@ export class ShipmentsStateService {
           }
 
           // Revert sales_order_picks from shipped back to picked
+          const slLineIds = shipmentLines.map((sl) => sl.salesOrderLineId);
+          const allShippedPicks =
+            slLineIds.length > 0
+              ? await innerTx
+                  .select()
+                  .from(salesOrderPicks)
+                  .where(
+                    and(
+                      inArray(salesOrderPicks.salesOrderLineId, slLineIds),
+                      eq(
+                        salesOrderPicks.stateCode,
+                        SALES_ORDER_PICK_STATE.SHIPPED,
+                      ),
+                    ),
+                  )
+              : [];
+
+          const shippedPicksByLineId = new Map<
+            string,
+            typeof allShippedPicks
+          >();
+          for (const p of allShippedPicks) {
+            const list = shippedPicksByLineId.get(p.salesOrderLineId) || [];
+            list.push(p);
+            shippedPicksByLineId.set(p.salesOrderLineId, list);
+          }
+
           for (const sl of shipmentLines) {
             let remainingToRevert = parseFloat(sl.quantityShipped);
-            const linePicks = await innerTx
-              .select()
-              .from(salesOrderPicks)
-              .where(
-                and(
-                  eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
-                  eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.SHIPPED),
-                ),
-              );
+            const linePicks =
+              shippedPicksByLineId.get(sl.salesOrderLineId) || [];
 
             for (const pick of linePicks) {
               if (remainingToRevert <= 0) break;
@@ -385,19 +441,42 @@ export class ShipmentsStateService {
               this.appConfig.valuationMethod(),
             );
 
+            const uuidProductIds: string[] = [];
+            const numberProductIds: string[] = [];
             for (const line of returnLines) {
               const isUuid =
                 /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
                   line.productId,
                 );
-              const [product] = await innerTx
-                .select()
-                .from(coreProducts)
-                .where(
-                  isUuid
-                    ? eq(coreProducts.productId, line.productId)
-                    : eq(coreProducts.productNumber, line.productId),
-                );
+              if (isUuid) {
+                uuidProductIds.push(line.productId);
+              } else {
+                numberProductIds.push(line.productId);
+              }
+            }
+
+            const cogsProducts = await innerTx
+              .select()
+              .from(coreProducts)
+              .where(
+                or(
+                  uuidProductIds.length > 0
+                    ? inArray(coreProducts.productId, uuidProductIds)
+                    : undefined,
+                  numberProductIds.length > 0
+                    ? inArray(coreProducts.productNumber, numberProductIds)
+                    : undefined,
+                ),
+              );
+
+            const cogsProductMap = new Map<string, (typeof cogsProducts)[0]>();
+            for (const p of cogsProducts) {
+              cogsProductMap.set(p.productId, p);
+              cogsProductMap.set(p.productNumber, p);
+            }
+
+            for (const line of returnLines) {
+              const product = cogsProductMap.get(line.productId);
 
               if (product) {
                 const cogsAmount =
@@ -580,17 +659,30 @@ export class ShipmentsStateService {
     }
 
     // Transition sales_order_picks to shipped
+    const dspLineIds = shipmentLines.map((sl) => sl.salesOrderLineId);
+    const allPickedPicks =
+      dspLineIds.length > 0
+        ? await innerTx
+            .select()
+            .from(salesOrderPicks)
+            .where(
+              and(
+                inArray(salesOrderPicks.salesOrderLineId, dspLineIds),
+                eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.PICKED),
+              ),
+            )
+        : [];
+
+    const pickedPicksByLineId = new Map<string, typeof allPickedPicks>();
+    for (const p of allPickedPicks) {
+      const list = pickedPicksByLineId.get(p.salesOrderLineId) || [];
+      list.push(p);
+      pickedPicksByLineId.set(p.salesOrderLineId, list);
+    }
+
     for (const sl of shipmentLines) {
       let remainingToShip = parseFloat(sl.quantityShipped);
-      const linePicks = await innerTx
-        .select()
-        .from(salesOrderPicks)
-        .where(
-          and(
-            eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
-            eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.PICKED),
-          ),
-        );
+      const linePicks = pickedPicksByLineId.get(sl.salesOrderLineId) || [];
 
       for (const pick of linePicks) {
         if (remainingToShip <= 0) break;
@@ -628,22 +720,47 @@ export class ShipmentsStateService {
 
     // Calculate COGS and record outbox event for GL mapping
     const cogsDetails = [];
+    const dspUuidProductIds: string[] = [];
+    const dspNumberProductIds: string[] = [];
     for (const line of physicalStockLines) {
       if (!line.productId) continue;
-
       const isUuid =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           line.productId,
         );
+      if (isUuid) {
+        dspUuidProductIds.push(line.productId);
+      } else {
+        dspNumberProductIds.push(line.productId);
+      }
+    }
 
-      const [product] = await innerTx
-        .select()
-        .from(coreProducts)
-        .where(
-          isUuid
-            ? eq(coreProducts.productId, line.productId)
-            : eq(coreProducts.productNumber, line.productId),
-        );
+    const dspCogsProducts =
+      dspUuidProductIds.length > 0 || dspNumberProductIds.length > 0
+        ? await innerTx
+            .select()
+            .from(coreProducts)
+            .where(
+              or(
+                dspUuidProductIds.length > 0
+                  ? inArray(coreProducts.productId, dspUuidProductIds)
+                  : undefined,
+                dspNumberProductIds.length > 0
+                  ? inArray(coreProducts.productNumber, dspNumberProductIds)
+                  : undefined,
+              ),
+            )
+        : [];
+
+    const dspProductMap = new Map<string, (typeof dspCogsProducts)[0]>();
+    for (const p of dspCogsProducts) {
+      dspProductMap.set(p.productId, p);
+      dspProductMap.set(p.productNumber, p);
+    }
+
+    for (const line of physicalStockLines) {
+      if (!line.productId) continue;
+      const product = dspProductMap.get(line.productId);
 
       if (product) {
         const cogsAmount =

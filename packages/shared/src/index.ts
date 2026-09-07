@@ -49,6 +49,7 @@ export {
   TRANSFER_ORDER_PICK_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  OPPORTUNITY_STATE,
   PROJECT_STATE,
   ACTOR_STATE,
   CONTACT_STATE,
@@ -60,6 +61,8 @@ export {
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,
   OPEN_PURCHASE_ORDER_STATES,
+  ON_ORDER_PURCHASE_ORDER_STATES,
+  COMMITTED_SALES_ORDER_STATES,
   PURCHASE_INVOICE_LIFECYCLE,
   SALES_INVOICE_LIFECYCLE,
   RECONCILIATION_LIFECYCLE,
@@ -78,6 +81,8 @@ export {
   getValidStates,
   isBackTransition,
   cap,
+  isOnOrderPurchaseOrderState,
+  isCommittedSalesOrderState,
 } from './state-machines';
 
 export type {
@@ -105,6 +110,7 @@ export type {
   ProductState,
   ActorState,
   ContactState,
+  OpportunityState,
   ProjectState,
   ReconciliationState,
   WorkOrderState,
@@ -207,3 +213,6 @@ export * from './telemetry';
 export * from './contacts';
 export * from './event-types';
 export * from './ledger-hash';
+export * from './tax';
+export * from './crm';
+

@@ -12,6 +12,7 @@ import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import { OrderedSettingEditor } from '@/components/shared/OrderedSettingEditor';
+import OrgLogoUploader from '@/components/settings/OrgLogoUploader';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -389,14 +390,14 @@ export default function SystemSettingsPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {tSettings('labels.logoUrl')}
+                  {tSettings('logo.title')}
                 </label>
-                <input
-                  className="input"
-                  value={orgForm.logoUrl || ''}
-                  onChange={(e) => updateOrgField('logoUrl', e.target.value)}
-                  onBlur={saveOrgField}
-                  placeholder={tSettings('placeholders.logoUrl')}
+                <OrgLogoUploader
+                  logoUrl={orgForm.logoUrl}
+                  companyName={orgForm.name}
+                  onLogoUpdated={(newLogoUrl) => {
+                    updateOrgField('logoUrl', newLogoUrl || '');
+                  }}
                 />
               </div>
             </div>

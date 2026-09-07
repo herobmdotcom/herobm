@@ -48,7 +48,8 @@ import { BusinessReportsModule } from './business-reports/business-reports.modul
 import { UserSettingsModule } from './user-settings/user-settings.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { ActorsModule } from './actors/actors.module';
-import { ProjectsModule } from './projects/projects.module';
+import { OpportunitiesModule } from './opportunities/opportunities.module';
+import { CrmActivitiesModule } from './crm-activities/crm-activities.module';
 import { CrmMapModule } from './crm-map/crm-map.module';
 import { HelpModule } from './help/help.module';
 import { extensionModules } from './generated/extension-modules';
@@ -111,7 +112,8 @@ import { EnvModule } from './common/config/env.module';
     ContactsModule,
     DeliveryAddressesModule,
     ActorsModule,
-    ProjectsModule,
+    OpportunitiesModule,
+    CrmActivitiesModule,
     CrmMapModule,
     HelpModule,
     ...extensionModules,
