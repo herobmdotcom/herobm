@@ -1541,6 +1541,7 @@
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
     "unnamedActor": "Unnamed Actor",
+    "unnamedOrganization": "Unnamed Organization",
     "updated": "Updated",
     "viewDetails": "View Details",
     "yes": "Yes"
@@ -1956,10 +1957,6 @@
       "settings": "Timeline Settings",
       "title": "Recent Events",
       "types": {
-        "actor": {
-          "created": "Actor created",
-          "updated": "Actor updated"
-        },
         "api_key": {
           "created": "API key created",
           "deleted": "API key deleted"
@@ -1993,6 +1990,11 @@
         },
         "inventory_ledger": {
           "entry_posted": "Ledger entry posted"
+        },
+        "organization": {
+          "created": "Organization created",
+          "deleted": "Organization deleted",
+          "updated": "Organization updated"
         },
         "payment": {
           "allocated": "Payment allocated",

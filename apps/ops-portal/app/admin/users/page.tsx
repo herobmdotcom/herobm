@@ -21,6 +21,7 @@ interface User {
   email?: string | null;
   role: string;
   isActive: boolean;
+  twoFactorEnabled?: boolean;
   createdAt: string;
   events?: TimelineEvent[];
 }
@@ -67,6 +68,7 @@ export default function UsersPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -79,12 +81,14 @@ export default function UsersPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersRes, rolesRes] = await Promise.all([
+      const [usersRes, rolesRes, eventsRes] = await Promise.all([
         api.usersControllerFindAll(),
-        api.rolesControllerFindAll()
+        api.rolesControllerFindAll(),
+        api.usersControllerGetEvents().catch(() => ({ data: [] as Record<string, unknown>[] })),
       ]);
       setUsers(usersRes.data as unknown as User[]);
       setRoles((rolesRes.data as { role: string }[]).map(r => r.role));
+      setEvents((eventsRes.data || []) as unknown as TimelineEvent[]);
     } catch (err: unknown) {
       toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
     } finally {
@@ -98,24 +102,34 @@ export default function UsersPage() {
 
   const loadUsers = async () => {
     try {
-      const res = await api.usersControllerFindAll();
-      setUsers(res.data as unknown as User[]);
+      const [usersRes, eventsRes] = await Promise.all([
+        api.usersControllerFindAll(),
+        api.usersControllerGetEvents().catch(() => ({ data: [] as Record<string, unknown>[] })),
+      ]);
+      setUsers(usersRes.data as unknown as User[]);
+      setEvents((eventsRes.data || []) as unknown as TimelineEvent[]);
     } catch (err: unknown) {
       toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
     }
   };
 
   const allEvents = useMemo(() => {
+    if (events.length > 0) {
+      return [...events].sort(
+        (a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime(),
+      );
+    }
     const evts: TimelineEvent[] = [];
     for (const u of users) {
       if (u.events) {
         evts.push(...u.events);
       }
     }
-    // Sort oldest first so ActivityTimeline can reverse to show newest first
-    evts.sort((a, b) => new Date(a.createdOn).getTime() - new Date(b.createdOn).getTime());
+    evts.sort(
+      (a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime(),
+    );
     return evts;
-  }, [users]);
+  }, [events, users]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -283,7 +297,9 @@ export default function UsersPage() {
       {/* 2FA */}
       <td>
         {!isEdit && (
-          <span className="text-sm text-[var(--text-muted)]">—</span>
+          <span className={`badge badge-sm ${data.twoFactorEnabled ? 'badge-active' : 'badge-inactive'}`}>
+            {data.twoFactorEnabled ? t('status.active') : t('status.disabled')}
+          </span>
         )}
       </td>
 
@@ -324,9 +340,12 @@ export default function UsersPage() {
           <div className="flex justify-end gap-2">
             {/* Reset 2FA */}
             <Button
-              variant="secondary" size="xs"
+              variant="secondary"
+              size="xs"
               onClick={() => reset2Fa(data)}
-              title={t2fa('reset')}
+              disabled={!data.twoFactorEnabled}
+              title={data.twoFactorEnabled ? t2fa('reset') : undefined}
+              className={!data.twoFactorEnabled ? 'opacity-40 cursor-not-allowed' : undefined}
             >
               2FA
             </Button>
@@ -428,7 +447,7 @@ export default function UsersPage() {
         </div>
         
         <div id="activity-section" className="card">
-          <ActivityTimeline events={allEvents} />
+          <ActivityTimeline events={allEvents} defaultOpen={true} />
         </div>
       </div>
     </div>

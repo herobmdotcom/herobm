@@ -9,7 +9,7 @@ import {
   salesOrders,
   products,
   productGroups,
-  actors,
+  organizations,
   salesInvoices,
   salesInvoiceLines,
   opportunities,
@@ -129,7 +129,7 @@ export class OrdersService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       customerId: coreAccounts.customerId,
-      customerName: sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
+      customerName: sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
@@ -137,7 +137,7 @@ export class OrdersService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
     const groupCols: any[] = [
       coreAccounts.customerId,
-      actors.name,
+      organizations.name,
       coreAccounts.customerNumber,
     ];
 
@@ -160,7 +160,10 @@ export class OrdersService implements OnModuleInit {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         salesOrderLineItems,
         eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
@@ -206,10 +209,10 @@ export class OrdersService implements OnModuleInit {
     ];
 
     if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      selectCols.customerName = sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
       groupCols.push(
         coreAccounts.customerId,
-        actors.name,
+        organizations.name,
         coreAccounts.customerNumber,
       );
     } else if (drillDown === 'period') {
@@ -238,7 +241,10 @@ export class OrdersService implements OnModuleInit {
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        );
     }
 
     if (conditions.length > 0) qb = qb.where(and(...conditions));
@@ -266,10 +272,10 @@ export class OrdersService implements OnModuleInit {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
       groupCols.push(products.productId, products.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      selectCols.customerName = sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
       groupCols.push(
         coreAccounts.customerId,
-        actors.name,
+        organizations.name,
         coreAccounts.customerNumber,
       );
     } else if (drillDown === 'period') {
@@ -302,7 +308,10 @@ export class OrdersService implements OnModuleInit {
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        );
     }
 
     if (conditions.length > 0) qb = qb.where(and(...conditions));
@@ -336,10 +345,10 @@ export class OrdersService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.productGroupId, productGroups.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      selectCols.customerName = sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
       groupCols.push(
         coreAccounts.customerId,
-        actors.name,
+        organizations.name,
         coreAccounts.customerNumber,
       );
     } else if (drillDown === 'channel') {
@@ -363,7 +372,10 @@ export class OrdersService implements OnModuleInit {
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        );
     }
     if (drillDown === 'product' || drillDown === 'product-group') {
       qb = qb.leftJoin(
@@ -433,10 +445,10 @@ export class OrdersService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.productGroupId, productGroups.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, ${salesInvoices.customerNameDisplay}, 'Unknown')`;
+      selectCols.customerName = sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, ${salesInvoices.customerNameDisplay}, 'Unknown')`;
       groupCols.push(
         coreAccounts.customerId,
-        actors.name,
+        organizations.name,
         coreAccounts.customerNumber,
         salesInvoices.customerNameDisplay,
       );
@@ -458,7 +470,10 @@ export class OrdersService implements OnModuleInit {
           coreAccounts,
           eq(salesInvoices.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        );
     }
     if (drillDown === 'product' || drillDown === 'product-group') {
       qb = qb
@@ -513,10 +528,10 @@ export class OrdersService implements OnModuleInit {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
       groupCols.push(products.productId, products.name);
     } else if (drillDown === 'customer') {
-      selectCols.customerName = sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
+      selectCols.customerName = sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`;
       groupCols.push(
         coreAccounts.customerId,
-        actors.name,
+        organizations.name,
         coreAccounts.customerNumber,
       );
     } else if (drillDown === 'period') {
@@ -540,7 +555,10 @@ export class OrdersService implements OnModuleInit {
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        );
     }
     if (drillDown === 'product') {
       qb = qb.leftJoin(
@@ -580,8 +598,8 @@ export class OrdersService implements OnModuleInit {
             WHEN ${salesOrders.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${salesOrders.customerOrderNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${salesOrders.customerOrderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -595,7 +613,7 @@ export class OrdersService implements OnModuleInit {
           ilike(salesOrders.orderNumber, `%${rawSearchTerm}%`),
           ilike(salesOrders.name, `%${rawSearchTerm}%`),
           ilike(salesOrders.customerOrderNumber, `%${rawSearchTerm}%`),
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -669,7 +687,10 @@ export class OrdersService implements OnModuleInit {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .where(whereClause);
 
     // Fetch paginated rows with customer name and line totals
@@ -678,7 +699,7 @@ export class OrdersService implements OnModuleInit {
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
-        customerName: sql<string>`coalesce(${actors.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
+        customerName: sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         source: salesOrders.source,
@@ -695,7 +716,10 @@ export class OrdersService implements OnModuleInit {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         opportunities,
         eq(salesOrders.opportunityId, opportunities.opportunityId),

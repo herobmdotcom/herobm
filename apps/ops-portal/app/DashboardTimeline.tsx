@@ -84,8 +84,11 @@ export const EVENT_ICONS: Record<
   'project.created': { icon: 'folder', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
   'project.updated': { icon: 'folder_open', colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/10', path: '/crm/opportunities' },
   'project.deleted': { icon: 'folder_delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/opportunities' },
-  'actor.created': { icon: 'business', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/actors' },
-  'actor.updated': { icon: 'edit', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/actors' },
+  'actor.created': { icon: 'business', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/organizations' },
+  'actor.updated': { icon: 'edit', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/organizations' },
+  'organization.created': { icon: 'business', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/organizations' },
+  'organization.updated': { icon: 'edit', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/10', path: '/crm/organizations' },
+  'organization.deleted': { icon: 'delete', colorClass: 'text-red-500', bgClass: 'bg-red-500/10', path: '/crm/organizations' },
 
   // Finance
   'payment.created': { icon: 'add_card', colorClass: 'text-teal-500', bgClass: 'bg-teal-500/10', path: '/payments?paymentId=' },

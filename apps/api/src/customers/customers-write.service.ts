@@ -14,8 +14,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   masterDataEvents,
   customers,
-  actors,
-  actorActorLinks,
+  organizations,
+  organizationOrganizationLinks,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -23,7 +23,7 @@ import {
   CUSTOMER_TRANSITIONS,
   CUSTOMER_STATE,
   CustomerState,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   getValidStates,
   SystemResource,
 } from '@herobm/shared';
@@ -80,30 +80,31 @@ export class CustomersWriteService {
         telephone1,
         fax,
         emailAddress1,
-        actorId,
+        organizationId,
         parentCustomerId,
         ...customerFields
       } = sanitizedDto as Record<string, unknown>;
 
-      let actorRecord;
-      if (actorId) {
-        const existingActors = await tx
+      const effectiveOrgId = organizationId as string | undefined;
+      let orgRecord;
+      if (effectiveOrgId) {
+        const existingOrgs = await tx
           .select()
-          .from(actors)
-          .where(eq(actors.actorId, actorId as string))
+          .from(organizations)
+          .where(eq(organizations.organizationId, effectiveOrgId))
           .limit(1);
 
-        if (existingActors.length === 0) {
+        if (existingOrgs.length === 0) {
           throw new BadRequestException(
-            `Actor with id '${actorId as string}' does not exist`,
+            `Organization with id '${effectiveOrgId}' does not exist`,
           );
         }
-        actorRecord = existingActors[0];
+        orgRecord = existingOrgs[0];
       } else {
-        [actorRecord] = await tx
-          .insert(actors)
+        [orgRecord] = await tx
+          .insert(organizations)
           .values({
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: name as string,
             businessNumber: (businessNumber as string) || null,
             isTaxRegistered: (isTaxRegistered as boolean) ?? false,
@@ -125,7 +126,7 @@ export class CustomersWriteService {
         .insert(customers)
         .values({
           ...customerFields,
-          actorId: actorRecord.actorId,
+          organizationId: orgRecord.organizationId,
           stateCode:
             (customerFields.stateCode as string) || CUSTOMER_STATE.ACTIVE,
           source: (customerFields.source as string) || 'system',
@@ -138,15 +139,15 @@ export class CustomersWriteService {
 
       if (parentCustomerId) {
         const parentRows = await tx
-          .select({ actorId: customers.actorId })
+          .select({ organizationId: customers.organizationId })
           .from(customers)
           .where(eq(customers.customerId, parentCustomerId as string))
           .limit(1);
 
-        if (parentRows.length > 0 && parentRows[0].actorId) {
-          await tx.insert(actorActorLinks).values({
-            sourceActorId: actorRecord.actorId,
-            targetActorId: parentRows[0].actorId,
+        if (parentRows.length > 0 && parentRows[0].organizationId) {
+          await tx.insert(organizationOrganizationLinks).values({
+            sourceOrganizationId: orgRecord.organizationId,
+            targetOrganizationId: parentRows[0].organizationId,
             linkType: 'parent_company',
           });
         }
@@ -163,18 +164,18 @@ export class CustomersWriteService {
 
       return {
         ...customer,
-        name: actorRecord.name,
-        businessNumber: actorRecord.businessNumber,
-        isTaxRegistered: actorRecord.isTaxRegistered,
-        billingAddressLine1: actorRecord.headquartersAddressLine1,
-        billingAddressLine2: actorRecord.headquartersAddressLine2,
-        billingAddressCity: actorRecord.headquartersCity,
-        billingAddressStateOrProvince: actorRecord.headquartersStateOrProvince,
-        billingAddressPostalCode: actorRecord.headquartersPostalCode,
-        billingAddressCountry: actorRecord.headquartersCountry,
-        telephone1: actorRecord.telephone,
-        fax: actorRecord.fax,
-        emailAddress1: actorRecord.email,
+        name: orgRecord.name,
+        businessNumber: orgRecord.businessNumber,
+        isTaxRegistered: orgRecord.isTaxRegistered,
+        billingAddressLine1: orgRecord.headquartersAddressLine1,
+        billingAddressLine2: orgRecord.headquartersAddressLine2,
+        billingAddressCity: orgRecord.headquartersCity,
+        billingAddressStateOrProvince: orgRecord.headquartersStateOrProvince,
+        billingAddressPostalCode: orgRecord.headquartersPostalCode,
+        billingAddressCountry: orgRecord.headquartersCountry,
+        telephone1: orgRecord.telephone,
+        fax: orgRecord.fax,
+        emailAddress1: orgRecord.email,
       };
     });
 
@@ -193,10 +194,13 @@ export class CustomersWriteService {
     const existingRows = await this.db
       .select({
         customer: customers,
-        actor: actors,
+        organization: organizations,
       })
       .from(customers)
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .where(
         isUuid(id) ? eq(customers.customerId, id) : eq(customers.sourceId, id),
       )
@@ -206,24 +210,24 @@ export class CustomersWriteService {
       throw new NotFoundException(`Customer '${id}' not found`);
     }
     const existing = existingRows[0].customer;
-    const actorRow = existingRows[0].actor;
-    const existingActorName = actorRow?.name;
+    const orgRow = existingRows[0].organization;
+    const existingOrgName = orgRow?.name;
     const sanitizedDto = buildUpdatePayload(dto);
 
     const existingComposite = {
       ...existing,
-      name: actorRow?.name,
-      businessNumber: actorRow?.businessNumber,
-      isTaxRegistered: actorRow?.isTaxRegistered,
-      billingAddressLine1: actorRow?.headquartersAddressLine1,
-      billingAddressLine2: actorRow?.headquartersAddressLine2,
-      billingAddressCity: actorRow?.headquartersCity,
-      billingAddressStateOrProvince: actorRow?.headquartersStateOrProvince,
-      billingAddressPostalCode: actorRow?.headquartersPostalCode,
-      billingAddressCountry: actorRow?.headquartersCountry,
-      telephone1: actorRow?.telephone,
-      fax: actorRow?.fax,
-      emailAddress1: actorRow?.email,
+      name: orgRow?.name,
+      businessNumber: orgRow?.businessNumber,
+      isTaxRegistered: orgRow?.isTaxRegistered,
+      billingAddressLine1: orgRow?.headquartersAddressLine1,
+      billingAddressLine2: orgRow?.headquartersAddressLine2,
+      billingAddressCity: orgRow?.headquartersCity,
+      billingAddressStateOrProvince: orgRow?.headquartersStateOrProvince,
+      billingAddressPostalCode: orgRow?.headquartersPostalCode,
+      billingAddressCountry: orgRow?.headquartersCountry,
+      telephone1: orgRow?.telephone,
+      fax: orgRow?.fax,
+      emailAddress1: orgRow?.email,
     };
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -260,7 +264,7 @@ export class CustomersWriteService {
         delete coreChanges.parentCustomerId;
       }
 
-      const actorKeys = [
+      const orgKeys = [
         'name',
         'businessNumber',
         'isTaxRegistered',
@@ -271,12 +275,12 @@ export class CustomersWriteService {
         'billingAddressPostalCode',
         'billingAddressCountry',
       ];
-      const actorUpdate: Record<string, unknown> = {};
+      const orgUpdate: Record<string, unknown> = {};
 
-      for (const k of actorKeys) {
+      for (const k of orgKeys) {
         if (k in coreChanges) {
           const val = coreChanges[k];
-          const actorMap: Record<string, string> = {
+          const orgMap: Record<string, string> = {
             billingAddressLine1: 'headquartersAddressLine1',
             billingAddressLine2: 'headquartersAddressLine2',
             billingAddressCity: 'headquartersCity',
@@ -284,18 +288,18 @@ export class CustomersWriteService {
             billingAddressPostalCode: 'headquartersPostalCode',
             billingAddressCountry: 'headquartersCountry',
           };
-          const actorKey = actorMap[k] || k;
-          actorUpdate[actorKey] = val;
+          const orgKey = orgMap[k] || k;
+          orgUpdate[orgKey] = val;
           delete coreChanges[k];
         }
       }
 
-      if (Object.keys(actorUpdate).length > 0) {
-        actorUpdate.modifiedOn = new Date();
+      if (Object.keys(orgUpdate).length > 0) {
+        orgUpdate.modifiedOn = new Date();
         await tx
-          .update(actors)
-          .set(actorUpdate)
-          .where(eq(actors.actorId, existing.actorId!));
+          .update(organizations)
+          .set(orgUpdate)
+          .where(eq(organizations.organizationId, existing.organizationId!));
       }
 
       // Perform the update
@@ -315,33 +319,41 @@ export class CustomersWriteService {
       if (newParentCustomerId !== undefined) {
         // Find existing parent link
         const existingLink = await tx
-          .select({ linkId: actorActorLinks.linkId })
-          .from(actorActorLinks)
+          .select({ linkId: organizationOrganizationLinks.linkId })
+          .from(organizationOrganizationLinks)
           .where(
             and(
-              eq(actorActorLinks.sourceActorId, existing.actorId!),
-              eq(actorActorLinks.linkType, 'parent_company'),
+              eq(
+                organizationOrganizationLinks.sourceOrganizationId,
+                existing.organizationId!,
+              ),
+              eq(organizationOrganizationLinks.linkType, 'parent_company'),
             ),
           )
           .limit(1);
 
         if (newParentCustomerId) {
           const parentRows = await tx
-            .select({ actorId: customers.actorId })
+            .select({ organizationId: customers.organizationId })
             .from(customers)
             .where(eq(customers.customerId, newParentCustomerId))
             .limit(1);
 
-          if (parentRows.length > 0 && parentRows[0].actorId) {
+          if (parentRows.length > 0 && parentRows[0].organizationId) {
             if (existingLink.length > 0) {
               await tx
-                .update(actorActorLinks)
-                .set({ targetActorId: parentRows[0].actorId })
-                .where(eq(actorActorLinks.linkId, existingLink[0].linkId));
+                .update(organizationOrganizationLinks)
+                .set({ targetOrganizationId: parentRows[0].organizationId })
+                .where(
+                  eq(
+                    organizationOrganizationLinks.linkId,
+                    existingLink[0].linkId,
+                  ),
+                );
             } else {
-              await tx.insert(actorActorLinks).values({
-                sourceActorId: existing.actorId!,
-                targetActorId: parentRows[0].actorId,
+              await tx.insert(organizationOrganizationLinks).values({
+                sourceOrganizationId: existing.organizationId!,
+                targetOrganizationId: parentRows[0].organizationId,
                 linkType: 'parent_company',
               });
             }
@@ -350,8 +362,13 @@ export class CustomersWriteService {
           // Cleared parent customer
           if (existingLink.length > 0) {
             await tx
-              .delete(actorActorLinks)
-              .where(eq(actorActorLinks.linkId, existingLink[0].linkId));
+              .delete(organizationOrganizationLinks)
+              .where(
+                eq(
+                  organizationOrganizationLinks.linkId,
+                  existingLink[0].linkId,
+                ),
+              );
           }
         }
       }
@@ -367,7 +384,7 @@ export class CustomersWriteService {
             entityType: EntityType.CUSTOMER,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
-            entityDisplayName: existingActorName || updated.customerNumber,
+            entityDisplayName: existingOrgName || updated.customerNumber,
             payload: {
               from: audit.previousValues.stateCode,
               to: audit.changes.stateCode,
@@ -379,7 +396,7 @@ export class CustomersWriteService {
             entityType: EntityType.CUSTOMER,
             entityId: id,
             eventType: EventType.UPDATED,
-            entityDisplayName: existingActorName || updated.customerNumber,
+            entityDisplayName: existingOrgName || updated.customerNumber,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -389,32 +406,30 @@ export class CustomersWriteService {
         }
       }
 
-      // Merge updated actor fields (either what was updated, or what existed)
+      // Merge updated organization fields (either what was updated, or what existed)
       return {
         ...updated,
-        name: actorUpdate.name ?? actorRow?.name,
-        businessNumber: actorUpdate.businessNumber ?? actorRow?.businessNumber,
-        isTaxRegistered:
-          actorUpdate.isTaxRegistered ?? actorRow?.isTaxRegistered,
+        name: orgUpdate.name ?? orgRow?.name,
+        businessNumber: orgUpdate.businessNumber ?? orgRow?.businessNumber,
+        isTaxRegistered: orgUpdate.isTaxRegistered ?? orgRow?.isTaxRegistered,
         billingAddressLine1:
-          actorUpdate.headquartersAddressLine1 ??
-          actorRow?.headquartersAddressLine1,
+          orgUpdate.headquartersAddressLine1 ??
+          orgRow?.headquartersAddressLine1,
         billingAddressLine2:
-          actorUpdate.headquartersAddressLine2 ??
-          actorRow?.headquartersAddressLine2,
+          orgUpdate.headquartersAddressLine2 ??
+          orgRow?.headquartersAddressLine2,
         billingAddressCity:
-          actorUpdate.headquartersCity ?? actorRow?.headquartersCity,
+          orgUpdate.headquartersCity ?? orgRow?.headquartersCity,
         billingAddressStateOrProvince:
-          actorUpdate.headquartersStateOrProvince ??
-          actorRow?.headquartersStateOrProvince,
+          orgUpdate.headquartersStateOrProvince ??
+          orgRow?.headquartersStateOrProvince,
         billingAddressPostalCode:
-          actorUpdate.headquartersPostalCode ??
-          actorRow?.headquartersPostalCode,
+          orgUpdate.headquartersPostalCode ?? orgRow?.headquartersPostalCode,
         billingAddressCountry:
-          actorUpdate.headquartersCountry ?? actorRow?.headquartersCountry,
-        telephone1: actorUpdate.telephone ?? actorRow?.telephone,
-        fax: actorUpdate.fax ?? actorRow?.fax,
-        emailAddress1: actorUpdate.email ?? actorRow?.email,
+          orgUpdate.headquartersCountry ?? orgRow?.headquartersCountry,
+        telephone1: orgUpdate.telephone ?? orgRow?.telephone,
+        fax: orgUpdate.fax ?? orgRow?.fax,
+        emailAddress1: orgUpdate.email ?? orgRow?.email,
       };
     });
 
@@ -488,10 +503,13 @@ export class CustomersWriteService {
     const existing = await db
       .select({
         customer: customers,
-        actorName: actors.name,
+        organizationName: organizations.name,
       })
       .from(customers)
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .where(eq(customers.customerId, customerId))
       .limit(1);
 
@@ -529,7 +547,7 @@ export class CustomersWriteService {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
         eventType: EventType.ARCHIVED,
-        entityDisplayName: existing[0].actorName ?? '',
+        entityDisplayName: existing[0].organizationName ?? '',
         payload: eventPayload,
         actor,
       });
@@ -538,7 +556,7 @@ export class CustomersWriteService {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
         eventType: EventType.UNARCHIVED,
-        entityDisplayName: existing[0].actorName ?? '',
+        entityDisplayName: existing[0].organizationName ?? '',
         payload: eventPayload,
         actor,
       });
@@ -547,7 +565,7 @@ export class CustomersWriteService {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
         eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: existing[0].actorName ?? '',
+        entityDisplayName: existing[0].organizationName ?? '',
         payload: eventPayload,
         actor,
       });

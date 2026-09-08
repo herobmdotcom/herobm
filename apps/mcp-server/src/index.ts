@@ -63,7 +63,8 @@ export const DOMAIN_MAP: Record<string, string> = {
   'Contacts': 'contact',
   'Delivery Addresses': 'delivery_address',
   'Tax': 'tax',
-  'Actors': 'actor',
+  'Organizations': 'organization',
+  'Actors': 'organization',
   'Projects': 'project',
   'CRM Map': 'crm_map'
 };
@@ -273,7 +274,7 @@ async function main() {
   console.error(`Registered ${toolRegistry.size} operations across ${domains.length} domains`);
 
   const server = new Server(
-    { name: 'herobm-mcp-server', version: '1.1.2' },
+    { name: 'herobm-mcp-server', version: '1.1.3' },
     { capabilities: { tools: {} } }
   );
 

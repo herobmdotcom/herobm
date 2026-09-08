@@ -2121,7 +2121,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                  "$ref": "#/components/schemas/OrganizationSettingsResponseDto"
                 }
               }
             }
@@ -2141,7 +2141,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateOrganizationDto"
+                "$ref": "#/components/schemas/UpdateOrganizationSettingsDto"
               }
             }
           }
@@ -2152,7 +2152,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                  "$ref": "#/components/schemas/OrganizationSettingsResponseDto"
                 }
               }
             }
@@ -2191,7 +2191,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                  "$ref": "#/components/schemas/OrganizationSettingsResponseDto"
                 }
               }
             }
@@ -2212,7 +2212,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                  "$ref": "#/components/schemas/OrganizationSettingsResponseDto"
                 }
               }
             }
@@ -2616,7 +2616,7 @@
     },
     "/settings/activities": {
       "get": {
-        "description": "List all activities",
+        "description": "List all General Ledger accounting dimension activities",
         "operationId": "ActivitiesController_findAll",
         "parameters": [
           {
@@ -2644,13 +2644,13 @@
             }
           }
         },
-        "summary": "List all activities",
+        "summary": "List all General Ledger activities",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "post": {
-        "description": "Create a new activity",
+        "description": "Create a new General Ledger accounting dimension activity",
         "operationId": "ActivitiesController_create",
         "parameters": [],
         "requestBody": {
@@ -2675,15 +2675,15 @@
             }
           }
         },
-        "summary": "Create a new activity",
+        "summary": "Create a new General Ledger activity",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
     "/settings/activities/{id}": {
       "patch": {
-        "description": "Update an activity",
+        "description": "Update a General Ledger accounting dimension activity",
         "operationId": "ActivitiesController_update",
         "parameters": [
           {
@@ -2717,13 +2717,13 @@
             }
           }
         },
-        "summary": "Update an activity",
+        "summary": "Update a General Ledger activity",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "delete": {
-        "description": "Delete an activity",
+        "description": "Delete a General Ledger accounting dimension activity",
         "operationId": "ActivitiesController_delete",
         "parameters": [
           {
@@ -2747,15 +2747,15 @@
             }
           }
         },
-        "summary": "Delete an activity",
+        "summary": "Delete a General Ledger activity",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
     "/settings/activities/import": {
       "post": {
-        "description": "Bulk import activities",
+        "description": "Bulk import General Ledger accounting dimension activities",
         "operationId": "ActivitiesController_import",
         "parameters": [],
         "requestBody": {
@@ -2783,9 +2783,9 @@
             }
           }
         },
-        "summary": "Bulk import activities",
+        "summary": "Bulk import General Ledger activities",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -16431,11 +16431,19 @@
     },
     "/purchase-returns": {
       "get": {
-        "description": "Retrieve a list of purchase returns based on state.",
-        "operationId": "GlobalPurchaseReturnsController_getPurchaseReturns",
+        "description": "Retrieve a paginated or filtered list of purchase returns across all purchase orders.",
+        "operationId": "GlobalPurchaseReturnsController_findAll",
         "parameters": [
           {
             "name": "stateCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
             "required": false,
             "in": "query",
             "schema": {
@@ -16453,7 +16461,7 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "Returns list",
             "content": {
               "application/json": {
                 "schema": {
@@ -16466,7 +16474,7 @@
             }
           }
         },
-        "summary": "List Purchase Returns",
+        "summary": "List all purchase returns across all POs",
         "tags": [
           "Purchase Returns"
         ]
@@ -19115,10 +19123,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UserResponseDto"
-                  }
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -19156,6 +19178,32 @@
           }
         },
         "summary": "Create User",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/users/events": {
+      "get": {
+        "description": "Retrieves all user domain audit events in chronological order.",
+        "operationId": "UsersController_getEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimelineEventDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List User Activity Events",
         "tags": [
           "System"
         ]
@@ -20483,17 +20531,17 @@
         ]
       }
     },
-    "/actors": {
+    "/organizations": {
       "post": {
-        "description": "Create Actor",
-        "operationId": "ActorsController_create",
+        "description": "Create Organization",
+        "operationId": "OrganizationsController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateActorDto"
+                "$ref": "#/components/schemas/CreateOrganizationDto"
               }
             }
           }
@@ -20504,20 +20552,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Create Actor",
+        "summary": "Create Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       },
       "get": {
-        "description": "Get all Actors (paginated)",
-        "operationId": "ActorsController_findAll",
+        "description": "Get all Organizations (paginated)",
+        "operationId": "OrganizationsController_findAll",
         "parameters": [
           {
             "name": "ownerId",
@@ -20680,7 +20728,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/ActorResponseDto"
+                            "$ref": "#/components/schemas/OrganizationResponseDto"
                           }
                         }
                       },
@@ -20694,16 +20742,16 @@
             }
           }
         },
-        "summary": "Get all Actors (paginated)",
+        "summary": "Get all Organizations (paginated)",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}": {
+    "/organizations/{id}": {
       "get": {
-        "description": "Get Actor by ID",
-        "operationId": "ActorsController_findOne",
+        "description": "Get Organization by ID",
+        "operationId": "OrganizationsController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -20720,20 +20768,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Get Actor by ID",
+        "summary": "Get Organization by ID",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       },
       "patch": {
-        "description": "Update Actor",
-        "operationId": "ActorsController_update",
+        "description": "Update Organization",
+        "operationId": "OrganizationsController_update",
         "parameters": [
           {
             "name": "id",
@@ -20749,7 +20797,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateActorDto"
+                "$ref": "#/components/schemas/UpdateOrganizationDto"
               }
             }
           }
@@ -20760,20 +20808,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Update Actor",
+        "summary": "Update Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       },
       "delete": {
-        "description": "Delete Actor",
-        "operationId": "ActorsController_remove",
+        "description": "Delete Organization",
+        "operationId": "OrganizationsController_remove",
         "parameters": [
           {
             "name": "id",
@@ -20796,16 +20844,16 @@
             }
           }
         },
-        "summary": "Delete Actor",
+        "summary": "Delete Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/contacts/{contactId}": {
+    "/organizations/{id}/contacts/{contactId}": {
       "patch": {
-        "description": "Update Contact Link on Actor",
-        "operationId": "ActorsController_updateContact",
+        "description": "Update Contact Link on Organization",
+        "operationId": "OrganizationsController_updateContact",
         "parameters": [
           {
             "name": "id",
@@ -20829,7 +20877,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateActorContactDto"
+                "$ref": "#/components/schemas/UpdateOrganizationContactDto"
               }
             }
           }
@@ -20846,14 +20894,14 @@
             }
           }
         },
-        "summary": "Update Contact Link on Actor",
+        "summary": "Update Contact Link on Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       },
       "delete": {
-        "description": "Remove Contact Link from Actor",
-        "operationId": "ActorsController_removeContact",
+        "description": "Remove Contact Link from Organization",
+        "operationId": "OrganizationsController_removeContact",
         "parameters": [
           {
             "name": "id",
@@ -20884,16 +20932,16 @@
             }
           }
         },
-        "summary": "Remove Contact Link from Actor",
+        "summary": "Remove Contact Link from Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/contacts": {
+    "/organizations/{id}/contacts": {
       "post": {
-        "description": "Link Contact to Actor",
-        "operationId": "ActorsController_addContact",
+        "description": "Link Contact to Organization",
+        "operationId": "OrganizationsController_addContact",
         "parameters": [
           {
             "name": "id",
@@ -20909,7 +20957,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateActorContactDto"
+                "$ref": "#/components/schemas/CreateOrganizationContactDto"
               }
             }
           }
@@ -20926,16 +20974,16 @@
             }
           }
         },
-        "summary": "Link Contact to Actor",
+        "summary": "Link Contact to Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/archive": {
+    "/organizations/{id}/archive": {
       "post": {
-        "description": "Archives an actor",
-        "operationId": "ActorsController_archive",
+        "description": "Archives an organization",
+        "operationId": "OrganizationsController_archive",
         "parameters": [
           {
             "name": "id",
@@ -20962,7 +21010,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
@@ -20972,22 +21020,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Archive Actor",
+        "summary": "Archive Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/unarchive": {
+    "/organizations/{id}/unarchive": {
       "post": {
-        "description": "Unarchives an actor",
-        "operationId": "ActorsController_unarchive",
+        "description": "Unarchives an organization",
+        "operationId": "OrganizationsController_unarchive",
         "parameters": [
           {
             "name": "id",
@@ -21014,7 +21062,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
@@ -21024,22 +21072,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorResponseDto"
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Unarchive Actor",
+        "summary": "Unarchive Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/notes": {
+    "/organizations/{id}/notes": {
       "post": {
-        "description": "Add Note to Actor",
-        "operationId": "ActorsController_addNote",
+        "description": "Add Note to Organization",
+        "operationId": "OrganizationsController_addNote",
         "parameters": [
           {
             "name": "id",
@@ -21055,7 +21103,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateActorNoteDto"
+                "$ref": "#/components/schemas/CreateOrganizationNoteDto"
               }
             }
           }
@@ -21066,22 +21114,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorNoteResponseDto"
+                  "$ref": "#/components/schemas/OrganizationNoteResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Add Note to Actor",
+        "summary": "Add Note to Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/notes/{noteId}": {
+    "/organizations/{id}/notes/{noteId}": {
       "delete": {
-        "description": "Remove Note from Actor",
-        "operationId": "ActorsController_removeNote",
+        "description": "Remove Note from Organization",
+        "operationId": "OrganizationsController_removeNote",
         "parameters": [
           {
             "name": "id",
@@ -21112,16 +21160,16 @@
             }
           }
         },
-        "summary": "Remove Note from Actor",
+        "summary": "Remove Note from Organization",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/links": {
+    "/organizations/{id}/links": {
       "get": {
-        "description": "Retrieve corporate links (parent, subsidiary, partner, referrer) for an actor.",
-        "operationId": "ActorsController_getLinks",
+        "description": "Get Organization Links",
+        "operationId": "OrganizationsController_getLinks",
         "parameters": [
           {
             "name": "id",
@@ -21140,21 +21188,21 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ActorLinkResponseDto"
+                    "$ref": "#/components/schemas/OrganizationLinkResponseDto"
                   }
                 }
               }
             }
           }
         },
-        "summary": "Get Actor Links",
+        "summary": "Get Organization Links",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       },
       "post": {
-        "description": "Create a link to another actor (parent, subsidiary, partner, referrer).",
-        "operationId": "ActorsController_addLink",
+        "description": "Add Organization Link",
+        "operationId": "OrganizationsController_addLink",
         "parameters": [
           {
             "name": "id",
@@ -21170,7 +21218,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateActorLinkDto"
+                "$ref": "#/components/schemas/CreateOrganizationLinkDto"
               }
             }
           }
@@ -21181,22 +21229,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActorLinkResponseDto"
+                  "$ref": "#/components/schemas/OrganizationLinkResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Add Actor Link",
+        "summary": "Add Organization Link",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
-    "/actors/{id}/links/{linkId}": {
+    "/organizations/{id}/links/{linkId}": {
       "delete": {
-        "description": "Remove an actor link.",
-        "operationId": "ActorsController_removeLink",
+        "description": "Remove Organization Link",
+        "operationId": "OrganizationsController_removeLink",
         "parameters": [
           {
             "name": "id",
@@ -21227,9 +21275,9 @@
             }
           }
         },
-        "summary": "Remove Actor Link",
+        "summary": "Remove Organization Link",
         "tags": [
-          "Actors"
+          "Organizations"
         ]
       }
     },
@@ -21270,7 +21318,7 @@
         "operationId": "OpportunitiesController_findAll",
         "parameters": [
           {
-            "name": "actorId",
+            "name": "organizationId",
             "required": false,
             "in": "query",
             "schema": {
@@ -21333,7 +21381,7 @@
     },
     "/opportunities/{id}": {
       "get": {
-        "description": "Get Opportunity by ID with linked actors, contacts, and notes",
+        "description": "Get Opportunity by ID with linked organizations, contacts, and notes",
         "operationId": "OpportunitiesController_findOne",
         "parameters": [
           {
@@ -21695,7 +21743,7 @@
       }
     },
     "/opportunities/{id}/contacts/{contactId}": {
-      "put": {
+      "patch": {
         "description": "Updates roles for a linked contact",
         "operationId": "OpportunitiesController_updateContact",
         "parameters": [
@@ -21782,10 +21830,10 @@
         ]
       }
     },
-    "/opportunities/{id}/actors": {
+    "/opportunities/{id}/organizations": {
       "post": {
-        "description": "Links an actor company to an opportunity",
-        "operationId": "OpportunitiesController_addActor",
+        "description": "Links an organization to an opportunity",
+        "operationId": "OpportunitiesController_addOrganization",
         "parameters": [
           {
             "name": "id",
@@ -21801,7 +21849,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateOpportunityActorDto"
+                "$ref": "#/components/schemas/CreateOpportunityOrganizationDto"
               }
             }
           }
@@ -21818,16 +21866,16 @@
             }
           }
         },
-        "summary": "Add Opportunity Actor",
+        "summary": "Add Opportunity Organization",
         "tags": [
           "Opportunities"
         ]
       }
     },
-    "/opportunities/{id}/actors/{actorId}": {
-      "put": {
-        "description": "Updates roles for a linked actor",
-        "operationId": "OpportunitiesController_updateActor",
+    "/opportunities/{id}/organizations/{organizationId}": {
+      "patch": {
+        "description": "Updates roles for a linked organization",
+        "operationId": "OpportunitiesController_updateOrganization",
         "parameters": [
           {
             "name": "id",
@@ -21838,7 +21886,7 @@
             }
           },
           {
-            "name": "actorId",
+            "name": "organizationId",
             "required": true,
             "in": "path",
             "schema": {
@@ -21851,7 +21899,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateOpportunityActorDto"
+                "$ref": "#/components/schemas/UpdateOpportunityOrganizationDto"
               }
             }
           }
@@ -21868,14 +21916,14 @@
             }
           }
         },
-        "summary": "Update Opportunity Actor Roles",
+        "summary": "Update Opportunity Organization Roles",
         "tags": [
           "Opportunities"
         ]
       },
       "delete": {
-        "description": "Unlinks an actor from an opportunity",
-        "operationId": "OpportunitiesController_deleteActor",
+        "description": "Unlinks an organization from an opportunity",
+        "operationId": "OpportunitiesController_deleteOrganization",
         "parameters": [
           {
             "name": "id",
@@ -21886,7 +21934,7 @@
             }
           },
           {
-            "name": "actorId",
+            "name": "organizationId",
             "required": true,
             "in": "path",
             "schema": {
@@ -21906,7 +21954,7 @@
             }
           }
         },
-        "summary": "Remove Opportunity Actor",
+        "summary": "Remove Opportunity Organization",
         "tags": [
           "Opportunities"
         ]
@@ -21914,7 +21962,7 @@
     },
     "/crm-activities": {
       "post": {
-        "description": "Logs a new interaction (Call, Meeting, Email, Task) against an Actor, Contact, or Project.",
+        "description": "Logs a new interaction (Call, Meeting, Email, Task, Note, or custom type) against an Organization, Contact, or Opportunity.",
         "operationId": "CrmActivitiesController_create",
         "parameters": [],
         "requestBody": {
@@ -21950,11 +21998,11 @@
         ]
       },
       "get": {
-        "description": "Retrieves CRM activities and tasks with filtering by entity, assignee, and status.",
+        "description": "Retrieves CRM activities and tasks with filtering by organization, contact, opportunity, assignee, overdue state, and status.",
         "operationId": "CrmActivitiesController_findAll",
         "parameters": [
           {
-            "name": "actorId",
+            "name": "organizationId",
             "required": false,
             "in": "query",
             "schema": {
@@ -21993,15 +22041,9 @@
             "name": "type",
             "required": false,
             "in": "query",
+            "description": "Activity type (e.g. call, meeting, email, task, note or custom type)",
             "schema": {
-              "type": "string",
-              "enum": [
-                "call",
-                "meeting",
-                "email",
-                "task",
-                "note"
-              ]
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -22036,6 +22078,33 @@
             "name": "myTasks",
             "required": false,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isOverdue",
+            "required": false,
+            "in": "query",
+            "description": "Filter open tasks that are overdue",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dueDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Filter activities with due date on or after this ISO date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dueDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Filter activities with due date on or before this ISO date",
             "schema": {
               "type": "string"
             }
@@ -22369,6 +22438,53 @@
         ]
       }
     },
+    "/crm-activities/{id}/reopen": {
+      "patch": {
+        "description": "Reopens a completed or cancelled CRM task, resetting its completion timestamp.",
+        "operationId": "CrmActivitiesController_reopen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmActivityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reopen Task",
+        "tags": [
+          "CRM Activities"
+        ]
+      }
+    },
     "/crm-map": {
       "get": {
         "description": "Get CRM Graph Map Data",
@@ -22552,8 +22668,8 @@
       "description": "System configuration, webhooks, auth, and setup"
     },
     {
-      "name": "Actors",
-      "description": "CRM Actors"
+      "name": "Organizations",
+      "description": "CRM Organizations"
     },
     {
       "name": "Projects",
@@ -23017,7 +23133,7 @@
           "customerId": {
             "type": "string"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "customerNumber": {
@@ -23204,7 +23320,7 @@
         },
         "required": [
           "customerId",
-          "actorId",
+          "organizationId",
           "customerNumber",
           "name",
           "billingAddressCountry",
@@ -23314,7 +23430,7 @@
       "CreateCustomerDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -23419,7 +23535,7 @@
       "UpdateCustomerDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -24032,22 +24148,72 @@
           }
         }
       },
-      "OrganizationResponseDto": {
+      "OrganizationSettingsResponseDto": {
         "type": "object",
         "properties": {
-          "organizationId": {
+          "tenantSettingsId": {
             "type": "string"
           },
           "name": {
             "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postCode": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "companyNumber": {
+            "type": "string"
+          },
+          "taxNumber": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "bankAccountName": {
+            "type": "string"
+          },
+          "bankAccountNumber": {
+            "type": "string"
+          },
+          "bankSwiftBic": {
+            "type": "string"
+          },
+          "bankIban": {
+            "type": "string"
           }
         },
         "required": [
-          "organizationId",
           "name"
         ]
       },
-      "UpdateOrganizationDto": {
+      "UpdateOrganizationSettingsDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -24178,13 +24344,13 @@
           "defaultSupplierTaxPositionId": {
             "type": "string"
           },
-          "actorTags": {
+          "organizationTags": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "actorContactRoles": {
+          "organizationContactRoles": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -24196,7 +24362,7 @@
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "opportunityActorRoles": {
+          "opportunityOrganizationRoles": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -24214,25 +24380,7 @@
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "projectContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectActorRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectStatuses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectTypes": {
+          "activityTypes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -24313,13 +24461,13 @@
           "enrichmentProviderMappings": {
             "type": "object"
           },
-          "actorTags": {
+          "organizationTags": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "actorContactRoles": {
+          "organizationContactRoles": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -24331,7 +24479,7 @@
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "opportunityActorRoles": {
+          "opportunityOrganizationRoles": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -24349,31 +24497,13 @@
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
-          "projectContactRoles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectActorRoles": {
+          "activityTypes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
             }
           },
           "referralModes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectStatuses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderedSettingDto"
-            }
-          },
-          "projectTypes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderedSettingDto"
@@ -31559,7 +31689,7 @@
           "supplierId": {
             "type": "string"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "vendorNumber": {
@@ -31682,7 +31812,7 @@
         },
         "required": [
           "supplierId",
-          "actorId",
+          "organizationId",
           "vendorNumber",
           "name",
           "address1Line1",
@@ -31788,7 +31918,7 @@
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -31909,7 +32039,7 @@
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -34222,7 +34352,9 @@
         "type": "object",
         "properties": {
           "success": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Indicates whether the operation was successful",
+            "example": true
           }
         },
         "required": [
@@ -34306,6 +34438,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "exportOnly": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -34663,6 +34798,9 @@
           "tenantId": {
             "type": "string"
           },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -34680,6 +34818,7 @@
           "displayName",
           "email",
           "tenantId",
+          "twoFactorEnabled",
           "createdAt",
           "updatedAt"
         ]
@@ -35197,6 +35336,12 @@
               "type": "string"
             }
           },
+          "organizationContactLinks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "actorContactLinks": {
             "type": "array",
             "items": {
@@ -35233,13 +35378,7 @@
         "type": "object",
         "properties": {
           "entityType": {
-            "type": "string",
-            "enum": [
-              "customer",
-              "supplier",
-              "actor",
-              "opportunity"
-            ]
+            "type": "object"
           },
           "entityId": {
             "type": "string",
@@ -35527,7 +35666,7 @@
           "success"
         ]
       },
-      "CreateActorDto": {
+      "CreateOrganizationDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -35585,7 +35724,7 @@
           "referralMode": {
             "type": "string"
           },
-          "referredByActorId": {
+          "referredByOrganizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -35605,7 +35744,7 @@
           "name"
         ]
       },
-      "ActorOwnerDto": {
+      "OrganizationOwnerDto": {
         "type": "object",
         "properties": {
           "userId": {
@@ -35628,7 +35767,7 @@
           "username"
         ]
       },
-      "ActorNoteResponseDto": {
+      "OrganizationNoteResponseDto": {
         "type": "object",
         "properties": {
           "noteId": {
@@ -35655,7 +35794,7 @@
           "createdOn"
         ]
       },
-      "ActorResponseDto": {
+      "OrganizationResponseDto": {
         "type": "object",
         "properties": {
           "ownerId": {
@@ -35667,7 +35806,7 @@
             "nullable": true,
             "allOf": [
               {
-                "$ref": "#/components/schemas/ActorOwnerDto"
+                "$ref": "#/components/schemas/OrganizationOwnerDto"
               }
             ]
           },
@@ -35675,7 +35814,7 @@
             "type": "string",
             "nullable": true
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -35744,10 +35883,10 @@
           "notes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ActorNoteResponseDto"
+              "$ref": "#/components/schemas/OrganizationNoteResponseDto"
             }
           },
-          "actorContactLinks": {
+          "organizationContactLinks": {
             "type": "array",
             "items": {
               "type": "object"
@@ -35763,7 +35902,7 @@
             "type": "string",
             "nullable": true
           },
-          "referredByActorId": {
+          "referredByOrganizationId": {
             "type": "string",
             "nullable": true,
             "format": "uuid"
@@ -35773,7 +35912,7 @@
             "nullable": true,
             "format": "uuid"
           },
-          "referredByActorName": {
+          "referredByOrganizationName": {
             "type": "string",
             "nullable": true
           },
@@ -35799,7 +35938,7 @@
           }
         },
         "required": [
-          "actorId",
+          "organizationId",
           "stateCode",
           "name",
           "isTaxRegistered",
@@ -35807,7 +35946,7 @@
           "modifiedOn"
         ]
       },
-      "UpdateActorDto": {
+      "UpdateOrganizationDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -35865,7 +36004,7 @@
           "referralMode": {
             "type": "string"
           },
-          "referredByActorId": {
+          "referredByOrganizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -35883,7 +36022,7 @@
           }
         }
       },
-      "UpdateActorContactDto": {
+      "UpdateOrganizationContactDto": {
         "type": "object",
         "properties": {
           "primaryFor": {
@@ -35897,7 +36036,7 @@
           "primaryFor"
         ]
       },
-      "CreateActorContactDto": {
+      "CreateOrganizationContactDto": {
         "type": "object",
         "properties": {
           "contactId": {
@@ -35915,7 +36054,7 @@
           "contactId"
         ]
       },
-      "CreateActorNoteDto": {
+      "CreateOrganizationNoteDto": {
         "type": "object",
         "properties": {
           "content": {
@@ -35926,10 +36065,10 @@
           "content"
         ]
       },
-      "ActorLinkPartnerDto": {
+      "OrganizationLinkPartnerDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "name": {
@@ -35941,20 +36080,20 @@
           }
         },
         "required": [
-          "actorId",
+          "organizationId",
           "name"
         ]
       },
-      "ActorLinkResponseDto": {
+      "OrganizationLinkResponseDto": {
         "type": "object",
         "properties": {
           "linkId": {
             "type": "string"
           },
-          "sourceActorId": {
+          "sourceOrganizationId": {
             "type": "string"
           },
-          "targetActorId": {
+          "targetOrganizationId": {
             "type": "string"
           },
           "linkType": {
@@ -35970,25 +36109,25 @@
             "format": "date-time",
             "type": "string"
           },
-          "targetActor": {
-            "$ref": "#/components/schemas/ActorLinkPartnerDto"
+          "targetOrganization": {
+            "$ref": "#/components/schemas/OrganizationLinkPartnerDto"
           },
-          "sourceActor": {
-            "$ref": "#/components/schemas/ActorLinkPartnerDto"
+          "sourceOrganization": {
+            "$ref": "#/components/schemas/OrganizationLinkPartnerDto"
           }
         },
         "required": [
           "linkId",
-          "sourceActorId",
-          "targetActorId",
+          "sourceOrganizationId",
+          "targetOrganizationId",
           "linkType",
           "createdOn"
         ]
       },
-      "CreateActorLinkDto": {
+      "CreateOrganizationLinkDto": {
         "type": "object",
         "properties": {
-          "targetActorId": {
+          "targetOrganizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -36003,7 +36142,7 @@
           }
         },
         "required": [
-          "targetActorId",
+          "targetOrganizationId",
           "linkType"
         ]
       },
@@ -36142,6 +36281,12 @@
               "$ref": "#/components/schemas/OpportunityNoteResponseDto"
             }
           },
+          "opportunityOrganizations": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "opportunityActors": {
             "type": "array",
             "items": {
@@ -36259,10 +36404,10 @@
           }
         }
       },
-      "CreateOpportunityActorDto": {
+      "CreateOpportunityOrganizationDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -36274,10 +36419,10 @@
           }
         },
         "required": [
-          "actorId"
+          "organizationId"
         ]
       },
-      "UpdateOpportunityActorDto": {
+      "UpdateOpportunityOrganizationDto": {
         "type": "object",
         "properties": {
           "roles": {
@@ -36293,13 +36438,8 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "call",
-              "meeting",
-              "email",
-              "task",
-              "note"
-            ]
+            "description": "Activity type (e.g. call, meeting, email, task, note or custom type)",
+            "example": "task"
           },
           "subject": {
             "type": "string"
@@ -36325,7 +36465,7 @@
               "urgent"
             ]
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -36400,7 +36540,7 @@
           "priority": {
             "type": "string"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "nullable": true
           },
@@ -36447,7 +36587,7 @@
             "format": "date-time",
             "type": "string"
           },
-          "actorName": {
+          "organizationName": {
             "type": "string",
             "nullable": true
           },
@@ -36476,13 +36616,8 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "call",
-              "meeting",
-              "email",
-              "task",
-              "note"
-            ]
+            "description": "Activity type (e.g. call, meeting, email, task, note or custom type)",
+            "example": "task"
           },
           "subject": {
             "type": "string"
@@ -36508,7 +36643,7 @@
               "urgent"
             ]
           },
-          "actorId": {
+          "organizationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -36521,6 +36656,7 @@
           },
           "opportunityId": {
             "type": "string",
+            "nullable": true,
             "format": "uuid"
           },
           "dueDate": {
@@ -36532,10 +36668,10 @@
           }
         }
       },
-      "CrmMapActorNodeDto": {
+      "CrmMapOrganizationNodeDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "name": {
@@ -36546,7 +36682,7 @@
           }
         },
         "required": [
-          "actorId",
+          "organizationId",
           "name"
         ]
       },
@@ -36584,10 +36720,10 @@
       "CrmMapNodesDto": {
         "type": "object",
         "properties": {
-          "actors": {
+          "organizations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapActorNodeDto"
+              "$ref": "#/components/schemas/CrmMapOrganizationNodeDto"
             }
           },
           "contacts": {
@@ -36604,30 +36740,30 @@
           }
         },
         "required": [
-          "actors",
+          "organizations",
           "contacts",
           "opportunities"
         ]
       },
-      "CrmMapActorActorLinkDto": {
+      "CrmMapOrganizationOrganizationLinkDto": {
         "type": "object",
         "properties": {
-          "sourceActorId": {
+          "sourceOrganizationId": {
             "type": "string"
           },
-          "targetActorId": {
+          "targetOrganizationId": {
             "type": "string"
           }
         },
         "required": [
-          "sourceActorId",
-          "targetActorId"
+          "sourceOrganizationId",
+          "targetOrganizationId"
         ]
       },
-      "CrmMapActorContactLinkDto": {
+      "CrmMapOrganizationContactLinkDto": {
         "type": "object",
         "properties": {
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "contactId": {
@@ -36641,17 +36777,17 @@
           }
         },
         "required": [
-          "actorId",
+          "organizationId",
           "contactId"
         ]
       },
-      "CrmMapOpportunityActorLinkDto": {
+      "CrmMapOpportunityOrganizationLinkDto": {
         "type": "object",
         "properties": {
           "opportunityId": {
             "type": "string"
           },
-          "actorId": {
+          "organizationId": {
             "type": "string"
           },
           "roles": {
@@ -36663,7 +36799,7 @@
         },
         "required": [
           "opportunityId",
-          "actorId"
+          "organizationId"
         ]
       },
       "CrmMapOpportunityContactLinkDto": {
@@ -36690,22 +36826,22 @@
       "CrmMapEdgesDto": {
         "type": "object",
         "properties": {
-          "actorActor": {
+          "organizationOrganization": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapActorActorLinkDto"
+              "$ref": "#/components/schemas/CrmMapOrganizationOrganizationLinkDto"
             }
           },
-          "actorContact": {
+          "organizationContact": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapActorContactLinkDto"
+              "$ref": "#/components/schemas/CrmMapOrganizationContactLinkDto"
             }
           },
-          "opportunityActor": {
+          "opportunityOrganization": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapOpportunityActorLinkDto"
+              "$ref": "#/components/schemas/CrmMapOpportunityOrganizationLinkDto"
             }
           },
           "opportunityContact": {
@@ -36714,23 +36850,20 @@
               "$ref": "#/components/schemas/CrmMapOpportunityContactLinkDto"
             }
           },
-          "referralActorActor": {
+          "referralOrganizationOrganization": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapActorActorLinkDto"
+              "$ref": "#/components/schemas/CrmMapOrganizationOrganizationLinkDto"
             }
           },
-          "referralContactActor": {
+          "referralContactOrganization": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CrmMapActorContactLinkDto"
+              "$ref": "#/components/schemas/CrmMapOrganizationContactLinkDto"
             }
           }
         },
         "required": [
-          "actorActor",
-          "actorContact",
-          "opportunityActor",
           "opportunityContact"
         ]
       },

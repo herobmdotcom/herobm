@@ -4,7 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   customers,
-  actors,
+  organizations,
   tradingTerms,
   salesInvoices,
   salesCreditNotes,
@@ -84,15 +84,18 @@ export class CustomerStatementService {
         stateCode: customers.stateCode,
         termsDescription: tradingTerms.description,
         termsCode: tradingTerms.code,
-        name: actors.name,
-        headquartersAddressLine1: actors.headquartersAddressLine1,
-        city: actors.headquartersCity,
-        stateOrProvince: actors.headquartersStateOrProvince,
-        postalCode: actors.headquartersPostalCode,
-        country: actors.headquartersCountry,
+        name: organizations.name,
+        headquartersAddressLine1: organizations.headquartersAddressLine1,
+        city: organizations.headquartersCity,
+        stateOrProvince: organizations.headquartersStateOrProvince,
+        postalCode: organizations.headquartersPostalCode,
+        country: organizations.headquartersCountry,
       })
       .from(customers)
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         tradingTerms,
         eq(customers.tradingTermsId, tradingTerms.tradingTermsId),

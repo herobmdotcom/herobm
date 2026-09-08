@@ -1,4 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
+import { eq } from 'drizzle-orm';
+import * as bcrypt from 'bcrypt';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { runDemoSeeds } from './demo';
 import {
@@ -11,17 +13,18 @@ import {
   productUoms,
   productDefaultBins,
   discountMatrix,
-  actors,
+  organizations,
   contacts,
-  actorContactLinks,
-  actorActorLinks,
-  actorNotes,
+  organizationContactLinks,
+  organizationOrganizationLinks,
+  organizationNotes,
   opportunities,
-  opportunityActors,
+  opportunityOrganizations,
   opportunityContacts,
   opportunityNotes,
   crmActivities,
   crmActivityContacts,
+  users,
   customerGroups,
   customers,
   customerDeliveryAddresses,
@@ -99,6 +102,17 @@ describe('Demo Seed Verification Suite', () => {
     // 1. Execute Demo Seeding
     await runDemoSeeds(ctx.db as unknown as SeedDB, false, true, 'us_standard');
 
+    // Assert Demo Admin User
+    const [demoUser] = await ctx.db
+      .select()
+      .from(users)
+      .where(eq(users.username, 'demo'));
+    expect(demoUser).toBeDefined();
+    expect(demoUser.role).toBe('admin');
+    expect(demoUser.isActive).toBe(true);
+    const pwMatch = await bcrypt.compare('demodemo', demoUser.passwordHash);
+    expect(pwMatch).toBe(true);
+
     // 2. Assert Exchange Rates & FX
     const seededFx = await ctx.db.select().from(exchangeRates);
     expect(seededFx.length).toBeGreaterThanOrEqual(5);
@@ -136,27 +150,27 @@ describe('Demo Seed Verification Suite', () => {
     const defaultBins = await ctx.db.select().from(productDefaultBins);
     expect(defaultBins.length).toBeGreaterThan(0);
 
-    // 5. Assert CRM Actors, Groups, Suppliers, Customers & Discounts
+    // 5. Assert CRM Organizations, Groups, Suppliers, Customers & Discounts
     const seededGroups = await ctx.db.select().from(customerGroups);
     expect(seededGroups.length).toBeGreaterThanOrEqual(3);
 
     const seededDiscounts = await ctx.db.select().from(discountMatrix);
     expect(seededDiscounts.length).toBeGreaterThanOrEqual(3);
 
-    const seededActors = await ctx.db.select().from(actors);
-    expect(seededActors.length).toBeGreaterThanOrEqual(10);
+    const seededOrganizations = await ctx.db.select().from(organizations);
+    expect(seededOrganizations.length).toBeGreaterThanOrEqual(10);
 
     const seededSuppliers = await ctx.db.select().from(suppliers);
     expect(seededSuppliers.length).toBeGreaterThanOrEqual(5);
     for (const s of seededSuppliers) {
-      expect(s.actorId).toBeDefined();
+      expect(s.organizationId).toBeDefined();
       expect(s.stateCode).toBe(SUPPLIER_STATE.ACTIVE);
     }
 
     const seededCustomers = await ctx.db.select().from(customers);
     expect(seededCustomers.length).toBeGreaterThanOrEqual(5);
     for (const c of seededCustomers) {
-      expect(c.actorId).toBeDefined();
+      expect(c.organizationId).toBeDefined();
       expect(c.stateCode).toBe(CUSTOMER_STATE.ACTIVE);
       if (c.customerNumber !== 'WALK-IN') {
         expect(Number(c.creditLimit)).toBeGreaterThan(0);
@@ -171,21 +185,25 @@ describe('Demo Seed Verification Suite', () => {
     const seededContacts = await ctx.db.select().from(contacts);
     expect(seededContacts.length).toBeGreaterThanOrEqual(10);
 
-    const seededContactLinks = await ctx.db.select().from(actorContactLinks);
+    const seededContactLinks = await ctx.db
+      .select()
+      .from(organizationContactLinks);
     expect(seededContactLinks.length).toBeGreaterThanOrEqual(10);
 
-    const seededActorLinks = await ctx.db.select().from(actorActorLinks);
-    expect(seededActorLinks.length).toBeGreaterThanOrEqual(1);
+    const seededOrgLinks = await ctx.db
+      .select()
+      .from(organizationOrganizationLinks);
+    expect(seededOrgLinks.length).toBeGreaterThanOrEqual(1);
 
-    const seededActorNotes = await ctx.db.select().from(actorNotes);
-    expect(seededActorNotes.length).toBeGreaterThanOrEqual(1);
+    const seededOrgNotes = await ctx.db.select().from(organizationNotes);
+    expect(seededOrgNotes.length).toBeGreaterThanOrEqual(1);
 
     // 6. Assert CRM Opportunities & Activities
     const seededOpportunities = await ctx.db.select().from(opportunities);
     expect(seededOpportunities.length).toBeGreaterThanOrEqual(10);
 
-    const seededOppActors = await ctx.db.select().from(opportunityActors);
-    expect(seededOppActors.length).toBeGreaterThanOrEqual(10);
+    const seededOppOrgs = await ctx.db.select().from(opportunityOrganizations);
+    expect(seededOppOrgs.length).toBeGreaterThanOrEqual(10);
 
     const seededOppContacts = await ctx.db.select().from(opportunityContacts);
     expect(seededOppContacts.length).toBeGreaterThanOrEqual(5);

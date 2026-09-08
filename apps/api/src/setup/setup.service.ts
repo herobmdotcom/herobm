@@ -11,7 +11,6 @@ import { sql } from 'drizzle-orm';
 import {
   appSettings,
   glSettings,
-  organization,
   locations,
   glAccounts,
   pipelineJobs,

@@ -3,14 +3,14 @@ import {
   PRODUCT_STATE,
   CUSTOMER_STATE,
   SUPPLIER_STATE,
-  ACTOR_STATE,
-  DEFAULT_ACTOR_CONTACT_ROLES,
-  ACTOR_CONTACT_ROLE,
+  ORGANIZATION_STATE,
+  DEFAULT_ORGANIZATION_CONTACT_ROLES,
+  ORGANIZATION_CONTACT_ROLE,
   DEFAULT_OPPORTUNITY_STAGES,
   DEFAULT_OPPORTUNITY_TYPES,
   DEFAULT_OPPORTUNITY_CONTACT_ROLES,
-  DEFAULT_OPPORTUNITY_ACTOR_ROLES,
-  DEFAULT_ACTOR_TAGS,
+  DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
+  DEFAULT_ORGANIZATION_TAGS,
   DEFAULT_REFERRAL_MODES,
 } from '@herobm/shared';
 import * as crypto from 'crypto';
@@ -21,11 +21,10 @@ import type { SeedDB } from '../run';
 import {
   users,
   uomDictionary,
-  actors,
   products,
   costCenters,
   activities,
-  organization,
+  tenantSettings,
   taxCategories,
   tradingTerms,
   glSettings,
@@ -39,6 +38,7 @@ import {
   bins,
   customers,
   suppliers,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -1504,23 +1504,23 @@ async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
       },
     });
 
-  const walkInActorId = '00000000-0000-4000-8000-000000000002';
+  const walkInOrganizationId = '00000000-0000-4000-8000-000000000002';
   const walkInCustomerId = '00000000-0000-4000-8000-000000000001';
 
   await db
-    .insert(actors)
+    .insert(organizations)
     .values({
-      actorId: walkInActorId,
+      organizationId: walkInOrganizationId,
       name: 'Walk-In Customer',
       headquartersAddressLine1: 'Over-the-counter collection',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .onConflictDoUpdate({
-      target: actors.actorId,
+      target: organizations.organizationId,
       set: {
         name: 'Walk-In Customer',
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
       },
     });
 
@@ -1528,7 +1528,7 @@ async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
     .insert(customers)
     .values({
       customerId: walkInCustomerId,
-      actorId: walkInActorId,
+      organizationId: walkInOrganizationId,
       customerNumber: 'WALK-IN',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'AUD')`,
       creditLimit: '0',
@@ -1596,28 +1596,30 @@ async function seedFinancialDimensions(db: SeedDB, dryRun: boolean) {
 
 async function seedOrganization(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
-    console.log('  [DRY RUN] Would seed fallback organization if none exists');
+    console.log(
+      '  [DRY RUN] Would seed fallback tenant settings if none exists',
+    );
     return;
   }
 
-  const existing = await db.select().from(organization).limit(1);
+  const existing = await db.select().from(tenantSettings).limit(1);
   if (existing.length > 0) {
-    console.log('  SKIP: Organization record already exists.');
+    console.log('  SKIP: Tenant settings record already exists.');
     return;
   }
 
   await db
-    .insert(organization)
+    .insert(tenantSettings)
     .values({
-      organizationId: '00000000-0000-4000-8000-000000000000',
+      tenantSettingsId: '00000000-0000-4000-8000-000000000000',
       name: 'My Company',
     })
     .onConflictDoUpdate({
-      target: organization.organizationId,
+      target: tenantSettings.tenantSettingsId,
       set: { name: 'My Company' },
     });
 
-  console.log('  Seeded default organization (fallback)');
+  console.log('  Seeded default tenant settings (fallback)');
 }
 
 async function seedAppSettings(db: SeedDB, dryRun: boolean) {
@@ -1630,17 +1632,20 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
   if (existing.length > 0) {
     const row = existing[0];
     const currentRoles =
-      (row.actorContactRoles as Array<{ value: string; order: number }>) || [];
+      (row.organizationContactRoles as Array<{
+        value: string;
+        order: number;
+      }>) || [];
     if (currentRoles.length === 0) {
       await db.update(appSettings).set({
-        actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
+        organizationContactRoles: DEFAULT_ORGANIZATION_CONTACT_ROLES,
       });
       console.log(
-        '  Updated existing app_settings with default actorContactRoles.',
+        '  Updated existing app_settings with default organizationContactRoles.',
       );
     } else {
-      // Ensure all canonical actor contact roles exist
-      const missingRoles = DEFAULT_ACTOR_CONTACT_ROLES.filter(
+      // Ensure all canonical organization contact roles exist
+      const missingRoles = DEFAULT_ORGANIZATION_CONTACT_ROLES.filter(
         (def) =>
           !currentRoles.some(
             (r) => r.value.toLowerCase() === def.value.toLowerCase(),
@@ -1656,9 +1661,11 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
           maxOrder += 1;
           updatedRoles.push({ value: missing.value, order: maxOrder });
         }
-        await db.update(appSettings).set({ actorContactRoles: updatedRoles });
+        await db
+          .update(appSettings)
+          .set({ organizationContactRoles: updatedRoles });
         console.log(
-          `  Added missing canonical roles (${missingRoles.map((r) => r.value).join(', ')}) to app_settings.actorContactRoles.`,
+          `  Added missing canonical roles (${missingRoles.map((r) => r.value).join(', ')}) to app_settings.organizationContactRoles.`,
         );
       }
     }
@@ -1702,19 +1709,24 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         '  Updated existing app_settings with default opportunityContactRoles.',
       );
     }
-    if (!row.opportunityActorRoles || row.opportunityActorRoles.length === 0) {
+    if (
+      !row.opportunityOrganizationRoles ||
+      row.opportunityOrganizationRoles.length === 0
+    ) {
       await db.update(appSettings).set({
-        opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
+        opportunityOrganizationRoles: DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
       });
       console.log(
-        '  Updated existing app_settings with default opportunityActorRoles.',
+        '  Updated existing app_settings with default opportunityOrganizationRoles.',
       );
     }
-    if (!row.actorTags || row.actorTags.length === 0) {
+    if (!row.organizationTags || row.organizationTags.length === 0) {
       await db.update(appSettings).set({
-        actorTags: DEFAULT_ACTOR_TAGS,
+        organizationTags: DEFAULT_ORGANIZATION_TAGS,
       });
-      console.log('  Updated existing app_settings with default actorTags.');
+      console.log(
+        '  Updated existing app_settings with default organizationTags.',
+      );
     }
     if (!row.referralModes || row.referralModes.length === 0) {
       await db.update(appSettings).set({
@@ -1739,12 +1751,12 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       creditLimitBehavior: 'soft',
       setupCompletedAt: now,
       systemIdentifier: sid,
-      actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
+      organizationContactRoles: DEFAULT_ORGANIZATION_CONTACT_ROLES,
       opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
       opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
       opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
-      opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
-      actorTags: DEFAULT_ACTOR_TAGS,
+      opportunityOrganizationRoles: DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
+      organizationTags: DEFAULT_ORGANIZATION_TAGS,
       referralModes: DEFAULT_REFERRAL_MODES,
       salesAnalysisCodes: [
         { value: 'DEFAULT', order: 1 },
@@ -2246,22 +2258,22 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
   }
 
   // Seed customer
-  const custActorId = '20000000-0000-4000-8000-000000000000';
+  const custOrgId = '20000000-0000-4000-8000-000000000000';
   await db
-    .insert(actors)
+    .insert(organizations)
     .values({
-      actorId: custActorId,
+      organizationId: custOrgId,
       name: 'E2E Default Customer',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .onConflictDoUpdate({
-      target: actors.actorId,
+      target: organizations.organizationId,
       set: {
         name: 'E2E Default Customer',
         headquartersAddressLine1: 'AU',
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
       },
     });
 
@@ -2269,7 +2281,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
     .insert(customers)
     .values({
       customerId: '20000000-0000-4000-8000-000000000001',
-      actorId: custActorId,
+      organizationId: custOrgId,
       customerNumber: 'CUST-E2E-001',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       creditLimit: '1000000000',
@@ -2285,18 +2297,18 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
     });
 
   // Seed vendor
-  const vendActorId = '20000000-0000-4000-8000-000000000003';
+  const vendOrgId = '20000000-0000-4000-8000-000000000003';
   await db
-    .insert(actors)
+    .insert(organizations)
     .values({
-      actorId: vendActorId,
+      organizationId: vendOrgId,
       name: 'E2E Default Vendor',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .onConflictDoUpdate({
-      target: actors.actorId,
+      target: organizations.organizationId,
       set: { name: 'Seed Vendor', headquartersAddressLine1: 'AU' },
     });
 
@@ -2304,7 +2316,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
     .insert(suppliers)
     .values({
       vendorId: '20000000-0000-4000-8000-000000000002',
-      actorId: vendActorId,
+      organizationId: vendOrgId,
       vendorNumber: 'VEND-E2E-001',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       stateCode: SUPPLIER_STATE.ACTIVE,

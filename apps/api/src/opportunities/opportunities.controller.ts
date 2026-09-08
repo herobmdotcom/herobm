@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Patch,
-  Put,
   Delete,
   Param,
   Body,
@@ -25,8 +24,8 @@ import {
   OpportunityNoteResponseDto,
   CreateOpportunityContactDto,
   UpdateOpportunityContactDto,
-  CreateOpportunityActorDto,
-  UpdateOpportunityActorDto,
+  CreateOpportunityOrganizationDto,
+  UpdateOpportunityOrganizationDto,
   EmptyBodyDto,
   SuccessResponseDto,
   OpportunityQueryDto,
@@ -70,7 +69,7 @@ export class OpportunitiesController {
   @ApiOperation({
     summary: 'Get Opportunity by ID',
     description:
-      'Get Opportunity by ID with linked actors, contacts, and notes',
+      'Get Opportunity by ID with linked organizations, contacts, and notes',
   })
   @ApiOkResponse({ type: OpportunityResponseDto })
   findOne(@Param('id') id: string) {
@@ -203,7 +202,7 @@ export class OpportunitiesController {
     );
   }
 
-  @Put(':id/contacts/:contactId')
+  @Patch(':id/contacts/:contactId')
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Opportunity Contact Roles',
@@ -243,59 +242,63 @@ export class OpportunitiesController {
     );
   }
 
-  // --- Sub-resources: Actors ---
+  // --- Sub-resources: Organizations ---
 
-  @Post(':id/actors')
+  @Post(':id/organizations')
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Add Opportunity Actor',
-    description: 'Links an actor company to an opportunity',
+    summary: 'Add Opportunity Organization',
+    description: 'Links an organization to an opportunity',
   })
   @ApiCreatedResponse({ type: SuccessResponseDto })
-  addActor(
+  addOrganization(
     @Param('id') id: string,
-    @Body() dto: CreateOpportunityActorDto,
+    @Body() dto: CreateOpportunityOrganizationDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.opportunitiesService.addOpportunityActor(id, dto, user.userId);
-  }
-
-  @Put(':id/actors/:actorId')
-  @CasbinAction('write')
-  @ApiOperation({
-    summary: 'Update Opportunity Actor Roles',
-    description: 'Updates roles for a linked actor',
-  })
-  @ApiOkResponse({ type: SuccessResponseDto })
-  updateActor(
-    @Param('id') id: string,
-    @Param('actorId') actorId: string,
-    @Body() dto: UpdateOpportunityActorDto,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.opportunitiesService.updateOpportunityActor(
+    return this.opportunitiesService.addOpportunityOrganization(
       id,
-      actorId,
       dto,
       user.userId,
     );
   }
 
-  @Delete(':id/actors/:actorId')
+  @Patch(':id/organizations/:organizationId')
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Remove Opportunity Actor',
-    description: 'Unlinks an actor from an opportunity',
+    summary: 'Update Opportunity Organization Roles',
+    description: 'Updates roles for a linked organization',
   })
   @ApiOkResponse({ type: SuccessResponseDto })
-  deleteActor(
+  updateOrganization(
     @Param('id') id: string,
-    @Param('actorId') actorId: string,
+    @Param('organizationId') organizationId: string,
+    @Body() dto: UpdateOpportunityOrganizationDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.opportunitiesService.deleteOpportunityActor(
+    return this.opportunitiesService.updateOpportunityOrganization(
       id,
-      actorId,
+      organizationId,
+      dto,
+      user.userId,
+    );
+  }
+
+  @Delete(':id/organizations/:organizationId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Opportunity Organization',
+    description: 'Unlinks an organization from an opportunity',
+  })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  deleteOrganization(
+    @Param('id') id: string,
+    @Param('organizationId') organizationId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.opportunitiesService.deleteOpportunityOrganization(
+      id,
+      organizationId,
       user.userId,
     );
   }

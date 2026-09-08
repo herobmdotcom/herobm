@@ -46,7 +46,6 @@ import {
   transferOrders,
   transferOrderReceipts,
   transferOrderReceiptLines,
-  actors,
   workOrders,
   backorders,
 } from '@herobm/db-schema';

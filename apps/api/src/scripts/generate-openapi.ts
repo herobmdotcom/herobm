@@ -42,7 +42,7 @@ async function generateDocs() {
     .addBearerAuth()
     .addServer('http://localhost:3000', 'Local Development Server')
     .addTag('System', 'System configuration, webhooks, auth, and setup')
-    .addTag('Actors', 'CRM Actors')
+    .addTag('Organizations', 'CRM Organizations')
     .addTag('Projects', 'Project management')
     .addTag('Opportunities', 'Opportunities and pipeline')
     .addTag('CRM Activities', 'CRM activity logging and tasks')

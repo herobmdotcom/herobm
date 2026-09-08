@@ -99,7 +99,6 @@ The following 186 event types are actively supported across 51 domain entity typ
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
 | `activity` | `created`, `deleted`, `updated` |
-| `actor` | `created`, `deleted`, `updated` |
 | `api_key` | `created`, `deleted` |
 | `app_settings` | `updated` |
 | `bank_statement_line` | `created`, `deleted`, `updated` |
@@ -124,6 +123,7 @@ The following 186 event types are actively supported across 51 domain entity typ
 | `location` | `created`, `deleted`, `updated` |
 | `macro` | `created`, `deleted`, `updated` |
 | `opportunity` | `created`, `deleted`, `updated` |
+| `organization` | `created`, `deleted`, `updated` |
 | `payment` | `created`, `payment_allocated`, `payment_cancelled`, `status_changed`, `updated` |
 | `product` | `archived`, `created`, `status_changed`, `unarchived`, `uom_added`, `uom_removed`, `updated` |
 | `product_group` | `created`, `deleted`, `updated` |
@@ -191,7 +191,7 @@ CRM activities track human customer interactions (phone calls, emails, meetings,
 
 | Event Type | Trigger Description | Key Payload Attributes |
 | :--- | :--- | :--- |
-| **`crm_activity.created`** | New interaction or task recorded. | `activityId`, `activityType`, `subject`, `status`, `priority`, `actorId`, `contactIds` (array of attendee UUIDs), `projectId` (opportunity ID), `dueDate`, `assignedToUserId` |
+| **`crm_activity.created`** | New interaction or task recorded. | `activityId`, `activityType`, `subject`, `status`, `priority`, `organizationId`, `contactIds` (array of attendee UUIDs), `projectId` (opportunity ID), `dueDate`, `assignedToUserId` |
 | **`crm_activity.updated`** | Activity details, subject, description, priority, or attendee contacts modified. | `activityId`, `changes` |
 | **`crm_activity.status_changed`** | Follow-up task marked as completed or reopened. | `activityId`, `previousStatus`, `newStatus`, `action` (`"crm_activity_completed"` or `"crm_activity_reopened"`) |
 | **`crm_activity.deleted`** | Activity or task deleted. | `activityId`, `type`, `subject`, `action: "crm_activity_deleted"` |
@@ -205,7 +205,7 @@ When an activity linked to an Opportunity (`projectId`) includes contacts, those
 #### Cross-Entity Audit Trails
 When an activity is logged:
 1. The primary event is emitted under `crm_activity.created`.
-2. If linked to an Actor, an update audit event (`actor.updated`) is emitted against the Actor with activity summary metadata.
+2. If linked to an Organization, an update audit event (`organization.updated`) is emitted against the Organization with activity summary metadata.
 3. If contacts are linked (`contactIds`), an update audit event (`contact.updated`) is emitted against each participating Contact.
 4. If linked to an Opportunity (`projectId`), an update audit event (`opportunity.updated`) is emitted against the Opportunity.
 
@@ -225,7 +225,7 @@ When an activity is logged:
     "subject": "Discovery & Scope Review",
     "status": "scheduled",
     "priority": "high",
-    "actorId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "organizationId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
     "contactIds": [
       "c1d2e3f4-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
       "d2e3f4a5-6b7c-8d9e-0f1a-2b3c4d5e6f7a"
@@ -257,10 +257,10 @@ When an activity is logged:
 
 ---
 
-### 3. Actor & Contact Events (`actor.*`, `contact.*`)
+### 3. Organization & Contact Events (`organization.*`, `contact.*`)
 
-- **`actor.*`: Unified Business Entity Lifecycle**
-  - `actor.created`, `actor.updated`, `actor.deleted`
+- **`organization.*`: Unified Business Entity Lifecycle**
+  - `organization.created`, `organization.updated`, `organization.deleted`
   - Emitted when business account details, account ownership (`owner_id`), corporate hierarchy links (`parent_company`, `subsidiary`, `partner`), or trading accounts (Customer/Supplier) are configured.
 - **`contact.*`: Contacts & Affiliations**
   - `contact.created`, `contact.updated`, `contact.deleted`

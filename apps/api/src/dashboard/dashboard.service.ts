@@ -22,7 +22,7 @@ import {
   opportunities as coreOpportunities,
   paymentEntries as corePayments,
   salesOrderLineItems as coreSalesOrderLines,
-  actors as coreActors,
+  organizations as coreOrganizations,
 } from '@herobm/db-schema';
 
 export type SearchEntityType =
@@ -148,14 +148,17 @@ export class DashboardService {
         this.db
           .select({
             id: coreAccounts.customerId,
-            label: sql<string>`COALESCE(${coreActors.name}, '')`,
+            label: sql<string>`COALESCE(${coreOrganizations.name}, '')`,
             subtitle: coreAccounts.customerNumber,
           })
           .from(coreAccounts)
-          .leftJoin(coreActors, eq(coreAccounts.actorId, coreActors.actorId))
+          .leftJoin(
+            coreOrganizations,
+            eq(coreAccounts.organizationId, coreOrganizations.organizationId),
+          )
           .where(
             or(
-              ilike(coreActors.name, term),
+              ilike(coreOrganizations.name, term),
               ilike(coreAccounts.customerNumber, term),
             ),
           )
@@ -208,14 +211,17 @@ export class DashboardService {
         this.db
           .select({
             id: coreSuppliers.vendorId,
-            label: sql<string>`COALESCE(${coreActors.name}, '')`,
+            label: sql<string>`COALESCE(${coreOrganizations.name}, '')`,
             subtitle: coreSuppliers.vendorNumber,
           })
           .from(coreSuppliers)
-          .leftJoin(coreActors, eq(coreSuppliers.actorId, coreActors.actorId))
+          .leftJoin(
+            coreOrganizations,
+            eq(coreSuppliers.organizationId, coreOrganizations.organizationId),
+          )
           .where(
             or(
-              ilike(coreActors.name, term),
+              ilike(coreOrganizations.name, term),
               ilike(coreSuppliers.vendorNumber, term),
             ),
           )

@@ -3,21 +3,22 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
-import type { UpdateCrmActivityDtoType } from './updateCrmActivityDtoType';
 import type { UpdateCrmActivityDtoStatus } from './updateCrmActivityDtoStatus';
 import type { UpdateCrmActivityDtoPriority } from './updateCrmActivityDtoPriority';
 
 export interface UpdateCrmActivityDto {
-  type?: UpdateCrmActivityDtoType;
+  /** Activity type (e.g. call, meeting, email, task, note or custom type) */
+  type?: string;
   subject?: string;
   description?: string;
   status?: UpdateCrmActivityDtoStatus;
   priority?: UpdateCrmActivityDtoPriority;
-  actorId?: string;
+  organizationId?: string;
   contactIds?: string[];
-  opportunityId?: string;
+  /** @nullable */
+  opportunityId?: string | null;
   dueDate?: string;
   assignedToUserId?: string;
 }

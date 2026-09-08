@@ -21,7 +21,7 @@ import {
   taxCategories,
   locations,
   appSettings,
-  actors,
+  organizations,
   productComponents,
   workOrders,
   workOrderComponents,
@@ -716,7 +716,7 @@ export class BackordersService {
         stateCode: purchaseOrders.stateCode,
         quantity: purchaseOrderLineItems.quantity,
         vendorId: purchaseOrders.vendorId,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         deliveryLocationId: purchaseOrders.deliveryLocationId,
         locationName: locations.name,
       })
@@ -732,7 +732,10 @@ export class BackordersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         locations,
         eq(purchaseOrders.deliveryLocationId, locations.locationId),

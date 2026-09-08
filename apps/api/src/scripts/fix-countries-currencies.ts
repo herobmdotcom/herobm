@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { customers, suppliers, actors } from '@herobm/db-schema';
+import { customers, suppliers, organizations } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -53,12 +53,15 @@ async function run() {
   const allCustomers = await db
     .select({
       customerId: customers.customerId,
-      actorId: customers.actorId,
+      organizationId: customers.organizationId,
       currencyCode: customers.currencyCode,
-      headquartersCountry: actors.headquartersCountry,
+      headquartersCountry: organizations.headquartersCountry,
     })
     .from(customers)
-    .leftJoin(actors, eq(customers.actorId, actors.actorId));
+    .leftJoin(
+      organizations,
+      eq(customers.organizationId, organizations.organizationId),
+    );
 
   let updatedCustomers = 0;
   for (const c of allCustomers) {
@@ -74,11 +77,15 @@ async function run() {
       hasUpdate = true;
     }
 
-    if (newCountry && newCountry !== c.headquartersCountry && c.actorId) {
+    if (
+      newCountry &&
+      newCountry !== c.headquartersCountry &&
+      c.organizationId
+    ) {
       await db
-        .update(actors)
+        .update(organizations)
         .set({ headquartersCountry: newCountry })
-        .where(eq(actors.actorId, c.actorId));
+        .where(eq(organizations.organizationId, c.organizationId));
       hasUpdate = true;
     }
 
@@ -90,12 +97,15 @@ async function run() {
   const allSuppliers = await db
     .select({
       vendorId: suppliers.vendorId,
-      actorId: suppliers.actorId,
+      organizationId: suppliers.organizationId,
       currencyCode: suppliers.currencyCode,
-      headquartersCountry: actors.headquartersCountry,
+      headquartersCountry: organizations.headquartersCountry,
     })
     .from(suppliers)
-    .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
+    .leftJoin(
+      organizations,
+      eq(suppliers.organizationId, organizations.organizationId),
+    );
 
   let updatedSuppliers = 0;
   for (const s of allSuppliers) {
@@ -111,11 +121,15 @@ async function run() {
       hasUpdate = true;
     }
 
-    if (newCountry && newCountry !== s.headquartersCountry && s.actorId) {
+    if (
+      newCountry &&
+      newCountry !== s.headquartersCountry &&
+      s.organizationId
+    ) {
       await db
-        .update(actors)
+        .update(organizations)
         .set({ headquartersCountry: newCountry })
-        .where(eq(actors.actorId, s.actorId));
+        .where(eq(organizations.organizationId, s.organizationId));
       hasUpdate = true;
     }
 

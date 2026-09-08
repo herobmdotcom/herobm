@@ -15,7 +15,7 @@ import {
   productUoms,
   locations,
   purchaseInvoiceLines,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import {
@@ -72,8 +72,8 @@ export class PurchaseOrdersQueryService {
             WHEN ${purchaseOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${purchaseOrders.name} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${purchaseOrders.name} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -86,7 +86,7 @@ export class PurchaseOrdersQueryService {
         or(
           ilike(purchaseOrders.orderNumber, `%${rawSearchTerm}%`),
           ilike(purchaseOrders.name, `%${rawSearchTerm}%`),
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -143,7 +143,10 @@ export class PurchaseOrdersQueryService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(whereClause);
 
     // --- App orders ---
@@ -152,7 +155,7 @@ export class PurchaseOrdersQueryService {
         id: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
         name: purchaseOrders.name,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         referenceNumber: purchaseOrders.referenceNumber,
         stateCode: purchaseOrders.stateCode,
         source: sql<string>`'app'`.as('source'),
@@ -167,7 +170,10 @@ export class PurchaseOrdersQueryService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (whereClause) {
@@ -349,7 +355,10 @@ export class PurchaseOrdersQueryService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         locations,
         eq(purchaseOrders.deliveryLocationId, locations.locationId),
@@ -365,7 +374,9 @@ export class PurchaseOrdersQueryService {
 
     const poEntity = rawOrder.purchase_orders || rawOrder;
     const vendorName =
-      rawOrder.actors?.name || rawOrder.suppliers?.name || poEntity.vendorId;
+      rawOrder.organizations?.name ||
+      rawOrder.suppliers?.name ||
+      poEntity.vendorId;
     const locationName =
       rawOrder.locations?.name || poEntity.deliveryLocationId;
 
@@ -498,7 +509,7 @@ export class PurchaseOrdersQueryService {
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderName: purchaseOrders.name,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         stateCode: purchaseOrders.stateCode,
         vendorId: purchaseOrders.vendorId,
         deliveryLocationId: purchaseOrders.deliveryLocationId,
@@ -530,7 +541,10 @@ export class PurchaseOrdersQueryService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         products,
         eq(purchaseOrderLineItems.productId, products.productId),
@@ -565,7 +579,7 @@ export class PurchaseOrdersQueryService {
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderName: purchaseOrders.name,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         stateCode: purchaseOrders.stateCode,
         vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
@@ -588,7 +602,10 @@ export class PurchaseOrdersQueryService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(
         and(
           eq(purchaseOrderLineItems.productId, productId),

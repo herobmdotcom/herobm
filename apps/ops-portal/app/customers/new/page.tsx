@@ -12,8 +12,8 @@ import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import CustomerSelect from '@/components/shared/CustomerSelect';
-import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
-import { ActorCard } from '@/components/shared/ActorCard';
+import OrganizationSelect, { Organization } from '@/components/shared/OrganizationSelect';
+import { OrganizationCard } from '@/components/shared/OrganizationCard';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 import { useSettings } from '@/components/SettingsProvider';
@@ -33,8 +33,9 @@ export default function NewAccountPage() {
   const defaultCurrency = getCurrencyForCountry(defaultCountry) || baseCurrency || 'EUR';
 
   const [submitting, setSubmitting] = useState(false);
-  const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [dto, setDto] = useState({
+    organizationId: '',
     actorId: '',
     customerNumber: '',
     name: '',
@@ -96,20 +97,22 @@ export default function NewAccountPage() {
     { value: (selectedGroup as { earlyPaymentDiscountDays?: number })?.earlyPaymentDiscountDays, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
-  const handleActorSelect = (actor: Actor | null) => {
-    setSelectedActor(actor);
-    if (actor) {
+  const handleOrganizationSelect = (org: Organization | null) => {
+    setSelectedOrganization(org);
+    if (org) {
       setDto((prev) => ({
         ...prev,
-        actorId: actor.actorId || '',
-        name: actor.name || prev.name,
-        businessNumber: actor.businessNumber || prev.businessNumber,
-        isTaxRegistered: actor.isTaxRegistered ?? prev.isTaxRegistered,
-        billingAddressCountry: actor.headquartersCountry || prev.billingAddressCountry,
+        organizationId: org.organizationId || '',
+        actorId: org.organizationId || '',
+        name: org.name || prev.name,
+        businessNumber: org.businessNumber || prev.businessNumber,
+        isTaxRegistered: org.isTaxRegistered ?? prev.isTaxRegistered,
+        billingAddressCountry: org.headquartersCountry || prev.billingAddressCountry,
       }));
     } else {
       setDto((prev) => ({
         ...prev,
+        organizationId: '',
         actorId: '',
         name: '',
         businessNumber: '',
@@ -192,18 +195,18 @@ export default function NewAccountPage() {
                 {/* eslint-disable-next-line i18next/no-literal-string -- icon */}
                 <span className="material-symbols-outlined">link</span>
                 { }
-                Link to Existing Actor (Optional)
+                Link to Existing Organization (Optional)
               </h3>
               <div className="mb-4">
-                <ActorSelect
-                  value={dto.actorId || null}
-                  onChange={handleActorSelect}
+                <OrganizationSelect
+                  value={dto.organizationId || dto.actorId || null}
+                  onChange={handleOrganizationSelect}
                   disabled={submitting}
                 />
               </div>
-              {selectedActor && (
+              {selectedOrganization && (
                 <div className="mt-4">
-                  <ActorCard actor={selectedActor} />
+                  <OrganizationCard organization={selectedOrganization} />
                 </div>
               )}
             </div>
@@ -231,7 +234,7 @@ export default function NewAccountPage() {
                       disabled={submitting}
                     />
                   </div>
-                  {!selectedActor && (
+                  {!selectedOrganization && (
                     <div>
                       <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tCommon('columns.name')} *
@@ -249,7 +252,7 @@ export default function NewAccountPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(!selectedActor || !(selectedActor as unknown as { headquartersCountry?: string }).headquartersCountry) && (
+                  {(!selectedOrganization || !(selectedOrganization as unknown as { headquartersCountry?: string }).headquartersCountry) && (
                     <div>
                       <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         {tCommon('columns.country')} *
@@ -274,7 +277,7 @@ export default function NewAccountPage() {
                       </select>
                     </div>
                   )}
-                  <div className={selectedActor ? "md:col-span-2" : ""}>
+                  <div className={selectedOrganization ? "md:col-span-2" : ""}>
                     <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                       {tCommon('columns.currency')} *
                     </label>

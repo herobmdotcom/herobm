@@ -310,6 +310,12 @@ export class TwoFactorService {
       throw new BadRequestException('2FA is not enabled for this user');
     }
 
+    const [targetUser] = await this.db
+      .select({ username: users.username })
+      .from(users)
+      .where(eq(users.userId, targetUserId))
+      .limit(1);
+
     await this.db.transaction(async (tx) => {
       await tx
         .delete(userTwoFactor)
@@ -319,14 +325,14 @@ export class TwoFactorService {
         entityType: EntityType.USER,
         entityId: targetUserId,
         eventType: EventType.UPDATED,
-        entityDisplayName: actor,
+        entityDisplayName: targetUser?.username || targetUserId,
         payload: { twoFactor: 'admin_reset', resetBy: actor },
         actor,
       });
     });
 
     this.logger.log(
-      `[AUDIT] Admin '${actor}' reset 2FA for user '${targetUserId}'`,
+      `[AUDIT] Admin '${actor}' reset 2FA for user '${targetUser?.username || targetUserId}'`,
     );
   }
 

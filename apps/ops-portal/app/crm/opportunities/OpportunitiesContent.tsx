@@ -12,6 +12,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { useTranslations } from 'next-intl';
 import { OpportunityKanbanBoard } from './components/OpportunityKanbanBoard';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 
 export default function OpportunitiesContent() {
   const tGrid = useTranslations('common.grid');
@@ -37,8 +38,8 @@ export default function OpportunitiesContent() {
       const res = await api.opportunitiesControllerFindAll();
       const items = res.data?.data || [];
       setOpportunities(Array.isArray(items) ? items : []);
-    } catch {
-      toast.error('Failed to load opportunities');
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Failed to load opportunities');
     } finally {
       setLoading(false);
     }
@@ -59,8 +60,8 @@ export default function OpportunitiesContent() {
     try {
       await api.opportunitiesControllerUpdate(opportunityId, { status: newStage });
       toast.success(`Moved to ${newStage}`);
-    } catch {
-      toast.error('Failed to update stage');
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Failed to update stage');
       loadOpportunities();
     }
   };
@@ -69,12 +70,12 @@ export default function OpportunitiesContent() {
     () => [
       { field: 'name', headerName: 'Opportunity Name', minWidth: 200, flex: 2 },
       {
-        headerName: 'Client / Actor',
+        headerName: 'Client / Organization',
         minWidth: 160,
         flex: 1.5,
         valueGetter: (params) => {
-          const actors = params.data?.opportunityActors || params.data?.projectActors;
-          return actors?.[0]?.actor?.name || '—';
+          const orgs = params.data?.opportunityOrganizations || params.data?.opportunityActors || params.data?.projectActors;
+          return orgs?.[0]?.organization?.name || orgs?.[0]?.actor?.name || '—';
         },
       },
       { field: 'status', headerName: 'Stage', width: 140 },

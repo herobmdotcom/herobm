@@ -26,7 +26,7 @@ import {
   productImages,
   productSuppliers,
   suppliers,
-  actors,
+  organizations,
   purchaseOrderLineItems,
   purchaseOrders,
 } from '@herobm/db-schema';
@@ -404,12 +404,15 @@ export class ProductsService {
         costPrice: productSuppliers.costPrice,
         discountPercent: productSuppliers.discountPercent,
         isPreferred: productSuppliers.isPreferred,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         vendorNumber: suppliers.vendorNumber,
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(productSuppliers.productId, id))
       .orderBy(
         desc(productSuppliers.isPreferred),
@@ -426,7 +429,7 @@ export class ProductsService {
         orderNumber: purchaseOrders.orderNumber,
         createdOn: purchaseOrders.createdOn,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
-        vendorName: actors.name,
+        vendorName: organizations.name,
       })
       .from(purchaseOrderLineItems)
       .innerJoin(
@@ -437,7 +440,10 @@ export class ProductsService {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(purchaseOrderLineItems.productId, id))
       .orderBy(desc(purchaseOrders.createdOn), desc(purchaseOrders.orderNumber))
       .limit(1);

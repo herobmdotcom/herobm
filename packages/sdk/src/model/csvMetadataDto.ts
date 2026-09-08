@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 
 export interface CsvMetadataDto {
@@ -11,4 +11,5 @@ export interface CsvMetadataDto {
   name: string;
   uniqueKey: string;
   columns: string[];
+  exportOnly?: boolean;
 }

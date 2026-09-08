@@ -11,7 +11,7 @@ import Tabs from './Tabs';
 import { CrmActivityCard } from './CrmActivityCard';
 
 export interface CrmActivitiesSectionProps {
-  entityType: 'actor' | 'contact' | 'opportunity';
+  entityType: 'actor' | 'organization' | 'contact' | 'opportunity';
   entityId: string;
   entityName?: string;
   title?: string;
@@ -42,8 +42,8 @@ export default function CrmActivitiesSection({
     setLoading(true);
     try {
       const query: api.CrmActivitiesControllerFindAllParams = {};
-      if (entityType === 'actor') {
-        query.actorId = entityId;
+      if (entityType === 'actor' || entityType === 'organization') {
+        query.organizationId = entityId;
       } else if (entityType === 'contact') {
         query.contactId = entityId;
       } else if (entityType === 'opportunity') {

@@ -68,17 +68,17 @@ const DOMAIN_GROUPS: DomainGroup[] = [
     description: 'Accounts, contacts, relationship graphs, CRM projects, customer groups, and addresses.',
     icon: 'contacts',
     tables: [
-      'actors',
+      'organizations',
       'contacts',
       'customers',
       'customer_groups',
       'customer_delivery_addresses',
-      'actor_contact_links',
-      'actor_actor_links',
-      'actor_notes',
+      'organization_contact_links',
+      'organization_organization_links',
+      'organization_notes',
       'opportunities',
       'opportunity_notes',
-      'opportunity_actors',
+      'opportunity_organizations',
       'opportunity_contacts',
       'crm_activities',
       'projects',
@@ -220,7 +220,7 @@ const DOMAIN_GROUPS: DomainGroup[] = [
       'users',
       'user_settings',
       'user_two_factor',
-      'organization',
+      'tenant_settings',
       'app_settings',
       'api_keys',
       'webhooks',
@@ -439,7 +439,7 @@ function generateMarkdown(snapshot: Snapshot, rowCounts: Record<string, number>)
 
   // 3. Core ER Lineage Mermaid Diagram
   const coreTables = [
-    'actors', 'contacts', 'customers', 'suppliers', 'products', 'opportunities',
+    'organizations', 'contacts', 'customers', 'suppliers', 'products', 'opportunities',
     'sales_orders', 'sales_order_line_items', 'sales_invoices', 'sales_order_shipments',
     'purchase_orders', 'purchase_order_line_items', 'purchase_invoices', 'goods_received',
     'locations', 'bins', 'inventory_entries', 'inventory_ledger',
@@ -457,7 +457,7 @@ function generateMarkdown(snapshot: Snapshot, rowCounts: Record<string, number>)
   const mermaidChart = `\`\`\`mermaid
 flowchart TD
     subgraph CRM ["CRM & Stakeholders"]
-        actors["actors"]
+        organizations["organizations"]
         contacts["contacts"]
         customers["customers"]
         suppliers["suppliers"]

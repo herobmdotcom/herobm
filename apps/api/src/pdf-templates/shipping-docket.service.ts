@@ -9,7 +9,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   customers as coreAccounts,
-  actors,
+  organizations,
   transferOrders,
   transferOrderShipments,
   transferOrderShipmentLines,
@@ -68,8 +68,8 @@ export class ShippingDocketService {
         notes: salesOrderShipments.notes,
         createdOn: salesOrderShipments.createdOn,
         orderNumber: salesOrders.orderNumber,
-        customerName: actors.name,
-        customerAddress: actors.headquartersAddressLine1,
+        customerName: organizations.name,
+        customerAddress: organizations.headquartersAddressLine1,
         deliveryName: salesOrders.deliveryName,
         deliveryCompanyName: salesOrders.deliveryCompanyName,
         deliveryPhone: salesOrders.deliveryPhone,
@@ -91,7 +91,10 @@ export class ShippingDocketService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
 

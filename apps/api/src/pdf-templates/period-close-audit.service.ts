@@ -5,7 +5,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   glFiscalPeriods,
-  organization,
+  tenantSettings,
   financialEvents,
   glSettings,
 } from '@herobm/db-schema';
@@ -167,8 +167,8 @@ export class PeriodCloseAuditService {
       throw new NotFoundException(`Fiscal period '${periodId}' not found.`);
     }
 
-    // 2. Fetch Organization and GL settings
-    const [org] = await this.db.select().from(organization).limit(1);
+    // 2. Fetch Tenant Settings and GL settings
+    const [org] = await this.db.select().from(tenantSettings).limit(1);
     const [glSet] = await this.db
       .select({ baseCurrency: glSettings.baseCurrency })
       .from(glSettings)

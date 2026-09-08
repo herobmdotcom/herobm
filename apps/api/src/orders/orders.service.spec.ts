@@ -12,7 +12,7 @@ import {
   products,
   productGroups,
   uomDictionary,
-  actors,
+  organizations,
   salesInvoices,
   salesInvoiceLines,
   opportunities,
@@ -23,7 +23,7 @@ import {
   SALES_INVOICE_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   OPPORTUNITY_STATE,
 } from '@herobm/shared';
 
@@ -59,10 +59,10 @@ describe('OrdersService', () => {
       createdBy: 'system',
     });
 
-    const [act] = await pg.db
-      .insert(actors)
+    const [org] = await pg.db
+      .insert(organizations)
       .values({
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         name: 'Acme Corp',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -70,7 +70,7 @@ describe('OrdersService', () => {
       .returning();
 
     await pg.db.insert(customers).values({
-      actorId: act.actorId,
+      organizationId: org.organizationId,
       customerId: ACCOUNT_ID,
       customerNumber: 'ACC001',
       currencyCode: 'EUR',
@@ -185,8 +185,8 @@ describe('OrdersService', () => {
   });
 
   describe('getSalesPerformanceByCustomer', () => {
-    it('should properly resolve customer name with actor, fallback to customerNumber, and fallback to Unknown', async () => {
-      // 1. Customer without actor
+    it('should properly resolve customer name with organization, fallback to customerNumber, and fallback to Unknown', async () => {
+      // 1. Customer without organization
       const NO_ACTOR_CUST_ID = '00000000-0000-4000-8000-000000000003';
       await pg.db.insert(customers).values({
         customerId: NO_ACTOR_CUST_ID,
@@ -195,7 +195,7 @@ describe('OrdersService', () => {
         stateCode: CUSTOMER_STATE.ACTIVE,
         source: 'app',
         createdBy: 'system',
-        actorId: null,
+        organizationId: null,
       });
 
       // Order for standard customer with actor

@@ -7,7 +7,8 @@ export const CRM_ACTIVITY_TYPE = {
 } as const;
 
 export type CrmActivityType =
-  (typeof CRM_ACTIVITY_TYPE)[keyof typeof CRM_ACTIVITY_TYPE];
+  | (typeof CRM_ACTIVITY_TYPE)[keyof typeof CRM_ACTIVITY_TYPE]
+  | (string & {});
 
 export const CRM_ACTIVITY_STATUS = {
   OPEN: 'open',
@@ -30,12 +31,23 @@ export type CrmActivityPriority =
   (typeof CRM_ACTIVITY_PRIORITY)[keyof typeof CRM_ACTIVITY_PRIORITY];
 
 export enum CrmEntityType {
-  ACTOR = 'actor',
+  ORGANIZATION = 'organization',
   CONTACT = 'contact',
   OPPORTUNITY = 'opportunity',
 }
 
 export const CRM_ENTITY_TYPE = CrmEntityType;
+
+export const DEFAULT_CRM_ACTIVITY_TYPES: Array<{
+  value: string;
+  order: number;
+}> = [
+  { value: 'call', order: 1 },
+  { value: 'meeting', order: 2 },
+  { value: 'email', order: 3 },
+  { value: 'task', order: 4 },
+  { value: 'note', order: 5 },
+];
 
 export const DEFAULT_OPPORTUNITY_STAGES: Array<{
   value: string;
@@ -72,7 +84,7 @@ export const DEFAULT_OPPORTUNITY_CONTACT_ROLES: Array<{
   { value: 'Lead Estimator', order: 7 },
 ];
 
-export const DEFAULT_OPPORTUNITY_ACTOR_ROLES: Array<{
+export const DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES: Array<{
   value: string;
   order: number;
 }> = [
@@ -87,7 +99,7 @@ export const DEFAULT_OPPORTUNITY_ACTOR_ROLES: Array<{
   { value: 'Bidder', order: 9 },
 ];
 
-export const DEFAULT_ACTOR_TAGS: Array<{
+export const DEFAULT_ORGANIZATION_TAGS: Array<{
   value: string;
   order: number;
 }> = [

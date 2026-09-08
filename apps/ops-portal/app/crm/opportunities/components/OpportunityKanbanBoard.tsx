@@ -113,6 +113,7 @@ export function OpportunityKanbanBoard({
         return (
           <div
             key={stage.value}
+            data-stage={stage.value}
             onDragOver={(e) => handleDragOver(e, stage.value)}
             onDragLeave={(e) => handleDragLeave(e, stage.value)}
             onDrop={(e) => handleDrop(e, stage.value)}

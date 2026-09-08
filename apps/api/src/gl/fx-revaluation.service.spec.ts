@@ -21,7 +21,7 @@ import {
   locations,
   products,
   uomDictionary,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -29,7 +29,7 @@ import {
   MATCH_STATUS,
   CUSTOMER_STATE,
   SUPPLIER_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   GOODS_RECEIVED_STATE,
   PRODUCT_STATE,
   SALES_ORDER_STATE,
@@ -204,10 +204,10 @@ describe('FxRevaluationService', () => {
     });
 
     // Seed Vendor and Customer
-    const vendorActorId = randomUUID();
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId: vendorActorId,
+    const vendorOrgId = randomUUID();
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId: vendorOrgId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
@@ -215,7 +215,7 @@ describe('FxRevaluationService', () => {
     vendorId = randomUUID();
     await pg.db.insert(suppliers).values({
       vendorId,
-      actorId: vendorActorId,
+      organizationId: vendorOrgId,
       vendorNumber: 'V-001',
       isPurchasingBlocked: false,
       currencyCode: 'USD',
@@ -224,10 +224,10 @@ describe('FxRevaluationService', () => {
       createdBy: 'system',
     });
 
-    const customerActorId = randomUUID();
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId: customerActorId,
+    const customerOrgId = randomUUID();
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId: customerOrgId,
       name: 'Test Customer',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
@@ -235,7 +235,7 @@ describe('FxRevaluationService', () => {
     customerId = randomUUID();
     await pg.db.insert(customers).values({
       customerId,
-      actorId: customerActorId,
+      organizationId: customerOrgId,
       customerNumber: 'C-001',
       currencyCode: 'USD',
       stateCode: CUSTOMER_STATE.DRAFT,

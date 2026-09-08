@@ -3,7 +3,7 @@ import {
   SUPPLIER_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import {
   glAccounts,
@@ -12,7 +12,7 @@ import {
   bins,
   suppliers,
   customers,
-  actors,
+  organizations,
   products,
   taxCategories,
   tradingTerms,
@@ -88,15 +88,15 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     })
     .onConflictDoNothing();
 
-  const supActorId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
+  const supOrgId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
   await db
-    .insert(actors)
+    .insert(organizations)
     .values({
-      actorId: supActorId,
+      organizationId: supOrgId,
       name: 'Test Supplier LLC',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .onConflictDoNothing();
 
@@ -105,7 +105,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     .insert(suppliers)
     .values({
       vendorId: supId,
-      actorId: supActorId,
+      organizationId: supOrgId,
       vendorNumber: 'TEST-SUP-01',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,
@@ -116,15 +116,15 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     })
     .onConflictDoNothing();
 
-  const custActorId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
+  const custOrgId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
   await db
-    .insert(actors)
+    .insert(organizations)
     .values({
-      actorId: custActorId,
+      organizationId: custOrgId,
       name: 'Test Customer Inc',
       headquartersAddressLine1: 'USA',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .onConflictDoNothing();
 
@@ -133,7 +133,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     .insert(customers)
     .values({
       customerId: custId,
-      actorId: custActorId,
+      organizationId: custOrgId,
       customerNumber: 'TEST-CUST-01',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,

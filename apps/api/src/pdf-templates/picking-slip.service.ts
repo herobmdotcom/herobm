@@ -17,7 +17,7 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import {
   SALES_ORDER_PICK_STATE,
@@ -132,7 +132,7 @@ export class PickingSlipService {
     const orderRows = await this.db
       .select({
         orderNumber: salesOrders.orderNumber,
-        customerName: actors.name,
+        customerName: organizations.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         createdOn: salesOrders.createdOn,
         locationName: locations.name,
@@ -142,7 +142,10 @@ export class PickingSlipService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         locations,
         eq(salesOrders.fulfillmentLocationId, locations.locationId),

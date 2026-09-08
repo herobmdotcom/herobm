@@ -27,7 +27,7 @@ import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('System')
+@ApiTags('General Ledger')
 @Controller('settings/activities')
 @CasbinResource(SystemResource.SETTINGS)
 export class ActivitiesController {
@@ -37,8 +37,8 @@ export class ActivitiesController {
   @ApiOkResponse({ type: [ActivityResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
-    summary: 'List all activities',
-    description: 'List all activities',
+    summary: 'List all General Ledger activities',
+    description: 'List all General Ledger accounting dimension activities',
   })
   @ApiFieldMask()
   findAll() {
@@ -50,8 +50,8 @@ export class ActivitiesController {
   @ApiCreatedResponse({ type: ActivityResponseDto })
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Create a new activity',
-    description: 'Create a new activity',
+    summary: 'Create a new General Ledger activity',
+    description: 'Create a new General Ledger accounting dimension activity',
   })
   create(@Body() dto: CreateActivityDto, @AuthUser() user: JwtUser) {
     return this.service.create(dto, user?.userId);
@@ -62,8 +62,8 @@ export class ActivitiesController {
   @ApiOkResponse({ type: ActivityResponseDto })
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Update an activity',
-    description: 'Update an activity',
+    summary: 'Update a General Ledger activity',
+    description: 'Update a General Ledger accounting dimension activity',
   })
   update(
     @Param('id') id: string,
@@ -77,8 +77,8 @@ export class ActivitiesController {
   @ApiOkResponse({ type: ActivityResponseDto })
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Delete an activity',
-    description: 'Delete an activity',
+    summary: 'Delete a General Ledger activity',
+    description: 'Delete a General Ledger accounting dimension activity',
   })
   delete(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.service.delete(id, user?.userId);
@@ -89,8 +89,8 @@ export class ActivitiesController {
   @ApiCreatedResponse({ type: BulkImportResultDto })
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Bulk import activities',
-    description: 'Bulk import activities',
+    summary: 'Bulk import General Ledger activities',
+    description: 'Bulk import General Ledger accounting dimension activities',
   })
   import(
     @Body() data: CreateActivityDto[],

@@ -36,6 +36,7 @@ describe('CrmActivitiesController', () => {
     complete: jest
       .fn()
       .mockResolvedValue({ ...mockActivity, status: 'completed' }),
+    reopen: jest.fn().mockResolvedValue({ ...mockActivity, status: 'open' }),
     remove: jest.fn().mockResolvedValue({ success: true }),
   };
 
@@ -55,7 +56,7 @@ describe('CrmActivitiesController', () => {
 
   describe('findAll', () => {
     it('should query activities with filters', async () => {
-      const query = { actorId: 'actor-1' };
+      const query = { organizationId: 'org-1' };
       const res = await controller.findAll(query, mockUser);
 
       expect(mockService.findAll).toHaveBeenCalledWith(query, mockUser);
@@ -103,6 +104,18 @@ describe('CrmActivitiesController', () => {
       );
       expect(mockService.complete).toHaveBeenCalledWith('act-1', mockUser);
       expect(res.status).toBe('completed');
+    });
+  });
+
+  describe('reopen', () => {
+    it('should reopen a task', async () => {
+      const res = await controller.reopen(
+        'act-1',
+        new EmptyBodyDto(),
+        mockUser,
+      );
+      expect(mockService.reopen).toHaveBeenCalledWith('act-1', mockUser);
+      expect(res.status).toBe('open');
     });
   });
 

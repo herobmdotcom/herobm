@@ -3,16 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 
-export type CreateContactDtoEntityType = typeof CreateContactDtoEntityType[keyof typeof CreateContactDtoEntityType];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CreateContactDtoEntityType = {
-  customer: 'customer',
-  supplier: 'supplier',
-  actor: 'actor',
-  opportunity: 'opportunity',
-} as const;
+export type CreateContactDtoEntityType = { [key: string]: unknown };

@@ -83,6 +83,7 @@ export class UserResponseDto {
   displayName: string | null;
   email: string | null;
   tenantId: string;
+  twoFactorEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

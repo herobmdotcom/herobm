@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 
 export interface SupplierResponseDto {
@@ -12,7 +12,7 @@ export interface SupplierResponseDto {
   /** @nullable */
   earlyPaymentDiscountDays?: number | null;
   supplierId: string;
-  actorId: string;
+  organizationId: string;
   vendorNumber: string;
   name: string;
   /** @nullable */

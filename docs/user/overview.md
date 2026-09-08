@@ -60,8 +60,8 @@ flowchart LR
 
 ## Core System Concepts
 
-### 1. Unified Actors
-Companies, customers, suppliers, and business contacts share a unified **Actor** foundation. An organisation can be both a supplier and a customer without duplicating contact details.
+### 1. Unified Organizations
+Companies, customers, suppliers, and business contacts share a unified **Organization** foundation. An organization can be both a supplier and a customer without duplicating contact details.
 
 ### 2. Perpetual Real-Time Inventory
 Every stock movement (receipt, transfer, pick, shipment, or adjustment) immediately updates on-hand and available balances. The single source of truth is the immutable stock ledger.

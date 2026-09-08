@@ -3,22 +3,22 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type {
-  CreateOpportunityActorDto,
   CreateOpportunityContactDto,
   CreateOpportunityDto,
   CreateOpportunityNoteDto,
+  CreateOpportunityOrganizationDto,
   EmptyBodyDto,
   OpportunitiesControllerFindAll200,
   OpportunitiesControllerFindAllParams,
   OpportunityNoteResponseDto,
   OpportunityResponseDto,
   SuccessResponseDto,
-  UpdateOpportunityActorDto,
   UpdateOpportunityContactDto,
-  UpdateOpportunityDto
+  UpdateOpportunityDto,
+  UpdateOpportunityOrganizationDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
@@ -104,7 +104,7 @@ export const opportunitiesControllerFindAll = async (params?: OpportunitiesContr
 
 
 /**
- * Get Opportunity by ID with linked actors, contacts, and notes
+ * Get Opportunity by ID with linked organizations, contacts, and notes
  * @summary Get Opportunity by ID
  */
 export type opportunitiesControllerFindOneResponse200 = {
@@ -481,7 +481,7 @@ export const opportunitiesControllerUpdateContact = async (id: string,
   return customFetch<opportunitiesControllerUpdateContactResponse>(getOpportunitiesControllerUpdateContactUrl(id,contactId),
   {      
     ...options,
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateOpportunityContactDto,)
@@ -528,112 +528,112 @@ export const opportunitiesControllerDeleteContact = async (id: string,
 
 
 /**
- * Links an actor company to an opportunity
- * @summary Add Opportunity Actor
+ * Links an organization to an opportunity
+ * @summary Add Opportunity Organization
  */
-export type opportunitiesControllerAddActorResponse201 = {
+export type opportunitiesControllerAddOrganizationResponse201 = {
   data: SuccessResponseDto
   status: 201
 }
     
-export type opportunitiesControllerAddActorResponseSuccess = (opportunitiesControllerAddActorResponse201) & {
+export type opportunitiesControllerAddOrganizationResponseSuccess = (opportunitiesControllerAddOrganizationResponse201) & {
   headers: Headers;
 };
 ;
 
-export type opportunitiesControllerAddActorResponse = (opportunitiesControllerAddActorResponseSuccess)
+export type opportunitiesControllerAddOrganizationResponse = (opportunitiesControllerAddOrganizationResponseSuccess)
 
-export const getOpportunitiesControllerAddActorUrl = (id: string,) => {
+export const getOpportunitiesControllerAddOrganizationUrl = (id: string,) => {
 
 
   
 
-  return `/opportunities/${id}/actors`
+  return `/opportunities/${id}/organizations`
 }
 
-export const opportunitiesControllerAddActor = async (id: string,
-    createOpportunityActorDto: CreateOpportunityActorDto, options?: RequestInit): Promise<opportunitiesControllerAddActorResponse> => {
+export const opportunitiesControllerAddOrganization = async (id: string,
+    createOpportunityOrganizationDto: CreateOpportunityOrganizationDto, options?: RequestInit): Promise<opportunitiesControllerAddOrganizationResponse> => {
   
-  return customFetch<opportunitiesControllerAddActorResponse>(getOpportunitiesControllerAddActorUrl(id),
+  return customFetch<opportunitiesControllerAddOrganizationResponse>(getOpportunitiesControllerAddOrganizationUrl(id),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      createOpportunityActorDto,)
+      createOpportunityOrganizationDto,)
   }
 );}
 
 
 /**
- * Updates roles for a linked actor
- * @summary Update Opportunity Actor Roles
+ * Updates roles for a linked organization
+ * @summary Update Opportunity Organization Roles
  */
-export type opportunitiesControllerUpdateActorResponse200 = {
+export type opportunitiesControllerUpdateOrganizationResponse200 = {
   data: SuccessResponseDto
   status: 200
 }
     
-export type opportunitiesControllerUpdateActorResponseSuccess = (opportunitiesControllerUpdateActorResponse200) & {
+export type opportunitiesControllerUpdateOrganizationResponseSuccess = (opportunitiesControllerUpdateOrganizationResponse200) & {
   headers: Headers;
 };
 ;
 
-export type opportunitiesControllerUpdateActorResponse = (opportunitiesControllerUpdateActorResponseSuccess)
+export type opportunitiesControllerUpdateOrganizationResponse = (opportunitiesControllerUpdateOrganizationResponseSuccess)
 
-export const getOpportunitiesControllerUpdateActorUrl = (id: string,
-    actorId: string,) => {
+export const getOpportunitiesControllerUpdateOrganizationUrl = (id: string,
+    organizationId: string,) => {
 
 
   
 
-  return `/opportunities/${id}/actors/${actorId}`
+  return `/opportunities/${id}/organizations/${organizationId}`
 }
 
-export const opportunitiesControllerUpdateActor = async (id: string,
-    actorId: string,
-    updateOpportunityActorDto: UpdateOpportunityActorDto, options?: RequestInit): Promise<opportunitiesControllerUpdateActorResponse> => {
+export const opportunitiesControllerUpdateOrganization = async (id: string,
+    organizationId: string,
+    updateOpportunityOrganizationDto: UpdateOpportunityOrganizationDto, options?: RequestInit): Promise<opportunitiesControllerUpdateOrganizationResponse> => {
   
-  return customFetch<opportunitiesControllerUpdateActorResponse>(getOpportunitiesControllerUpdateActorUrl(id,actorId),
+  return customFetch<opportunitiesControllerUpdateOrganizationResponse>(getOpportunitiesControllerUpdateOrganizationUrl(id,organizationId),
   {      
     ...options,
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      updateOpportunityActorDto,)
+      updateOpportunityOrganizationDto,)
   }
 );}
 
 
 /**
- * Unlinks an actor from an opportunity
- * @summary Remove Opportunity Actor
+ * Unlinks an organization from an opportunity
+ * @summary Remove Opportunity Organization
  */
-export type opportunitiesControllerDeleteActorResponse200 = {
+export type opportunitiesControllerDeleteOrganizationResponse200 = {
   data: SuccessResponseDto
   status: 200
 }
     
-export type opportunitiesControllerDeleteActorResponseSuccess = (opportunitiesControllerDeleteActorResponse200) & {
+export type opportunitiesControllerDeleteOrganizationResponseSuccess = (opportunitiesControllerDeleteOrganizationResponse200) & {
   headers: Headers;
 };
 ;
 
-export type opportunitiesControllerDeleteActorResponse = (opportunitiesControllerDeleteActorResponseSuccess)
+export type opportunitiesControllerDeleteOrganizationResponse = (opportunitiesControllerDeleteOrganizationResponseSuccess)
 
-export const getOpportunitiesControllerDeleteActorUrl = (id: string,
-    actorId: string,) => {
+export const getOpportunitiesControllerDeleteOrganizationUrl = (id: string,
+    organizationId: string,) => {
 
 
   
 
-  return `/opportunities/${id}/actors/${actorId}`
+  return `/opportunities/${id}/organizations/${organizationId}`
 }
 
-export const opportunitiesControllerDeleteActor = async (id: string,
-    actorId: string, options?: RequestInit): Promise<opportunitiesControllerDeleteActorResponse> => {
+export const opportunitiesControllerDeleteOrganization = async (id: string,
+    organizationId: string, options?: RequestInit): Promise<opportunitiesControllerDeleteOrganizationResponse> => {
   
-  return customFetch<opportunitiesControllerDeleteActorResponse>(getOpportunitiesControllerDeleteActorUrl(id,actorId),
+  return customFetch<opportunitiesControllerDeleteOrganizationResponse>(getOpportunitiesControllerDeleteOrganizationUrl(id,organizationId),
   {      
     ...options,
     method: 'DELETE'

@@ -21,7 +21,7 @@ import {
   taxCategories,
   inventoryEntries,
   inventoryLedger,
-  actors,
+  organizations,
   emailOutbox,
   appSettings,
 } from '@herobm/db-schema';
@@ -33,7 +33,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ShipmentState,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -223,13 +223,13 @@ describe('ShipmentService', () => {
     PICKING_ORDER.fulfillmentLocationId =
       '10000000-0000-4000-8000-000000000001';
 
-    const custActorId = '00000000-0000-4000-8000-000000000002';
+    const custOrgId = '00000000-0000-4000-8000-000000000002';
     await pg.db
-      .insert(actors)
+      .insert(organizations)
       .values([
         {
-          stateCode: ACTOR_STATE.ACTIVE,
-          actorId: custActorId,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          organizationId: custOrgId,
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -243,7 +243,7 @@ describe('ShipmentService', () => {
       .values([
         {
           customerId: '00000000-0000-4000-8000-000000000001',
-          actorId: custActorId,
+          organizationId: custOrgId,
           customerNumber: 'CUST-001',
           currencyCode: 'AUD',
           stateCode: CUSTOMER_STATE.DRAFT,

@@ -17,7 +17,7 @@ export class BaseSupplierDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
   @IsString()
   @IsNotEmpty()
   vendorNumber!: string;
@@ -267,7 +267,7 @@ export class UpdateSupplierExpiryDto {
 
 export class SupplierResponseDto {
   supplierId: string;
-  actorId: string;
+  organizationId: string;
   vendorNumber: string;
   name: string;
   address1Line1: string | null;

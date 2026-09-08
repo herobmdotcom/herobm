@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage, DEFAULT_ACTOR_CONTACT_ROLES } from '@herobm/shared';
+import { getErrorMessage, DEFAULT_ORGANIZATION_CONTACT_ROLES } from '@herobm/shared';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -23,7 +23,7 @@ interface ContactSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
   entityId?: string;
-  entityType?: 'customer' | 'supplier' | 'actor' | 'opportunity';
+  entityType?: 'customer' | 'supplier' | 'actor' | 'organization' | 'opportunity';
   contactId?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic wrapper for API usage @typescript-eslint/no-explicit-any
   existingData?: Partial<any>;
@@ -165,24 +165,24 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
               });
             }
           } else {
-            // customer | supplier | actor
-            // Note: Customers and suppliers use actorsController endpoints underneath for links
-            let actorId = entityId;
+            // customer | supplier | actor | organization
+            // Note: Customers and suppliers use organizationsController endpoints underneath for links
+            let orgId = entityId;
             if (entityType === 'customer') {
               const cust = await api.customersControllerFindOne(entityId);
-              actorId = cust.data.actorId;
+              orgId = cust.data.organizationId || (cust.data as unknown as { actorId?: string }).actorId || '';
             } else if (entityType === 'supplier') {
               const supp = await api.suppliersControllerFindOne(entityId);
-              actorId = supp.data.actorId;
+              orgId = supp.data.organizationId || (supp.data as unknown as { actorId?: string }).actorId || '';
             }
             
-            if (actorId) {
+            if (orgId) {
               if (!contactId && selectedContact) {
                 // Linking for the first time
-                await api.actorsControllerAddContact(actorId, { contactId: finalContactId, primaryFor: dto.primaryFor });
+                await api.organizationsControllerAddContact(orgId, { contactId: finalContactId, primaryFor: dto.primaryFor });
               } else if (contactId) {
                 // Updating existing link
-                await api.actorsControllerUpdateContact(actorId, finalContactId, { primaryFor: dto.primaryFor });
+                await api.organizationsControllerUpdateContact(orgId, finalContactId, { primaryFor: dto.primaryFor });
               }
             }
           }
@@ -350,13 +350,13 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
         {entityType && entityType !== 'opportunity' && (
           <div className="mt-2 pt-4 border-t border-[var(--border)]">
             <label className="block text-sm font-medium mb-3 text-[var(--text-muted)]">
-              Actor Roles
+              Organization Roles
             </label>
             <div className="flex flex-col gap-3">
               {[
-                ...(appSettings?.actorContactRoles && appSettings.actorContactRoles.length > 0
-                  ? appSettings.actorContactRoles
-                  : DEFAULT_ACTOR_CONTACT_ROLES),
+                ...(appSettings?.organizationContactRoles && appSettings.organizationContactRoles.length > 0
+                  ? appSettings.organizationContactRoles
+                  : DEFAULT_ORGANIZATION_CONTACT_ROLES),
               ]
                 .sort((a, b) => Number(a.order) - Number(b.order))
                 .map((r) => {

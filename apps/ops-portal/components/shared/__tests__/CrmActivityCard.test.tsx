@@ -29,7 +29,7 @@ describe('CrmActivityCard', () => {
     assignedToName: 'Frank Decesare',
   };
 
-  it('renders task title, inline due date in same font, and priority badge on the right below task owner', () => {
+  it('renders task title, inline due date in same font, and priority badge on the right to the left of task owner', () => {
     render(<CrmActivityCard activity={baseTask} />);
 
     // Title
@@ -49,10 +49,11 @@ describe('CrmActivityCard', () => {
     const taskOwnerEl = screen.getByText('Frank Decesare');
     expect(taskOwnerEl).toBeInTheDocument();
 
-    // Priority badge on the right, in the same container below the task owner
+    // Priority badge on the right, to the left of the task owner
     const priorityBadge = screen.getByText('priorities.medium');
     expect(priorityBadge).toBeInTheDocument();
-    expect(priorityBadge.closest('.flex-col')).toBe(taskOwnerEl.closest('.flex-col'));
+    expect(priorityBadge.parentElement).toBe(taskOwnerEl.closest('.text-xs')?.parentElement);
+    expect(priorityBadge.compareDocumentPosition(taskOwnerEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     // No activity type badge (e.g. FOLLOW-UP TASK)
     expect(screen.queryByText('types.task')).not.toBeInTheDocument();

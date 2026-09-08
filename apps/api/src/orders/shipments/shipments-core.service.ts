@@ -29,7 +29,7 @@ import {
   transferOrderShipmentLines,
   transferOrderLines,
   locations,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../../settings/app-config.service';
 import { getValuationStrategy } from '../../inventory/valuation';
@@ -128,7 +128,7 @@ export class ShipmentsCoreService {
         salesOrderId: salesOrderShipments.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: actors.name,
+        customerName: organizations.name,
         stateCode: salesOrderShipments.stateCode,
         notes: salesOrderShipments.notes,
         trackingNumber: salesOrderShipments.trackingNumber,
@@ -137,7 +137,7 @@ export class ShipmentsCoreService {
         modifiedOn: salesOrderShipments.modifiedOn,
         deliveryCompanyName: sql<
           string | null
-        >`COALESCE(${salesOrders.deliveryCompanyName}, ${actors.name})`,
+        >`COALESCE(${salesOrders.deliveryCompanyName}, ${organizations.name})`,
         deliveryName: salesOrders.deliveryName,
         deliveryPhone: salesOrders.deliveryPhone,
         deliveryAddressLine1: salesOrders.deliveryAddressLine1,
@@ -157,7 +157,10 @@ export class ShipmentsCoreService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
 
@@ -391,7 +394,7 @@ export class ShipmentsCoreService {
         salesOrderId: salesOrderShipments.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: actors.name,
+        customerName: organizations.name,
         stateCode: salesOrderShipments.stateCode,
         createdOn: salesOrderShipments.createdOn,
         notes: salesOrderShipments.notes,
@@ -406,7 +409,10 @@ export class ShipmentsCoreService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .where(and(...conditions))
       .orderBy(desc(salesOrderShipments.createdOn))
       .limit(limit > 0 ? limit : 100);

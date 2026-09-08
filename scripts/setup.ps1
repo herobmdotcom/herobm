@@ -209,11 +209,21 @@ memory=8GB
     catch {
         # Ignore errors if volume already exists
     }
-    # Pre-create logs directory
+    # Pre-create logs and storage directories
     $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
     $logsDir = Join-Path $projectDir "logs"
     if (-not (Test-Path $logsDir)) {
         New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+    }
+    $storageDirs = @(
+        (Join-Path $projectDir "data\storage\products\uploads"),
+        (Join-Path $projectDir "data\storage\organization"),
+        (Join-Path $projectDir "data\storage\reports")
+    )
+    foreach ($dir in $storageDirs) {
+        if (-not (Test-Path $dir)) {
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        }
     }
 }
 

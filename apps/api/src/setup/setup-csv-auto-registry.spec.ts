@@ -3,9 +3,9 @@ import { SetupService } from './setup.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AppConfigService } from '../settings/app-config.service';
-import { actors, systemEvents } from '@herobm/db-schema';
+import { organizations, systemEvents } from '@herobm/db-schema';
 import { parse } from 'csv-parse/sync';
-import { ACTOR_STATE } from '@herobm/shared';
+import { ORGANIZATION_STATE } from '@herobm/shared';
 
 describe('SetupService - Automatic CSV Registry (Unit)', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -27,7 +27,7 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
 
     service = module.get<SetupService>(SetupService);
 
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(systemEvents);
   });
 
@@ -40,7 +40,7 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
     const tableIds = metadata.map((m) => m.id);
 
     // Core missing entities must now be present
-    expect(tableIds).toContain('actors');
+    expect(tableIds).toContain('organizations');
     expect(tableIds).toContain('contacts');
     expect(tableIds).toContain('trading_terms');
     expect(tableIds).toContain('customer_delivery_addresses');
@@ -57,17 +57,17 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
     expect(tableIds).toContain('bin_contents');
   });
 
-  it('should include actors table with correct metadata and columns', async () => {
+  it('should include organizations table with correct metadata and columns', async () => {
     const metadata = await service.getCsvMetadata();
-    const actorMeta = metadata.find((m) => m.id === 'actors');
+    const orgMeta = metadata.find((m) => m.id === 'organizations');
 
-    expect(actorMeta).toBeDefined();
-    expect(actorMeta?.name).toBe('Actors');
-    expect(actorMeta?.uniqueKey).toBe('actor_id');
+    expect(orgMeta).toBeDefined();
+    expect(orgMeta?.name).toBe('Organizations');
+    expect(orgMeta?.uniqueKey).toBe('organization_id');
 
     // Clean column names without asterisk
-    const colNames = actorMeta?.columns.map((c) => c.replace(/\*$/, '')) || [];
-    expect(colNames).toContain('actor_id');
+    const colNames = orgMeta?.columns.map((c) => c.replace(/\*$/, '')) || [];
+    expect(colNames).toContain('organization_id');
     expect(colNames).toContain('name');
     expect(colNames).toContain('state_code');
     expect(colNames).toContain('is_tax_registered');
@@ -133,18 +133,18 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
     // Singletons
     expect(tableIds).not.toContain('app_settings');
     expect(tableIds).not.toContain('gl_settings');
-    expect(tableIds).not.toContain('organization');
+    expect(tableIds).not.toContain('tenant_settings');
 
     // Event logs
     const eventTables = tableIds.filter((id) => id.endsWith('_events'));
     expect(eventTables).toHaveLength(0);
   });
 
-  it('should successfully export actors as CSV', async () => {
-    // 1. Seed an actor record
-    await pg.db.insert(actors).values({
+  it('should successfully export organizations as CSV', async () => {
+    // 1. Seed an organization record
+    await pg.db.insert(organizations).values({
       name: 'Acme Industrial Supplies Pty Ltd',
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
       isTaxRegistered: true,
       legalStatus: 'Pty Ltd',
       headquartersCity: 'Sydney',
@@ -153,7 +153,7 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
     });
 
     // 2. Export CSV
-    const csvString = (await service.exportCsv('actors')) as string;
+    const csvString = (await service.exportCsv('organizations')) as string;
     expect(typeof csvString).toBe('string');
 
     // 3. Parse CSV
@@ -171,8 +171,8 @@ describe('SetupService - Automatic CSV Registry (Unit)', () => {
 
     // 4. Verify headers match getCsvMetadata
     const metadata = await service.getCsvMetadata();
-    const actorMeta = metadata.find((m) => m.id === 'actors')!;
-    const expectedHeaders = actorMeta.columns.map((c) => c.replace(/\*$/, ''));
+    const orgMeta = metadata.find((m) => m.id === 'organizations')!;
+    const expectedHeaders = orgMeta.columns.map((c) => c.replace(/\*$/, ''));
     expect(Object.keys(records[0])).toEqual(expectedHeaders);
   });
 });

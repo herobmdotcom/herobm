@@ -49,7 +49,7 @@ export class GlobalNotesService {
         LEFT JOIN herobm_core.sales_orders so ON cn.sales_order_id = so.sales_order_id
         LEFT JOIN herobm_core.sales_order_returns rt ON cn.return_id = rt.return_id
         LEFT JOIN herobm_core.customers ca ON cn.customer_id = ca.customer_id
-        LEFT JOIN herobm_core.actors act ON ca.actor_id = act.actor_id
+        LEFT JOIN herobm_core.organizations act ON ca.organization_id = act.organization_id
         
         UNION ALL
         
@@ -69,7 +69,7 @@ export class GlobalNotesService {
         FROM herobm_core.purchase_debit_notes dn
         LEFT JOIN herobm_core.purchase_orders po ON dn.purchase_order_id = po.purchase_order_id
         LEFT JOIN herobm_core.suppliers su ON dn.vendor_id = su.vendor_id
-        LEFT JOIN herobm_core.actors act ON su.actor_id = act.actor_id
+        LEFT JOIN herobm_core.organizations act ON su.organization_id = act.organization_id
       )
       SELECT *
       FROM unified_notes u
@@ -92,7 +92,7 @@ export class GlobalNotesService {
         LEFT JOIN herobm_core.sales_orders so ON cn.sales_order_id = so.sales_order_id
         LEFT JOIN herobm_core.sales_order_returns rt ON cn.return_id = rt.return_id
         LEFT JOIN herobm_core.customers ca ON cn.customer_id = ca.customer_id
-        LEFT JOIN herobm_core.actors act ON ca.actor_id = act.actor_id
+        LEFT JOIN herobm_core.organizations act ON ca.organization_id = act.organization_id
         
         UNION ALL
         
@@ -107,7 +107,7 @@ export class GlobalNotesService {
         FROM herobm_core.purchase_debit_notes dn
         LEFT JOIN herobm_core.purchase_orders po ON dn.purchase_order_id = po.purchase_order_id
         LEFT JOIN herobm_core.suppliers su ON dn.vendor_id = su.vendor_id
-        LEFT JOIN herobm_core.actors act ON su.actor_id = act.actor_id
+        LEFT JOIN herobm_core.organizations act ON su.organization_id = act.organization_id
       )
       SELECT COUNT(*)::int AS total
       FROM unified_notes u

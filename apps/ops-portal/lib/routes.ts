@@ -112,10 +112,10 @@ export const routes = {
 
   // CRM
   crm: {
-    actors: {
-      list: () => '/crm/actors',
-      detail: (id: string) => `/crm/actors/${id}`,
-      new: () => '/crm/actors/new',
+    organizations: {
+      list: () => '/crm/organizations',
+      detail: (id: string) => `/crm/organizations/${id}`,
+      new: () => '/crm/organizations/new',
     },
     contacts: {
       list: () => '/crm/contacts',

@@ -19,9 +19,9 @@ export class CrmMapQueryDto {
   maxDistance?: number;
 }
 
-export class CrmMapActorNodeDto {
+export class CrmMapOrganizationNodeDto {
   @ApiProperty()
-  actorId!: string;
+  organizationId!: string;
 
   @ApiProperty()
   name!: string;
@@ -49,17 +49,17 @@ export class CrmMapOpportunityNodeDto {
   name?: string;
 }
 
-export class CrmMapActorActorLinkDto {
+export class CrmMapOrganizationOrganizationLinkDto {
   @ApiProperty()
-  sourceActorId!: string;
+  sourceOrganizationId!: string;
 
   @ApiProperty()
-  targetActorId!: string;
+  targetOrganizationId!: string;
 }
 
-export class CrmMapActorContactLinkDto {
+export class CrmMapOrganizationContactLinkDto {
   @ApiProperty()
-  actorId!: string;
+  organizationId!: string;
 
   @ApiProperty()
   contactId!: string;
@@ -68,12 +68,12 @@ export class CrmMapActorContactLinkDto {
   primaryFor?: string[];
 }
 
-export class CrmMapOpportunityActorLinkDto {
+export class CrmMapOpportunityOrganizationLinkDto {
   @ApiProperty()
   opportunityId!: string;
 
   @ApiProperty()
-  actorId!: string;
+  organizationId!: string;
 
   @ApiPropertyOptional({ type: [String] })
   roles?: string[];
@@ -91,8 +91,8 @@ export class CrmMapOpportunityContactLinkDto {
 }
 
 export class CrmMapNodesDto {
-  @ApiProperty({ type: [CrmMapActorNodeDto] })
-  actors!: CrmMapActorNodeDto[];
+  @ApiProperty({ type: [CrmMapOrganizationNodeDto] })
+  organizations!: CrmMapOrganizationNodeDto[];
 
   @ApiProperty({ type: [CrmMapContactNodeDto] })
   contacts!: CrmMapContactNodeDto[];
@@ -102,23 +102,23 @@ export class CrmMapNodesDto {
 }
 
 export class CrmMapEdgesDto {
-  @ApiProperty({ type: [CrmMapActorActorLinkDto] })
-  actorActor!: CrmMapActorActorLinkDto[];
+  @ApiPropertyOptional({ type: [CrmMapOrganizationOrganizationLinkDto] })
+  organizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
 
-  @ApiProperty({ type: [CrmMapActorContactLinkDto] })
-  actorContact!: CrmMapActorContactLinkDto[];
+  @ApiPropertyOptional({ type: [CrmMapOrganizationContactLinkDto] })
+  organizationContact?: CrmMapOrganizationContactLinkDto[];
 
-  @ApiProperty({ type: [CrmMapOpportunityActorLinkDto] })
-  opportunityActor!: CrmMapOpportunityActorLinkDto[];
+  @ApiPropertyOptional({ type: [CrmMapOpportunityOrganizationLinkDto] })
+  opportunityOrganization?: CrmMapOpportunityOrganizationLinkDto[];
 
   @ApiProperty({ type: [CrmMapOpportunityContactLinkDto] })
   opportunityContact!: CrmMapOpportunityContactLinkDto[];
 
-  @ApiPropertyOptional({ type: [CrmMapActorActorLinkDto] })
-  referralActorActor?: CrmMapActorActorLinkDto[];
+  @ApiPropertyOptional({ type: [CrmMapOrganizationOrganizationLinkDto] })
+  referralOrganizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
 
-  @ApiPropertyOptional({ type: [CrmMapActorContactLinkDto] })
-  referralContactActor?: CrmMapActorContactLinkDto[];
+  @ApiPropertyOptional({ type: [CrmMapOrganizationContactLinkDto] })
+  referralContactOrganization?: CrmMapOrganizationContactLinkDto[];
 }
 
 export class CrmMapResponseDto {

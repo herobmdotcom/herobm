@@ -3,10 +3,11 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { OpportunityResponseDtoOwner } from './opportunityResponseDtoOwner';
 import type { OpportunityNoteResponseDto } from './opportunityNoteResponseDto';
+import type { OpportunityResponseDtoOpportunityOrganizationsItem } from './opportunityResponseDtoOpportunityOrganizationsItem';
 import type { OpportunityResponseDtoOpportunityActorsItem } from './opportunityResponseDtoOpportunityActorsItem';
 import type { OpportunityResponseDtoOpportunityContactsItem } from './opportunityResponseDtoOpportunityContactsItem';
 import type { OpportunityResponseDtoEventsItem } from './opportunityResponseDtoEventsItem';
@@ -35,6 +36,7 @@ export interface OpportunityResponseDto {
   ownerId?: string | null;
   owner?: OpportunityResponseDtoOwner;
   notes?: OpportunityNoteResponseDto[];
+  opportunityOrganizations?: OpportunityResponseDtoOpportunityOrganizationsItem[];
   opportunityActors?: OpportunityResponseDtoOpportunityActorsItem[];
   opportunityContacts?: OpportunityResponseDtoOpportunityContactsItem[];
   /**

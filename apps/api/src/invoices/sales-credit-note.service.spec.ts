@@ -20,7 +20,7 @@ import {
   customers,
   products,
   locations,
-  actors,
+  organizations,
   glAccounts,
   glJournalEntries,
   glJournalLines,
@@ -41,7 +41,7 @@ import {
   PUTAWAY_STATUS,
   SALES_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 describe('SalesCreditNoteService', () => {
@@ -86,7 +86,7 @@ describe('SalesCreditNoteService', () => {
       TRUNCATE herobm_core.gl_settings CASCADE;
       TRUNCATE herobm_core.tax_categories CASCADE;
       TRUNCATE herobm_core.locations CASCADE;
-      TRUNCATE herobm_core.actors CASCADE;
+      TRUNCATE herobm_core.organizations CASCADE;
       TRUNCATE herobm_core.uom_dictionary CASCADE;
     `);
 
@@ -112,16 +112,16 @@ describe('SalesCreditNoteService', () => {
       createdBy: 'system',
     });
 
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId: ACTOR_ID,
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId: ACTOR_ID,
       name: 'Test Customer Inc',
       isTaxRegistered: true,
     });
 
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
-      actorId: ACTOR_ID,
+      organizationId: ACTOR_ID,
       customerNumber: 'CUST-001',
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,

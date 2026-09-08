@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ACTOR_STATE, CUSTOMER_STATE } from '@herobm/shared';
+import { ORGANIZATION_STATE, CUSTOMER_STATE } from '@herobm/shared';
 import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -20,7 +20,7 @@ import {
   salesOrderShipments,
   customers,
   suppliers,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
@@ -726,19 +726,19 @@ describe('GlService', () => {
     });
 
     it('resolves sourceNumber for sales credit notes, purchase debit notes, and shipments', async () => {
-      const actorId = randomUUID();
-      await pg.db.insert(actors).values({
-        actorId,
+      const organizationId = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId,
         name: 'Test Party',
         email: 'test@example.com',
         isTaxRegistered: false,
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
       });
 
       const customerId = randomUUID();
       await pg.db.insert(customers).values({
         customerId,
-        actorId,
+        organizationId,
         customerNumber: 'CUST-01',
         currencyCode: 'EUR',
         stateCode: CUSTOMER_STATE.ACTIVE,

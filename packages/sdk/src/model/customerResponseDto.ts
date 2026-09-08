@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { CustomerResponseDtoEventsItem } from './customerResponseDtoEventsItem';
 import type { CustomerResponseDtoContactsItem } from './customerResponseDtoContactsItem';
@@ -12,7 +12,7 @@ import type { CustomerResponseDtoCreditAssessment } from './customerResponseDtoC
 
 export interface CustomerResponseDto {
   customerId: string;
-  actorId: string;
+  organizationId: string;
   customerNumber: string;
   name: string;
   billingAddressLine1?: string;

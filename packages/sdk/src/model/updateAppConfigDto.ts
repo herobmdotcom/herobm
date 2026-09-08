@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { UpdateAppConfigDtoCreditLimitBehavior } from './updateAppConfigDtoCreditLimitBehavior';
 import type { UpdateAppConfigDtoTaxProviderMappings } from './updateAppConfigDtoTaxProviderMappings';
@@ -27,16 +27,13 @@ export interface UpdateAppConfigDto {
   apiRateLimit?: string;
   taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
   enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
-  actorTags?: OrderedSettingDto[];
-  actorContactRoles?: OrderedSettingDto[];
+  organizationTags?: OrderedSettingDto[];
+  organizationContactRoles?: OrderedSettingDto[];
   opportunityContactRoles?: OrderedSettingDto[];
-  opportunityActorRoles?: OrderedSettingDto[];
+  opportunityOrganizationRoles?: OrderedSettingDto[];
   opportunityStages?: OrderedSettingDto[];
   opportunityTypes?: OrderedSettingDto[];
-  projectContactRoles?: OrderedSettingDto[];
-  projectActorRoles?: OrderedSettingDto[];
+  activityTypes?: OrderedSettingDto[];
   referralModes?: OrderedSettingDto[];
-  projectStatuses?: OrderedSettingDto[];
-  projectTypes?: OrderedSettingDto[];
   salesAnalysisCodes?: OrderedSettingDto[];
 }

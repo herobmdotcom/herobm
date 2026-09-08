@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import * as api from '@herobm/sdk';
@@ -39,7 +40,7 @@ export interface LogActivityModalProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultType?: 'call' | 'meeting' | 'email' | 'task';
-  entityType?: 'actor' | 'contact' | 'opportunity';
+  entityType?: 'actor' | 'organization' | 'contact' | 'opportunity';
   entityId?: string;
   entityName?: string;
   opportunityContacts?: OpportunityContactItem[];
@@ -138,7 +139,7 @@ export default function LogActivityModal({
     try {
       if (activityToEdit) {
         const updatePayload: UpdateCrmActivityDto = {
-          type,
+          type: type as api.UpdateCrmActivityDto['type'],
           subject: subject.trim(),
           description: description.trim() || undefined,
           priority: type === 'task' ? priority : (activityToEdit.priority as UpdateCrmActivityDtoPriority || 'medium'),
@@ -151,15 +152,15 @@ export default function LogActivityModal({
         toast.success(t('toasts.updated'));
       } else {
         const payload: CreateCrmActivityDto = {
-          type,
+          type: type as api.CreateCrmActivityDto['type'],
           subject: subject.trim(),
           description: description.trim() || undefined,
           status: type === 'task' ? 'open' : 'completed',
           priority: type === 'task' ? priority : 'medium',
         };
 
-        if (entityType === 'actor' && entityId) {
-          payload.actorId = entityId;
+        if ((entityType === 'actor' || entityType === 'organization') && entityId) {
+          payload.organizationId = entityId;
         } else if (entityType === 'contact' && entityId) {
           if (!selectedContacts.some((c) => c.contactId === entityId)) {
             selectedContacts.push({ contactId: entityId, fullName: entityName || 'Contact' });
@@ -452,9 +453,15 @@ export default function LogActivityModal({
                   key={c.contactId}
                   className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 h-6 rounded-md bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30"
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
-                  <span className="material-symbols-outlined text-[13px] text-[var(--accent)]">person</span>
-                  <span>{c.fullName}</span>
+                  <Link
+                    href={`/crm/contacts/${c.contactId}`}
+                    className="inline-flex items-center gap-1 hover:underline text-[var(--accent)]"
+                    title={`View ${c.fullName}`}
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
+                    <span className="material-symbols-outlined text-[13px] text-[var(--accent)]">person</span>
+                    <span>{c.fullName}</span>
+                  </Link>
                   {entityType !== 'contact' || entityId !== c.contactId ? (
                     <Button
                       type="button"
@@ -463,7 +470,7 @@ export default function LogActivityModal({
                       onClick={() =>
                         setSelectedContacts((prev) => prev.filter((x) => x.contactId !== c.contactId))
                       }
-                      className="!p-0 !h-auto hover:opacity-70 focus:outline-none flex items-center justify-center text-[var(--accent)]"
+                      className="!p-0 !h-auto hover:opacity-70 focus:outline-none flex items-center justify-center text-[var(--accent)] ml-0.5"
                       title="Remove contact"
                     >
                       <span className="material-symbols-outlined text-[13px] block">close</span>

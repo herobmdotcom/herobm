@@ -82,8 +82,8 @@ The **Groups & System Settings** module provides centralized configuration acros
 ## Step-by-Step Workflows
 
 ### 1. Creating a Customer Group with a Price Scale
-1. Go to **Administration** → **Settings** → **Groups** (`/admin/settings/groups`).
-2. In the **Customer Groups** section, click **New Group**.
+1. Go to **Administration** → **Customer Groups** (`/admin/customer-groups`).
+2. Click **New Group**.
 3. Enter the **Group Name** and select the default **Price Scale (1–4)**.
 4. Select the default **AR Control Account** and **Trading Terms**.
 5. Click **Save Group**.

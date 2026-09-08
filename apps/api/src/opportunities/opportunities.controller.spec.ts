@@ -32,9 +32,13 @@ describe('OpportunitiesController', () => {
     addOpportunityContact: jest.fn().mockResolvedValue({ success: true }),
     updateOpportunityContact: jest.fn().mockResolvedValue({ success: true }),
     deleteOpportunityContact: jest.fn().mockResolvedValue({ success: true }),
-    addOpportunityActor: jest.fn().mockResolvedValue({ success: true }),
-    updateOpportunityActor: jest.fn().mockResolvedValue({ success: true }),
-    deleteOpportunityActor: jest.fn().mockResolvedValue({ success: true }),
+    addOpportunityOrganization: jest.fn().mockResolvedValue({ success: true }),
+    updateOpportunityOrganization: jest
+      .fn()
+      .mockResolvedValue({ success: true }),
+    deleteOpportunityOrganization: jest
+      .fn()
+      .mockResolvedValue({ success: true }),
   };
 
   beforeEach(async () => {
@@ -109,6 +113,85 @@ describe('OpportunitiesController', () => {
         'O001',
         mockUser.userId,
       );
+    });
+  });
+
+  describe('contacts', () => {
+    it('should add a contact', async () => {
+      const dto = { contactId: 'C001', roles: ['decision_maker'] };
+      const res = await controller.addContact('O001', dto, mockUser);
+      expect(mockService.addOpportunityContact).toHaveBeenCalledWith(
+        'O001',
+        dto,
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
+    });
+
+    it('should update contact roles with PATCH', async () => {
+      const dto = { roles: ['influencer'] };
+      const res = await controller.updateContact('O001', 'C001', dto, mockUser);
+      expect(mockService.updateOpportunityContact).toHaveBeenCalledWith(
+        'O001',
+        'C001',
+        dto,
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
+    });
+
+    it('should delete a contact link', async () => {
+      const res = await controller.deleteContact('O001', 'C001', mockUser);
+      expect(mockService.deleteOpportunityContact).toHaveBeenCalledWith(
+        'O001',
+        'C001',
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
+    });
+  });
+
+  describe('organizations', () => {
+    it('should add an organization', async () => {
+      const dto = { organizationId: 'ORG001', roles: ['contractor'] };
+      const res = await controller.addOrganization('O001', dto, mockUser);
+      expect(mockService.addOpportunityOrganization).toHaveBeenCalledWith(
+        'O001',
+        dto,
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
+    });
+
+    it('should update organization roles with PATCH', async () => {
+      const dto = { roles: ['partner'] };
+      const res = await controller.updateOrganization(
+        'O001',
+        'ORG001',
+        dto,
+        mockUser,
+      );
+      expect(mockService.updateOpportunityOrganization).toHaveBeenCalledWith(
+        'O001',
+        'ORG001',
+        dto,
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
+    });
+
+    it('should delete an organization link', async () => {
+      const res = await controller.deleteOrganization(
+        'O001',
+        'ORG001',
+        mockUser,
+      );
+      expect(mockService.deleteOpportunityOrganization).toHaveBeenCalledWith(
+        'O001',
+        'ORG001',
+        mockUser.userId,
+      );
+      expect(res).toEqual({ success: true });
     });
   });
 });

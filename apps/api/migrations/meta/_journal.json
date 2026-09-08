@@ -15,6 +15,20 @@
       "when": 1788510000000,
       "tag": "0001_crm_and_opportunities",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788600000000,
+      "tag": "0002_rename_actors_to_organizations_and_tenant_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788865424699,
+      "tag": "0003_crm_activity_types",
+      "breakpoints": true
     }
   ]
 }

@@ -11,10 +11,14 @@ import {
   productSuppliers,
   productComponents,
   suppliers,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, sql, and } from 'drizzle-orm';
-import { PRODUCT_STATE, SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
+import {
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+  ORGANIZATION_STATE,
+} from '@herobm/shared';
 import { EventType, EntityType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
 import { ProductCopyService } from './product-copy.service';
@@ -352,20 +356,20 @@ describe('ProductsWriteService', () => {
     });
 
     it('should copy active suppliers', async () => {
-      const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
+      const organizationId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
       const vendorId = '7d2e99f5-46f9-4d6b-bd5d-31849cf2a561';
 
-      await pg.db.insert(actors).values({
-        actorId,
+      await pg.db.insert(organizations).values({
+        organizationId,
         name: 'Supplier Co',
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
       });
 
       await pg.db.insert(suppliers).values({
         vendorId,
-        actorId,
+        organizationId,
         vendorNumber: 'V001',
         currencyCode: 'EUR',
         stateCode: SUPPLIER_STATE.ACTIVE,

@@ -29,7 +29,7 @@ import {
   costCenters,
   activities,
   outbox,
-  actors,
+  organizations,
   glFiscalPeriods,
   financialEvents,
   systemEvents,
@@ -678,9 +678,9 @@ export class GlService implements OnModuleInit {
       FROM herobm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
       LEFT JOIN herobm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
-      LEFT JOIN herobm_core.actors acc_actor ON acc.actor_id = acc_actor.actor_id
+      LEFT JOIN herobm_core.organizations acc_actor ON acc.organization_id = acc_actor.organization_id
       LEFT JOIN herobm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
-      LEFT JOIN herobm_core.actors supp_actor ON supp.actor_id = supp_actor.actor_id
+      LEFT JOIN herobm_core.organizations supp_actor ON supp.organization_id = supp_actor.organization_id
       LEFT JOIN herobm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
       LEFT JOIN herobm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
       LEFT JOIN herobm_core.sales_credit_notes scn ON scn.credit_note_id = je.source_id AND je.source_type = 'sales_credit_note'
@@ -779,8 +779,8 @@ export class GlService implements OnModuleInit {
         memo: glJournalLines.memo,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
-        customerName: sql<string>`case when ${glJournalLines.partyType} = 'customer' then ${actors.name} else null end`,
-        supplierName: sql<string>`case when ${glJournalLines.partyType} = 'supplier' then ${actors.name} else null end`,
+        customerName: sql<string>`case when ${glJournalLines.partyType} = 'customer' then ${organizations.name} else null end`,
+        supplierName: sql<string>`case when ${glJournalLines.partyType} = 'supplier' then ${organizations.name} else null end`,
         accountId: glJournalLines.glAccountId,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
@@ -809,15 +809,15 @@ export class GlService implements OnModuleInit {
         ),
       )
       .leftJoin(
-        actors,
+        organizations,
         or(
           and(
             eq(glJournalLines.partyType, 'customer'),
-            eq(customers.actorId, actors.actorId),
+            eq(customers.organizationId, organizations.organizationId),
           ),
           and(
             eq(glJournalLines.partyType, 'supplier'),
-            eq(suppliers.actorId, actors.actorId),
+            eq(suppliers.organizationId, organizations.organizationId),
           ),
         ),
       )

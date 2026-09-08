@@ -3,9 +3,9 @@ import { SuppliersWriteService } from './suppliers-write.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
+import { SUPPLIER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, masterDataEvents, actors } from '@herobm/db-schema';
+import { suppliers, masterDataEvents, organizations } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
@@ -33,7 +33,7 @@ describe('SuppliersWriteService', () => {
     // Clean transactional data
     await pg.db.delete(masterDataEvents);
     await pg.db.delete(suppliers);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
   });
 
   describe('create', () => {
@@ -55,9 +55,9 @@ describe('SuppliersWriteService', () => {
 
     it('should throw if vendor number already exists', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Existing',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -65,7 +65,7 @@ describe('SuppliersWriteService', () => {
         .returning();
 
       await pg.db.insert(suppliers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         vendorNumber: 'V-001',
         currencyCode: 'EUR',
         stateCode: SUPPLIER_STATE.ACTIVE,
@@ -85,13 +85,13 @@ describe('SuppliersWriteService', () => {
 
   describe('update', () => {
     let existingId: string;
-    let existingActorId: string;
+    let existingOrgId: string;
 
     beforeEach(async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Old Name',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -101,7 +101,7 @@ describe('SuppliersWriteService', () => {
       const [s] = await pg.db
         .insert(suppliers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           vendorNumber: 'V-EX',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -110,7 +110,7 @@ describe('SuppliersWriteService', () => {
           createdBy: 'system',
         })
         .returning();
-      existingActorId = act.actorId;
+      existingOrgId = act.organizationId;
       existingId = s.vendorId;
     });
 
@@ -120,11 +120,11 @@ describe('SuppliersWriteService', () => {
         { name: 'New Name' },
         'test-actor',
       );
-      const [updatedActor] = await pg.db
+      const [updatedOrg] = await pg.db
         .select()
-        .from(actors)
-        .where(eq(actors.actorId, existingActorId));
-      expect(updatedActor.name).toBe('New Name');
+        .from(organizations)
+        .where(eq(organizations.organizationId, existingOrgId));
+      expect(updatedOrg.name).toBe('New Name');
     });
 
     it('should throw NotFoundException if supplier not found', async () => {

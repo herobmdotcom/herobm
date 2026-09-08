@@ -17,7 +17,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   crmActivities,
   crmActivityContacts,
-  actors,
+  organizations,
   contacts,
   opportunities,
   opportunityContacts,
@@ -54,6 +54,8 @@ export class CrmActivitiesService {
         ? user.userId
         : dto.assignedToUserId || null;
 
+    const targetOrganizationId = dto.organizationId ?? null;
+
     const [created] = await db
       .insert(crmActivities)
       .values({
@@ -62,7 +64,7 @@ export class CrmActivitiesService {
         description: dto.description || null,
         status: dto.status,
         priority: dto.priority,
-        actorId: dto.actorId || null,
+        organizationId: targetOrganizationId,
         opportunityId: dto.opportunityId || null,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
         assignedToUserId,
@@ -98,7 +100,7 @@ export class CrmActivitiesService {
         subject: created.subject,
         status: created.status,
         priority: created.priority,
-        actorId: created.actorId,
+        organizationId: created.organizationId,
         contactIds: dto.contactIds || [],
         opportunityId: created.opportunityId,
         dueDate: created.dueDate,
@@ -107,13 +109,13 @@ export class CrmActivitiesService {
       actor: user.username,
     });
 
-    // 2. Audit event for linked Actor if present
-    if (created.actorId) {
+    // 2. Audit event for linked Organization if present
+    if (created.organizationId) {
       await emitEvent(db, {
-        entityType: EntityType.ACTOR,
-        entityId: created.actorId,
+        entityType: EntityType.ORGANIZATION,
+        entityId: created.organizationId,
         eventType: EventType.UPDATED,
-        entityDisplayName: 'Actor',
+        entityDisplayName: 'Organization',
         payload: {
           action: 'crm_activity_logged',
           activityId: created.activityId,
@@ -210,8 +212,8 @@ export class CrmActivitiesService {
       conditions.push(or(...taskVisibilityConditions));
     }
 
-    if (query?.actorId) {
-      conditions.push(eq(crmActivities.actorId, query.actorId));
+    if (query?.organizationId) {
+      conditions.push(eq(crmActivities.organizationId, query.organizationId));
     }
     if (query?.contactId) {
       conditions.push(
@@ -244,6 +246,27 @@ export class CrmActivitiesService {
         ),
       );
     }
+    if (query?.isOverdue === 'true') {
+      conditions.push(
+        and(
+          eq(crmActivities.type, 'task'),
+          ne(crmActivities.status, 'completed'),
+          ne(crmActivities.status, 'cancelled'),
+          isNotNull(crmActivities.dueDate),
+          sql`${crmActivities.dueDate} < clock_timestamp()`,
+        ),
+      );
+    }
+    if (query?.dueDateFrom) {
+      conditions.push(
+        sql`${crmActivities.dueDate} >= ${new Date(query.dueDateFrom)}`,
+      );
+    }
+    if (query?.dueDateTo) {
+      conditions.push(
+        sql`${crmActivities.dueDate} <= ${new Date(query.dueDateTo)}`,
+      );
+    }
     if (query?.type) {
       conditions.push(eq(crmActivities.type, query.type));
     }
@@ -272,7 +295,7 @@ export class CrmActivitiesService {
         description: crmActivities.description,
         status: crmActivities.status,
         priority: crmActivities.priority,
-        actorId: crmActivities.actorId,
+        organizationId: crmActivities.organizationId,
         opportunityId: crmActivities.opportunityId,
         dueDate: crmActivities.dueDate,
         assignedToUserId: crmActivities.assignedToUserId,
@@ -282,14 +305,17 @@ export class CrmActivitiesService {
         createdById: crmActivities.createdById,
         createdOn: crmActivities.createdOn,
         modifiedOn: crmActivities.modifiedOn,
-        actorName: actors.name,
+        organizationName: organizations.name,
         opportunityName: opportunities.name,
         assignedToName: sql<
           string | null
         >`COALESCE(${users.displayName}, ${users.username})`,
       })
       .from(crmActivities)
-      .leftJoin(actors, eq(crmActivities.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(crmActivities.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         opportunities,
         eq(crmActivities.opportunityId, opportunities.opportunityId),
@@ -461,7 +487,7 @@ export class CrmActivitiesService {
         description: crmActivities.description,
         status: crmActivities.status,
         priority: crmActivities.priority,
-        actorId: crmActivities.actorId,
+        organizationId: crmActivities.organizationId,
         opportunityId: crmActivities.opportunityId,
         dueDate: crmActivities.dueDate,
         assignedToUserId: crmActivities.assignedToUserId,
@@ -471,14 +497,17 @@ export class CrmActivitiesService {
         createdById: crmActivities.createdById,
         createdOn: crmActivities.createdOn,
         modifiedOn: crmActivities.modifiedOn,
-        actorName: actors.name,
+        organizationName: organizations.name,
         opportunityName: opportunities.name,
         assignedToName: sql<
           string | null
         >`COALESCE(${users.displayName}, ${users.username})`,
       })
       .from(crmActivities)
-      .leftJoin(actors, eq(crmActivities.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(crmActivities.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         opportunities,
         eq(crmActivities.opportunityId, opportunities.opportunityId),
@@ -555,7 +584,8 @@ export class CrmActivitiesService {
     if (dto.description !== undefined)
       updatePayload.description = dto.description || null;
     if (dto.priority !== undefined) updatePayload.priority = dto.priority;
-    if (dto.actorId !== undefined) updatePayload.actorId = dto.actorId || null;
+    if (dto.organizationId !== undefined)
+      updatePayload.organizationId = dto.organizationId || null;
     if (dto.opportunityId !== undefined)
       updatePayload.opportunityId = dto.opportunityId || null;
     if (dto.dueDate !== undefined)
@@ -669,6 +699,41 @@ export class CrmActivitiesService {
         activityId: id,
         previousStatus: existing.status,
         newStatus: 'completed',
+      },
+      actor: user.username,
+    });
+
+    return this.findOne(id, user, db);
+  }
+
+  async reopen(
+    id: string,
+    user: { userId: string; username: string; role?: string },
+    tx?: DrizzleDB,
+  ): Promise<CrmActivityResponseDto> {
+    const db = tx || this.db;
+    const existing = await this.findOne(id, user, db);
+
+    await db
+      .update(crmActivities)
+      .set({
+        status: 'open',
+        completedAt: null,
+        completedByUserId: null,
+        modifiedOn: sql`clock_timestamp()`,
+      })
+      .where(eq(crmActivities.activityId, id));
+
+    await emitEvent(db, {
+      entityType: EntityType.CRM_ACTIVITY,
+      entityId: id,
+      eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: `${existing.type.toUpperCase()}: ${existing.subject}`,
+      payload: {
+        action: 'crm_activity_reopened',
+        activityId: id,
+        previousStatus: existing.status,
+        newStatus: 'open',
       },
       actor: user.username,
     });

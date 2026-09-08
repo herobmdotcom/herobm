@@ -10,9 +10,9 @@ import {
   glJournalEntries,
   glAccounts,
   locations,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
-import { CUSTOMER_STATE, ACTOR_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
 
 describe('CreditAssessmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -61,9 +61,9 @@ describe('CreditAssessmentService', () => {
 
     it('should calculate correct balances from invoices and GL', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Test Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -73,7 +73,7 @@ describe('CreditAssessmentService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           customerNumber: 'CUST-1',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,

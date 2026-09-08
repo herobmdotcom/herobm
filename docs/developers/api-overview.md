@@ -56,27 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (496 Endpoints Across 26 Domains)
-
-### Actors
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/actors` | Create Actor |
-| `GET` | `/actors` | Get all Actors (paginated) |
-| `GET` | `/actors/{id}` | Get Actor by ID |
-| `PATCH` | `/actors/{id}` | Update Actor |
-| `DELETE` | `/actors/{id}` | Delete Actor |
-| `PATCH` | `/actors/{id}/contacts/{contactId}` | Update Contact Link on Actor |
-| `DELETE` | `/actors/{id}/contacts/{contactId}` | Remove Contact Link from Actor |
-| `POST` | `/actors/{id}/contacts` | Link Contact to Actor |
-| `POST` | `/actors/{id}/archive` | Archive Actor |
-| `POST` | `/actors/{id}/unarchive` | Unarchive Actor |
-| `POST` | `/actors/{id}/notes` | Add Note to Actor |
-| `DELETE` | `/actors/{id}/notes/{noteId}` | Remove Note from Actor |
-| `GET` | `/actors/{id}/links` | Get Actor Links |
-| `POST` | `/actors/{id}/links` | Add Actor Link |
-| `DELETE` | `/actors/{id}/links/{linkId}` | Remove Actor Link |
+## Core Endpoint Catalog (498 Endpoints Across 26 Domains)
 
 ### CRM Activities
 
@@ -88,6 +68,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `PATCH` | `/crm-activities/{id}` | Update CRM Activity |
 | `DELETE` | `/crm-activities/{id}` | Delete CRM Activity |
 | `PATCH` | `/crm-activities/{id}/complete` | Complete Task |
+| `PATCH` | `/crm-activities/{id}/reopen` | Reopen Task |
 
 ### CRM Map
 
@@ -148,6 +129,11 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `PATCH` | `/settings/cost-centers/{id}` | Update a cost center |
 | `DELETE` | `/settings/cost-centers/{id}` | Delete a cost center |
 | `POST` | `/settings/cost-centers/import` | Bulk import cost centers |
+| `GET` | `/settings/activities` | List all General Ledger activities |
+| `POST` | `/settings/activities` | Create a new General Ledger activity |
+| `PATCH` | `/settings/activities/{id}` | Update a General Ledger activity |
+| `DELETE` | `/settings/activities/{id}` | Delete a General Ledger activity |
+| `POST` | `/settings/activities/import` | Bulk import General Ledger activities |
 | `GET` | `/gl/accounts` | Get Accounts |
 | `POST` | `/gl/accounts` | Create Account |
 | `PATCH` | `/gl/accounts/{id}` | Update Account |
@@ -249,11 +235,31 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/opportunities/{id}/notes` | Get Opportunity Notes |
 | `DELETE` | `/opportunities/{id}/notes/{noteId}` | Delete Opportunity Note |
 | `POST` | `/opportunities/{id}/contacts` | Add Opportunity Contact |
-| `PUT` | `/opportunities/{id}/contacts/{contactId}` | Update Opportunity Contact Roles |
+| `PATCH` | `/opportunities/{id}/contacts/{contactId}` | Update Opportunity Contact Roles |
 | `DELETE` | `/opportunities/{id}/contacts/{contactId}` | Remove Opportunity Contact |
-| `POST` | `/opportunities/{id}/actors` | Add Opportunity Actor |
-| `PUT` | `/opportunities/{id}/actors/{actorId}` | Update Opportunity Actor Roles |
-| `DELETE` | `/opportunities/{id}/actors/{actorId}` | Remove Opportunity Actor |
+| `POST` | `/opportunities/{id}/organizations` | Add Opportunity Organization |
+| `PATCH` | `/opportunities/{id}/organizations/{organizationId}` | Update Opportunity Organization Roles |
+| `DELETE` | `/opportunities/{id}/organizations/{organizationId}` | Remove Opportunity Organization |
+
+### Organizations
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/organizations` | Create Organization |
+| `GET` | `/organizations` | Get all Organizations (paginated) |
+| `GET` | `/organizations/{id}` | Get Organization by ID |
+| `PATCH` | `/organizations/{id}` | Update Organization |
+| `DELETE` | `/organizations/{id}` | Delete Organization |
+| `PATCH` | `/organizations/{id}/contacts/{contactId}` | Update Contact Link on Organization |
+| `DELETE` | `/organizations/{id}/contacts/{contactId}` | Remove Contact Link from Organization |
+| `POST` | `/organizations/{id}/contacts` | Link Contact to Organization |
+| `POST` | `/organizations/{id}/archive` | Archive Organization |
+| `POST` | `/organizations/{id}/unarchive` | Unarchive Organization |
+| `POST` | `/organizations/{id}/notes` | Add Note to Organization |
+| `DELETE` | `/organizations/{id}/notes/{noteId}` | Remove Note from Organization |
+| `GET` | `/organizations/{id}/links` | Get Organization Links |
+| `POST` | `/organizations/{id}/links` | Add Organization Link |
+| `DELETE` | `/organizations/{id}/links/{linkId}` | Remove Organization Link |
 
 ### Payments
 
@@ -346,7 +352,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/purchase-orders/{id}/returns/{returnId}/ship` | Ship Purchase Return |
 | `POST` | `/purchase-orders/{id}/returns/{returnId}/unship` | Unship Purchase Return |
 | `POST` | `/purchase-orders/{id}/returns/{returnId}/cancel` | Cancel Purchase Return |
-| `GET` | `/purchase-returns` | List Purchase Returns |
+| `GET` | `/purchase-returns` | List all purchase returns across all POs |
 | `GET` | `/purchase-returns/{id}` | Get Purchase Return |
 | `POST` | `/purchase-returns/{id}/mark-resolved` | Mark Purchase Return as Resolved |
 | `POST` | `/purchase-returns/{id}/email-document` | Email Purchase Return Document |
@@ -494,11 +500,6 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/settings/trading-terms` | Create trading term |
 | `PATCH` | `/settings/trading-terms/{id}` | Update trading term |
 | `DELETE` | `/settings/trading-terms/{id}` | Delete trading term |
-| `GET` | `/settings/activities` | List all activities |
-| `POST` | `/settings/activities` | Create a new activity |
-| `PATCH` | `/settings/activities/{id}` | Update an activity |
-| `DELETE` | `/settings/activities/{id}` | Delete an activity |
-| `POST` | `/settings/activities/import` | Bulk import activities |
 | `GET` | `/settings/license-status` | Get License Status |
 | `POST` | `/settings/license` | Apply License |
 | `GET` | `/business-reports` | List available business reports |
@@ -548,6 +549,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `DELETE` | `/macros/{id}` | Delete Macro |
 | `GET` | `/users` | List Users |
 | `POST` | `/users` | Create User |
+| `GET` | `/users/events` | List User Activity Events |
 | `GET` | `/users/{id}` | Get User |
 | `PATCH` | `/users/{id}` | Update User |
 | `DELETE` | `/users/{id}` | Delete User |

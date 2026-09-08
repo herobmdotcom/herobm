@@ -39,10 +39,13 @@ export class AppConfigController {
     }
     delete response.smtpPassEncrypted;
 
-    response.projectStatuses = response.opportunityStages;
-    response.projectTypes = response.opportunityTypes;
-    response.projectContactRoles = response.opportunityContactRoles;
-    response.projectActorRoles = response.opportunityActorRoles;
+    if (
+      !response.activityTypes ||
+      (Array.isArray(response.activityTypes) &&
+        response.activityTypes.length === 0)
+    ) {
+      response.activityTypes = this.appConfigService.activityTypes();
+    }
 
     return response as unknown as AppConfigResponseDto;
   }
@@ -58,18 +61,6 @@ export class AppConfigController {
     @AuthUser() user: JwtUser,
   ) {
     const updatePayload: UpdatePayload = { ...dto };
-    if (dto.projectStatuses && !dto.opportunityStages) {
-      updatePayload.opportunityStages = dto.projectStatuses;
-    }
-    if (dto.projectTypes && !dto.opportunityTypes) {
-      updatePayload.opportunityTypes = dto.projectTypes;
-    }
-    if (dto.projectContactRoles && !dto.opportunityContactRoles) {
-      updatePayload.opportunityContactRoles = dto.projectContactRoles;
-    }
-    if (dto.projectActorRoles && !dto.opportunityActorRoles) {
-      updatePayload.opportunityActorRoles = dto.projectActorRoles;
-    }
 
     if (updatePayload.smtpPass) {
       updatePayload.smtpPassEncrypted = this.encryptionService.encrypt(
@@ -87,11 +78,6 @@ export class AppConfigController {
       response.smtpPass = '********';
     }
     delete response.smtpPassEncrypted;
-
-    response.projectStatuses = response.opportunityStages;
-    response.projectTypes = response.opportunityTypes;
-    response.projectContactRoles = response.opportunityContactRoles;
-    response.projectActorRoles = response.opportunityActorRoles;
 
     return response;
   }

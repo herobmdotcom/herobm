@@ -24,6 +24,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/shared/Button';
+import OrganizationSelect, { Organization } from '@/components/shared/OrganizationSelect';
 import dagre from 'dagre';
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -97,6 +98,7 @@ export interface NodeData {
   group?: string;
   role?: string;
   isSubcontractor?: boolean;
+  organizationId?: string;
   actorId?: string;
   name?: string;
   contactId?: string;
@@ -111,8 +113,11 @@ export interface NodeData {
 }
 
 export interface EdgeData {
+  sourceOrganizationId?: string;
+  targetOrganizationId?: string;
   sourceActorId?: string;
   targetActorId?: string;
+  organizationId?: string;
   actorId?: string;
   contactId?: string;
   opportunityId?: string;
@@ -126,7 +131,7 @@ export interface EdgeData {
 
 export type CustomNode = Node<NodeData>;
 
-const ActorNode = ({ data }: NodeProps<CustomNode>) => (
+const OrganizationNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-md relative group w-[250px] min-h-[80px] flex flex-col justify-center bg-[var(--bg-card)] border border-[var(--border)]">
     <Handle type="target" position={Position.Top} id="top-target" className="opacity-0" />
     <Handle type="source" position={Position.Top} id="top-source" className="opacity-0" />
@@ -138,7 +143,7 @@ const ActorNode = ({ data }: NodeProps<CustomNode>) => (
     <Handle type="source" position={Position.Right} id="right-source" className="opacity-0" />
 
     <div className="flex flex-col relative z-10 pr-6 overflow-hidden">
-      <Link href={`/crm/actors/${data.rawId}`} className="font-bold text-sm hover:underline line-clamp-2 text-[var(--text-primary)]" title={data.label}>
+      <Link href={`/crm/organizations/${data.rawId}`} className="font-bold text-sm hover:underline line-clamp-2 text-[var(--text-primary)]" title={data.label}>
         🏢 {data.label}
       </Link>
       {data.industry && <div className="text-xs line-clamp-1 text-[var(--text-muted)]" title={data.industry}>{data.industry}</div>}
@@ -153,6 +158,8 @@ const ActorNode = ({ data }: NodeProps<CustomNode>) => (
     </Button>
   </div>
 );
+
+const ActorNode = OrganizationNode;
 
 const ContactNode = ({ data }: NodeProps<CustomNode>) => (
   <div className="px-4 py-2 rounded-full relative group w-[250px] min-h-[80px] flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border)]">
@@ -211,24 +218,23 @@ const OpportunityNode = ({ data }: NodeProps<CustomNode>) => (
 const ProjectNode = OpportunityNode;
 
 const nodeTypes = {
+  organization: OrganizationNode as any,
   actor: ActorNode as any,
   contact: ContactNode as any,
   opportunity: OpportunityNode as any,
   project: ProjectNode as any,
 };
 
-import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
-
 export default function MapContent() {
   const searchParams = useSearchParams();
-  const queryActorId = searchParams.get('actorId') || searchParams.get('focalNodeId') || '';
-  const [focalNodeId, setFocalNodeId] = useState<string>(queryActorId);
+  const queryOrgId = searchParams.get('organizationId') || searchParams.get('actorId') || searchParams.get('focalNodeId') || '';
+  const [focalNodeId, setFocalNodeId] = useState<string>(queryOrgId);
 
   useEffect(() => {
-    if (queryActorId && queryActorId !== focalNodeId) {
-      setFocalNodeId(queryActorId);
+    if (queryOrgId && queryOrgId !== focalNodeId) {
+      setFocalNodeId(queryOrgId);
     }
-  }, [queryActorId]);
+  }, [queryOrgId]);
   
   // Fetch graph data
   const { data: mapData, isLoading, error } = useSWR(
@@ -239,13 +245,14 @@ export default function MapContent() {
     }
   );
 
-  const focalActorName = useMemo(() => {
-    return mapData?.nodes?.actors?.find((a) => a.actorId === focalNodeId)?.name || '';
+  const focalOrgName = useMemo(() => {
+    const orgs = mapData?.nodes?.organizations || [];
+    return orgs.find((a) => a.organizationId === focalNodeId)?.name || '';
   }, [mapData, focalNodeId]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [isExpanding, setIsExpanding] = useState(false);
+  const [, setIsExpanding] = useState(false);
 
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
@@ -260,12 +267,13 @@ export default function MapContent() {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
 
-    payload.nodes.actors?.forEach((a) => {
+    const orgNodes = payload.nodes.organizations || [];
+    orgNodes.forEach((a) => {
       newNodes.push({
-        id: `actor-${a.actorId}`,
-        type: 'actor',
+        id: `organization-${a.organizationId}`,
+        type: 'organization',
         position: { x: 0, y: 0 },
-        data: { label: a.name, industry: a.industry, rawId: a.actorId, onExpand: onExpandCb },
+        data: { label: a.name, industry: a.industry, rawId: a.organizationId, onExpand: onExpandCb },
       });
     });
 
@@ -278,73 +286,74 @@ export default function MapContent() {
       });
     });
 
-    const opps = (payload.nodes as any).opportunities || (payload.nodes as any).projects || [];
-    opps.forEach((p: any) => {
-      const oppId = p.opportunityId || p.projectId;
+    const opps = payload.nodes.opportunities || [];
+    opps.forEach((p) => {
       newNodes.push({
-        id: `opportunity-${oppId}`,
+        id: `opportunity-${p.opportunityId}`,
         type: 'opportunity',
         position: { x: 0, y: 0 },
-        data: { label: p.title || p.name || 'Opportunity', rawId: oppId, onExpand: onExpandCb },
+        data: { label: p.name || 'Opportunity', rawId: p.opportunityId, onExpand: onExpandCb },
       });
     });
 
-    payload.edges.actorActor?.forEach((e) => {
+    const orgOrgEdges = payload.edges.organizationOrganization || [];
+    orgOrgEdges.forEach((e) => {
       newEdges.push({
-        id: `aa-${e.sourceActorId}-${e.targetActorId}`,
-        source: `actor-${e.sourceActorId}`,
-        target: `actor-${e.targetActorId}`,
+        id: `oo-${e.sourceOrganizationId}-${e.targetOrganizationId}`,
+        source: `organization-${e.sourceOrganizationId}`,
+        target: `organization-${e.targetOrganizationId}`,
         animated: true,
       });
     });
 
-    payload.edges.actorContact?.forEach((e) => {
+    const orgContactEdges = payload.edges.organizationContact || [];
+    orgContactEdges.forEach((e) => {
       newEdges.push({
-        id: `ac-${e.actorId}-${e.contactId}`,
-        source: `actor-${e.actorId}`,
+        id: `oc-${e.organizationId}-${e.contactId}`,
+        source: `organization-${e.organizationId}`,
         target: `contact-${e.contactId}`,
         label: e.primaryFor?.length ? `Primary for: ${e.primaryFor.join(', ')}` : undefined,
       });
     });
 
-    const oppActors = (payload.edges as any).opportunityActor || (payload.edges as any).projectActor || [];
-    oppActors.forEach((e: any) => {
-      const oppId = e.opportunityId || e.projectId;
+    const oppOrgs = payload.edges.opportunityOrganization || [];
+    oppOrgs.forEach((e) => {
       newEdges.push({
-        id: `pa-${oppId}-${e.actorId}`,
-        source: `opportunity-${oppId}`,
-        target: `actor-${e.actorId}`,
+        id: `po-${e.opportunityId}-${e.organizationId}`,
+        source: `opportunity-${e.opportunityId}`,
+        target: `organization-${e.organizationId}`,
         label: e.roles?.length ? e.roles.join(', ') : undefined,
       });
     });
 
-    const oppContacts = (payload.edges as any).opportunityContact || (payload.edges as any).projectContact || [];
-    oppContacts.forEach((e: any) => {
-      const oppId = e.opportunityId || e.projectId;
+    const oppContacts = payload.edges.opportunityContact || [];
+    oppContacts.forEach((e) => {
       newEdges.push({
-        id: `pc-${oppId}-${e.contactId}`,
-        source: `opportunity-${oppId}`,
+        id: `pc-${e.opportunityId}-${e.contactId}`,
+        source: `opportunity-${e.opportunityId}`,
         target: `contact-${e.contactId}`,
         label: e.roles?.length ? e.roles.join(', ') : undefined,
       });
     });
 
-    payload.edges.referralActorActor?.forEach((e) => {
+    const refOrgOrgs = payload.edges.referralOrganizationOrganization || [];
+    refOrgOrgs.forEach((e) => {
       newEdges.push({
-        id: `ref-aa-${e.sourceActorId}-${e.targetActorId}`,
-        source: `actor-${e.sourceActorId}`,
-        target: `actor-${e.targetActorId}`,
+        id: `ref-oo-${e.sourceOrganizationId}-${e.targetOrganizationId}`,
+        source: `organization-${e.sourceOrganizationId}`,
+        target: `organization-${e.targetOrganizationId}`,
         animated: false,
         style: { stroke: '#9ca3af', strokeWidth: 2, strokeDasharray: '5,5' },
         label: 'Referred By',
       });
     });
 
-    payload.edges.referralContactActor?.forEach((e) => {
+    const refContactOrgs = payload.edges.referralContactOrganization || [];
+    refContactOrgs.forEach((e) => {
       newEdges.push({
-        id: `ref-ca-${e.contactId}-${e.actorId}`,
+        id: `ref-co-${e.contactId}-${e.organizationId}`,
         source: `contact-${e.contactId}`,
-        target: `actor-${e.actorId}`,
+        target: `organization-${e.organizationId}`,
         animated: false,
         style: { stroke: '#9ca3af', strokeWidth: 2, strokeDasharray: '5,5' },
         label: 'Referred By',
@@ -397,13 +406,13 @@ export default function MapContent() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">CRM Map</h1>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-[var(--text-secondary)]">Center on Actor:</label>
+          <label className="text-sm font-medium text-[var(--text-secondary)]">Center on Organization:</label>
           <div className="w-80">
-            <ActorSelect 
+            <OrganizationSelect 
               value={focalNodeId}
-              initialSearchTerm={focalActorName}
-              onChange={(actor: Actor | null) => setFocalNodeId(actor?.actorId || '')}
-              placeholder="Search for an Actor..."
+              initialSearchTerm={focalOrgName}
+              onChange={(org: Organization | null) => setFocalNodeId(org?.organizationId || '')}
+              placeholder="Search for an Organization..."
             />
           </div>
           {focalNodeId && (
@@ -415,7 +424,7 @@ export default function MapContent() {
       <div className="flex-1 w-full h-[800px] rounded overflow-hidden relative bg-[var(--bg-secondary)]">
         {!focalNodeId ? (
           <div className="flex h-full items-center justify-center text-[var(--text-muted)]">
-            Search and select an Actor above to view their relationship map.
+            Search and select an Organization above to view their relationship map.
           </div>
         ) : error ? (
           <div className="flex flex-col h-full items-center justify-center text-[var(--danger)]">

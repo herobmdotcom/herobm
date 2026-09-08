@@ -7,9 +7,9 @@ import {
   masterDataEvents,
   supplierGroups,
   supplierExpiries,
-  actors,
+  organizations,
   contacts,
-  actorContactLinks,
+  organizationContactLinks,
 } from '@herobm/db-schema';
 import { EntityType } from '../common/event-types';
 import {
@@ -73,8 +73,8 @@ export class SuppliersService {
     const scoreSql = searchTerm
       ? sql<number>`
           CASE 
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
@@ -85,7 +85,7 @@ export class SuppliersService {
     let qb = this.db
       .select({
         ...getTableColumns(coreSuppliers),
-        name: actors.name,
+        name: organizations.name,
         supplierGroupName: supplierGroups.name,
         supplierGroupCode: supplierGroups.groupCode,
         groupIsPurchasingBlocked: supplierGroups.isPurchasingBlocked,
@@ -95,22 +95,25 @@ export class SuppliersService {
         supplierGroupTaxPositionId: supplierGroups.taxPositionId,
         supplierGroupTradingTermsId: supplierGroups.tradingTermsId,
         score: scoreSql,
-        address1Line1: actors.headquartersAddressLine1,
-        address1Line2: actors.headquartersAddressLine2,
-        address1City: actors.headquartersCity,
-        address1StateOrProvince: actors.headquartersStateOrProvince,
-        address1PostalCode: actors.headquartersPostalCode,
-        address1Country: actors.headquartersCountry,
-        telephone1: sql<string>`TRIM(${actors.telephone})`,
-        fax: sql<string>`TRIM(${actors.fax})`,
-        emailAddress1: sql<string>`TRIM(${actors.email})`,
+        address1Line1: organizations.headquartersAddressLine1,
+        address1Line2: organizations.headquartersAddressLine2,
+        address1City: organizations.headquartersCity,
+        address1StateOrProvince: organizations.headquartersStateOrProvince,
+        address1PostalCode: organizations.headquartersPostalCode,
+        address1Country: organizations.headquartersCountry,
+        telephone1: sql<string>`TRIM(${organizations.telephone})`,
+        fax: sql<string>`TRIM(${organizations.fax})`,
+        emailAddress1: sql<string>`TRIM(${organizations.email})`,
       })
       .from(coreSuppliers)
       .leftJoin(
         supplierGroups,
         eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -118,7 +121,7 @@ export class SuppliersService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
           ilike(coreSuppliers.vendorNumber, `%${rawSearchTerm}%`),
         ),
       );
@@ -149,10 +152,13 @@ export class SuppliersService {
         const strOp = dir === 'next' ? sql`>` : sql`<`;
         const cursorCond = or(
           sql`${scoreSql} ${scoreOp} ${c.score}`,
-          and(eq(scoreSql, c.score), sql`${actors.name} ${strOp} ${c.name}`),
           and(
             eq(scoreSql, c.score),
-            eq(actors.name, c.name),
+            sql`${organizations.name} ${strOp} ${c.name}`,
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(organizations.name, c.name),
             sql`${coreSuppliers.vendorId} ${strOp} ${c.supplierId}`,
           ),
         );
@@ -163,7 +169,7 @@ export class SuppliersService {
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
           scoreOp(scoreSql),
-          orderFn(actors.name),
+          orderFn(organizations.name),
           orderFn(coreSuppliers.vendorId),
         );
       },
@@ -178,7 +184,10 @@ export class SuppliersService {
     let countQb = this.db
       .select({ count: sql<number>`count(*)` })
       .from(coreSuppliers)
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (conditions.length > 0) {
@@ -195,26 +204,29 @@ export class SuppliersService {
     const rows = await db
       .select({
         ...getTableColumns(coreSuppliers),
-        name: actors.name,
+        name: organizations.name,
         supplierGroupTaxPositionId: supplierGroups.taxPositionId,
-        address1Line1: actors.headquartersAddressLine1,
-        address1Line2: actors.headquartersAddressLine2,
-        address1City: actors.headquartersCity,
-        address1StateOrProvince: actors.headquartersStateOrProvince,
-        address1PostalCode: actors.headquartersPostalCode,
-        address1Country: actors.headquartersCountry,
-        businessNumber: actors.businessNumber,
-        isTaxRegistered: actors.isTaxRegistered,
-        telephone1: sql<string>`TRIM(${actors.telephone})`,
-        fax: sql<string>`TRIM(${actors.fax})`,
-        emailAddress1: sql<string>`TRIM(${actors.email})`,
+        address1Line1: organizations.headquartersAddressLine1,
+        address1Line2: organizations.headquartersAddressLine2,
+        address1City: organizations.headquartersCity,
+        address1StateOrProvince: organizations.headquartersStateOrProvince,
+        address1PostalCode: organizations.headquartersPostalCode,
+        address1Country: organizations.headquartersCountry,
+        businessNumber: organizations.businessNumber,
+        isTaxRegistered: organizations.isTaxRegistered,
+        telephone1: sql<string>`TRIM(${organizations.telephone})`,
+        fax: sql<string>`TRIM(${organizations.fax})`,
+        emailAddress1: sql<string>`TRIM(${organizations.email})`,
       })
       .from(coreSuppliers)
       .leftJoin(
         supplierGroups,
         eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 
@@ -241,7 +253,7 @@ export class SuppliersService {
         )
         .limit(1);
 
-      const contactsResult = rows[0].actorId
+      const contactsResult = rows[0].organizationId
         ? await db
             .select({
               id: contacts.contactId,
@@ -254,16 +266,21 @@ export class SuppliersService {
               phone: contacts.phone,
               mobile: contacts.mobile,
               jobTitle: contacts.jobTitle,
-              primaryFor: actorContactLinks.primaryFor,
+              primaryFor: organizationContactLinks.primaryFor,
               createdOn: contacts.createdOn,
               modifiedOn: contacts.modifiedOn,
             })
             .from(contacts)
             .innerJoin(
-              actorContactLinks,
-              eq(contacts.contactId, actorContactLinks.contactId),
+              organizationContactLinks,
+              eq(contacts.contactId, organizationContactLinks.contactId),
             )
-            .where(eq(actorContactLinks.actorId, rows[0].actorId))
+            .where(
+              eq(
+                organizationContactLinks.organizationId,
+                rows[0].organizationId,
+              ),
+            )
             .catch(() => [])
         : [];
 
@@ -420,7 +437,7 @@ export class SuppliersService {
   async findProductSuppliers(productId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { productSuppliers, suppliers, actors } =
+    const { productSuppliers, suppliers, organizations } =
       await import('@herobm/db-schema');
 
     const whereClause = eq(productSuppliers.productId, productId);
@@ -435,12 +452,15 @@ export class SuppliersService {
         priceBreakQuantity: productSuppliers.priceBreakQuantity,
         isPreferred: productSuppliers.isPreferred,
         stateCode: productSuppliers.stateCode,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         vendorNumber: suppliers.vendorNumber,
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(whereClause)
       .$dynamic();
 
@@ -453,16 +473,16 @@ export class SuppliersService {
         const cursorCond =
           dir === 'next'
             ? or(
-                sql`${actors.name} > ${c.name}`,
+                sql`${organizations.name} > ${c.name}`,
                 and(
-                  eq(actors.name, c.name),
+                  eq(organizations.name, c.name),
                   sql`${productSuppliers.productSupplierId} > ${c.id}`,
                 ),
               )
             : or(
-                sql`${actors.name} < ${c.name}`,
+                sql`${organizations.name} < ${c.name}`,
                 and(
-                  eq(actors.name, c.name),
+                  eq(organizations.name, c.name),
                   sql`${productSuppliers.productSupplierId} < ${c.id}`,
                 ),
               );
@@ -471,7 +491,7 @@ export class SuppliersService {
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
-          orderFn(actors.name),
+          orderFn(organizations.name),
           orderFn(productSuppliers.productSupplierId),
         );
       },
@@ -546,7 +566,7 @@ export class SuppliersService {
           COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as days90_plus,
           COALESCE(SUM(i.outstanding_amount), 0) as total_outstanding
         FROM herobm_core.suppliers s
-        LEFT JOIN herobm_core.actors a ON s.actor_id = a.actor_id
+        LEFT JOIN herobm_core.organizations a ON s.organization_id = a.organization_id
         JOIN herobm_core.purchase_invoices i ON i.vendor_id = s.vendor_id
         WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${PURCHASE_INVOICE_STATE.DRAFT}, ${PURCHASE_INVOICE_STATE.CANCELLED}, ${PURCHASE_INVOICE_STATE.PAID})
         GROUP BY s.vendor_id, a.name, s.vendor_number, s.currency_code, s.is_payment_blocked, s.credit_limit

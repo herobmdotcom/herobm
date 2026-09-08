@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { sql, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { organization, glSettings, glFiscalPeriods } from '@herobm/db-schema';
+import { tenantSettings, glSettings, glFiscalPeriods } from '@herobm/db-schema';
 import {
   calculateCashFlowStatement,
   calculateCashFlowLineDrilldown,
@@ -189,7 +189,7 @@ export class CashFlowService {
         endDate || `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
     }
 
-    const [org] = await this.db.select().from(organization).limit(1);
+    const [org] = await this.db.select().from(tenantSettings).limit(1);
     const [glSet] = await this.db
       .select({
         baseCurrency: glSettings.baseCurrency,

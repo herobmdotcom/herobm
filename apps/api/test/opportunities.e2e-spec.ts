@@ -9,7 +9,7 @@ describe('Opportunities (e2e)', () => {
   let viewerToken: string;
   let createdOpportunityId: string;
   let createdContactId: string;
-  let createdActorId: string;
+  let createdOrganizationId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await (
@@ -57,15 +57,14 @@ describe('Opportunities (e2e)', () => {
       });
     createdContactId = contactRes.body.contactId;
 
-    // Setup an actor
-    const actorRes = await request(app.getHttpServer())
-      .post('/api/actors')
+    // Setup an organization
+    const orgRes = await request(app.getHttpServer())
+      .post('/api/organizations')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        name: 'Opportunity Actor',
-        actorType: 'supplier',
+        name: 'Opportunity Organization',
       });
-    createdActorId = actorRes.body.actorId;
+    createdOrganizationId = orgRes.body.organizationId;
   });
 
   afterAll(async () => {
@@ -165,9 +164,9 @@ describe('Opportunities (e2e)', () => {
       ).toBeDefined();
     });
 
-    it('PUT /api/opportunities/:id/contacts/:contactId — updates contact role (admin)', async () => {
+    it('PATCH /api/opportunities/:id/contacts/:contactId — updates contact role (admin)', async () => {
       const res = await request(app.getHttpServer())
-        .put(
+        .patch(
           `/api/opportunities/${createdOpportunityId}/contacts/${createdContactId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
@@ -197,22 +196,44 @@ describe('Opportunities (e2e)', () => {
       expect(res.status).toBe(200);
     });
 
-    it('POST /api/opportunities/:id/actors — adds an actor (admin)', async () => {
+    it('POST /api/opportunities/:id/organizations — adds an organization (admin)', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/api/opportunities/${createdOpportunityId}/actors`)
+        .post(`/api/opportunities/${createdOpportunityId}/organizations`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          actorId: createdActorId,
+          organizationId: createdOrganizationId,
           roles: ['supplier'],
         });
 
       expect(res.status).toBe(201);
     });
 
-    it('DELETE /api/opportunities/:id/actors/:actorId — removes an actor link (admin)', async () => {
+    it('PATCH /api/opportunities/:id/organizations/:organizationId — updates organization role (admin)', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(
+          `/api/opportunities/${createdOpportunityId}/organizations/${createdOrganizationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          roles: ['supplier', 'strategic_partner'],
+        });
+
+      expect(res.status).toBe(200);
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/opportunities/${createdOpportunityId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const link = getRes.body.opportunityOrganizations.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test check
+        (po: any) => po.organizationId === createdOrganizationId,
+      );
+      expect(link.roles).toContain('strategic_partner');
+    });
+
+    it('DELETE /api/opportunities/:id/organizations/:organizationId — removes an organization link (admin)', async () => {
       const res = await request(app.getHttpServer())
         .delete(
-          `/api/opportunities/${createdOpportunityId}/actors/${createdActorId}`,
+          `/api/opportunities/${createdOpportunityId}/organizations/${createdOrganizationId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`);
 

@@ -77,7 +77,7 @@ export function CrmActivityCard({
 
   const hasContextLinks =
     (showOpportunity && activity.opportunityId && activity.opportunityName) ||
-    (activity.actorId && activity.actorName) ||
+    (activity.organizationId && activity.organizationName) ||
     (activity.contacts && activity.contacts.length > 0);
 
   return (
@@ -157,17 +157,9 @@ export function CrmActivityCard({
               )}
             </div>
 
-            {/* Right block: Task Owner and Priority Badge below it */}
+            {/* Right block: Priority Badge to the left of Task Owner */}
             {(activity.assignedToName || (isTask && activity.priority)) && (
-              <div className="flex flex-col items-end justify-between gap-1 shrink-0 ml-auto self-stretch">
-                {activity.assignedToName && (
-                  <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol */}
-                    <span className="material-symbols-outlined text-[14px]">person</span>
-                    <span>{activity.assignedToName}</span>
-                  </span>
-                )}
-
+              <div className="flex items-center gap-2 shrink-0 ml-auto flex-wrap justify-end">
                 {isTask && activity.priority && (
                   <span
                     className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${getPriorityBadgeClass(
@@ -177,11 +169,19 @@ export function CrmActivityCard({
                     {getPriorityLabel(activity.priority)}
                   </span>
                 )}
+
+                {activity.assignedToName && (
+                  <span className="text-xs text-[var(--text-muted)] flex items-center gap-1 shrink-0">
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol */}
+                    <span className="material-symbols-outlined text-[14px]">person</span>
+                    <span>{activity.assignedToName}</span>
+                  </span>
+                )}
               </div>
             )}
           </div>
 
-          {/* Sub-row: Linked Entity Badges (Opportunity, Actor, Contacts) */}
+          {/* Sub-row: Linked Entity Badges (Opportunity, Organization, Contacts) */}
           {hasContextLinks && (
             <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
               {/* Opportunity Link: shown on Dashboard/general, hidden on Opportunity page */}
@@ -196,16 +196,16 @@ export function CrmActivityCard({
                 </Link>
               )}
 
-              {/* Actor / Company Link */}
-              {activity.actorId && activity.actorName && (
+              {/* Organization Link */}
+              {activity.organizationId && activity.organizationName && (
                 <Link
-                  href={`/crm/actors/${activity.actorId}`}
+                  href={`/crm/organizations/${activity.organizationId}`}
                   onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] transition-colors"
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol */}
                   <span className="material-symbols-outlined text-[13px]">domain</span>
-                  <span>{activity.actorName}</span>
+                  <span>{activity.organizationName}</span>
                 </Link>
               )}
 

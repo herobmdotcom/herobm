@@ -3,7 +3,7 @@ import { asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  organization,
+  tenantSettings,
   glSettings,
   costCenters,
   activities,
@@ -65,8 +65,8 @@ export class AccountingCodesService {
   ): Promise<AccountingCodesData> {
     const now = new Date();
 
-    // 1. Fetch organization details
-    const orgQuery = await this.db.select().from(organization).limit(1);
+    // 1. Fetch tenant organization details
+    const orgQuery = await this.db.select().from(tenantSettings).limit(1);
     const org = orgQuery.length > 0 ? orgQuery[0] : null;
 
     // 2. Fetch GL Settings

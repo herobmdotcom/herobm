@@ -357,6 +357,20 @@ export class HumanActor {
 
     const locator = typeof locatorOrSelector === 'string' ? this.page.locator(locatorOrSelector).first() : locatorOrSelector;
 
+    // HTML5 date inputs in Chromium use internal locale-dependent segments (dd/mm/yyyy or mm/dd/yyyy)
+    // and reject raw character typing or '-' dashes, scrambling the date. Use fill() instead.
+    const inputType = await locator.getAttribute('type').catch(() => null);
+    if (inputType === 'date') {
+      if (clickFirst) {
+        await this.click(locator);
+      }
+      await locator.fill(text);
+      await locator.dispatchEvent('input');
+      await locator.dispatchEvent('change');
+      await this.delay(150 + Math.random() * 120);
+      return;
+    }
+
     if (clickFirst) {
       await this.click(locator);
     }
@@ -430,6 +444,108 @@ export class HumanActor {
   async pause(minMs = 400, maxMs = 900): Promise<void> {
     const ms = minMs + Math.random() * (maxMs - minMs);
     await this.delay(ms);
+  }
+
+  /**
+   * Simulates a natural human drag and drop:
+   * 1. Hovers over the source element with a generous reading pause
+   * 2. Triggers visual mousedown animation
+   * 3. Drags the visual cursor along a smooth curved path to the target
+   * 4. Pauses briefly over the target column
+   * 5. Dispatches standard HTML5 drag & drop events to trigger React onDrop
+   * 6. Releases mouse at destination with natural settling pause
+   */
+  async dragAndDrop(
+    sourceLocatorOrSelector: string | Locator,
+    targetLocatorOrSelector: string | Locator,
+    options: {
+      speed?: number;
+      preDragPauseMs?: number;
+      dragDurationMs?: number;
+      holdOverTargetMs?: number;
+      postDropPauseMs?: number;
+      targetStage?: string;
+    } = {}
+  ): Promise<void> {
+    const sourceLocator =
+      typeof sourceLocatorOrSelector === 'string'
+        ? this.page.locator(sourceLocatorOrSelector).first()
+        : sourceLocatorOrSelector;
+    const targetLocator =
+      typeof targetLocatorOrSelector === 'string'
+        ? this.page.locator(targetLocatorOrSelector).first()
+        : targetLocatorOrSelector;
+
+    // 1. Deliberate hover on source card
+    const startPoint = await this.hover(sourceLocator);
+    await this.delay(options.preDragPauseMs ?? 1600);
+
+    // 2. Get destination drop point inside target column
+    const endPoint = await this.getElementNaturalPoint(targetLocator);
+
+    // 3. Trigger visual ripple animation
+    await this.triggerVisualClick(startPoint.x, startPoint.y);
+    await this.delay(150);
+
+    // 4. Smooth glide across the board from source to destination
+    const dragDuration = options.dragDurationMs ?? 1200;
+    const steps = 35;
+    const stepDelay = dragDuration / steps;
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+
+    const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+
+    for (let i = 1; i <= steps; i++) {
+      const t = easeInOut(i / steps);
+      // Slight upward arc while dragging
+      const arc = Math.sin(t * Math.PI) * -16;
+      const x = Math.round(startPoint.x + dx * t);
+      const y = Math.round(startPoint.y + dy * t + arc);
+
+      await this.page.mouse.move(x, y);
+      await this.updateVisualCursor(x, y);
+      await this.delay(stepDelay);
+    }
+
+    // 5. Hover over the target drop column
+    await this.delay(options.holdOverTargetMs ?? 600);
+    await this.triggerVisualClick(endPoint.x, endPoint.y);
+
+    // 6. Execute HTML5 drag and drop via Playwright and DOM events
+    // Extract opportunity ID directly from source element
+    const oppId = await sourceLocator.evaluate((el: HTMLElement) => {
+      return (
+        el.getAttribute('data-opportunity-id') ||
+        el.querySelector('a[href*="/crm/opportunities/"]')?.getAttribute('href')?.split('/').pop() ||
+        ''
+      );
+    }).catch(() => '');
+
+    if (oppId) {
+      await targetLocator.evaluate(
+        (targetEl: HTMLElement, payload: { oppId: string; targetStage?: string }) => {
+          const dt = new DataTransfer();
+          dt.setData('text/plain', payload.oppId);
+
+          const stageCol = payload.targetStage
+            ? document.querySelector(`[data-stage="${payload.targetStage}"]`) || targetEl
+            : targetEl;
+
+          stageCol.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
+          stageCol.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+          stageCol.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+        },
+        { oppId, targetStage: options.targetStage }
+      ).catch(() => {});
+    }
+
+    // Also call Playwright's dragTo to ensure full event lifecycle
+    await sourceLocator.dragTo(targetLocator).catch(() => {});
+
+    // 7. Settle visual cursor at drop destination
+    await this.updateVisualCursor(endPoint.x, endPoint.y);
+    await this.delay(options.postDropPauseMs ?? 2500);
   }
 
   /**

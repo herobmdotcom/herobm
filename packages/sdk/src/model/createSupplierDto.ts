@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { CreateSupplierDtoPurchasingBlockReason } from './createSupplierDtoPurchasingBlockReason';
 import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPaymentBlockReason';
@@ -11,7 +11,7 @@ import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPay
 export interface CreateSupplierDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
-  actorId?: string;
+  organizationId?: string;
   vendorNumber: string;
   name: string;
   address1Line1?: string;

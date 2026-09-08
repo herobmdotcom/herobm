@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 
 export type CreateReturnLineDtoResolution = typeof CreateReturnLineDtoResolution[keyof typeof CreateReturnLineDtoResolution];

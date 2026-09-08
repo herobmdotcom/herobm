@@ -17,7 +17,7 @@ import {
   taxCategories,
   supplierExpiries,
   appSettings,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import { getErrorMessage, LineType } from '@herobm/shared';
@@ -28,7 +28,7 @@ import { getExchangeRateForCurrency } from '../common/fx-helper';
 import {
   PURCHASE_ORDER_STATE,
   computeLinePriceForStorage,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   PRODUCT_STATE,
   BACKORDER_STATE,
   normalizeUomCode,
@@ -171,16 +171,19 @@ export class PurchaseOrdersWriteService {
       }
 
       const [supplier] = await tx
-        .select({ stateCode: actors.stateCode })
+        .select({ stateCode: organizations.stateCode })
         .from(coreSuppliers)
-        .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(coreSuppliers.organizationId, organizations.organizationId),
+        )
         .where(eq(coreSuppliers.vendorId, createDto.vendorId))
         .limit(1);
 
       if (!supplier) {
         throw new BadRequestException('Supplier not found.');
       }
-      if (supplier.stateCode !== ACTOR_STATE.ACTIVE) {
+      if (supplier.stateCode !== ORGANIZATION_STATE.ACTIVE) {
         throw new BadRequestException(
           'Cannot create purchase order for an inactive supplier.',
         );
@@ -348,9 +351,12 @@ export class PurchaseOrdersWriteService {
       }
 
       const [vendor] = await tx
-        .select({ name: actors.name })
+        .select({ name: organizations.name })
         .from(coreSuppliers)
-        .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(coreSuppliers.organizationId, organizations.organizationId),
+        )
         .where(eq(coreSuppliers.vendorId, createDto.vendorId));
 
       await emitEvent(tx, {

@@ -32,7 +32,7 @@ import {
   purchaseInvoiceReceipts,
   paymentAllocations,
   paymentEntries,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -239,11 +239,14 @@ export class PurchaseInvoiceCoreService {
     const rows = await db
       .select({
         invoice: purchaseInvoices,
-        vendorName: actors.name,
+        vendorName: organizations.name,
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(purchaseInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -497,8 +500,8 @@ export class PurchaseInvoiceCoreService {
             WHEN ${purchaseInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -509,7 +512,7 @@ export class PurchaseInvoiceCoreService {
         or(
           ilike(purchaseInvoices.invoiceNumber, `%${rawSearchTerm}%`),
           ilike(purchaseInvoices.supplierInvoiceNumber, `%${rawSearchTerm}%`),
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
         ) as import('drizzle-orm').SQL,
       );
     }
@@ -521,7 +524,7 @@ export class PurchaseInvoiceCoreService {
         invoiceId: purchaseInvoices.invoiceId,
         invoiceNumber: purchaseInvoices.invoiceNumber,
         vendorId: purchaseInvoices.vendorId,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         supplierInvoiceNumber: purchaseInvoices.supplierInvoiceNumber,
         totalAmount: purchaseInvoices.totalAmount,
         taxAmount: purchaseInvoices.taxAmount,
@@ -535,7 +538,10 @@ export class PurchaseInvoiceCoreService {
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (whereClause) {

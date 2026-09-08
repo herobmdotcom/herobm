@@ -131,6 +131,21 @@ def main():
     except Exception as e:
         print(f"\033[33mWarning: Could not set restrictive permissions on {env_file_name}: {e}\033[0m")
 
+    # Pre-create logs and storage directories
+    storage_subdirs = [
+        os.path.join(root_dir, "logs"),
+        os.path.join(root_dir, "data", "storage", "products", "uploads"),
+        os.path.join(root_dir, "data", "storage", "organization"),
+        os.path.join(root_dir, "data", "storage", "reports"),
+    ]
+    for d in storage_subdirs:
+        os.makedirs(d, exist_ok=True)
+        if os.name == 'posix':
+            try:
+                os.chmod(d, 0o777)
+            except Exception:
+                pass
+
     print(f"\n\033[32m=== {env_file_name} created at {env_file_path} ===\033[0m")
     print("Review it and fill in any remaining <REDACTED> values.\n")
 

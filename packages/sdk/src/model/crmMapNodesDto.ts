@@ -3,14 +3,14 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
-import type { CrmMapActorNodeDto } from './crmMapActorNodeDto';
+import type { CrmMapOrganizationNodeDto } from './crmMapOrganizationNodeDto';
 import type { CrmMapContactNodeDto } from './crmMapContactNodeDto';
 import type { CrmMapOpportunityNodeDto } from './crmMapOpportunityNodeDto';
 
 export interface CrmMapNodesDto {
-  actors: CrmMapActorNodeDto[];
+  organizations: CrmMapOrganizationNodeDto[];
   contacts: CrmMapContactNodeDto[];
   opportunities: CrmMapOpportunityNodeDto[];
 }

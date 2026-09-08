@@ -30,7 +30,7 @@ import {
   glJournalEntries,
   glJournalLines,
   exchangeRates,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -169,12 +169,12 @@ describe('PaymentsService', () => {
       isOnCreditHold: false,
     } as any);
 
-    // 6. Customer Actor
+    // 6. Customer Organization
     customerId = randomUUID();
     usdCustomerId = randomUUID();
-    const customerActorId = randomUUID();
-    await pg.db.insert(actors).values({
-      actorId: customerActorId,
+    const customerOrganizationId = randomUUID();
+    await pg.db.insert(organizations).values({
+      organizationId: customerOrganizationId,
       name: 'Test Customer',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
@@ -182,7 +182,7 @@ describe('PaymentsService', () => {
 
     await pg.db.insert(customers).values({
       customerId: customerId,
-      actorId: customerActorId,
+      organizationId: customerOrganizationId,
       customerNumber: 'ACCT-001',
       externalId: 'CUST-001',
       currencyCode: 'AUD',
@@ -191,16 +191,16 @@ describe('PaymentsService', () => {
       source: 'system',
     } as any);
 
-    const cActorId = randomUUID();
-    await pg.db.insert(actors).values({
-      actorId: cActorId,
+    const cOrganizationId = randomUUID();
+    await pg.db.insert(organizations).values({
+      organizationId: cOrganizationId,
       name: 'FX Customer',
       headquartersAddressLine1: 'US',
       isTaxRegistered: false,
     } as any);
     await pg.db.insert(customers).values({
       customerId: usdCustomerId,
-      actorId: cActorId,
+      organizationId: cOrganizationId,
       customerNumber: 'FX-CUST-001',
       currencyCode: 'USD',
       customerGroupId,
@@ -219,11 +219,11 @@ describe('PaymentsService', () => {
       defaultApAccountId: apAccountId,
     } as any);
 
-    // 7. Supplier Actor
+    // 7. Supplier Organization
     supplierId = randomUUID();
-    const supplierActorId = randomUUID();
-    await pg.db.insert(actors).values({
-      actorId: supplierActorId,
+    const supplierOrganizationId = randomUUID();
+    await pg.db.insert(organizations).values({
+      organizationId: supplierOrganizationId,
       name: 'Test Supplier',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
@@ -231,7 +231,7 @@ describe('PaymentsService', () => {
 
     await pg.db.insert(suppliers).values({
       vendorId: supplierId,
-      actorId: supplierActorId,
+      organizationId: supplierOrganizationId,
       vendorNumber: 'VEND-001',
       externalId: 'SUPP-001',
       currencyCode: 'AUD',
@@ -570,16 +570,16 @@ describe('PaymentsService', () => {
     it('should fall back to glSettings when group has no AR/AP override', async () => {
       // Create a customer with no customer group
       const ungroupedId = randomUUID();
-      const unActorId = randomUUID();
-      await pg.db.insert(actors).values({
-        actorId: unActorId,
+      const unOrgId = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId: unOrgId,
         name: 'Ungrouped Customer',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
       } as any);
       await pg.db.insert(customers).values({
         customerId: ungroupedId,
-        actorId: unActorId,
+        organizationId: unOrgId,
         customerNumber: 'ACCT-UNGROUPED',
         externalId: 'UNGROUPED-001',
         currencyCode: 'AUD',
@@ -1094,16 +1094,16 @@ describe('PaymentsService', () => {
     });
     it('should validate early payment discount successfully', async () => {
       const discCustomerId = randomUUID();
-      const dActorId = randomUUID();
-      await pg.db.insert(actors).values({
-        actorId: dActorId,
+      const dOrgId = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId: dOrgId,
         name: 'Discount Customer',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
       } as any);
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
-        actorId: dActorId,
+        organizationId: dOrgId,
         customerNumber: 'CUST-DISC-001',
         stateCode: CUSTOMER_STATE.ACTIVE,
         source: 'system',
@@ -1180,16 +1180,16 @@ describe('PaymentsService', () => {
 
     it('should reject early payment discount if past the allowed days', async () => {
       const discCustomerId = randomUUID();
-      const dActorId2 = randomUUID();
-      await pg.db.insert(actors).values({
-        actorId: dActorId2,
+      const dOrgId2 = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId: dOrgId2,
         name: 'Discount Customer 2',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
       } as any);
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
-        actorId: dActorId2,
+        organizationId: dOrgId2,
         customerNumber: 'CUST-DISC-002',
         stateCode: CUSTOMER_STATE.ACTIVE,
         source: 'system',

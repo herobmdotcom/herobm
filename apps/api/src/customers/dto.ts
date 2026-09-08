@@ -16,7 +16,7 @@ export class BaseCustomerDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
   @IsString()
   @IsNotEmpty()
   customerNumber!: string;
@@ -189,7 +189,7 @@ export class UpdateCustomerGroupDto extends PartialType(BaseCustomerGroupDto) {}
 
 export class CustomerResponseDto {
   customerId!: string;
-  actorId!: string;
+  organizationId!: string;
   customerNumber!: string;
   name!: string;
   billingAddressLine1?: string;

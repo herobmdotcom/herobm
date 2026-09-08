@@ -195,31 +195,31 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     await searchPageTable(page, lastName);
   });
 
-  test('creates a new CRM actor and verifies detail view', async ({ page }) => {
-    const actorSuffix = uniqueId('ACT');
-    const actorName = `Acme Enterprise ${actorSuffix}`;
+  test('creates a new CRM organization and verifies detail view', async ({ page }) => {
+    const orgSuffix = uniqueId('ORG');
+    const orgName = `Acme Enterprise ${orgSuffix}`;
 
-    // 1. Navigate to New Actor page
-    await page.goto('/crm/actors/new', { waitUntil: 'networkidle' });
+    // 1. Navigate to New Organization page
+    await page.goto('/crm/organizations/new', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
 
-    // 2. Fill Actor fields
+    // 2. Fill Organization fields
     const nameInput = page.locator('input[name="name"], input[placeholder*="Acme Holdings" i], input[type="text"]').first();
     await expect(nameInput).toBeVisible({ timeout: 10000 });
-    await nameInput.fill(actorName);
+    await nameInput.fill(orgName);
 
     const industryInput = page.locator('input[name="industry"], input[placeholder*="Technology" i]').first();
     if (await industryInput.isVisible()) {
       await industryInput.fill('Manufacturing & Logistics');
     }
 
-    // 3. Submit Actor form
-    const createBtn = page.getByRole('button', { name: /save|create actor/i }).first();
+    // 3. Submit Organization form
+    const createBtn = page.getByRole('button', { name: /save|create organization/i }).first();
     await expect(createBtn).toBeVisible();
     await expect(createBtn).toBeEnabled();
 
     const responsePromise = page.waitForResponse(
-      (res) => res.url().includes('/api/crm/actors') && res.request().method() === 'POST',
+      (res) => (res.url().includes('/api/crm/organizations') || res.url().includes('/api/organizations')) && res.request().method() === 'POST',
       { timeout: 15000 }
     ).catch(() => null);
 
@@ -230,8 +230,8 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
       expect([200, 201]).toContain(response.status());
     }
 
-    // 4. Assert redirect to Actor Details page
-    await page.waitForURL(/\/crm\/actors\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
+    // 4. Assert redirect to Organization Details page
+    await page.waitForURL(/\/crm\/organizations\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
     await expectNoErrorBoundaries(page);
 
     const header = page.locator('h1, h2, [class*="EntityHeader"]').first();

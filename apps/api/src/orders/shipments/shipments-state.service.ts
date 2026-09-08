@@ -29,7 +29,7 @@ import {
   transferOrderShipmentLines,
   transferOrderLines,
   locations,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../../settings/app-config.service';
 import { getValuationStrategy } from '../../inventory/valuation';
@@ -519,7 +519,10 @@ export class ShipmentsStateService {
                 coreAccounts,
                 eq(salesOrders.customerId, coreAccounts.customerId),
               )
-              .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+              .leftJoin(
+                organizations,
+                eq(coreAccounts.organizationId, organizations.organizationId),
+              )
               .leftJoin(
                 customerGroups,
                 eq(
@@ -814,7 +817,10 @@ export class ShipmentsStateService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

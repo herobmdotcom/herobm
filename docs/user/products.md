@@ -162,7 +162,7 @@ Images should be uploaded via the Ops Portal UI on the Product detail page, or v
 | :--- | :--- |
 | **Product Code / SKU** | Unique catalog code. |
 | **Product Name** | Full commercial description. |
-| **Product Type** | `Stocked`, `Non-Stock`, `Service`, or `Freight`. |
+| **Product Type** | `Inventory (Tracked)` (`inventory`), `Non-Stock` (`non-stock`), `Service` (`service`), or `Freight` (`freight`). |
 | **Standard Cost** | Current unit cost benchmark for GL valuation and budgeting. |
 | **Weighted Average Cost (WAC)** | Rolling inventory valuation unit cost basis calculated from stock receipts. |
 | **Preferred Supplier Cost** | Contracted purchase price from the primary vendor, including discount. |

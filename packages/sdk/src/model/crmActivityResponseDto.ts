@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { ActivityContactDto } from './activityContactDto';
 
@@ -16,7 +16,7 @@ export interface CrmActivityResponseDto {
   status: string;
   priority: string;
   /** @nullable */
-  actorId?: string | null;
+  organizationId?: string | null;
   contacts?: ActivityContactDto[];
   /** @nullable */
   opportunityId?: string | null;
@@ -34,7 +34,7 @@ export interface CrmActivityResponseDto {
   createdOn: string;
   modifiedOn: string;
   /** @nullable */
-  actorName?: string | null;
+  organizationName?: string | null;
   /** @nullable */
   opportunityName?: string | null;
   /** @nullable */

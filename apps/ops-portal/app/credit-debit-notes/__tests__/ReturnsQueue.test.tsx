@@ -5,7 +5,6 @@ import * as api from '@herobm/sdk';
 
 jest.mock('@herobm/sdk', () => ({
   globalReturnsControllerFindGlobalReturns: jest.fn(),
-  globalPurchaseReturnsControllerGetPurchaseReturns: jest.fn(),
 }));
 
 jest.mock('next-intl', () => ({
@@ -105,22 +104,6 @@ describe('CreditDebitOperationsPage — Unified Returns Queue', () => {
           createdOn: '2026-08-01T10:00:00Z',
           stateCode: 'received',
           lines: [{ lineId: '1', putawayStatus: 'completed' }],
-        },
-      ],
-    });
-
-    (api.globalPurchaseReturnsControllerGetPurchaseReturns as jest.Mock).mockResolvedValue({
-      data: [
-        {
-          returnId: 'pr-1',
-          returnNumber: 'PRET-001',
-          purchaseOrderId: 'po-1',
-          orderNumber: 'PO-200',
-          vendorName: 'Supplier One',
-          vendorCode: 'SUP-001',
-          createdOn: '2026-08-02T11:00:00Z',
-          stateCode: 'shipped',
-          lines: [{ lineId: '2' }],
         },
       ],
     });

@@ -69,8 +69,8 @@ await inventoryService.recordInventoryMovement(tx, {
 Within a single transaction, the engine:
 1. Inserts the `inventory_entries` header.
 2. Inserts balanced `inventory_ledger` lines.
-3. Emits an `INVENTORY_ENTRY_CREATED` event to the transactional outbox.
-4. Updates the fast read-cache (`quantityOnHand`) for rapid UI querying.
+3. Emits an `ENTRY_POSTED` event (`entityType: INVENTORY_LEDGER`) to the transactional outbox.
+4. Updates the fast read-cache (`bin_contents.actualQuantity`) for rapid UI querying (which feeds into the aggregated `inventory_levels` view).
 
 ---
 

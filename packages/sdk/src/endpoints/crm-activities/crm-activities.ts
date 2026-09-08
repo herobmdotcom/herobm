@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type {
   CreateCrmActivityDto,
@@ -18,7 +18,7 @@ import type {
 import { customFetch } from '../../mutator';
 
 /**
- * Logs a new interaction (Call, Meeting, Email, Task) against an Actor, Contact, or Project.
+ * Logs a new interaction (Call, Meeting, Email, Task, Note, or custom type) against an Organization, Contact, or Opportunity.
  * @summary Create CRM Activity
  */
 export type crmActivitiesControllerCreateResponse201 = {
@@ -55,7 +55,7 @@ export const crmActivitiesControllerCreate = async (createCrmActivityDto: Create
 
 
 /**
- * Retrieves CRM activities and tasks with filtering by entity, assignee, and status.
+ * Retrieves CRM activities and tasks with filtering by organization, contact, opportunity, assignee, overdue state, and status.
  * @summary List CRM Activities
  */
 export type crmActivitiesControllerFindAllResponse200 = {
@@ -235,6 +235,44 @@ export const crmActivitiesControllerComplete = async (id: string,
     emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<crmActivitiesControllerCompleteResponse> => {
   
   return customFetch<crmActivitiesControllerCompleteResponse>(getCrmActivitiesControllerCompleteUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+/**
+ * Reopens a completed or cancelled CRM task, resetting its completion timestamp.
+ * @summary Reopen Task
+ */
+export type crmActivitiesControllerReopenResponse200 = {
+  data: CrmActivityResponseDto
+  status: 200
+}
+    
+export type crmActivitiesControllerReopenResponseSuccess = (crmActivitiesControllerReopenResponse200) & {
+  headers: Headers;
+};
+;
+
+export type crmActivitiesControllerReopenResponse = (crmActivitiesControllerReopenResponseSuccess)
+
+export const getCrmActivitiesControllerReopenUrl = (id: string,) => {
+
+
+  
+
+  return `/crm-activities/${id}/reopen`
+}
+
+export const crmActivitiesControllerReopen = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<crmActivitiesControllerReopenResponse> => {
+  
+  return customFetch<crmActivitiesControllerReopenResponse>(getCrmActivitiesControllerReopenUrl(id),
   {      
     ...options,
     method: 'PATCH',

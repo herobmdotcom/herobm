@@ -6,7 +6,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   SALES_ORDER_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   SUPPLIER_STATE,
 } from '@herobm/shared';
 import {
@@ -20,7 +20,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
 
@@ -99,14 +99,15 @@ describe('DashboardService', () => {
     await pg.db.delete(customers);
     await pg.db.delete(products);
     await pg.db.delete(suppliers);
+    await pg.db.delete(organizations);
   });
 
   describe('getSummary', () => {
     it('should return counts for all entities', async () => {
-      const actorId = '00000000-0000-4000-8000-000000000005';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId,
+      const organizationId = '00000000-0000-4000-8000-000000000005';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId,
         name: 'Test Customer',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -114,7 +115,7 @@ describe('DashboardService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId,
+          organizationId,
           customerNumber: 'ACC1',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -192,10 +193,10 @@ describe('DashboardService', () => {
           createdBy: 'system',
         })
         .returning();
-      const actorId2 = '00000000-0000-4000-8000-000000000006';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId: actorId2,
+      const organizationId2 = '00000000-0000-4000-8000-000000000006';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: organizationId2,
         name: 'Alpha Corp',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -203,7 +204,7 @@ describe('DashboardService', () => {
       const [a] = await pg.db
         .insert(customers)
         .values({
-          actorId: actorId2,
+          organizationId: organizationId2,
           customerNumber: 'AC-01',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -232,10 +233,10 @@ describe('DashboardService', () => {
     });
 
     it('should return correct href for each entity type', async () => {
-      const actorId3 = '00000000-0000-4000-8000-000000000007';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId: actorId3,
+      const organizationId3 = '00000000-0000-4000-8000-000000000007';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: organizationId3,
         name: 'Search Acc',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -243,7 +244,7 @@ describe('DashboardService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: actorId3,
+          organizationId: organizationId3,
           customerNumber: 'SA1',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -291,10 +292,10 @@ describe('DashboardService', () => {
         })
         .returning();
 
-      const actorIdFilter = '00000000-0000-4000-8000-000000000088';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId: actorIdFilter,
+      const organizationIdFilter = '00000000-0000-4000-8000-000000000088';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: organizationIdFilter,
         name: 'Widget Supplier',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -303,7 +304,7 @@ describe('DashboardService', () => {
       await pg.db.insert(suppliers).values({
         stateCode: SUPPLIER_STATE.ACTIVE,
         isPurchasingBlocked: false,
-        actorId: actorIdFilter,
+        organizationId: organizationIdFilter,
         vendorNumber: 'SUP-01',
         currencyCode: 'USD',
         source: 'app',
@@ -352,17 +353,17 @@ describe('DashboardService', () => {
   describe('getTimeline', () => {
     it('should return chronological events from system_events', async () => {
       const customerId = '00000000-0000-4000-8000-00000000000a';
-      const actorId4 = '00000000-0000-4000-8000-000000000008';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId: actorId4,
+      const organizationId4 = '00000000-0000-4000-8000-000000000008';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: organizationId4,
         name: 'Timeline Customer',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
       });
       await pg.db.insert(customers).values({
         customerId,
-        actorId: actorId4,
+        organizationId: organizationId4,
         customerNumber: 'TACC',
         currencyCode: 'USD',
         stateCode: CUSTOMER_STATE.DRAFT,

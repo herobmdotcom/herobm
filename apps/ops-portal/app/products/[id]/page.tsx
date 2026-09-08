@@ -137,6 +137,7 @@ export default function ProductDetailPage() {
 
   return (
     <DetailsLayout
+      maxWidth={activeTab === 'inventory' ? '6xl' : 'full'}
       header={
         <EntityHeader
           title={product.productNumber}

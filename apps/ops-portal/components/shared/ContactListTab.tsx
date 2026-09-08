@@ -12,7 +12,7 @@ export type ContactLinkWithDetails = any;
 
 interface ContactListTabProps {
   entityId: string;
-  entityType: 'actor' | 'customer' | 'supplier' | 'opportunity';
+  entityType: 'actor' | 'organization' | 'customer' | 'supplier' | 'opportunity';
   contacts: ContactLinkWithDetails[];
   onContactAdded: () => void;
 }
@@ -29,16 +29,16 @@ export function ContactListTab({ entityId, entityType, contacts, onContactAdded 
       if (entityType === 'opportunity') {
         await api.opportunitiesControllerDeleteContact(entityId, contactId);
       } else {
-        // actor, customer, or supplier
-        let actorId = entityId;
+        // actor, organization, customer, or supplier
+        let orgId = entityId;
         if (entityType === 'customer') {
           const cust = await api.customersControllerFindOne(entityId);
-          actorId = cust.data.actorId;
+          orgId = cust.data.organizationId || (cust.data as unknown as { actorId?: string }).actorId || '';
         } else if (entityType === 'supplier') {
           const supp = await api.suppliersControllerFindOne(entityId);
-          actorId = supp.data.actorId;
+          orgId = supp.data.organizationId || (supp.data as unknown as { actorId?: string }).actorId || '';
         }
-        await api.actorsControllerRemoveContact(actorId, contactId);
+        await api.organizationsControllerRemoveContact(orgId, contactId);
       }
       toast.success('Contact unlinked');
       onContactAdded();

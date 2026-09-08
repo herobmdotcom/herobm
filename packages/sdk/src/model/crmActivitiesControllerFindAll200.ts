@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { PaginatedResponse } from './paginatedResponse';
 import type { CrmActivitiesControllerFindAll200AllOf } from './crmActivitiesControllerFindAll200AllOf';

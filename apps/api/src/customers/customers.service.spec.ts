@@ -13,14 +13,14 @@ import {
   glJournalEntries,
   glJournalLines,
   glAccounts,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
 import {
   CUSTOMER_STATE,
   SALES_ORDER_STATE,
   SALES_INVOICE_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 import { CreditAssessmentService } from './credit-assessment.service';
@@ -68,16 +68,16 @@ describe('CustomersService', () => {
   describe('findAll', () => {
     it('should return paginated customers', async () => {
       const acts = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values([
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Customer A',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Customer B',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -87,7 +87,7 @@ describe('CustomersService', () => {
 
       await pg.db.insert(customers).values([
         {
-          actorId: acts[0].actorId,
+          organizationId: acts[0].organizationId,
           customerNumber: 'A1',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -95,7 +95,7 @@ describe('CustomersService', () => {
           createdBy: 'system',
         },
         {
-          actorId: acts[1].actorId,
+          organizationId: acts[1].organizationId,
           customerNumber: 'B1',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -112,16 +112,16 @@ describe('CustomersService', () => {
 
     it('should apply search filter (ilike)', async () => {
       const acts = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values([
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Acme Corp',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Other Inc',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -131,7 +131,7 @@ describe('CustomersService', () => {
 
       await pg.db.insert(customers).values([
         {
-          actorId: acts[0].actorId,
+          organizationId: acts[0].organizationId,
           customerNumber: 'ACME',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -139,7 +139,7 @@ describe('CustomersService', () => {
           createdBy: 'system',
         },
         {
-          actorId: acts[1].actorId,
+          organizationId: acts[1].organizationId,
           customerNumber: 'OTHER',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -173,9 +173,9 @@ describe('CustomersService', () => {
         .returning();
 
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'VIP Client',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -183,7 +183,7 @@ describe('CustomersService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'VIP-001',
         currencyCode: 'AUD',
         customerGroupId: ag.customerGroupId,
@@ -202,16 +202,16 @@ describe('CustomersService', () => {
 
     it('should exclude archived customers by default', async () => {
       const acts = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values([
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Active',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
           },
           {
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Archived',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -221,7 +221,7 @@ describe('CustomersService', () => {
 
       await pg.db.insert(customers).values([
         {
-          actorId: acts[0].actorId,
+          organizationId: acts[0].organizationId,
           customerNumber: 'ACT',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.ACTIVE,
@@ -229,7 +229,7 @@ describe('CustomersService', () => {
           createdBy: 'system',
         },
         {
-          actorId: acts[1].actorId,
+          organizationId: acts[1].organizationId,
           customerNumber: 'ARC',
           currencyCode: 'USD',
           stateCode: CUSTOMER_STATE.ARCHIVED,
@@ -250,9 +250,9 @@ describe('CustomersService', () => {
 
     it('should resolve isSalesBlocked: true when customer is on manual credit hold', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Hold Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -260,7 +260,7 @@ describe('CustomersService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'HOLD-01',
         currencyCode: 'USD',
         stateCode: CUSTOMER_STATE.ACTIVE,
@@ -289,9 +289,9 @@ describe('CustomersService', () => {
         .returning();
 
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Group Hold Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -299,7 +299,7 @@ describe('CustomersService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'GHOLD-01',
         currencyCode: 'USD',
         stateCode: CUSTOMER_STATE.ACTIVE,
@@ -317,9 +317,9 @@ describe('CustomersService', () => {
 
     it('should resolve isSalesBlocked: false when customer has a valid future override', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Override Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -330,7 +330,7 @@ describe('CustomersService', () => {
       futureDate.setDate(futureDate.getDate() + 7);
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'OVR-01',
         currencyCode: 'USD',
         stateCode: CUSTOMER_STATE.ACTIVE,
@@ -349,9 +349,9 @@ describe('CustomersService', () => {
   describe('findOne', () => {
     it('should return customer by UUID with its events', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Main Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -361,7 +361,7 @@ describe('CustomersService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           customerNumber: 'MAIN',
           currencyCode: 'GBP',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -386,9 +386,9 @@ describe('CustomersService', () => {
 
     it('should return customer by sourceId (legacy)', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Legacy Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -396,7 +396,7 @@ describe('CustomersService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'LEG1',
         currencyCode: 'USD',
         sourceId: 'ABM-999',
@@ -430,9 +430,9 @@ describe('CustomersService', () => {
         .returning();
 
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Group Customer',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: true,
@@ -442,7 +442,7 @@ describe('CustomersService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           customerNumber: 'GRP-CUST-1',
           currencyCode: 'AUD',
           customerGroupId: ag.customerGroupId,
@@ -468,9 +468,9 @@ describe('CustomersService', () => {
     it('should compute total outstanding, GL balance, discrepancy, and credit metrics', async () => {
       // 1. Seed Customer
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Balance Test Customer',
           headquartersAddressLine1: 'US',
           isTaxRegistered: false,
@@ -480,7 +480,7 @@ describe('CustomersService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           customerNumber: 'BAL1',
           currencyCode: 'USD',
           isOnCreditHold: true,

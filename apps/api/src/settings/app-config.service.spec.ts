@@ -146,5 +146,34 @@ describe('AppConfigService', () => {
         { value: 'WEST', order: 2 },
       ]);
     });
+
+    it('should load custom activityTypes and fall back to DEFAULT_CRM_ACTIVITY_TYPES', async () => {
+      expect(service.activityTypes()).toEqual([
+        { value: 'call', order: 1 },
+        { value: 'meeting', order: 2 },
+        { value: 'email', order: 3 },
+        { value: 'task', order: 4 },
+        { value: 'note', order: 5 },
+      ]);
+
+      await pg.db.insert(appSettings).values({
+        defaultFulfillmentLocationId: testLocationId,
+        inventoryValuationMethod: 'fifo',
+        inventoryAccountingMode: 'perpetual',
+        setupCompletedAt: new Date(),
+        creditLimitBehavior: 'soft',
+        apiRateLimit: '100',
+        activityTypes: [
+          { value: 'demo', order: 1 },
+          { value: 'discovery', order: 2 },
+        ],
+      });
+
+      await service.reload();
+      expect(service.activityTypes()).toEqual([
+        { value: 'demo', order: 1 },
+        { value: 'discovery', order: 2 },
+      ]);
+    });
   });
 });

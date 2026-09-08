@@ -57,7 +57,7 @@ HTTP Request ──► JwtAuthGuard (Validates Bearer Token / API Key)
 The Ops Portal is built with Next.js 15, React, and Tailwind CSS adhering to the "Machine Shop" design identity:
 
 - **Dense Industrial Layout**: Optimized for high-throughput operational productivity (`p-2`, `gap-2`, compact typography).
-- **ag-Grid Enterprise Grids**: Standardized for master data tables with server-side filtering, sorting, column reordering, and CSV export.
+- **ag-Grid Data Grids**: Standardized with `ag-grid-community` and `ag-grid-react` for master data tables with server-side filtering, sorting, column reordering, and CSV export.
 - **Client-Side Data Fetching**: Standardized wrappers (`apiFetch`, `apiMutate`, `apiFetchBlob`) manage authentication headers and JSON serialization.
 - **Strict Internationalization (`next-intl`)**: All UI strings are managed through `messages/en.json` using `t('key')` to maintain type-safe localization.
 
@@ -67,6 +67,6 @@ The Ops Portal is built with Next.js 15, React, and Tailwind CSS adhering to the
 
 The reporting subsystem decouples report intents (e.g. "Print Shipping Docket") from specific formatting templates:
 
-- **Template Registry**: Typst templates (`.typ`) are stored in the `herobm_core.reports` database table with context mappings in `report_contexts`.
+- **Template Registry**: Typst templates (`.typ`) are stored in the `herobm_core.pdf_templates` database table with context mappings in `pdf_template_contexts` and hook triggers in `pdf_template_hooks`.
 - **Typst CLI Compilation**: The API compiles Typst templates dynamically using JSON data payloads, producing vector PDFs in sub-second rendering times.
 - **Zero-Code Report Deployment**: System administrators can upload, test, and activate custom company report layouts directly through the UI without requiring backend rebuilds.

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { GenericTaxSummaryDto } from './genericTaxSummaryDto';
 import type { TaxReportBoxDto } from './taxReportBoxDto';

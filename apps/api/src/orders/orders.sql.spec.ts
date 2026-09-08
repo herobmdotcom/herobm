@@ -4,11 +4,15 @@ import {
   salesOrders,
   customers,
   customerGroups,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { sql, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { CUSTOMER_STATE, SALES_ORDER_STATE, ACTOR_STATE } from '@herobm/shared';
+import {
+  CUSTOMER_STATE,
+  SALES_ORDER_STATE,
+  ORGANIZATION_STATE,
+} from '@herobm/shared';
 
 describe('orders.sql - getCreditBlockedSql', () => {
   const pg = setupPgliteSuite();
@@ -17,17 +21,17 @@ describe('orders.sql - getCreditBlockedSql', () => {
     overrides: Partial<typeof customers.$inferInsert> = {},
   ) {
     const customerId = randomUUID();
-    const [act] = await pg.db
-      .insert(actors)
+    const [org] = await pg.db
+      .insert(organizations)
       .values({
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         name: 'Test Customer',
         isTaxRegistered: false,
       })
       .returning();
 
     await pg.db.insert(customers).values({
-      actorId: act.actorId,
+      organizationId: org.organizationId,
       customerId,
       customerNumber: `CUST-${customerId.substring(0, 8)}`,
       currencyCode: 'AUD',

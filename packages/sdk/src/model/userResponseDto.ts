@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 
 export interface UserResponseDto {
@@ -16,6 +16,7 @@ export interface UserResponseDto {
   /** @nullable */
   email: string | null;
   tenantId: string;
+  twoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }

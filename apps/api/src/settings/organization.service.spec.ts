@@ -3,7 +3,7 @@ import { OrganizationService } from './organization.service';
 import { StorageService } from '../common/storage/storage.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { organization } from '@herobm/db-schema';
+import { tenantSettings } from '@herobm/db-schema';
 import { BadRequestException } from '@nestjs/common';
 
 describe('OrganizationService', () => {
@@ -35,25 +35,25 @@ describe('OrganizationService', () => {
     }).compile();
 
     service = module.get<OrganizationService>(OrganizationService);
-    await pg.db.delete(organization);
+    await pg.db.delete(tenantSettings);
   });
 
   describe('get', () => {
-    it('should return default object when no organization exists', async () => {
+    it('should return default object when no tenantSettings exists', async () => {
       const org = await service.get();
       expect(org).toBeDefined();
       expect(org.name).toBe('');
       expect(org.logoUrl).toBe('');
     });
 
-    it('should return existing organization when present', async () => {
-      await pg.db.insert(organization).values({
+    it('should return existing tenantSettings when present', async () => {
+      await pg.db.insert(tenantSettings).values({
         name: 'Acme Corp',
-        logoUrl: 'organization/acme_logo.png',
+        logoUrl: 'tenantSettings/acme_logo.png',
       });
       const org = await service.get();
       expect(org.name).toBe('Acme Corp');
-      expect(org.logoUrl).toBe('organization/acme_logo.png');
+      expect(org.logoUrl).toBe('tenantSettings/acme_logo.png');
     });
   });
 
@@ -64,7 +64,7 @@ describe('OrganizationService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should insert organization if non-existent', async () => {
+    it('should insert tenantSettings if non-existent', async () => {
       const result = await service.update(
         { name: 'New Corp', city: 'Sydney' } as any,
         'testuser',
@@ -73,7 +73,7 @@ describe('OrganizationService', () => {
       expect(result.city).toBe('Sydney');
     });
 
-    it('should update organization if already exists', async () => {
+    it('should update tenantSettings if already exists', async () => {
       await service.update({ name: 'Initial Corp' } as any, 'testuser');
       const updated = await service.update(
         { name: 'Updated Corp', city: 'Melbourne' } as any,
@@ -109,7 +109,7 @@ describe('OrganizationService', () => {
       );
     });
 
-    it('should save logo and update organization logoUrl', async () => {
+    it('should save logo and update tenantSettings logoUrl', async () => {
       const file = {
         mimetype: 'image/png',
         size: 2048,
@@ -128,7 +128,7 @@ describe('OrganizationService', () => {
     });
 
     it('should delete previous logo if already configured', async () => {
-      await pg.db.insert(organization).values({
+      await pg.db.insert(tenantSettings).values({
         name: 'Acme Corp',
         logoUrl: 'organization/old_logo.png',
       });
@@ -148,7 +148,7 @@ describe('OrganizationService', () => {
 
   describe('removeLogo', () => {
     it('should delete logo file and clear logoUrl', async () => {
-      await pg.db.insert(organization).values({
+      await pg.db.insert(tenantSettings).values({
         name: 'Acme Corp',
         logoUrl: 'organization/my_logo.png',
       });

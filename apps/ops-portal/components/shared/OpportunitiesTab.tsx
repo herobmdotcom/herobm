@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 interface OpportunitiesTabProps {
   entityId: string;
-  entityType: 'actor' | 'contact';
+  entityType: 'actor' | 'organization' | 'contact';
 }
 
 export function OpportunitiesTab({
@@ -27,8 +27,8 @@ export function OpportunitiesTab({
       setLoading(true);
       try {
         const query =
-          entityType === 'actor'
-            ? { actorId: entityId }
+          entityType === 'actor' || entityType === 'organization'
+            ? { organizationId: entityId }
             : { contactId: entityId };
         const res = await api.opportunitiesControllerFindAll(query);
         const data = res.data?.data;
@@ -68,12 +68,8 @@ export function OpportunitiesTab({
             <span className="material-symbols-outlined">trending_up</span>
             Opportunities
           </h3>
-          <Button asChild size="sm" variant="secondary">
+          <Button asChild size="sm" variant="primary">
             <Link href="/crm/opportunities/new">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
-              <span className="material-symbols-outlined text-[15px] mr-1">
-                add
-              </span>
               New Opportunity
             </Link>
           </Button>

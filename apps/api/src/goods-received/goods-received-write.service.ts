@@ -24,7 +24,7 @@ import {
   backorders,
   glJournalEntries,
   glJournalLines,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -108,12 +108,15 @@ export class GoodsReceivedWriteService {
       const [vendor] = await tx
         .select({
           vendorId: suppliers.vendorId,
-          name: actors.name,
+          name: organizations.name,
           costCenterId: supplierGroups.defaultCostCenterId,
           activityId: supplierGroups.defaultActivityId,
         })
         .from(suppliers)
-        .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(suppliers.organizationId, organizations.organizationId),
+        )
         .leftJoin(
           supplierGroups,
           eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),

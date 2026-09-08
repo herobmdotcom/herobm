@@ -100,8 +100,8 @@ export const userEvents = herobmCore.table('user_events', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const organization = herobmCore.table('organization', {
-  organizationId: uuid('organization_id').primaryKey().defaultRandom(),
+export const tenantSettings = herobmCore.table('tenant_settings', {
+  tenantSettingsId: uuid('tenant_settings_id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   addressLine1: text('address_line_1'),
   addressLine2: text('address_line_2'),
@@ -153,14 +153,14 @@ export const appSettings = herobmCore.table('app_settings', {
   smtpUser: text('smtp_user'),
   smtpPassEncrypted: text('smtp_pass_encrypted'),
   smtpFromAddress: text('smtp_from_address'),
-  actorTags: jsonb('actor_tags').$type<{ value: string; order: number }[]>(),
-  actorContactRoles: jsonb('actor_contact_roles').$type<
+  organizationTags: jsonb('organization_tags').$type<{ value: string; order: number }[]>(),
+  organizationContactRoles: jsonb('organization_contact_roles').$type<
     { value: string; order: number }[]
   >(),
   opportunityContactRoles: jsonb('opportunity_contact_roles').$type<
     { value: string; order: number }[]
   >(),
-  opportunityActorRoles: jsonb('opportunity_actor_roles').$type<
+  opportunityOrganizationRoles: jsonb('opportunity_organization_roles').$type<
     { value: string; order: number }[]
   >(),
   opportunityStages:
@@ -169,6 +169,8 @@ export const appSettings = herobmCore.table('app_settings', {
     jsonb('opportunity_types').$type<{ value: string; order: number }[]>(),
   referralModes:
     jsonb('referral_modes').$type<{ value: string; order: number }[]>(),
+  activityTypes:
+    jsonb('activity_types').$type<{ value: string; order: number }[]>(),
   salesAnalysisCodes:
     jsonb('sales_analysis_codes').$type<{ value: string; order: number }[]>(),
   apiRateLimit: numeric('api_rate_limit').notNull(),

@@ -41,7 +41,7 @@ import {
   customerGroups,
   locations,
   salesInvoices,
-  actors,
+  organizations,
   taxCategories,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
@@ -758,7 +758,10 @@ export class ReturnsWriteService {
               coreAccounts,
               eq(salesOrders.customerId, coreAccounts.customerId),
             )
-            .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+            .leftJoin(
+              organizations,
+              eq(coreAccounts.organizationId, organizations.organizationId),
+            )
             .leftJoin(
               customerGroups,
               eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
@@ -1014,7 +1017,7 @@ export class ReturnsWriteService {
         salesOrderId: salesOrderReturns.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: actors.name,
+        customerName: organizations.name,
         stateCode: salesOrderReturns.stateCode,
         locationId: salesOrderReturns.locationId,
         locationName: locations.name,
@@ -1032,7 +1035,10 @@ export class ReturnsWriteService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         locations,
         eq(salesOrderReturns.locationId, locations.locationId),
@@ -1185,7 +1191,7 @@ export class ReturnsWriteService {
         salesOrderNumber: salesOrders.orderNumber,
         customerId: coreAccounts.customerId,
         customerNumber: coreAccounts.customerNumber,
-        customerName: actors.name,
+        customerName: organizations.name,
       })
       .from(salesOrderReturns)
       .leftJoin(
@@ -1196,7 +1202,10 @@ export class ReturnsWriteService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -1234,7 +1243,7 @@ export class ReturnsWriteService {
           ilike(salesOrderReturns.notes, searchTerm),
           ilike(salesOrders.orderNumber, searchTerm),
           ilike(coreAccounts.customerNumber, searchTerm),
-          ilike(actors.name, searchTerm),
+          ilike(organizations.name, searchTerm),
         ),
       );
     }

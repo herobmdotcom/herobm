@@ -19,10 +19,10 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   contacts,
-  actorContactLinks,
+  organizationContactLinks,
   customers,
   suppliers,
-  actors,
+  organizations,
   opportunities,
   opportunityContacts,
   masterDataEvents,
@@ -154,9 +154,9 @@ export class ContactsService {
     const contact = await this.db.query.contacts.findFirst({
       where: eq(contacts.contactId, id),
       with: {
-        actorContactLinks: {
+        organizationContactLinks: {
           with: {
-            actor: true,
+            organization: true,
           },
         },
       },
@@ -173,7 +173,8 @@ export class ContactsService {
     return {
       ...this.mapToDto(contact),
       events,
-      actorContactLinks: contact.actorContactLinks || [],
+      organizationContactLinks: contact.organizationContactLinks || [],
+      actorContactLinks: contact.organizationContactLinks || [],
     } as unknown as ContactResponseDto;
   }
 
@@ -182,7 +183,7 @@ export class ContactsService {
     userId: string,
   ): Promise<ContactResponseDto> {
     return await this.db.transaction(async (tx) => {
-      let targetActorId: string | null = null;
+      let targetOrganizationId: string | null = null;
       let targetOpportunityId: string | null = null;
 
       if (dto.entityType === ContactEntityType.CUSTOMER && dto.entityId) {
@@ -193,11 +194,11 @@ export class ContactsService {
           throw new NotFoundException(
             `Customer with ID ${dto.entityId} not found`,
           );
-        if (!customer.actorId)
+        if (!customer.organizationId)
           throw new BadRequestException(
-            `Customer has no actor_id assigned yet.`,
+            `Customer has no organization_id assigned yet.`,
           );
-        targetActorId = customer.actorId;
+        targetOrganizationId = customer.organizationId;
       } else if (
         dto.entityType === ContactEntityType.SUPPLIER &&
         dto.entityId
@@ -209,20 +210,23 @@ export class ContactsService {
           throw new NotFoundException(
             `Supplier with ID ${dto.entityId} not found`,
           );
-        if (!supplier.actorId)
+        if (!supplier.organizationId)
           throw new BadRequestException(
-            `Supplier has no actor_id assigned yet.`,
+            `Supplier has no organization_id assigned yet.`,
           );
-        targetActorId = supplier.actorId;
-      } else if (dto.entityType === ContactEntityType.ACTOR && dto.entityId) {
-        const actor = await tx.query.actors.findFirst({
-          where: eq(actors.actorId, dto.entityId),
+        targetOrganizationId = supplier.organizationId;
+      } else if (
+        dto.entityType === ContactEntityType.ORGANIZATION &&
+        dto.entityId
+      ) {
+        const org = await tx.query.organizations.findFirst({
+          where: eq(organizations.organizationId, dto.entityId),
         });
-        if (!actor)
+        if (!org)
           throw new NotFoundException(
-            `Actor with ID ${dto.entityId} not found`,
+            `Organization with ID ${dto.entityId} not found`,
           );
-        targetActorId = actor.actorId;
+        targetOrganizationId = org.organizationId;
       } else if (
         dto.entityType === ContactEntityType.OPPORTUNITY &&
         dto.entityId
@@ -251,9 +255,9 @@ export class ContactsService {
         })
         .returning();
 
-      if (targetActorId) {
-        await tx.insert(actorContactLinks).values({
-          actorId: targetActorId,
+      if (targetOrganizationId) {
+        await tx.insert(organizationContactLinks).values({
+          organizationId: targetOrganizationId,
           contactId: newContact.contactId,
           linkType: 'employee',
           primaryFor: dto.primaryFor ?? (dto.isPrimary ? ['purchasing'] : []),
@@ -320,16 +324,16 @@ export class ContactsService {
         .returning();
 
       if (dto.primaryFor !== undefined) {
-        // This is a naive implementation that sets primaryFor on ALL links for this contact to this actor.
+        // This is a naive implementation that sets primaryFor on ALL links for this contact to this organization.
         await tx
-          .update(actorContactLinks)
+          .update(organizationContactLinks)
           .set({ primaryFor: dto.primaryFor })
-          .where(eq(actorContactLinks.contactId, id));
+          .where(eq(organizationContactLinks.contactId, id));
       } else if (dto.isPrimary !== undefined) {
         await tx
-          .update(actorContactLinks)
+          .update(organizationContactLinks)
           .set({ primaryFor: dto.isPrimary ? ['purchasing'] : [] })
-          .where(eq(actorContactLinks.contactId, id));
+          .where(eq(organizationContactLinks.contactId, id));
       }
 
       await emitEvent(tx, {
@@ -374,8 +378,8 @@ export class ContactsService {
       });
 
       await tx
-        .delete(actorContactLinks)
-        .where(eq(actorContactLinks.contactId, id));
+        .delete(organizationContactLinks)
+        .where(eq(organizationContactLinks.contactId, id));
       await tx.delete(contacts).where(eq(contacts.contactId, id));
     });
   }

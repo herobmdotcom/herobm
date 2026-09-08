@@ -9,7 +9,7 @@ import {
   purchaseOrderLineItems,
   purchaseOrderReturnShipments,
   suppliers,
-  actors,
+  organizations,
   products,
   glSettings,
 } from '@herobm/db-schema';
@@ -68,12 +68,12 @@ export class PurchaseReturnSlipService {
         orderNumber: purchaseOrders.orderNumber,
         currencyCode: purchaseOrders.currencyCode,
         vendorId: purchaseOrders.vendorId,
-        vendorName: actors.name,
-        headquartersAddressLine1: actors.headquartersAddressLine1,
-        city: actors.headquartersCity,
-        stateOrProvince: actors.headquartersStateOrProvince,
-        postalCode: actors.headquartersPostalCode,
-        country: actors.headquartersCountry,
+        vendorName: organizations.name,
+        headquartersAddressLine1: organizations.headquartersAddressLine1,
+        city: organizations.headquartersCity,
+        stateOrProvince: organizations.headquartersStateOrProvince,
+        postalCode: organizations.headquartersPostalCode,
+        country: organizations.headquartersCountry,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -84,7 +84,10 @@ export class PurchaseReturnSlipService {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .limit(1);
 

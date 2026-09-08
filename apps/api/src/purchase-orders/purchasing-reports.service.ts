@@ -7,7 +7,7 @@ import {
   purchaseOrders,
   purchaseOrderLineItems,
   suppliers,
-  actors,
+  organizations,
   products,
   productGroups,
 } from '@herobm/db-schema';
@@ -70,14 +70,14 @@ export class PurchasingReportsService implements OnModuleInit {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
-      supplierName: sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`,
+      supplierName: sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [
       suppliers.vendorId,
-      actors.name,
+      organizations.name,
       suppliers.vendorNumber,
     ];
 
@@ -101,7 +101,10 @@ export class PurchasingReportsService implements OnModuleInit {
         ),
       )
       .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (drillDown === 'product') {
@@ -141,8 +144,12 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`;
-      groupCols.push(suppliers.vendorId, actors.name, suppliers.vendorNumber);
+      selectCols.supplierName = sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`;
+      groupCols.push(
+        suppliers.vendorId,
+        organizations.name,
+        suppliers.vendorNumber,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
@@ -171,7 +178,10 @@ export class PurchasingReportsService implements OnModuleInit {
     if (drillDown === 'supplier') {
       qb = qb
         .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-        .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(suppliers.organizationId, organizations.organizationId),
+        );
     }
 
     if (whereClause) qb = qb.where(whereClause);
@@ -205,8 +215,12 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`;
-      groupCols.push(suppliers.vendorId, actors.name, suppliers.vendorNumber);
+      selectCols.supplierName = sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`;
+      groupCols.push(
+        suppliers.vendorId,
+        organizations.name,
+        suppliers.vendorNumber,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
@@ -234,7 +248,10 @@ export class PurchasingReportsService implements OnModuleInit {
     } else if (drillDown === 'supplier') {
       qb = qb
         .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-        .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
+        .leftJoin(
+          organizations,
+          eq(suppliers.organizationId, organizations.organizationId),
+        );
     }
 
     if (whereClause) qb = qb.where(whereClause);
@@ -261,7 +278,7 @@ export class PurchasingReportsService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       poNumber: purchaseOrders.orderNumber,
-      supplierName: sql<string>`coalesce(${actors.name}, ${suppliers.vendorNumber}, 'Unknown')`,
+      supplierName: sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       expectedDate: sql<string>`to_char(${expectedDateField}, 'YYYY-MM-DD')`,
       pendingValue: sql<number>`sum((${purchaseOrderLineItems.quantity} - COALESCE(${purchaseOrderLineItems.quantityReceived}, 0)) * ${purchaseOrderLineItems.pricePerUnit})::numeric`,
     };
@@ -269,7 +286,7 @@ export class PurchasingReportsService implements OnModuleInit {
     const groupCols: any[] = [
       purchaseOrders.orderNumber,
       suppliers.vendorId,
-      actors.name,
+      organizations.name,
       suppliers.vendorNumber,
       expectedDateField,
     ];
@@ -290,7 +307,10 @@ export class PurchasingReportsService implements OnModuleInit {
         ),
       )
       .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (drillDown === 'product') {

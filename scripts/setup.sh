@@ -193,11 +193,14 @@ else
 fi
 
 echo -e "\n\033[36m--- Podman Setup ---\033[0m"
-echo -e "  Creating logs directory..."
-mkdir -p ./logs
-chmod -R 777 ./logs 2>/dev/null || chmod -R a+rwx ./logs 2>/dev/null || true
+echo -e "  Creating logs and storage directories..."
+mkdir -p ./logs \
+    ./data/storage/products/uploads \
+    ./data/storage/organization \
+    ./data/storage/reports
+chmod -R 777 ./logs ./data/storage 2>/dev/null || chmod -R a+rwx ./logs ./data/storage 2>/dev/null || true
 if [ "$(uname -s)" = "Linux" ]; then
-    podman unshare chmod -R 777 ./logs 2>/dev/null || true
+    podman unshare chmod -R 777 ./logs ./data/storage 2>/dev/null || true
 elif [ "$(uname -s)" = "Darwin" ] && command -v podman >/dev/null 2>&1; then
     MACHINE_LIST=$(podman machine list --format "{{.Name}}" 2>/dev/null || true)
     if [ -z "$MACHINE_LIST" ]; then

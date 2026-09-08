@@ -10,6 +10,7 @@ export interface TimelineEvent {
   payload: Record<string, unknown>;
   actor: string;
   createdOn: string;
+  entityDisplayName?: string;
 }
 
 function EventIcon({ type }: { type: string }) {
@@ -130,6 +131,11 @@ export default function ActivityTimeline({
                 <span className="font-semibold capitalize">
                   {displayType.replace(/_/g, ' ')}
                 </span>
+                {event.entityDisplayName && (
+                  <span className="font-medium text-[var(--foreground)]">
+                    ({event.entityDisplayName})
+                  </span>
+                )}
                 <span className="text-[var(--text-muted)] text-[11px]">
                   {tDynamic(t, 'timeline.by', undefined, { actor: event.actor })}
                 </span>
@@ -177,7 +183,8 @@ export default function ActivityTimeline({
                             debitNote: '/purchase-debit-notes',
                             quote: '/sales-quotes',
                             project: '/crm/opportunities',
-                            actor: '/crm/actors',
+                            actor: '/crm/organizations',
+                            organization: '/crm/organizations',
                             contact: '/crm/contacts',
                             workOrder: '/manufacturing/work-orders',
                             transferOrder: '/inventory/transfers',
@@ -197,6 +204,16 @@ export default function ActivityTimeline({
                             displayValue = nameVal;
                           }
                         }
+                      } else if (
+                        typeof value === 'object' &&
+                        value !== null &&
+                        'from' in value &&
+                        'to' in value
+                      ) {
+                        const changeObj = value as { from?: unknown; to?: unknown };
+                        displayValue = `${String(changeObj.from ?? '—')} → ${String(changeObj.to ?? '—')}`;
+                      } else if (typeof value === 'object' && value !== null) {
+                        displayValue = JSON.stringify(value);
                       }
                       
                       return (

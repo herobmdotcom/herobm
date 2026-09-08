@@ -8,7 +8,7 @@ import {
   paymentAllocations,
   suppliers,
   glSettings,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, and, sql, isNull, inArray, lte, or, isNotNull } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -166,7 +166,7 @@ export class PaymentRunGeneratorService {
           invoiceId: purchaseInvoices.invoiceId,
           invoiceNumber: purchaseInvoices.invoiceNumber,
           supplierId: purchaseInvoices.vendorId,
-          supplierName: actors.name,
+          supplierName: organizations.name,
           dueDate: purchaseInvoices.dueDate,
           invoiceDate: purchaseInvoices.invoiceDate,
           totalAmount: purchaseInvoices.totalAmount,
@@ -176,7 +176,10 @@ export class PaymentRunGeneratorService {
         })
         .from(purchaseInvoices)
         .innerJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
-        .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(suppliers.organizationId, organizations.organizationId),
+        )
         .where(
           and(
             eq(purchaseInvoices.stateCode, 'POSTED'), // Ensure it's posted

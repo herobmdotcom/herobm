@@ -88,8 +88,9 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
 
   const handleLogin = async () => {
     setError('');
+    const trimmedUsername = username.trim();
     try {
-      const data = await login(username, password);
+      const data = await login(trimmedUsername, password);
       if (data && data.twoFactorRequired) {
         setTwoFactorTempToken(data.tempToken);
         return;
@@ -97,7 +98,7 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
       const session = await validateSession();
       if (session.valid && session.data) {
         setRole(session.data.role);
-        setCurrentUsername(session.data.username || username);
+        setCurrentUsername(session.data.username || trimmedUsername);
         setDisplayName(session.data.displayName || null);
         setPermissions(session.data.permissions || []);
         setAuthenticated(true);

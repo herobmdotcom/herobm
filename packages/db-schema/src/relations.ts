@@ -26,7 +26,7 @@ import {
   macros,
   userSettings,
   userEvents,
-  organization,
+  tenantSettings,
   appSettings,
   pdfTemplates,
   pdfTemplateHooks,
@@ -75,7 +75,7 @@ export {
   macros,
   userSettings,
   userEvents,
-  organization,
+  tenantSettings,
   appSettings,
   pdfTemplates,
   pdfTemplateHooks,
@@ -245,15 +245,15 @@ export {
 };
 
 import {
-  actors,
+  organizations,
   contacts,
-  actorContactLinks,
-  actorActorLinks,
+  organizationContactLinks,
+  organizationOrganizationLinks,
   opportunities,
   opportunityNotes,
-  opportunityActors,
+  opportunityOrganizations,
   opportunityContacts,
-  actorNotes,
+  organizationNotes,
   tradingTerms,
   customerGroups,
   supplierGroups,
@@ -265,17 +265,17 @@ import {
 } from './crm.schema';
 
 export {
-  actors,
+  organizations,
   contacts,
-  actorContactLinks,
-  actorActorLinks,
+  organizationContactLinks,
+  organizationOrganizationLinks,
   opportunities,
   opportunityNotes,
-  opportunityActors,
+  opportunityOrganizations,
   opportunityContacts,
   crmActivities,
   crmActivityContacts,
-  actorNotes,
+  organizationNotes,
   tradingTerms,
   customerGroups,
   supplierGroups,
@@ -300,16 +300,16 @@ export const pdfTemplateHooksRelations = relations(
 
 export const customersRelations = relations(customers, ({ many, one }) => ({
   deliveryAddresses: many(customerDeliveryAddresses),
-  actor: one(actors, {
-    fields: [customers.actorId],
-    references: [actors.actorId],
+  organization: one(organizations, {
+    fields: [customers.organizationId],
+    references: [organizations.organizationId],
   }),
 }));
 
 export const suppliersRelations = relations(suppliers, ({ one }) => ({
-  actor: one(actors, {
-    fields: [suppliers.actorId],
-    references: [actors.actorId],
+  organization: one(organizations, {
+    fields: [suppliers.organizationId],
+    references: [organizations.organizationId],
   }),
 }));
 
@@ -323,44 +323,50 @@ export const customerDeliveryAddressesRelations = relations(
   }),
 );
 
-export const actorsRelations = relations(actors, ({ one, many }) => ({
-  actorContactLinks: many(actorContactLinks),
-  sourceLinks: many(actorActorLinks, { relationName: 'sourceActor' }),
-  targetLinks: many(actorActorLinks, { relationName: 'targetActor' }),
-  opportunityActors: many(opportunityActors),
-  notes: many(actorNotes),
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  organizationContactLinks: many(organizationContactLinks),
+  sourceLinks: many(organizationOrganizationLinks, { relationName: 'sourceOrganization' }),
+  targetLinks: many(organizationOrganizationLinks, { relationName: 'targetOrganization' }),
+  opportunityOrganizations: many(opportunityOrganizations),
+  notes: many(organizationNotes),
   customers: many(customers),
   suppliers: many(suppliers),
   owner: one(users, {
-    fields: [actors.ownerId],
+    fields: [organizations.ownerId],
     references: [users.userId],
   }),
-  referredByActor: one(actors, {
-    fields: [actors.referredByActorId],
-    references: [actors.actorId],
-    relationName: 'actorReferrals',
+  referredByOrganization: one(organizations, {
+    fields: [organizations.referredByOrganizationId],
+    references: [organizations.organizationId],
+    relationName: 'organizationReferrals',
+  }),
+  referredOrganizations: many(organizations, {
+    relationName: 'organizationReferrals',
   }),
   referredByContact: one(contacts, {
-    fields: [actors.referredByContactId],
+    fields: [organizations.referredByContactId],
     references: [contacts.contactId],
     relationName: 'contactReferrals',
   }),
 }));
 
-export const actorNotesRelations = relations(actorNotes, ({ one }) => ({
-  actor: one(actors, {
-    fields: [actorNotes.actorId],
-    references: [actors.actorId],
+export const organizationNotesRelations = relations(organizationNotes, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationNotes.organizationId],
+    references: [organizations.organizationId],
   }),
   createdBy: one(users, {
-    fields: [actorNotes.createdById],
+    fields: [organizationNotes.createdById],
     references: [users.userId],
   }),
 }));
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
-  actorContactLinks: many(actorContactLinks),
+  organizationContactLinks: many(organizationContactLinks),
   opportunityContacts: many(opportunityContacts),
+  referredOrganizations: many(organizations, {
+    relationName: 'contactReferrals',
+  }),
 }));
 
 export const opportunitiesRelations = relations(opportunities, ({ one, many }) => ({
@@ -369,11 +375,10 @@ export const opportunitiesRelations = relations(opportunities, ({ one, many }) =
     references: [users.userId],
   }),
   notes: many(opportunityNotes),
-  opportunityActors: many(opportunityActors),
+  opportunityOrganizations: many(opportunityOrganizations),
   opportunityContacts: many(opportunityContacts),
   salesOrders: many(salesOrders),
 }));
-export const projectsRelations = opportunitiesRelations;
 
 export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
   customer: one(customers, {
@@ -381,10 +386,6 @@ export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
     references: [customers.customerId],
   }),
   opportunity: one(opportunities, {
-    fields: [salesOrders.opportunityId],
-    references: [opportunities.opportunityId],
-  }),
-  project: one(opportunities, {
     fields: [salesOrders.opportunityId],
     references: [opportunities.opportunityId],
   }),
@@ -401,49 +402,47 @@ export const opportunityNotesRelations = relations(opportunityNotes, ({ one }) =
     references: [users.userId],
   }),
 }));
-export const projectNotesRelations = opportunityNotesRelations;
 
-export const actorContactLinksRelations = relations(
-  actorContactLinks,
+export const organizationContactLinksRelations = relations(
+  organizationContactLinks,
   ({ one }) => ({
-    actor: one(actors, {
-      fields: [actorContactLinks.actorId],
-      references: [actors.actorId],
+    organization: one(organizations, {
+      fields: [organizationContactLinks.organizationId],
+      references: [organizations.organizationId],
     }),
     contact: one(contacts, {
-      fields: [actorContactLinks.contactId],
+      fields: [organizationContactLinks.contactId],
       references: [contacts.contactId],
     }),
   }),
 );
 
-export const actorActorLinksRelations = relations(
-  actorActorLinks,
+export const organizationOrganizationLinksRelations = relations(
+  organizationOrganizationLinks,
   ({ one }) => ({
-    sourceActor: one(actors, {
-      fields: [actorActorLinks.sourceActorId],
-      references: [actors.actorId],
-      relationName: 'sourceActor',
+    sourceOrganization: one(organizations, {
+      fields: [organizationOrganizationLinks.sourceOrganizationId],
+      references: [organizations.organizationId],
+      relationName: 'sourceOrganization',
     }),
-    targetActor: one(actors, {
-      fields: [actorActorLinks.targetActorId],
-      references: [actors.actorId],
-      relationName: 'targetActor',
+    targetOrganization: one(organizations, {
+      fields: [organizationOrganizationLinks.targetOrganizationId],
+      references: [organizations.organizationId],
+      relationName: 'targetOrganization',
     }),
   }),
 );
 
-export const opportunityActorsRelations = relations(opportunityActors, ({ one }) => ({
+export const opportunityOrganizationsRelations = relations(opportunityOrganizations, ({ one }) => ({
   opportunity: one(opportunities, {
-    fields: [opportunityActors.opportunityId],
+    fields: [opportunityOrganizations.opportunityId],
     references: [opportunities.opportunityId],
   }),
-  actor: one(actors, {
-    fields: [opportunityActors.actorId],
-    references: [actors.actorId],
+  organization: one(organizations, {
+    fields: [opportunityOrganizations.organizationId],
+    references: [organizations.organizationId],
   }),
 }));
-export const projectActorsRelations = opportunityActorsRelations;
 
 export const opportunityContactsRelations = relations(
   opportunityContacts,
@@ -458,7 +457,6 @@ export const opportunityContactsRelations = relations(
     }),
   }),
 );
-export const projectContactsRelations = opportunityContactsRelations;
 
 import {
   workOrders,
@@ -527,7 +525,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.userId],
     references: [userSettings.userId],
   }),
-  ownedActors: many(actors),
+  ownedOrganizations: many(organizations),
 }));
 
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
@@ -538,9 +536,9 @@ export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 }));
 
 export const crmActivitiesRelations = relations(crmActivities, ({ one, many }) => ({
-  actor: one(actors, {
-    fields: [crmActivities.actorId],
-    references: [actors.actorId],
+  organization: one(organizations, {
+    fields: [crmActivities.organizationId],
+    references: [organizations.organizationId],
   }),
   activityContacts: many(crmActivityContacts),
   opportunity: one(opportunities, {

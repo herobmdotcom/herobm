@@ -5,7 +5,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AppConfigService } from '../settings/app-config.service';
 import {
   customers,
-  actors,
+  organizations,
   customerGroups,
   systemEvents,
 } from '@herobm/db-schema';
@@ -36,7 +36,7 @@ describe('CSV Export Engine (Unit)', () => {
     // Clean tables
     await pg.db.delete(customers);
     await pg.db.delete(customerGroups);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(systemEvents);
   });
 

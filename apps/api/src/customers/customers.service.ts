@@ -18,10 +18,10 @@ import {
   customerGroups,
   taxPositions,
   contacts,
-  actorContactLinks,
-  actors,
+  organizationContactLinks,
+  organizations,
   customerDeliveryAddresses,
-  actorActorLinks,
+  organizationOrganizationLinks,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
@@ -103,8 +103,8 @@ export class CustomersService {
     const scoreSql = searchTerm
       ? sql<number>`
           CASE 
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
@@ -117,7 +117,7 @@ export class CustomersService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
           ilike(customers.customerNumber, `%${rawSearchTerm}%`),
         ),
       );
@@ -131,14 +131,14 @@ export class CustomersService {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const parentLink = alias(actorActorLinks, 'parent_link');
-    const parentActor = alias(actors, 'parent_actor');
+    const parentLink = alias(organizationOrganizationLinks, 'parent_link');
+    const parentOrg = alias(organizations, 'parent_org');
     const parentCustomer = alias(customers, 'parent_customer');
 
     let qb = this.db
       .select({
         ...getTableColumns(customers),
-        name: actors.name,
+        name: organizations.name,
         customerGroupName: customerGroups.name,
         customerGroupCode: customerGroups.groupCode,
         customerGroupTradingTermsId: customerGroups.tradingTermsId,
@@ -147,28 +147,29 @@ export class CustomersService {
         customerGroupTaxPositionId: customerGroups.taxPositionId,
         gstCategoryName: taxPositions.code,
         score: scoreSql,
-        billingAddressLine1: actors.headquartersAddressLine1,
-        billingAddressLine2: actors.headquartersAddressLine2,
-        billingAddressCity: actors.headquartersCity,
-        billingAddressStateOrProvince: actors.headquartersStateOrProvince,
-        billingAddressPostalCode: actors.headquartersPostalCode,
-        billingAddressCountry: actors.headquartersCountry,
+        billingAddressLine1: organizations.headquartersAddressLine1,
+        billingAddressLine2: organizations.headquartersAddressLine2,
+        billingAddressCity: organizations.headquartersCity,
+        billingAddressStateOrProvince:
+          organizations.headquartersStateOrProvince,
+        billingAddressPostalCode: organizations.headquartersPostalCode,
+        billingAddressCountry: organizations.headquartersCountry,
         parentCustomerId: parentCustomer.customerId,
-        parentCustomerName: parentActor.name,
-        telephone: actors.telephone,
-        email: actors.email,
+        parentCustomerName: parentOrg.name,
+        telephone: organizations.telephone,
+        email: organizations.email,
         salesContactName: sql<string>`(
           SELECT c.first_name || ' ' || c.last_name
-          FROM ${actorContactLinks} acl
+          FROM ${organizationContactLinks} acl
           JOIN ${contacts} c ON acl.contact_id = c.contact_id
-          WHERE acl.actor_id = ${customers.actorId} AND 'sales' = ANY(acl.primary_for)
+          WHERE acl.organization_id = ${customers.organizationId} AND 'sales' = ANY(acl.primary_for)
           LIMIT 1
         )`,
         accountsContactName: sql<string>`(
           SELECT c.first_name || ' ' || c.last_name
-          FROM ${actorContactLinks} acl
+          FROM ${organizationContactLinks} acl
           JOIN ${contacts} c ON acl.contact_id = c.contact_id
-          WHERE acl.actor_id = ${customers.actorId} AND 'accounts' = ANY(acl.primary_for)
+          WHERE acl.organization_id = ${customers.organizationId} AND 'accounts' = ANY(acl.primary_for)
           LIMIT 1
         )`,
       })
@@ -181,16 +182,25 @@ export class CustomersService {
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         parentLink,
         and(
-          eq(parentLink.sourceActorId, customers.actorId),
+          eq(parentLink.sourceOrganizationId, customers.organizationId),
           eq(parentLink.linkType, 'parent_company'),
         ),
       )
-      .leftJoin(parentActor, eq(parentLink.targetActorId, parentActor.actorId))
-      .leftJoin(parentCustomer, eq(parentActor.actorId, parentCustomer.actorId))
+      .leftJoin(
+        parentOrg,
+        eq(parentLink.targetOrganizationId, parentOrg.organizationId),
+      )
+      .leftJoin(
+        parentCustomer,
+        eq(parentOrg.organizationId, parentCustomer.organizationId),
+      )
       .$dynamic();
 
     if (whereClause) {
@@ -211,11 +221,11 @@ export class CustomersService {
           sql`${scoreSql} ${scoreOp} ${c.score}`,
           and(
             sql`${scoreSql} = ${c.score}`,
-            sql`lower(${actors.name}) ${nameOp} lower(${c.name})`,
+            sql`lower(${organizations.name}) ${nameOp} lower(${c.name})`,
           ),
           and(
             sql`${scoreSql} = ${c.score}`,
-            sql`lower(${actors.name}) = lower(${c.name})`,
+            sql`lower(${organizations.name}) = lower(${c.name})`,
             sql`${customers.customerId} ${idOp} ${c.id}`,
           ),
         );
@@ -226,7 +236,7 @@ export class CustomersService {
         const scoreOp = dir === 'next' ? desc : asc;
         return q.orderBy(
           scoreOp(scoreSql),
-          orderFn(sql`lower(${actors.name})`),
+          orderFn(sql`lower(${organizations.name})`),
           orderFn(customers.customerId),
         );
       },
@@ -241,7 +251,10 @@ export class CustomersService {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(customers)
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .where(whereClause);
 
     // Fetch balances and uninvoiced totals for the paginated customers
@@ -342,20 +355,21 @@ export class CustomersService {
     const rows = await db
       .select({
         ...getTableColumns(customers),
-        name: actors.name,
+        name: organizations.name,
         gstCategoryName: taxPositions.code,
         customerGroupTaxPositionId: customerGroups.taxPositionId,
-        businessNumber: actors.businessNumber,
-        isTaxRegistered: actors.isTaxRegistered,
-        billingAddressLine1: actors.headquartersAddressLine1,
-        billingAddressLine2: actors.headquartersAddressLine2,
-        billingAddressCity: actors.headquartersCity,
-        billingAddressStateOrProvince: actors.headquartersStateOrProvince,
-        billingAddressPostalCode: actors.headquartersPostalCode,
-        billingAddressCountry: actors.headquartersCountry,
-        telephone1: actors.telephone,
-        fax: actors.fax,
-        emailAddress1: actors.email,
+        businessNumber: organizations.businessNumber,
+        isTaxRegistered: organizations.isTaxRegistered,
+        billingAddressLine1: organizations.headquartersAddressLine1,
+        billingAddressLine2: organizations.headquartersAddressLine2,
+        billingAddressCity: organizations.headquartersCity,
+        billingAddressStateOrProvince:
+          organizations.headquartersStateOrProvince,
+        billingAddressPostalCode: organizations.headquartersPostalCode,
+        billingAddressCountry: organizations.headquartersCountry,
+        telephone1: organizations.telephone,
+        fax: organizations.fax,
+        emailAddress1: organizations.email,
       })
       .from(customers)
       .leftJoin(
@@ -366,7 +380,10 @@ export class CustomersService {
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
 
       .where(isUuid ? eq(customers.customerId, id) : eq(customers.sourceId, id))
       .limit(1);
@@ -392,7 +409,7 @@ export class CustomersService {
       childrenResult,
     ] = await Promise.all([
       eventsQuery,
-      customer.actorId
+      customer.organizationId
         ? db
             .select({
               id: contacts.contactId,
@@ -404,16 +421,21 @@ export class CustomersService {
               phone: contacts.phone,
               mobile: contacts.mobile,
               jobTitle: contacts.jobTitle,
-              primaryFor: actorContactLinks.primaryFor,
+              primaryFor: organizationContactLinks.primaryFor,
               createdOn: contacts.createdOn,
               modifiedOn: contacts.modifiedOn,
             })
             .from(contacts)
             .innerJoin(
-              actorContactLinks,
-              eq(contacts.contactId, actorContactLinks.contactId),
+              organizationContactLinks,
+              eq(contacts.contactId, organizationContactLinks.contactId),
             )
-            .where(eq(actorContactLinks.actorId, customer.actorId))
+            .where(
+              eq(
+                organizationContactLinks.organizationId,
+                customer.organizationId,
+              ),
+            )
             .catch(() => [])
         : Promise.resolve([]),
       db.query.customerDeliveryAddresses
@@ -422,43 +444,61 @@ export class CustomersService {
         })
         .catch(() => []),
       this.creditAssessmentService.assessCredit(customer.customerId, db),
-      customer.actorId
+      customer.organizationId
         ? db
             .select({
               customerId: customers.customerId,
-              name: actors.name,
+              name: organizations.name,
             })
-            .from(actorActorLinks)
+            .from(organizationOrganizationLinks)
             .innerJoin(
-              actors,
-              eq(actorActorLinks.targetActorId, actors.actorId),
+              organizations,
+              eq(
+                organizationOrganizationLinks.targetOrganizationId,
+                organizations.organizationId,
+              ),
             )
-            .innerJoin(customers, eq(actors.actorId, customers.actorId))
+            .innerJoin(
+              customers,
+              eq(organizations.organizationId, customers.organizationId),
+            )
             .where(
               and(
-                eq(actorActorLinks.sourceActorId, customer.actorId),
-                eq(actorActorLinks.linkType, 'parent_company'),
+                eq(
+                  organizationOrganizationLinks.sourceOrganizationId,
+                  customer.organizationId,
+                ),
+                eq(organizationOrganizationLinks.linkType, 'parent_company'),
               ),
             )
             .limit(1)
             .catch(() => [])
         : Promise.resolve([]),
-      customer.actorId
+      customer.organizationId
         ? db
             .select({
               customerId: customers.customerId,
-              name: actors.name,
+              name: organizations.name,
             })
-            .from(actorActorLinks)
+            .from(organizationOrganizationLinks)
             .innerJoin(
-              actors,
-              eq(actorActorLinks.sourceActorId, actors.actorId),
+              organizations,
+              eq(
+                organizationOrganizationLinks.sourceOrganizationId,
+                organizations.organizationId,
+              ),
             )
-            .innerJoin(customers, eq(actors.actorId, customers.actorId))
+            .innerJoin(
+              customers,
+              eq(organizations.organizationId, customers.organizationId),
+            )
             .where(
               and(
-                eq(actorActorLinks.targetActorId, customer.actorId),
-                eq(actorActorLinks.linkType, 'parent_company'),
+                eq(
+                  organizationOrganizationLinks.targetOrganizationId,
+                  customer.organizationId,
+                ),
+                eq(organizationOrganizationLinks.linkType, 'parent_company'),
               ),
             )
             .catch(() => [])
@@ -594,7 +634,7 @@ export class CustomersService {
         FROM herobm_core.sales_invoices i
         LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
         JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
-        LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
+        LEFT JOIN herobm_core.organizations a ON c.organization_id = a.organization_id
         LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
         WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('draft', 'cancelled', 'paid')
         GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit

@@ -12,7 +12,7 @@ import {
   suppliers as coreSuppliers,
   masterDataEvents,
   supplierExpiries,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -20,7 +20,7 @@ import {
   SUPPLIER_TRANSITIONS,
   SUPPLIER_STATE,
   SupplierState,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
@@ -60,29 +60,30 @@ export class SuppliersWriteService {
         fax,
         emailAddress1,
         vendorNumber,
-        actorId,
+        organizationId,
         ...supplierFields
       } = dto as unknown as Record<string, unknown>;
 
-      let actorRecord;
-      if (actorId) {
-        const existingActors = await tx
+      const effectiveOrgId = organizationId as string | undefined;
+      let orgRecord;
+      if (effectiveOrgId) {
+        const existingOrgs = await tx
           .select()
-          .from(actors)
-          .where(eq(actors.actorId, actorId as string))
+          .from(organizations)
+          .where(eq(organizations.organizationId, effectiveOrgId))
           .limit(1);
 
-        if (existingActors.length === 0) {
+        if (existingOrgs.length === 0) {
           throw new BadRequestException(
-            `Actor with id '${actorId as string}' does not exist`,
+            `Organization with id '${effectiveOrgId}' does not exist`,
           );
         }
-        actorRecord = existingActors[0];
+        orgRecord = existingOrgs[0];
       } else {
-        [actorRecord] = await tx
-          .insert(actors)
+        [orgRecord] = await tx
+          .insert(organizations)
           .values({
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: name as string,
             businessNumber: (businessNumber as string) || null,
             isTaxRegistered: (isTaxRegistered as boolean) ?? false,
@@ -104,7 +105,7 @@ export class SuppliersWriteService {
         .values({
           ...supplierFields,
           vendorNumber: vendorNumber as string,
-          actorId: actorRecord.actorId,
+          organizationId: orgRecord.organizationId,
           currencyCode: dto.currencyCode || this.appConfig.homeCurrency(),
           createdBy: actor,
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -124,18 +125,18 @@ export class SuppliersWriteService {
 
       return {
         ...supplier,
-        name: actorRecord.name,
-        businessNumber: actorRecord.businessNumber,
-        isTaxRegistered: actorRecord.isTaxRegistered,
+        name: orgRecord.name,
+        businessNumber: orgRecord.businessNumber,
+        isTaxRegistered: orgRecord.isTaxRegistered,
         address1Line1: dto.address1Line1,
         address1Line2: dto.address1Line2,
         address1City: dto.address1City,
         address1StateOrProvince: dto.address1StateOrProvince,
         address1PostalCode: dto.address1PostalCode,
         address1Country: dto.address1Country,
-        telephone1: actorRecord.telephone,
-        fax: actorRecord.fax,
-        emailAddress1: actorRecord.email,
+        telephone1: orgRecord.telephone,
+        fax: orgRecord.fax,
+        emailAddress1: orgRecord.email,
       };
     });
 
@@ -152,10 +153,13 @@ export class SuppliersWriteService {
     const existingRows = await this.db
       .select({
         supplier: coreSuppliers,
-        actorName: actors.name,
+        organizationName: organizations.name,
       })
       .from(coreSuppliers)
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 
@@ -163,11 +167,11 @@ export class SuppliersWriteService {
       throw new NotFoundException(`Supplier '${id}' not found`);
     }
     const existing = existingRows[0].supplier;
-    const existingActorName = existingRows[0].actorName;
+    const existingOrgName = existingRows[0].organizationName;
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const coreChanges = { ...dto } as Record<string, unknown>;
-      const actorKeys = [
+      const orgKeys = [
         'name',
         'businessNumber',
         'isTaxRegistered',
@@ -181,27 +185,27 @@ export class SuppliersWriteService {
         'fax',
         'emailAddress1',
       ];
-      const actorUpdate: Record<string, unknown> = {};
+      const orgUpdate: Record<string, unknown> = {};
 
-      for (const k of actorKeys) {
+      for (const k of orgKeys) {
         if (k in coreChanges) {
-          if (k === 'name') actorUpdate.name = coreChanges.name;
+          if (k === 'name') orgUpdate.name = coreChanges.name;
           if (k === 'businessNumber')
-            actorUpdate.businessNumber = coreChanges.businessNumber;
+            orgUpdate.businessNumber = coreChanges.businessNumber;
           if (k === 'isTaxRegistered')
-            actorUpdate.isTaxRegistered = coreChanges.isTaxRegistered;
+            orgUpdate.isTaxRegistered = coreChanges.isTaxRegistered;
           if (k === 'telephone1')
-            actorUpdate.telephone =
+            orgUpdate.telephone =
               typeof coreChanges.telephone1 === 'string'
                 ? coreChanges.telephone1.trim()
                 : coreChanges.telephone1;
           if (k === 'fax')
-            actorUpdate.fax =
+            orgUpdate.fax =
               typeof coreChanges.fax === 'string'
                 ? coreChanges.fax.trim()
                 : coreChanges.fax;
           if (k === 'emailAddress1')
-            actorUpdate.email =
+            orgUpdate.email =
               typeof coreChanges.emailAddress1 === 'string'
                 ? coreChanges.emailAddress1.trim()
                 : coreChanges.emailAddress1;
@@ -220,16 +224,16 @@ export class SuppliersWriteService {
 
       const hasAddressChange = addressParts.some((k) => k in coreChanges);
       if (hasAddressChange) {
-        actorUpdate.headquartersAddressLine1 =
+        orgUpdate.headquartersAddressLine1 =
           coreChanges.address1Line1 as string;
-        actorUpdate.headquartersAddressLine2 =
+        orgUpdate.headquartersAddressLine2 =
           coreChanges.address1Line2 as string;
-        actorUpdate.headquartersCity = coreChanges.address1City as string;
-        actorUpdate.headquartersStateOrProvince =
+        orgUpdate.headquartersCity = coreChanges.address1City as string;
+        orgUpdate.headquartersStateOrProvince =
           coreChanges.address1StateOrProvince as string;
-        actorUpdate.headquartersPostalCode =
+        orgUpdate.headquartersPostalCode =
           coreChanges.address1PostalCode as string;
-        actorUpdate.headquartersCountry = coreChanges.address1Country as string;
+        orgUpdate.headquartersCountry = coreChanges.address1Country as string;
 
         for (const k of addressParts) {
           delete coreChanges[k];
@@ -238,11 +242,11 @@ export class SuppliersWriteService {
 
       const audit = calculateAuditTrail(coreChanges, existing, AuditMode.DIFF);
 
-      if (Object.keys(actorUpdate).length > 0 && existing.actorId) {
+      if (Object.keys(orgUpdate).length > 0 && existing.organizationId) {
         await tx
-          .update(actors)
-          .set({ ...actorUpdate, modifiedOn: new Date() })
-          .where(eq(actors.actorId, existing.actorId));
+          .update(organizations)
+          .set({ ...orgUpdate, modifiedOn: new Date() })
+          .where(eq(organizations.organizationId, existing.organizationId));
       }
 
       let updated = existing;
@@ -258,15 +262,15 @@ export class SuppliersWriteService {
         updated = res;
       }
 
-      if (audit.hasChanges || Object.keys(actorUpdate).length > 0) {
+      if (audit.hasChanges || Object.keys(orgUpdate).length > 0) {
         const changedKeys = Object.keys(audit.changes);
         const isStatusOnly =
           changedKeys.length === 1 &&
           changedKeys[0] === 'stateCode' &&
-          Object.keys(actorUpdate).length === 0;
+          Object.keys(orgUpdate).length === 0;
 
         const displayName =
-          (actorUpdate.name as string) || existingActorName || 'Unknown';
+          (orgUpdate.name as string) || existingOrgName || 'Unknown';
 
         if (isStatusOnly) {
           await emitEvent(tx, {
@@ -287,7 +291,7 @@ export class SuppliersWriteService {
             eventType: EventType.UPDATED,
             entityDisplayName: displayName,
             payload: {
-              changes: { ...audit.changes, ...actorUpdate },
+              changes: { ...audit.changes, ...orgUpdate },
               previousValues: audit.previousValues,
             },
             actor,
@@ -297,7 +301,7 @@ export class SuppliersWriteService {
 
       return {
         ...updated,
-        name: actorUpdate.name ?? existingActorName,
+        name: orgUpdate.name ?? existingOrgName,
       };
     });
 
@@ -364,10 +368,13 @@ export class SuppliersWriteService {
     const existingRows = await db
       .select({
         supplier: coreSuppliers,
-        actorName: actors.name,
+        organizationName: organizations.name,
       })
       .from(coreSuppliers)
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(coreSuppliers.vendorId, vendorId))
       .limit(1);
 
@@ -376,7 +383,7 @@ export class SuppliersWriteService {
     }
 
     const existing = existingRows[0].supplier;
-    const actorName = existingRows[0].actorName;
+    const organizationName = existingRows[0].organizationName;
 
     const currentState = existing.stateCode;
 
@@ -409,7 +416,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.ARCHIVED,
-        entityDisplayName: actorName || 'Unknown',
+        entityDisplayName: organizationName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -418,7 +425,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.UNARCHIVED,
-        entityDisplayName: actorName || 'Unknown',
+        entityDisplayName: organizationName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -427,7 +434,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: actorName || 'Unknown',
+        entityDisplayName: organizationName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -444,9 +451,12 @@ export class SuppliersWriteService {
     actor: string,
   ) {
     const existing = await this.db
-      .select({ id: coreSuppliers.vendorId, name: actors.name })
+      .select({ id: coreSuppliers.vendorId, name: organizations.name })
       .from(coreSuppliers)
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(coreSuppliers.vendorId, vendorId));
     if (existing.length === 0)
       throw new NotFoundException('Supplier not found');
@@ -483,14 +493,17 @@ export class SuppliersWriteService {
       .select({
         expiryId: supplierExpiries.expiryId,
         vendorId: supplierExpiries.vendorId,
-        supplierName: actors.name,
+        supplierName: organizations.name,
       })
       .from(supplierExpiries)
       .innerJoin(
         coreSuppliers,
         eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -529,14 +542,17 @@ export class SuppliersWriteService {
     const existing = await this.db
       .select({
         expiryType: supplierExpiries.expiryType,
-        supplierName: actors.name,
+        supplierName: organizations.name,
       })
       .from(supplierExpiries)
       .innerJoin(
         coreSuppliers,
         eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
       )
-      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreSuppliers.organizationId, organizations.organizationId),
+      )
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );

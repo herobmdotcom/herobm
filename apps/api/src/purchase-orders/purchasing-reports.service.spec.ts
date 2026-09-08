@@ -11,13 +11,13 @@ import {
   taxCategories,
   products,
   uomDictionary,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import {
   PURCHASE_ORDER_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 describe('PurchasingReportsService', () => {
@@ -53,10 +53,10 @@ describe('PurchasingReportsService', () => {
       createdBy: 'system',
     });
 
-    const [act] = await pg.db
-      .insert(actors)
+    const [org] = await pg.db
+      .insert(organizations)
       .values({
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         name: 'Industrial Supplies Ltd',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -64,7 +64,7 @@ describe('PurchasingReportsService', () => {
       .returning();
 
     await pg.db.insert(suppliers).values({
-      actorId: act.actorId,
+      organizationId: org.organizationId,
       vendorId: SUPPLIER_ID,
       vendorNumber: 'VEN001',
       currencyCode: 'EUR',
@@ -75,7 +75,7 @@ describe('PurchasingReportsService', () => {
     });
 
     await pg.db.insert(suppliers).values({
-      actorId: null,
+      organizationId: null,
       vendorId: NO_ACTOR_SUPPLIER_ID,
       vendorNumber: 'VEN_NO_ACTOR',
       currencyCode: 'EUR',

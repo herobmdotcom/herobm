@@ -79,7 +79,7 @@ export class UpdateExchangeRateDto {
   effectiveDate?: string;
 }
 
-export class UpdateOrganizationDto {
+export class UpdateOrganizationSettingsDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
@@ -233,9 +233,26 @@ export class ExchangeRateResponseDto {
   @ApiProperty() sellRate!: string;
   @ApiProperty() effectiveDate!: Date;
 }
-export class OrganizationResponseDto {
-  @ApiProperty() organizationId!: string;
+export class OrganizationSettingsResponseDto {
+  @ApiProperty({ required: false }) tenantSettingsId?: string;
   @ApiProperty() name!: string;
+  @ApiProperty({ required: false }) addressLine1?: string;
+  @ApiProperty({ required: false }) addressLine2?: string;
+  @ApiProperty({ required: false }) city?: string;
+  @ApiProperty({ required: false }) state?: string;
+  @ApiProperty({ required: false }) country?: string;
+  @ApiProperty({ required: false }) postCode?: string;
+  @ApiProperty({ required: false }) email?: string;
+  @ApiProperty({ required: false }) phone?: string;
+  @ApiProperty({ required: false }) website?: string;
+  @ApiProperty({ required: false }) companyNumber?: string;
+  @ApiProperty({ required: false }) taxNumber?: string;
+  @ApiProperty({ required: false }) logoUrl?: string;
+  @ApiProperty({ required: false }) bankName?: string;
+  @ApiProperty({ required: false }) bankAccountName?: string;
+  @ApiProperty({ required: false }) bankAccountNumber?: string;
+  @ApiProperty({ required: false }) bankSwiftBic?: string;
+  @ApiProperty({ required: false }) bankIban?: string;
 }
 export class AppConfigResponseDto {
   @ApiProperty() defaultFulfillmentLocationId!: string;
@@ -264,29 +281,19 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false }) defaultCustomerTaxPositionId?: string;
   @ApiProperty({ required: false }) defaultSupplierTaxPositionId?: string;
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  actorTags?: OrderedSettingDto[];
+  organizationTags?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  actorContactRoles?: OrderedSettingDto[];
+  organizationContactRoles?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   opportunityContactRoles?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  opportunityActorRoles?: OrderedSettingDto[];
+  opportunityOrganizationRoles?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   opportunityStages?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   opportunityTypes?: OrderedSettingDto[];
-  /** @deprecated use opportunityContactRoles */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  projectContactRoles?: OrderedSettingDto[];
-  /** @deprecated use opportunityActorRoles */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  projectActorRoles?: OrderedSettingDto[];
-  /** @deprecated use opportunityStages */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  projectStatuses?: OrderedSettingDto[];
-  /** @deprecated use opportunityTypes */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  projectTypes?: OrderedSettingDto[];
+  activityTypes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   referralModes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
@@ -376,14 +383,14 @@ export class UpdateAppConfigDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
-  actorTags?: OrderedSettingDto[];
+  organizationTags?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
-  actorContactRoles?: OrderedSettingDto[];
+  organizationContactRoles?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
@@ -397,7 +404,7 @@ export class UpdateAppConfigDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
-  opportunityActorRoles?: OrderedSettingDto[];
+  opportunityOrganizationRoles?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
@@ -413,21 +420,12 @@ export class UpdateAppConfigDto {
   @Type(() => OrderedSettingDto)
   opportunityTypes?: OrderedSettingDto[];
 
-  /** @deprecated use opportunityContactRoles */
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
-  projectContactRoles?: OrderedSettingDto[];
-
-  /** @deprecated use opportunityActorRoles */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => OrderedSettingDto)
-  projectActorRoles?: OrderedSettingDto[];
+  activityTypes?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()
@@ -435,22 +433,6 @@ export class UpdateAppConfigDto {
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
   referralModes?: OrderedSettingDto[];
-
-  /** @deprecated use opportunityStages */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => OrderedSettingDto)
-  projectStatuses?: OrderedSettingDto[];
-
-  /** @deprecated use opportunityTypes */
-  @ApiProperty({ required: false, type: [OrderedSettingDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => OrderedSettingDto)
-  projectTypes?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()

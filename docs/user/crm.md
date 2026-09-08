@@ -1,15 +1,15 @@
 ---
 id: crm
-title: "CRM: Actors, Opportunities, Contacts & Activities"
+title: "CRM: Organizations, Opportunities, Contacts & Activities"
 description: "Manage unified business accounts, sales pipelines, corporate hierarchies, contact dispatch roles, human interactions, and interactive relationship maps."
 category: "CRM"
 order: 22
 resource: "crm"
 action: "read"
 routes:
-  - "/crm/actors"
-  - "/crm/actors/new"
-  - "/crm/actors/:id"
+  - "/crm/organizations"
+  - "/crm/organizations/new"
+  - "/crm/organizations/:id"
   - "/crm/opportunities"
   - "/crm/opportunities/new"
   - "/crm/opportunities/:id"
@@ -20,10 +20,10 @@ routes:
   - "/crm/projects/new"
   - "/crm/projects/:id"
   - "/crm/map"
-tags: ["crm", "actors", "companies", "opportunities", "pipeline", "kanban", "contacts", "activities", "tasks", "map", "roles", "hierarchy"]
+tags: ["crm", "organizations", "companies", "opportunities", "pipeline", "kanban", "contacts", "activities", "tasks", "map", "roles", "hierarchy"]
 fields:
-  actor_name:
-    title: "Actor / Company Name"
+  organization_name:
+    title: "Organization / Company Name"
     summary: "Unified business entity profile representing customers, suppliers, prospects, or strategic partners."
   owner_id:
     title: "Account / Deal Owner"
@@ -60,7 +60,7 @@ related:
   - "dashboard"
 ---
 
-# CRM: Actors, Opportunities, Contacts & Activities
+# CRM: Organizations, Opportunities, Contacts & Activities
 
 The **CRM** module provides an integrated environment for managing commercial relationships, sales pipeline funnels, corporate group hierarchies, functional document dispatch routing, human communication logs, and visual network graphs.
 
@@ -71,7 +71,7 @@ The **CRM** module provides an integrated environment for managing commercial re
 ```mermaid
 flowchart TD
     subgraph CRM_Ecosystem ["CRM Core Architecture"]
-        A[Unified Actor / Company] --> O[Sales Opportunities]
+        A[Unified Organization / Company] --> O[Sales Opportunities]
         A --> C[Contacts & Affiliations]
         A --> CH[Corporate Hierarchy]
         A --> CA[Commercial Accounts]
@@ -91,20 +91,20 @@ flowchart TD
     end
 ```
 
-### 1. The Unified Actor Model
+### 1. The Unified Organization Model
 
 Traditional enterprise systems often isolate customer databases from supplier catalogs, creating duplicate records when a business partner acts as both a buyer and a vendor.
 
-In HeroBM, an **Actor** represents a single legal or business entity profile:
-- **Multi-Role Capability**: An Actor can simultaneously serve as a customer, a supplier, a prospect, and a strategic partner while maintaining a single address book, tax registration profile, and document history.
-- **Account Ownership**: Each Actor can be assigned an **Account Owner** (`owner_id`) from active system users. This establishes clear internal accountability for account management.
-- **Ownership Views & Filtering**: The Actors directory (`/crm/actors`) includes an **Owner Filter** allowing team members to view **My Accounts**, inspect **All Owners**, or identify **Unassigned** accounts needing outreach.
+In HeroBM, an **Organization** represents a single legal or business entity profile:
+- **Multi-Role Capability**: An Organization can simultaneously serve as a customer, a supplier, a prospect, and a strategic partner while maintaining a single address book, tax registration profile, and document history.
+- **Account Ownership**: Each Organization can be assigned an **Account Owner** (`owner_id`) from active system users. This establishes clear internal accountability for account management.
+- **Ownership Views & Filtering**: The Organizations directory (`/crm/organizations`) includes an **Owner Filter** allowing team members to view **My Accounts**, inspect **All Owners**, or identify **Unassigned** accounts needing outreach.
 
 ---
 
 ### 2. Dual Commercial Accounts View
 
-On every Actor detail screen (`/crm/actors/:id`), the **Commercial Accounts** tab bridges CRM relationships with ERP trading ledgers:
+On every Organization detail screen (`/crm/organizations/:id`), the **Commercial Accounts** tab bridges CRM relationships with ERP trading ledgers:
 
 - **Customer Profile Integration**:
   - Displays linked Customer Number, Trading Currency, Credit Limit, and active Credit Hold status.
@@ -115,13 +115,13 @@ On every Actor detail screen (`/crm/actors/:id`), the **Commercial Accounts** ta
   - Features an embedded interactive grid of all recent **Purchase Orders** raised with this vendor.
   - Includes a direct shortcut to raise a new Purchase Order.
 - **1-Click Commercial Account Creation**:
-  - When viewing an Actor that has not yet traded commercially, operators can provision a dedicated Customer or Supplier account with a single click, instantly inheriting company details without manual re-entry.
+  - When viewing an Organization that has not yet traded commercially, operators can provision a dedicated Customer or Supplier account with a single click, instantly inheriting company details without manual re-entry.
 
 ---
 
 ### 3. Corporate Hierarchy & Group Trees
 
-Modern enterprise clients often operate through parent holding companies, subsidiaries, branch offices, and joint ventures. The **Corporate Hierarchy** tab (`/crm/actors/:id` -> Corporate Hierarchy) manages these inter-corporate linkages:
+Modern enterprise clients often operate through parent holding companies, subsidiaries, branch offices, and joint ventures. The **Corporate Hierarchy** tab (`/crm/organizations/:id` -> Corporate Hierarchy) manages these inter-corporate linkages:
 
 - **Structural Link Types**:
   - `parent_company`: Designates the controlling holding company or corporate headquarters.
@@ -130,7 +130,7 @@ Modern enterprise clients often operate through parent holding companies, subsid
 - **Reciprocal Perspective Mapping**:
   - Relationship symmetry is maintained automatically. When an operator designates Company B as a `subsidiary` of Company A, viewing Company B automatically catalogs Company A as its `parent_company`.
 - **Relationship Management**:
-  - Search and link external Actors with dedicated roles, or unlink relationships when organizational restructurings occur.
+  - Search and link external Organizations with dedicated roles, or unlink relationships when organizational restructurings occur.
 
 ---
 
@@ -165,7 +165,7 @@ Under the **Commercial & Quotes** tab of an Opportunity:
   - **Create Quote**: Launches `/sales-quotes/new?opportunityId=<id>` to issue commercial proposals.
 
 #### E. Stakeholders & Contacts
-- **Stakeholders Tab**: Links multiple Actor organizations to the deal (e.g. Lead Contractor, Architectural Firm, Engineering Consultant, Financing Partner) with customized role tags.
+- **Stakeholders Tab**: Links multiple Organization entities to the deal (e.g. Lead Contractor, Architectural Firm, Engineering Consultant, Financing Partner) with customized role tags.
 - **Contacts Tab**: Links individual decision-makers and influencers to the opportunity with explicit project roles.
 
 #### F. Deal Notes & Collaboration
@@ -181,7 +181,7 @@ Opportunities adhere to formal lifecycle states: `Active`, `Inactive`, and `Arch
 Contacts represent individual human representatives (`/crm/contacts`).
 
 #### A. Multi-Company Affiliations
-A single individual can be affiliated with multiple Actor organizations simultaneously (for example, an external legal counsel, a fractional CFO, or an executive board member serving multiple corporate entities).
+A single individual can be affiliated with multiple Organization entities simultaneously (for example, an external legal counsel, a fractional CFO, or an executive board member serving multiple corporate entities).
 - The **Affiliated Companies** tab (`/crm/contacts/:id` -> Affiliated Companies) allows operators to link a contact to several companies.
 - For each affiliated company, operators can specify the structural link type (`employee`, `advisor`, `board_member`) and specific dispatch responsibilities.
 
@@ -225,7 +225,7 @@ flowchart LR
 ```
 
 #### A. Unified Activity Timeline
-Displayed on Actor, Contact, and Opportunity pages, the **Activity Timeline** presents a comprehensive chronological history combining:
+Displayed on Organization, Contact, and Opportunity pages, the **Activity Timeline** presents a comprehensive chronological history combining:
 - **Human Interactions**: Logged calls, outgoing emails, meeting minutes, notes, and tasks.
 - **System Audit Logs**: Automated ERP transactions (orders placed, status changes, invoice generation).
 
@@ -273,12 +273,12 @@ The homepage dashboard (`/`) includes the **Tasks** widget (`DashboardTasksWidge
 The **Relationship Map** (`/crm/map`) renders an interactive visual graph powered by ReactFlow, illustrating complex networks between companies, people, and commercial initiatives.
 
 - **Visual Entity Nodes**:
-  - **Actors (Blue)**: Company profiles with business details and direct links.
+  - **Organizations (Blue)**: Company profiles with business details and direct links.
   - **Contacts (Green)**: Individual representatives with direct phone and email links.
   - **Opportunities (Purple)**: Active sales deals and commercial projects.
-- **Focal Actor Selection**:
-  - Search for any Actor using the autocomplete selector to center the map on that entity.
-  - URL parameter support (`/crm/map?actorId=<uuid>`) allows direct navigation from an Actor profile into the graph.
+- **Focal Organization Selection**:
+  - Search for any Organization using the autocomplete selector to center the map on that entity.
+  - URL parameter support (`/crm/map?organizationId=<uuid>`) allows direct navigation from an Organization profile into the graph.
 - **Dynamic Node Expansion**:
   - Each node features an expansion button (`+`). Clicking it dynamically loads and displays all connected corporate links, affiliated contacts, and active opportunities without refreshing the page.
 - **Navigation & Controls**:
@@ -288,19 +288,19 @@ The **Relationship Map** (`/crm/map`) renders an interactive visual graph powere
 
 ## Step-by-Step Workflows
 
-### 1. Creating an Actor Account with Ownership
-1. Navigate to **CRM** → **Actors** (`/crm/actors`).
-2. Click **New Actor** (`/crm/actors/new`).
+### 1. Creating an Organization Account with Ownership
+1. Navigate to **CRM** → **Organizations** (`/crm/organizations`).
+2. Click **New Organization** (`/crm/organizations/new`).
 3. Enter the **Company Name**, **Headquarters Address**, **Email**, **Telephone**, and **Tax Registration** details.
 4. Select the responsible team member in the **Account Owner** dropdown.
-5. Click **Create Actor**.
-6. On the Actor detail page, open the **Commercial Accounts** tab to provision Customer or Supplier trading profiles if applicable.
+5. Click **Create Organization**.
+6. On the Organization detail page, open the **Commercial Accounts** tab to provision Customer or Supplier trading profiles if applicable.
 
 ### 2. Establishing Corporate Group Hierarchies
-1. Open an existing Actor record (`/crm/actors/:id`).
+1. Open an existing Organization record (`/crm/organizations/:id`).
 2. Select the **Corporate Hierarchy** tab in the navigation bar.
 3. Click **Link Company**.
-4. Search for the target organization using the Actor search field.
+4. Search for the target organization using the Organization search field.
 5. Select the **Relationship Type**:
    - `Parent Company` (if the target holds ownership of this entity).
    - `Subsidiary` (if this entity holds ownership of the target).
@@ -327,7 +327,7 @@ The **Relationship Map** (`/crm/map`) renders an interactive visual graph powere
 7. To convert the deal, click **Convert to Order** in the header actions. This opens the sales order creation form pre-linked to the opportunity.
 
 ### 5. Logging Interactions & Follow-Up Tasks
-1. Open any Actor, Contact, or Opportunity detail page.
+1. Open any Organization, Contact, or Opportunity detail page.
 2. Scroll to the **Activity Timeline** section.
 3. Click one of the quick logging buttons:
    - **Log Call**: Record phone conversation takeaways.
@@ -344,8 +344,8 @@ The **Relationship Map** (`/crm/map`) renders an interactive visual graph powere
 
 ### 6. Exploring Networks in the Relationship Map
 1. Navigate to **CRM** → **Map** (`/crm/map`).
-2. Use the search bar in the top-left corner to search for a company Actor.
-3. The graph centers on the selected Actor, revealing linked contacts and opportunities.
+2. Use the search bar in the top-left corner to search for a company Organization.
+3. The graph centers on the selected Organization, revealing linked contacts and opportunities.
 4. Hover over any node and click the `+` button to expand additional connections.
 5. Click on any node's title link to open its full profile page in a new view.
 
@@ -355,11 +355,11 @@ The **Relationship Map** (`/crm/map`) renders an interactive visual graph powere
 
 | Field | Context | Description |
 | :--- | :--- | :--- |
-| **Actor Name** | Actor / Account | Official trading or legal business name. |
-| **Account Owner** | Actor / Account | System user responsible for maintaining the business relationship. |
-| **Industry** | Actor / Account | Industry vertical classification (e.g. Manufacturing, Retail, Construction). |
-| **Is Tax Registered** | Actor / Account | Boolean indicator confirming registered corporate tax status. |
-| **Corporate Link Type** | Actor / Hierarchy | Classification of corporate link: `parent_company`, `subsidiary`, `partner`. |
+| **Organization Name** | Organization / Account | Official trading or legal business name. |
+| **Account Owner** | Organization / Account | System user responsible for maintaining the business relationship. |
+| **Industry** | Organization / Account | Industry vertical classification (e.g. Manufacturing, Retail, Construction). |
+| **Is Tax Registered** | Organization / Account | Boolean indicator confirming registered corporate tax status. |
+| **Corporate Link Type** | Organization / Hierarchy | Classification of corporate link: `parent_company`, `subsidiary`, `partner`. |
 | **Opportunity Name** | Opportunity | Commercial deal name or client initiative tracker. |
 | **Opportunity Owner** | Opportunity | Sales representative or account manager driving deal execution. |
 | **Pipeline Stage** | Opportunity | Configurable sales stage (e.g. Discovery, Proposal, Negotiation, Won, Lost). |
@@ -371,7 +371,7 @@ The **Relationship Map** (`/crm/map`) renders an interactive visual graph powere
 | **Live Deal Revenue** | Opportunity | Calculated aggregate total across all associated quotes and confirmed orders. |
 | **Contact Name** | Contact | First and last name of the individual representative. |
 | **Email & Phone** | Contact | Direct electronic contact endpoints for correspondence. |
-| **Affiliation Link Type** | Contact / Affiliation | Structural relationship to an Actor: `employee`, `advisor`, `board_member`. |
+| **Affiliation Link Type** | Contact / Affiliation | Structural relationship to an Organization: `employee`, `advisor`, `board_member`. |
 | **Dispatch Tags** | Contact / Dispatch | Automated document dispatch routing: `billing`, `shipping`, `purchasing`, `sales`, `general`. |
 | **Primary Flag** | Contact / Dispatch | Designates the primary contact person for default correspondence. |
 | **Activity Type** | Activity / Task | Classification of interaction: `call`, `email`, `meeting`, `task`, `note`. |
@@ -392,25 +392,26 @@ All CRM state mutations are recorded to the central audit log (`master_data_even
 | Domain Entity | Event Identifier | Trigger Condition |
 | :--- | :--- | :--- |
 | **Opportunity** | `opportunity.created` | New commercial opportunity created via UI or API. Payload includes `opportunityId`, `opportunityName`. |
-| | `opportunity.updated` | Opportunity attributes, stage, value, linked actors, contacts, notes, or activities updated. |
+| | `opportunity.updated` | Opportunity attributes, stage, value, linked organizations, contacts, notes, or activities updated. |
 | | `opportunity.deleted` | Opportunity permanently removed. |
-| **CRM Activity** | `crm_activity.created` | New interaction (Call, Meeting, Email, Note) or follow-up task logged. Payload includes `activityType`, `subject`, `status`, `priority`, `actorId`, `contactIds`, `projectId`, `dueDate`, `assignedToUserId`. |
+| **CRM Activity** | `crm_activity.created` | New interaction (Call, Meeting, Email, Note) or follow-up task logged. Payload includes `activityType`, `subject`, `status`, `priority`, `organizationId`, `contactIds`, `opportunityId`, `dueDate`, `assignedToUserId`. |
 | | `crm_activity.updated` | Activity subject, description, due date, assignee, or priority edited. |
 | | `crm_activity.status_changed`| Task marked as completed or reopened. Payload includes `previousStatus` and `newStatus`. |
 | | `crm_activity.deleted` | Activity or task deleted. |
-| **Actor** | `actor.created` | New business entity profile registered. |
-| | `actor.updated` | Profile, tax details, corporate relationships, or owner changed. |
-| | `actor.deleted` | Actor record removed. |
-| **Contact** | `contact.created` | Individual contact person created and linked to actor/opportunity. |
+| **Organization** | `organization.created` | New business entity profile registered. |
+| | `organization.updated` | Profile, tax details, corporate relationships, or owner changed. |
+| | `organization.deleted` | Organization record removed. |
+| **Contact** | `contact.created` | Individual contact person created and linked to organization/opportunity. |
 | | `contact.updated` | Contact details, job title, or dispatch roles updated. |
 | | `contact.deleted` | Contact record removed. |
 
 ### Cross-Entity Audit Trails
 When an activity or task is logged:
 1. A primary audit event is emitted under `crm_activity.created`.
-2. If linked to an Actor, an update event (`actor.updated`) is emitted against the Actor with activity summary metadata.
+2. If linked to an Organization, an update event (`organization.updated`) is emitted against the Organization with activity summary metadata.
 3. If contacts are linked (`contactIds`), an update event (`contact.updated`) is emitted against each participating Contact.
-4. If linked to an Opportunity (`projectId`), an update event (`opportunity.updated`) is emitted against the Opportunity, and any new contacts are automatically linked to the deal.
+4. If linked to an Opportunity (`opportunityId`), an update event (`opportunity.updated`) is emitted against the Opportunity, and any new contacts are automatically linked to the deal.
 
 For webhook subscription configuration, signature verification headers, and payload schemas, refer to the [Webhooks API Reference](/admin/developers#webhooks-api).
+
 

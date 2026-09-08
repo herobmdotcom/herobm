@@ -47,7 +47,7 @@ import {
   transferOrders,
   transferOrderReceipts,
   transferOrderReceiptLines,
-  actors,
+  organizations,
   productComponents,
   workOrders,
 } from '@herobm/db-schema';
@@ -968,12 +968,15 @@ export class InventoryQueryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: actors.name,
+            customerName: organizations.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrders)
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(actors, eq(customers.actorId, actors.actorId))
+          .leftJoin(
+            organizations,
+            eq(customers.organizationId, organizations.organizationId),
+          )
           .where(eq(salesOrders.salesOrderId, entry.sourceId))
           .limit(1);
 
@@ -997,7 +1000,7 @@ export class InventoryQueryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: actors.name,
+            customerName: organizations.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrderShipments)
@@ -1006,7 +1009,10 @@ export class InventoryQueryService {
             eq(salesOrders.salesOrderId, salesOrderShipments.salesOrderId),
           )
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(actors, eq(customers.actorId, actors.actorId))
+          .leftJoin(
+            organizations,
+            eq(customers.organizationId, organizations.organizationId),
+          )
           .where(eq(salesOrderShipments.shipmentId, entry.sourceId))
           .limit(1);
 
@@ -1030,7 +1036,7 @@ export class InventoryQueryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: actors.name,
+            customerName: organizations.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrderReturns)
@@ -1039,7 +1045,10 @@ export class InventoryQueryService {
             eq(salesOrders.salesOrderId, salesOrderReturns.salesOrderId),
           )
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(actors, eq(customers.actorId, actors.actorId))
+          .leftJoin(
+            organizations,
+            eq(customers.organizationId, organizations.organizationId),
+          )
           .where(eq(salesOrderReturns.returnId, entry.sourceId))
           .limit(1);
 

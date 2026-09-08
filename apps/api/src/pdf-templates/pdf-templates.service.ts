@@ -15,7 +15,7 @@ import {
   pdfTemplates,
   pdfTemplateHooks,
   pdfTemplateContexts,
-  organization,
+  tenantSettings,
 } from '@herobm/db-schema';
 import { eq, like, or, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
@@ -395,7 +395,7 @@ export class PdfTemplatesService {
     const pdfFile = path.join(workDir, `${jobId}.pdf`);
 
     // Fetch and inject organization
-    const orgQuery = await this.db.select().from(organization).limit(1);
+    const orgQuery = await this.db.select().from(tenantSettings).limit(1);
     const orgData = orgQuery.length > 0 ? orgQuery[0] : null;
 
     let logoFileInWorkDir: string | null = null;

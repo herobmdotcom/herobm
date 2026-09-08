@@ -28,6 +28,7 @@ import {
   EmptyBodyDto,
 } from './dto';
 import { Reset2FaResponseDto } from '../auth/dto';
+import { TimelineEventDto } from '../dashboard/dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -41,7 +42,6 @@ export class UsersController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ type: [UserResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Users',
@@ -51,6 +51,18 @@ export class UsersController {
   @ApiFieldMask()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('events')
+  @CasbinAction('read')
+  @ApiOkResponse({ type: [TimelineEventDto] })
+  @ApiOperation({
+    summary: 'List User Activity Events',
+    description:
+      'Retrieves all user domain audit events in chronological order.',
+  })
+  getEvents() {
+    return this.usersService.getEvents();
   }
 
   @Get(':id')

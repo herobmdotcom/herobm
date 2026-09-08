@@ -12,7 +12,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   pdfTemplates,
   pdfTemplateHooks,
-  organization,
+  tenantSettings,
 } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 import { StorageService } from '../common/storage/storage.service';
@@ -84,7 +84,7 @@ describe('PdfTemplatesService', () => {
   beforeEach(async () => {
     await pg.db.delete(pdfTemplateHooks);
     await pg.db.delete(pdfTemplates);
-    await pg.db.delete(organization);
+    await pg.db.delete(tenantSettings);
 
     mockRegistry = {
       getProvider: jest.fn(),
@@ -300,7 +300,7 @@ describe('PdfTemplatesService', () => {
     });
 
     it('should stage logo file and include _org.logoFile in Typst data when logo is configured', async () => {
-      await pg.db.insert(organization).values({
+      await pg.db.insert(tenantSettings).values({
         name: 'Acme Test Corp',
         logoUrl: 'organization/acme_logo.png',
       });
@@ -326,7 +326,7 @@ describe('PdfTemplatesService', () => {
     });
 
     it('should not include logoFile when organization has no logoUrl', async () => {
-      await pg.db.insert(organization).values({
+      await pg.db.insert(tenantSettings).values({
         name: 'Plain Corp',
         logoUrl: '',
       });

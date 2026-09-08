@@ -15,7 +15,7 @@ import {
   taxCategories,
   products,
   locations,
-  actors,
+  organizations,
   glAccounts,
   uomDictionary,
   salesInvoices,
@@ -28,7 +28,7 @@ import {
   SALES_INVOICE_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
@@ -72,10 +72,10 @@ describe('SalesInvoiceService', () => {
       createdBy: 'system',
     });
 
-    const actorId = '00000000-0000-4000-8000-000000000002';
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId,
+    const organizationId = '00000000-0000-4000-8000-000000000002';
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
@@ -83,7 +83,7 @@ describe('SalesInvoiceService', () => {
 
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
-      actorId,
+      organizationId,
       customerNumber: 'CUST001',
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.DRAFT,

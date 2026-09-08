@@ -11,8 +11,8 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
-import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
-import { ActorCard } from '@/components/shared/ActorCard';
+import OrganizationSelect, { Organization } from '@/components/shared/OrganizationSelect';
+import { OrganizationCard } from '@/components/shared/OrganizationCard';
 import { useSettings } from '@/components/SettingsProvider';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
@@ -32,8 +32,9 @@ export default function NewSupplierPage() {
   const defaultCurrency = getCurrencyForCountry(defaultCountry) || baseCurrency || 'EUR';
 
   const [submitting, setSubmitting] = useState(false);
-  const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [dto, setDto] = useState({
+    organizationId: '',
     actorId: '',
     vendorNumber: '',
     name: '',
@@ -100,20 +101,22 @@ export default function NewSupplierPage() {
     { value: selectedGroup?.isPaymentBlocked === true ? 'true' : selectedGroup?.isPaymentBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
-  const handleActorSelect = (actor: Actor | null) => {
-    setSelectedActor(actor);
-    if (actor) {
+  const handleOrganizationSelect = (org: Organization | null) => {
+    setSelectedOrganization(org);
+    if (org) {
       setDto((prev) => ({
         ...prev,
-        actorId: actor.actorId || '',
-        name: actor.name || prev.name,
-        businessNumber: actor.businessNumber || prev.businessNumber,
-        isTaxRegistered: actor.isTaxRegistered ?? prev.isTaxRegistered,
-        address1Country: actor.headquartersCountry || prev.address1Country,
+        organizationId: org.organizationId || '',
+        actorId: org.organizationId || '',
+        name: org.name || prev.name,
+        businessNumber: org.businessNumber || prev.businessNumber,
+        isTaxRegistered: org.isTaxRegistered ?? prev.isTaxRegistered,
+        address1Country: org.headquartersCountry || prev.address1Country,
       }));
     } else {
       setDto((prev) => ({
         ...prev,
+        organizationId: '',
         actorId: '',
         name: '',
         businessNumber: '',
@@ -194,19 +197,19 @@ export default function NewSupplierPage() {
         <div className="card">
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string -- icon */}
-<span className="material-symbols-outlined">link</span>
-            Link to Existing Actor (Optional)
+            <span className="material-symbols-outlined">link</span>
+            Link to Existing Organization (Optional)
           </h3>
           <div className="mb-4">
-            <ActorSelect
-              value={dto.actorId || null}
-              onChange={handleActorSelect}
+            <OrganizationSelect
+              value={dto.organizationId || dto.actorId || null}
+              onChange={handleOrganizationSelect}
               disabled={submitting}
             />
           </div>
-          {selectedActor && (
+          {selectedOrganization && (
             <div className="mt-4">
-              <ActorCard actor={selectedActor} />
+              <OrganizationCard organization={selectedOrganization} />
             </div>
           )}
         </div>
@@ -233,7 +236,7 @@ export default function NewSupplierPage() {
                   disabled={submitting}
                 />
               </div>
-              {!selectedActor && (
+              {!selectedOrganization && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {t('columns.name')} *
@@ -250,7 +253,7 @@ export default function NewSupplierPage() {
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(!selectedActor || !(selectedActor as unknown as { headquartersCountry?: string }).headquartersCountry) && (
+              {(!selectedOrganization || !(selectedOrganization as unknown as { headquartersCountry?: string }).headquartersCountry) && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                     {tCommon('columns.country')} *
@@ -275,7 +278,7 @@ export default function NewSupplierPage() {
                   </select>
                 </div>
               )}
-              <div className={selectedActor ? "md:col-span-2" : ""}>
+              <div className={selectedOrganization ? "md:col-span-2" : ""}>
                 <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                   {tCommon('columns.currency')} *
                 </label>

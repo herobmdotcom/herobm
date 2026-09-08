@@ -10,7 +10,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users, userEvents } from '@herobm/db-schema';
+import { users, userEvents, userTwoFactor } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';
@@ -40,8 +40,15 @@ export class UsersService {
 
   async findAll() {
     const userRows = await this.db
-      .select(PUBLIC_COLUMNS)
+      .select({
+        ...PUBLIC_COLUMNS,
+        twoFactorEnabled:
+          sql<boolean>`COALESCE(${userTwoFactor.isEnabled}, false)`.as(
+            'two_factor_enabled',
+          ),
+      })
       .from(users)
+      .leftJoin(userTwoFactor, eq(users.userId, userTwoFactor.userId))
       .orderBy(users.username);
 
     const events = await this.db
@@ -63,10 +70,24 @@ export class UsersService {
     }));
   }
 
+  async getEvents() {
+    return this.db
+      .select()
+      .from(userEvents)
+      .orderBy(sql`${userEvents.createdOn} DESC`);
+  }
+
   async findOne(id: string) {
     const rows = await this.db
-      .select(PUBLIC_COLUMNS)
+      .select({
+        ...PUBLIC_COLUMNS,
+        twoFactorEnabled:
+          sql<boolean>`COALESCE(${userTwoFactor.isEnabled}, false)`.as(
+            'two_factor_enabled',
+          ),
+      })
       .from(users)
+      .leftJoin(userTwoFactor, eq(users.userId, userTwoFactor.userId))
       .where(eq(users.userId, id))
       .limit(1);
     if (rows.length === 0) {
@@ -112,7 +133,10 @@ export class UsersService {
       `[AUDIT] User '${actor}' created user '${result.username}' (Name: ${dto.displayName || 'N/A'}) with role '${dto.role}'`,
     );
 
-    return result;
+    return {
+      ...result,
+      twoFactorEnabled: false,
+    };
   }
 
   async update(id: string, dto: UpdateUserDto, actorId: string, actor: string) {
@@ -193,7 +217,10 @@ export class UsersService {
       `[AUDIT] User '${actor}' updated user '${target.username}': ${Object.keys(auditChanges).join(', ')}`,
     );
 
-    return rows[0];
+    return {
+      ...rows[0],
+      twoFactorEnabled: target.twoFactorEnabled,
+    };
   }
 
   async toggleActive(id: string, actorId: string, actor: string) {
@@ -240,7 +267,10 @@ export class UsersService {
       `[AUDIT] User '${actor}' ${newStatus ? 'enabled' : 'disabled'} user '${target.username}'`,
     );
 
-    return rows[0];
+    return {
+      ...rows[0],
+      twoFactorEnabled: target.twoFactorEnabled,
+    };
   }
 
   async remove(id: string, actorId: string, actor: string) {

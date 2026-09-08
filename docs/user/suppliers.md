@@ -40,7 +40,7 @@ The **Suppliers** module manages vendor master records, payment terms, purchasin
 ## Supplier Management Rules
 
 ### 1. Unified Vendor Profiles
-Suppliers share the same underlying Actor model as customers, enabling companies that both buy and sell with you to maintain synchronized contact details and addresses without duplicate data entry.
+Suppliers share the same underlying Organization model as customers, enabling companies that both buy and sell with you to maintain synchronized contact details and addresses without duplicate data entry.
 
 ### 2. Multi-Currency Purchasing
 Each supplier has an assigned purchasing currency (e.g. `USD`, `EUR`, `AUD`, `GBP`). When raising a purchase order, current FX rates convert line costs to the system base currency for accurate inventory valuation and General Ledger commitments.

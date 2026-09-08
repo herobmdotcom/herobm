@@ -3,9 +3,10 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq } from 'drizzle-orm';
 import { glSettings, appSettings } from '@herobm/db-schema';
-import type {
-  RevenueRoutingStrategy,
-  ExpenseRoutingStrategy,
+import {
+  type RevenueRoutingStrategy,
+  type ExpenseRoutingStrategy,
+  DEFAULT_CRM_ACTIVITY_TYPES,
 } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -229,6 +230,14 @@ export class AppConfigService implements OnModuleInit {
   /** The raw app settings row, if available. */
   getAppSettingsRaw(): typeof appSettings.$inferSelect | null {
     return this.appCache;
+  }
+
+  /** Configured CRM Activity types or defaults */
+  activityTypes(): { value: string; order: number }[] {
+    return (
+      (this.appCache?.activityTypes as { value: string; order: number }[]) ||
+      DEFAULT_CRM_ACTIVITY_TYPES
+    );
   }
 
   /** Whether SMTP host is configured in app settings. */

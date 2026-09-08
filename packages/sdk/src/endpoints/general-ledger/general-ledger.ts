@@ -3,9 +3,11 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type {
+  ActivitiesControllerFindAllParams,
+  ActivityResponseDto,
   AutoMatchRequestDto,
   AutoMatchResponseDto,
   BankStatementBulkMatchDto,
@@ -23,6 +25,7 @@ import type {
   CostCenterResponseDto,
   CostCentersControllerFindAllParams,
   CreateAccountRequestDto,
+  CreateActivityDto,
   CreateAdjustmentDto,
   CreateAdjustmentResponseDto,
   CreateBankStatementLineDto,
@@ -79,6 +82,7 @@ import type {
   TrialBalanceResponseDto,
   UnmatchRequestDto,
   UpdateAccountRequestDto,
+  UpdateActivityDto,
   UpdateCostCenterDto,
   UpdateExchangeRateDto,
   UpdateFiscalPeriodStatusDto,
@@ -475,6 +479,197 @@ export const costCentersControllerImport = async (createCostCenterDto: CreateCos
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createCostCenterDto,)
+  }
+);}
+
+
+/**
+ * List all General Ledger accounting dimension activities
+ * @summary List all General Ledger activities
+ */
+export type activitiesControllerFindAllResponse200 = {
+  data: ActivityResponseDto[]
+  status: 200
+}
+    
+export type activitiesControllerFindAllResponseSuccess = (activitiesControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type activitiesControllerFindAllResponse = (activitiesControllerFindAllResponseSuccess)
+
+export const getActivitiesControllerFindAllUrl = (params?: ActivitiesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/settings/activities?${stringifiedParams}` : `/settings/activities`
+}
+
+export const activitiesControllerFindAll = async (params?: ActivitiesControllerFindAllParams, options?: RequestInit): Promise<activitiesControllerFindAllResponse> => {
+  
+  return customFetch<activitiesControllerFindAllResponse>(getActivitiesControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Create a new General Ledger accounting dimension activity
+ * @summary Create a new General Ledger activity
+ */
+export type activitiesControllerCreateResponse201 = {
+  data: ActivityResponseDto
+  status: 201
+}
+    
+export type activitiesControllerCreateResponseSuccess = (activitiesControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type activitiesControllerCreateResponse = (activitiesControllerCreateResponseSuccess)
+
+export const getActivitiesControllerCreateUrl = () => {
+
+
+  
+
+  return `/settings/activities`
+}
+
+export const activitiesControllerCreate = async (createActivityDto: CreateActivityDto, options?: RequestInit): Promise<activitiesControllerCreateResponse> => {
+  
+  return customFetch<activitiesControllerCreateResponse>(getActivitiesControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActivityDto,)
+  }
+);}
+
+
+/**
+ * Update a General Ledger accounting dimension activity
+ * @summary Update a General Ledger activity
+ */
+export type activitiesControllerUpdateResponse200 = {
+  data: ActivityResponseDto
+  status: 200
+}
+    
+export type activitiesControllerUpdateResponseSuccess = (activitiesControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type activitiesControllerUpdateResponse = (activitiesControllerUpdateResponseSuccess)
+
+export const getActivitiesControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/activities/${id}`
+}
+
+export const activitiesControllerUpdate = async (id: string,
+    updateActivityDto: UpdateActivityDto, options?: RequestInit): Promise<activitiesControllerUpdateResponse> => {
+  
+  return customFetch<activitiesControllerUpdateResponse>(getActivitiesControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateActivityDto,)
+  }
+);}
+
+
+/**
+ * Delete a General Ledger accounting dimension activity
+ * @summary Delete a General Ledger activity
+ */
+export type activitiesControllerDeleteResponse200 = {
+  data: ActivityResponseDto
+  status: 200
+}
+    
+export type activitiesControllerDeleteResponseSuccess = (activitiesControllerDeleteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type activitiesControllerDeleteResponse = (activitiesControllerDeleteResponseSuccess)
+
+export const getActivitiesControllerDeleteUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/activities/${id}`
+}
+
+export const activitiesControllerDelete = async (id: string, options?: RequestInit): Promise<activitiesControllerDeleteResponse> => {
+  
+  return customFetch<activitiesControllerDeleteResponse>(getActivitiesControllerDeleteUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * Bulk import General Ledger accounting dimension activities
+ * @summary Bulk import General Ledger activities
+ */
+export type activitiesControllerImportResponse201 = {
+  data: BulkImportResultDto
+  status: 201
+}
+    
+export type activitiesControllerImportResponseSuccess = (activitiesControllerImportResponse201) & {
+  headers: Headers;
+};
+;
+
+export type activitiesControllerImportResponse = (activitiesControllerImportResponseSuccess)
+
+export const getActivitiesControllerImportUrl = () => {
+
+
+  
+
+  return `/settings/activities/import`
+}
+
+export const activitiesControllerImport = async (createActivityDto: CreateActivityDto[], options?: RequestInit): Promise<activitiesControllerImportResponse> => {
+  
+  return customFetch<activitiesControllerImportResponse>(getActivitiesControllerImportUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActivityDto,)
   }
 );}
 

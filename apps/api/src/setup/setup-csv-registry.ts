@@ -25,7 +25,7 @@ export const EXCLUDED_TABLES = new Set<string>([
   // System singletons (configured via dedicated settings pages)
   'app_settings',
   'gl_settings',
-  'organization',
+  'tenant_settings',
 
   // Technical templates, hooks, and integrations
   'pdf_templates',

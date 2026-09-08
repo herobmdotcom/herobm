@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@herobm/shared';
 
 export default function OpportunityForm() {
   const router = useRouter();
@@ -55,6 +56,16 @@ export default function OpportunityForm() {
       return;
     }
 
+    let targetCloseDateIso: string | undefined = undefined;
+    if (dto.targetCloseDate && dto.targetCloseDate.trim()) {
+      const d = new Date(dto.targetCloseDate);
+      if (isNaN(d.getTime()) || d.getFullYear() < 1900 || d.getFullYear() > 2100) {
+        toast.error('Please enter a valid target close date (between 1900 and 2100)');
+        return;
+      }
+      targetCloseDateIso = d.toISOString();
+    }
+
     setLoading(true);
     try {
       const payload: api.CreateOpportunityDto = {
@@ -64,7 +75,7 @@ export default function OpportunityForm() {
         estimatedValue: dto.estimatedValue ? dto.estimatedValue : undefined,
         currencyCode: dto.currencyCode || baseCurrency || undefined,
         probability: dto.probability ? Number(dto.probability) : undefined,
-        targetCloseDate: dto.targetCloseDate ? new Date(dto.targetCloseDate).toISOString() : undefined,
+        targetCloseDate: targetCloseDateIso,
         description: dto.description || undefined,
       };
 
@@ -73,7 +84,7 @@ export default function OpportunityForm() {
       const oppId = res.data?.opportunityId || '';
       router.push(`/crm/opportunities/${oppId}`);
     } catch (err) {
-      toast.error('Failed to create opportunity');
+      toast.error(getErrorMessage(err) || 'Failed to create opportunity');
       reportError(err, 'OpportunityForm');
     } finally {
       setLoading(false);
@@ -257,6 +268,8 @@ export default function OpportunityForm() {
               </label>
               <input
                 type="date"
+                min="2000-01-01"
+                max="2099-12-31"
                 className="input w-full"
                 value={dto.targetCloseDate}
                 onChange={(e) => updateField('targetCloseDate', e.target.value)}

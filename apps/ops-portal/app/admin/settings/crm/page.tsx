@@ -50,6 +50,7 @@ export default function CRMSettingsPage() {
   const navSections = useMemo(() => [
     { id: 'roles-section', label: 'Roles', show: true },
     { id: 'opportunities-section', label: 'Opportunities', show: true },
+    { id: 'activities-section', label: 'Activities', show: true },
     { id: 'referrals-section', label: 'Referrals', show: true },
   ], []);
 
@@ -84,28 +85,28 @@ export default function CRMSettingsPage() {
           </h3>
           <div className="flex flex-col gap-8">
             <OrderedSettingEditor
-              title="Actor Tags"
+              title="Organization Tags"
               columnTitle="Tag"
-              items={appForm?.actorTags || []}
-              onChange={(newTags) => updateAppField('actorTags', newTags)}
+              items={appForm?.organizationTags || []}
+              onChange={(newTags) => updateAppField('organizationTags', newTags)}
             />
             <OrderedSettingEditor
-              title="Actor Contact Roles"
+              title="Organization Contact Roles"
               columnTitle="Role"
-              items={appForm?.actorContactRoles || []}
-              onChange={(newRoles) => updateAppField('actorContactRoles', newRoles)}
+              items={appForm?.organizationContactRoles || []}
+              onChange={(newRoles) => updateAppField('organizationContactRoles', newRoles)}
             />
             <OrderedSettingEditor
               title="Opportunity Contact Roles"
               columnTitle="Role"
-              items={appForm?.opportunityContactRoles || appForm?.projectContactRoles || []}
+              items={appForm?.opportunityContactRoles || []}
               onChange={(newRoles) => updateAppField('opportunityContactRoles', newRoles)}
             />
             <OrderedSettingEditor
-              title="Opportunity Stakeholder Roles"
+              title="Opportunity Organization Roles"
               columnTitle="Role"
-              items={appForm?.opportunityActorRoles || appForm?.projectActorRoles || []}
-              onChange={(newRoles) => updateAppField('opportunityActorRoles', newRoles)}
+              items={appForm?.opportunityOrganizationRoles || []}
+              onChange={(newRoles) => updateAppField('opportunityOrganizationRoles', newRoles)}
             />
           </div>
         </div>
@@ -120,14 +121,30 @@ export default function CRMSettingsPage() {
             <OrderedSettingEditor
               title="Opportunity Stages"
               columnTitle="Stage"
-              items={appForm?.opportunityStages || appForm?.projectStatuses || []}
+              items={appForm?.opportunityStages || []}
               onChange={(newStatuses) => updateAppField('opportunityStages', newStatuses)}
             />
             <OrderedSettingEditor
               title="Opportunity Types"
               columnTitle="Type"
-              items={appForm?.opportunityTypes || appForm?.projectTypes || []}
+              items={appForm?.opportunityTypes || []}
               onChange={(newTypes) => updateAppField('opportunityTypes', newTypes)}
+            />
+          </div>
+        </div>
+
+        {/* ── Activities Settings ─────────────────────────────────────────────── */}
+        <div id="activities-section" className="card">
+          <h3 className="section-heading flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined">task_alt</span>
+            Activity Types
+          </h3>
+          <div className="flex flex-col gap-8">
+            <OrderedSettingEditor
+              title="CRM Activity Types"
+              columnTitle="Type"
+              items={appForm?.activityTypes || []}
+              onChange={(newTypes) => updateAppField('activityTypes', newTypes)}
             />
           </div>
         </div>

@@ -17,7 +17,7 @@ import {
   purchaseDebitNoteShipments,
   suppliers,
   supplierGroups,
-  actors,
+  organizations,
   products,
   glJournalEntries,
   glJournalLines,
@@ -91,7 +91,7 @@ export class PurchaseDebitNotesService {
         modifiedOn: purchaseDebitNotes.modifiedOn,
         orderNumber: purchaseOrders.orderNumber,
         vendorCode: suppliers.vendorNumber,
-        vendorName: actors.name,
+        vendorName: organizations.name,
       })
       .from(purchaseDebitNotes)
       .leftJoin(
@@ -99,7 +99,10 @@ export class PurchaseDebitNotesService {
         eq(purchaseDebitNotes.purchaseOrderId, purchaseOrders.purchaseOrderId),
       )
       .leftJoin(suppliers, eq(purchaseDebitNotes.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -199,7 +202,7 @@ export class PurchaseDebitNotesService {
         createdOn: purchaseDebitNotes.createdOn,
         modifiedOn: purchaseDebitNotes.modifiedOn,
         orderNumber: purchaseOrders.orderNumber,
-        vendorName: actors.name,
+        vendorName: organizations.name,
       })
       .from(purchaseDebitNotes)
       .leftJoin(
@@ -207,7 +210,10 @@ export class PurchaseDebitNotesService {
         eq(purchaseDebitNotes.purchaseOrderId, purchaseOrders.purchaseOrderId),
       )
       .leftJoin(suppliers, eq(purchaseDebitNotes.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(purchaseDebitNotes.debitNoteId, id))
       .limit(1);
 
@@ -423,14 +429,17 @@ export class PurchaseDebitNotesService {
         currencyCode: suppliers.currencyCode,
         costCenterId: supplierGroups.defaultCostCenterId,
         activityId: supplierGroups.defaultActivityId,
-        name: actors.name,
+        name: organizations.name,
       })
       .from(suppliers)
       .leftJoin(
         supplierGroups,
         eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
       )
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(suppliers.vendorId, vendorId));
 
     if (!suppInfo) throw new NotFoundException('Supplier not found');
@@ -629,12 +638,15 @@ export class PurchaseDebitNotesService {
         const vendorId = po?.vendorId || dn.vendorId;
         const [supp] = await tx
           .select({
-            name: actors.name,
+            name: organizations.name,
             costCenterId: supplierGroups.defaultCostCenterId,
             activityId: supplierGroups.defaultActivityId,
           })
           .from(suppliers)
-          .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+          .leftJoin(
+            organizations,
+            eq(suppliers.organizationId, organizations.organizationId),
+          )
           .leftJoin(
             supplierGroups,
             eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),

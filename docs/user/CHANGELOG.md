@@ -13,6 +13,27 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-09-08] - System-Wide Renaming of Actors to Organizations & Tenant Settings
+
+**Topics Updated:**
+- **`docs/user/crm.md`**:
+  - Renamed all references, routes (`/crm/organizations`), fields (`organization_name`), and architecture concepts from Actor to Organization.
+  - Documented Unified Organization model, Organization directory, Corporate Hierarchy, Organization Stakeholders on Opportunities, and multi-organization affiliations for Contacts.
+  - Documented Relationship Map updates with focal Organization selection (`/crm/map?organizationId=...`) and updated node legends.
+  - Updated Webhook event reference to `organization.created`, `organization.updated`, `organization.deleted`, and `organizationId` attributes.
+- **`docs/user/overview.md`**:
+  - Updated Core System Concepts to feature "Unified Organizations" as the shared foundation for customers, suppliers, and contacts.
+- **`docs/user/suppliers.md`**:
+  - Updated Unified Vendor Profiles to reflect the underlying Organization model.
+- **`docs/user/database_schema.md`**:
+  - Regenerated schema documentation reflecting tables `organizations`, `organization_contact_links`, `organization_organization_links`, `organization_notes`, `opportunity_organizations`, and `tenant_settings`.
+- **`docs/developers/webhooks.md` & `docs/user/webhooks_api.md`**:
+  - Updated webhook catalog and sample payloads with `organization.*` events and `organizationId` fields.
+- **`docs/developers/api-overview.md` & `docs/user/api_reference.md`**:
+  - Updated REST API endpoint catalogs with `/organizations` routes and opportunity organization endpoints.
+
+---
+
 ## [2026-09-03] - Comprehensive CRM Enhancements: Opportunities, Corporate Hierarchy, Activities & Relationship Map
 
 **Topics Updated:**

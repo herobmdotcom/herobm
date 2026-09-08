@@ -6,9 +6,9 @@ import {
   opportunities,
   opportunityNotes,
   opportunityContacts,
-  opportunityActors,
+  opportunityOrganizations,
   contacts,
-  actors,
+  organizations,
   users,
   salesOrders,
   salesOrderLineItems,
@@ -21,7 +21,7 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import {
   OPPORTUNITY_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   CONTACT_STATE,
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
@@ -39,13 +39,13 @@ describe('OpportunitiesService', () => {
   beforeEach(async () => {
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
-    await pg.db.delete(opportunityActors);
+    await pg.db.delete(opportunityOrganizations);
     await pg.db.delete(opportunityContacts);
     await pg.db.delete(opportunityNotes);
     await pg.db.delete(opportunities);
     await pg.db.delete(customers);
     await pg.db.delete(contacts);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
 
     await pg.db
       .insert(users)
@@ -182,18 +182,18 @@ describe('OpportunitiesService', () => {
         })
         .returning();
 
-      const [actor] = await pg.db
-        .insert(actors)
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Client Corp',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
 
-      await service.addOpportunityActor(
+      await service.addOpportunityOrganization(
         opp.opportunityId,
-        { actorId: actor.actorId, roles: ['client'] },
+        { organizationId: org.organizationId, roles: ['client'] },
         mockUserId,
       );
 
@@ -205,13 +205,13 @@ describe('OpportunitiesService', () => {
 
       const fetched = await service.getOpportunity(opp.opportunityId);
       expect(fetched.name).toBe('Full Opp');
-      expect(fetched.opportunityActors?.length).toBe(1);
+      expect(fetched.opportunityOrganizations?.length).toBe(1);
       expect(fetched.notes?.length).toBe(1);
     });
   });
 
   describe('getOpportunities', () => {
-    it('should support stage filtering and eager-load actors', async () => {
+    it('should support stage filtering and eager-load organizations', async () => {
       const [opp1] = await pg.db
         .insert(opportunities)
         .values({
@@ -341,43 +341,123 @@ describe('OpportunitiesService', () => {
       expect(check).toBeUndefined();
     });
 
-    it('should delete opportunity actors', async () => {
+    it('should delete opportunity organizations', async () => {
       const [opp] = await pg.db
         .insert(opportunities)
         .values({
           stateCode: OPPORTUNITY_STATE.ACTIVE,
-          name: 'Actor Unlink Opp',
+          name: 'Organization Unlink Opp',
           type: 'commercial',
           status: 'prospect',
         })
         .returning();
 
-      const [a] = await pg.db
-        .insert(actors)
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Partner LLC',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
 
-      await service.addOpportunityActor(
+      await service.addOpportunityOrganization(
         opp.opportunityId,
-        { actorId: a.actorId, roles: ['consultant'] },
+        { organizationId: org.organizationId, roles: ['consultant'] },
         mockUserId,
       );
 
-      const delRes = await service.deleteOpportunityActor(
+      const delRes = await service.deleteOpportunityOrganization(
         opp.opportunityId,
-        a.actorId,
+        org.organizationId,
         mockUserId,
       );
       expect(delRes.success).toBe(true);
 
-      const check = await pg.db.query.opportunityActors.findFirst({
-        where: eq(opportunityActors.opportunityId, opp.opportunityId),
+      const check = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, opp.opportunityId),
       });
       expect(check).toBeUndefined();
+    });
+
+    it('should update opportunity contact roles', async () => {
+      const [opp] = await pg.db
+        .insert(opportunities)
+        .values({
+          stateCode: OPPORTUNITY_STATE.ACTIVE,
+          name: 'Contact Role Update Opp',
+          type: 'commercial',
+          status: 'prospect',
+        })
+        .returning();
+
+      const [c] = await pg.db
+        .insert(contacts)
+        .values({
+          firstName: 'Alice',
+          lastName: 'Smith',
+          stateCode: CONTACT_STATE.ACTIVE,
+        })
+        .returning();
+
+      await service.addOpportunityContact(
+        opp.opportunityId,
+        { contactId: c.contactId, roles: ['champion'] },
+        mockUserId,
+      );
+
+      const updateRes = await service.updateOpportunityContact(
+        opp.opportunityId,
+        c.contactId,
+        { roles: ['decision_maker', 'champion'] },
+        mockUserId,
+      );
+      expect(updateRes.success).toBe(true);
+
+      const dbLinked = await pg.db.query.opportunityContacts.findFirst({
+        where: eq(opportunityContacts.opportunityId, opp.opportunityId),
+      });
+      expect(dbLinked?.roles).toEqual(['decision_maker', 'champion']);
+    });
+
+    it('should update opportunity organization roles', async () => {
+      const [opp] = await pg.db
+        .insert(opportunities)
+        .values({
+          stateCode: OPPORTUNITY_STATE.ACTIVE,
+          name: 'Org Role Update Opp',
+          type: 'commercial',
+          status: 'prospect',
+        })
+        .returning();
+
+      const [org] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'Tech Partner Inc',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      await service.addOpportunityOrganization(
+        opp.opportunityId,
+        { organizationId: org.organizationId, roles: ['vendor'] },
+        mockUserId,
+      );
+
+      const updateRes = await service.updateOpportunityOrganization(
+        opp.opportunityId,
+        org.organizationId,
+        { roles: ['strategic_partner'] },
+        mockUserId,
+      );
+      expect(updateRes.success).toBe(true);
+
+      const dbLinked = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, opp.opportunityId),
+      });
+      expect(dbLinked?.roles).toEqual(['strategic_partner']);
     });
   });
 
@@ -418,11 +498,11 @@ describe('OpportunitiesService', () => {
         })
         .returning();
 
-      // Create Actor and Customer
-      const [act] = await pg.db
-        .insert(actors)
+      // Create Organization and Customer
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Apex Builder',
           isTaxRegistered: false,
         })
@@ -431,7 +511,7 @@ describe('OpportunitiesService', () => {
       const [cust] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: org.organizationId,
           customerNumber: 'CUST-001',
           currencyCode: 'EUR',
           stateCode: CUSTOMER_STATE.ACTIVE,

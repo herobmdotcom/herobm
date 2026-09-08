@@ -4,8 +4,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   contacts,
-  actorContactLinks,
-  actors,
+  organizationContactLinks,
+  organizations,
   suppliers,
   opportunities,
   opportunityContacts,
@@ -17,7 +17,7 @@ import { eq } from 'drizzle-orm';
 import {
   OPPORTUNITY_STATE,
   CONTACT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   SUPPLIER_STATE,
   ContactEntityType,
 } from '@herobm/shared';
@@ -32,11 +32,11 @@ describe('ContactsService', () => {
   const mockUserId = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
-    await pg.db.delete(actorContactLinks);
+    await pg.db.delete(organizationContactLinks);
     await pg.db.delete(opportunityContacts);
     await pg.db.delete(opportunities);
     await pg.db.delete(suppliers);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(contacts);
     jest.clearAllMocks();
 
@@ -70,12 +70,12 @@ describe('ContactsService', () => {
       expect(emitEvent).toHaveBeenCalled();
     });
 
-    it('should create a contact and link to an actor', async () => {
-      const [actor] = await pg.db
-        .insert(actors)
+    it('should create a contact and link to an organization', async () => {
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
-          name: 'Test Actor',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          name: 'Test Organization',
           isTaxRegistered: false,
         })
         .returning();
@@ -84,8 +84,8 @@ describe('ContactsService', () => {
         {
           firstName: 'Jane',
           lastName: 'Smith',
-          entityType: ContactEntityType.ACTOR,
-          entityId: actor.actorId,
+          entityType: ContactEntityType.ORGANIZATION,
+          entityId: org.organizationId,
           primaryFor: ['billing'],
         },
         mockUserId,
@@ -93,20 +93,20 @@ describe('ContactsService', () => {
 
       expect(result.contactId).toBeDefined();
 
-      const links = await pg.db.query.actorContactLinks.findMany({
-        where: eq(actorContactLinks.contactId, result.contactId),
+      const links = await pg.db.query.organizationContactLinks.findMany({
+        where: eq(organizationContactLinks.contactId, result.contactId),
       });
       expect(links.length).toBe(1);
-      expect(links[0].actorId).toBe(actor.actorId);
+      expect(links[0].organizationId).toBe(org.organizationId);
       expect(links[0].primaryFor).toEqual(['billing']);
     });
 
     it('should create a contact and link to a supplier (ADV-181)', async () => {
-      const [actor] = await pg.db
-        .insert(actors)
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
-          name: 'Supplier Actor',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          name: 'Supplier Organization',
           isTaxRegistered: false,
         })
         .returning();
@@ -115,7 +115,7 @@ describe('ContactsService', () => {
         .insert(suppliers)
         .values({
           stateCode: SUPPLIER_STATE.ACTIVE,
-          actorId: actor.actorId,
+          organizationId: org.organizationId,
           vendorNumber: 'VEND-999',
           currencyCode: 'USD',
           source: 'app',
@@ -138,11 +138,11 @@ describe('ContactsService', () => {
 
       expect(result.contactId).toBeDefined();
 
-      const links = await pg.db.query.actorContactLinks.findMany({
-        where: eq(actorContactLinks.contactId, result.contactId),
+      const links = await pg.db.query.organizationContactLinks.findMany({
+        where: eq(organizationContactLinks.contactId, result.contactId),
       });
       expect(links.length).toBe(1);
-      expect(links[0].actorId).toBe(actor.actorId);
+      expect(links[0].organizationId).toBe(org.organizationId);
       expect(links[0].primaryFor).toEqual(['purchasing']);
     });
 
@@ -178,13 +178,13 @@ describe('ContactsService', () => {
       expect(links[0].roles).toEqual(['manager']);
     });
 
-    it('should throw NotFoundException if linked actor does not exist', async () => {
+    it('should throw NotFoundException if linked organization does not exist', async () => {
       await expect(
         service.createContact(
           {
             firstName: 'No',
-            lastName: 'Actor',
-            entityType: ContactEntityType.ACTOR,
+            lastName: 'Org',
+            entityType: ContactEntityType.ORGANIZATION,
             entityId: randomUUID(),
           },
           mockUserId,
@@ -232,16 +232,16 @@ describe('ContactsService', () => {
           firstName: 'Test',
         })
         .returning();
-      const [actor] = await pg.db
-        .insert(actors)
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
-          name: 'Actor',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          name: 'Organization',
           isTaxRegistered: false,
         })
         .returning();
-      await pg.db.insert(actorContactLinks).values({
-        actorId: actor.actorId,
+      await pg.db.insert(organizationContactLinks).values({
+        organizationId: org.organizationId,
         contactId: contact.contactId,
         primaryFor: [],
         linkType: 'employee',
@@ -255,8 +255,8 @@ describe('ContactsService', () => {
         mockUserId,
       );
 
-      const links = await pg.db.query.actorContactLinks.findMany({
-        where: eq(actorContactLinks.contactId, contact.contactId),
+      const links = await pg.db.query.organizationContactLinks.findMany({
+        where: eq(organizationContactLinks.contactId, contact.contactId),
       });
       expect(links[0].primaryFor).toEqual(['shipping']);
     });
@@ -277,16 +277,16 @@ describe('ContactsService', () => {
           firstName: 'Delete',
         })
         .returning();
-      const [actor] = await pg.db
-        .insert(actors)
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
-          name: 'Actor',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          name: 'Organization',
           isTaxRegistered: false,
         })
         .returning();
-      await pg.db.insert(actorContactLinks).values({
-        actorId: actor.actorId,
+      await pg.db.insert(organizationContactLinks).values({
+        organizationId: org.organizationId,
         contactId: contact.contactId,
         primaryFor: [],
         linkType: 'employee',
@@ -301,8 +301,8 @@ describe('ContactsService', () => {
       });
       expect(dbRecord).toBeUndefined();
 
-      const links = await pg.db.query.actorContactLinks.findMany({
-        where: eq(actorContactLinks.contactId, contact.contactId),
+      const links = await pg.db.query.organizationContactLinks.findMany({
+        where: eq(organizationContactLinks.contactId, contact.contactId),
       });
       expect(links.length).toBe(0);
     });
@@ -354,11 +354,11 @@ describe('ContactsService', () => {
   });
 
   describe('getContact', () => {
-    it('should retrieve a contact with linked actors', async () => {
-      const [actor] = await pg.db
-        .insert(actors)
+    it('should retrieve a contact with linked organizations', async () => {
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Affiliated Corp',
           industry: 'Logistics',
           isTaxRegistered: false,
@@ -374,8 +374,8 @@ describe('ContactsService', () => {
         })
         .returning();
 
-      await pg.db.insert(actorContactLinks).values({
-        actorId: actor.actorId,
+      await pg.db.insert(organizationContactLinks).values({
+        organizationId: org.organizationId,
         contactId: contact.contactId,
         linkType: 'employee',
         primaryFor: ['billing', 'shipping'],
@@ -384,9 +384,9 @@ describe('ContactsService', () => {
       const res = await service.getContact(contact.contactId);
       expect(res.contactId).toBe(contact.contactId);
       expect(res.firstName).toBe('Alice');
-      expect((res as any).actorContactLinks).toBeDefined();
-      expect((res as any).actorContactLinks.length).toBe(1);
-      expect((res as any).actorContactLinks[0].actor?.name).toBe(
+      expect((res as any).organizationContactLinks).toBeDefined();
+      expect((res as any).organizationContactLinks.length).toBe(1);
+      expect((res as any).organizationContactLinks[0].organization?.name).toBe(
         'Affiliated Corp',
       );
     });

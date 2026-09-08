@@ -372,7 +372,7 @@ export const PRODUCT_STATE = {
   DRAFT: 'draft',
 } as const;
 
-export const ACTOR_STATE = {
+export const ORGANIZATION_STATE = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   ARCHIVED: 'archived',
@@ -436,7 +436,7 @@ export type PaymentState = typeof PAYMENT_STATE[keyof typeof PAYMENT_STATE];
 export type CustomerState = typeof CUSTOMER_STATE[keyof typeof CUSTOMER_STATE];
 export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
 export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
-export type ActorState = typeof ACTOR_STATE[keyof typeof ACTOR_STATE];
+export type OrganizationState = typeof ORGANIZATION_STATE[keyof typeof ORGANIZATION_STATE];
 export type ContactState = typeof CONTACT_STATE[keyof typeof CONTACT_STATE];
 export type OpportunityState = typeof OPPORTUNITY_STATE[keyof typeof OPPORTUNITY_STATE];
 export type ProjectState = OpportunityState;

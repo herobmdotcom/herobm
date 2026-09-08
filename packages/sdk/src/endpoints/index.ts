@@ -1,4 +1,3 @@
-export * from './actors/actors';
 export * from './contacts/contacts';
 export * from './crm-activities/crm-activities';
 export * from './crm-map/crm-map';
@@ -9,6 +8,7 @@ export * from './global-notes/global-notes';
 export * from './help/help';
 export * from './manufacturing-work-orders/manufacturing-work-orders';
 export * from './opportunities/opportunities';
+export * from './organizations/organizations';
 export * from './payments/payments';
 export * from './products/products';
 export * from './purchase-invoices/purchase-invoices';

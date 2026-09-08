@@ -24,7 +24,7 @@ import {
   taxCategories,
   inventoryEntries,
   inventoryLedger,
-  actors,
+  organizations,
   uomDictionary,
   glAccounts,
 } from '@herobm/db-schema';
@@ -34,7 +34,7 @@ import {
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
   CUSTOMER_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
@@ -140,7 +140,7 @@ describe('CounterFulfillmentService', () => {
     await pg.db.delete(locations);
     await pg.db.delete(products);
     await pg.db.delete(customers);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(glAccounts);
     await pg.db.delete(taxCategories);
     await pg.db.delete(uomDictionary);
@@ -250,17 +250,17 @@ describe('CounterFulfillmentService', () => {
       actualQuantity: '20',
     });
 
-    await pg.db.insert(actors).values({
-      actorId: ACTOR_ID,
+    await pg.db.insert(organizations).values({
+      organizationId: ACTOR_ID,
       name: 'Walk-In Counter Customer',
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
       isTaxRegistered: true,
       headquartersAddressLine1: '123 Trade Center Way',
     });
 
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
-      actorId: ACTOR_ID,
+      organizationId: ACTOR_ID,
       customerNumber: 'CUST-WALKIN',
       stateCode: CUSTOMER_STATE.ACTIVE,
       currencyCode: 'AUD',

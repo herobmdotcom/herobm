@@ -167,10 +167,10 @@ export class UpdateOpportunityContactDto {
   roles?: string[];
 }
 
-export class CreateOpportunityActorDto {
+export class CreateOpportunityOrganizationDto {
   @ApiProperty()
   @IsUUID()
-  actorId!: string;
+  organizationId!: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
@@ -178,7 +178,7 @@ export class CreateOpportunityActorDto {
   roles?: string[];
 }
 
-export class UpdateOpportunityActorDto {
+export class UpdateOpportunityOrganizationDto {
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsString({ each: true })
@@ -245,6 +245,10 @@ export class OpportunityResponseDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  opportunityOrganizations?: unknown[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
   opportunityActors?: unknown[];
 
   @ApiPropertyOptional()
@@ -275,7 +279,7 @@ export class OpportunityQueryDto {
   @ApiPropertyOptional({ required: false, type: String })
   @IsOptional()
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
 
   @ApiPropertyOptional({ required: false, type: String })
   @IsOptional()
@@ -287,17 +291,3 @@ export class OpportunityQueryDto {
   @IsString()
   status?: string;
 }
-
-// Aliases for Projects backward compatibility
-export {
-  CreateOpportunityDto as CreateProjectDto,
-  UpdateOpportunityDto as UpdateProjectDto,
-  CreateOpportunityNoteDto as CreateProjectNoteDto,
-  OpportunityNoteResponseDto as ProjectNoteResponseDto,
-  CreateOpportunityContactDto as CreateProjectContactDto,
-  UpdateOpportunityContactDto as UpdateProjectContactDto,
-  CreateOpportunityActorDto as CreateProjectActorDto,
-  UpdateOpportunityActorDto as UpdateProjectActorDto,
-  OpportunityResponseDto as ProjectResponseDto,
-  OpportunityQueryDto as ProjectQueryDto,
-};

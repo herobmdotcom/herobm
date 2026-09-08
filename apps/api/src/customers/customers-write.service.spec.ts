@@ -8,9 +8,13 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, masterDataEvents, actors } from '@herobm/db-schema';
+import { customers, masterDataEvents, organizations } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
-import { getErrorMessage, CUSTOMER_STATE, ACTOR_STATE } from '@herobm/shared';
+import {
+  getErrorMessage,
+  CUSTOMER_STATE,
+  ORGANIZATION_STATE,
+} from '@herobm/shared';
 
 describe('CustomersWriteService', () => {
   const pg = setupPgliteSuite();
@@ -65,9 +69,9 @@ describe('CustomersWriteService', () => {
 
     it('should throw BadRequestException if customerNumber exists (manual check)', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Existing',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -75,7 +79,7 @@ describe('CustomersWriteService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'TEST001',
         currencyCode: 'EUR',
         stateCode: CUSTOMER_STATE.DRAFT,
@@ -98,9 +102,9 @@ describe('CustomersWriteService', () => {
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'First',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -108,7 +112,7 @@ describe('CustomersWriteService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'UNQ-001',
         currencyCode: 'EUR',
         stateCode: CUSTOMER_STATE.DRAFT,
@@ -119,9 +123,9 @@ describe('CustomersWriteService', () => {
       // Directly call DB to bypass service's manual existence check
       try {
         const [act2] = await pg.db
-          .insert(actors)
+          .insert(organizations)
           .values({
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             name: 'Duplicate',
             headquartersAddressLine1: 'AU',
             isTaxRegistered: false,
@@ -129,7 +133,7 @@ describe('CustomersWriteService', () => {
           .returning();
 
         await pg.db.insert(customers).values({
-          actorId: act2.actorId,
+          organizationId: act2.organizationId,
           customerNumber: 'UNQ-001',
           currencyCode: 'EUR',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -147,9 +151,9 @@ describe('CustomersWriteService', () => {
 
     it('should propagate native unique violation error when manual check is bypassed', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'First',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -157,7 +161,7 @@ describe('CustomersWriteService', () => {
         .returning();
 
       await pg.db.insert(customers).values({
-        actorId: act.actorId,
+        organizationId: act.organizationId,
         customerNumber: 'CONFLICT-001',
         currencyCode: 'EUR',
         stateCode: CUSTOMER_STATE.DRAFT,
@@ -197,9 +201,9 @@ describe('CustomersWriteService', () => {
   describe('update', () => {
     it('should update an existing customer', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Old',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: false,
@@ -209,7 +213,7 @@ describe('CustomersWriteService', () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           customerNumber: 'TEST001',
           currencyCode: 'EUR',
           stateCode: CUSTOMER_STATE.DRAFT,
@@ -227,8 +231,8 @@ describe('CustomersWriteService', () => {
 
       const updatedActor = await pg.db
         .select()
-        .from(actors)
-        .where(eq(actors.actorId, act.actorId));
+        .from(organizations)
+        .where(eq(organizations.organizationId, act.organizationId));
       expect(updatedActor[0].name).toBe('New');
     });
 

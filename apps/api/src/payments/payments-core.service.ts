@@ -16,7 +16,7 @@ import {
   suppliers,
   glAccounts,
   paymentLines,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -85,16 +85,16 @@ export class PaymentsCoreService {
         currencyCode: paymentEntries.currencyCode,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: actors.name,
+        partyName: organizations.name,
       })
       .from(paymentEntries)
       .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
       .leftJoin(
-        actors,
+        organizations,
         or(
-          eq(customers.actorId, actors.actorId),
-          eq(suppliers.actorId, actors.actorId),
+          eq(customers.organizationId, organizations.organizationId),
+          eq(suppliers.organizationId, organizations.organizationId),
         ),
       )
       .where(whereClause)
@@ -119,16 +119,16 @@ export class PaymentsCoreService {
         referenceNumber: paymentEntries.referenceNumber,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: actors.name,
+        partyName: organizations.name,
       })
       .from(paymentEntries)
       .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
       .leftJoin(
-        actors,
+        organizations,
         or(
-          eq(customers.actorId, actors.actorId),
-          eq(suppliers.actorId, actors.actorId),
+          eq(customers.organizationId, organizations.organizationId),
+          eq(suppliers.organizationId, organizations.organizationId),
         ),
       )
       .where(eq(paymentEntries.paymentId, paymentId));

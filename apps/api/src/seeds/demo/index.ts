@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import * as readline from 'readline';
 import { sql, eq } from 'drizzle-orm';
 import {
@@ -13,13 +14,13 @@ import {
   locations,
   zones,
   bins,
-  actors,
+  organizations,
   contacts,
-  actorContactLinks,
-  actorActorLinks,
-  actorNotes,
+  organizationContactLinks,
+  organizationOrganizationLinks,
+  organizationNotes,
   opportunities,
-  opportunityActors,
+  opportunityOrganizations,
   opportunityContacts,
   opportunityNotes,
   customerGroups,
@@ -117,7 +118,7 @@ import {
   SUPPLIER_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   CONTACT_STATE,
   OPPORTUNITY_STATE,
   PROJECT_STATE,
@@ -130,9 +131,9 @@ import {
   DEFAULT_OPPORTUNITY_STAGES,
   DEFAULT_OPPORTUNITY_TYPES,
   DEFAULT_OPPORTUNITY_CONTACT_ROLES,
-  DEFAULT_OPPORTUNITY_ACTOR_ROLES,
-  DEFAULT_ACTOR_CONTACT_ROLES,
-  DEFAULT_ACTOR_TAGS,
+  DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
+  DEFAULT_ORGANIZATION_CONTACT_ROLES,
+  DEFAULT_ORGANIZATION_TAGS,
   DEFAULT_REFERRAL_MODES,
 } from '@herobm/shared';
 
@@ -183,10 +184,10 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.products, herobm_core.product_groups, herobm_core.uom_dictionary,
       herobm_core.customer_delivery_addresses, herobm_core.customers, herobm_core.customer_groups,
       herobm_core.suppliers, herobm_core.supplier_groups,
-      herobm_core.actor_contact_links, herobm_core.actor_actor_links, herobm_core.actor_notes, herobm_core.contacts,
+      herobm_core.organization_contact_links, herobm_core.organization_organization_links, herobm_core.organization_notes, herobm_core.contacts,
       herobm_core.crm_activity_contacts, herobm_core.crm_activities,
-      herobm_core.opportunity_actors, herobm_core.opportunity_contacts, herobm_core.opportunity_notes, herobm_core.opportunities,
-      herobm_core.actors,
+      herobm_core.opportunity_organizations, herobm_core.opportunity_contacts, herobm_core.opportunity_notes, herobm_core.opportunities,
+      herobm_core.organizations,
       herobm_core.bins, herobm_core.zones, herobm_core.locations,
       herobm_core.exchange_rates,
       herobm_core.tax_position_mappings, herobm_core.tax_positions, herobm_core.tax_categories, herobm_core.trading_terms,
@@ -194,7 +195,7 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.procurement_events, herobm_core.sales_events, herobm_core.warehouse_events, herobm_core.master_data_events,
       herobm_core.financial_events, herobm_core.inventory_events, herobm_core.system_events, herobm_core.user_events,
       herobm_core.business_report_events, herobm_core.email_events, herobm_core.integration_events, herobm_core.group_events,
-      herobm_core.organization, herobm_core.app_settings, herobm_core.users, herobm_core.casbin_rule
+      herobm_core.tenant_settings, herobm_core.app_settings, herobm_core.users, herobm_core.casbin_rule
     CASCADE;
   `);
   console.log('Database wiped.');
@@ -226,8 +227,8 @@ export interface MasterProduct {
   isKit?: boolean;
 }
 
-export interface MasterActorSupplier {
-  actorId: string;
+export interface MasterOrganizationSupplier {
+  organizationId: string;
   vendorId: string;
   number: string;
   name: string;
@@ -235,8 +236,8 @@ export interface MasterActorSupplier {
   contactId: string;
 }
 
-export interface MasterActorCustomer {
-  actorId: string;
+export interface MasterOrganizationCustomer {
+  organizationId: string;
   customerId: string;
   number: string;
   name: string;
@@ -247,8 +248,8 @@ export interface MasterActorCustomer {
 
 export interface MasterData {
   locs: MasterLocation[];
-  sups: MasterActorSupplier[];
-  custs: MasterActorCustomer[];
+  sups: MasterOrganizationSupplier[];
+  custs: MasterOrganizationCustomer[];
   prods: MasterProduct[];
   kitProds: MasterProduct[];
   taxCategoryId: string;
@@ -918,18 +919,18 @@ export async function seedMasterData(
     },
   ];
 
-  const sups: MasterActorSupplier[] = [];
+  const sups: MasterOrganizationSupplier[] = [];
 
   for (const s of supConfigs) {
-    const actorId = uuid();
+    const organizationId = uuid();
     const vendorId = uuid();
 
     await db
-      .insert(actors)
+      .insert(organizations)
       .values({
-        actorId,
+        organizationId,
         name: s.name,
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         isTaxRegistered: true,
         headquartersAddressLine1: s.address,
         headquartersCity: s.city,
@@ -946,7 +947,7 @@ export async function seedMasterData(
       .insert(suppliers)
       .values({
         vendorId,
-        actorId,
+        organizationId,
         vendorNumber: s.number,
         currencyCode: s.currency,
         tradingTermsId: termId,
@@ -973,10 +974,10 @@ export async function seedMasterData(
       .onConflictDoNothing();
 
     await db
-      .insert(actorContactLinks)
+      .insert(organizationContactLinks)
       .values({
         linkId: uuid(),
-        actorId,
+        organizationId,
         contactId,
         linkType: 'employee',
         primaryFor: ['purchasing', 'billing'],
@@ -1005,7 +1006,7 @@ export async function seedMasterData(
     }
 
     sups.push({
-      actorId,
+      organizationId,
       vendorId,
       number: s.number,
       name: s.name,
@@ -1148,18 +1149,18 @@ export async function seedMasterData(
     },
   ];
 
-  const custs: MasterActorCustomer[] = [];
+  const custs: MasterOrganizationCustomer[] = [];
 
   for (const c of custConfigs) {
-    const actorId = uuid();
+    const organizationId = uuid();
     const customerId = uuid();
 
     await db
-      .insert(actors)
+      .insert(organizations)
       .values({
-        actorId,
+        organizationId,
         name: c.name,
-        stateCode: ACTOR_STATE.ACTIVE,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
         isTaxRegistered: true,
         headquartersAddressLine1: c.address,
         headquartersCity: c.city,
@@ -1176,7 +1177,7 @@ export async function seedMasterData(
       .insert(customers)
       .values({
         customerId,
-        actorId,
+        organizationId,
         customerNumber: c.number,
         customerGroupId: c.groupId,
         currencyCode: baseCurrency,
@@ -1222,18 +1223,18 @@ export async function seedMasterData(
       .onConflictDoNothing();
 
     await db
-      .insert(actorContactLinks)
+      .insert(organizationContactLinks)
       .values({
         linkId: uuid(),
-        actorId,
+        organizationId,
         contactId,
         linkType: 'employee',
-        primaryFor: ['sales', 'billing'],
+        primaryFor: ['sales', 'billing', 'purchasing'],
       })
       .onConflictDoNothing();
 
     custs.push({
-      actorId,
+      organizationId,
       customerId,
       number: c.number,
       name: c.name,
@@ -1241,25 +1242,53 @@ export async function seedMasterData(
       currencyCode: baseCurrency,
       contactId,
     });
+
+    // Make the first customer a Unified Actor (also a supplier)
+    if (c.number === 'CUST-001') {
+      const vendorId = uuid();
+      await db
+        .insert(suppliers)
+        .values({
+          vendorId,
+          organizationId,
+          vendorNumber: 'SUP-006', // Next in sequence
+          currencyCode: baseCurrency,
+          tradingTermsId: termId,
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'system',
+        })
+        .onConflictDoNothing();
+
+      sups.push({
+        organizationId,
+        vendorId,
+        number: 'SUP-006',
+        name: c.name,
+        currencyCode: baseCurrency,
+        contactId,
+      });
+    }
   }
 
-  // 9. B2B Actor Relationships & Notes
+  // 9. B2B Organization Relationships & Notes
   if (custs.length >= 2) {
     await db
-      .insert(actorActorLinks)
+      .insert(organizationOrganizationLinks)
       .values({
         linkId: uuid(),
-        sourceActorId: custs[0].actorId,
-        targetActorId: custs[1].actorId,
+        sourceOrganizationId: custs[0].organizationId,
+        targetOrganizationId: custs[1].organizationId,
         linkType: 'partner',
       })
       .onConflictDoNothing();
 
     await db
-      .insert(actorNotes)
+      .insert(organizationNotes)
       .values({
         noteId: uuid(),
-        actorId: custs[0].actorId,
+        organizationId: custs[0].organizationId,
         content:
           'Enterprise Account: VIP Discount tier applied with Net 30 terms. Preferred delivery yard at Dock 4.',
       })
@@ -1267,12 +1296,19 @@ export async function seedMasterData(
   }
 
   // 10. Major CRM Opportunities & Activities
+  const [demoUser] = await db
+    .select({ userId: users.userId, username: users.username })
+    .from(users)
+    .where(eq(users.username, 'demo'))
+    .limit(1);
   const [adminUser] = await db
     .select({ userId: users.userId, username: users.username })
     .from(users)
     .where(eq(users.username, 'admin'))
     .limit(1);
-  const adminUserId = adminUser?.userId || null;
+  const demoUserId = demoUser?.userId || null;
+  const adminUserId = adminUser?.userId || demoUserId;
+  const assigneeUserId = demoUserId || adminUserId;
 
   const opp1 = uuid(); // Pacific Northwest Clean Energy Complex (Prospect)
   const opp2 = uuid(); // Austin Tech Campus Expansion - Phase 2 (Prospect)
@@ -1455,74 +1491,74 @@ export async function seedMasterData(
     ])
     .onConflictDoNothing();
 
-  // Opportunity Actors
+  // Opportunity Organizations
   await db
-    .insert(opportunityActors)
+    .insert(opportunityOrganizations)
     .values([
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp1,
-        actorId: custs[4].actorId, // PNW Contractors
+        organizationId: custs[4].organizationId, // PNW Contractors
         roles: ['General Contractor', 'Primary Builder'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp2,
-        actorId: custs[1].actorId, // BuildIt Retail
+        organizationId: custs[1].organizationId, // BuildIt Retail
         roles: ['Primary Builder', 'Procurement Partner'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp3,
-        actorId: custs[0].actorId, // Home Hardware
+        organizationId: custs[0].organizationId, // Home Hardware
         roles: ['Supplier Consortium Partner'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp4,
-        actorId: custs[0].actorId, // Home Hardware
+        organizationId: custs[0].organizationId, // Home Hardware
         roles: ['General Contractor'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp5,
-        actorId: custs[3].actorId, // Texas Builders Group
+        organizationId: custs[3].organizationId, // Texas Builders Group
         roles: ['Structural Subcontractor'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp6,
-        actorId: custs[3].actorId, // Texas Builders Group
+        organizationId: custs[3].organizationId, // Texas Builders Group
         roles: ['Maintenance Contractor'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp7,
-        actorId: custs[2].actorId, // Apex Construction
+        organizationId: custs[2].organizationId, // Apex Construction
         roles: ['General Contractor', 'Primary Builder'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp7,
-        actorId: sups[0].actorId, // Milwaukee Tool
+        organizationId: sups[0].organizationId, // Milwaukee Tool
         roles: ['Preferred Tool Supplier'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp8,
-        actorId: custs[2].actorId, // Apex Construction
+        organizationId: custs[2].organizationId, // Apex Construction
         roles: ['EPC Contractor'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp9,
-        actorId: custs[2].actorId, // Apex Construction
+        organizationId: custs[2].organizationId, // Apex Construction
         roles: ['Prime Contractor'],
       },
       {
-        opportunityActorId: uuid(),
+        opportunityOrganizationId: uuid(),
         opportunityId: opp10,
-        actorId: custs[1].actorId, // BuildIt Retail
+        organizationId: custs[1].organizationId, // BuildIt Retail
         roles: ['Bidder'],
       },
     ])
@@ -1580,49 +1616,49 @@ export async function seedMasterData(
         opportunityId: opp1,
         content:
           'Exploratory scope completed. Client requested product compatibility matrix for outdoor industrial installations and extended cold-weather battery testing.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp3,
         content:
           'Budget line item approved by municipal transit authority. Needs Buy American compliance documentation and UL certification records attached.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp5,
         content:
           'Formal proposal submitted with tiered volume discounting. Engineering department reviewing customized staging delivery requirements for Downtown Hub.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp7,
         content:
           'Phase 1 Tool Deliveries scheduled for West Coast Hub pickup. 20V Max saws, impact wrenches, and rapid charger packs allocated.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp8,
         content:
           'Agreed on 10% volume discount tier for cordless torque packages. Awaiting final master services agreement signature from VP of Operations.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp9,
         content:
           'Contract awarded and fully signed! First order batch fulfilled and dispatched with positive receiving confirmation from Phoenix staging yard.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
       {
         noteId: uuid(),
         opportunityId: opp10,
         content:
           'Post-mortem review: Competitor undercut on third-party battery leasing options. Recommended packaging battery warranty in all future bids.',
-        createdById: adminUserId,
+        createdById: assigneeUserId,
       },
     ])
     .onConflictDoNothing();
@@ -1648,7 +1684,7 @@ export async function seedMasterData(
   await db
     .insert(crmActivities)
     .values([
-      // Open Tasks (populates Dashboard Tasks widget for admin)
+      // Open Tasks (populates Dashboard Tasks widget for demo/admin)
       {
         activityId: act1,
         type: CRM_ACTIVITY_TYPE.TASK,
@@ -1657,12 +1693,12 @@ export async function seedMasterData(
           'Coordinate with West Coast distribution warehouse for pickup window and confirm packaging serials.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.URGENT,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp7,
         dueDate: new Date(nowTimestamp.getTime() + 1 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
       },
@@ -1674,12 +1710,12 @@ export async function seedMasterData(
           'Analyze structural contractor feedback on cordless concrete cut-off saws and pack runtimes.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.HIGH,
-        actorId: custs[3].actorId,
+        organizationId: custs[3].organizationId,
         opportunityId: opp5,
         dueDate: new Date(nowTimestamp.getTime() + 3 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
       },
@@ -1691,12 +1727,12 @@ export async function seedMasterData(
           'Provide certified COO documents for commercial drill presses and demolition kits.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[0].actorId,
+        organizationId: custs[0].organizationId,
         opportunityId: opp3,
         dueDate: new Date(nowTimestamp.getTime() + 5 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 4 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 4 * 24 * 60 * 60 * 1000),
       },
@@ -1708,12 +1744,12 @@ export async function seedMasterData(
           'Apply tiered 15% discount structure on bulk carbide blade replenishment shipments.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.HIGH,
-        actorId: custs[3].actorId,
+        organizationId: custs[3].organizationId,
         opportunityId: opp6,
         dueDate: new Date(nowTimestamp.getTime() + 7 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
       },
@@ -1725,12 +1761,12 @@ export async function seedMasterData(
           'Arrange field specialist demo of brushless rotary hammers with Austin project team.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[1].actorId,
+        organizationId: custs[1].organizationId,
         opportunityId: opp2,
         dueDate: new Date(nowTimestamp.getTime() + 10 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 6 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 6 * 24 * 60 * 60 * 1000),
       },
@@ -1742,12 +1778,12 @@ export async function seedMasterData(
           'Contact legal counsel to verify execution of terms and liability insurance schedule.',
         status: CRM_ACTIVITY_STATUS.OPEN,
         priority: CRM_ACTIVITY_PRIORITY.URGENT,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp8,
         dueDate: new Date(nowTimestamp.getTime() - 1 * 24 * 60 * 60 * 1000), // overdue task
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 7 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 1 * 24 * 60 * 60 * 1000),
       },
@@ -1760,16 +1796,16 @@ export async function seedMasterData(
           'Reviewed D&B rating and approved $150,000 credit limit with Net 30 terms.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp7,
         dueDate: new Date(nowTimestamp.getTime() - 15 * 24 * 60 * 60 * 1000),
         completedAt: new Date(
           nowTimestamp.getTime() - 14 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 20 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 14 * 24 * 60 * 60 * 1000),
       },
@@ -1782,16 +1818,16 @@ export async function seedMasterData(
           'Transmitted complete 2026 commercial tooling catalog via digital portal.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.LOW,
-        actorId: custs[4].actorId,
+        organizationId: custs[4].organizationId,
         opportunityId: opp1,
         dueDate: new Date(nowTimestamp.getTime() - 25 * 24 * 60 * 60 * 1000),
         completedAt: new Date(
           nowTimestamp.getTime() - 24 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 30 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 24 * 24 * 60 * 60 * 1000),
       },
@@ -1804,13 +1840,13 @@ export async function seedMasterData(
           'Discussed high-volume rebate thresholds and warranty coverage periods for rail contract.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.HIGH,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp7,
         completedAt: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 5 * 24 * 60 * 60 * 1000),
       },
@@ -1823,13 +1859,13 @@ export async function seedMasterData(
           'Reviewed battery compatibility across pneumatic and brushless fastening tools.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[1].actorId,
+        organizationId: custs[1].organizationId,
         opportunityId: opp2,
         completedAt: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 8 * 24 * 60 * 60 * 1000),
       },
@@ -1841,12 +1877,12 @@ export async function seedMasterData(
           'Quarterly review call to address replacement turnaround SLA for job site repairs.',
         status: CRM_ACTIVITY_STATUS.SCHEDULED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[4].actorId,
+        organizationId: custs[4].organizationId,
         opportunityId: opp1,
         dueDate: new Date(nowTimestamp.getTime() + 4 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 2 * 24 * 60 * 60 * 1000),
       },
@@ -1860,12 +1896,12 @@ export async function seedMasterData(
           'Final walkthrough of terms and conditions with executive management team.',
         status: CRM_ACTIVITY_STATUS.SCHEDULED,
         priority: CRM_ACTIVITY_PRIORITY.HIGH,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp7,
         dueDate: new Date(nowTimestamp.getTime() + 2 * 24 * 60 * 60 * 1000),
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 3 * 24 * 60 * 60 * 1000),
       },
@@ -1878,15 +1914,15 @@ export async function seedMasterData(
           'Demonstrated dust extraction vacuum attachments and anti-kickback grinders to safety crew.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp9,
         completedAt: new Date(
           nowTimestamp.getTime() - 35 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 40 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 35 * 24 * 60 * 60 * 1000),
       },
@@ -1898,15 +1934,15 @@ export async function seedMasterData(
           'Reviewed equipment tolerances and vibration damping metrics for station refurbishment.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[0].actorId,
+        organizationId: custs[0].organizationId,
         opportunityId: opp3,
         completedAt: new Date(
           nowTimestamp.getTime() - 18 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 20 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 18 * 24 * 60 * 60 * 1000),
       },
@@ -1920,15 +1956,15 @@ export async function seedMasterData(
           'Sent proposal PDF packet including delivery logistics and warranty riders.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.MEDIUM,
-        actorId: custs[3].actorId,
+        organizationId: custs[3].organizationId,
         opportunityId: opp5,
         completedAt: new Date(
           nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 10 * 24 * 60 * 60 * 1000),
       },
@@ -1941,15 +1977,15 @@ export async function seedMasterData(
           'Confirmed signed contract execution and initiated first order fulfillment release.',
         status: CRM_ACTIVITY_STATUS.COMPLETED,
         priority: CRM_ACTIVITY_PRIORITY.HIGH,
-        actorId: custs[2].actorId,
+        organizationId: custs[2].organizationId,
         opportunityId: opp9,
         completedAt: new Date(
           nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000,
         ),
-        completedByUserId: adminUserId,
-        assignedToUserId: adminUserId,
-        createdBy: 'admin',
-        createdById: adminUserId,
+        completedByUserId: assigneeUserId,
+        assignedToUserId: assigneeUserId,
+        createdBy: 'demo',
+        createdById: assigneeUserId,
         createdOn: new Date(nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000),
         modifiedOn: new Date(nowTimestamp.getTime() - 32 * 24 * 60 * 60 * 1000),
       },
@@ -2918,7 +2954,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       | 'shipping_partial'
       | 'quoted';
     location: MasterLocation;
-    customer: MasterActorCustomer;
+    customer: MasterOrganizationCustomer;
     orderDate?: Date;
     opportunityId?: string;
     name?: string;
@@ -3867,9 +3903,9 @@ async function seedDemoAppSettings(db: SeedDB) {
     opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
     opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
     opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
-    opportunityActorRoles: DEFAULT_OPPORTUNITY_ACTOR_ROLES,
-    actorContactRoles: DEFAULT_ACTOR_CONTACT_ROLES,
-    actorTags: DEFAULT_ACTOR_TAGS,
+    opportunityOrganizationRoles: DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
+    organizationContactRoles: DEFAULT_ORGANIZATION_CONTACT_ROLES,
+    organizationTags: DEFAULT_ORGANIZATION_TAGS,
     referralModes: DEFAULT_REFERRAL_MODES,
   };
 
@@ -3903,6 +3939,37 @@ async function seedDemoAppSettings(db: SeedDB) {
   }
 }
 
+export async function seedDemoUsers(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed demo admin user: demo (pw: demodemo)');
+    return;
+  }
+  const demoPass = process.env.DEMO_PASSWORD || 'demodemo'; // TEST_CREDENTIAL
+  console.log(`Seeding demo admin user (demo)...`);
+  const hash = await bcrypt.hash(demoPass, 10);
+  await db
+    .insert(users)
+    .values({
+      username: 'demo',
+      passwordHash: hash,
+      displayName: 'Demo Administrator',
+      email: 'demo@herobm.com',
+      role: 'admin',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: hash,
+        displayName: 'Demo Administrator',
+        email: 'demo@herobm.com',
+        role: 'admin',
+        isActive: true,
+      },
+    });
+  console.log('  Seeded user: demo (role: admin, pw: demodemo)');
+}
+
 export async function runDemoSeeds(
   db: SeedDB,
   dryRun = false,
@@ -3931,6 +3998,7 @@ export async function runDemoSeeds(
 
     // 1. Run the framework baseline seeds (Users, App settings, Casbin, Reports)
     await runProdSeeds(db, dryRun);
+    await seedDemoUsers(db, dryRun);
     await seedDemoAppSettings(db);
     await seedCoaAccounts(db, false, region);
     await seedCoaSettings(db, false, region);

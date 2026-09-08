@@ -42,7 +42,7 @@ export class CrmActivitiesController {
   @ApiOperation({
     summary: 'Create CRM Activity',
     description:
-      'Logs a new interaction (Call, Meeting, Email, Task) against an Actor, Contact, or Project.',
+      'Logs a new interaction (Call, Meeting, Email, Task, Note, or custom type) against an Organization, Contact, or Opportunity.',
   })
   @ApiCreatedResponse({ type: CrmActivityResponseDto })
   create(@Body() dto: CreateCrmActivityDto, @AuthUser() user: JwtUser) {
@@ -54,7 +54,7 @@ export class CrmActivitiesController {
   @ApiOperation({
     summary: 'List CRM Activities',
     description:
-      'Retrieves CRM activities and tasks with filtering by entity, assignee, and status.',
+      'Retrieves CRM activities and tasks with filtering by organization, contact, opportunity, assignee, overdue state, and status.',
   })
   @ApiPaginatedResponse(CrmActivityResponseDto)
   findAll(@Query() query: CrmActivityQueryDto, @AuthUser() user: JwtUser) {
@@ -101,6 +101,23 @@ export class CrmActivitiesController {
     @AuthUser() user: JwtUser,
   ) {
     return this.crmActivitiesService.complete(id, user);
+  }
+
+  @Patch(':id/reopen')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Reopen Task',
+    description:
+      'Reopens a completed or cancelled CRM task, resetting its completion timestamp.',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiOkResponse({ type: CrmActivityResponseDto })
+  reopen(
+    @Param('id') id: string,
+    @Body() _dto: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.crmActivitiesService.reopen(id, user);
   }
 
   @Delete(':id')

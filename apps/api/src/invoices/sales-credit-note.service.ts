@@ -37,7 +37,7 @@ import {
   customers as coreAccounts,
   products as coreProducts,
   customerGroups,
-  actors,
+  organizations,
   salesEvents,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
@@ -703,9 +703,12 @@ export class SalesCreditNoteService {
 
       const [customer] = order.customerId
         ? await innerTx
-            .select({ name: actors.name })
+            .select({ name: organizations.name })
             .from(coreAccounts)
-            .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+            .leftJoin(
+              organizations,
+              eq(coreAccounts.organizationId, organizations.organizationId),
+            )
             .where(eq(coreAccounts.customerId, order.customerId))
         : [null];
 
@@ -774,7 +777,7 @@ export class SalesCreditNoteService {
         referenceNumber: salesOrderReturns.returnNumber,
         returnNumber: salesOrderReturns.returnNumber,
         customerNumber: coreAccounts.customerNumber,
-        customerName: actors.name,
+        customerName: organizations.name,
       })
       .from(salesCreditNotes)
       .leftJoin(
@@ -789,7 +792,10 @@ export class SalesCreditNoteService {
         coreAccounts,
         eq(salesCreditNotes.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -810,7 +816,7 @@ export class SalesCreditNoteService {
           ilike(salesCreditNotes.creditNoteNumber, searchTerm),
           ilike(salesCreditNotes.notes, searchTerm),
           ilike(coreAccounts.customerNumber, searchTerm),
-          ilike(actors.name, searchTerm),
+          ilike(organizations.name, searchTerm),
         ),
       );
     }
@@ -1192,7 +1198,7 @@ export class SalesCreditNoteService {
       .select({
         ...getTableColumns(salesCreditNotes),
         customerNumber: coreAccounts.customerNumber,
-        customerName: actors.name,
+        customerName: organizations.name,
         orderNumber: salesOrders.orderNumber,
         returnNumber: salesOrderReturns.returnNumber,
       })
@@ -1201,7 +1207,10 @@ export class SalesCreditNoteService {
         coreAccounts,
         eq(salesCreditNotes.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         salesOrders,
         eq(salesCreditNotes.salesOrderId, salesOrders.salesOrderId),

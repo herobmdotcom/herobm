@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import {
   customers,
   suppliers,
-  actors,
+  organizations,
   customerGroups,
   supplierGroups,
   tradingTerms,
@@ -69,7 +69,7 @@ export const CUSTOMERS_EXTENDED: CsvExportProjection = {
     let query: any = db
       .select({
         customer_number: customers.customerNumber,
-        customer_name: actors.name,
+        customer_name: organizations.name,
         customer_group_code: customerGroups.groupCode,
         customer_group_name: customerGroups.name,
         state_code: customers.stateCode,
@@ -77,26 +77,29 @@ export const CUSTOMERS_EXTENDED: CsvExportProjection = {
         price_tier: customers.priceTier,
         credit_limit: customers.creditLimit,
         is_on_credit_hold: customers.isOnCreditHold,
-        business_number: actors.businessNumber,
-        email: actors.email,
-        telephone: actors.telephone,
-        website: actors.website,
-        industry: actors.industry,
+        business_number: organizations.businessNumber,
+        email: organizations.email,
+        telephone: organizations.telephone,
+        website: organizations.website,
+        industry: organizations.industry,
         trading_terms: tradingTerms.description,
         tax_position: taxPositions.title,
         bank_account_name: customers.bankAccountName,
         bank_bsb: customers.bankBsb,
         bank_account_number: customers.bankAccountNumber,
-        address_line1: actors.headquartersAddressLine1,
-        address_line2: actors.headquartersAddressLine2,
-        city: actors.headquartersCity,
-        state_province: actors.headquartersStateOrProvince,
-        postal_code: actors.headquartersPostalCode,
-        country: actors.headquartersCountry,
+        address_line1: organizations.headquartersAddressLine1,
+        address_line2: organizations.headquartersAddressLine2,
+        city: organizations.headquartersCity,
+        state_province: organizations.headquartersStateOrProvince,
+        postal_code: organizations.headquartersPostalCode,
+        country: organizations.headquartersCountry,
         notes: customers.notes,
       })
       .from(customers)
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         customerGroups,
         eq(customers.customerGroupId, customerGroups.customerGroupId),
@@ -160,30 +163,33 @@ export const SUPPLIERS_EXTENDED: CsvExportProjection = {
     let query: any = db
       .select({
         vendor_number: suppliers.vendorNumber,
-        supplier_name: actors.name,
+        supplier_name: organizations.name,
         supplier_group_code: supplierGroups.groupCode,
         supplier_group_name: supplierGroups.name,
         state_code: suppliers.stateCode,
         currency_code: suppliers.currencyCode,
-        business_number: actors.businessNumber,
-        email: actors.email,
-        telephone: actors.telephone,
-        website: actors.website,
+        business_number: organizations.businessNumber,
+        email: organizations.email,
+        telephone: organizations.telephone,
+        website: organizations.website,
         trading_terms: tradingTerms.description,
         tax_position: taxPositions.title,
         bank_account_name: suppliers.bankAccountName,
         bank_bsb: suppliers.bankBsb,
         bank_account_number: suppliers.bankAccountNumber,
-        address_line1: actors.headquartersAddressLine1,
-        address_line2: actors.headquartersAddressLine2,
-        city: actors.headquartersCity,
-        state_province: actors.headquartersStateOrProvince,
-        postal_code: actors.headquartersPostalCode,
-        country: actors.headquartersCountry,
+        address_line1: organizations.headquartersAddressLine1,
+        address_line2: organizations.headquartersAddressLine2,
+        city: organizations.headquartersCity,
+        state_province: organizations.headquartersStateOrProvince,
+        postal_code: organizations.headquartersPostalCode,
+        country: organizations.headquartersCountry,
         notes: suppliers.notes,
       })
       .from(suppliers)
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         supplierGroups,
         eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
@@ -316,7 +322,7 @@ export const SALES_ORDERS_EXTENDED: CsvExportProjection = {
         order_number: salesOrders.orderNumber,
         name: salesOrders.name,
         customer_number: customers.customerNumber,
-        customer_name: actors.name,
+        customer_name: organizations.name,
         fulfillment_location_code: locations.code,
         fulfillment_location_name: locations.name,
         state_code: salesOrders.stateCode,
@@ -338,7 +344,10 @@ export const SALES_ORDERS_EXTENDED: CsvExportProjection = {
       })
       .from(salesOrders)
       .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         locations,
         eq(salesOrders.fulfillmentLocationId, locations.locationId),

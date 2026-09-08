@@ -5,7 +5,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   crmActivities,
   crmActivityContacts,
-  actors,
+  organizations,
   contacts,
   opportunities,
   opportunityContacts,
@@ -14,7 +14,11 @@ import {
 import { NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
-import { ACTOR_STATE, CONTACT_STATE, OPPORTUNITY_STATE } from '@herobm/shared';
+import {
+  ORGANIZATION_STATE,
+  CONTACT_STATE,
+  OPPORTUNITY_STATE,
+} from '@herobm/shared';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -35,7 +39,7 @@ describe('CrmActivitiesService', () => {
     await pg.db.delete(opportunityContacts);
     await pg.db.delete(opportunities);
     await pg.db.delete(contacts);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(users);
     jest.clearAllMocks();
 
@@ -62,12 +66,12 @@ describe('CrmActivitiesService', () => {
   });
 
   describe('create', () => {
-    it('should create a call activity linked to an actor', async () => {
-      const [actor] = await pg.db
-        .insert(actors)
+    it('should create a call activity linked to an organization', async () => {
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Acme Corp',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
@@ -79,7 +83,7 @@ describe('CrmActivitiesService', () => {
           description: 'Discussed Q3 requirements',
           status: 'completed',
           priority: 'medium',
-          actorId: actor.actorId,
+          organizationId: org.organizationId,
         },
         mockUser,
       );
@@ -88,7 +92,7 @@ describe('CrmActivitiesService', () => {
       expect(result.activityId).toBeDefined();
       expect(result.type).toBe('call');
       expect(result.subject).toBe('Initial discovery call');
-      expect(result.actorName).toBe('Acme Corp');
+      expect(result.organizationName).toBe('Acme Corp');
       expect(result.createdBy).toBe('admin');
       expect(emitEvent).toHaveBeenCalled();
     });
@@ -116,24 +120,40 @@ describe('CrmActivitiesService', () => {
       expect(result.assignedToUserId).toBe(mockUser.userId);
       expect(result.assignedToName).toBe('Admin User');
     });
+
+    it('should create an activity with a custom configurable type', async () => {
+      const result = await service.create(
+        {
+          type: 'demo',
+          subject: 'Product Demo Session',
+          status: 'completed',
+          priority: 'high',
+        },
+        mockUser,
+      );
+
+      expect(result).toBeDefined();
+      expect(result.type).toBe('demo');
+      expect(result.subject).toBe('Product Demo Session');
+    });
   });
 
   describe('findAll', () => {
-    it('should filter activities by actorId', async () => {
-      const [actor1] = await pg.db
-        .insert(actors)
+    it('should filter activities by organizationId', async () => {
+      const [org1] = await pg.db
+        .insert(organizations)
         .values({
-          name: 'Actor 1',
-          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Org 1',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
 
-      const [actor2] = await pg.db
-        .insert(actors)
+      const [org2] = await pg.db
+        .insert(organizations)
         .values({
-          name: 'Actor 2',
-          stateCode: ACTOR_STATE.ACTIVE,
+          name: 'Org 2',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
@@ -141,10 +161,10 @@ describe('CrmActivitiesService', () => {
       await service.create(
         {
           type: 'call',
-          subject: 'Call for Actor 1',
+          subject: 'Call for Org 1',
           status: 'completed',
           priority: 'low',
-          actorId: actor1.actorId,
+          organizationId: org1.organizationId,
         },
         mockUser,
       );
@@ -152,18 +172,20 @@ describe('CrmActivitiesService', () => {
       await service.create(
         {
           type: 'meeting',
-          subject: 'Meeting for Actor 2',
+          subject: 'Meeting for Org 2',
           status: 'completed',
           priority: 'medium',
-          actorId: actor2.actorId,
+          organizationId: org2.organizationId,
         },
         mockUser,
       );
 
-      const res = await service.findAll({ actorId: actor1.actorId });
+      const res = await service.findAll({
+        organizationId: org1.organizationId,
+      });
       expect(res.data.length).toBe(1);
-      expect(res.data[0].subject).toBe('Call for Actor 1');
-      expect(res.data[0].actorName).toBe('Actor 1');
+      expect(res.data[0].subject).toBe('Call for Org 1');
+      expect(res.data[0].organizationName).toBe('Org 1');
     });
 
     it('should filter by myTasks', async () => {
@@ -192,6 +214,90 @@ describe('CrmActivitiesService', () => {
       expect(res.data.length).toBe(1);
       expect(res.data[0].subject).toBe('My task 1');
     });
+
+    it('should filter by isOverdue', async () => {
+      const pastDate = new Date(Date.now() - 86400000 * 2).toISOString();
+      const futureDate = new Date(Date.now() + 86400000 * 2).toISOString();
+
+      await service.create(
+        {
+          type: 'task',
+          subject: 'Overdue task',
+          status: 'open',
+          priority: 'high',
+          dueDate: pastDate,
+          assignedToUserId: mockUser.userId,
+        },
+        mockUser,
+      );
+
+      await service.create(
+        {
+          type: 'task',
+          subject: 'Future task',
+          status: 'open',
+          priority: 'medium',
+          dueDate: futureDate,
+          assignedToUserId: mockUser.userId,
+        },
+        mockUser,
+      );
+
+      await service.create(
+        {
+          type: 'task',
+          subject: 'Completed overdue task',
+          status: 'completed',
+          priority: 'low',
+          dueDate: pastDate,
+          assignedToUserId: mockUser.userId,
+        },
+        mockUser,
+      );
+
+      const overdueRes = await service.findAll(
+        { isOverdue: 'true' },
+        mockUser.userId,
+      );
+      expect(overdueRes.data.length).toBe(1);
+      expect(overdueRes.data[0].subject).toBe('Overdue task');
+    });
+
+    it('should filter by dueDateFrom and dueDateTo', async () => {
+      await service.create(
+        {
+          type: 'task',
+          subject: 'Task in range',
+          status: 'open',
+          priority: 'medium',
+          dueDate: '2026-06-15T10:00:00Z',
+          assignedToUserId: mockUser.userId,
+        },
+        mockUser,
+      );
+
+      await service.create(
+        {
+          type: 'task',
+          subject: 'Task outside range',
+          status: 'open',
+          priority: 'low',
+          dueDate: '2026-08-01T10:00:00Z',
+          assignedToUserId: mockUser.userId,
+        },
+        mockUser,
+      );
+
+      const res = await service.findAll(
+        {
+          dueDateFrom: '2026-06-01T00:00:00Z',
+          dueDateTo: '2026-06-30T23:59:59Z',
+        },
+        mockUser.userId,
+      );
+      expect(res.data.length).toBe(1);
+      expect(res.data[0].subject).toBe('Task in range');
+    });
   });
 
   describe('complete', () => {
@@ -213,6 +319,35 @@ describe('CrmActivitiesService', () => {
       expect(completed.status).toBe('completed');
       expect(completed.completedAt).toBeDefined();
       expect(completed.completedByUserId).toBe(mockUser.userId);
+    });
+  });
+
+  describe('reopen', () => {
+    it('should reopen a completed task and reset completion fields', async () => {
+      const task = await service.create(
+        {
+          type: 'task',
+          subject: 'Task to complete and reopen',
+          status: 'open',
+          priority: 'medium',
+        },
+        mockUser,
+      );
+
+      await service.complete(task.activityId, mockUser);
+      const completed = await service.findOne(task.activityId, mockUser);
+      expect(completed.status).toBe('completed');
+      expect(completed.completedAt).toBeDefined();
+
+      const reopened = await service.reopen(task.activityId, mockUser);
+      expect(reopened.status).toBe('open');
+      expect(reopened.completedAt).toBeNull();
+      expect(reopened.completedByUserId).toBeNull();
+
+      const fetched = await service.findOne(task.activityId, mockUser);
+      expect(fetched.status).toBe('open');
+      expect(fetched.completedAt).toBeNull();
+      expect(fetched.completedByUserId).toBeNull();
     });
   });
 

@@ -43,10 +43,20 @@ import {
   purchaseDebitNotes,
   procurementEvents,
   suppliers,
-  actors,
+  organizations,
   bins,
 } from '@herobm/db-schema';
-import { eq, desc, inArray, or, sql, isNull, and, ne } from 'drizzle-orm';
+import {
+  eq,
+  desc,
+  inArray,
+  or,
+  sql,
+  isNull,
+  and,
+  ne,
+  ilike,
+} from 'drizzle-orm';
 import { PurchaseReturnResponseDto, EmailDocumentDto } from './dto';
 import { PurchaseReturnsService } from './purchase-returns.service';
 
@@ -83,28 +93,34 @@ export class GlobalPurchaseReturnsListDto {
   data: GlobalPurchaseReturnDto[];
 }
 
-@Controller('purchase-returns')
-@CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('Purchase Returns')
+@CasbinResource(SystemResource.PURCHASE_RETURNS)
+@Controller('purchase-returns')
 export class GlobalPurchaseReturnsController {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private purchaseReturnsService: PurchaseReturnsService,
-    private documentDispatchService: DocumentDispatchService,
+    private readonly purchaseReturnsService: PurchaseReturnsService,
+    private readonly documentDispatchService: DocumentDispatchService,
   ) {}
 
   @Get()
   @CasbinAction('read')
   @ApiOperation({
-    summary: 'List Purchase Returns',
-    description: 'Retrieve a list of purchase returns based on state.',
+    summary: 'List all purchase returns across all POs',
+    description:
+      'Retrieve a paginated or filtered list of purchase returns across all purchase orders.',
   })
-  @ApiOkResponse({ type: [GlobalPurchaseReturnDto] })
-  @ApiQuery({ name: 'stateCode', required: false })
+  @ApiOkResponse({
+    description: 'Returns list',
+    type: [GlobalPurchaseReturnDto],
+  })
+  @ApiQuery({ name: 'stateCode', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'requireDebitNote', required: false, type: Boolean })
-  async getPurchaseReturns(
+  async findAll(
     @Query('stateCode') stateCodeStr?: string,
-    @Query('requireDebitNote') requireDebitNote?: boolean,
+    @Query('search') search?: string,
+    @Query('requireDebitNote') requireDebitNote?: boolean | string,
   ) {
     let query = this.db
       .select({
@@ -117,7 +133,7 @@ export class GlobalPurchaseReturnsController {
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         vendorId: suppliers.vendorId,
         vendorCode: suppliers.vendorNumber,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         debitNoteId: sql<string | null>`(
           SELECT pdn.debit_note_id 
           FROM herobm_core.purchase_debit_notes pdn 
@@ -156,7 +172,10 @@ export class GlobalPurchaseReturnsController {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -167,6 +186,17 @@ export class GlobalPurchaseReturnsController {
         inArray(
           purchaseOrderReturns.stateCode,
           states as PurchaseReturnState[],
+        ),
+      );
+    }
+
+    if (search) {
+      conditions.push(
+        or(
+          ilike(purchaseOrderReturns.returnNumber, `%${search}%`),
+          ilike(purchaseOrders.orderNumber, `%${search}%`),
+          ilike(organizations.name, `%${search}%`),
+          ilike(suppliers.vendorNumber, `%${search}%`),
         ),
       );
     }
@@ -218,7 +248,7 @@ export class GlobalPurchaseReturnsController {
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         vendorId: suppliers.vendorId,
         vendorCode: suppliers.vendorNumber,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         currencyCode: purchaseOrders.currencyCode,
         debitNoteId: purchaseDebitNotes.debitNoteId,
         debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
@@ -236,7 +266,10 @@ export class GlobalPurchaseReturnsController {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         purchaseDebitNotes,
         eq(purchaseOrderReturns.returnId, purchaseDebitNotes.returnId),

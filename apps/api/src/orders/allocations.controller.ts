@@ -37,7 +37,7 @@ import {
   salesOrderLineItems,
   productSuppliers,
   suppliers,
-  actors,
+  organizations,
   locations,
   inventoryLevels,
   purchaseOrders,
@@ -79,7 +79,7 @@ export class AllocationsController {
         quantity: sql<number>`CAST(${backorders.quantity} AS float)`,
         createdOn: backorders.createdOn,
         vendorId: productSuppliers.vendorId,
-        vendorName: actors.name,
+        vendorName: organizations.name,
         costPrice: sql<number>`CAST(${productSuppliers.costPrice} AS float)`,
         currencyCode: suppliers.currencyCode,
         locationId: sql<string>`COALESCE(${salesOrderLineItems.fulfillmentLocationId}, ${demandWorkOrders.locationId})`,
@@ -124,7 +124,10 @@ export class AllocationsController {
         ),
       )
       .leftJoin(suppliers, eq(suppliers.vendorId, productSuppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         purchaseOrders,
         eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),

@@ -11,7 +11,7 @@ import { users } from './system.schema';
 import { glAccounts, costCenters, activities } from './gl.schema';
 import { taxPositions } from './tax.schema';
 import {
-  ActorState,
+  OrganizationState,
   ContactState,
   OpportunityState,
   CustomerState,
@@ -22,12 +22,12 @@ import {
 } from '@herobm/shared';
 
 // ---------------------------------------------------------------------------
-// actors (CRM Core: Central Business Entity)
+// organizations (CRM Core: Central Business Entity)
 // ---------------------------------------------------------------------------
-export const actors = herobmCore.table('actors', {
-  actorId: uuid('actor_id').primaryKey().defaultRandom(),
+export const organizations = herobmCore.table('organizations', {
+  organizationId: uuid('organization_id').primaryKey().defaultRandom(),
   stateCode: text('state_code')
-    .$type<ActorState>()
+    .$type<OrganizationState>()
     .notNull(),
   name: text('name').notNull(),
   ownerId: uuid('owner_id').references(() => users.userId),
@@ -46,8 +46,8 @@ export const actors = herobmCore.table('actors', {
   businessNumber: text('business_number'),
   isTaxRegistered: boolean('is_tax_registered').notNull(),
   referralMode: text('referral_mode'),
-  referredByActorId: uuid('referred_by_actor_id').references(
-    (): any => actors.actorId,
+  referredByOrganizationId: uuid('referred_by_organization_id').references(
+    (): any => organizations.organizationId,
   ), // Self-reference
   referredByContactId: uuid('referred_by_contact_id').references(
     (): any => contacts.contactId,
@@ -71,8 +71,8 @@ export const contacts = herobmCore.table('contacts', {
   phone: text('phone'),
   mobile: text('mobile'),
   linkedinProfile: text('linkedin_profile'),
-  referredByActorId: uuid('referred_by_actor_id').references(
-    (): any => actors.actorId,
+  referredByOrganizationId: uuid('referred_by_organization_id').references(
+    (): any => organizations.organizationId,
   ),
   referredByContactId: uuid('referred_by_contact_id').references(
     (): any => contacts.contactId,
@@ -81,11 +81,11 @@ export const contacts = herobmCore.table('contacts', {
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 
-export const actorContactLinks = herobmCore.table('actor_contact_links', {
+export const organizationContactLinks = herobmCore.table('organization_contact_links', {
   linkId: uuid('link_id').primaryKey().defaultRandom(),
-  actorId: uuid('actor_id')
+  organizationId: uuid('organization_id')
     .notNull()
-    .references(() => actors.actorId),
+    .references(() => organizations.organizationId),
   contactId: uuid('contact_id')
     .notNull()
     .references(() => contacts.contactId),
@@ -96,14 +96,14 @@ export const actorContactLinks = herobmCore.table('actor_contact_links', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const actorActorLinks = herobmCore.table('actor_actor_links', {
+export const organizationOrganizationLinks = herobmCore.table('organization_organization_links', {
   linkId: uuid('link_id').primaryKey().defaultRandom(),
-  sourceActorId: uuid('source_actor_id')
+  sourceOrganizationId: uuid('source_organization_id')
     .notNull()
-    .references(() => actors.actorId),
-  targetActorId: uuid('target_actor_id')
+    .references(() => organizations.organizationId),
+  targetOrganizationId: uuid('target_organization_id')
     .notNull()
-    .references(() => actors.actorId),
+    .references(() => organizations.organizationId),
   linkType: text('link_type', {
     enum: ['parent_company', 'subsidiary', 'partner', 'referrer'],
   }).notNull(),
@@ -139,14 +139,14 @@ export const opportunityNotes = herobmCore.table('opportunity_notes', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const opportunityActors = herobmCore.table('opportunity_actors', {
-  opportunityActorId: uuid('opportunity_actor_id').primaryKey().defaultRandom(),
+export const opportunityOrganizations = herobmCore.table('opportunity_organizations', {
+  opportunityOrganizationId: uuid('opportunity_organization_id').primaryKey().defaultRandom(),
   opportunityId: uuid('opportunity_id')
     .notNull()
     .references(() => opportunities.opportunityId),
-  actorId: uuid('actor_id')
+  organizationId: uuid('organization_id')
     .notNull()
-    .references(() => actors.actorId),
+    .references(() => organizations.organizationId),
   roles: text('roles').array(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
@@ -163,11 +163,11 @@ export const opportunityContacts = herobmCore.table('opportunity_contacts', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
-export const actorNotes = herobmCore.table('actor_notes', {
+export const organizationNotes = herobmCore.table('organization_notes', {
   noteId: uuid('note_id').primaryKey().defaultRandom(),
-  actorId: uuid('actor_id')
+  organizationId: uuid('organization_id')
     .notNull()
-    .references(() => actors.actorId),
+    .references(() => organizations.organizationId),
   content: text('content').notNull(),
   createdById: uuid('created_by_id').references(() => users.userId),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -265,7 +265,7 @@ export const suppliers = herobmCore.table(
     supplierGroupId: uuid('supplier_group_id').references(
       () => supplierGroups.supplierGroupId,
     ),
-    actorId: uuid('actor_id').references(() => actors.actorId),
+    organizationId: uuid('organization_id').references(() => organizations.organizationId),
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
@@ -316,7 +316,7 @@ export const customers = herobmCore.table(
     customerGroupId: uuid('customer_group_id').references(
       () => customerGroups.customerGroupId,
     ),
-    actorId: uuid('actor_id').references(() => actors.actorId),
+    organizationId: uuid('organization_id').references(() => organizations.organizationId),
     stateCode: text('state_code').$type<CustomerState>().notNull(),
     taxPositionId: uuid('tax_position_id').references(
       () => taxPositions.taxPositionId,
@@ -385,7 +385,7 @@ export const crmActivities = herobmCore.table('crm_activities', {
   description: text('description'),
   status: text('status').$type<CrmActivityStatus>().notNull(),
   priority: text('priority').$type<CrmActivityPriority>().notNull(),
-  actorId: uuid('actor_id').references(() => actors.actorId),
+  organizationId: uuid('organization_id').references(() => organizations.organizationId),
   opportunityId: uuid('opportunity_id').references(() => opportunities.opportunityId),
   dueDate: timestamp('due_date', { withTimezone: true }),
   assignedToUserId: uuid('assigned_to_user_id').references(() => users.userId),

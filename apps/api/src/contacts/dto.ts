@@ -163,12 +163,14 @@ export class UpdateContactDto {
   projectRole?: string;
 }
 
-export enum ActorRole {
+export enum OrganizationRole {
   PURCHASING = 'purchasing',
   BILLING = 'billing',
   SALES = 'sales',
   TECHNICAL = 'technical',
 }
+export const ActorRole = OrganizationRole;
+export type ActorRole = OrganizationRole;
 
 export class ContactResponseDto {
   contactId!: string;
@@ -181,6 +183,7 @@ export class ContactResponseDto {
   mobile?: string | null;
   jobTitle?: string | null;
   primaryFor?: string[];
+  organizationContactLinks?: unknown[];
   actorContactLinks?: unknown[];
   events?: unknown[];
   createdOn!: Date | null;

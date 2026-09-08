@@ -9,7 +9,7 @@ import {
   purchaseOrderLineItems,
   purchaseOrderReturns,
   suppliers,
-  actors,
+  organizations,
   products,
   glSettings,
 } from '@herobm/db-schema';
@@ -75,12 +75,12 @@ export class PurchaseDebitNoteService {
         returnId: purchaseDebitNotes.returnId,
         returnNumber: purchaseOrderReturns.returnNumber,
         vendorId: purchaseDebitNotes.vendorId,
-        vendorName: actors.name,
-        headquartersAddressLine1: actors.headquartersAddressLine1,
-        city: actors.headquartersCity,
-        stateOrProvince: actors.headquartersStateOrProvince,
-        postalCode: actors.headquartersPostalCode,
-        country: actors.headquartersCountry,
+        vendorName: organizations.name,
+        headquartersAddressLine1: organizations.headquartersAddressLine1,
+        city: organizations.headquartersCity,
+        stateOrProvince: organizations.headquartersStateOrProvince,
+        postalCode: organizations.headquartersPostalCode,
+        country: organizations.headquartersCountry,
       })
       .from(purchaseDebitNotes)
       .leftJoin(
@@ -92,7 +92,10 @@ export class PurchaseDebitNoteService {
         eq(purchaseDebitNotes.returnId, purchaseOrderReturns.returnId),
       )
       .leftJoin(suppliers, eq(purchaseDebitNotes.vendorId, suppliers.vendorId))
-      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
       .limit(1);
 

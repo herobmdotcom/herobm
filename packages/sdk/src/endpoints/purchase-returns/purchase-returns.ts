@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type {
   CreatePurchaseReturnDto,
@@ -11,7 +11,7 @@ import type {
   EmptyBodyDto,
   GlobalPurchaseReturnDto,
   GlobalPurchaseReturnsControllerEmailDocument201,
-  GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,
+  GlobalPurchaseReturnsControllerFindAllParams,
   PurchaseReturnResponseDto,
   ResolvePurchaseReturnDto,
   ShipPurchaseReturnDto
@@ -332,22 +332,21 @@ export const purchaseReturnsControllerCancelReturn = async (id: string,
 
 
 /**
- * Retrieve a list of purchase returns based on state.
- * @summary List Purchase Returns
+ * @summary List all purchase returns across all POs
  */
-export type globalPurchaseReturnsControllerGetPurchaseReturnsResponse200 = {
+export type globalPurchaseReturnsControllerFindAllResponse200 = {
   data: GlobalPurchaseReturnDto[]
   status: 200
 }
     
-export type globalPurchaseReturnsControllerGetPurchaseReturnsResponseSuccess = (globalPurchaseReturnsControllerGetPurchaseReturnsResponse200) & {
+export type globalPurchaseReturnsControllerFindAllResponseSuccess = (globalPurchaseReturnsControllerFindAllResponse200) & {
   headers: Headers;
 };
 ;
 
-export type globalPurchaseReturnsControllerGetPurchaseReturnsResponse = (globalPurchaseReturnsControllerGetPurchaseReturnsResponseSuccess)
+export type globalPurchaseReturnsControllerFindAllResponse = (globalPurchaseReturnsControllerFindAllResponseSuccess)
 
-export const getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl = (params?: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,) => {
+export const getGlobalPurchaseReturnsControllerFindAllUrl = (params?: GlobalPurchaseReturnsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -362,9 +361,9 @@ export const getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl = (params?:
   return stringifiedParams.length > 0 ? `/purchase-returns?${stringifiedParams}` : `/purchase-returns`
 }
 
-export const globalPurchaseReturnsControllerGetPurchaseReturns = async (params?: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams, options?: RequestInit): Promise<globalPurchaseReturnsControllerGetPurchaseReturnsResponse> => {
+export const globalPurchaseReturnsControllerFindAll = async (params?: GlobalPurchaseReturnsControllerFindAllParams, options?: RequestInit): Promise<globalPurchaseReturnsControllerFindAllResponse> => {
   
-  return customFetch<globalPurchaseReturnsControllerGetPurchaseReturnsResponse>(getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl(params),
+  return customFetch<globalPurchaseReturnsControllerFindAllResponse>(getGlobalPurchaseReturnsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'

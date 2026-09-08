@@ -82,7 +82,7 @@ describe('ContactsController', () => {
       const dto = {
         firstName: 'John',
         lastName: 'Doe',
-        entityType: ContactEntityType.ACTOR,
+        entityType: ContactEntityType.ORGANIZATION,
         entityId: 'A001',
       };
       const result = await controller.create(dto, mockUser);

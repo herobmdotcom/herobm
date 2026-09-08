@@ -3,22 +3,36 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
-import type { CrmActivitiesControllerFindAllType } from './crmActivitiesControllerFindAllType';
+import type { Object } from './object';
 import type { CrmActivitiesControllerFindAllStatus } from './crmActivitiesControllerFindAllStatus';
 import type { CrmActivitiesControllerFindAllPriority } from './crmActivitiesControllerFindAllPriority';
-import type { Object } from './object';
 
 export type CrmActivitiesControllerFindAllParams = {
-actorId?: string;
+organizationId?: string;
 contactId?: string;
 opportunityId?: string;
 assignedToUserId?: string;
-type?: CrmActivitiesControllerFindAllType;
+/**
+ * Activity type (e.g. call, meeting, email, task, note or custom type)
+ */
+type?: Object;
 status?: CrmActivitiesControllerFindAllStatus;
 priority?: CrmActivitiesControllerFindAllPriority;
 myTasks?: string;
+/**
+ * Filter open tasks that are overdue
+ */
+isOverdue?: string;
+/**
+ * Filter activities with due date on or after this ISO date
+ */
+dueDateFrom?: string;
+/**
+ * Filter activities with due date on or before this ISO date
+ */
+dueDateTo?: string;
 q?: string;
 page?: number;
 cursor?: string;

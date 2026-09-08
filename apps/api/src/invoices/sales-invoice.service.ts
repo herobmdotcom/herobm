@@ -29,7 +29,7 @@ import {
   salesOrderReturns,
   salesOrderReturnLines,
   inventoryLedger,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -166,7 +166,7 @@ export class SalesInvoiceService {
       const custRows = await this.db
         .select({
           externalId: customers.externalId,
-          name: actors.name,
+          name: organizations.name,
           defaultArAccountId: customerGroups.defaultArAccountId,
           defaultRevenueAccountId: customerGroups.defaultRevenueAccountId,
           defaultCostCenterId: customerGroups.defaultCostCenterId,
@@ -188,7 +188,10 @@ export class SalesInvoiceService {
           customerGroups,
           eq(customers.customerGroupId, customerGroups.customerGroupId),
         )
-        .leftJoin(actors, eq(customers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(customers.organizationId, organizations.organizationId),
+        )
         .where(
           isUuid
             ? eq(customers.customerId, order.customerId)
@@ -957,7 +960,7 @@ export class SalesInvoiceService {
         ),
         customerName: sql<
           string | null
-        >`COALESCE(${salesInvoices.customerNameDisplay}, ${actors.name})`.as(
+        >`COALESCE(${salesInvoices.customerNameDisplay}, ${organizations.name})`.as(
           'customer_name',
         ),
         totalAmount: salesInvoices.totalAmount,
@@ -985,7 +988,10 @@ export class SalesInvoiceService {
           customers.customerId,
         ),
       )
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .where(eq(salesInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -1173,8 +1179,8 @@ export class SalesInvoiceService {
             WHEN ${salesInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${organizations.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -1185,7 +1191,7 @@ export class SalesInvoiceService {
         or(
           ilike(salesInvoices.invoiceNumber, `%${rawSearchTerm}%`),
           ilike(salesOrders.orderNumber, `%${rawSearchTerm}%`),
-          ilike(actors.name, `%${rawSearchTerm}%`),
+          ilike(organizations.name, `%${rawSearchTerm}%`),
         ) as import('drizzle-orm').SQL,
       );
     }
@@ -1210,7 +1216,7 @@ export class SalesInvoiceService {
         ),
         customerName: sql<
           string | null
-        >`COALESCE(${salesInvoices.customerNameDisplay}, ${actors.name})`.as(
+        >`COALESCE(${salesInvoices.customerNameDisplay}, ${organizations.name})`.as(
           'customer_name',
         ),
         totalAmount: salesInvoices.totalAmount,
@@ -1235,7 +1241,10 @@ export class SalesInvoiceService {
           customers.customerId,
         ),
       )
-      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (whereClause) {

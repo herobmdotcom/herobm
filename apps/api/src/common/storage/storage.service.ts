@@ -39,7 +39,6 @@ export class StorageService {
       this.ensureDirectory(this.storageRoot);
       this.ensureDirectory(path.join(this.storageRoot, 'products'));
       this.ensureDirectory(path.join(this.storageRoot, 'products', 'uploads'));
-      this.ensureDirectory(path.join(this.storageRoot, 'products', 'abm')); // Kept for legacy fallback
       this.ensureDirectory(path.join(this.storageRoot, 'organization'));
       this.ensureDirectory(path.join(this.storageRoot, 'reports'));
     } catch (err: unknown) {

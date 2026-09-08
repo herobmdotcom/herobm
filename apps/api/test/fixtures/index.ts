@@ -13,7 +13,7 @@ import {
   glJournalEntries,
   salesInvoices,
   uomDictionary,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import {
   SalesOrderState,
@@ -29,7 +29,7 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 // Ensures random order numbers during test isolation
@@ -40,17 +40,17 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
   const name = opts?.name || 'Test Customer';
 
   const [act] = await db
-    .insert(actors)
+    .insert(organizations)
     .values({
       name,
-      country: 'AU',
+      headquartersCountry: 'AU',
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .returning();
 
   await db.insert(customers).values({
-    actorId: act.actorId,
+    organizationId: act.organizationId,
     customerId,
     customerNumber: `CUST-TEST-${++_sequence}`,
     currencyCode: 'AUD', // fixture
@@ -213,16 +213,16 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
   const name = opts?.name || 'Test Supplier';
 
   const [act] = await db
-    .insert(actors)
+    .insert(organizations)
     .values({
       name,
       isTaxRegistered: false,
-      stateCode: ACTOR_STATE.ACTIVE,
+      stateCode: ORGANIZATION_STATE.ACTIVE,
     })
     .returning();
 
   await db.insert(customers).values({
-    actorId: act.actorId,
+    organizationId: act.organizationId,
     customerId,
     customerNumber: `SUPP-TEST-${++_sequence}`,
     currencyCode: 'AUD', // fixture

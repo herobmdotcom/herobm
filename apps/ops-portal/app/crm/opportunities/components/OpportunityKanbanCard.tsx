@@ -18,12 +18,14 @@ export function OpportunityKanbanCard({
   onMoveStage,
 }: OpportunityKanbanCardProps) {
   const { baseCurrency } = useSettings();
-  // Extract primary client / actor
-  type ActorRef = { actor?: { name?: string }; actorName?: string };
-  const oppActors = opportunity.opportunityActors as unknown as ActorRef[] | undefined;
+  // Extract primary client / organization
+  type OrgRef = { organization?: { name?: string }; organizationName?: string; actor?: { name?: string }; actorName?: string };
+  const oppOrgs = (opportunity.opportunityOrganizations || opportunity.opportunityActors) as unknown as OrgRef[] | undefined;
   const primaryActor =
-    oppActors?.[0]?.actor?.name ||
-    oppActors?.[0]?.actorName;
+    oppOrgs?.[0]?.organization?.name ||
+    oppOrgs?.[0]?.organizationName ||
+    oppOrgs?.[0]?.actor?.name ||
+    oppOrgs?.[0]?.actorName;
 
   // Extract owner
   type OwnerRef = { displayName?: string; username?: string; email?: string; name?: string };
@@ -54,6 +56,7 @@ export function OpportunityKanbanCard({
   return (
     <div
       draggable
+      data-opportunity-id={opportunity.opportunityId}
       onDragStart={handleDragStart}
       className="card !p-0 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-lg overflow-hidden shadow-none hover:border-[var(--accent)] transition-all cursor-grab active:cursor-grabbing group"
     >

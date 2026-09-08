@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
 import type { UpdateProductDtoProductType } from './updateProductDtoProductType';
 import type { UpdateProductDtoStructureType } from './updateProductDtoStructureType';

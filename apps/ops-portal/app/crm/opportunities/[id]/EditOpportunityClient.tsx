@@ -13,8 +13,8 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import PageNav from '@/components/shared/PageNav';
 import { Button } from '@/components/shared/Button';
 import { ContactListTab } from '@/components/shared/ContactListTab';
-import { ActorCard } from '@/components/shared/ActorCard';
-import { ActorSlideOver } from '@/components/shared/ActorSlideOver';
+import { OrganizationCard } from '@/components/shared/OrganizationCard';
+import { OrganizationSlideOver } from '@/components/shared/OrganizationSlideOver';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
 import { useSettings } from '@/components/SettingsProvider';
@@ -117,7 +117,7 @@ function GeneralInfoTab({
               }}
               disabled={loading}
             >
-              {[...(appSettings?.opportunityStages || appSettings?.projectStatuses || [])]
+              {[...(appSettings?.opportunityStages || [])]
                 .sort((a, b) => Number(a.order) - Number(b.order))
                 .map((s) => (
                   <option key={s.value} value={s.value}>
@@ -140,7 +140,7 @@ function GeneralInfoTab({
               }}
               disabled={loading}
             >
-              {[...(appSettings?.opportunityTypes || appSettings?.projectTypes || [])]
+              {[...(appSettings?.opportunityTypes || [])]
                 .sort((a, b) => Number(a.order) - Number(b.order))
                 .map((t) => (
                   <option key={t.value} value={t.value}>
@@ -244,11 +244,24 @@ function GeneralInfoTab({
             </label>
             <input
               type="date"
+              min="2000-01-01"
+              max="2099-12-31"
               className="input w-full"
               value={dto.targetCloseDate ? dto.targetCloseDate.slice(0, 10) : ''}
               onChange={(e) => {
-                updateField('targetCloseDate', e.target.value);
-                saveField('targetCloseDate', e.target.value ? new Date(e.target.value).toISOString() : undefined);
+                const val = e.target.value;
+                updateField('targetCloseDate', val);
+                let iso: string | undefined = undefined;
+                if (val && val.trim()) {
+                  const d = new Date(val);
+                  if (!isNaN(d.getTime()) && d.getFullYear() >= 1900 && d.getFullYear() <= 2100) {
+                    iso = d.toISOString();
+                  } else {
+                    toast.error('Please enter a valid target close date (between 1900 and 2100)');
+                    return;
+                  }
+                }
+                saveField('targetCloseDate', iso);
               }}
               disabled={loading}
             />
@@ -351,8 +364,8 @@ function NotesTab({
       toast.success('Note added');
       setContent('');
       onNoteAdded();
-    } catch {
-      toast.error('Failed to add note');
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Failed to add note');
     } finally {
       setSubmitting(false);
     }
@@ -416,33 +429,33 @@ function NotesTab({
   );
 }
 
-function ActorsTab({
+function OrganizationsTab({
   opportunityId,
-  actors,
-  onActorAdded,
+  organizations,
+  onOrganizationAdded,
 }: {
   opportunityId: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- We can't type this strictly since the SDK defines it as a generic object with unknown properties
-  actors: any[];
-  onActorAdded: () => void;
+  organizations: any[];
+  onOrganizationAdded: () => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
-  const [editingActor, setEditingActor] = useState<{
-    actorId: string;
+  const [editingOrg, setEditingOrg] = useState<{
+    organizationId: string;
     name: string;
     industry?: string;
     email?: string;
     roles?: string[];
   } | null>(null);
 
-  const handleUnlink = async (actorId: string, name: string) => {
+  const handleUnlink = async (orgId: string, name: string) => {
     if (!window.confirm(`Are you sure you want to unlink ${name}?`)) return;
     try {
-      await api.opportunitiesControllerDeleteActor(opportunityId, actorId);
+      await api.opportunitiesControllerDeleteOrganization(opportunityId, orgId);
       toast.success('Stakeholder unlinked');
-      onActorAdded();
-    } catch {
-      toast.error('Failed to unlink stakeholder');
+      onOrganizationAdded();
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Failed to unlink stakeholder');
     }
   };
 
@@ -453,13 +466,13 @@ function ActorsTab({
           <h3 className="section-heading m-0">
             {/* eslint-disable-next-line i18next/no-literal-string -- Material symbols are not translated */}
             <span className="material-symbols-outlined">business</span>
-            Stakeholders & Companies
+            Stakeholders & Organizations
           </h3>
           <Button
             variant="primary"
             size="sm"
             onClick={() => {
-              setEditingActor(null);
+              setEditingOrg(null);
               setIsAdding(true);
             }}
           >
@@ -467,26 +480,27 @@ function ActorsTab({
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {actors && actors.length > 0 ? (
-            actors.map((link) => {
-              const actor = link.actor;
-              if (!actor) return null;
+          {organizations && organizations.length > 0 ? (
+            organizations.map((link) => {
+              const org = link.organization;
+              if (!org) return null;
+              const orgId = org.organizationId || link.organizationId;
               return (
-                <ActorCard
-                  key={actor.actorId}
-                  actor={actor}
+                <OrganizationCard
+                  key={orgId}
+                  organization={org}
                   roles={link.roles}
                   onEdit={() => {
-                    setEditingActor({
-                      actorId: actor.actorId,
-                      name: actor.name || '',
-                      industry: actor.industry || undefined,
-                      email: actor.email || undefined,
+                    setEditingOrg({
+                      organizationId: orgId,
+                      name: org.name || '',
+                      industry: org.industry || undefined,
+                      email: org.email || undefined,
                       roles: link.roles || [],
                     });
                     setIsAdding(true);
                   }}
-                  onDelete={() => handleUnlink(actor.actorId, actor.name || '')}
+                  onDelete={() => handleUnlink(orgId, org.name || '')}
                   deleteTitle="Unlink Stakeholder"
                 />
               );
@@ -499,15 +513,15 @@ function ActorsTab({
         </div>
       </div>
 
-      <ActorSlideOver
+      <OrganizationSlideOver
         isOpen={isAdding}
         onClose={() => {
           setIsAdding(false);
-          setEditingActor(null);
+          setEditingOrg(null);
         }}
         opportunityId={opportunityId}
-        onSaved={onActorAdded}
-        editingActor={editingActor}
+        onSaved={onOrganizationAdded}
+        editingOrganization={editingOrg}
       />
     </div>
   );
@@ -556,8 +570,8 @@ export default function EditOpportunityClient({ id }: { id: string }) {
   useEffect(() => {
     api.usersControllerFindAll()
       .then((res) => {
-        const u = res.data;
-        const list = Array.isArray(u) ? u : (u as unknown as { data: api.UserResponseDto[] })?.data || [];
+        const u = res.data as unknown;
+        const list: api.UserResponseDto[] = Array.isArray(u) ? u : (u as { data?: api.UserResponseDto[] })?.data || [];
         setUsers(list);
       })
       .catch((e) => {
@@ -819,10 +833,10 @@ export default function EditOpportunityClient({ id }: { id: string }) {
         )}
 
         {activeTab === 'actors' && (
-          <ActorsTab
+          <OrganizationsTab
             opportunityId={id}
-            actors={((opportunity?.opportunityActors || (opportunity as unknown as { projectActors?: unknown[] })?.projectActors || []) as unknown as unknown[])}
-            onActorAdded={loadOpportunity}
+            organizations={((opportunity?.opportunityOrganizations || []) as unknown as unknown[])}
+            onOrganizationAdded={loadOpportunity}
           />
         )}
       </>

@@ -18,7 +18,7 @@ The remaining 2 inline styles are strictly runtime-computed dynamic indentation 
   ```tsx
   <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
   ```
-- **Rationale:** Computes the visual indentation of arbitrary recursive Chart of Accounts categories and accounts. Depth can theoretically be nested to $N$ levels based on the user's customized chart structure.
+- **Rationale:** Computes the visual indentation of arbitrary recursive Chart of Accounts categories and accounts. Depth can theoretically be nested to N levels based on the user's customized chart structure.
 
 ### Exception 2: General Ledger Account Codes Modal Tree Depth
 - **File:** [`apps/ops-portal/app/general-ledger/CodesModal.tsx`](../apps/ops-portal/app/general-ledger/CodesModal.tsx#L165)

@@ -100,7 +100,7 @@ export default function SystemSettingsPage() {
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
-      await api.organizationControllerUpdate(payload as unknown as api.UpdateOrganizationDto);
+      await api.organizationControllerUpdate(payload as unknown as api.UpdateOrganizationSettingsDto);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err), { id: 'org-save-error' });
     } finally {

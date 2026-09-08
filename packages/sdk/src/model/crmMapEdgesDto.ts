@@ -3,18 +3,18 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
-import type { CrmMapActorActorLinkDto } from './crmMapActorActorLinkDto';
-import type { CrmMapActorContactLinkDto } from './crmMapActorContactLinkDto';
-import type { CrmMapOpportunityActorLinkDto } from './crmMapOpportunityActorLinkDto';
+import type { CrmMapOrganizationOrganizationLinkDto } from './crmMapOrganizationOrganizationLinkDto';
+import type { CrmMapOrganizationContactLinkDto } from './crmMapOrganizationContactLinkDto';
+import type { CrmMapOpportunityOrganizationLinkDto } from './crmMapOpportunityOrganizationLinkDto';
 import type { CrmMapOpportunityContactLinkDto } from './crmMapOpportunityContactLinkDto';
 
 export interface CrmMapEdgesDto {
-  actorActor: CrmMapActorActorLinkDto[];
-  actorContact: CrmMapActorContactLinkDto[];
-  opportunityActor: CrmMapOpportunityActorLinkDto[];
+  organizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
+  organizationContact?: CrmMapOrganizationContactLinkDto[];
+  opportunityOrganization?: CrmMapOpportunityOrganizationLinkDto[];
   opportunityContact: CrmMapOpportunityContactLinkDto[];
-  referralActorActor?: CrmMapActorActorLinkDto[];
-  referralContactActor?: CrmMapActorContactLinkDto[];
+  referralOrganizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
+  referralContactOrganization?: CrmMapOrganizationContactLinkDto[];
 }

@@ -61,7 +61,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "output_bin_id" uuid;
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "putaway_status" text;
     ALTER TABLE "herobm_core"."purchase_order_return_lines" ADD COLUMN IF NOT EXISTS "source_bin_id" uuid;
-    ALTER TABLE "herobm_core"."actors" ALTER COLUMN "state_code" SET DEFAULT 'active';`);
+    ALTER TABLE "herobm_core"."organizations" ALTER COLUMN "state_code" SET DEFAULT 'active';`);
 
   const db = drizzle(client, { schema });
 

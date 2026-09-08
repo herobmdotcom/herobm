@@ -3,8 +3,9 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
+import type { ContactResponseDtoOrganizationContactLinksItem } from './contactResponseDtoOrganizationContactLinksItem';
 import type { ContactResponseDtoActorContactLinksItem } from './contactResponseDtoActorContactLinksItem';
 import type { ContactResponseDtoEventsItem } from './contactResponseDtoEventsItem';
 
@@ -24,6 +25,7 @@ export interface ContactResponseDto {
   /** @nullable */
   jobTitle?: string | null;
   primaryFor?: string[];
+  organizationContactLinks?: ContactResponseDtoOrganizationContactLinksItem[];
   actorContactLinks?: ContactResponseDtoActorContactLinksItem[];
   events?: ContactResponseDtoEventsItem[];
   /** @nullable */

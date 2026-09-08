@@ -98,7 +98,7 @@ export default function Sidebar() {
     {
       label: 'CRM',
       items: [
-        { href: routes.crm.actors.list(), label: 'Actors', icon: 'business' },
+        { href: routes.crm.organizations.list(), label: 'Organizations', icon: 'business' },
         { href: routes.crm.opportunities.list(), label: 'Opportunities', icon: 'trending_up' },
         { href: routes.crm.contacts.list(), label: 'Contacts', icon: 'contacts' },
         { href: routes.crm.map(), label: 'Map', icon: 'map' },

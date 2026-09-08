@@ -7,7 +7,7 @@ import {
   paymentAllocations,
   purchaseInvoices,
   suppliers,
-  actors,
+  organizations,
   glSettings,
 } from '@herobm/db-schema';
 
@@ -104,15 +104,18 @@ export class SupplierRemittanceAdviceService {
         .select({
           vendorId: suppliers.vendorId,
           vendorNumber: suppliers.vendorNumber,
-          name: actors.name,
-          headquartersAddressLine1: actors.headquartersAddressLine1,
-          city: actors.headquartersCity,
-          stateOrProvince: actors.headquartersStateOrProvince,
-          postalCode: actors.headquartersPostalCode,
-          country: actors.headquartersCountry,
+          name: organizations.name,
+          headquartersAddressLine1: organizations.headquartersAddressLine1,
+          city: organizations.headquartersCity,
+          stateOrProvince: organizations.headquartersStateOrProvince,
+          postalCode: organizations.headquartersPostalCode,
+          country: organizations.headquartersCountry,
         })
         .from(suppliers)
-        .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(suppliers.organizationId, organizations.organizationId),
+        )
         .where(eq(suppliers.vendorId, pmt.partyId))
         .limit(1);
 

@@ -58,7 +58,7 @@ The following entity-relationship diagram illustrates the operational dependenci
 ```mermaid
 flowchart TD
     subgraph CRM ["CRM & Stakeholders"]
-        actors["actors"]
+        organizations["organizations"]
         contacts["contacts"]
         customers["customers"]
         suppliers["suppliers"]
@@ -97,11 +97,9 @@ flowchart TD
         payment_entries["payment_entries"]
     end
 
-    actors -->|referred_by_actor_id| actors
-    contacts -->|referred_by_contact_id| actors
-    actors -->|referred_by_actor_id| contacts
     contacts -->|referred_by_contact_id| contacts
-    actors -->|actor_id| customers
+    organizations -->|referred_by_organization_id| contacts
+    organizations -->|organization_id| customers
     gl_journal_entries -->|reversed_by| gl_journal_entries
     gl_accounts -->|gl_account_id| gl_journal_lines
     gl_journal_entries -->|journal_entry_id| gl_journal_lines
@@ -111,6 +109,8 @@ flowchart TD
     inventory_entries -->|entry_id| inventory_ledger
     locations -->|location_id| inventory_ledger
     products -->|product_id| inventory_ledger
+    contacts -->|referred_by_contact_id| organizations
+    organizations -->|referred_by_organization_id| organizations
     gl_accounts -->|gl_account_bank| payment_entries
     purchase_orders -->|purchase_order_id| purchase_invoices
     suppliers -->|vendor_id| purchase_invoices
@@ -123,7 +123,7 @@ flowchart TD
     customers -->|customer_id| sales_orders
     locations -->|fulfillment_location_id| sales_orders
     opportunities -->|opportunity_id| sales_orders
-    actors -->|actor_id| suppliers
+    organizations -->|organization_id| suppliers
     locations -->|location_id| work_orders
     bins -->|output_bin_id| work_orders
     products -->|product_id| work_orders
@@ -134,23 +134,23 @@ flowchart TD
 
 ## Schema Summary & Table Directory
 
-The `herobm_core` schema contains **118 tables**, **1261 columns**, and **243 foreign key relationships** across **8 business domains**:
+The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 foreign key relationships** across **8 business domains**:
 
 | Table | Domain | Primary Key | Columns | Foreign Keys | Live Rows |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [actor_actor_links](#table-actor-actor-links) | CRM & Stakeholders | `link_id` | 5 | 2 | — |
-| [actor_contact_links](#table-actor-contact-links) | CRM & Stakeholders | `link_id` | 6 | 2 | — |
-| [actor_notes](#table-actor-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
-| [actors](#table-actors) | CRM & Stakeholders | `actor_id` | 25 | 3 | — |
 | [contacts](#table-contacts) | CRM & Stakeholders | `contact_id` | 14 | 2 | — |
 | [crm_activities](#table-crm-activities) | CRM & Stakeholders | `activity_id` | 16 | 5 | — |
 | [customer_delivery_addresses](#table-customer-delivery-addresses) | CRM & Stakeholders | `id` | 17 | 1 | — |
 | [customer_groups](#table-customer-groups) | CRM & Stakeholders | `customer_group_id` | 14 | 6 | — |
 | [customers](#table-customers) | CRM & Stakeholders | `customer_id` | 24 | 4 | — |
 | [opportunities](#table-opportunities) | CRM & Stakeholders | `opportunity_id` | 14 | 1 | — |
-| [opportunity_actors](#table-opportunity-actors) | CRM & Stakeholders | `opportunity_actor_id` | 5 | 2 | — |
 | [opportunity_contacts](#table-opportunity-contacts) | CRM & Stakeholders | `opportunity_contact_id` | 5 | 2 | — |
 | [opportunity_notes](#table-opportunity-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
+| [opportunity_organizations](#table-opportunity-organizations) | CRM & Stakeholders | `opportunity_organization_id` | 5 | 2 | — |
+| [organization_contact_links](#table-organization-contact-links) | CRM & Stakeholders | `link_id` | 6 | 2 | — |
+| [organization_notes](#table-organization-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
+| [organization_organization_links](#table-organization-organization-links) | CRM & Stakeholders | `link_id` | 5 | 2 | — |
+| [organizations](#table-organizations) | CRM & Stakeholders | `organization_id` | 25 | 3 | — |
 | [trading_terms](#table-trading-terms) | CRM & Stakeholders | `trading_terms_id` | 10 | 0 | — |
 | [discount_matrix](#table-discount-matrix) | Products & Catalog | `discount_matrix_id` | 7 | 3 | — |
 | [product_components](#table-product-components) | Products & Catalog | `component_id` | 7 | 2 | — |
@@ -233,7 +233,7 @@ The `herobm_core` schema contains **118 tables**, **1261 columns**, and **243 fo
 | [work_orders](#table-work-orders) | Manufacturing & Work Orders | `work_order_id` | 16 | 4 | — |
 | [_pipeline_jobs](#table--pipeline-jobs) | System, Security & Telemetry | `job_id` | 8 | 0 | — |
 | [api_keys](#table-api-keys) | System, Security & Telemetry | `api_key_id` | 8 | 0 | — |
-| [app_settings](#table-app-settings) | System, Security & Telemetry | `settings_id` | 31 | 7 | — |
+| [app_settings](#table-app-settings) | System, Security & Telemetry | `settings_id` | 32 | 7 | — |
 | [business_report_events](#table-business-report-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
 | [business_reports](#table-business-reports) | System, Security & Telemetry | `id` | 8 | 0 | — |
 | [casbin_rule](#table-casbin-rule) | System, Security & Telemetry | `id` | 8 | 0 | — |
@@ -244,12 +244,12 @@ The `herobm_core` schema contains **118 tables**, **1261 columns**, and **243 fo
 | [integrations](#table-integrations) | System, Security & Telemetry | `integration_id` | 6 | 0 | — |
 | [macros](#table-macros) | System, Security & Telemetry | `macro_id` | 6 | 0 | — |
 | [master_data_events](#table-master-data-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
-| [organization](#table-organization) | System, Security & Telemetry | `organization_id` | 19 | 0 | — |
 | [outbox](#table-outbox) | System, Security & Telemetry | `outbox_id` | 10 | 0 | — |
 | [pdf_template_contexts](#table-pdf-template-contexts) | System, Security & Telemetry | — | 2 | 1 | — |
 | [pdf_template_hooks](#table-pdf-template-hooks) | System, Security & Telemetry | `id` | 5 | 1 | — |
 | [pdf_templates](#table-pdf-templates) | System, Security & Telemetry | `id` | 9 | 0 | — |
 | [system_events](#table-system-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
+| [tenant_settings](#table-tenant-settings) | System, Security & Telemetry | `tenant_settings_id` | 19 | 0 | — |
 | [user_events](#table-user-events) | System, Security & Telemetry | `event_id` | 7 | 0 | — |
 | [user_settings](#table-user-settings) | System, Security & Telemetry | `user_id` | 6 | 1 | — |
 | [user_two_factor](#table-user-two-factor) | System, Security & Telemetry | `user_id` | 7 | 1 | — |
@@ -265,15 +265,6 @@ The table below catalogs all referential constraints across the application data
 
 | From Table | Column | To Table | Target Column | On Delete Action |
 | :--- | :--- | :--- | :--- | :--- |
-| `actor_actor_links` | `source_actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `actor_actor_links` | `target_actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `actor_contact_links` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `actor_contact_links` | `contact_id` | `contacts` | `contact_id` | `RESTRICT` |
-| `actor_notes` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `actor_notes` | `created_by_id` | `users` | `user_id` | `RESTRICT` |
-| `actors` | `owner_id` | `users` | `user_id` | `RESTRICT` |
-| `actors` | `referred_by_actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `actors` | `referred_by_contact_id` | `contacts` | `contact_id` | `RESTRICT` |
 | `app_settings` | `default_customer_tax_position_id` | `tax_positions` | `tax_position_id` | `RESTRICT` |
 | `app_settings` | `default_customer_terms_id` | `trading_terms` | `trading_terms_id` | `RESTRICT` |
 | `app_settings` | `default_fulfillment_location_id` | `locations` | `location_id` | `RESTRICT` |
@@ -298,13 +289,13 @@ The table below catalogs all referential constraints across the application data
 | `bin_contents` | `bin_id` | `bins` | `bin_id` | `cascade` |
 | `bin_contents` | `product_id` | `products` | `product_id` | `cascade` |
 | `bins` | `zone_id` | `zones` | `zone_id` | `RESTRICT` |
-| `contacts` | `referred_by_actor_id` | `actors` | `actor_id` | `RESTRICT` |
 | `contacts` | `referred_by_contact_id` | `contacts` | `contact_id` | `RESTRICT` |
-| `crm_activities` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
+| `contacts` | `referred_by_organization_id` | `organizations` | `organization_id` | `RESTRICT` |
 | `crm_activities` | `assigned_to_user_id` | `users` | `user_id` | `RESTRICT` |
 | `crm_activities` | `completed_by_user_id` | `users` | `user_id` | `RESTRICT` |
 | `crm_activities` | `created_by_id` | `users` | `user_id` | `RESTRICT` |
 | `crm_activities` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
+| `crm_activities` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
 | `crm_activity_contacts` | `activity_id` | `crm_activities` | `activity_id` | `cascade` |
 | `crm_activity_contacts` | `contact_id` | `contacts` | `contact_id` | `cascade` |
 | `customer_delivery_addresses` | `customer_id` | `customers` | `customer_id` | `RESTRICT` |
@@ -314,8 +305,8 @@ The table below catalogs all referential constraints across the application data
 | `customer_groups` | `default_revenue_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `customer_groups` | `tax_position_id` | `tax_positions` | `tax_position_id` | `RESTRICT` |
 | `customer_groups` | `trading_terms_id` | `trading_terms` | `trading_terms_id` | `RESTRICT` |
-| `customers` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
 | `customers` | `customer_group_id` | `customer_groups` | `customer_group_id` | `RESTRICT` |
+| `customers` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
 | `customers` | `tax_position_id` | `tax_positions` | `tax_position_id` | `RESTRICT` |
 | `customers` | `trading_terms_id` | `trading_terms` | `trading_terms_id` | `RESTRICT` |
 | `discount_matrix` | `customer_group_id` | `customer_groups` | `customer_group_id` | `RESTRICT` |
@@ -364,12 +355,21 @@ The table below catalogs all referential constraints across the application data
 | `inventory_ledger` | `product_id` | `products` | `product_id` | `RESTRICT` |
 | `inventory_ledger` | `zone_id` | `zones` | `zone_id` | `RESTRICT` |
 | `opportunities` | `owner_id` | `users` | `user_id` | `RESTRICT` |
-| `opportunity_actors` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
-| `opportunity_actors` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
 | `opportunity_contacts` | `contact_id` | `contacts` | `contact_id` | `RESTRICT` |
 | `opportunity_contacts` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
 | `opportunity_notes` | `created_by_id` | `users` | `user_id` | `RESTRICT` |
 | `opportunity_notes` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
+| `opportunity_organizations` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
+| `opportunity_organizations` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
+| `organization_contact_links` | `contact_id` | `contacts` | `contact_id` | `RESTRICT` |
+| `organization_contact_links` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
+| `organization_notes` | `created_by_id` | `users` | `user_id` | `RESTRICT` |
+| `organization_notes` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
+| `organization_organization_links` | `source_organization_id` | `organizations` | `organization_id` | `RESTRICT` |
+| `organization_organization_links` | `target_organization_id` | `organizations` | `organization_id` | `RESTRICT` |
+| `organizations` | `owner_id` | `users` | `user_id` | `RESTRICT` |
+| `organizations` | `referred_by_contact_id` | `contacts` | `contact_id` | `RESTRICT` |
+| `organizations` | `referred_by_organization_id` | `organizations` | `organization_id` | `RESTRICT` |
 | `payment_allocations` | `payment_id` | `payment_entries` | `payment_id` | `RESTRICT` |
 | `payment_entries` | `gl_account_bank` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `payment_lines` | `gl_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
@@ -471,7 +471,7 @@ The table below catalogs all referential constraints across the application data
 | `supplier_groups` | `default_expense_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `supplier_groups` | `tax_position_id` | `tax_positions` | `tax_position_id` | `RESTRICT` |
 | `supplier_groups` | `trading_terms_id` | `trading_terms` | `trading_terms_id` | `RESTRICT` |
-| `suppliers` | `actor_id` | `actors` | `actor_id` | `RESTRICT` |
+| `suppliers` | `organization_id` | `organizations` | `organization_id` | `RESTRICT` |
 | `suppliers` | `supplier_group_id` | `supplier_groups` | `supplier_group_id` | `RESTRICT` |
 | `suppliers` | `tax_position_id` | `tax_positions` | `tax_position_id` | `RESTRICT` |
 | `suppliers` | `trading_terms_id` | `trading_terms` | `trading_terms_id` | `RESTRICT` |
@@ -516,67 +516,6 @@ The table below catalogs all referential constraints across the application data
 
 Accounts, contacts, relationship graphs, CRM projects, customer groups, and addresses.
 
-### Table: `herobm_core.actor_actor_links` {#table-actor-actor-links}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `link_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `source_actor_id` | `uuid` | NO | — | 🔗 `actors.actor_id` |
-| 3 | `target_actor_id` | `uuid` | NO | — | 🔗 `actors.actor_id` |
-| 4 | `link_type` | `text` | NO | — | — |
-| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-
-### Table: `herobm_core.actor_contact_links` {#table-actor-contact-links}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `link_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `actor_id` | `uuid` | NO | — | 🔗 `actors.actor_id` |
-| 3 | `contact_id` | `uuid` | NO | — | 🔗 `contacts.contact_id` |
-| 4 | `link_type` | `text` | NO | — | — |
-| 5 | `primary_for` | `text[]` | YES | — | — |
-| 6 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-
-### Table: `herobm_core.actor_notes` {#table-actor-notes}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `note_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `actor_id` | `uuid` | NO | — | 🔗 `actors.actor_id` |
-| 3 | `content` | `text` | NO | — | — |
-| 4 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-
-### Table: `herobm_core.actors` {#table-actors}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `actor_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `state_code` | `text` | NO | — | — |
-| 3 | `name` | `text` | NO | — | — |
-| 4 | `owner_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 5 | `legal_status` | `text` | YES | — | — |
-| 6 | `headquarters_address_line1` | `text` | YES | — | — |
-| 7 | `headquarters_address_line2` | `text` | YES | — | — |
-| 8 | `headquarters_city` | `text` | YES | — | — |
-| 9 | `headquarters_state_or_province` | `text` | YES | — | — |
-| 10 | `headquarters_postal_code` | `text` | YES | — | — |
-| 11 | `headquarters_country` | `text` | YES | — | — |
-| 12 | `website` | `text` | YES | — | — |
-| 13 | `industry` | `text` | YES | — | — |
-| 14 | `telephone` | `text` | YES | — | — |
-| 15 | `fax` | `text` | YES | — | — |
-| 16 | `email` | `text` | YES | — | — |
-| 17 | `business_number` | `text` | YES | — | — |
-| 18 | `is_tax_registered` | `boolean` | NO | — | — |
-| 19 | `referral_mode` | `text` | YES | — | — |
-| 20 | `referred_by_actor_id` | `uuid` | YES | — | 🔗 `actors.actor_id` |
-| 21 | `referred_by_contact_id` | `uuid` | YES | — | 🔗 `contacts.contact_id` |
-| 22 | `referral_note` | `text` | YES | — | — |
-| 23 | `tags` | `text[]` | YES | — | — |
-| 24 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 25 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
-
 ### Table: `herobm_core.contacts` {#table-contacts}
 
 | # | Column | Data Type | Nullable | Default | Constraints & Relationships |
@@ -591,7 +530,7 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 8 | `phone` | `text` | YES | — | — |
 | 9 | `mobile` | `text` | YES | — | — |
 | 10 | `linkedin_profile` | `text` | YES | — | — |
-| 11 | `referred_by_actor_id` | `uuid` | YES | — | 🔗 `actors.actor_id` |
+| 11 | `referred_by_organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
 | 12 | `referred_by_contact_id` | `uuid` | YES | — | 🔗 `contacts.contact_id` |
 | 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 | 14 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
@@ -606,16 +545,16 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 4 | `description` | `text` | YES | — | — |
 | 5 | `status` | `text` | NO | — | — |
 | 6 | `priority` | `text` | NO | — | — |
-| 7 | `actor_id` | `uuid` | YES | — | 🔗 `actors.actor_id` |
-| 8 | `due_date` | `timestamp with time zone` | YES | — | — |
-| 9 | `assigned_to_user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 10 | `completed_at` | `timestamp with time zone` | YES | — | — |
-| 11 | `completed_by_user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 12 | `created_by` | `text` | NO | — | — |
-| 13 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 14 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 15 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
-| 16 | `opportunity_id` | `uuid` | YES | — | 🔗 `opportunities.opportunity_id` |
+| 7 | `organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
+| 8 | `opportunity_id` | `uuid` | YES | — | 🔗 `opportunities.opportunity_id` |
+| 9 | `due_date` | `timestamp with time zone` | YES | — | — |
+| 10 | `assigned_to_user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 11 | `completed_at` | `timestamp with time zone` | YES | — | — |
+| 12 | `completed_by_user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 13 | `created_by` | `text` | NO | — | — |
+| 14 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 15 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 16 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.customer_delivery_addresses` {#table-customer-delivery-addresses}
 
@@ -665,7 +604,7 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 1 | `customer_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
 | 2 | `customer_number` | `text` | NO | — | ⚡ `UNIQUE` |
 | 3 | `customer_group_id` | `uuid` | YES | — | 🔗 `customer_groups.customer_group_id` |
-| 4 | `actor_id` | `uuid` | YES | — | 🔗 `actors.actor_id` |
+| 4 | `organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
 | 5 | `state_code` | `text` | NO | — | — |
 | 6 | `tax_position_id` | `uuid` | YES | — | 🔗 `tax_positions.tax_position_id` |
 | 7 | `currency_code` | `text` | NO | — | 🏷️ `CHECK` |
@@ -706,16 +645,6 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 | 14 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
-### Table: `herobm_core.opportunity_actors` {#table-opportunity-actors}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `opportunity_actor_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `opportunity_id` | `uuid` | NO | — | 🔗 `opportunities.opportunity_id` |
-| 3 | `actor_id` | `uuid` | NO | — | 🔗 `actors.actor_id` |
-| 4 | `roles` | `text[]` | YES | — | — |
-| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-
 ### Table: `herobm_core.opportunity_contacts` {#table-opportunity-contacts}
 
 | # | Column | Data Type | Nullable | Default | Constraints & Relationships |
@@ -735,6 +664,77 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 3 | `content` | `text` | NO | — | — |
 | 4 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
 | 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.opportunity_organizations` {#table-opportunity-organizations}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `opportunity_organization_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `opportunity_id` | `uuid` | NO | — | 🔗 `opportunities.opportunity_id` |
+| 3 | `organization_id` | `uuid` | NO | — | 🔗 `organizations.organization_id` |
+| 4 | `roles` | `text[]` | YES | — | — |
+| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.organization_contact_links` {#table-organization-contact-links}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `link_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `organization_id` | `uuid` | NO | — | 🔗 `organizations.organization_id` |
+| 3 | `contact_id` | `uuid` | NO | — | 🔗 `contacts.contact_id` |
+| 4 | `link_type` | `text` | NO | — | — |
+| 5 | `primary_for` | `text[]` | YES | — | — |
+| 6 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.organization_notes` {#table-organization-notes}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `note_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `organization_id` | `uuid` | NO | — | 🔗 `organizations.organization_id` |
+| 3 | `content` | `text` | NO | — | — |
+| 4 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.organization_organization_links` {#table-organization-organization-links}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `link_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `source_organization_id` | `uuid` | NO | — | 🔗 `organizations.organization_id` |
+| 3 | `target_organization_id` | `uuid` | NO | — | 🔗 `organizations.organization_id` |
+| 4 | `link_type` | `text` | NO | — | — |
+| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.organizations` {#table-organizations}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `organization_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `state_code` | `text` | NO | — | — |
+| 3 | `name` | `text` | NO | — | — |
+| 4 | `owner_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 5 | `legal_status` | `text` | YES | — | — |
+| 6 | `headquarters_address_line1` | `text` | YES | — | — |
+| 7 | `headquarters_address_line2` | `text` | YES | — | — |
+| 8 | `headquarters_city` | `text` | YES | — | — |
+| 9 | `headquarters_state_or_province` | `text` | YES | — | — |
+| 10 | `headquarters_postal_code` | `text` | YES | — | — |
+| 11 | `headquarters_country` | `text` | YES | — | — |
+| 12 | `website` | `text` | YES | — | — |
+| 13 | `industry` | `text` | YES | — | — |
+| 14 | `telephone` | `text` | YES | — | — |
+| 15 | `fax` | `text` | YES | — | — |
+| 16 | `email` | `text` | YES | — | — |
+| 17 | `business_number` | `text` | YES | — | — |
+| 18 | `is_tax_registered` | `boolean` | NO | — | — |
+| 19 | `referral_mode` | `text` | YES | — | — |
+| 20 | `referred_by_organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
+| 21 | `referred_by_contact_id` | `uuid` | YES | — | 🔗 `contacts.contact_id` |
+| 22 | `referral_note` | `text` | YES | — | — |
+| 23 | `tags` | `text[]` | YES | — | — |
+| 24 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 25 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.trading_terms` {#table-trading-terms}
 
@@ -1442,7 +1442,7 @@ Purchase orders, goods receipts, purchase bills, vendor debit notes, returns, an
 | 1 | `vendor_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
 | 2 | `vendor_number` | `text` | NO | — | ⚡ `UNIQUE` |
 | 3 | `supplier_group_id` | `uuid` | YES | — | 🔗 `supplier_groups.supplier_group_id` |
-| 4 | `actor_id` | `uuid` | YES | — | 🔗 `actors.actor_id` |
+| 4 | `organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
 | 5 | `trading_terms_id` | `uuid` | YES | — | 🔗 `trading_terms.trading_terms_id` |
 | 6 | `early_payment_discount` | `numeric` | YES | — | — |
 | 7 | `early_payment_discount_days` | `integer` | YES | — | — |
@@ -2117,21 +2117,22 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 14 | `smtp_user` | `text` | YES | — | — |
 | 15 | `smtp_pass_encrypted` | `text` | YES | — | — |
 | 16 | `smtp_from_address` | `text` | YES | — | — |
-| 17 | `actor_tags` | `jsonb` | YES | — | — |
-| 18 | `actor_contact_roles` | `jsonb` | YES | — | — |
+| 17 | `organization_tags` | `jsonb` | YES | — | — |
+| 18 | `organization_contact_roles` | `jsonb` | YES | — | — |
 | 19 | `opportunity_contact_roles` | `jsonb` | YES | — | — |
-| 20 | `opportunity_actor_roles` | `jsonb` | YES | — | — |
+| 20 | `opportunity_organization_roles` | `jsonb` | YES | — | — |
 | 21 | `opportunity_stages` | `jsonb` | YES | — | — |
 | 22 | `opportunity_types` | `jsonb` | YES | — | — |
 | 23 | `referral_modes` | `jsonb` | YES | — | — |
-| 24 | `sales_analysis_codes` | `jsonb` | YES | — | — |
-| 25 | `api_rate_limit` | `numeric` | NO | — | — |
-| 26 | `setup_completed_at` | `timestamp with time zone` | YES | — | — |
-| 27 | `system_identifier` | `text` | YES | — | — |
-| 28 | `active_license_key` | `text` | YES | — | — |
-| 29 | `active_license_payload` | `jsonb` | YES | — | — |
-| 30 | `tax_provider_mappings` | `jsonb` | YES | — | — |
-| 31 | `enrichment_provider_mappings` | `jsonb` | YES | — | — |
+| 24 | `activity_types` | `jsonb` | YES | — | — |
+| 25 | `sales_analysis_codes` | `jsonb` | YES | — | — |
+| 26 | `api_rate_limit` | `numeric` | NO | — | — |
+| 27 | `setup_completed_at` | `timestamp with time zone` | YES | — | — |
+| 28 | `system_identifier` | `text` | YES | — | — |
+| 29 | `active_license_key` | `text` | YES | — | — |
+| 30 | `active_license_payload` | `jsonb` | YES | — | — |
+| 31 | `tax_provider_mappings` | `jsonb` | YES | — | — |
+| 32 | `enrichment_provider_mappings` | `jsonb` | YES | — | — |
 
 ### Table: `herobm_core.business_report_events` {#table-business-report-events}
 
@@ -2265,30 +2266,6 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 7 | `actor` | `text` | YES | — | — |
 | 8 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 
-### Table: `herobm_core.organization` {#table-organization}
-
-| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `organization_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
-| 2 | `name` | `text` | NO | — | — |
-| 3 | `address_line_1` | `text` | YES | — | — |
-| 4 | `address_line_2` | `text` | YES | — | — |
-| 5 | `city` | `text` | YES | — | — |
-| 6 | `state` | `text` | YES | — | — |
-| 7 | `country` | `text` | YES | — | — |
-| 8 | `post_code` | `text` | YES | — | — |
-| 9 | `email` | `text` | YES | — | — |
-| 10 | `phone` | `text` | YES | — | — |
-| 11 | `website` | `text` | YES | — | — |
-| 12 | `company_number` | `text` | YES | — | — |
-| 13 | `tax_number` | `text` | YES | — | — |
-| 14 | `logo_url` | `text` | YES | — | — |
-| 15 | `bank_name` | `text` | YES | — | — |
-| 16 | `bank_account_name` | `text` | YES | — | — |
-| 17 | `bank_account_number` | `text` | YES | — | — |
-| 18 | `bank_swift_bic` | `text` | YES | — | — |
-| 19 | `bank_iban` | `text` | YES | — | — |
-
 ### Table: `herobm_core.outbox` {#table-outbox}
 
 | # | Column | Data Type | Nullable | Default | Constraints & Relationships |
@@ -2347,6 +2324,30 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 6 | `payload` | `jsonb` | YES | — | — |
 | 7 | `actor` | `text` | YES | — | — |
 | 8 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.tenant_settings` {#table-tenant-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `tenant_settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `name` | `text` | NO | — | — |
+| 3 | `address_line_1` | `text` | YES | — | — |
+| 4 | `address_line_2` | `text` | YES | — | — |
+| 5 | `city` | `text` | YES | — | — |
+| 6 | `state` | `text` | YES | — | — |
+| 7 | `country` | `text` | YES | — | — |
+| 8 | `post_code` | `text` | YES | — | — |
+| 9 | `email` | `text` | YES | — | — |
+| 10 | `phone` | `text` | YES | — | — |
+| 11 | `website` | `text` | YES | — | — |
+| 12 | `company_number` | `text` | YES | — | — |
+| 13 | `tax_number` | `text` | YES | — | — |
+| 14 | `logo_url` | `text` | YES | — | — |
+| 15 | `bank_name` | `text` | YES | — | — |
+| 16 | `bank_account_name` | `text` | YES | — | — |
+| 17 | `bank_account_number` | `text` | YES | — | — |
+| 18 | `bank_swift_bic` | `text` | YES | — | — |
+| 19 | `bank_iban` | `text` | YES | — | — |
 
 ### Table: `herobm_core.user_events` {#table-user-events}
 

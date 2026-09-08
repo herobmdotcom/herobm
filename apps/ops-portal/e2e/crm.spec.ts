@@ -3,12 +3,12 @@ import { waitForGrid } from './helpers/grid';
 import { expectNoErrorBoundaries } from './helpers/forms';
 
 test.describe('Sidebar Section: CRM', () => {
-  test('Actors: list and create views load', async ({ page }) => {
-    await page.goto('/crm/actors', { waitUntil: 'networkidle' });
+  test('Organizations: list and create views load', async ({ page }) => {
+    await page.goto('/crm/organizations', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    await page.goto('/crm/actors/new', { waitUntil: 'networkidle' });
+    await page.goto('/crm/organizations/new', { waitUntil: 'networkidle' });
     await expectNoErrorBoundaries(page);
   });
 

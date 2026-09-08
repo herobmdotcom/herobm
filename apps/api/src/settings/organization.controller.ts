@@ -32,7 +32,10 @@ import { StorageService } from '../common/storage/storage.service';
 import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
 import { Public } from '../auth/public.decorator';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { UpdateOrganizationDto, OrganizationResponseDto } from './dto';
+import {
+  UpdateOrganizationSettingsDto,
+  OrganizationSettingsResponseDto,
+} from './dto';
 
 @Controller('settings/organization')
 @CasbinResource(SystemResource.SETTINGS)
@@ -44,7 +47,7 @@ export class OrganizationController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ type: OrganizationResponseDto })
+  @ApiOkResponse({ type: OrganizationSettingsResponseDto })
   @CasbinAction('read')
   @ApiOperation({ summary: 'get', description: 'get operation' })
   get() {
@@ -52,17 +55,20 @@ export class OrganizationController {
   }
 
   @Patch()
-  @ApiBody({ type: UpdateOrganizationDto })
-  @ApiOkResponse({ type: OrganizationResponseDto })
+  @ApiBody({ type: UpdateOrganizationSettingsDto })
+  @ApiOkResponse({ type: OrganizationSettingsResponseDto })
   @CasbinAction('write')
   @ApiOperation({ summary: 'update', description: 'update operation' })
-  update(@Body() dto: UpdateOrganizationDto, @AuthUser() user: JwtUser) {
+  update(
+    @Body() dto: UpdateOrganizationSettingsDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.orgService.update(dto, user?.userId || 'system');
   }
 
   @Post('logo')
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ type: OrganizationResponseDto })
+  @ApiOkResponse({ type: OrganizationSettingsResponseDto })
   @UseInterceptors(FileInterceptor('file'))
   @CasbinAction('write')
   @ApiConsumes('multipart/form-data')
@@ -94,7 +100,7 @@ export class OrganizationController {
     summary: 'Remove Organization Logo',
     description: 'Remove the company logo image.',
   })
-  @ApiOkResponse({ type: OrganizationResponseDto })
+  @ApiOkResponse({ type: OrganizationSettingsResponseDto })
   async removeLogo(@AuthUser() user: JwtUser) {
     return this.orgService.removeLogo(user?.username || 'system');
   }

@@ -47,7 +47,7 @@ import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
 import { ContactsModule } from './contacts/contacts.module';
-import { ActorsModule } from './actors/actors.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { OpportunitiesModule } from './opportunities/opportunities.module';
 import { CrmActivitiesModule } from './crm-activities/crm-activities.module';
 import { CrmMapModule } from './crm-map/crm-map.module';
@@ -111,7 +111,7 @@ import { EnvModule } from './common/config/env.module';
     UserSettingsModule,
     ContactsModule,
     DeliveryAddressesModule,
-    ActorsModule,
+    OrganizationsModule,
     OpportunitiesModule,
     CrmActivitiesModule,
     CrmMapModule,

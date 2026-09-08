@@ -24,7 +24,7 @@ import {
   workOrders,
   workOrderComponents,
   workOrderPicks,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { getCreditBlockedSql } from './orders.sql';
@@ -371,7 +371,7 @@ export class PickingQueryService {
           id: salesOrders.salesOrderId,
           orderNumber: salesOrders.orderNumber,
           name: salesOrders.name,
-          customerName: actors.name,
+          customerName: organizations.name,
           customerOrderNumber: salesOrders.customerOrderNumber,
           stateCode: salesOrders.stateCode,
           createdOn: salesOrders.createdOn,
@@ -393,7 +393,10 @@ export class PickingQueryService {
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
-        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        )
         .leftJoin(
           customerGroups,
           eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

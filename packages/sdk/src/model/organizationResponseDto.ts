@@ -3,10 +3,57 @@
  * Do not edit manually.
  * HeroBM API
  * Core API System endpoints
- * OpenAPI spec version: 1.0
+ * OpenAPI spec version: 1.1
  */
+import type { OrganizationResponseDtoOwner } from './organizationResponseDtoOwner';
+import type { OrganizationNoteResponseDto } from './organizationNoteResponseDto';
+import type { OrganizationResponseDtoOrganizationContactLinksItem } from './organizationResponseDtoOrganizationContactLinksItem';
+import type { OrganizationResponseDtoEventsItem } from './organizationResponseDtoEventsItem';
+import type { OrganizationResponseDtoCustomersItem } from './organizationResponseDtoCustomersItem';
+import type { OrganizationResponseDtoSuppliersItem } from './organizationResponseDtoSuppliersItem';
 
 export interface OrganizationResponseDto {
+  /** @nullable */
+  ownerId?: string | null;
+  /** @nullable */
+  owner?: OrganizationResponseDtoOwner;
+  /** @nullable */
+  ownerDisplayName?: string | null;
   organizationId: string;
+  stateCode: string;
   name: string;
+  legalStatus?: string;
+  headquartersAddressLine1?: string;
+  headquartersAddressLine2?: string;
+  headquartersCity?: string;
+  headquartersStateOrProvince?: string;
+  headquartersPostalCode?: string;
+  headquartersCountry?: string;
+  website?: string;
+  industry?: string;
+  telephone?: string;
+  fax?: string;
+  email?: string;
+  businessNumber?: string;
+  isTaxRegistered: boolean;
+  createdOn: string;
+  modifiedOn: string;
+  tags?: string[];
+  notes?: OrganizationNoteResponseDto[];
+  organizationContactLinks?: OrganizationResponseDtoOrganizationContactLinksItem[];
+  events?: OrganizationResponseDtoEventsItem[];
+  /** @nullable */
+  referralMode?: string | null;
+  /** @nullable */
+  referredByOrganizationId?: string | null;
+  /** @nullable */
+  referredByContactId?: string | null;
+  /** @nullable */
+  referredByOrganizationName?: string | null;
+  /** @nullable */
+  referredByContactName?: string | null;
+  /** @nullable */
+  referralNote?: string | null;
+  customers?: OrganizationResponseDtoCustomersItem[];
+  suppliers?: OrganizationResponseDtoSuppliersItem[];
 }

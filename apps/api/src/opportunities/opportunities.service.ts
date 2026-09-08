@@ -6,8 +6,8 @@ import {
   opportunities,
   opportunityNotes,
   opportunityContacts,
-  opportunityActors,
-  actors,
+  opportunityOrganizations,
+  organizations,
   contacts,
   users,
   salesOrders,
@@ -23,8 +23,8 @@ import {
   OpportunityNoteResponseDto,
   CreateOpportunityContactDto,
   UpdateOpportunityContactDto,
-  CreateOpportunityActorDto,
-  UpdateOpportunityActorDto,
+  CreateOpportunityOrganizationDto,
+  UpdateOpportunityOrganizationDto,
   OpportunityQueryDto,
 } from './dto';
 import {
@@ -203,9 +203,9 @@ export class OpportunitiesService {
             createdBy: true,
           },
         },
-        opportunityActors: {
+        opportunityOrganizations: {
           with: {
-            actor: true,
+            organization: true,
           },
         },
         opportunityContacts: {
@@ -248,6 +248,8 @@ export class OpportunitiesService {
 
     return this.mapResponse({
       ...opp,
+      opportunityOrganizations: opp.opportunityOrganizations || [],
+      opportunityActors: opp.opportunityOrganizations || [],
       events,
       dealRevenue: revenueRes?.dealRevenue ?? 0,
       quoteCount: revenueRes?.quoteCount ?? 0,
@@ -496,39 +498,50 @@ export class OpportunitiesService {
     return { success: true };
   }
 
-  async addOpportunityActor(
+  async addOpportunityOrganization(
     opportunityId: string,
-    dto: CreateOpportunityActorDto,
+    dto: CreateOpportunityOrganizationDto,
     userId: string,
   ): Promise<{ success: boolean }> {
     await this.getOpportunity(opportunityId);
 
-    const actor = await this.db.query.actors.findFirst({
-      where: eq(actors.actorId, dto.actorId),
-    });
+    const organizationId = dto.organizationId;
 
-    if (!actor) {
-      throw new NotFoundException(`Actor with ID ${dto.actorId} not found`);
+    if (!organizationId) {
+      throw new NotFoundException('organizationId is required');
     }
 
-    const existing = await this.db.query.opportunityActors.findFirst({
+    const org = await this.db.query.organizations.findFirst({
+      where: eq(organizations.organizationId, organizationId),
+    });
+
+    if (!org) {
+      throw new NotFoundException(
+        `Organization with ID ${organizationId} not found`,
+      );
+    }
+
+    const existing = await this.db.query.opportunityOrganizations.findFirst({
       where: and(
-        eq(opportunityActors.opportunityId, opportunityId),
-        eq(opportunityActors.actorId, dto.actorId),
+        eq(opportunityOrganizations.opportunityId, opportunityId),
+        eq(opportunityOrganizations.organizationId, organizationId),
       ),
     });
 
     if (existing) {
       await this.db
-        .update(opportunityActors)
+        .update(opportunityOrganizations)
         .set({ roles: dto.roles })
         .where(
-          eq(opportunityActors.opportunityActorId, existing.opportunityActorId),
+          eq(
+            opportunityOrganizations.opportunityOrganizationId,
+            existing.opportunityOrganizationId,
+          ),
         );
     } else {
-      await this.db.insert(opportunityActors).values({
+      await this.db.insert(opportunityOrganizations).values({
         opportunityId,
-        actorId: dto.actorId,
+        organizationId,
         roles: dto.roles,
       });
     }
@@ -539,10 +552,10 @@ export class OpportunitiesService {
       eventType: EventType.UPDATED,
       entityDisplayName: 'Opportunity',
       payload: {
-        action: 'opportunity_actor_linked',
+        action: 'opportunity_organization_linked',
         opportunityId,
-        actorId: dto.actorId,
-        actorName: actor.name,
+        organizationId,
+        organizationName: org.name,
       },
       actor: userId,
     });
@@ -551,30 +564,35 @@ export class OpportunitiesService {
     return { success: true };
   }
 
-  async updateOpportunityActor(
+  async updateOpportunityOrganization(
     opportunityId: string,
-    actorId: string,
-    dto: UpdateOpportunityActorDto,
+    organizationId: string,
+    dto: UpdateOpportunityOrganizationDto,
     userId: string,
   ): Promise<{ success: boolean }> {
     await this.getOpportunity(opportunityId);
 
-    const existing = await this.db.query.opportunityActors.findFirst({
+    const existing = await this.db.query.opportunityOrganizations.findFirst({
       where: and(
-        eq(opportunityActors.opportunityId, opportunityId),
-        eq(opportunityActors.actorId, actorId),
+        eq(opportunityOrganizations.opportunityId, opportunityId),
+        eq(opportunityOrganizations.organizationId, organizationId),
       ),
     });
 
     if (!existing) {
-      throw new NotFoundException('Actor link not found for this opportunity');
+      throw new NotFoundException(
+        'Organization link not found for this opportunity',
+      );
     }
 
     await this.db
-      .update(opportunityActors)
+      .update(opportunityOrganizations)
       .set({ roles: dto.roles })
       .where(
-        eq(opportunityActors.opportunityActorId, existing.opportunityActorId),
+        eq(
+          opportunityOrganizations.opportunityOrganizationId,
+          existing.opportunityOrganizationId,
+        ),
       );
 
     await emitEvent(this.db, {
@@ -583,9 +601,9 @@ export class OpportunitiesService {
       eventType: EventType.UPDATED,
       entityDisplayName: 'Opportunity',
       payload: {
-        action: 'opportunity_actor_roles_updated',
+        action: 'opportunity_organization_roles_updated',
         opportunityId,
-        actorId,
+        organizationId,
         roles: dto.roles,
       },
       actor: userId,
@@ -595,29 +613,31 @@ export class OpportunitiesService {
     return { success: true };
   }
 
-  async deleteOpportunityActor(
+  async deleteOpportunityOrganization(
     opportunityId: string,
-    actorId: string,
+    organizationId: string,
     userId: string,
   ): Promise<{ success: boolean }> {
     await this.getOpportunity(opportunityId);
 
-    const actor = await this.db.query.actors.findFirst({
-      where: eq(actors.actorId, actorId),
+    const org = await this.db.query.organizations.findFirst({
+      where: eq(organizations.organizationId, organizationId),
     });
 
     const [deleted] = await this.db
-      .delete(opportunityActors)
+      .delete(opportunityOrganizations)
       .where(
         and(
-          eq(opportunityActors.opportunityId, opportunityId),
-          eq(opportunityActors.actorId, actorId),
+          eq(opportunityOrganizations.opportunityId, opportunityId),
+          eq(opportunityOrganizations.organizationId, organizationId),
         ),
       )
       .returning();
 
     if (!deleted) {
-      throw new NotFoundException('Actor link not found for this opportunity');
+      throw new NotFoundException(
+        'Organization link not found for this opportunity',
+      );
     }
 
     await emitEvent(this.db, {
@@ -626,10 +646,10 @@ export class OpportunitiesService {
       eventType: EventType.UPDATED,
       entityDisplayName: 'Opportunity',
       payload: {
-        action: 'opportunity_actor_unlinked',
+        action: 'opportunity_organization_unlinked',
         opportunityId,
-        actorId,
-        actorName: actor?.name,
+        organizationId,
+        organizationName: org?.name,
       },
       actor: userId,
     });
@@ -648,9 +668,9 @@ export class OpportunitiesService {
     if (!includeArchived) {
       conditions.push(ne(opportunities.stateCode, OPPORTUNITY_STATE.ARCHIVED));
     }
-    if (query?.actorId) {
+    if (query?.organizationId) {
       conditions.push(
-        sql`EXISTS (SELECT 1 FROM ${opportunityActors} WHERE ${opportunityActors.opportunityId} = ${opportunities.opportunityId} AND ${opportunityActors.actorId} = ${query.actorId})`,
+        sql`EXISTS (SELECT 1 FROM ${opportunityOrganizations} WHERE ${opportunityOrganizations.opportunityId} = ${opportunities.opportunityId} AND ${opportunityOrganizations.organizationId} = ${query.organizationId})`,
       );
     }
     if (query?.contactId) {
@@ -708,7 +728,7 @@ export class OpportunitiesService {
       }),
     });
 
-    // Eagerly enrich page with actors and owner for immediate cards display
+    // Eagerly enrich page with organizations/actors and owner for immediate cards display
     const enrichedData = await this.enrichOpportunities(data);
 
     return {
@@ -752,15 +772,21 @@ export class OpportunitiesService {
     T extends { opportunityId: string; ownerId?: string | null },
   >(
     items: T[],
-  ): Promise<(T & { opportunityActors?: unknown[]; owner?: unknown })[]> {
+  ): Promise<
+    (T & {
+      opportunityOrganizations?: unknown[];
+      opportunityActors?: unknown[];
+      owner?: unknown;
+    })[]
+  > {
     if (!items || items.length === 0) return [];
     const oppIds = items.map((i) => i.opportunityId);
 
-    // Fetch linked actors
-    const linkedActors = await this.db.query.opportunityActors.findMany({
-      where: inArray(opportunityActors.opportunityId, oppIds),
+    // Fetch linked organizations
+    const linkedOrgs = await this.db.query.opportunityOrganizations.findMany({
+      where: inArray(opportunityOrganizations.opportunityId, oppIds),
       with: {
-        actor: true,
+        organization: true,
       },
     });
 
@@ -775,11 +801,11 @@ export class OpportunitiesService {
           })
         : [];
 
-    const actorsByOpp = new Map<string, unknown[]>();
-    for (const la of linkedActors) {
-      const list = actorsByOpp.get(la.opportunityId) || [];
-      list.push(la);
-      actorsByOpp.set(la.opportunityId, list);
+    const orgsByOpp = new Map<string, unknown[]>();
+    for (const lo of linkedOrgs) {
+      const list = orgsByOpp.get(lo.opportunityId) || [];
+      list.push(lo);
+      orgsByOpp.set(lo.opportunityId, list);
     }
 
     const ownersById = new Map<string, unknown>();
@@ -825,7 +851,8 @@ export class OpportunitiesService {
 
     return items.map((item) => ({
       ...item,
-      opportunityActors: actorsByOpp.get(item.opportunityId) || [],
+      opportunityOrganizations: orgsByOpp.get(item.opportunityId) || [],
+      opportunityActors: orgsByOpp.get(item.opportunityId) || [],
       owner: item.ownerId ? ownersById.get(item.ownerId) : null,
       dealRevenue: revenueByOpp.get(item.opportunityId)?.dealRevenue ?? 0,
       quoteCount: revenueByOpp.get(item.opportunityId)?.quoteCount ?? 0,

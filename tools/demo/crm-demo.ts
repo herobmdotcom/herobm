@@ -15,14 +15,14 @@ if (fs.existsSync(path.join(__dirname, '..', '..', '.env'))) {
 
 const BASE_URL = process.env.DEMO_BASE_URL || 'https://herobm-dev.exe.xyz';
 const USERNAME = process.env.DEMO_USERNAME || 'demo';
-const PASSWORD = process.env.DEMO_PASSWORD || 'demodemo';
+const PASSWORD = process.env.DEMO_PASSWORD || 'demodemo'; // TEST_CREDENTIAL
 const HEADED = process.env.DEMO_HEADED !== 'false';
 const USER_DATA_DIR = path.join(__dirname, '..', '..', 'tmp', 'demo-browser-profile');
 const OUTPUT_DIR = path.join(__dirname, '..', '..', 'tmp', 'videos');
 
 async function runCrmDemo() {
   console.log('='.repeat(65));
-  console.log(' HeroBM - CRM Showcase Video Generator (Playwright - Dark Mode)');
+  console.log(' HeroBM - CRM Showcase: The Operations-Driven CRM');
   console.log('='.repeat(65));
   console.log(` Target URL       : ${BASE_URL}`);
   console.log(` Username         : ${USERNAME}`);
@@ -78,7 +78,7 @@ async function runCrmDemo() {
     // -------------------------------------------------------------
     // Step 1: Navigate to HeroBM & Authenticate (Dark Mode Entry)
     // -------------------------------------------------------------
-    console.log('\n[1/8] Navigating to HeroBM in Dark Mode...');
+    console.log('\n[1/6] Navigating to HeroBM in Dark Mode...');
     await page.goto(BASE_URL, { timeout: 60000, waitUntil: 'load' });
     await actor.injectVisualCursor();
     await actor.pause(700, 1000);
@@ -86,11 +86,9 @@ async function runCrmDemo() {
     const loginUsernameSelector = '#portal-login-username:visible, input[placeholder*="Username" i]:visible';
     const sidebarSelector = 'nav:visible, aside:visible, [class*="sidebar"]:visible';
 
-    console.log(' -> Checking authentication status...');
     try {
       await page.waitForSelector(`${loginUsernameSelector}, ${sidebarSelector}`, { timeout: 15000 });
     } catch {
-      console.log(' -> Waiting for application layout to settle...');
       await page.waitForSelector(`${loginUsernameSelector}, ${sidebarSelector}`, { timeout: 45000 });
     }
 
@@ -98,7 +96,7 @@ async function runCrmDemo() {
     const isHeroBmLoginForm = await usernameField.isVisible().catch(() => false);
 
     if (isHeroBmLoginForm) {
-      console.log(' -> HeroBM login screen detected. Authenticating in dark mode...');
+      console.log(' -> Authenticating...');
       await actor.type(usernameField, USERNAME, { baseDelayMs: 45 });
       await actor.pause(150, 300);
 
@@ -108,12 +106,7 @@ async function runCrmDemo() {
 
       const signInBtn = page.locator('#portal-login-submit:visible, button:has-text("Sign In"):visible').first();
       await actor.click(signInBtn);
-
-      console.log(' -> Waiting for dashboard after login...');
       await page.waitForSelector(sidebarSelector, { timeout: 30000 });
-      console.log(' -> Authenticated successfully.');
-    } else {
-      console.log(' -> Active session found.');
     }
 
     // Ensure dark mode DOM classes are applied
@@ -125,366 +118,217 @@ async function runCrmDemo() {
     });
 
     // -------------------------------------------------------------
-    // Step 2: Sidebar Navigation to CRM -> Opportunities
+    // Step 2: The Unified Actor & Dual Commercial View
     // -------------------------------------------------------------
-    console.log('\n[2/8] Navigating to CRM Opportunities via Sidebar...');
-    await actor.pause(1200, 1600); // Orientation pause
-
-    const oppsLink = page
-      .locator(
-        'nav a[href="/crm/opportunities"]:visible, aside a[href="/crm/opportunities"]:visible, [class*="sidebar"] a[href="/crm/opportunities"]:visible',
-      )
-      .first();
-
-    if (await oppsLink.isVisible().catch(() => false)) {
-      await actor.hover(oppsLink, { speed: 0.95 });
-      await actor.pause(450, 750);
-      await actor.click(oppsLink);
-    } else {
-      console.log(' -> Navigating directly to /crm/opportunities...');
-      await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/opportunities`, { waitUntil: 'load' });
-      await actor.injectVisualCursor();
-    }
-
-    await page.waitForLoadState('networkidle').catch(() => {});
+    console.log('\n[2/6] Differentiator 1 & 3: Unified Actor & Dual Commercial Accounts...');
     await actor.pause(1000, 1500);
 
-    // -------------------------------------------------------------
-    // Step 3: Showcase Opportunities Kanban Board in Dark Mode
-    // -------------------------------------------------------------
-    console.log('\n[3/8] Showcasing Opportunities Kanban Board...');
-
-    // Wait for columns and cards to load
-    const kanbanColumn = page.locator('div:has(> div:has-text("Lead")), div:has(> div:has-text("Qualification")), div:has(> div:has-text("Proposal"))').first();
-    await kanbanColumn.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-
-    // Hover over stage summary metrics in the board columns
-    console.log(' -> Inspecting pipeline stages and deal totals...');
-    const columnHeaders = page.locator('div.rounded-t-xl:visible, div:has(> span.font-semibold):visible');
-    const headerCount = await columnHeaders.count();
-    if (headerCount > 0) {
-      await actor.hover(columnHeaders.first(), { speed: 0.9 });
-      await actor.pause(500, 800);
-      if (headerCount > 2) {
-        await actor.hover(columnHeaders.nth(2), { speed: 0.9 });
-        await actor.pause(450, 700);
-      }
+    // Navigate to Actors
+    const actorsLink = page.locator('nav a[href="/crm/actors"]:visible, aside a[href="/crm/actors"]:visible').first();
+    if (await actorsLink.isVisible().catch(() => false)) {
+      await actor.hover(actorsLink);
+      await actor.pause(450, 750);
+      await actor.click(actorsLink);
+    } else {
+      await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/actors`, { waitUntil: 'load' });
+      await actor.injectVisualCursor();
     }
-
-    // Hover over an opportunity card
-    const firstOppCard = page.locator('div.card[draggable="true"]:visible, div[draggable="true"]:visible').first();
-    if (await firstOppCard.isVisible().catch(() => false)) {
-      console.log(' -> Reviewing opportunity card in dark mode...');
-      await actor.hover(firstOppCard);
-      await actor.pause(700, 1100);
-
-      // Demonstrate stage movement via the quick stage dropdown
-      const quickStageSelect = firstOppCard.locator('select').first();
-      if (await quickStageSelect.isVisible().catch(() => false) || (await quickStageSelect.count()) > 0) {
-        console.log(' -> Progressing opportunity stage...');
-        await quickStageSelect.evaluate((el: HTMLSelectElement) => {
-          const options = Array.from(el.options);
-          const nextOption = options.find((o) => o.value.toLowerCase().includes('proposal') || o.value.toLowerCase().includes('negotiation'));
-          if (nextOption) {
-            el.value = nextOption.value;
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        });
-        await actor.pause(800, 1200);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // Step 4: Toggle View: Kanban -> ag-Grid List View -> Kanban
-    // -------------------------------------------------------------
-    console.log('\n[4/8] Demonstrating View Modes (Kanban <-> ag-Grid List)...');
-    const listViewBtn = page
-      .locator('button:has-text("List"):visible, button:has(span:has-text("format_list_bulleted")):visible')
-      .first();
-
-    if (await listViewBtn.isVisible().catch(() => false)) {
-      await actor.hover(listViewBtn, { speed: 0.95 });
-      await actor.pause(350, 600);
-      await actor.click(listViewBtn);
-      console.log(' -> Switched to ag-Grid List View.');
-      await page.waitForSelector('.ag-root:visible, .ag-body-viewport:visible', { timeout: 15000 }).catch(() => {});
-      await actor.pause(1200, 1800);
-
-      // Highlight a row in the list
-      const firstRow = page.locator('.ag-row:first-child:visible, table tbody tr:first-child:visible').first();
-      if (await firstRow.isVisible().catch(() => false)) {
-        await actor.hover(firstRow);
-        await actor.pause(600, 900);
-      }
-
-      // Switch back to Kanban
-      const kanbanViewBtn = page
-        .locator('button:has-text("Kanban"):visible, button:has(span:has-text("view_kanban")):visible')
-        .first();
-      if (await kanbanViewBtn.isVisible().catch(() => false)) {
-        await actor.hover(kanbanViewBtn, { speed: 0.95 });
-        await actor.pause(350, 550);
-        await actor.click(kanbanViewBtn);
-        console.log(' -> Switched back to Kanban Board.');
-        await actor.pause(800, 1200);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // Step 5: Click "New Opportunity" & Fill Deal Form
-    // -------------------------------------------------------------
-    console.log('\n[5/8] Creating New Commercial Opportunity...');
-    const newOppBtn = page
-      .locator(
-        'a[href="/crm/opportunities/new"]:visible, a:has-text("New Opportunity"):visible, button:has-text("New Opportunity"):visible',
-      )
-      .first();
-    await newOppBtn.waitFor({ state: 'visible', timeout: 15000 });
-    await actor.hover(newOppBtn, { speed: 0.95 });
-    await actor.pause(500, 750);
-    await actor.click(newOppBtn);
-
-    await page.waitForURL('**/crm/opportunities/new', { timeout: 20000 }).catch(() => {});
-    await page.waitForLoadState('networkidle').catch(() => {});
-    await actor.pause(700, 1000);
-
-    // Fill Opportunity Name
-    const nameInput = page.locator('input[placeholder*="Acme Corp" i]:visible, input.font-semibold:visible, input[type="text"]:visible').first();
-    if (await nameInput.isVisible().catch(() => false)) {
-      console.log(' -> Entering opportunity name...');
-      await actor.type(nameInput, 'Apex Commercial - Automated Facade Systems Phase 2', { baseDelayMs: 38 });
-      await actor.pause(250, 450);
-    }
-
-    // Select Pipeline Stage (Proposal)
-    const stageSelect = page.locator('select:visible').first();
-    if (await stageSelect.isVisible().catch(() => false)) {
-      console.log(' -> Selecting pipeline stage: Proposal...');
-      await stageSelect.selectOption({ label: 'Proposal' }).catch(async () => {
-        const options = await stageSelect.locator('option').allInnerTexts();
-        const propOpt = options.find((o) => o.toLowerCase().includes('proposal') || o.toLowerCase().includes('qual'));
-        if (propOpt) await stageSelect.selectOption({ label: propOpt });
-      });
-      await actor.pause(200, 400);
-    }
-
-    // Enter Estimated Value
-    const estValInput = page.locator('input[type="number"][placeholder*="150000" i]:visible, input[type="number"]:visible').first();
-    if (await estValInput.isVisible().catch(() => false)) {
-      console.log(' -> Entering estimated deal value: $320,000...');
-      await actor.type(estValInput, '320000', { baseDelayMs: 45 });
-      await actor.pause(200, 400);
-    }
-
-    // Set Win Probability slider to 75%
-    const probSlider = page.locator('input[type="range"]:visible').first();
-    if (await probSlider.isVisible().catch(() => false)) {
-      console.log(' -> Adjusting Win Probability slider to 75%...');
-      await actor.hover(probSlider);
-      await probSlider.fill('75');
-      await probSlider.dispatchEvent('input');
-      await probSlider.dispatchEvent('change');
-      await actor.pause(350, 600);
-    }
-
-    // Set Target Close Date
-    const closeDateInput = page.locator('input[type="date"]:visible').first();
-    if (await closeDateInput.isVisible().catch(() => false)) {
-      await actor.type(closeDateInput, '2026-12-15', { baseDelayMs: 40 });
-      await actor.pause(200, 350);
-    }
-
-    // Description
-    const descTextarea = page.locator('textarea:visible').first();
-    if (await descTextarea.isVisible().catch(() => false)) {
-      console.log(' -> Entering strategic deal scope...');
-      await actor.type(
-        descTextarea,
-        'Enterprise commercial facade automation and telemetry contract. Tied to Master Supply Agreement.',
-        { baseDelayMs: 32 },
-      );
-      await actor.pause(300, 500);
-    }
-
-    // Submit Create Opportunity
-    const createOppSubmit = page.locator('button:has-text("Create Opportunity"):visible').first();
-    await actor.hover(createOppSubmit, { speed: 0.95 });
-    await actor.pause(450, 750);
-    await actor.click(createOppSubmit);
-
-    console.log(' -> Waiting for opportunity creation & redirection...');
-    await page.waitForURL(/crm\/opportunities\/[a-zA-Z0-9_-]+/, { timeout: 25000 }).catch(() => {});
+    
     await page.waitForLoadState('networkidle').catch(() => {});
     await actor.pause(1200, 1600);
 
-    // -------------------------------------------------------------
-    // Step 6: Opportunity Detail & CRM Activities / Tasks Flow
-    // -------------------------------------------------------------
-    console.log('\n[6/8] Showcasing Opportunity Detail, Activities & Tasks...');
-
-    // Review Overview Forecast
-    await actor.smoothScroll(220, 400);
-    await actor.pause(700, 1100);
-    await actor.smoothScroll(-220, 400);
-    await actor.pause(500, 800);
-
-    // Log a Call activity
-    const logCallBtn = page.locator('button:has-text("Call"):visible').first();
-    if (await logCallBtn.isVisible().catch(() => false)) {
-      console.log(' -> Logging commercial discovery call...');
-      await actor.hover(logCallBtn);
-      await actor.pause(250, 450);
-      await actor.click(logCallBtn);
-
-      const slideOver = page.locator('[role="dialog"]:visible, div:has-text("Log Activity"):visible, div:has-text("Call"):visible').first();
-      await slideOver.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-      await actor.pause(350, 550);
-
-      const subjectInput = page.locator('input[placeholder*="subject" i]:visible, input[placeholder*="title" i]:visible, input[type="text"]:visible').last();
-      if (await subjectInput.isVisible().catch(() => false)) {
-        await actor.type(subjectInput, 'Executive Strategy Alignment with VP Engineering', { baseDelayMs: 36 });
-        await actor.pause(200, 350);
-      }
-
-      const notesInput = page.locator('textarea:visible').last();
-      if (await notesInput.isVisible().catch(() => false)) {
-        await actor.type(
-          notesInput,
-          'Confirmed phase 2 scope and timeline. Pricing approved for engineering review.',
-          { baseDelayMs: 32 },
-        );
-        await actor.pause(250, 450);
-      }
-
-      const saveActBtn = page.locator('button:has-text("Save"):visible, button:has-text("Log Activity"):visible, button[type="submit"]:visible').last();
-      await actor.hover(saveActBtn);
-      await actor.pause(250, 400);
-      await actor.click(saveActBtn);
-      await actor.pause(700, 1100);
-    }
-
-    // Log a Task with High Priority
-    const logTaskBtn = page.locator('button:has-text("Task"):visible').first();
-    if (await logTaskBtn.isVisible().catch(() => false)) {
-      console.log(' -> Creating actionable CRM task...');
-      await actor.hover(logTaskBtn);
-      await actor.pause(250, 450);
-      await actor.click(logTaskBtn);
-
-      await actor.pause(350, 550);
-      const subjectInput = page.locator('input[placeholder*="subject" i]:visible, input[placeholder*="title" i]:visible, input[type="text"]:visible').last();
-      if (await subjectInput.isVisible().catch(() => false)) {
-        await actor.type(subjectInput, 'Prepare & Dispatch Master Commercial Proposal', { baseDelayMs: 35 });
-        await actor.pause(200, 350);
-      }
-
-      const prioritySelect = page.locator('select:has(option[value="high"]):visible').first();
-      if (await prioritySelect.isVisible().catch(() => false)) {
-        await prioritySelect.selectOption('high');
-        await actor.pause(200, 350);
-      }
-
-      const saveTaskBtn = page.locator('button:has-text("Save"):visible, button:has-text("Log Activity"):visible, button[type="submit"]:visible').last();
-      await actor.hover(saveTaskBtn);
-      await actor.pause(250, 400);
-      await actor.click(saveTaskBtn);
-      await actor.pause(800, 1200);
-    }
-
-    // Toggle Task completion (Checkmark task)
-    console.log(' -> Completing task on the activity timeline...');
-    const taskCheckbox = page.locator('button:has(span:has-text("radio_button_unchecked")):visible, button[title*="complete" i]:visible').first();
-    if (await taskCheckbox.isVisible().catch(() => false)) {
-      await actor.hover(taskCheckbox);
-      await actor.pause(400, 650);
-      await actor.click(taskCheckbox);
-      await actor.pause(800, 1200);
-      console.log(' -> Task marked as completed with visual badge.');
-    }
-
-    // -------------------------------------------------------------
-    // Step 7: Commercial Integration Tab (Live Revenue & Quotes)
-    // -------------------------------------------------------------
-    console.log('\n[7/8] Inspecting Commercial Integration (Live Quotes & Revenue)...');
-    const commercialTab = page
-      .locator(
-        'button:has-text("Commercial"):visible, #tab-commercial:visible, a:has-text("Commercial"):visible',
-      )
-      .first();
-
-    if (await commercialTab.isVisible().catch(() => false)) {
-      await actor.hover(commercialTab, { speed: 0.95 });
-      await actor.pause(350, 600);
-      await actor.click(commercialTab);
+    // Type 'Home Hardware' in the quick filter to ensure we select our Unified Actor
+    const searchInput = page.locator('input[placeholder*="Search" i]:visible').first();
+    if (await searchInput.isVisible().catch(() => false)) {
+      await actor.type(searchInput, 'Home Hardware', { baseDelayMs: 40 });
       await actor.pause(1000, 1500);
+    }
 
-      // Inspect Commercial KPI Card
-      const revenueCard = page.locator('div:has-text("Live Deal Revenue"):visible, div:has-text("Commercial Documents"):visible').first();
-      if (await revenueCard.isVisible().catch(() => false)) {
-        await actor.hover(revenueCard);
-        await actor.pause(600, 950);
-      }
+    // Click the first Actor in the filtered list to open its profile
+    const firstActorRow = page.locator('.ag-row:first-child:visible, table tbody tr:first-child:visible').first();
+    if (await firstActorRow.isVisible().catch(() => false)) {
+      await actor.hover(firstActorRow);
+      await actor.pause(400, 600);
+      await actor.click(firstActorRow.locator('a').first().or(firstActorRow));
+    }
+    
+    await page.waitForURL(/crm\/actors\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await actor.pause(1500, 2000);
+
+    // Switch to Commercial Accounts tab
+    const commercialTab = page.locator('button[role="tab"]:has-text("Commercial Accounts"), button:has-text("Commercial Accounts")').first();
+    if (await commercialTab.isVisible().catch(() => false)) {
+      console.log(' -> Showcasing Dual Commercial Accounts (Customer + Vendor)...');
+      await actor.hover(commercialTab);
+      await actor.click(commercialTab);
+      await actor.pause(1500, 2000);
+
+      // Smooth scroll to reveal both Customer (Sales Orders) and Vendor (Purchase Orders) grids
+      await actor.smoothScroll(400, 600);
+      await actor.pause(1500, 2000);
+      await actor.smoothScroll(-400, 600);
+      await actor.pause(500, 1000);
     }
 
     // -------------------------------------------------------------
-    // Step 8: CRM Relationship Ecosystem Map & Finale
+    // Step 3: The Omniscient Timeline (System + Human Events)
     // -------------------------------------------------------------
-    console.log('\n[8/8] Navigating to CRM Ecosystem Map & Finale...');
-    const crmMapLink = page
-      .locator(
-        'nav a[href="/crm/map"]:visible, aside a[href="/crm/map"]:visible, [class*="sidebar"] a[href="/crm/map"]:visible',
-      )
-      .first();
+    console.log('\n[3/6] Differentiator 2: The Omniscient Timeline...');
+    
+    // Switch to Overview/Timeline tab
+    const overviewTab = page.locator('button[role="tab"]:has-text("Overview"), button:has-text("Overview")').first();
+    if (await overviewTab.isVisible().catch(() => false)) {
+      await actor.hover(overviewTab);
+      await actor.click(overviewTab);
+      await actor.pause(1000, 1500);
+    }
 
-    if (await crmMapLink.isVisible().catch(() => false)) {
-      await actor.hover(crmMapLink, { speed: 0.95 });
-      await actor.pause(350, 600);
-      await actor.click(crmMapLink);
+    // Scroll down to the Activities Section
+    await actor.smoothScroll(500, 700);
+    await actor.pause(1500, 2000);
+
+    // Toggle the "System Logs" filter to show intertwined ERP events
+    const allActivityFilter = page.locator('button:has-text("All Activity"):visible').first();
+    if (await allActivityFilter.isVisible().catch(() => false)) {
+      console.log(' -> Toggling Activity Filters to show ERP events...');
+      await actor.hover(allActivityFilter);
+      await actor.click(allActivityFilter);
+      await actor.pause(2500, 3500); // Let the viewer read the system events next to calls
+    }
+
+    // -------------------------------------------------------------
+    // Step 4: Complex B2B Reality & Relationship Map
+    // -------------------------------------------------------------
+    console.log('\n[4/6] Differentiator 4: Interactive Relationship Map & Hierarchies...');
+
+    // Switch to Corporate Hierarchy tab
+    const hierarchyTab = page.locator('button[role="tab"]:has-text("Corporate Hierarchy"), button:has-text("Corporate Hierarchy")').first();
+    if (await hierarchyTab.isVisible().catch(() => false)) {
+      await actor.smoothScroll(-500, 700);
+      await actor.hover(hierarchyTab);
+      await actor.click(hierarchyTab);
+      await actor.pause(2000, 2500);
+      console.log(' -> Showcasing structural links (Parent/Subsidiary/Partner)...');
+    }
+
+    // Navigate to /crm/map
+    const mapLink = page.locator('nav a[href="/crm/map"]:visible, aside a[href="/crm/map"]:visible').first();
+    if (await mapLink.isVisible().catch(() => false)) {
+      await actor.hover(mapLink);
+      await actor.click(mapLink);
     } else {
       await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/map`, { waitUntil: 'load' });
       await actor.injectVisualCursor();
     }
-
-    await page.waitForURL('**/crm/map', { timeout: 20000 }).catch(() => {});
+    
     await page.waitForLoadState('networkidle').catch(() => {});
-    await actor.pause(1200, 1800);
+    await actor.pause(1500, 2000);
 
-    // Pan across the dark ReactFlow relationship map
-    console.log(' -> Showcasing Dark Mode Ecosystem Map nodes & connections...');
-    const flowCanvas = page.locator('.react-flow__pane:visible, .react-flow:visible').first();
-    if (await flowCanvas.isVisible().catch(() => false)) {
-      await actor.hover(flowCanvas);
-      await actor.pause(600, 1000);
-      // Gentle pan
-      await actor.smoothScroll(150, 500);
-      await actor.pause(600, 900);
-      await actor.smoothScroll(-150, 500);
+    // Interact with the map
+    const expandNodeBtn = page.locator('.react-flow__node button:has-text("+")').first();
+    if (await expandNodeBtn.isVisible().catch(() => false)) {
+      console.log(' -> Expanding nodes on the Relationship Graph...');
+      await actor.hover(expandNodeBtn);
       await actor.pause(500, 800);
+      await actor.click(expandNodeBtn);
+      await actor.pause(2500, 3500); // Let the visual expansion sink in
     }
 
-    // Return to CRM Opportunities Kanban for the grand finale
-    console.log(' -> Returning to Opportunities Kanban board for finale showcase...');
-    const returnOppsLink = page
-      .locator(
-        'nav a[href="/crm/opportunities"]:visible, aside a[href="/crm/opportunities"]:visible, [class*="sidebar"] a[href="/crm/opportunities"]:visible',
-      )
-      .first();
+    // -------------------------------------------------------------
+    // Step 5: Operationalized Contacts & Dispatch Routing
+    // -------------------------------------------------------------
+    console.log('\n[5/6] Differentiator 5: Operationalized Contacts (Dispatch Routing)...');
+    
+    // Navigate to /crm/contacts
+    const contactsLink = page.locator('nav a[href="/crm/contacts"]:visible, aside a[href="/crm/contacts"]:visible').first();
+    if (await contactsLink.isVisible().catch(() => false)) {
+      await actor.hover(contactsLink);
+      await actor.click(contactsLink);
+    } else {
+      await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/contacts`, { waitUntil: 'load' });
+      await actor.injectVisualCursor();
+    }
+    
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await actor.pause(1200, 1600);
 
-    if (await returnOppsLink.isVisible().catch(() => false)) {
-      await actor.hover(returnOppsLink);
-      await actor.pause(250, 450);
-      await actor.click(returnOppsLink);
+    // Click the first Contact
+    const firstContactRow = page.locator('.ag-row:first-child:visible, table tbody tr:first-child:visible').first();
+    if (await firstContactRow.isVisible().catch(() => false)) {
+      await actor.hover(firstContactRow);
+      await actor.pause(400, 600);
+      await actor.click(firstContactRow.locator('a').first().or(firstContactRow));
+    }
+    
+    await page.waitForURL(/crm\/contacts\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await actor.pause(1500, 2000);
+
+    // Switch to Affiliated Companies Tab
+    const affiliationsTab = page.locator('button[role="tab"]:has-text("Affiliated Companies"), button:has-text("Affiliated Companies")').first();
+    if (await affiliationsTab.isVisible().catch(() => false)) {
+      console.log(' -> Showcasing Multi-Company Affiliations and Dispatch Tags...');
+      await actor.hover(affiliationsTab);
+      await actor.click(affiliationsTab);
+      await actor.pause(2000, 3000);
+      
+      // Look for badges like "Billing", "Shipping" to hover over
+      const dispatchBadge = page.locator('.badge:has-text("billing"), .badge:has-text("shipping"), span:has-text("billing")').first();
+      if (await dispatchBadge.isVisible().catch(() => false)) {
+        await actor.hover(dispatchBadge);
+        await actor.pause(1500, 2000);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Step 6: Live Deal Revenue Rollup in Opportunities
+    // -------------------------------------------------------------
+    console.log('\n[6/6] The Finale: Live Deal Revenue Rollup in Opportunities...');
+    
+    // Navigate to /crm/opportunities
+    const oppsLink = page.locator('nav a[href="/crm/opportunities"]:visible, aside a[href="/crm/opportunities"]:visible').first();
+    if (await oppsLink.isVisible().catch(() => false)) {
+      await actor.hover(oppsLink);
+      await actor.click(oppsLink);
     } else {
       await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/opportunities`, { waitUntil: 'load' });
       await actor.injectVisualCursor();
     }
-
-    await page.waitForURL('**/crm/opportunities', { timeout: 20000 }).catch(() => {});
+    
     await page.waitForLoadState('networkidle').catch(() => {});
+    await actor.pause(1500, 2000);
 
-    // Final showcase pause on the complete Dark Mode Kanban board
-    await actor.pause(3500, 4500);
-    console.log(' -> CRM Dark Mode video sequence completed successfully!');
+    // Click the first Opportunity card
+    const oppCard = page.locator('div.card[draggable="true"]:visible, div[draggable="true"]:visible').first();
+    if (await oppCard.isVisible().catch(() => false)) {
+      await actor.hover(oppCard);
+      await actor.pause(500, 800);
+      await actor.click(oppCard.locator('a').first().or(oppCard));
+    }
+    
+    await page.waitForURL(/crm\/opportunities\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await actor.pause(1500, 2000);
+
+    // Switch to Commercial & Quotes Tab
+    const oppCommercialTab = page.locator('button[role="tab"]:has-text("Commercial"), button:has-text("Commercial & Quotes")').first();
+    if (await oppCommercialTab.isVisible().catch(() => false)) {
+      console.log(' -> Showcasing the convergence of CRM Deal Value with real ERP Billed Revenue...');
+      await actor.hover(oppCommercialTab);
+      await actor.click(oppCommercialTab);
+      await actor.pause(2000, 3000);
+
+      // Hover over the "Convert to Order" or "Create Quote" buttons
+      const convertToOrderBtn = page.locator('button:has-text("Convert to Order"), a:has-text("Convert to Order")').first();
+      if (await convertToOrderBtn.isVisible().catch(() => false)) {
+        console.log(' -> Highlighting 1-Click Deal Conversion...');
+        await actor.hover(convertToOrderBtn);
+        await actor.pause(3500, 4500); // Dramatic pause
+      }
+    }
+
+    console.log('\n -> Story-driven CRM video sequence completed successfully!');
 
   } catch (error) {
     console.error('\n Demo script encountered an issue:', error);
@@ -504,10 +348,10 @@ async function runCrmDemo() {
       const sizeMb = (stats.size / (1024 * 1024)).toFixed(2);
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const finalPath = path.join(OUTPUT_DIR, `crm-demo-${timestamp}.webm`);
+      const finalPath = path.join(OUTPUT_DIR, `crm-story-demo-${timestamp}.webm`);
       fs.renameSync(videoPath, finalPath);
 
-      console.log(' CRM Demo Video Recorded Successfully!');
+      console.log(' CRM Story Demo Video Recorded Successfully!');
       console.log(` File : ${finalPath}`);
       console.log(` Size : ${sizeMb} MB`);
     } else {

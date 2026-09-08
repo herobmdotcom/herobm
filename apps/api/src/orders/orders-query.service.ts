@@ -28,7 +28,7 @@ import {
   salesEvents,
   customers as coreAccounts,
   customerGroups,
-  actors,
+  organizations,
   opportunities,
   products as coreProducts,
   backorders,
@@ -241,8 +241,8 @@ export class OrdersQueryService {
     const rows = await this.db
       .select({
         order: salesOrders,
-        customerName: actors.name,
-        country: actors.headquartersCountry,
+        customerName: organizations.name,
+        country: organizations.headquartersCountry,
         isCreditBlocked: getCreditBlockedSql(),
         opportunityName: opportunities.name,
       })
@@ -251,7 +251,10 @@ export class OrdersQueryService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

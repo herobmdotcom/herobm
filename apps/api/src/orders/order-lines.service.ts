@@ -39,7 +39,6 @@ import {
   productComponents,
   tradingTerms,
   taxCategories,
-  actors,
 } from '@herobm/db-schema';
 import {
   CreateOrderDto,

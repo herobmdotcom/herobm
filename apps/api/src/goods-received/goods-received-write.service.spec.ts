@@ -21,7 +21,7 @@ import {
   bins,
   uomDictionary,
   taxCategories,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -31,7 +31,7 @@ import {
   GOODS_RECEIVED_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
@@ -124,12 +124,12 @@ describe('GoodsReceivedWriteService', () => {
   });
 
   async function seedBasics() {
-    const actorId = '00000000-0000-4000-8000-000000000005';
+    const organizationId = '00000000-0000-4000-8000-000000000005';
     await pg.db
-      .insert(actors)
+      .insert(organizations)
       .values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId,
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId,
         name: 'Supplier 1',
         headquartersAddressLine1: 'AU',
         isTaxRegistered: false,
@@ -140,7 +140,7 @@ describe('GoodsReceivedWriteService', () => {
       .insert(suppliers)
       .values({
         vendorId: VENDOR_ID,
-        actorId,
+        organizationId,
         vendorNumber: 'V1',
         currencyCode: 'EUR',
         stateCode: SUPPLIER_STATE.ACTIVE,

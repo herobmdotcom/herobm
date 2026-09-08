@@ -62,6 +62,17 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
       .expect(201);
 
     const userId = createRes.body.userId;
+    expect(createRes.body.twoFactorEnabled).toBe(false);
+
+    // Verify GET /api/users returns twoFactorEnabled: false before setup
+    const usersBefore = await request(app.getHttpServer())
+      .get('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const userBefore = usersBefore.body.find(
+      (u: { userId: string }) => u.userId === userId,
+    );
+    expect(userBefore?.twoFactorEnabled).toBe(false);
 
     // 2. Initial login as test user (no 2FA yet)
     const initialLogin = await request(app.getHttpServer())
@@ -109,6 +120,16 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
 
     expect(enableRes.body.backupCodes).toBeDefined();
     const finalBackupCodes = enableRes.body.backupCodes;
+
+    // Verify GET /api/users returns twoFactorEnabled: true after enable
+    const usersAfter = await request(app.getHttpServer())
+      .get('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const userAfter = usersAfter.body.find(
+      (u: { userId: string }) => u.userId === userId,
+    );
+    expect(userAfter?.twoFactorEnabled).toBe(true);
 
     // 6. Login as test user — should now require 2FA challenge
     const challengeRes = await request(app.getHttpServer())
@@ -165,7 +186,22 @@ describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
 
     expect(meRes.body.username).toBe(testUsername);
 
-    // 11. Cleanup: delete test user
+    // 11. Admin Reset 2FA and verify twoFactorEnabled flips back to false
+    await request(app.getHttpServer())
+      .post(`/api/users/${userId}/2fa/reset`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(201);
+
+    const usersReset = await request(app.getHttpServer())
+      .get('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const userReset = usersReset.body.find(
+      (u: { userId: string }) => u.userId === userId,
+    );
+    expect(userReset?.twoFactorEnabled).toBe(false);
+
+    // 12. Cleanup: delete test user
     await request(app.getHttpServer())
       .delete(`/api/users/${userId}`)
       .set('Authorization', `Bearer ${adminToken}`)

@@ -22,7 +22,7 @@ import {
   goodsReceivedLines,
   purchaseInvoiceReceipts,
   glAccounts,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -36,7 +36,7 @@ import {
   SUPPLIER_STATE,
   GOODS_RECEIVED_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 /**
@@ -140,10 +140,10 @@ describe('PurchaseInvoiceService', () => {
       createdBy: 'system',
     });
 
-    const actorId = '00000000-0000-4000-8000-000000000003';
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId,
+    const organizationId = '00000000-0000-4000-8000-000000000003';
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId,
       name: 'Steel Co',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
@@ -151,7 +151,7 @@ describe('PurchaseInvoiceService', () => {
 
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
-      actorId,
+      organizationId,
       vendorNumber: 'V001',
       currencyCode: 'AUD',
       stateCode: SUPPLIER_STATE.ACTIVE,

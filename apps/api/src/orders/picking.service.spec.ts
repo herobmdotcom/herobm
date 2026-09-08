@@ -21,7 +21,7 @@ import {
   uomDictionary,
   salesEvents,
   outbox,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, and } from 'drizzle-orm';
 import {
@@ -29,7 +29,7 @@ import {
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
   CUSTOMER_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
@@ -113,17 +113,17 @@ describe('PickingService', () => {
         isBonded: false,
       },
     ]);
-    const custActorId = '00000000-0000-4000-8000-000000000002';
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId: custActorId,
+    const custOrgId = '00000000-0000-4000-8000-000000000002';
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId: custOrgId,
       name: 'Acme Corp',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
     });
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
-      actorId: custActorId,
+      organizationId: custOrgId,
       customerNumber: 'CUST01',
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,

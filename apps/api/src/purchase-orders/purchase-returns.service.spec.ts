@@ -6,7 +6,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import {
-  actors,
+  organizations,
   suppliers,
   locations,
   products,
@@ -27,7 +27,7 @@ import {
   PURCHASE_RETURN_SHIPMENT_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -112,17 +112,17 @@ describe('PurchaseReturnsService', () => {
   });
 
   async function seedBasics() {
-    const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId,
+    const organizationId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId,
       name: 'Supplier 1',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
     });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
-      actorId,
+      organizationId,
       vendorNumber: 'V1',
       currencyCode: 'EUR',
       stateCode: SUPPLIER_STATE.ACTIVE,

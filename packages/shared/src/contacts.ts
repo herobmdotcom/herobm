@@ -1,14 +1,14 @@
-export const ACTOR_CONTACT_ROLE = {
+export const ORGANIZATION_CONTACT_ROLE = {
   SALES: 'sales',
   PURCHASING: 'purchasing',
   BILLING: 'billing',
   DELIVERY: 'delivery',
 } as const;
 
-export type ActorContactRole =
-  (typeof ACTOR_CONTACT_ROLE)[keyof typeof ACTOR_CONTACT_ROLE];
+export type OrganizationContactRole =
+  (typeof ORGANIZATION_CONTACT_ROLE)[keyof typeof ORGANIZATION_CONTACT_ROLE];
 
-export const DEFAULT_ACTOR_CONTACT_ROLES: Array<{
+export const DEFAULT_ORGANIZATION_CONTACT_ROLES: Array<{
   value: string;
   order: number;
 }> = [
@@ -21,7 +21,7 @@ export const DEFAULT_ACTOR_CONTACT_ROLES: Array<{
 export enum ContactEntityType {
   CUSTOMER = 'customer',
   SUPPLIER = 'supplier',
-  ACTOR = 'actor',
+  ORGANIZATION = 'organization',
   OPPORTUNITY = 'opportunity',
 }
 

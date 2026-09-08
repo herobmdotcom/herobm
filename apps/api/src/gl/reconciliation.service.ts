@@ -16,7 +16,7 @@ import {
   glJournalEntries,
   customers,
   suppliers,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
 import { CreateReconciliationDto, CreateAdjustmentDto } from './dto';
@@ -181,7 +181,7 @@ export class ReconciliationService {
         matchGroupId: glJournalLines.matchGroupId,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
-        partyName: actors.name,
+        partyName: organizations.name,
         sourceId: glJournalEntries.sourceId,
         createdAt: glJournalEntries.createdOn,
       })
@@ -208,10 +208,10 @@ export class ReconciliationService {
         ),
       )
       .leftJoin(
-        actors,
+        organizations,
         or(
-          eq(customers.actorId, actors.actorId),
-          eq(suppliers.actorId, actors.actorId),
+          eq(customers.organizationId, organizations.organizationId),
+          eq(suppliers.organizationId, organizations.organizationId),
         ),
       )
       .where(

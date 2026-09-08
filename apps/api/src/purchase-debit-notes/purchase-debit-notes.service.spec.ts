@@ -22,7 +22,7 @@ import {
   glAccounts,
   glJournalEntries,
   glJournalLines,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -33,7 +33,7 @@ import {
   PURCHASE_DEBIT_NOTE_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 
 describe('PurchaseDebitNotesService', () => {
@@ -68,11 +68,11 @@ describe('PurchaseDebitNotesService', () => {
       })
       .onConflictDoNothing();
 
-    const [actor] = await pg.db
-      .insert(actors)
+    const [org] = await pg.db
+      .insert(organizations)
       .values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId: randomUUID(),
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: randomUUID(),
         name: 'Test Supplier',
         isTaxRegistered: false,
       })
@@ -82,7 +82,7 @@ describe('PurchaseDebitNotesService', () => {
       .insert(suppliers)
       .values({
         vendorId: VENDOR_ID,
-        actorId: actor.actorId,
+        organizationId: org.organizationId,
         vendorNumber: 'SUP-001',
         currencyCode: 'AUD',
         stateCode: SUPPLIER_STATE.ACTIVE,

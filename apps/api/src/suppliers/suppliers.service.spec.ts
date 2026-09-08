@@ -5,11 +5,11 @@ import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   suppliers,
-  actors,
+  organizations,
   supplierGroups,
   taxPositions,
 } from '@herobm/db-schema';
-import { SUPPLIER_STATE, ACTOR_STATE } from '@herobm/shared';
+import { SUPPLIER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersService', () => {
@@ -29,20 +29,20 @@ describe('SuppliersService', () => {
   describe('findAll', () => {
     it('should return paginated suppliers', async () => {
       const acts = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values([
           {
             name: 'Vendor 1',
             email: 'vendor1@example.com',
             telephone: '+61400000000',
             headquartersAddressLine1: 'AU',
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             isTaxRegistered: false,
           },
           {
             name: 'Vendor 2',
             headquartersAddressLine1: 'AU',
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             isTaxRegistered: false,
           },
         ])
@@ -50,7 +50,7 @@ describe('SuppliersService', () => {
 
       await pg.db.insert(suppliers).values([
         {
-          actorId: acts[0].actorId,
+          organizationId: acts[0].organizationId,
           vendorNumber: 'V1',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -59,7 +59,7 @@ describe('SuppliersService', () => {
           createdBy: 'system',
         },
         {
-          actorId: acts[1].actorId,
+          organizationId: acts[1].organizationId,
           vendorNumber: 'V2',
           currencyCode: 'USD',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -78,18 +78,18 @@ describe('SuppliersService', () => {
 
     it('should apply search filter', async () => {
       const acts = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values([
           {
             name: 'Alpha',
             headquartersAddressLine1: 'AU',
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             isTaxRegistered: false,
           },
           {
             name: 'Beta',
             headquartersAddressLine1: 'AU',
-            stateCode: ACTOR_STATE.ACTIVE,
+            stateCode: ORGANIZATION_STATE.ACTIVE,
             isTaxRegistered: false,
           },
         ])
@@ -97,7 +97,7 @@ describe('SuppliersService', () => {
 
       await pg.db.insert(suppliers).values([
         {
-          actorId: acts[0].actorId,
+          organizationId: acts[0].organizationId,
           vendorNumber: 'V1',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -106,7 +106,7 @@ describe('SuppliersService', () => {
           createdBy: 'system',
         },
         {
-          actorId: acts[1].actorId,
+          organizationId: acts[1].organizationId,
           vendorNumber: 'V2',
           currencyCode: 'USD',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -125,11 +125,11 @@ describe('SuppliersService', () => {
   describe('findOne', () => {
     it('should return a single supplier', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
           name: 'Existing Vendor',
           headquartersAddressLine1: 'AU',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
@@ -137,7 +137,7 @@ describe('SuppliersService', () => {
       const [s] = await pg.db
         .insert(suppliers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           vendorNumber: 'V-EX',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -153,13 +153,13 @@ describe('SuppliersService', () => {
 
     it('should trim trailing spaces on email, phone, and fax from actor record', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
           name: 'Padded Vendor',
           email: '  accounts@padded.co   ',
           telephone: '  +1234567   ',
           fax: '  +7654321   ',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
@@ -167,7 +167,7 @@ describe('SuppliersService', () => {
       const [s] = await pg.db
         .insert(suppliers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           vendorNumber: 'V-PAD',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.ACTIVE,
@@ -204,9 +204,9 @@ describe('SuppliersService', () => {
         .returning();
 
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           name: 'Group Supplier',
           headquartersAddressLine1: 'AU',
           isTaxRegistered: true,
@@ -216,7 +216,7 @@ describe('SuppliersService', () => {
       const [s] = await pg.db
         .insert(suppliers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           vendorNumber: 'GRP-SUP-1',
           currencyCode: 'AUD',
           supplierGroupId: sg.supplierGroupId,
@@ -242,11 +242,11 @@ describe('SuppliersService', () => {
   describe('assessRisk', () => {
     it('should retrieve supplier and assess risk correctly', async () => {
       const [act] = await pg.db
-        .insert(actors)
+        .insert(organizations)
         .values({
           name: 'Risk Vendor',
           headquartersAddressLine1: 'AU',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: false,
         })
         .returning();
@@ -254,7 +254,7 @@ describe('SuppliersService', () => {
       const [s] = await pg.db
         .insert(suppliers)
         .values({
-          actorId: act.actorId,
+          organizationId: act.organizationId,
           vendorNumber: 'V-RISK',
           currencyCode: 'EUR',
           stateCode: SUPPLIER_STATE.INACTIVE,

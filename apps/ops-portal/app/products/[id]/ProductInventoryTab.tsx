@@ -245,8 +245,8 @@ export function ProductInventoryTab({
                 <thead className="bg-[var(--bg-secondary)] sticky top-0 z-10">
                   <tr className="border-b border-[var(--border)]">
                     <th className="py-2 px-6 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider">{t('products.tabs.kitComponents')} / {t('products.columns.productNumber')}</th>
-                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantity')}</th>
-                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right w-44">{t('products.columns.quantity')}</th>
+                    <th className="py-2 px-4 font-semibold text-[var(--text-muted)] text-[11px] uppercase tracking-wider text-right w-44">{t('inventory.columns.available')}</th>
                   </tr>
                 </thead>
                 <tbody className="[&_tr:last-child]:border-b-0">

@@ -63,7 +63,7 @@ export async function calculateCustomerBalances(
     FROM herobm_core.sales_invoices i
     LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
     JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
-    LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
+    LEFT JOIN herobm_core.organizations a ON c.organization_id = a.organization_id
     LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
     WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
     ${customerIdFilter}

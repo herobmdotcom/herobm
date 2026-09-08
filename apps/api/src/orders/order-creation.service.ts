@@ -39,7 +39,7 @@ import {
   productComponents,
   tradingTerms,
   taxCategories,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import {
   CreateOrderDto,
@@ -242,9 +242,12 @@ export class OrderCreationService {
 
       if (!deliveryCompanyName) {
         deliveryCompanyName = await tx
-          .select({ name: actors.name })
+          .select({ name: organizations.name })
           .from(coreAccounts)
-          .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+          .innerJoin(
+            organizations,
+            eq(coreAccounts.organizationId, organizations.organizationId),
+          )
           .where(eq(coreAccounts.customerId, dto.customerId))
           .limit(1)
           .then((r) => r[0]?.name ?? '');
@@ -502,9 +505,12 @@ export class OrderCreationService {
       }
 
       const [customerObj] = await tx
-        .select({ name: actors.name })
+        .select({ name: organizations.name })
         .from(coreAccounts)
-        .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+        .innerJoin(
+          organizations,
+          eq(coreAccounts.organizationId, organizations.organizationId),
+        )
         .where(eq(coreAccounts.customerId, dto.customerId));
 
       // Audit + outbox

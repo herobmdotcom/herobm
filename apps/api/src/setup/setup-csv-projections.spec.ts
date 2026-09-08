@@ -6,7 +6,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import {
   customers,
   suppliers,
-  actors,
+  organizations,
   customerGroups,
   supplierGroups,
   tradingTerms,
@@ -23,7 +23,7 @@ import {
   CUSTOMER_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
   SALES_ORDER_STATE,
 } from '@herobm/shared';
 import { parse } from 'csv-parse/sync';
@@ -65,7 +65,7 @@ describe('CSV Extended Projections (Unit)', () => {
     await pg.db.delete(locations);
     await pg.db.delete(tradingTerms);
     await pg.db.delete(taxPositions);
-    await pg.db.delete(actors);
+    await pg.db.delete(organizations);
     await pg.db.delete(systemEvents);
   });
 
@@ -139,12 +139,12 @@ describe('CSV Extended Projections (Unit)', () => {
         })
         .returning();
 
-      // 2. Seed actor
-      const [actor] = await pg.db
-        .insert(actors)
+      // 2. Seed organization
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Acme Industries',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: true,
           email: 'info@acme.com',
           telephone: '0299998888',
@@ -152,10 +152,10 @@ describe('CSV Extended Projections (Unit)', () => {
         })
         .returning();
 
-      // 3. Seed customer linked to actor and group
+      // 3. Seed customer linked to organization and group
       await pg.db.insert(customers).values({
         customerNumber: 'CUST-EXT-01',
-        actorId: actor.actorId,
+        organizationId: org.organizationId,
         customerGroupId: cg.customerGroupId,
         stateCode: CUSTOMER_STATE.ACTIVE,
         currencyCode: 'AUD',
@@ -201,12 +201,12 @@ describe('CSV Extended Projections (Unit)', () => {
         })
         .returning();
 
-      // 2. Seed actor
-      const [actor] = await pg.db
-        .insert(actors)
+      // 2. Seed organization
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Global Metals Pty Ltd',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: true,
           email: 'orders@globalmetals.com',
           telephone: '0388887777',
@@ -217,7 +217,7 @@ describe('CSV Extended Projections (Unit)', () => {
       // 3. Seed supplier
       await pg.db.insert(suppliers).values({
         vendorNumber: 'SUPP-EXT-01',
-        actorId: actor.actorId,
+        organizationId: org.organizationId,
         supplierGroupId: sg.supplierGroupId,
         stateCode: SUPPLIER_STATE.ACTIVE,
         currencyCode: 'USD',
@@ -299,12 +299,12 @@ describe('CSV Extended Projections (Unit)', () => {
 
   describe('Sales Orders Extended Export', () => {
     it('should export sales orders with customer and location names', async () => {
-      // 1. Seed actor and customer
-      const [actor] = await pg.db
-        .insert(actors)
+      // 1. Seed organization and customer
+      const [org] = await pg.db
+        .insert(organizations)
         .values({
           name: 'Apex Logistics',
-          stateCode: ACTOR_STATE.ACTIVE,
+          stateCode: ORGANIZATION_STATE.ACTIVE,
           isTaxRegistered: true,
         })
         .returning();
@@ -313,7 +313,7 @@ describe('CSV Extended Projections (Unit)', () => {
         .insert(customers)
         .values({
           customerNumber: 'CUST-SO-01',
-          actorId: actor.actorId,
+          organizationId: org.organizationId,
           stateCode: CUSTOMER_STATE.ACTIVE,
           currencyCode: 'AUD',
           source: 'manual',

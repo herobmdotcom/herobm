@@ -61,6 +61,12 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('role', 'admin');
     });
 
+    it('should allow login with case-insensitive and whitespace-padded username', async () => {
+      const result = await service.login('  ADMIN  ', TEST_PASSWORD);
+      expect(result).toHaveProperty('access_token', 'mock.jwt.token');
+      expect(result).toHaveProperty('username', 'admin');
+    });
+
     it('should throw UnauthorizedException for unknown user', async () => {
       await expect(service.login('nonexistent', 'pass')).rejects.toThrow(
         UnauthorizedException,

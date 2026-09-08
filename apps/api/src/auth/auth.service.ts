@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users } from '@herobm/db-schema';
@@ -23,10 +23,11 @@ export class AuthService {
   ) {}
 
   async login(username: string, password: string) {
+    const cleanUsername = (username || '').trim();
     const [user] = await this.db
       .select()
       .from(users)
-      .where(eq(users.username, username))
+      .where(sql`lower(${users.username}) = lower(${cleanUsername})`)
       .limit(1);
 
     if (!user || !user.isActive) {

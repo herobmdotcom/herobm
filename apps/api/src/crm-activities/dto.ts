@@ -16,8 +16,14 @@ import {
 import { PaginationQuery } from '../common/pagination';
 
 export class CreateCrmActivityDto {
-  @ApiProperty({ enum: ['call', 'meeting', 'email', 'task', 'note'] })
-  @IsIn(['call', 'meeting', 'email', 'task', 'note'])
+  @ApiProperty({
+    type: String,
+    description:
+      'Activity type (e.g. call, meeting, email, task, note or custom type)',
+    example: 'task',
+  })
+  @IsString()
+  @IsNotEmpty()
   type!: CrmActivityType;
 
   @ApiProperty()
@@ -41,7 +47,7 @@ export class CreateCrmActivityDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
@@ -65,9 +71,15 @@ export class CreateCrmActivityDto {
 }
 
 export class UpdateCrmActivityDto {
-  @ApiPropertyOptional({ enum: ['call', 'meeting', 'email', 'task', 'note'] })
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'Activity type (e.g. call, meeting, email, task, note or custom type)',
+    example: 'task',
+  })
   @IsOptional()
-  @IsIn(['call', 'meeting', 'email', 'task', 'note'])
+  @IsString()
+  @IsNotEmpty()
   type?: CrmActivityType;
 
   @ApiPropertyOptional()
@@ -96,7 +108,7 @@ export class UpdateCrmActivityDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
@@ -123,7 +135,7 @@ export class CrmActivityQueryDto extends PaginationQuery {
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
-  actorId?: string;
+  organizationId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -140,9 +152,12 @@ export class CrmActivityQueryDto extends PaginationQuery {
   @IsUUID()
   assignedToUserId?: string;
 
-  @ApiPropertyOptional({ enum: ['call', 'meeting', 'email', 'task', 'note'] })
+  @ApiPropertyOptional({
+    description:
+      'Activity type (e.g. call, meeting, email, task, note or custom type)',
+  })
   @IsOptional()
-  @IsIn(['call', 'meeting', 'email', 'task', 'note'])
+  @IsString()
   type?: CrmActivityType;
 
   @ApiPropertyOptional({
@@ -161,6 +176,25 @@ export class CrmActivityQueryDto extends PaginationQuery {
   @IsOptional()
   @IsBooleanString()
   myTasks?: string;
+
+  @ApiPropertyOptional({ description: 'Filter open tasks that are overdue' })
+  @IsOptional()
+  @IsBooleanString()
+  isOverdue?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter activities with due date on or after this ISO date',
+  })
+  @IsOptional()
+  @IsDateString()
+  dueDateFrom?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter activities with due date on or before this ISO date',
+  })
+  @IsOptional()
+  @IsDateString()
+  dueDateTo?: string;
 }
 
 export class ActivityContactDto {
@@ -197,7 +231,7 @@ export class CrmActivityResponseDto {
   priority!: string;
 
   @ApiPropertyOptional()
-  actorId?: string | null;
+  organizationId?: string | null;
 
   @ApiPropertyOptional({ type: () => [ActivityContactDto] })
   contacts?: ActivityContactDto[];
@@ -230,7 +264,7 @@ export class CrmActivityResponseDto {
   modifiedOn!: Date;
 
   @ApiPropertyOptional()
-  actorName?: string | null;
+  organizationName?: string | null;
 
   @ApiPropertyOptional()
   opportunityName?: string | null;

@@ -16,7 +16,7 @@ import {
   uomDictionary,
   taxCategories,
   suppliers,
-  actors,
+  organizations,
   procurementEvents,
   exchangeRates,
 } from '@herobm/db-schema';
@@ -25,7 +25,7 @@ import {
   PURCHASE_ORDER_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
@@ -72,17 +72,17 @@ describe('PurchaseOrdersService', () => {
       source: 'app',
       createdBy: 'system',
     });
-    const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
-    await pg.db.insert(actors).values({
-      stateCode: ACTOR_STATE.ACTIVE,
-      actorId,
+    const organizationId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
+    await pg.db.insert(organizations).values({
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      organizationId,
       name: 'Test Vendor',
       headquartersAddressLine1: 'AU',
       isTaxRegistered: false,
     });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
-      actorId,
+      organizationId,
       vendorNumber: 'V001',
       currencyCode: 'EUR',
       stateCode: SUPPLIER_STATE.ACTIVE,
@@ -176,16 +176,16 @@ describe('PurchaseOrdersService', () => {
   describe('create', () => {
     it('should throw BadRequestException if supplier is inactive', async () => {
       const INACTIVE_VENDOR_ID = '00000000-0000-4000-8000-000000000200';
-      const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47262d';
-      await pg.db.insert(actors).values({
-        actorId,
+      const organizationId = '0e3c4e85-d865-4f40-8abf-c4e89e47262d';
+      await pg.db.insert(organizations).values({
+        organizationId,
         name: 'Inactive Vendor',
         isTaxRegistered: false,
-        stateCode: ACTOR_STATE.ARCHIVED,
+        stateCode: ORGANIZATION_STATE.ARCHIVED,
       });
       await pg.db.insert(suppliers).values({
         vendorId: INACTIVE_VENDOR_ID,
-        actorId,
+        organizationId,
         vendorNumber: 'V002',
         currencyCode: 'EUR',
         stateCode: SUPPLIER_STATE.ARCHIVED,

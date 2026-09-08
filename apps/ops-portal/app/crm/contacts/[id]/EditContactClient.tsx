@@ -142,8 +142,9 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
   const searchParams = useSearchParams();
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.CRM, 'archive');
-  const initialTab = (searchParams.get('tab') as 'overview' | 'projects' | 'affiliations' | 'opportunities') || 'overview';
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'affiliations' | 'opportunities'>(initialTab);
+  const rawTab = searchParams.get('tab');
+  const initialTab = (rawTab === 'affiliations' || rawTab === 'actors' ? 'organizations' : rawTab as 'overview' | 'projects' | 'affiliations' | 'actors' | 'organizations' | 'opportunities') || 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'affiliations' | 'actors' | 'organizations' | 'opportunities'>(initialTab);
 
   const {
     entity: contact,
@@ -215,11 +216,11 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       ],
     },
     {
-      id: "tab-affiliations",
-      label: "Affiliated Companies",
+      id: "tab-organizations",
+      label: "Organizations",
       isSubPage: true,
-      isActive: activeTab === "affiliations",
-      onClick: () => setActiveTab("affiliations"),
+      isActive: activeTab === "organizations" || activeTab === "actors" || activeTab === "affiliations",
+      onClick: () => setActiveTab("organizations"),
     },
     {
       id: "tab-opportunities",
@@ -291,7 +292,7 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
             </div>
           </div>
         )}
-        {activeTab === 'affiliations' && (
+        {(activeTab === 'organizations' || activeTab === 'actors' || activeTab === 'affiliations') && (
           <ContactAffiliationsTab
             contactId={contactId}
             contact={contact}

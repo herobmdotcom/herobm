@@ -2,12 +2,12 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  actors,
+  organizations,
   contacts,
   opportunities,
-  actorActorLinks,
-  actorContactLinks,
-  opportunityActors,
+  organizationOrganizationLinks,
+  organizationContactLinks,
+  opportunityOrganizations,
   opportunityContacts,
 } from '@herobm/db-schema';
 
@@ -18,42 +18,42 @@ export class CrmMapService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async getMapData(focalNodeId?: string, maxDistance: number = 2) {
-    const allActors = await this.db.select().from(actors);
+    const allOrganizations = await this.db.select().from(organizations);
     const allContacts = await this.db.select().from(contacts);
     const allOpportunities = await this.db.select().from(opportunities);
 
-    const aALinks = await this.db.select().from(actorActorLinks);
-    const aCLinks = await this.db.select().from(actorContactLinks);
-    const oALinks = await this.db.select().from(opportunityActors);
-    const oCLinks = await this.db.select().from(opportunityContacts);
+    const oOLinks = await this.db.select().from(organizationOrganizationLinks);
+    const oCLinks = await this.db.select().from(organizationContactLinks);
+    const oppOLinks = await this.db.select().from(opportunityOrganizations);
+    const oppCLinks = await this.db.select().from(opportunityContacts);
 
     if (!focalNodeId) {
-      const referralActorActor = allActors
-        .filter((a) => a.referredByActorId)
+      const referralOrganizationOrganization = allOrganizations
+        .filter((a) => a.referredByOrganizationId)
         .map((a) => ({
-          sourceActorId: a.referredByActorId!,
-          targetActorId: a.actorId,
+          sourceOrganizationId: a.referredByOrganizationId!,
+          targetOrganizationId: a.organizationId,
         }));
-      const referralContactActor = allActors
+      const referralContactOrganization = allOrganizations
         .filter((a) => a.referredByContactId)
         .map((a) => ({
           contactId: a.referredByContactId!,
-          actorId: a.actorId,
+          organizationId: a.organizationId,
         }));
 
       return {
         nodes: {
-          actors: allActors,
+          organizations: allOrganizations,
           contacts: allContacts,
           opportunities: allOpportunities,
         },
         edges: {
-          actorActor: aALinks,
-          actorContact: aCLinks,
-          opportunityActor: oALinks,
-          opportunityContact: oCLinks,
-          referralActorActor,
-          referralContactActor,
+          organizationOrganization: oOLinks,
+          organizationContact: oCLinks,
+          opportunityOrganization: oppOLinks,
+          opportunityContact: oppCLinks,
+          referralOrganizationOrganization,
+          referralContactOrganization,
         },
       };
     }
@@ -73,14 +73,18 @@ export class CrmMapService {
       adj[v].push(u);
     };
 
-    aALinks.forEach((e) => addEdge(e.sourceActorId, e.targetActorId));
-    aCLinks.forEach((e) => addEdge(e.actorId, e.contactId));
-    oALinks.forEach((e) => addEdge(e.opportunityId, e.actorId));
-    oCLinks.forEach((e) => addEdge(e.opportunityId, e.contactId));
+    oOLinks.forEach((e) =>
+      addEdge(e.sourceOrganizationId, e.targetOrganizationId),
+    );
+    oCLinks.forEach((e) => addEdge(e.organizationId, e.contactId));
+    oppOLinks.forEach((e) => addEdge(e.opportunityId, e.organizationId));
+    oppCLinks.forEach((e) => addEdge(e.opportunityId, e.contactId));
 
-    allActors.forEach((a) => {
-      if (a.referredByActorId) addEdge(a.actorId, a.referredByActorId);
-      if (a.referredByContactId) addEdge(a.actorId, a.referredByContactId);
+    allOrganizations.forEach((a) => {
+      if (a.referredByOrganizationId)
+        addEdge(a.organizationId, a.referredByOrganizationId);
+      if (a.referredByContactId)
+        addEdge(a.organizationId, a.referredByContactId);
     });
 
     while (queue.length > 0) {
@@ -100,7 +104,9 @@ export class CrmMapService {
     }
 
     // Filter nodes
-    const filteredActors = allActors.filter((n) => visitedNodes.has(n.actorId));
+    const filteredOrganizations = allOrganizations.filter((n) =>
+      visitedNodes.has(n.organizationId),
+    );
     const filteredContacts = allContacts.filter((n) =>
       visitedNodes.has(n.contactId),
     );
@@ -109,51 +115,56 @@ export class CrmMapService {
     );
 
     // Filter edges (only keep edges where BOTH source and target are in visitedNodes)
-    const filteredAALinks = aALinks.filter(
+    const filteredOOLinks = oOLinks.filter(
       (e) =>
-        visitedNodes.has(e.sourceActorId) && visitedNodes.has(e.targetActorId),
-    );
-    const filteredACLinks = aCLinks.filter(
-      (e) => visitedNodes.has(e.actorId) && visitedNodes.has(e.contactId),
-    );
-    const filteredOALinks = oALinks.filter(
-      (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.actorId),
+        visitedNodes.has(e.sourceOrganizationId) &&
+        visitedNodes.has(e.targetOrganizationId),
     );
     const filteredOCLinks = oCLinks.filter(
+      (e) =>
+        visitedNodes.has(e.organizationId) && visitedNodes.has(e.contactId),
+    );
+    const filteredOppOLinks = oppOLinks.filter(
+      (e) =>
+        visitedNodes.has(e.opportunityId) && visitedNodes.has(e.organizationId),
+    );
+    const filteredOppCLinks = oppCLinks.filter(
       (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.contactId),
     );
 
-    const referralActorActor = filteredActors
+    const referralOrganizationOrganization = filteredOrganizations
       .filter(
-        (a) => a.referredByActorId && visitedNodes.has(a.referredByActorId),
+        (a) =>
+          a.referredByOrganizationId &&
+          visitedNodes.has(a.referredByOrganizationId),
       )
       .map((a) => ({
-        sourceActorId: a.referredByActorId!,
-        targetActorId: a.actorId,
+        sourceOrganizationId: a.referredByOrganizationId!,
+        targetOrganizationId: a.organizationId,
       }));
 
-    const referralContactActor = filteredActors
+    const referralContactOrganization = filteredOrganizations
       .filter(
         (a) => a.referredByContactId && visitedNodes.has(a.referredByContactId),
       )
       .map((a) => ({
         contactId: a.referredByContactId!,
-        actorId: a.actorId,
+        organizationId: a.organizationId,
       }));
 
     return {
       nodes: {
-        actors: filteredActors,
+        organizations: filteredOrganizations,
         contacts: filteredContacts,
         opportunities: filteredOpportunities,
       },
       edges: {
-        actorActor: filteredAALinks,
-        actorContact: filteredACLinks,
-        opportunityActor: filteredOALinks,
-        opportunityContact: filteredOCLinks,
-        referralActorActor,
-        referralContactActor,
+        organizationOrganization: filteredOOLinks,
+        organizationContact: filteredOCLinks,
+        opportunityOrganization: filteredOppOLinks,
+        opportunityContact: filteredOppCLinks,
+        referralOrganizationOrganization,
+        referralContactOrganization,
       },
     };
   }

@@ -7,7 +7,7 @@ import {
   paymentAllocations,
   salesInvoices,
   customers,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../settings/app-config.service';
 
@@ -96,15 +96,18 @@ export class CustomerPaymentReceiptService {
         .select({
           customerId: customers.customerId,
           customerNumber: customers.customerNumber,
-          name: actors.name,
-          headquartersAddressLine1: actors.headquartersAddressLine1,
-          city: actors.headquartersCity,
-          stateOrProvince: actors.headquartersStateOrProvince,
-          postalCode: actors.headquartersPostalCode,
-          country: actors.headquartersCountry,
+          name: organizations.name,
+          headquartersAddressLine1: organizations.headquartersAddressLine1,
+          city: organizations.headquartersCity,
+          stateOrProvince: organizations.headquartersStateOrProvince,
+          postalCode: organizations.headquartersPostalCode,
+          country: organizations.headquartersCountry,
         })
         .from(customers)
-        .leftJoin(actors, eq(customers.actorId, actors.actorId))
+        .leftJoin(
+          organizations,
+          eq(customers.organizationId, organizations.organizationId),
+        )
         .where(eq(customers.customerId, pmt.partyId))
         .limit(1);
 

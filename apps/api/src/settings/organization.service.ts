@@ -2,11 +2,11 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { organization } from '@herobm/db-schema';
+import { tenantSettings } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
-import { UpdateOrganizationDto } from './dto';
+import { UpdateOrganizationSettingsDto } from './dto';
 
 @Injectable()
 export class OrganizationService {
@@ -17,7 +17,7 @@ export class OrganizationService {
 
   async get(tx?: DrizzleDB) {
     const db = tx || this.db;
-    const rows = await db.select().from(organization).limit(1);
+    const rows = await db.select().from(tenantSettings).limit(1);
     if (rows.length === 0) {
       // Return a default object if no record exists yet
       return {
@@ -44,18 +44,18 @@ export class OrganizationService {
     return rows[0];
   }
 
-  async update(dto: UpdateOrganizationDto, actor: string) {
+  async update(dto: UpdateOrganizationSettingsDto, actor: string) {
     if (!dto.name) {
       throw new BadRequestException('Company name is required');
     }
 
-    const rows = await this.db.select().from(organization).limit(1);
+    const rows = await this.db.select().from(tenantSettings).limit(1);
 
     let result;
     if (rows.length === 0) {
       // Create the singleton record
       const newRows = await this.db
-        .insert(organization)
+        .insert(tenantSettings)
         .values({
           ...dto,
         })
@@ -64,18 +64,18 @@ export class OrganizationService {
     } else {
       // Update the existing singleton record
       const updatedRows = await this.db
-        .update(organization)
+        .update(tenantSettings)
         .set({
           ...dto,
         })
-        .where(eq(organization.organizationId, rows[0].organizationId))
+        .where(eq(tenantSettings.tenantSettingsId, rows[0].tenantSettingsId))
         .returning();
       result = updatedRows[0];
     }
 
     await emitEvent(this.db, {
       entityType: EntityType.SYSTEM,
-      entityId: result.organizationId,
+      entityId: result.tenantSettingsId,
       eventType: EventType.UPDATED,
       entityDisplayName: 'Organization Settings',
       payload: { changes: Object.keys(dto) },
@@ -112,11 +112,11 @@ export class OrganizationService {
 
     const saved = await this.storageService.saveImage('organization', file);
 
-    const rows = await this.db.select().from(organization).limit(1);
+    const rows = await this.db.select().from(tenantSettings).limit(1);
     let result;
     if (rows.length === 0) {
       const [inserted] = await this.db
-        .insert(organization)
+        .insert(tenantSettings)
         .values({
           name: 'My Company',
           logoUrl: saved.storagePath,
@@ -125,18 +125,18 @@ export class OrganizationService {
       result = inserted;
     } else {
       const [updated] = await this.db
-        .update(organization)
+        .update(tenantSettings)
         .set({
           logoUrl: saved.storagePath,
         })
-        .where(eq(organization.organizationId, rows[0].organizationId))
+        .where(eq(tenantSettings.tenantSettingsId, rows[0].tenantSettingsId))
         .returning();
       result = updated;
     }
 
     await emitEvent(this.db, {
       entityType: EntityType.SYSTEM,
-      entityId: result.organizationId,
+      entityId: result.tenantSettingsId,
       eventType: EventType.UPDATED,
       entityDisplayName: 'Organization Settings',
       payload: { action: 'logo_uploaded', logoUrl: saved.storagePath },
@@ -152,22 +152,22 @@ export class OrganizationService {
       await this.storageService.deleteFile(currentOrg.logoUrl);
     }
 
-    const rows = await this.db.select().from(organization).limit(1);
+    const rows = await this.db.select().from(tenantSettings).limit(1);
     if (rows.length === 0) {
       return currentOrg;
     }
 
     const [updated] = await this.db
-      .update(organization)
+      .update(tenantSettings)
       .set({
         logoUrl: '',
       })
-      .where(eq(organization.organizationId, rows[0].organizationId))
+      .where(eq(tenantSettings.tenantSettingsId, rows[0].tenantSettingsId))
       .returning();
 
     await emitEvent(this.db, {
       entityType: EntityType.SYSTEM,
-      entityId: updated.organizationId,
+      entityId: updated.tenantSettingsId,
       eventType: EventType.UPDATED,
       entityDisplayName: 'Organization Settings',
       payload: { action: 'logo_removed' },

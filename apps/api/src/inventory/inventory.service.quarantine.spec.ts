@@ -15,7 +15,7 @@ import {
   inventoryLedger,
   inventoryEntries,
   uomDictionary,
-  actors,
+  organizations,
 } from '@herobm/db-schema';
 import {
   PUTAWAY_STATUS,
@@ -24,7 +24,7 @@ import {
   SUPPLIER_STATE,
   GOODS_RECEIVED_STATE,
   MATCH_STATUS,
-  ACTOR_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
 import { eq, like } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
@@ -232,17 +232,17 @@ describe('InventoryService - Quarantine', () => {
 
   describe('Line-based Move (Auto-resolve)', () => {
     beforeEach(async () => {
-      const actorId = '00000000-0000-4000-8000-000000000004';
-      await pg.db.insert(actors).values({
-        stateCode: ACTOR_STATE.ACTIVE,
-        actorId,
+      const orgId = '00000000-0000-4000-8000-000000000004';
+      await pg.db.insert(organizations).values({
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        organizationId: orgId,
         name: 'Test Vendor',
         headquartersAddressLine1: 'DE',
         isTaxRegistered: false,
       });
       await pg.db.insert(suppliers).values({
         vendorId: '00000000-0000-4000-8000-000000000098',
-        actorId,
+        organizationId: orgId,
         vendorNumber: 'V1',
         currencyCode: 'EUR',
         stateCode: SUPPLIER_STATE.ACTIVE,

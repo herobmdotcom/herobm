@@ -29,7 +29,6 @@ import {
   transferOrderShipmentLines,
   transferOrderLines,
   locations,
-  actors,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../../settings/app-config.service';
 import { getValuationStrategy } from '../../inventory/valuation';

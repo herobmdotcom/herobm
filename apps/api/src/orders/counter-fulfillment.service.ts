@@ -19,7 +19,6 @@ import {
   locations,
   customerGroups,
   customers as coreAccounts,
-  actors,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
