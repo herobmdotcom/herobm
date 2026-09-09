@@ -159,6 +159,22 @@ describe('emitEvent', () => {
       expect(calls[0].table).toBe(masterDataEvents);
       expect(calls[0].values.entityId).toBe('ps-001');
     });
+
+    it('should route goods_received events to warehouseEvents', async () => {
+      const { tx, calls } = createMockTx();
+      // @sync-ignore
+      await emitEvent(tx, {
+        entityType: EntityType.GOODS_RECEIVED,
+        entityId: 'gr-001',
+        eventType: EventType.RECEIPT_CREATED,
+        entityDisplayName: 'Test Entity',
+        payload: {},
+        actor: 'admin',
+      });
+
+      expect(calls[0].table).toBe(warehouseEvents);
+      expect(calls[0].values.entityId).toBe('gr-001');
+    });
   });
 
   // ── 2. System events routing ──────────────────────────────────────────

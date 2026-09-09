@@ -45,7 +45,17 @@ Suppliers share the same underlying Organization model as customers, enabling co
 ### 2. Multi-Currency Purchasing
 Each supplier has an assigned purchasing currency (e.g. `USD`, `EUR`, `AUD`, `GBP`). When raising a purchase order, current FX rates convert line costs to the system base currency for accurate inventory valuation and General Ledger commitments.
 
-### 3. Operational & Purchasing Holds
+### 3. Vendor Trading Terms & Settlement Schedules
+Vendor trading terms determine the legal payment deadline on supplier bills (AP invoices) and directly influence Accounts Payable cash disbursement planning:
+
+* **Inheritance Cascade**:
+  `1. Supplier Profile Override` → `2. Supplier Group Defaults` → `3. System Default (Financial Settings)` → `4. Immediate / Cash Basis Fallback`
+* **Due Date Calculation**:
+  * **Net Terms (`net`)**: `Due Date = Bill Date + Days` (e.g. `NET30` sets payment due 30 days after the vendor invoice date).
+  * **End of Month (`end_of_month`)**: `Due Date = Last Day of Bill Month + Days` (e.g. `EOM30` sets due date 30 days after the close of the invoice month).
+  * **Cash on Delivery (`cash_on_delivery`)**: `Due Date = Bill Date` (immediate payment upon delivery).
+
+### 4. Operational & Purchasing Holds
 If a supplier is flagged **On Purchasing Hold**, the system warns operators and prevents advancing new purchase orders to `Ordered` state until the hold is resolved and lifted by an authorized user.
 
 ---
@@ -56,7 +66,7 @@ If a supplier is flagged **On Purchasing Hold**, the system warns operators and 
 1. Go to **Purchasing** → **Suppliers** (`/suppliers`).
 2. Click **New Supplier** (`/suppliers/new`).
 3. Enter the **Company Name**, **Supplier Group**, and **Purchasing Currency**.
-4. Set the **Payment Terms** (e.g. Net 30) and **Default Lead Time**.
+4. Set the **Payment Terms** (e.g. `NET30`, `EOM30`, or inherit from Supplier Group) and **Default Lead Time**.
 5. Add the primary **Billing Address** and supplier contact email.
 6. Click **Save Supplier**.
 
@@ -67,7 +77,8 @@ If a supplier is flagged **On Purchasing Hold**, the system warns operators and 
 | Field | Description |
 | :--- | :--- |
 | **Supplier Name** | Legal business name. |
-| **Supplier Group** | Vendor category for reporting and expense accounts. |
-| **Purchasing Currency** | Currency for PO line costs. |
-| **Payment Terms** | Agreed settlement timeline. |
+| **Supplier Group** | Vendor category setting default AP account, spend analytics tags, and default payment terms. |
+| **Purchasing Currency** | Operating currency for PO line costs. |
+| **Payment Terms** | Agreed settlement timeline (Net days, End of Month, COD) determining supplier invoice due dates. |
 | **Purchasing Hold** | Flag indicating operational block on raising confirmed purchase orders. |
+

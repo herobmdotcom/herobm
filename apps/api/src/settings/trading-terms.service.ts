@@ -9,6 +9,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { tradingTerms } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { CreateTradingTermDto, UpdateTradingTermDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class TradingTermsService {
@@ -19,17 +21,23 @@ export class TradingTermsService {
       .select()
       .from(tradingTerms)
       .orderBy(tradingTerms.code);
-    return records.map((r) => ({
-      tradingTermsId: r.tradingTermsId,
-      code: r.code,
-      description: r.description,
-      days: r.days,
-      type: r.type,
-    }));
+    return records
+      .map((r) => ({
+        tradingTermsId: r.tradingTermsId,
+        code: r.code,
+        description: r.description,
+        days: r.days,
+        type: r.type,
+      }))
+      .sort((a, b) =>
+        a.code.localeCompare(b.code, undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        }),
+      );
   }
 
-  // @herobm-skip-audit
-  async create(dto: CreateTradingTermDto) {
+  async create(dto: CreateTradingTermDto, actor: string = 'system') {
     return this.db.transaction(async (tx) => {
       const [record] = await tx
         .insert(tradingTerms)
@@ -42,6 +50,16 @@ export class TradingTermsService {
           isActive: true,
         })
         .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.SYSTEM,
+        entityId: record.tradingTermsId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `Trading Term: ${record.code}`,
+        payload: dto,
+        actor,
+      });
+
       return {
         tradingTermsId: record.tradingTermsId,
         code: record.code,
@@ -52,8 +70,11 @@ export class TradingTermsService {
     });
   }
 
-  // @herobm-skip-audit
-  async update(id: string, dto: UpdateTradingTermDto) {
+  async update(
+    id: string,
+    dto: UpdateTradingTermDto,
+    actor: string = 'system',
+  ) {
     return this.db.transaction(async (tx) => {
       const [record] = await tx
         .update(tradingTerms)
@@ -63,6 +84,15 @@ export class TradingTermsService {
 
       if (!record) throw new NotFoundException('Trading term not found');
 
+      await emitEvent(tx, {
+        entityType: EntityType.SYSTEM,
+        entityId: record.tradingTermsId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Trading Term: ${record.code}`,
+        payload: dto,
+        actor,
+      });
+
       return {
         tradingTermsId: record.tradingTermsId,
         code: record.code,
@@ -73,13 +103,24 @@ export class TradingTermsService {
     });
   }
 
-  // @herobm-skip-audit
-  async delete(id: string) {
-    const [record] = await this.db
-      .delete(tradingTerms)
-      .where(eq(tradingTerms.tradingTermsId, id))
-      .returning();
-    if (!record) throw new NotFoundException('Trading term not found');
-    return { success: true };
+  async delete(id: string, actor: string = 'system') {
+    return this.db.transaction(async (tx) => {
+      const [record] = await tx
+        .delete(tradingTerms)
+        .where(eq(tradingTerms.tradingTermsId, id))
+        .returning();
+      if (!record) throw new NotFoundException('Trading term not found');
+
+      await emitEvent(tx, {
+        entityType: EntityType.SYSTEM,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Trading Term: ${record.code}`,
+        payload: { code: record.code },
+        actor,
+      });
+
+      return { success: true };
+    });
   }
 }

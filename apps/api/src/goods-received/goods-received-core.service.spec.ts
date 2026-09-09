@@ -12,6 +12,7 @@ import {
   uomDictionary,
   taxCategories,
   organizations,
+  warehouseEvents,
 } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -136,6 +137,84 @@ describe('GoodsReceivedCoreService', () => {
       expect(result.receiptNumber).toBe('GR-001');
       expect(result.lines).toHaveLength(1);
       expect(result.lines[0].productNumber).toBe('P1');
+    });
+
+    it('should aggregate timeline events from header, line putaway, and matching', async () => {
+      await seedBasics();
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-100',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        })
+        .returning();
+
+      const [line] = await pg.db
+        .insert(goodsReceivedLines)
+        .values({
+          goodsReceivedId: gr.goodsReceivedId,
+          productId: PROD_ID,
+          quantityReceived: '10',
+          matchStatus: MATCH_STATUS.MATCHED,
+          putawayStatus: PUTAWAY_STATUS.COMPLETED,
+        })
+        .returning();
+
+      // 1. Header creation event in warehouseEvents
+      await pg.db.insert(warehouseEvents).values({
+        entityType: 'warehouse',
+        entityId: gr.goodsReceivedId,
+        eventType: 'receipt_created',
+        entityDisplayName: 'GR-100',
+        payload: {
+          goodsReceivedId: gr.goodsReceivedId,
+          receiptNumber: 'GR-100',
+        },
+        actor: 'operator1',
+        createdOn: new Date('2026-09-01T10:00:00Z'),
+      });
+
+      // 2. Line-level putaway event in warehouseEvents (entityId = lineId)
+      await pg.db.insert(warehouseEvents).values({
+        entityType: 'warehouse',
+        entityId: line.goodsReceivedLineId,
+        eventType: 'putaway_completed',
+        entityDisplayName: 'GR-100',
+        payload: {
+          lineId: line.goodsReceivedLineId,
+          goodsReceivedId: gr.goodsReceivedId,
+          receiptNumber: 'GR-100',
+          quantityPutaway: '10',
+        },
+        actor: 'forklift_driver',
+        createdOn: new Date('2026-09-01T11:00:00Z'),
+      });
+
+      // 3. Matching event in warehouseEvents
+      await pg.db.insert(warehouseEvents).values({
+        entityType: 'goods_received',
+        entityId: gr.goodsReceivedId,
+        eventType: 'receipt_matched',
+        entityDisplayName: 'GR-100',
+        payload: {
+          goodsReceivedId: gr.goodsReceivedId,
+          goodsReceivedLineId: line.goodsReceivedLineId,
+          allocatedQuantity: '10',
+        },
+        actor: 'buyer',
+        createdOn: new Date('2026-09-01T10:30:00Z'),
+      });
+
+      const result = await service.findOne(gr.goodsReceivedId);
+      expect(result.events).toHaveLength(3);
+
+      // Verify events are sorted chronologically descending
+      expect(result.events[0].eventType).toBe('putaway_completed');
+      expect(result.events[0].actor).toBe('forklift_driver');
+      expect(result.events[1].eventType).toBe('receipt_matched');
+      expect(result.events[2].eventType).toBe('receipt_created');
     });
 
     it('should throw NotFoundException when receipt does not exist', async () => {

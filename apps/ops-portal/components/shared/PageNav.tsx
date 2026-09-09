@@ -109,7 +109,7 @@ export default function PageNav({ sections }: PageNavProps) {
 
         return (
           <div 
-            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:min-w-full lg:max-w-none lg:absolute lg:top-full lg:left-0 lg:pt-1 lg:z-50 hide-scrollbar before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
+            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:min-w-full lg:max-w-none lg:absolute lg:top-full lg:right-0 lg:left-auto lg:pt-1 lg:z-50 hide-scrollbar before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
             onMouseEnter={clearTimer}
             onMouseLeave={() => scheduleReset(200)}
           >

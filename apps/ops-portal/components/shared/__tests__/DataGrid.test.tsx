@@ -61,10 +61,14 @@ describe('DataGrid', () => {
   beforeEach(() => {
     latestAgGridProps = null;
     mockCustomFetch.mockResolvedValue({ data: [] } as never);
+    localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
     mockCustomFetch.mockReset();
+    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('fetches data using canonical ?q= parameter when searching', async () => {
@@ -180,6 +184,104 @@ describe('DataGrid', () => {
     const input = screen.getByDisplayValue('initial query');
     expect(input).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /clearSearch/i })).toBeInTheDocument();
+  });
+
+  it('filters mobile cards client-side when search query is entered for rowData/fetchAll', async () => {
+    const user = userEvent.setup();
+    const testRows = [
+      { id: '1', sku: 'SKU-APPLE', name: 'Fresh Apples', bin: 'BIN-A1' },
+      { id: '2', sku: 'SKU-BANANA', name: 'Organic Bananas', bin: 'BIN-B2' },
+      { id: '3', sku: 'SKU-CHERRY', name: 'Sweet Cherries', bin: 'BIN-C3' },
+    ];
+
+    render(
+      <DataGrid
+        rowData={testRows}
+        columns={[
+          { field: 'sku', headerName: 'SKU' },
+          { field: 'name', headerName: 'Product Name' },
+          { field: 'bin', headerName: 'Bin' },
+        ]}
+        searchPlaceholder="Search inventory..."
+      />,
+    );
+
+    // All items rendered initially in mobile card view
+    expect(screen.getByText('SKU-APPLE')).toBeInTheDocument();
+    expect(screen.getByText('SKU-BANANA')).toBeInTheDocument();
+    expect(screen.getByText('SKU-CHERRY')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('Search inventory...');
+    await user.type(searchInput, 'banana');
+
+    // Banana should match, others should be filtered out
+    expect(screen.getByText('SKU-BANANA')).toBeInTheDocument();
+    expect(screen.queryByText('SKU-APPLE')).toBeNull();
+    expect(screen.queryByText('SKU-CHERRY')).toBeNull();
+
+    // Clear search restores all rows
+    const clearBtn = screen.getByRole('button', { name: /clearSearch/i });
+    await user.click(clearBtn);
+
+    expect(screen.getByText('SKU-APPLE')).toBeInTheDocument();
+    expect(screen.getByText('SKU-BANANA')).toBeInTheDocument();
+    expect(screen.getByText('SKU-CHERRY')).toBeInTheDocument();
+  });
+
+  it('displays empty search results state on mobile when search has no matches', async () => {
+    const user = userEvent.setup();
+    const testRows = [
+      { id: '1', sku: 'SKU-APPLE', name: 'Fresh Apples' },
+    ];
+
+    render(
+      <DataGrid
+        rowData={testRows}
+        columns={[
+          { field: 'sku', headerName: 'SKU' },
+          { field: 'name', headerName: 'Product Name' },
+        ]}
+        searchPlaceholder="Search inventory..."
+      />,
+    );
+
+    expect(screen.getByText('SKU-APPLE')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('Search inventory...');
+    await user.type(searchInput, 'nonexistent query');
+
+    expect(screen.queryByText('SKU-APPLE')).toBeNull();
+    expect(screen.getByText('noSearchResults')).toBeInTheDocument();
+  });
+
+  it('supports search matching against valueGetter computed columns', async () => {
+    const user = userEvent.setup();
+    const testRows = [
+      { id: '1', first: 'John', last: 'Doe' },
+      { id: '2', first: 'Jane', last: 'Smith' },
+    ];
+
+    render(
+      <DataGrid
+        rowData={testRows}
+        columns={[
+          {
+            headerName: 'Full Name',
+            valueGetter: (params) => `${params.data?.first} ${params.data?.last}`,
+          },
+        ]}
+        searchPlaceholder="Search people..."
+      />,
+    );
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('Search people...');
+    await user.type(searchInput, 'Smith');
+
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.queryByText('John Doe')).toBeNull();
   });
 });
 

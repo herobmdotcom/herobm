@@ -12,6 +12,7 @@ import {
   organizations,
   procurementEvents,
   warehouseEvents,
+  systemEvents,
 } from '@herobm/db-schema';
 import {
   eq,
@@ -21,6 +22,7 @@ import {
   or,
   ilike,
   asc,
+  inArray,
   getTableColumns,
 } from 'drizzle-orm';
 import {
@@ -674,6 +676,37 @@ export class GoodsReceivedCoreService {
       )
       .where(eq(goodsReceivedLines.goodsReceivedId, id));
 
+    const lineIds = lines.map((l) => l.goodsReceivedLineId);
+
+    const buildEventConditions = (
+      table:
+        | typeof warehouseEvents
+        | typeof procurementEvents
+        | typeof systemEvents,
+    ) => {
+      const conds = [
+        eq(table.entityId, id),
+        sql`${table.payload}->>'goodsReceivedId' = ${id}`,
+        sql`${table.payload}->>'receiptNumber' = ${receipt.receipt.receiptNumber}`,
+      ];
+      if (lineIds.length > 0) {
+        conds.push(inArray(table.entityId, lineIds));
+        conds.push(
+          sql`${table.payload}->>'lineId' IN (${sql.join(
+            lineIds.map((lid) => sql`${lid}`),
+            sql`, `,
+          )})`,
+        );
+        conds.push(
+          sql`${table.payload}->>'goodsReceivedLineId' IN (${sql.join(
+            lineIds.map((lid) => sql`${lid}`),
+            sql`, `,
+          )})`,
+        );
+      }
+      return or(...conds);
+    };
+
     const whEvents = await tx
       .select({
         eventId: warehouseEvents.eventId,
@@ -683,13 +716,7 @@ export class GoodsReceivedCoreService {
         createdOn: warehouseEvents.createdOn,
       })
       .from(warehouseEvents)
-      .where(
-        or(
-          eq(warehouseEvents.entityId, id),
-          sql`${warehouseEvents.payload}->>'goodsReceivedId' = ${id}`,
-          sql`${warehouseEvents.payload}->>'receiptNumber' = ${receipt.receipt.receiptNumber}`,
-        ),
-      );
+      .where(buildEventConditions(warehouseEvents));
 
     const procEvents = await tx
       .select({
@@ -700,15 +727,25 @@ export class GoodsReceivedCoreService {
         createdOn: procurementEvents.createdOn,
       })
       .from(procurementEvents)
-      .where(
-        or(
-          eq(procurementEvents.entityId, id),
-          sql`${procurementEvents.payload}->>'goodsReceivedId' = ${id}`,
-          sql`${procurementEvents.payload}->>'receiptNumber' = ${receipt.receipt.receiptNumber}`,
-        ),
-      );
+      .where(buildEventConditions(procurementEvents));
 
-    const events = [...whEvents, ...procEvents].sort(
+    const sysEvents = await tx
+      .select({
+        eventId: systemEvents.eventId,
+        eventType: systemEvents.eventType,
+        payload: systemEvents.payload,
+        actor: systemEvents.actor,
+        createdOn: systemEvents.createdOn,
+      })
+      .from(systemEvents)
+      .where(buildEventConditions(systemEvents));
+
+    const eventMap = new Map<string, (typeof whEvents)[0]>();
+    for (const ev of [...whEvents, ...procEvents, ...sysEvents]) {
+      eventMap.set(ev.eventId, ev);
+    }
+
+    const events = Array.from(eventMap.values()).sort(
       (a, b) =>
         new Date(b.createdOn || 0).getTime() -
         new Date(a.createdOn || 0).getTime(),

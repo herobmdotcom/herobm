@@ -25,7 +25,7 @@ import {
   glJournalEntries,
   glJournalLines,
   tradingTerms,
-  systemEvents,
+  salesEvents,
   salesOrderReturns,
   salesOrderReturnLines,
   inventoryLedger,
@@ -1049,9 +1049,9 @@ export class SalesInvoiceService {
 
     const events = await this.db
       .select()
-      .from(systemEvents)
-      .where(eq(systemEvents.entityId, invoiceId))
-      .orderBy(desc(systemEvents.createdOn));
+      .from(salesEvents)
+      .where(eq(salesEvents.entityId, invoiceId))
+      .orderBy(desc(salesEvents.createdOn));
 
     return { ...invoice, lines, allocations, events };
   }

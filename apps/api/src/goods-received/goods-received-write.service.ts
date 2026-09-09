@@ -756,18 +756,51 @@ export class GoodsReceivedWriteService {
       // 5. Decrement PO lines and revert PO state
       const updatedPoIds = new Set<string>();
 
+      // Pre-aggregate quantities to avoid duplicate purchaseOrderLineId issues in the VALUES clause
+      const aggregatedLines = new Map<
+        string,
+        { quantityReceived: number; purchaseOrderId: string }
+      >();
+
       for (const line of receiptLines) {
         if (
           line.matchStatus === MATCH_STATUS.MATCHED &&
           line.purchaseOrderLineId &&
           line.purchaseOrderId
         ) {
-          await tx.execute(
-            sql`UPDATE herobm_core.purchase_order_lines 
-                SET quantity_received = COALESCE(quantity_received, 0) - CAST(${line.quantityReceived} AS NUMERIC)
-                WHERE purchase_order_line_id = ${line.purchaseOrderLineId}`,
-          );
-          updatedPoIds.add(line.purchaseOrderId);
+          const qty = parseFloat(line.quantityReceived) || 0;
+          if (aggregatedLines.has(line.purchaseOrderLineId)) {
+            const existing = aggregatedLines.get(line.purchaseOrderLineId)!;
+            existing.quantityReceived += qty;
+          } else {
+            aggregatedLines.set(line.purchaseOrderLineId, {
+              quantityReceived: qty,
+              purchaseOrderId: line.purchaseOrderId,
+            });
+          }
+        }
+      }
+
+      const linesToUpdate = Array.from(aggregatedLines.entries());
+
+      if (linesToUpdate.length > 0) {
+        await tx.execute(
+          sql`UPDATE herobm_core.purchase_order_lines AS pol
+              SET quantity_received = COALESCE(pol.quantity_received, 0) - u.quantity_received
+              FROM (VALUES
+                ${sql.join(
+                  linesToUpdate.map(
+                    ([poLineId, data]) =>
+                      sql`(${poLineId}::uuid, CAST(${data.quantityReceived} AS NUMERIC))`,
+                  ),
+                  sql`, `,
+                )}
+              ) AS u(purchase_order_line_id, quantity_received)
+              WHERE pol.purchase_order_line_id = u.purchase_order_line_id`,
+        );
+
+        for (const [, data] of linesToUpdate) {
+          updatedPoIds.add(data.purchaseOrderId);
         }
       }
 
@@ -1056,11 +1089,13 @@ export class GoodsReceivedWriteService {
         .from(goodsReceived)
         .where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
-        entityType: EntityType.SYSTEM,
+        entityType: EntityType.WAREHOUSE,
         entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_MATCHED,
         entityDisplayName: receipt.receiptNumber,
         payload: {
+          goodsReceivedId: grLine.goodsReceivedId,
+          receiptNumber: receipt.receiptNumber,
           goodsReceivedLineId,
           purchaseOrderLineId: poLine.poLineId,
           purchaseOrderId: poLine.poId,
@@ -1216,11 +1251,13 @@ export class GoodsReceivedWriteService {
         .from(goodsReceived)
         .where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
-        entityType: EntityType.SYSTEM,
+        entityType: EntityType.WAREHOUSE,
         entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_UNMATCHED,
         entityDisplayName: receipt.receiptNumber,
         payload: {
+          goodsReceivedId: grLine.goodsReceivedId,
+          receiptNumber: receipt.receiptNumber,
           goodsReceivedLineId,
           previousPurchaseOrderLineId: poLine.poLineId,
           previousPurchaseOrderId: poLine.poId,

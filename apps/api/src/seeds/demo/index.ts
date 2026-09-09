@@ -3944,7 +3944,7 @@ export async function seedDemoUsers(db: SeedDB, dryRun = false) {
     console.log('  [DRY RUN] Would seed demo admin user: demo (pw: demodemo)');
     return;
   }
-  const demoPass = process.env.DEMO_PASSWORD || 'demodemo'; // TEST_CREDENTIAL
+  const demoPass = (process.env.DEMO_PASSWORD || 'demodemo').trim(); // TEST_CREDENTIAL
   console.log(`Seeding demo admin user (demo)...`);
   const hash = await bcrypt.hash(demoPass, 10);
   await db

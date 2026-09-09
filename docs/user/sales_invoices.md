@@ -68,7 +68,21 @@ Credit: Sales Revenue Account               (Net Line Items Total)
 Credit: Output Tax / GST Payable            (Statutory Sales Tax Total)
 ```
 
-### 2. Database Immutability & Reversals
+### 2. Payment Due Date & Trading Terms Computation
+Upon invoice creation, the system automatically resolves the customer's effective trading terms (`Customer Record` → `Customer Group` → `System Default`) to calculate the legal **Payment Due Date**:
+
+* **`Net (Days from Invoice)` (`net`)**:
+  * `Due Date = Invoice Date + Days`
+  * Example: An invoice issued on June 5 with `NET30` (30 days) is assigned a due date of July 5.
+* **`End of Month (EOM)` (`end_of_month`)**:
+  * `Due Date = Last Day of Invoice Month + Days`
+  * Example: An invoice issued on June 5 with `EOM30` (30 days EOM) takes the end of June (June 30) plus 30 days -> Due Date is July 30.
+* **`Cash on Delivery (COD)` (`cash_on_delivery`)**:
+  * `Due Date = Invoice Date` (zero days credit; payment due immediately upon receipt).
+
+Payment terms and early settlement discount windows (e.g. 2% within 10 days) are rendered automatically on official customer Typst PDF invoices.
+
+### 3. Database Immutability & Reversals
 * Once posted, a sales invoice cannot be edited or deleted due to database immutability triggers (`herobm_core.prevent_financial_deletion`).
 * To correct or void a posted invoice, operators must issue a formal [Sales Credit Note](./sales_credit_notes.md).
 

@@ -185,4 +185,17 @@ describe('PageNav Component', () => {
 
     expect(screen.queryByText('Info')).not.toBeInTheDocument();
   });
+
+  it('anchors subtargets container to the right edge to prevent overflowing the screen', () => {
+    render(<PageNav sections={mockSections} />);
+
+    const overviewTab = screen.getByText('Overview & Terms');
+    fireEvent.mouseEnter(overviewTab);
+
+    const activityBtn = screen.getByText('Activity');
+    const subtargetsRow = activityBtn.parentElement!;
+    expect(subtargetsRow.className).toContain('lg:right-0');
+    expect(subtargetsRow.className).toContain('lg:left-auto');
+  });
 });
+

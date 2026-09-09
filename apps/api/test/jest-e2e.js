@@ -38,6 +38,7 @@ module.exports = {
     '^@test/(.*)$': '<rootDir>/$1',
     '^@herobm/shared(.*)$': '<rootDir>/../../../packages/shared/src$1',
     '^uuid$': '<rootDir>/utils/uuid-mock.js',
+    '^otplib$': '<rootDir>/utils/otplib-mock.js',
   },
   setupFiles: ['./setup-env.ts'],
   setupFilesAfterEnv: ['./suite-setup.ts'],

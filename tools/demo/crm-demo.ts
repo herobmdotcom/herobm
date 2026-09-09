@@ -13,9 +13,9 @@ if (fs.existsSync(path.join(__dirname, '..', '..', '.env'))) {
   dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 }
 
-const BASE_URL = process.env.DEMO_BASE_URL || 'https://herobm-dev.exe.xyz';
-const USERNAME = process.env.DEMO_USERNAME || 'demo';
-const PASSWORD = process.env.DEMO_PASSWORD || 'demodemo'; // TEST_CREDENTIAL
+const BASE_URL = (process.env.DEMO_BASE_URL || 'https://herobm-dev.exe.xyz').trim();
+const USERNAME = (process.env.DEMO_USERNAME || 'demo').trim();
+const PASSWORD = (process.env.DEMO_PASSWORD || 'demodemo').trim(); // TEST_CREDENTIAL
 const HEADED = process.env.DEMO_HEADED !== 'false';
 const USER_DATA_DIR = path.join(__dirname, '..', '..', 'tmp', 'demo-browser-profile');
 const OUTPUT_DIR = path.join(__dirname, '..', '..', 'tmp', 'videos');
@@ -123,14 +123,14 @@ async function runCrmDemo() {
     console.log('\n[2/6] Differentiator 1 & 3: Unified Actor & Dual Commercial Accounts...');
     await actor.pause(1000, 1500);
 
-    // Navigate to Actors
-    const actorsLink = page.locator('nav a[href="/crm/actors"]:visible, aside a[href="/crm/actors"]:visible').first();
+    // Navigate to Organizations
+    const actorsLink = page.locator('nav a[href="/crm/organizations"]:visible, aside a[href="/crm/organizations"]:visible').first();
     if (await actorsLink.isVisible().catch(() => false)) {
       await actor.hover(actorsLink);
       await actor.pause(450, 750);
       await actor.click(actorsLink);
     } else {
-      await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/actors`, { waitUntil: 'load' });
+      await page.goto(`${BASE_URL.replace(/\/$/, '')}/crm/organizations`, { waitUntil: 'load' });
       await actor.injectVisualCursor();
     }
     
@@ -149,10 +149,15 @@ async function runCrmDemo() {
     if (await firstActorRow.isVisible().catch(() => false)) {
       await actor.hover(firstActorRow);
       await actor.pause(400, 600);
-      await actor.click(firstActorRow.locator('a').first().or(firstActorRow));
+      const rowLink = firstActorRow.locator('a').first();
+      if (await rowLink.isVisible().catch(() => false)) {
+        await actor.click(rowLink);
+      } else {
+        await actor.click(firstActorRow);
+      }
     }
     
-    await page.waitForURL(/crm\/actors\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});
+    await page.waitForURL(/crm\/organizations\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});
     await page.waitForLoadState('networkidle').catch(() => {});
     await actor.pause(1500, 2000);
 
@@ -304,7 +309,12 @@ async function runCrmDemo() {
     if (await oppCard.isVisible().catch(() => false)) {
       await actor.hover(oppCard);
       await actor.pause(500, 800);
-      await actor.click(oppCard.locator('a').first().or(oppCard));
+      const cardLink = oppCard.locator('a').first();
+      if (await cardLink.isVisible().catch(() => false)) {
+        await actor.click(cardLink);
+      } else {
+        await actor.click(oppCard);
+      }
     }
     
     await page.waitForURL(/crm\/opportunities\/[a-zA-Z0-9_-]+/, { timeout: 20000 }).catch(() => {});

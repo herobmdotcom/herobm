@@ -22,7 +22,11 @@ export function TradingTermsSection({ appSettings, updateAppSetting }: TradingTe
     try {
       setTradingTermsLoading(true);
       const res = await api.tradingTermsControllerFindAll();
-      setTradingTerms(res.data as unknown as api.TradingTermResponseDto[]);
+      const items = (res.data || []) as unknown as api.TradingTermResponseDto[];
+      const sorted = items.sort((a, b) =>
+        a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' })
+      );
+      setTradingTerms(sorted);
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('financialSettings.credit') }) + ': ' + getErrorMessage(err));
     } finally {

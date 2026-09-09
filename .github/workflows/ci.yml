@@ -1,9 +1,136 @@
 name: CI
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  verify:
+  static-and-structural:
+    name: Static Analysis & Invariant Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+          node scripts/install-native-deps.js
+
+      - name: Initialize Environment Variables
+        run: |
+          python scripts/init_env.py
+
+      - name: Build Core Packages
+        run: |
+          make build-shared
+          make build-db-schema
+          make build-sdk
+
+      - name: Check Types
+        run: make check-types
+
+      - name: Check Lint & OAS
+        run: make check-lint
+
+      - name: Check Dependency Completeness
+        run: make test-deps
+
+      - name: Structural Architecture & Invariant Tests
+        run: make test-structural
+
+  unit-tests:
+    name: Unit Tests (API PGlite & Ops Portal)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+          node scripts/install-native-deps.js
+
+      - name: Initialize Environment Variables
+        run: |
+          python scripts/init_env.py
+
+      - name: Build Core Packages
+        run: |
+          make build-shared
+          make build-db-schema
+          make build-sdk
+
+      - name: Run Unit Tests
+        run: make test-unit
+
+  portal-build:
+    name: Ops Portal Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+          node scripts/install-native-deps.js
+
+      - name: Initialize Environment Variables
+        run: |
+          python scripts/init_env.py
+
+      - name: Build Core Packages
+        run: |
+          make build-shared
+          make build-db-schema
+          make build-sdk
+
+      - name: Verify Portal Production Build
+        run: make build-portal
+
+  e2e-api:
+    name: Backend API E2E Tests (PostgreSQL)
     runs-on: ubuntu-latest
 
     services:
@@ -50,15 +177,6 @@ jobs:
           make build-shared
           make build-db-schema
           make build-sdk
-
-      - name: Fast verification gate (Tier 1)
-        run: make verify-fast
-
-      - name: Structural Architecture & Invariant Tests
-        run: make test-structural
-
-      - name: Verify Portal Production Build
-        run: make build-portal
 
       - name: Run Backend API E2E Tests (PostgreSQL)
         env:

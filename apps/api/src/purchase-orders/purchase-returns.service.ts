@@ -41,6 +41,11 @@ import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import {
+  generateReturnNumber,
+  generateShipmentNumber,
+  getSupplierReturnsBinId,
+} from './purchase-returns.utils';
 
 const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);
 
@@ -54,48 +59,6 @@ export class PurchaseReturnsService {
   ) {}
 
   private readonly logger = new Logger(PurchaseReturnsService.name);
-
-  private async generateReturnNumber(tx?: DrizzleDB): Promise<string> {
-    const db = tx || this.db;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `PRT-${today}-`;
-
-    const result = await db
-      .select({ returnNumber: purchaseOrderReturns.returnNumber })
-      .from(purchaseOrderReturns)
-      .where(sql`${purchaseOrderReturns.returnNumber} LIKE ${prefix + '%'}`)
-      .orderBy(sql`${purchaseOrderReturns.returnNumber} DESC`)
-      .limit(1);
-
-    const seq =
-      result.length > 0
-        ? parseInt(result[0].returnNumber.replace(prefix, ''), 10) + 1
-        : 1;
-
-    return `${prefix}${String(seq).padStart(4, '0')}`;
-  }
-
-  private async generateShipmentNumber(tx?: DrizzleDB): Promise<string> {
-    const db = tx || this.db;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `RSH-${today}-`;
-
-    const result = await db
-      .select({ shipmentNumber: purchaseOrderReturnShipments.shipmentNumber })
-      .from(purchaseOrderReturnShipments)
-      .where(
-        sql`${purchaseOrderReturnShipments.shipmentNumber} LIKE ${prefix + '%'}`,
-      )
-      .orderBy(sql`${purchaseOrderReturnShipments.shipmentNumber} DESC`)
-      .limit(1);
-
-    const seq =
-      result.length > 0
-        ? parseInt(result[0].shipmentNumber.replace(prefix, ''), 10) + 1
-        : 1;
-
-    return `${prefix}${String(seq).padStart(4, '0')}`;
-  }
 
   async createReturn(
     purchaseOrderId: string,
@@ -120,7 +83,7 @@ export class PurchaseReturnsService {
       );
     }
 
-    const returnNumber = await this.generateReturnNumber();
+    const returnNumber = await generateReturnNumber(this.db);
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [ret] = await tx
@@ -248,23 +211,10 @@ export class PurchaseReturnsService {
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // Move inventory from warehouse storage bins INTO SUPPLIER_RETURNS bin
       if (po.deliveryLocationId && returnLines.length > 0) {
-        const [supplierReturnsBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
-              eq(zones.locationId, po.deliveryLocationId),
-            ),
-          )
-          .limit(1);
-
-        if (!supplierReturnsBin) {
-          throw new BadRequestException(
-            'SUPPLIER_RETURNS bin not found for location',
-          );
-        }
+        const supplierReturnsBinId = await getSupplierReturnsBinId(
+          tx,
+          po.deliveryLocationId,
+        );
 
         const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
         const orderLineRows =
@@ -321,7 +271,7 @@ export class PurchaseReturnsService {
               },
               {
                 productId: orderLine.productId,
-                binId: supplierReturnsBin.binId,
+                binId: supplierReturnsBinId,
                 quantity: qty,
                 uomCode: orderLine.unitOfMeasure || 'EA',
               },
@@ -386,23 +336,10 @@ export class PurchaseReturnsService {
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       if (po.deliveryLocationId && returnLines.length > 0) {
-        const [supplierReturnsBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
-              eq(zones.locationId, po.deliveryLocationId),
-            ),
-          )
-          .limit(1);
-
-        if (!supplierReturnsBin) {
-          throw new BadRequestException(
-            'SUPPLIER_RETURNS bin not found for location',
-          );
-        }
+        const supplierReturnsBinId = await getSupplierReturnsBinId(
+          tx,
+          po.deliveryLocationId,
+        );
 
         const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
         const orderLineRows =
@@ -453,7 +390,7 @@ export class PurchaseReturnsService {
             lines: [
               {
                 productId: orderLine.productId,
-                binId: supplierReturnsBin.binId,
+                binId: supplierReturnsBinId,
                 quantity: -qty,
                 uomCode: orderLine.unitOfMeasure || 'EA',
               },
@@ -585,7 +522,7 @@ export class PurchaseReturnsService {
       );
 
       // 2. Create the shipment record
-      const shipmentNumber = await this.generateShipmentNumber(tx);
+      const shipmentNumber = await generateShipmentNumber(tx);
       const [shipment] = await tx
         .insert(purchaseOrderReturnShipments)
         .values({
@@ -646,23 +583,10 @@ export class PurchaseReturnsService {
       }
 
       if (po.deliveryLocationId) {
-        const [supplierReturnsBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
-              eq(zones.locationId, po.deliveryLocationId),
-            ),
-          )
-          .limit(1);
-
-        if (!supplierReturnsBin) {
-          throw new BadRequestException(
-            `SUPPLIER_RETURNS bin not found for location '${po.deliveryLocationId}'`,
-          );
-        }
+        const supplierReturnsBinId = await getSupplierReturnsBinId(
+          tx,
+          po.deliveryLocationId,
+        );
 
         const validStockLines = stockLines.filter(
           (l) => l.productId != null,
@@ -670,7 +594,7 @@ export class PurchaseReturnsService {
 
         const moveLines = validStockLines.map((line) => ({
           productId: line.productId,
-          binId: supplierReturnsBin.binId,
+          binId: supplierReturnsBinId,
           quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
           uomCode: line.uomCode,
         }));
@@ -693,6 +617,8 @@ export class PurchaseReturnsService {
 
       // Decrement PO quantity Received
       let totalValueReturned = 0;
+      const aggregatedReturns = new Map<string, number>();
+
       for (const rl of returnLines) {
         // Calculate financial value of return
         const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
@@ -703,8 +629,28 @@ export class PurchaseReturnsService {
             parseFloat(rl.quantityReturned);
         }
 
+        const qty = parseFloat(rl.quantityReturned) || 0;
+        aggregatedReturns.set(
+          rl.purchaseOrderLineId,
+          (aggregatedReturns.get(rl.purchaseOrderLineId) || 0) + qty,
+        );
+      }
+
+      const returnEntries = Array.from(aggregatedReturns.entries());
+      if (returnEntries.length > 0) {
         await tx.execute(
-          sql`UPDATE herobm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`,
+          sql`UPDATE herobm_core.purchase_order_lines AS pol
+              SET quantity_received = (COALESCE(pol.quantity_received, 0)::numeric - u.quantity_returned)
+              FROM (VALUES
+                ${sql.join(
+                  returnEntries.map(
+                    ([poLineId, qty]) =>
+                      sql`(${poLineId}::uuid, CAST(${qty} AS NUMERIC))`,
+                  ),
+                  sql`, `,
+                )}
+              ) AS u(purchase_order_line_id, quantity_returned)
+              WHERE pol.purchase_order_line_id = u.purchase_order_line_id`,
         );
       }
 
@@ -805,17 +751,10 @@ export class PurchaseReturnsService {
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // 1. Re-add stock back into SUPPLIER_RETURNS bin
       if (po.deliveryLocationId && returnLines.length > 0) {
-        const [supplierReturnsBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
-              eq(zones.locationId, po.deliveryLocationId),
-            ),
-          )
-          .limit(1);
+        const supplierReturnsBinId = await getSupplierReturnsBinId(
+          tx,
+          po.deliveryLocationId,
+        );
 
         const poLineIds = returnLines.map((rl) => rl.purchaseOrderLineId);
         const orderLineRows =
@@ -835,52 +774,50 @@ export class PurchaseReturnsService {
           orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
         );
 
-        if (supplierReturnsBin) {
-          for (const rl of returnLines) {
-            const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
+        for (const rl of returnLines) {
+          const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
-            if (!orderLine || !orderLine.productId) {
-              throw new BadRequestException(
-                `Purchase order line not found for return line ${rl.returnLineId}`,
-              );
-            }
-            const qty = parseFloat(rl.quantityReturned || '0');
-            if (qty <= 0) {
-              throw new BadRequestException(
-                `Invalid quantity returned for return line ${rl.returnLineId}`,
-              );
-            }
-
-            const newQtyReceived = (
-              parseFloat(orderLine.quantityReceived || '0') + qty
-            ).toString();
-
-            await tx
-              .update(purchaseOrderLineItems)
-              .set({ quantityReceived: newQtyReceived })
-              .where(
-                eq(
-                  purchaseOrderLineItems.purchaseOrderLineId,
-                  rl.purchaseOrderLineId,
-                ),
-              );
-
-            const movementNumber = `MOV-${Date.now()}`;
-            await this.inventoryMovementService.recordInventoryMovement(tx, {
-              entryNumber: movementNumber,
-              sourceType: 'PURCHASE_RETURN_UNSHIP',
-              sourceId: returnId,
-              userId: actor,
-              lines: [
-                {
-                  productId: orderLine.productId,
-                  binId: supplierReturnsBin.binId,
-                  quantity: qty,
-                  uomCode: orderLine.unitOfMeasure || 'EA',
-                },
-              ],
-            });
+          if (!orderLine || !orderLine.productId) {
+            throw new BadRequestException(
+              `Purchase order line not found for return line ${rl.returnLineId}`,
+            );
           }
+          const qty = parseFloat(rl.quantityReturned || '0');
+          if (qty <= 0) {
+            throw new BadRequestException(
+              `Invalid quantity returned for return line ${rl.returnLineId}`,
+            );
+          }
+
+          const newQtyReceived = (
+            parseFloat(orderLine.quantityReceived || '0') + qty
+          ).toString();
+
+          await tx
+            .update(purchaseOrderLineItems)
+            .set({ quantityReceived: newQtyReceived })
+            .where(
+              eq(
+                purchaseOrderLineItems.purchaseOrderLineId,
+                rl.purchaseOrderLineId,
+              ),
+            );
+
+          const movementNumber = `MOV-${Date.now()}`;
+          await this.inventoryMovementService.recordInventoryMovement(tx, {
+            entryNumber: movementNumber,
+            sourceType: 'PURCHASE_RETURN_UNSHIP',
+            sourceId: returnId,
+            userId: actor,
+            lines: [
+              {
+                productId: orderLine.productId,
+                binId: supplierReturnsBinId,
+                quantity: qty,
+                uomCode: orderLine.unitOfMeasure || 'EA',
+              },
+            ],
+          });
         }
       }
 

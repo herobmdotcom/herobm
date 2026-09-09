@@ -29,6 +29,13 @@
       "when": 1788865424699,
       "tag": "0003_crm_activity_types",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788900000000,
+      "tag": "0004_gl_journal_entries_immutability",
+      "breakpoints": true
     }
   ]
 }

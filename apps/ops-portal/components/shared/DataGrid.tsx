@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short. */
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, isValidElement } from "react";
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AgGridReact } from "ag-grid-react";
@@ -145,7 +145,7 @@ export default function DataGrid<T>({
   hideSearch,
   hideSecondaryHeaderOnMobile = false,
 }: DataGridProps<T>) {
-  const tGrid = useTranslations('common.grid');
+  const tGrid = useTranslations('common.grid' as never) as unknown as (key: string, values?: Record<string, string>) => string;
   const gridRef = useRef<AgGridReact<T>>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -546,6 +546,123 @@ export default function DataGrid<T>({
     return data;
   }, [rowData, swrResponse, data]);
 
+  /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
+  const enhancedColumns = useMemo(
+    () =>
+      columns.map((col, colIndex) => {
+        const isNumeric = col.type === "numericColumn";
+        const base: ColDef<T> = {
+          ...col,
+          headerTooltip:
+            col.headerTooltip ??
+            col.headerName ??
+            (col.field as string) ??
+            undefined,
+          // Cell tooltips for text columns — show full value on hover
+          ...(!isNumeric && col.field && !col.tooltipField
+            ? { tooltipField: col.field as ColDefField<T> }
+            : {}),
+          // First column is always bold for visual anchoring
+          ...(colIndex === 0
+            ? {
+              cellStyle: {
+                fontWeight: 600,
+                ...(typeof col.cellStyle === "object" &&
+                  col.cellStyle !== null
+                  ? col.cellStyle
+                  : {}),
+              },
+            }
+            : {}),
+          // Default boolean values to simple text 'true' / 'false' to minimize rendering cost
+          ...(!col.valueFormatter && !col.cellRenderer
+            ? {
+                valueFormatter: (params: import('ag-grid-community').ValueFormatterParams<T>) => {
+                  if (typeof params.value === 'boolean') {
+                    return params.value ? 'true' : 'false';
+                  }
+                  return params.value;
+                },
+              }
+            : {}),
+        };
+        if (!isNumeric || !col.field) return base;
+        const field = col.field;
+        return {
+          ...base,
+          // Only add default valueGetter/valueFormatter if the column doesn't already have custom ones
+          ...(col.valueGetter
+            ? {}
+            : {
+              valueGetter: (params: { data?: Record<string, unknown> }) => {
+                const v = params.data?.[field];
+                if (v == null || v === "") return null;
+                const n = Number(v);
+                return isNaN(n) ? null : n;
+              },
+            }),
+          ...(col.valueFormatter ? {} : { valueFormatter: numericFormatter }),
+          filter: "agNumberColumnFilter",
+        } as ColDef<T>;
+      }),
+    [columns],
+  );
+
+  // Client-side search and filtering (crucial for fetchAll, rowData, and mobile rendering)
+  const clientFilteredData = useMemo(() => {
+    if (!effectiveData) return [];
+    if (!isClientData || !search.trim()) return effectiveData;
+
+    const queryTokens = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (queryTokens.length === 0) return effectiveData;
+
+    return (effectiveData as T[]).filter((row: T) => {
+      const searchStrings: string[] = [];
+
+      for (const col of enhancedColumns) {
+        if (col.hide) continue;
+        let val: unknown = undefined;
+        if (col.field) {
+          val = (row as Record<string, unknown>)[col.field as string];
+        }
+        if (col.valueGetter && typeof col.valueGetter === 'function') {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ColDef valueGetter params boundary
+            val = col.valueGetter({ data: row, colDef: col, api: gridRef.current?.api } as any);
+          } catch {
+            // ignore
+          }
+        }
+        if (col.valueFormatter && typeof col.valueFormatter === 'function') {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ColDef valueFormatter params boundary
+            val = col.valueFormatter({ value: val, data: row, colDef: col } as any);
+          } catch {
+            // ignore
+          }
+        }
+        if (val != null) {
+          if (typeof val === 'object' && !Array.isArray(val) && isValidElement(val)) {
+            // Skip pure React elements
+          } else if (typeof val === 'object') {
+            searchStrings.push(JSON.stringify(val).toLowerCase());
+          } else {
+            searchStrings.push(String(val).toLowerCase());
+          }
+        }
+      }
+
+      for (const val of Object.values(row as Record<string, unknown>)) {
+        if (val != null && typeof val !== 'object') {
+          searchStrings.push(String(val).toLowerCase());
+        }
+      }
+
+      const compositeText = searchStrings.join(' ');
+      return queryTokens.every((token) => compositeText.includes(token));
+    });
+  }, [effectiveData, isClientData, search, enhancedColumns]);
+
   const loading = externalLoading !== undefined 
     ? externalLoading 
     : (swrResponse ? false : internalLoading);
@@ -630,68 +747,6 @@ export default function DataGrid<T>({
       }
     }
   }, [loading, effectiveData, gridKey, isMobile]);
-
-  /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
-  const enhancedColumns = useMemo(
-    () =>
-      columns.map((col, colIndex) => {
-        const isNumeric = col.type === "numericColumn";
-        const base: ColDef<T> = {
-          ...col,
-          headerTooltip:
-            col.headerTooltip ??
-            col.headerName ??
-            (col.field as string) ??
-            undefined,
-          // Cell tooltips for text columns — show full value on hover
-          ...(!isNumeric && col.field && !col.tooltipField
-            ? { tooltipField: col.field as ColDefField<T> }
-            : {}),
-          // First column is always bold for visual anchoring
-          ...(colIndex === 0
-            ? {
-              cellStyle: {
-                fontWeight: 600,
-                ...(typeof col.cellStyle === "object" &&
-                  col.cellStyle !== null
-                  ? col.cellStyle
-                  : {}),
-              },
-            }
-            : {}),
-          // Default boolean values to simple text 'true' / 'false' to minimize rendering cost
-          ...(!col.valueFormatter && !col.cellRenderer
-            ? {
-                valueFormatter: (params: import('ag-grid-community').ValueFormatterParams<T>) => {
-                  if (typeof params.value === 'boolean') {
-                    return params.value ? 'true' : 'false';
-                  }
-                  return params.value;
-                },
-              }
-            : {}),
-        };
-        if (!isNumeric || !col.field) return base;
-        const field = col.field;
-        return {
-          ...base,
-          // Only add default valueGetter/valueFormatter if the column doesn't already have custom ones
-          ...(col.valueGetter
-            ? {}
-            : {
-              valueGetter: (params: { data?: Record<string, unknown> }) => {
-                const v = params.data?.[field];
-                if (v == null || v === "") return null;
-                const n = Number(v);
-                return isNaN(n) ? null : n;
-              },
-            }),
-          ...(col.valueFormatter ? {} : { valueFormatter: numericFormatter }),
-          filter: "agNumberColumnFilter",
-        } as ColDef<T>;
-      }),
-    [columns],
-  );
 
   const defaultColDef = useMemo<ColDef>(
     () => ({
@@ -857,6 +912,7 @@ export default function DataGrid<T>({
   const handleClearSearch = useCallback(() => {
     setSearch('');
     setCursor(null);
+    setClientPage(0);
     resetScroll();
     searchInputRef.current?.focus();
   }, [resetScroll]);
@@ -872,6 +928,7 @@ export default function DataGrid<T>({
         onChange={(e) => {
           setSearch(e.target.value.trimStart());
           setCursor(null);
+          setClientPage(0);
           resetScroll();
         }}
         onBlur={(e) => {
@@ -883,6 +940,7 @@ export default function DataGrid<T>({
           type="button"
           variant="ghost"
           onMouseDown={(e) => e.preventDefault()}
+          onTouchStart={(e) => e.preventDefault()}
           onClick={handleClearSearch}
           aria-label={tGrid('clearSearch')}
           title={tGrid('clearSearch')}
@@ -1017,8 +1075,9 @@ export default function DataGrid<T>({
                   if (size === 99999) {
                     setIsCustomView(false);
                   }
-                  if (isClientData && gridRef.current?.api) {
-                    if (size !== 99999) {
+                  if (isClientData) {
+                    setClientPage(0);
+                    if (gridRef.current?.api && size !== 99999) {
                       gridRef.current.api.paginationGoToPage(0);
                     }
                   }
@@ -1036,35 +1095,52 @@ export default function DataGrid<T>({
     </div>
   );
 
+  const effectiveTotalPages = isClientData && limit !== 99999
+    ? Math.max(1, Math.ceil(clientFilteredData.length / limit))
+    : clientTotalPages;
+
+  const currentDisplayedCount = isClientData
+    ? clientFilteredData.length
+    : (isMobile ? (effectiveData ? effectiveData.length : 0) : displayedRowCount);
 
   const handlePrev = useCallback(() => {
     if (isClientData) {
-      gridRef.current?.api?.paginationGoToPreviousPage();
-      resetScroll();
+      if (isMobile) {
+        setClientPage((p) => Math.max(0, p - 1));
+        resetScroll();
+      } else {
+        gridRef.current?.api?.paginationGoToPreviousPage();
+        resetScroll();
+      }
     } else {
       setCursor(prevCursor);
       setDirection('prev');
       resetScroll();
     }
-  }, [isClientData, prevCursor, resetScroll]);
+  }, [isClientData, isMobile, prevCursor, resetScroll]);
 
   const handleNext = useCallback(() => {
     if (isClientData) {
-      gridRef.current?.api?.paginationGoToNextPage();
-      resetScroll();
+      if (isMobile) {
+        setClientPage((p) => Math.min(effectiveTotalPages - 1, p + 1));
+        resetScroll();
+      } else {
+        gridRef.current?.api?.paginationGoToNextPage();
+        resetScroll();
+      }
     } else {
       setCursor(nextCursor);
       setDirection('next');
       resetScroll();
     }
-  }, [isClientData, nextCursor, resetScroll]);
+  }, [isClientData, isMobile, effectiveTotalPages, nextCursor, resetScroll]);
 
   const isPrevDisabled = isClientData
     ? clientPage <= 0 || limit === 99999
     : !cursor || !prevCursor;
 
   const isNextDisabled = isClientData
-    ? clientPage >= clientTotalPages - 1 || limit === 99999
+    ? clientPage >= (isMobile ? effectiveTotalPages - 1 : clientTotalPages - 1) || limit === 99999
     : !nextCursor;
 
   const prevButton = (
@@ -1265,11 +1341,21 @@ export default function DataGrid<T>({
               })
             : enhancedColumns.filter(c => !c.hide);
 
+          const mobileData = isClientData ? clientFilteredData : (effectiveData || []);
           const isClientPaginated = isClientData && limit !== 99999;
-          const dataToMap = sortedData.length > 0 ? sortedData : (effectiveData || []);
           const paginatedDataToMap = isClientPaginated
-            ? dataToMap.slice(clientPage * limit, (clientPage + 1) * limit)
-            : dataToMap;
+            ? mobileData.slice(clientPage * limit, (clientPage + 1) * limit)
+            : mobileData;
+
+          if (mobileData.length === 0 && !loading) {
+            return (
+              <div className="text-center py-12 text-[var(--text-muted)] text-sm bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
+                {search
+                  ? tGrid('noSearchResults', { fallback: 'No records matching search criteria.' })
+                  : tGrid('noRowsToShow', { fallback: 'No records found' })}
+              </div>
+            );
+          }
 
           return paginatedDataToMap.map((row: T, idx: number) => {
             const rowId = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T] ?? '') : '';
@@ -1335,7 +1421,7 @@ export default function DataGrid<T>({
                           {tGrid('rowCountLabel')}
                         </span>
                         <span className="text-[11px] font-mono font-bold text-[var(--text-primary)]">
-                          {loading ? '...' : displayedRowCount.toLocaleString()}
+                          {loading ? '...' : currentDisplayedCount.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -1377,12 +1463,12 @@ export default function DataGrid<T>({
   return (
     <div className={`flex flex-col lg:bg-[var(--bg-card)] relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full flex-1 min-h-0'}`}>
       {renderHeader ? (
-        renderHeader!({ searchInput: searchInputNode, optionsButton: null, rowCount: displayedRowCount, loading })
+        renderHeader!({ searchInput: searchInputNode, optionsButton: null, rowCount: currentDisplayedCount, loading })
       ) : (
         <div className="flex items-center gap-3">
           {searchInputNode}
           <span className="text-xs text-[var(--text-muted)]">
-            {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(displayedRowCount) })}
+            {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(currentDisplayedCount) })}
           </span>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pollOutbox, processEvent } from './relay.service';
+import { relayLogger } from './logger';
 import { Job } from 'bullmq';
 
 describe('relay.service', () => {
@@ -47,6 +48,21 @@ describe('relay.service', () => {
       mockDb.limit.mockResolvedValue([]);
       await pollOutbox(mockDb, mockQueue);
       expect(mockQueue.add).not.toHaveBeenCalled();
+    });
+
+    it('should log error when database query fails during polling', async () => {
+      const errorSpy = vi.spyOn(relayLogger, 'error').mockImplementation(() => {});
+      const dbError = new Error('Database connection failed');
+      mockDb.limit.mockRejectedValue(dbError);
+
+      await pollOutbox(mockDb, mockQueue);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        { err: dbError },
+        'Error polling outbox'
+      );
+      expect(mockQueue.add).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
     });
   });
 

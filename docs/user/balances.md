@@ -57,17 +57,17 @@ flowchart LR
 ```
 
 ### 1. The Aging Bucket Classification Algorithm
-For every open invoice in Accounts Receivable and Accounts Payable:
+For every open invoice in Accounts Receivable and Accounts Payable, the system computes overdue delinquency relative to the **Payment Due Date** (derived from the assigned trading terms):
 
 ```
 Days Overdue = max(0, asOfDate - invoiceDueDate)
 ```
 
-* **Current**: `invoiceDueDate >= asOfDate` (within agreed commercial payment terms).
-* **1–30 Days**: `1 <= Days Overdue <= 30`
-* **31–60 Days**: `31 <= Days Overdue <= 60`
-* **61–90 Days**: `61 <= Days Overdue <= 90`
-* **90+ Days**: `Days Overdue > 90` (triggers strict credit hold warnings).
+* **Current**: `invoiceDueDate >= asOfDate` (unpaid balance is strictly within agreed commercial trading terms, e.g. Net 30, EOM 30, or COD).
+* **1–30 Days Overdue**: `1 <= Days Overdue <= 30` calendar days past the agreed due date.
+* **31–60 Days Overdue**: `31 <= Days Overdue <= 60` calendar days past the agreed due date.
+* **61–90 Days Overdue**: `61 <= Days Overdue <= 90` calendar days past the agreed due date.
+* **90+ Days Overdue**: `Days Overdue > 90` calendar days past the agreed due date (triggers severe delinquency warnings and blocks customer sales order confirmation via the Credit Hold OR-gate).
 
 ### 2. Treatment of Unallocated Credits & Prepayments
 * Unapplied customer payment deposits and unallocated credit notes are credited against the account's total exposure.

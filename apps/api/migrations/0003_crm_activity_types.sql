@@ -28,7 +28,7 @@ ALTER TABLE "herobm_core"."organization_notes" DROP CONSTRAINT "actor_notes_acto
 --> statement-breakpoint
 ALTER TABLE "herobm_core"."organization_notes" DROP CONSTRAINT "actor_notes_created_by_id_users_user_id_fk";
 --> statement-breakpoint
-ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "activity_types" jsonb;--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN IF NOT EXISTS "activity_types" jsonb;--> statement-breakpoint
 ALTER TABLE "herobm_core"."contacts" ADD CONSTRAINT "contacts_referred_by_organization_id_organizations_organization_id_fk" FOREIGN KEY ("referred_by_organization_id") REFERENCES "herobm_core"."organizations"("organization_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "herobm_core"."crm_activities" ADD CONSTRAINT "crm_activities_organization_id_organizations_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "herobm_core"."organizations"("organization_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "herobm_core"."customers" ADD CONSTRAINT "customers_organization_id_organizations_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "herobm_core"."organizations"("organization_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

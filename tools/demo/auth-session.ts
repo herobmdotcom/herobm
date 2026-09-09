@@ -13,7 +13,9 @@ if (fs.existsSync(path.join(__dirname, '..', '..', '.env'))) {
   dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 }
 
-const BASE_URL = process.env.DEMO_BASE_URL || 'https://herobm-dev.exe.xyz';
+const BASE_URL = (process.env.DEMO_BASE_URL || 'https://herobm-dev.exe.xyz').trim();
+const USERNAME = (process.env.DEMO_USERNAME || 'demo').trim();
+const PASSWORD = (process.env.DEMO_PASSWORD || 'demodemo').trim(); // TEST_CREDENTIAL
 const USER_DATA_DIR = path.join(__dirname, '..', '..', 'tmp', 'demo-browser-profile');
 
 async function setupAuthSession() {

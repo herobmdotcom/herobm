@@ -138,13 +138,13 @@ The following 186 event types are actively supported across 51 domain entity typ
 | `shipment` | `shipment_created`, `shipment_line_added`, `shipment_line_removed`, `shipment_line_updated`, `shipment_updated` |
 | `supplier` | `added_expiry`, `archived`, `created`, `debit_note_posted`, `deleted_expiry`, `status_changed`, `unarchived`, `updated`, `updated_expiry` |
 | `supplier_group` | `created`, `deleted`, `updated` |
-| `system` | `ledger_integrity_violation`, `receipt_matched`, `receipt_unmatched`, `updated` |
+| `system` | `ledger_integrity_violation`, `updated` |
 | `tax_category` | `created`, `deleted`, `updated` |
 | `tax_position` | `created`, `deleted`, `updated` |
 | `tax_position_mapping` | `created`, `deleted` |
 | `transfer_order` | `created`, `status_changed`, `stock_dispatched`, `updated` |
 | `user` | `created`, `deleted`, `status_changed`, `updated` |
-| `warehouse` | `pick_cancelled`, `pick_created`, `putaway_completed`, `receipt_created`, `receipt_status_changed`, `shipment_dispatched`, `shipment_status_changed`, `stock_moved`, `updated` |
+| `warehouse` | `pick_cancelled`, `pick_created`, `putaway_completed`, `receipt_created`, `receipt_matched`, `receipt_status_changed`, `receipt_unmatched`, `shipment_dispatched`, `shipment_status_changed`, `stock_moved`, `updated` |
 | `webhook` | `created`, `deleted`, `updated` |
 | `work_order` | `created`, `demand_allocated`, `status_changed`, `updated` |
 | `work_order_pick` | `created`, `pick_cancelled`, `status_changed` |

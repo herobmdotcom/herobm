@@ -90,6 +90,7 @@ const EXCLUDED_IDS = new Set([
   'itemId',
   'periodId',
   'copiedFromProductId',
+  'recordSourceId',
 ]);
 
 describe('Event Payload Enrichment Audit', () => {

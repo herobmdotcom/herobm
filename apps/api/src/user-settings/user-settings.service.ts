@@ -4,6 +4,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { userSettings } from '@herobm/db-schema';
 import { eq } from 'drizzle-orm';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class UserSettingsService {
@@ -16,7 +18,6 @@ export class UserSettingsService {
 
     if (!settings) {
       const [inserted] = await this.db
-        // @herobm-skip-audit
         .insert(userSettings)
         .values({
           userId,
@@ -24,6 +25,15 @@ export class UserSettingsService {
         })
         .returning();
       settings = inserted;
+
+      await emitEvent(this.db, {
+        entityType: EntityType.USER,
+        entityId: userId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `User Preferences (${userId})`,
+        payload: { preferences: { density: 'comfortable', theme: 'dark' } },
+        actor: userId,
+      });
     } else if (!settings.preferences) {
       settings = {
         ...settings,
@@ -69,7 +79,6 @@ export class UserSettingsService {
 
     if (audit.hasChanges) {
       const [updated] = await this.db
-        // @herobm-skip-audit
         .update(userSettings)
         .set({
           ...audit.changes,
@@ -77,6 +86,15 @@ export class UserSettingsService {
         } as typeof userSettings.$inferInsert)
         .where(eq(userSettings.userId, userId))
         .returning();
+
+      await emitEvent(this.db, {
+        entityType: EntityType.USER,
+        entityId: userId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `User Preferences (${userId})`,
+        payload: { changes: Object.keys(audit.changes) },
+        actor: userId,
+      });
 
       return updated;
     }

@@ -1430,6 +1430,9 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
   }
 
   let adminPass = process.env.ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD;
+  if (adminPass) {
+    adminPass = adminPass.trim();
+  }
   let generated = false;
 
   if (!adminPass) {

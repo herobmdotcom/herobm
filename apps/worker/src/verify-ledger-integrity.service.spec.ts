@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { verifyLedgerIntegrity } from './verify-ledger-integrity.service';
+import { relayLogger } from './logger';
+import { systemEvents, outbox, emailOutbox } from '@herobm/db-schema';
 import { Job } from 'bullmq';
 
 describe('verify-ledger-integrity.service', () => {
@@ -8,6 +10,10 @@ describe('verify-ledger-integrity.service', () => {
 
   beforeEach(() => {
     mockJob = { id: 'test-job' } as unknown as Job;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should pass cleanly with zero anomalies when ledger is fully consistent', async () => {
@@ -349,6 +355,122 @@ describe('verify-ledger-integrity.service', () => {
     expect(res.anomaliesCount).toBe(0);
     expect(res.verifiedInvoicesCount).toBe(2);
     expect(mockDb.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('should trigger multi-channel alerting (logger.error, systemEvents, outbox, emailOutbox) when anomalies are detected', async () => {
+    const errorSpy = vi.spyOn(relayLogger, 'error').mockImplementation(() => {});
+
+    const invoices: any[] = [];
+    const journals = [
+      {
+        journalEntryId: 'je-unbalanced',
+        entryNumber: 'JE-20260831-9999',
+        sourceType: 'manual',
+      },
+    ];
+    const lines = [
+      { journalEntryId: 'je-unbalanced', debit: '100.00', credit: '0' },
+      { journalEntryId: 'je-unbalanced', debit: '0', credit: '50.00' }, // Drift of 50.00
+    ];
+
+    const insertedRecords: Record<string, any[]> = {
+      systemEvents: [],
+      outbox: [],
+      emailOutbox: [],
+    };
+
+    let selectCallCount = 0;
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockImplementation(() => {
+          selectCallCount++;
+          if (selectCallCount === 1) {
+            return {
+              orderBy: vi.fn().mockResolvedValue(invoices),
+            };
+          } else if (selectCallCount === 2) {
+            return Promise.resolve(journals);
+          } else {
+            return Promise.resolve(lines);
+          }
+        }),
+      }),
+      insert: vi.fn().mockImplementation((table: any) => ({
+        values: vi.fn().mockImplementation((val: any) => {
+          if (table === systemEvents) insertedRecords.systemEvents.push(val);
+          if (table === outbox) insertedRecords.outbox.push(val);
+          if (table === emailOutbox) insertedRecords.emailOutbox.push(val);
+          return Promise.resolve(true);
+        }),
+      })),
+    };
+
+    const res = await verifyLedgerIntegrity(mockJob, mockDb);
+
+    expect(res.anomaliesCount).toBe(1);
+    expect(res.anomalies[0].type).toBe('unbalanced_journal_entry');
+
+    // 1. Verify error logger called with compliance alert
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        anomaliesCount: 1,
+        anomalies: expect.arrayContaining([
+          expect.objectContaining({ type: 'unbalanced_journal_entry' }),
+        ]),
+      }),
+      'COMPLIANCE ALERT: Ledger integrity anomalies detected!'
+    );
+
+    // 2. Verify systemEvents insert (dashboard alert)
+    expect(insertedRecords.systemEvents).toHaveLength(1);
+    expect(insertedRecords.systemEvents[0]).toMatchObject({
+      eventType: 'ledger_integrity_violation',
+      entityType: 'system',
+      actor: 'system-worker',
+      entityDisplayName: 'Ledger Integrity Alert: 1 anomaly detected',
+      payload: expect.objectContaining({ anomaliesCount: 1 }),
+    });
+
+    // 3. Verify outbox insert (external sync event)
+    expect(insertedRecords.outbox).toHaveLength(1);
+    expect(insertedRecords.outbox[0]).toMatchObject({
+      eventType: 'system.ledger_integrity_violation',
+      entityType: 'system',
+      entityDisplayName: 'Ledger Integrity Alert: 1 anomaly detected',
+      payload: expect.objectContaining({ anomaliesCount: 1 }),
+    });
+
+    // 4. Verify emailOutbox insert (admin email alert)
+    expect(insertedRecords.emailOutbox).toHaveLength(1);
+    expect(insertedRecords.emailOutbox[0]).toMatchObject({
+      toAddress: expect.any(String),
+      subject: expect.stringContaining('[ALERT] General Ledger Integrity Violation Detected (1 issues)'),
+      status: 'pending',
+      retries: 0,
+      entityType: 'system',
+    });
+    expect(insertedRecords.emailOutbox[0].htmlBody).toContain('General Ledger Integrity Violation Alert');
+    expect(insertedRecords.emailOutbox[0].htmlBody).toContain('unbalanced_journal_entry');
+  });
+
+  it('should log error and rethrow when ledger verification encounters a fatal database error', async () => {
+    const errorSpy = vi.spyOn(relayLogger, 'error').mockImplementation(() => {});
+    const dbError = new Error('Database connection failed unexpectedly');
+
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockRejectedValue(dbError),
+        }),
+      }),
+    };
+
+    await expect(verifyLedgerIntegrity(mockJob, mockDb)).rejects.toThrow('Database connection failed unexpectedly');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      { err: 'Database connection failed unexpectedly' },
+      'Failed to execute Ledger Integrity verification job'
+    );
   });
 });
 

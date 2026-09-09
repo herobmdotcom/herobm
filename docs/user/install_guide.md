@@ -6,8 +6,11 @@ category: "Overview"
 order: 1
 routes:
   - "/admin/version"
-tags: ["installation", "setup", "fast-install", "deployment", "prerequisites", "startup-options", "autostart", "systemd", "firewall", "networking", "ports", "system-requirements", "hardware"]
+tags: ["installation", "setup", "fast-install", "deployment", "repositories", "herobm", "herobm-pro", "prerequisites", "startup-options", "autostart", "systemd", "firewall", "networking", "ports", "system-requirements", "hardware"]
 fields:
+  repositories:
+    title: "Repositories"
+    summary: "Repository options: `herobm` and `herobm-pro` (licensed, includes all test suites)."
   requirements:
     title: "Machine & System Requirements"
     summary: "Hardware specifications, supported operating systems, and container/software prerequisites."
@@ -73,19 +76,31 @@ The automated installer (`make fast-install`) will automatically detect, install
 
 The primary and recommended way to install and configure HeroBM on any machine (Linux, macOS, Windows) is using `make fast-install`.
 
-1. Clone the repository and navigate to the project root:
-   ```bash
-   git clone <repo-url> herobm
-   cd herobm
-   ```
+### Step 1: Clone the Repository
 
-2. Run the automated Fast Install command:
-   ```bash
-   make fast-install
-   ```
+HeroBM is hosted across two repositories:
 
-   > [!TIP]
-   > On Windows without `make` pre-installed, you can run `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` once to install Make, then run `make fast-install`.
+- **`herobm`**: Contains the core application stack (`apps/api`, `apps/ops-portal`, `apps/worker`, `apps/mcp-server`), shared packages (`packages/db-schema`, `packages/shared`, `packages/sdk`), and documentation.
+  ```bash
+  git clone https://github.com/herobmdotcom/herobm.git
+  cd herobm
+  ```
+
+- **`herobm-pro`**: Access to this repository comes with a license. Contains the full platform and includes all test suites (unit tests, structural architecture invariant tests, and fuzzy testers).
+  ```bash
+  git clone https://github.com/herobmdotcom/herobm-pro.git herobm
+  cd herobm
+  ```
+
+### Step 2: Run Fast Install
+
+Run the automated Fast Install command from the project root:
+```bash
+make fast-install
+```
+
+> [!TIP]
+> On Windows without `make` pre-installed, you can run `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1` once to install Make, then run `make fast-install`.
 
 The Fast Install target automatically:
 1. **Installs OS Prerequisites** (`make install-prereqs`): Checks and installs Node.js (>=20), Podman, Python 3, Typst, and Make.

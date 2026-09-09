@@ -26,6 +26,7 @@ export const EntityType = {
   SALES_RETURN: 'sales_return',
   PURCHASE_INVOICE: 'purchase_invoice',
   PURCHASE_RETURN: 'purchase_return',
+  GOODS_RECEIVED: 'goods_received',
   SYSTEM: 'system', // the entire system (for system-wide events or generic stuff)
   WAREHOUSE: 'warehouse', // warehouse operations
   INVENTORY_LEDGER: 'inventory_ledger',
@@ -332,8 +333,6 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'supplier_group.deleted',
   'supplier_group.updated',
   'system.ledger_integrity_violation',
-  'system.receipt_matched',
-  'system.receipt_unmatched',
   'system.updated',
   'tax_category.created',
   'tax_category.deleted',
@@ -355,7 +354,9 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'warehouse.pick_created',
   'warehouse.putaway_completed',
   'warehouse.receipt_created',
+  'warehouse.receipt_matched',
   'warehouse.receipt_status_changed',
+  'warehouse.receipt_unmatched',
   'warehouse.shipment_dispatched',
   'warehouse.shipment_status_changed',
   'warehouse.stock_moved',

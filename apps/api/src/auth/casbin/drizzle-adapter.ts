@@ -40,11 +40,13 @@ export class DrizzleAdapter implements Adapter {
     // Drop all policies
     await this.db.delete(casbinRule);
 
+    const lines: (typeof casbinRule.$inferInsert)[] = [];
+
     const astMap = model.model.get('p');
     if (astMap) {
       for (const [ptype, ast] of astMap) {
         for (const rule of ast.policy) {
-          await this.savePolicyLine(ptype, rule);
+          lines.push(this.getPolicyLine(ptype, rule));
         }
       }
     }
@@ -53,9 +55,13 @@ export class DrizzleAdapter implements Adapter {
     if (astMapG) {
       for (const [ptype, ast] of astMapG) {
         for (const rule of ast.policy) {
-          await this.savePolicyLine(ptype, rule);
+          lines.push(this.getPolicyLine(ptype, rule));
         }
       }
+    }
+
+    if (lines.length > 0) {
+      await this.db.insert(casbinRule).values(lines);
     }
 
     return true;

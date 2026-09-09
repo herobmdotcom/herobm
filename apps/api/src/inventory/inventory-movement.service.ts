@@ -654,6 +654,13 @@ export class InventoryMovementService {
           payload: {
             lineId: lineDto.lineId,
             sourceType: lineDto.sourceType,
+            recordSourceId,
+            ...(lineDto.sourceType === 'goods_receipt'
+              ? {
+                  goodsReceivedId: recordSourceId,
+                  receiptNumber: referenceNumber,
+                }
+              : {}),
             productId,
             productName: product?.name,
             quantityPutaway: lineDto.quantity,

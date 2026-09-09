@@ -13,6 +13,15 @@ This changelog records all synchronization audits and updates to `docs/user/`. E
 
 ---
 
+## [2026-09-08] - Repository Options in Install Guide
+
+**Topics Updated:**
+- **`docs/user/install_guide.md`**:
+  - Added repository listings and clone instructions for `herobm` and `herobm-pro` (licensed, includes all test suites).
+  - Added `repositories` field definitions and tags.
+
+---
+
 ## [2026-09-08] - System-Wide Renaming of Actors to Organizations & Tenant Settings
 
 **Topics Updated:**

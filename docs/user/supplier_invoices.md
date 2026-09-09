@@ -86,6 +86,15 @@ Credit: Accounts Payable Control Account    (Total Invoice Amount Base)
 
 * **Unmatched Expense Invoices**: If an invoice line is not linked to a Purchase Order (e.g. utility bills, freight fees), the operator must explicitly assign an active GL Expense Account, Cost Center, and Activity before posting.
 
+### 3. Payment Due Date & Vendor Trading Terms
+The system automatically determines the legally binding payment deadline from the supplier's effective trading terms (`Supplier Record` → `Supplier Group` → `System Default`):
+
+* **Net Terms (`net`)**: `Due Date = Bill Date + Days` (e.g. `NET30` sets due date 30 days after the bill date).
+* **End of Month (`end_of_month`)**: `Due Date = Last Day of Bill Month + Days` (e.g. `EOM30` sets due date 30 days after the close of the invoice month).
+* **Cash on Delivery (`cash_on_delivery`)**: `Due Date = Bill Date` (immediate settlement).
+
+These computed due dates populate the Accounts Payable aging schedule (`/balances/suppliers`), enabling the treasury team to schedule cash disbursements without incurring late fees.
+
 ---
 
 ## Step-by-Step Workflows

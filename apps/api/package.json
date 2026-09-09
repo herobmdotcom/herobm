@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "HeroBM: Core Backend API Gateway & Domain Services",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -164,7 +164,8 @@
     "moduleNameMapper": {
       "^@api/(.*)$": "<rootDir>/$1",
       "^@herobm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
-      "^uuid$": "<rootDir>/../test/utils/uuid-mock.js"
+      "^uuid$": "<rootDir>/../test/utils/uuid-mock.js",
+      "^otplib$": "<rootDir>/../test/utils/otplib-mock.js"
     }
   }
 }

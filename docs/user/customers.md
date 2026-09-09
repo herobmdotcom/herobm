@@ -63,9 +63,9 @@ When creating or updating customer orders, the system automatically resolves com
 | Commercial Setting | Resolution Cascade (First Match Wins) | Default / Fallback |
 | :--- | :--- | :--- |
 | **Credit Limit** | `1. Customer Record` → `2. Customer Group` | `0.00` (Cash Basis only) |
-| **Payment Terms** | `1. Customer Record` → `2. Customer Group` → `3. System Default` | `None` (Immediate / Cash) |
-| **Early Payment Discount** | `1. Customer Record` → `2. Customer Group` | `0%` (No discount) |
-| **Early Payment Days** | `1. Customer Record` → `2. Customer Group` | `None` |
+| **Trading / Payment Terms** | `1. Customer Record` → `2. Customer Group` → `3. System Default` | `Immediate / Cash Basis` |
+| **Early Payment Discount %** | `1. Customer Record` → `2. Customer Group` | `0%` (No discount) |
+| **Early Payment Window (Days)** | `1. Customer Record` → `2. Customer Group` | `None` (0 days) |
 | **Price Scale (1–4)** | `1. Customer Group Price Scale` | `Scale 1` (Retail List Price) |
 
 ```mermaid
@@ -74,10 +74,23 @@ flowchart TD
     B -- Yes --> C[Use Customer Level Setting]
     B -- No --> D{Group Setting Defined?}
     D -- Yes --> E[Inherit Group Level Setting]
-    D -- No --> F[Apply System Default / Cash Basis]
+    D -- No --> F[Apply System Default / Cash Basis Fallback]
 ```
 
-### 2. Credit Exposure & Assessment Formula
+### 2. Trading Terms & Settlement Schedule Mechanics
+When a sales invoice is posted, the customer's effective trading term calculates the official **Payment Due Date**:
+
+* **Net Terms (`net`)**: `Due Date = Invoice Date + Days` (e.g. `NET30` sets due date 30 days after invoice date).
+* **End of Month Terms (`end_of_month`)**: `Due Date = Last Day of Invoice Month + Days` (e.g. `EOM30` sets due date 30 days after the end of the invoice month).
+* **Cash on Delivery (`cash_on_delivery`)**: `Due Date = Invoice Date` (zero credit window; immediate settlement required).
+
+#### Early Payment Cash Discounts
+Organizations can incentivize prompt customer payments by specifying early settlement terms:
+* **Early Payment Discount % (`early_payment_discount`)**: Percentage reduction applied to the total gross amount if paid early (e.g. `2.00` for 2%).
+* **Early Payment Window (`early_payment_discount_days`)**: Number of calendar days from the invoice date during which the discount is valid (e.g. `10` days).
+* *Example (2/10 Net 30)*: A 1,000.00 invoice on `NET30` with `2%` discount within `10` days allows the customer to settle for 980.00 if paid within 10 days of the invoice date.
+
+### 3. Credit Exposure & Assessment Formula
 The system evaluates customer financial risk whenever an order is moved to **Quoted** or **Confirmed**:
 
 ```
@@ -86,13 +99,14 @@ Total Financial Exposure = Total Unpaid Invoice Balance + Additional Open Order 
 * **Unpaid Invoice Balance**: Sum of all posted, non-cancelled Sales Invoices minus credited amounts and unallocated customer receipts.
 * **Additional Open Order Exposure**: Gross total value of open Sales Orders in `Confirmed`, `Picking`, or `Shipped` states that have not yet been fully invoiced.
 
-### 3. Credit Hold Evaluation (Logical OR-Gate)
+### 4. Credit Hold Evaluation (Logical OR-Gate)
 An account's effective credit hold status is evaluated as a logical OR-gate:
 
 ```
 Is Sales Blocked = (Customer is on Credit Hold) OR (Customer Group is on Credit Hold) OR (Overdue Balance > 0) OR (Total Exposure > Effective Credit Limit)
 ```
 
+* **Overdue Balance Block**: If an invoice remains unpaid past its computed due date (`Current Date > Due Date`), `Overdue Balance > 0` immediately triggers the credit hold gate.
 * **Active Override**: If an authorized user has granted a **Credit Hold Override**, the block is bypassed until `overrideCreditHoldUntil` timestamp expires (`overrideCreditHoldUntil > Current Time`).
 * **Hard vs. Soft Limit Behavior**: Under `hard` limit configuration (default), exceeding credit limits strictly prevents confirming or quoting orders. Under `soft` limit mode, operators receive a non-blocking financial warning.
 

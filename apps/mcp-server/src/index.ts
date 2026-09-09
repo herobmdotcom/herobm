@@ -274,7 +274,7 @@ async function main() {
   console.error(`Registered ${toolRegistry.size} operations across ${domains.length} domains`);
 
   const server = new Server(
-    { name: 'herobm-mcp-server', version: '1.1.3' },
+    { name: 'herobm-mcp-server', version: '1.1.4' },
     { capabilities: { tools: {} } }
   );
 
