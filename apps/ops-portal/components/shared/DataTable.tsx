@@ -54,7 +54,11 @@ export function DataTable<T>({
                 <th
                   key={col.id || i}
                   className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}
-                  style={col.width ? { width: col.width } : undefined}
+                  /* inline-style-allowed: Dynamic column width specified by table column configuration */
+                  style={{
+                    ...(col.width ? { width: col.width } : {}),
+                    ...(col.align ? { textAlign: col.align } : {}),
+                  }}
                 >
                   {col.header}
                 </th>

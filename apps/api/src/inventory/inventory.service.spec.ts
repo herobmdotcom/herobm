@@ -22,6 +22,9 @@ import { PRODUCT_STATE } from '@herobm/shared';
 import { eq, sql } from 'drizzle-orm';
 import { InventoryMovementService } from './inventory-movement.service';
 import { InventoryQueryService } from './inventory-query.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { BackordersService } from '../orders/backorders.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -106,6 +109,26 @@ describe('InventoryService', () => {
           useValue: {
             getSettings: jest.fn().mockResolvedValue(null),
             postJournalEntry: jest.fn(),
+          },
+        },
+        {
+          provide: WorkOrdersWriteService,
+          useValue: {
+            updatePutawayStatus: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: BackordersService,
+          useValue: {
+            fulfillWorkOrderDemand: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: ReturnsWriteService,
+          useValue: {
+            updateReturnLinePutawayStatus: jest
+              .fn()
+              .mockResolvedValue(undefined),
           },
         },
       ],

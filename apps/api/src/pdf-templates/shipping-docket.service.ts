@@ -79,7 +79,7 @@ export class ShippingDocketService {
         deliveryState: salesOrders.deliveryState,
         deliveryPostalCode: salesOrders.deliveryPostalCode,
         deliveryCountry: salesOrders.deliveryCountry,
-        shippingNotes: salesOrders.shippingNotes,
+        shippingNotes: salesOrderShipments.shippingNotes,
         customerOrderNumber: salesOrders.customerOrderNumber,
       })
       .from(salesOrderShipments)
@@ -117,7 +117,7 @@ export class ShippingDocketService {
           deliveryState: locations.stateOrProvince,
           deliveryPostalCode: locations.postalCode,
           deliveryCountry: locations.country,
-          shippingNotes: transferOrders.shippingNotes,
+          shippingNotes: transferOrderShipments.shippingNotes,
           customerOrderNumber: sql<string | null>`NULL`,
         })
         .from(transferOrderShipments)

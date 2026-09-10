@@ -41,6 +41,8 @@ import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
+import { forwardRef } from '@nestjs/common';
 import {
   generateReturnNumber,
   generateShipmentNumber,
@@ -56,6 +58,8 @@ export class PurchaseReturnsService {
     private readonly appConfig: AppConfigService,
     private readonly glService: GlService,
     private readonly inventoryMovementService: InventoryMovementService,
+    @Inject(forwardRef(() => PurchaseOrdersWriteService))
+    private readonly purchaseOrdersWriteService: PurchaseOrdersWriteService,
   ) {}
 
   private readonly logger = new Logger(PurchaseReturnsService.name);
@@ -638,19 +642,13 @@ export class PurchaseReturnsService {
 
       const returnEntries = Array.from(aggregatedReturns.entries());
       if (returnEntries.length > 0) {
-        await tx.execute(
-          sql`UPDATE herobm_core.purchase_order_lines AS pol
-              SET quantity_received = (COALESCE(pol.quantity_received, 0)::numeric - u.quantity_returned)
-              FROM (VALUES
-                ${sql.join(
-                  returnEntries.map(
-                    ([poLineId, qty]) =>
-                      sql`(${poLineId}::uuid, CAST(${qty} AS NUMERIC))`,
-                  ),
-                  sql`, `,
-                )}
-              ) AS u(purchase_order_line_id, quantity_returned)
-              WHERE pol.purchase_order_line_id = u.purchase_order_line_id`,
+        await this.purchaseOrdersWriteService.revertReceiptQuantities(
+          tx,
+          returnEntries.map(([poLineId, qty]) => ({
+            purchaseOrderLineId: poLineId,
+            quantity: Number(qty),
+          })),
+          actor,
         );
       }
 
@@ -789,19 +787,16 @@ export class PurchaseReturnsService {
             );
           }
 
-          const newQtyReceived = (
-            parseFloat(orderLine.quantityReceived || '0') + qty
-          ).toString();
-
-          await tx
-            .update(purchaseOrderLineItems)
-            .set({ quantityReceived: newQtyReceived })
-            .where(
-              eq(
-                purchaseOrderLineItems.purchaseOrderLineId,
-                rl.purchaseOrderLineId,
-              ),
-            );
+          await this.purchaseOrdersWriteService.recordReceiptQuantities(
+            tx,
+            [
+              {
+                purchaseOrderLineId: rl.purchaseOrderLineId,
+                quantity: qty,
+              },
+            ],
+            actor,
+          );
 
           const movementNumber = `MOV-${Date.now()}`;
           await this.inventoryMovementService.recordInventoryMovement(tx, {
@@ -837,6 +832,7 @@ export class PurchaseReturnsService {
         tx,
       );
 
+      // @herobm-skip-audit - DB write is performed by changePurchaseReturnState, emitting cross-entity event here
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
@@ -925,5 +921,46 @@ export class PurchaseReturnsService {
       .where(eq(purchaseOrderReturnShipments.returnId, returnId))
       .returning();
     return updated;
+  }
+
+  /**
+   * Resolve a purchase return without issuing a debit note.
+   * @herobm-skip-audit - State transition delegated to changePurchaseReturnState which emits EventType.STATUS_CHANGED
+   */
+  async resolveWithoutDebitNote(
+    returnId: string,
+    notes?: string,
+    actor: string = 'finance',
+  ) {
+    const [existing] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (!existing) throw new NotFoundException('Purchase Return not found');
+
+    const updatedNotes = notes
+      ? `${existing.notes ? existing.notes + ' | ' : ''}${notes}`
+      : existing.notes || 'Marked as resolved without debit note';
+
+    return await this.db.transaction(async (tx: DrizzleDB) => {
+      await tx
+        .update(purchaseOrderReturns)
+        .set({
+          notes: updatedNotes,
+          modifiedOn: new Date(),
+        })
+        .where(eq(purchaseOrderReturns.returnId, returnId));
+
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+
+      return updated;
+    });
   }
 }

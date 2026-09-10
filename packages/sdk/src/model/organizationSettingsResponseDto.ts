@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { PdfThemeConfigDto } from './pdfThemeConfigDto';
 
 export interface OrganizationSettingsResponseDto {
   tenantSettingsId?: string;
@@ -26,4 +27,5 @@ export interface OrganizationSettingsResponseDto {
   bankAccountNumber?: string;
   bankSwiftBic?: string;
   bankIban?: string;
+  pdfThemeConfig?: PdfThemeConfigDto;
 }

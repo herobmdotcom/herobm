@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CounterFulfillmentService } from './counter-fulfillment.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
 import { SalesInvoiceService } from '../invoices/sales-invoice.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
@@ -7,14 +7,20 @@ import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
 import { OrganizationService } from '../settings/organization.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { BackordersService } from './backorders.service';
+import { ReturnsWriteService } from './returns-write.service';
 import { UomService } from '../inventory/uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import {
   salesOrders,
   salesOrderLineItems,
   salesOrderPicks,
+  salesOrderShipments,
+  salesOrderShipmentLines,
   products,
   zones,
   bins,
@@ -41,9 +47,9 @@ jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
 }));
 
-describe('CounterFulfillmentService', () => {
+describe('DirectFulfillmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
-  let service: CounterFulfillmentService;
+  let service: DirectFulfillmentService;
   let salesInvoiceService: SalesInvoiceService;
 
   const CUSTOMER_ID = '00000000-0000-4000-8000-000000000001';
@@ -56,6 +62,8 @@ describe('CounterFulfillmentService', () => {
   const MOCK_AR_ID = '00000000-0000-4000-8000-0000000000a1';
   const MOCK_REV_ID = '00000000-0000-4000-8000-0000000000a2';
   const MOCK_TAX_ID = '00000000-0000-4000-8000-0000000000a3';
+  const MOCK_INVENTORY_ID = '00000000-0000-4000-8000-0000000000a4';
+  const MOCK_COGS_ID = '00000000-0000-4000-8000-0000000000a5';
 
   let mockGlService: any;
   let mockAppConfigService: any;
@@ -86,18 +94,19 @@ describe('CounterFulfillmentService', () => {
       defaultRevenueAccountId: jest.fn().mockReturnValue(null),
       defaultCostCenterId: jest.fn().mockReturnValue(null),
       defaultActivityId: jest.fn().mockReturnValue(null),
-      defaultInventoryAccountId: jest.fn().mockReturnValue('1200'),
+      defaultInventoryAccountId: jest.fn().mockReturnValue(MOCK_INVENTORY_ID),
       defaultGrniAccountId: jest.fn().mockReturnValue('2110'),
-      defaultCogsAccountId: jest.fn().mockReturnValue('5000'),
+      defaultCogsAccountId: jest.fn().mockReturnValue(MOCK_COGS_ID),
       defaultShrinkageAccountId: jest.fn().mockReturnValue('5100'),
       defaultPpvAccountId: jest.fn().mockReturnValue('5200'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CounterFulfillmentService,
+        DirectFulfillmentService,
         SalesInvoiceService,
         InventoryMovementService,
+        ShipmentsCoreService,
         UomService,
         { provide: DRIZZLE, useValue: pg.db },
         { provide: GlService, useValue: mockGlService },
@@ -122,13 +131,35 @@ describe('CounterFulfillmentService', () => {
             get: jest.fn().mockResolvedValue({}),
           },
         },
+        {
+          provide: WorkOrdersWriteService,
+          useValue: {
+            updatePutawayStatus: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: BackordersService,
+          useValue: {
+            fulfillWorkOrderDemand: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: ReturnsWriteService,
+          useValue: {
+            updateReturnLinePutawayStatus: jest
+              .fn()
+              .mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
-    service = module.get<CounterFulfillmentService>(CounterFulfillmentService);
+    service = module.get<DirectFulfillmentService>(DirectFulfillmentService);
     salesInvoiceService = module.get<SalesInvoiceService>(SalesInvoiceService);
 
     // Clean tables
+    await pg.db.delete(salesOrderShipmentLines);
+    await pg.db.delete(salesOrderShipments);
     await pg.db.delete(salesOrderPicks);
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
@@ -137,50 +168,51 @@ describe('CounterFulfillmentService', () => {
     await pg.db.delete(binContents);
     await pg.db.delete(bins);
     await pg.db.delete(zones);
-    await pg.db.delete(locations);
     await pg.db.delete(products);
     await pg.db.delete(customers);
     await pg.db.delete(organizations);
-    await pg.db.delete(glAccounts);
+    await pg.db.delete(locations);
     await pg.db.delete(taxCategories);
     await pg.db.delete(uomDictionary);
+    await pg.db.delete(glAccounts);
 
-    // Seed master data
-    await pg.db.insert(glAccounts).values([
-      {
-        glAccountId: MOCK_AR_ID,
-        accountCode: '1100',
-        name: 'Accounts Receivable',
-        accountType: 'asset',
-        currencyCode: 'AUD',
-        isGroup: false,
-        isSystem: true,
-        isBankAccount: false,
-        isActive: true,
-      },
-      {
-        glAccountId: MOCK_REV_ID,
-        accountCode: '4100',
-        name: 'Sales Revenue',
-        accountType: 'revenue',
-        currencyCode: 'AUD',
-        isGroup: false,
-        isSystem: true,
-        isBankAccount: false,
-        isActive: true,
-      },
-      {
-        glAccountId: MOCK_TAX_ID,
-        accountCode: '2200',
-        name: 'GST Collected',
-        accountType: 'liability',
-        currencyCode: 'AUD',
-        isGroup: false,
-        isSystem: true,
-        isBankAccount: false,
-        isActive: true,
-      },
-    ]);
+    // 1. Seed base data
+    await pg.db.insert(organizations).values({
+      organizationId: '00000000-0000-4000-8000-000000000000',
+      name: 'Direct Fulfillment Test Org',
+      stateCode: ORGANIZATION_STATE.ACTIVE,
+      isTaxRegistered: true,
+    });
+
+    await pg.db.insert(locations).values({
+      locationId: LOCATION_ID,
+      code: 'LOC-COUNTER',
+      name: 'Counter & Trade Location',
+      source: 'manual',
+      createdBy: ACTOR_ID,
+    });
+
+    await pg.db.insert(zones).values({
+      zoneId: ZONE_ID,
+      locationId: LOCATION_ID,
+      code: 'Z-PICK',
+      name: 'Pickable Area',
+      source: 'manual',
+      createdBy: ACTOR_ID,
+    });
+
+    await pg.db.insert(bins).values({
+      binId: BIN_ID,
+      zoneId: ZONE_ID,
+      binNumber: 'B-01',
+      binType: 'storage',
+      source: 'manual',
+      isUnavailable: false,
+      isBonded: false,
+      isConsignment: false,
+      createdBy: ACTOR_ID,
+    });
+
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
@@ -189,94 +221,108 @@ describe('CounterFulfillmentService', () => {
     await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
-      title: 'GST',
-      rate: '0.1',
+      title: 'Standard GST',
       type: 'tax_applies',
-    });
-
-    await pg.db.insert(locations).values({
-      locationId: LOCATION_ID,
-      code: 'SYD-CTR',
-      name: 'Sydney Counter & Warehouse',
-      addressLine1: '123 Trade Center Way',
-      city: 'Sydney',
-      stateOrProvince: 'NSW',
-      postalCode: '2000',
-      country: 'Australia',
-      source: 'app',
-      createdBy: 'system',
-    });
-
-    await pg.db.insert(zones).values({
-      zoneId: ZONE_ID,
-      code: 'CTR',
-      name: 'Counter Area',
-      locationId: LOCATION_ID,
-      source: 'app',
-      createdBy: 'system',
-    });
-
-    await pg.db.insert(bins).values({
-      binId: BIN_ID,
-      binNumber: 'A-01',
-      zoneId: ZONE_ID,
-      binType: 'storage',
-      isUnavailable: false,
-      isBonded: false,
-      source: 'app',
-      createdBy: 'system',
+      rate: '10.0',
     });
 
     await pg.db.insert(products).values({
       productId: PRODUCT_ID,
-      productNumber: 'TL-1001',
+      productNumber: 'DRILL-18V',
       name: '18V Cordless Drill',
       productType: 'inventory',
+      baseUom: 'EA',
       listPrice: '150.00',
       standardCost: '80.00',
       weightedAverageCost: '80.00',
-      baseUom: 'EA',
       stateCode: PRODUCT_STATE.ACTIVE,
-      salesTaxCategoryId: TAX_CAT_ID,
+      source: 'manual',
       structureType: 'standard',
-      source: 'app',
-      createdBy: 'system',
+      createdBy: ACTOR_ID,
     });
 
-    // 20 units on hand in bin A-01
     await pg.db.insert(binContents).values({
       binId: BIN_ID,
       productId: PRODUCT_ID,
       actualQuantity: '20',
     });
 
-    await pg.db.insert(organizations).values({
-      organizationId: ACTOR_ID,
-      name: 'Walk-In Counter Customer',
-      stateCode: ORGANIZATION_STATE.ACTIVE,
-      isTaxRegistered: true,
-      headquartersAddressLine1: '123 Trade Center Way',
-    });
-
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
-      organizationId: ACTOR_ID,
-      customerNumber: 'CUST-WALKIN',
-      stateCode: CUSTOMER_STATE.ACTIVE,
+      customerNumber: 'CUST-001',
       currencyCode: 'AUD',
-      source: 'app',
-      createdBy: 'system',
+      stateCode: CUSTOMER_STATE.ACTIVE,
+      source: 'manual',
+      createdBy: ACTOR_ID,
     });
+
+    await pg.db.insert(glAccounts).values([
+      {
+        glAccountId: MOCK_INVENTORY_ID,
+        accountCode: '1200',
+        name: 'Inventory Asset',
+        accountType: 'asset',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'AUD',
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_COGS_ID,
+        accountCode: '5000',
+        name: 'Cost of Goods Sold',
+        accountType: 'expense',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'AUD',
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_AR_ID,
+        accountCode: '1100',
+        name: 'Accounts Receivable',
+        accountType: 'asset',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'AUD',
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_REV_ID,
+        accountCode: '4000',
+        name: 'Sales Revenue',
+        accountType: 'revenue',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'AUD',
+        isActive: true,
+      },
+      {
+        glAccountId: MOCK_TAX_ID,
+        accountCode: '2200',
+        name: 'GST Payable',
+        accountType: 'liability',
+        isGroup: false,
+        isSystem: false,
+        isBankAccount: false,
+        currencyCode: 'AUD',
+        isActive: true,
+      },
+    ]);
   });
 
-  it('should successfully fulfill order over the counter and post COGS', async () => {
+  it('should fully fulfill order directly, decrement stock, post COGS, and mark order SHIPPED', async () => {
     const orderId = '00000000-0000-4000-8000-000000000101';
     const lineId = '00000000-0000-4000-8000-000000000102';
 
-    // 1. Create a confirmed order with 5 units
+    // 1. Create confirmed sales order for 5 drills
     await pg.db.insert(salesOrders).values({
       salesOrderId: orderId,
-      orderNumber: 'ORD-OTC-001',
+      orderNumber: 'ORD-DIR-001',
       customerId: CUSTOMER_ID,
       fulfillmentLocationId: LOCATION_ID,
       stateCode: SALES_ORDER_STATE.CONFIRMED,
@@ -304,10 +350,14 @@ describe('CounterFulfillmentService', () => {
       fulfillmentLocationId: LOCATION_ID,
     });
 
-    // 2. Fulfill over the counter
-    const result = await service.fulfillCounterOrder(
+    // 2. Fulfill directly
+    const result = await service.fulfillDirectOrder(
       orderId,
-      {},
+      {
+        trackingNumber: 'TRACK-12345',
+        deliveryCompanyName: 'FastExpress',
+        notes: 'Direct counter dispatch',
+      },
       'counter.staff',
     );
 
@@ -333,14 +383,32 @@ describe('CounterFulfillmentService', () => {
     expect(picks[0].stateCode).toBe(SALES_ORDER_PICK_STATE.SHIPPED);
     expect(picks[0].quantity).toBe('5');
 
-    // 5. Verify order state updated to SHIPPED
+    // 5. Verify sales_order_shipments was created with state 'dispatched'
+    const shipments = await pg.db
+      .select()
+      .from(salesOrderShipments)
+      .where(eq(salesOrderShipments.salesOrderId, orderId));
+    expect(shipments).toHaveLength(1);
+    expect(shipments[0].stateCode).toBe('dispatched');
+    expect(shipments[0].trackingNumber).toBe('TRACK-12345');
+    expect(shipments[0].deliveryCompanyName).toBe('FastExpress');
+    expect(shipments[0].notes).toBe('Direct counter dispatch');
+
+    const shipmentLines = await pg.db
+      .select()
+      .from(salesOrderShipmentLines)
+      .where(eq(salesOrderShipmentLines.shipmentId, shipments[0].shipmentId));
+    expect(shipmentLines).toHaveLength(1);
+    expect(shipmentLines[0].quantityShipped).toBe('5');
+
+    // 6. Verify order state updated to SHIPPED
     const [updatedOrder] = await pg.db
       .select()
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, orderId));
     expect(updatedOrder.stateCode).toBe(SALES_ORDER_STATE.SHIPPED);
 
-    // 6. Verify COGS GL journal was posted
+    // 7. Verify COGS GL journal was posted
     expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
 
     // 7. Verify SalesInvoiceService can now invoice the order
@@ -353,14 +421,14 @@ describe('CounterFulfillmentService', () => {
     expect(parseFloat(invoice.totalAmount)).toBe(825.0);
   });
 
-  it('should support partial fulfillment over the counter', async () => {
+  it('should support partial fulfillment directly', async () => {
     const orderId = '00000000-0000-4000-8000-000000000201';
     const lineId = '00000000-0000-4000-8000-000000000202';
 
     // 1. Create order for 10 units
     await pg.db.insert(salesOrders).values({
       salesOrderId: orderId,
-      orderNumber: 'ORD-OTC-PARTIAL',
+      orderNumber: 'ORD-DIR-PARTIAL',
       customerId: CUSTOMER_ID,
       fulfillmentLocationId: LOCATION_ID,
       stateCode: SALES_ORDER_STATE.CONFIRMED,
@@ -388,8 +456,8 @@ describe('CounterFulfillmentService', () => {
       fulfillmentLocationId: LOCATION_ID,
     });
 
-    // 2. Fulfill only 4 units over the counter
-    const result = await service.fulfillCounterOrder(
+    // 2. Fulfill only 4 units directly
+    const result = await service.fulfillDirectOrder(
       orderId,
       {
         lines: [
@@ -422,14 +490,14 @@ describe('CounterFulfillmentService', () => {
     expect(parseFloat(invoice.totalAmount)).toBe(660.0); // 4 * $150 + 10% tax = $660
   });
 
-  it('should reject counter fulfillment when stock is insufficient', async () => {
+  it('should reject direct fulfillment when stock is insufficient', async () => {
     const orderId = '00000000-0000-4000-8000-000000000301';
     const lineId = '00000000-0000-4000-8000-000000000302';
 
     // 1. Create order for 25 units (only 20 in stock)
     await pg.db.insert(salesOrders).values({
       salesOrderId: orderId,
-      orderNumber: 'ORD-OTC-OOS',
+      orderNumber: 'ORD-DIR-OOS',
       customerId: CUSTOMER_ID,
       fulfillmentLocationId: LOCATION_ID,
       stateCode: SALES_ORDER_STATE.CONFIRMED,
@@ -458,18 +526,18 @@ describe('CounterFulfillmentService', () => {
 
     // 2. Attempt to fulfill 25 units
     await expect(
-      service.fulfillCounterOrder(orderId, {}, 'counter.staff'),
+      service.fulfillDirectOrder(orderId, {}, 'counter.staff'),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('should reject counter fulfillment if COGS or Inventory GL account is missing in perpetual mode (Strict Mode)', async () => {
+  it('should reject direct fulfillment if COGS or Inventory GL account is missing in perpetual mode (Strict Mode)', async () => {
     const orderId = '00000000-0000-4000-8000-000000000401';
     const lineId = '00000000-0000-4000-8000-000000000402';
 
     // 1. Create order
     await pg.db.insert(salesOrders).values({
       salesOrderId: orderId,
-      orderNumber: 'ORD-OTC-GL-FAIL',
+      orderNumber: 'ORD-DIR-GL-FAIL',
       customerId: CUSTOMER_ID,
       fulfillmentLocationId: LOCATION_ID,
       stateCode: SALES_ORDER_STATE.CONFIRMED,
@@ -501,7 +569,7 @@ describe('CounterFulfillmentService', () => {
     mockAppConfigService.defaultCogsAccountId.mockReturnValue(null);
 
     await expect(
-      service.fulfillCounterOrder(orderId, {}, 'counter.staff'),
+      service.fulfillDirectOrder(orderId, {}, 'counter.staff'),
     ).rejects.toThrow(
       'Perpetual inventory requires the default COGS account to be configured.',
     );

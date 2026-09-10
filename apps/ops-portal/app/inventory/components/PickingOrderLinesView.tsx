@@ -41,6 +41,7 @@ export interface PickingOrderLinesViewProps {
   lines: PickingLine[];
   picks?: PickAllocation[];
   readOnly?: boolean;
+  disabled?: boolean;
   pickInputs?: Record<string, { quantity: string; binId: string }>;
   onPickInputChange?: (lineId: string, input: { quantity?: string; binId?: string }) => void;
   onPickLine?: (lineId: string) => void;
@@ -52,6 +53,7 @@ export default function PickingOrderLinesView({
   lines,
   picks = [],
   readOnly = false,
+  disabled = false,
   pickInputs = {},
   onPickInputChange,
   onPickLine,
@@ -337,6 +339,7 @@ export default function PickingOrderLinesView({
                           type="button"
                           onClick={() => onPickLine?.(line.salesOrderLineId)}
                           disabled={
+                            disabled ||
                             isSubmitting ||
                             !pickInputs[line.salesOrderLineId]?.quantity ||
                             !pickInputs[line.salesOrderLineId]?.binId
@@ -441,6 +444,7 @@ export default function PickingOrderLinesView({
                           type="button"
                           onClick={() => onPickLine?.(line.salesOrderLineId)}
                           disabled={
+                            disabled ||
                             isSubmitting ||
                             !pickInputs[line.salesOrderLineId]?.quantity ||
                             !pickInputs[line.salesOrderLineId]?.binId

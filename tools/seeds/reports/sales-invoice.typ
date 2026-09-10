@@ -16,28 +16,27 @@
   }
 }
 
-#import "theme-external.typ": conf
+#import "theme-customer.typ": conf, getTheme
 #show: doc => conf(title: "SALES INVOICE", doc)
-
-#set text(size: 10pt)
+#let theme = getTheme(data)
 
 // ── Document Identity ───────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(9pt, fill: luma(120))[Order No:] #h(4pt) #text(11pt, weight: "semibold")[#data.header.orderNumber] \
+    #text(9pt, fill: theme.mutedColor)[Order No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.header.orderNumber] \
     #if "invoiceMeta" in data and data.invoiceMeta != none and "invoiceNumber" in data.invoiceMeta [
       #v(0.1cm)
-      #text(9pt, fill: luma(120))[Invoice No:] #h(4pt) #text(11pt, weight: "semibold")[#data.invoiceMeta.invoiceNumber]
+      #text(9pt, fill: theme.mutedColor)[Invoice No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.invoiceMeta.invoiceNumber]
       #if "sequenceNumber" in data.invoiceMeta and "totalInvoices" in data.invoiceMeta [
         #h(6pt)
-        #text(9pt, fill: luma(100))[(Invoice \##data.invoiceMeta.sequenceNumber of #data.invoiceMeta.totalInvoices)]
+        #text(8.5pt, fill: theme.mutedColor)[(Invoice \##data.invoiceMeta.sequenceNumber of #data.invoiceMeta.totalInvoices)]
       ]
     ]
   ],
   align(right)[
-    #text(9pt, fill: luma(100))[
+    #text(8.5pt, fill: theme.mutedColor)[
       Generated on: #data.generatedAt
     ]
   ]
@@ -50,7 +49,7 @@
   columns: (1.2fr, 0.8fr),
   gutter: 20pt,
   [
-    #text(9pt, weight: "bold", fill: luma(80))[CUSTOMER] \
+    #text(9pt, weight: "bold", fill: theme.accentColor)[CUSTOMER] \
     #v(0.1cm)
     #text(11pt, weight: "semibold")[#data.header.customerName]
   ],
@@ -59,11 +58,11 @@
       columns: (auto, 1fr),
       row-gutter: 8pt,
       column-gutter: 12pt,
-      text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.orderDate,
-      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Date:], data.header.orderDate,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—],
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Currency:], data.header.currencyCode,
       ..if "invoiceMeta" in data and data.invoiceMeta != none and "dueDate" in data.invoiceMeta and data.invoiceMeta.dueDate != none and data.invoiceMeta.dueDate != "" {
-        (text(9pt, weight: "bold", fill: luma(80))[Due Date:], data.invoiceMeta.dueDate)
+        (text(9pt, weight: "bold", fill: theme.mutedColor)[Due Date:], data.invoiceMeta.dueDate)
       } else {
         ()
       }
@@ -109,18 +108,18 @@
 #table(
   columns: tableColumns,
   inset: (x: 6pt, y: 8pt),
-  stroke: 0.5pt + luma(210),
-  fill: (_, row) => if row == 0 { rgb("#f8fafc") },
+  stroke: 0.5pt + theme.borderColor,
+  fill: (_, row) => if row == 0 { theme.tableHeaderFill },
   align: tableAlign,
   
   // Header Row
-  text(9pt, weight: "bold", fill: luma(50))[Code],
-  text(9pt, weight: "bold", fill: luma(50))[Description],
-  text(9pt, weight: "bold", fill: luma(50))[Qty],
-  text(9pt, weight: "bold", fill: luma(50))[Unit Price],
-  ..(if hasDiscount { (text(9pt, weight: "bold", fill: luma(50))[Disc %],) } else { () }),
-  text(9pt, weight: "bold", fill: luma(50))[Tax],
-  text(9pt, weight: "bold", fill: luma(50))[Amount],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Code],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Description],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Qty],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Unit Price],
+  ..(if hasDiscount { (text(9pt, weight: "bold", fill: theme.primaryColor)[Disc %],) } else { () }),
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Tax],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Amount],
 
   ..for line in data.lines {
     let desc = line.at("description", default: "")
@@ -151,17 +150,17 @@
       [Subtotal:], [#data.header.currencyCode #fmt(data.summary.subtotal)],
       [Total Tax:], [#data.header.currencyCode #fmt(data.summary.totalTax)],
       
-      grid.cell(colspan: 2)[#line(length: 100%, stroke: 1pt + luma(230))],
+      grid.cell(colspan: 2)[#line(length: 100%, stroke: 1pt + theme.borderColor)],
       
       text(12pt, weight: "bold")[Invoice Total:], 
-      text(12pt, weight: "bold", fill: rgb("#1e3a5f"))[#data.header.currencyCode #fmt(data.summary.totalAmount)],
+      text(12pt, weight: "bold", fill: theme.accentColor)[#data.header.currencyCode #fmt(data.summary.totalAmount)],
 
       // Show order total comparison when this is a partial invoice
       ..if "invoiceMeta" in data and data.invoiceMeta != none {
         if "totalInvoices" in data.invoiceMeta and data.invoiceMeta.totalInvoices != none and data.invoiceMeta.totalInvoices > 1 {
           (
-            text(9pt, fill: luma(100))[Order Total:],
-            text(9pt, fill: luma(100))[#data.header.currencyCode #fmt(data.invoiceMeta.at("orderTotal", default: 0))],
+            text(8.5pt, fill: theme.mutedColor)[Order Total:],
+            text(8.5pt, fill: theme.mutedColor)[#data.header.currencyCode #fmt(data.invoiceMeta.at("orderTotal", default: 0))],
           )
         }
       },
@@ -171,6 +170,6 @@
 
 #v(2.5cm)
 
-#text(8pt, fill: luma(120), style: "italic")[
+#text(8pt, fill: theme.mutedColor, style: "italic")[
   Thank you for your business.
 ]

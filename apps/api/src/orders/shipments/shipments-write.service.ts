@@ -170,6 +170,7 @@ export class ShipmentsWriteService {
             salesOrderId,
             stateCode: SHIPMENT_STATE.DRAFT, // Create as draft first, then transition to dispatched
             notes: dto.notes,
+            shippingNotes: dto.shippingNotes ?? order.shippingNotes ?? null,
             trackingNumber: dto.trackingNumber,
             deliveryCompanyName:
               dto.deliveryCompanyName ?? order.deliveryCompanyName,

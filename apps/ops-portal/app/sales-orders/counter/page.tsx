@@ -555,10 +555,10 @@ export default function CounterSalesPage() {
 
       // --- STEP 2: OVER-THE-COUNTER FULFILLMENT ---
       setSubmissionStep('Fulfilling stock over the counter...');
-      await api.ordersControllerFulfillCounterOrder(orderId, {
+      await api.ordersControllerFulfillDirectOrder(orderId, {
         notes: 'Over-the-counter direct handover',
         allowPartialFulfillment: true,
-      } as unknown as api.FulfillCounterOrderDto);
+      } as unknown as api.FulfillDirectOrderDto);
 
       // --- STEP 3: CREATE INVOICE ---
       setSubmissionStep('Generating tax invoice...');

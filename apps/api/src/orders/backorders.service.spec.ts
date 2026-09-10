@@ -21,12 +21,17 @@ import {
 import { eq } from 'drizzle-orm';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
+import { workOrders } from '@herobm/db-schema';
+import { WORK_ORDER_STATE } from '@herobm/shared';
 
 describe('BackordersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: BackordersService;
   let inventoryQueryService: any;
   let inventoryMovementService: InventoryMovementService;
+  let mockWorkOrdersWriteService: any;
   const ORDER_ID = '00000000-0000-4000-8000-000000000001';
   const PROD_ID = '00000000-0000-4000-8000-00000000000a';
   const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
@@ -66,6 +71,26 @@ describe('BackordersService', () => {
       findByProductIds: jest.fn(),
     };
 
+    mockWorkOrdersWriteService = {
+      createFromDemand: jest.fn(async (tx, params) => {
+        const [wo] = await tx
+          .insert(workOrders)
+          .values({
+            productId: params.productId,
+            locationId: params.locationId,
+            targetQuantity: String(params.targetQuantity),
+            completedQuantity: '0',
+            stateCode: WORK_ORDER_STATE.DRAFT,
+            orderNumber: 'WO-TEST-001',
+            source: 'app',
+            createdBy: params.actor,
+          })
+          .returning();
+        return wo;
+      }),
+      updatePutawayStatus: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BackordersService,
@@ -76,6 +101,18 @@ describe('BackordersService', () => {
           useValue: { homeCurrency: () => 'EUR' },
         },
         { provide: InventoryMovementService, useValue: inventoryQueryService },
+        {
+          provide: WorkOrdersWriteService,
+          useValue: mockWorkOrdersWriteService,
+        },
+        {
+          provide: PurchaseOrdersWriteService,
+          useValue: {
+            createFromRequisition: jest.fn(),
+            recordReceiptQuantities: jest.fn(),
+            revertReceiptQuantities: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

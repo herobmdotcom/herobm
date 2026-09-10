@@ -5,8 +5,9 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -44,6 +45,8 @@ import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
 
 @Injectable()
 export class BackordersService {
@@ -53,6 +56,10 @@ export class BackordersService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly appConfig: AppConfigService,
     private readonly inventoryQueryService: InventoryQueryService,
+    @Inject(forwardRef(() => WorkOrdersWriteService))
+    private readonly workOrdersWriteService: WorkOrdersWriteService,
+    @Inject(forwardRef(() => PurchaseOrdersWriteService))
+    private readonly purchaseOrdersWriteService: PurchaseOrdersWriteService,
   ) {}
 
   /**
@@ -115,19 +122,6 @@ export class BackordersService {
   private async generatePurchaseOrderNumber(tx: DrizzleDB): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `PO-${today}-`;
-
-    const uniqueSuffix =
-      Date.now().toString().slice(-6) +
-      Math.floor(Math.random() * 100).toString();
-    return `${prefix}${uniqueSuffix}`;
-  }
-
-  /**
-   * Helper to generate a unique Work Order number inside a transaction.
-   */
-  private async generateWorkOrderNumber(tx: DrizzleDB): Promise<string> {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `WO-${today}-`;
 
     const uniqueSuffix =
       Date.now().toString().slice(-6) +
@@ -470,31 +464,16 @@ export class BackordersService {
 
       // 4. Generate Work Orders for unfulfilled stock kit demands
       for (const demand of kitDemands) {
-        const orderNumber = await this.generateWorkOrderNumber(tx);
-        const [wo] = await tx
-          .insert(workOrders)
-          .values({
-            orderNumber,
-            productId: demand.productId,
-            targetQuantity: demand.quantity,
-            completedQuantity: '0',
-            locationId: demand.fulfillmentLocationId,
-            stateCode: WORK_ORDER_STATE.DRAFT,
-            createdBy: actor,
-          })
-          .returning();
-
         // Snapshot the BOM components
         const components = componentsByParent.get(demand.productId) || [];
 
-        for (const comp of components) {
-          const expectedQty = Number(comp.quantity) * Number(demand.quantity);
-          await tx.insert(workOrderComponents).values({
-            workOrderId: wo.workOrderId,
-            productId: comp.productId,
-            expectedQuantity: expectedQty.toString(),
-          });
-        }
+        const wo = await this.workOrdersWriteService.createFromDemand(tx, {
+          productId: demand.productId,
+          targetQuantity: demand.quantity,
+          locationId: demand.fulfillmentLocationId,
+          actor,
+          components,
+        });
 
         // Link the backorder to the Work Order
         await this.changeBackorderState(
@@ -626,53 +605,32 @@ export class BackordersService {
           );
         }
 
-        const [po] = await tx
-          .insert(purchaseOrders)
-          .values({
-            orderNumber,
-            name: `Requisition PO ${orderNumber}`,
-            vendorId: poPayload.vendorId,
-            deliveryLocationId: deliveryLocationId,
-            stateCode: PURCHASE_ORDER_STATE.DRAFT,
-            currencyCode,
-            notes: `Generated ${soNotes}`,
-            createdBy: actor,
-            baseTotalAmount: '0',
-            exchangeRate: '1',
-          })
-          .returning();
-
-        await emitEvent(tx, {
-          entityType: EntityType.PURCHASE_ORDER,
-          entityId: po.purchaseOrderId,
-          eventType: EventType.CREATED,
-          entityDisplayName: orderNumber,
-          actor,
-          payload: { reason: 'manual_requisition' },
+        const poLinesPayload = poPayload.lines.map((line) => {
+          const coreProd = coreProdMap.get(line.productId);
+          return {
+            productId: line.productId,
+            productDescription: coreProd?.name,
+            quantity: line.quantity.toString(),
+            pricePerUnit: line.pricePerUnit.toString(),
+            taxCategoryId: coreProd?.purchaseTaxCategoryId || fallbackTaxId,
+          };
         });
 
-        let openLineNumber = 1;
-        for (const line of poPayload.lines) {
-          const coreProd = coreProdMap.get(line.productId);
+        const { purchaseOrder: po, lineItems: poLines } =
+          await this.purchaseOrdersWriteService.createFromRequisition(tx, {
+            orderNumber,
+            vendorId: poPayload.vendorId,
+            deliveryLocationId: deliveryLocationId,
+            currencyCode,
+            notes: `Generated ${soNotes}`,
+            actor,
+            lines: poLinesPayload,
+          });
 
-          const [poLine] = await tx
-            .insert(purchaseOrderLineItems)
-            .values({
-              purchaseOrderId: po.purchaseOrderId,
-              lineNumber: openLineNumber++,
-              productId: line.productId,
-              productDescription: coreProd?.name,
-              quantity: line.quantity.toString(),
-              pricePerUnit: line.pricePerUnit.toString(),
-              taxCategoryId: coreProd?.purchaseTaxCategoryId || fallbackTaxId,
-              discountPercentage: '0',
-              amount: '0',
-              tax: '0',
-              quantityReceived: '0',
-            })
-            .returning();
-
-          if (line.backorderIds && line.backorderIds.length > 0) {
+        for (let i = 0; i < poPayload.lines.length; i++) {
+          const line = poPayload.lines[i];
+          const poLine = poLines[i];
+          if (line.backorderIds && line.backorderIds.length > 0 && poLine) {
             for (const backorderId of line.backorderIds) {
               await this.changeBackorderState(
                 backorderId,
@@ -1131,5 +1089,397 @@ export class BackordersService {
     }
 
     return updated;
+  }
+
+  /**
+   * Fulfill backorder demand against received goods for a given purchase order line.
+   * Handles full fulfillment and fractional backorder splits while maintaining state machine invariants.
+   * Returns remaining unallocated receipt quantity.
+   */
+  async fulfillReceiptDemand(
+    tx: DrizzleDB,
+    purchaseOrderLineId: string,
+    receivedQuantity: number,
+    actor: string,
+  ): Promise<number> {
+    const awaitingBackorders = await tx
+      .select()
+      .from(backorders)
+      .where(
+        and(
+          eq(backorders.purchaseOrderLineId, purchaseOrderLineId),
+          eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
+        ),
+      );
+
+    let receiptRemaining = receivedQuantity;
+
+    for (const bo of awaitingBackorders) {
+      if (receiptRemaining <= 0) break;
+      const boQty = parseFloat(bo.quantity);
+
+      if (receiptRemaining >= boQty) {
+        // Fully fulfilled — transition entire backorder
+        await this.changeBackorderState(
+          bo.backorderId,
+          BACKORDER_STATE.RECEIVED_RESERVED,
+          actor,
+          tx,
+        );
+        receiptRemaining -= boQty;
+      } else {
+        // Partially fulfilled — split the backorder record
+        await tx
+          .update(backorders)
+          .set({
+            quantity: (boQty - receiptRemaining).toString(),
+            modifiedOn: new Date(),
+          })
+          .where(eq(backorders.backorderId, bo.backorderId));
+
+        const [newBo] = await tx
+          .insert(backorders)
+          .values({
+            salesOrderId: bo.salesOrderId,
+            salesOrderLineId: bo.salesOrderLineId,
+            productId: bo.productId,
+            purchaseOrderId: bo.purchaseOrderId,
+            purchaseOrderLineId: bo.purchaseOrderLineId,
+            quantity: receiptRemaining.toString(),
+            stateCode: BACKORDER_STATE.RECEIVED_RESERVED,
+          })
+          .returning();
+
+        if (bo.salesOrderId) {
+          const [order] = await tx
+            .select({ orderNumber: salesOrders.orderNumber })
+            .from(salesOrders)
+            .where(eq(salesOrders.salesOrderId, bo.salesOrderId));
+
+          await emitEvent(tx, {
+            entityType: EntityType.SALES_ORDER,
+            entityId: bo.salesOrderId,
+            eventType: EventType.STATUS_CHANGED,
+            entityDisplayName: order?.orderNumber || 'Sales Order',
+            actor,
+            payload: {
+              entity: 'backorder',
+              entityId: newBo.backorderId,
+              splitFrom: bo.backorderId,
+              quantity: receiptRemaining.toString(),
+              to: BACKORDER_STATE.RECEIVED_RESERVED,
+            },
+          });
+        }
+
+        receiptRemaining = 0;
+      }
+    }
+
+    return receiptRemaining;
+  }
+
+  /**
+   * Fulfill all backorders linked to a completed Work Order.
+   */
+  async fulfillWorkOrderDemand(
+    tx: DrizzleDB,
+    workOrderId: string,
+    actor: string,
+  ): Promise<void> {
+    const linkedBackorders = await tx
+      .select({ backorderId: backorders.backorderId })
+      .from(backorders)
+      .where(eq(backorders.workOrderId, workOrderId));
+
+    for (const bo of linkedBackorders) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.FULFILLED,
+        actor,
+        tx,
+      );
+    }
+  }
+
+  /**
+   * Unlink and revert all backorders associated with a deleted or modified purchase order line.
+   */
+  async unlinkDemandForPoLine(
+    tx: DrizzleDB,
+    purchaseOrderLineId: string,
+    actor: string,
+  ): Promise<void> {
+    const lineDemands = await tx
+      .select({
+        backorderId: backorders.backorderId,
+        purchaseOrderId: backorders.purchaseOrderId,
+        salesOrderId: backorders.salesOrderId,
+      })
+      .from(backorders)
+      .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));
+
+    if (lineDemands.length === 0) return;
+
+    for (const bo of lineDemands) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.PENDING_SUPPLY,
+        actor,
+        tx,
+        {
+          purchaseOrderId: null,
+          purchaseOrderLineId: null,
+        },
+      );
+
+      if (bo.purchaseOrderId) {
+        const [po] = await tx
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, bo.purchaseOrderId));
+
+        // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+        await emitEvent(tx, {
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: bo.purchaseOrderId,
+          eventType: EventType.DEMAND_UNALLOCATED,
+          entityDisplayName: po?.orderNumber || 'Purchase Order',
+          actor,
+          payload: { backorderId: bo.backorderId, purchaseOrderLineId },
+        });
+      }
+    }
+  }
+
+  /**
+   * Unlink all backorders associated with a cancelled/archived purchase order.
+   */
+  async unlinkDemandForPurchaseOrder(
+    tx: DrizzleDB,
+    purchaseOrderId: string,
+    actor: string,
+  ): Promise<void> {
+    const poDemands = await tx
+      .select({
+        backorderId: backorders.backorderId,
+        salesOrderId: backorders.salesOrderId,
+      })
+      .from(backorders)
+      .where(eq(backorders.purchaseOrderId, purchaseOrderId));
+
+    for (const bo of poDemands) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.PENDING_SUPPLY,
+        actor,
+        tx,
+        {
+          purchaseOrderId: null,
+          purchaseOrderLineId: null,
+        },
+      );
+
+      if (bo.salesOrderId) {
+        // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+        await emitEvent(tx, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: bo.salesOrderId,
+          eventType: EventType.DEMAND_UNALLOCATED,
+          entityDisplayName: `Sales Order`,
+          payload: { backorderId: bo.backorderId },
+          actor,
+        });
+      }
+    }
+  }
+
+  /**
+   * Cancel all open backorders for a cancelled Sales Order.
+   */
+  async cancelDemandForSalesOrder(
+    tx: DrizzleDB,
+    salesOrderId: string,
+    actor: string,
+  ): Promise<void> {
+    const list = await tx
+      .select({ backorderId: backorders.backorderId })
+      .from(backorders)
+      .where(eq(backorders.salesOrderId, salesOrderId));
+
+    for (const bo of list) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+    }
+
+    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+    await emitEvent(tx, {
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: 'Sales Order',
+      actor,
+      payload: { reason: 'sales_order_cancelled_backorders_cancelled' },
+    });
+  }
+
+  /**
+   * Delete backorder demands for deleted sales order lines.
+   * @herobm-skip-audit - Cascading demand cleanup upon sales order line removal
+   */
+  async deleteDemandsForLineIds(
+    tx: DrizzleDB,
+    lineIds: string[],
+  ): Promise<void> {
+    if (lineIds.length === 0) return;
+    await tx
+      .delete(backorders)
+      .where(inArray(backorders.salesOrderLineId, lineIds));
+  }
+
+  /**
+   * Create a shortfall demand record for a Work Order component.
+   */
+  async createShortfallDemand(
+    tx: DrizzleDB,
+    params: {
+      demandWorkOrderId: string;
+      workOrderComponentId: string;
+      productId: string;
+      quantity: string;
+      actor: string;
+    },
+  ): Promise<void> {
+    const [bo] = await tx
+      .insert(backorders)
+      .values({
+        demandWorkOrderId: params.demandWorkOrderId,
+        workOrderComponentId: params.workOrderComponentId,
+        productId: params.productId,
+        quantity: params.quantity,
+        stateCode: BACKORDER_STATE.PENDING_SUPPLY,
+      })
+      .returning();
+
+    await emitEvent(tx, {
+      entityType: EntityType.WORK_ORDER,
+      entityId: params.demandWorkOrderId,
+      eventType: EventType.DEMAND_ALLOCATED,
+      entityDisplayName: 'Work Order',
+      actor: params.actor,
+      payload: {
+        backorderId: bo.backorderId,
+        workOrderComponentId: params.workOrderComponentId,
+        productId: params.productId,
+        productName: 'Component',
+        quantity: params.quantity,
+      },
+    });
+  }
+
+  /**
+   * Cancel all component backorders for a cancelled Work Order.
+   */
+  async cancelDemandForWorkOrder(
+    tx: DrizzleDB,
+    workOrderId: string,
+    actor: string,
+  ): Promise<void> {
+    const list = await tx
+      .select({ backorderId: backorders.backorderId })
+      .from(backorders)
+      .where(eq(backorders.demandWorkOrderId, workOrderId));
+
+    for (const bo of list) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+    }
+
+    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+    await emitEvent(tx, {
+      entityType: EntityType.WORK_ORDER,
+      entityId: workOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: 'Work Order',
+      actor,
+      payload: { reason: 'work_order_cancelled_backorders_cancelled' },
+    });
+  }
+
+  /**
+   * Link a backorder demand to a transfer order line.
+   */
+  async linkDemandToTransferOrder(
+    tx: DrizzleDB,
+    backorderId: string,
+    transferOrderId: string,
+    transferOrderLineId: string,
+    actor: string,
+  ): Promise<void> {
+    await this.changeBackorderState(
+      backorderId,
+      BACKORDER_STATE.AWAITING_RECEIPT,
+      actor,
+      tx,
+      {
+        transferOrderId,
+        transferOrderLineId,
+      },
+    );
+
+    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+    await emitEvent(tx, {
+      entityType: EntityType.TRANSFER_ORDER,
+      entityId: transferOrderId,
+      eventType: EventType.DEMAND_ALLOCATED,
+      entityDisplayName: 'Transfer Order',
+      actor,
+      payload: { backorderId, transferOrderLineId },
+    });
+  }
+
+  /**
+   * Unlink all backorders associated with a cancelled transfer order.
+   */
+  async unlinkDemandForTransferOrder(
+    tx: DrizzleDB,
+    transferOrderId: string,
+    actor: string,
+  ): Promise<void> {
+    const list = await tx
+      .select({ backorderId: backorders.backorderId })
+      .from(backorders)
+      .where(eq(backorders.transferOrderId, transferOrderId));
+
+    for (const bo of list) {
+      await this.changeBackorderState(
+        bo.backorderId,
+        BACKORDER_STATE.PENDING_SUPPLY,
+        actor,
+        tx,
+        {
+          transferOrderId: null,
+          transferOrderLineId: null,
+        },
+      );
+    }
+
+    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
+    await emitEvent(tx, {
+      entityType: EntityType.TRANSFER_ORDER,
+      entityId: transferOrderId,
+      eventType: EventType.DEMAND_UNALLOCATED,
+      entityDisplayName: 'Transfer Order',
+      actor,
+      payload: { transferOrderId },
+    });
   }
 }

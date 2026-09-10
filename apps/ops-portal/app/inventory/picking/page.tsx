@@ -16,6 +16,8 @@ import { SALES_ORDER_PICK_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import Tabs from '@/components/shared/Tabs';
+import Link from 'next/link';
+import { routes } from '@/lib/routes';
 import PickingOrderLinesView from '../components/PickingOrderLinesView';
 
 interface UnifiedOrder {
@@ -32,6 +34,7 @@ interface UnifiedOrder {
     pickabilityStatus: 'ready' | 'partial' | 'blocked';
     hasAllocation?: boolean;
     type?: 'sales_order' | 'transfer_order' | 'work_order';
+    isCreditBlocked?: boolean;
 }
 
 interface PickAllocation {
@@ -250,7 +253,7 @@ export default function PickingPage() {
     }, [loadSummary]);
 
     const handlePickLine = async (lineId: string) => {
-        if (!selectedOrder) return;
+        if (!selectedOrder || pickingSummary?.isCreditBlocked || selectedOrder.isCreditBlocked) return;
         
         const input = pickInputs[lineId];
         if (!input || !input.quantity || !input.binId) return;
@@ -459,7 +462,18 @@ export default function PickingPage() {
                             {/* Card Header with Order Info */}
                             <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">
                                 <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
-                                    <span className="font-bold shrink-0">{selectedOrder.orderNumber}</span>
+                                    <Link
+                                        href={
+                                            selectedOrder.type === 'transfer_order'
+                                                ? routes.inventory.transfers.detail(selectedOrder.id)
+                                                : selectedOrder.type === 'work_order'
+                                                ? routes.workOrders.detail(selectedOrder.id)
+                                                : routes.salesOrders.detail(selectedOrder.id)
+                                        }
+                                        className="font-bold shrink-0 hover:text-[var(--accent)] hover:underline transition-colors"
+                                    >
+                                        {selectedOrder.orderNumber}
+                                    </Link>
                                     <span className="text-[var(--text-muted)] opacity-50 hidden sm:inline">&middot;</span>
                                     <span className="truncate hidden sm:inline">{selectedOrder.name || t('noName')}</span>
                                     <span className="text-[var(--text-muted)] opacity-50 hidden sm:inline">&middot;</span>
@@ -498,6 +512,7 @@ export default function PickingPage() {
                                     <PickingOrderLinesView
                                         lines={pickingSummary.lines}
                                         picks={pickingSummary.picks}
+                                        disabled={Boolean(pickingSummary.isCreditBlocked || selectedOrder.isCreditBlocked)}
                                         pickInputs={pickInputs}
                                         onPickInputChange={(lineId, input) => {
                                             setPickInputs(prev => ({

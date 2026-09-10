@@ -70,7 +70,68 @@ The live application schema is defined strictly in TypeScript under `packages/db
 
 ---
 
-## 3. Database Migrations & Ledger Linearity
+## 3. Strict Single-Writer Domain Ownership & Transaction Delegation
+
+HeroBM enforces a strict bounded-context write architecture across its entire relational database:
+
+> **The Single-Writer Principle:**
+> *Any module in the system may read any table. Each table has exactly one domain module authorized to write to it.*
+
+```mermaid
+flowchart LR
+    subgraph "Coordinating Domain (e.g. Goods Received)"
+        GR[GoodsReceivedService]
+    end
+
+    subgraph "PostgreSQL ACID Transaction Boundary (tx: DrizzleDB)"
+        GR -- "1. recordMovement(tx, ...)" --> INV[InventoryMovementService]
+        GR -- "2. recordReceiptQuantities(tx, ...)" --> PO[PurchaseOrdersWriteService]
+        GR -- "3. fulfillReceiptDemand(tx, ...)" --> BO[BackordersService]
+        
+        INV -- "insert / update" --> T_INV[(inventory_ledger / bin_contents)]
+        PO -- "update" --> T_PO[(purchase_order_lines)]
+        BO -- "update" --> T_BO[(backorders)]
+    end
+```
+
+### Transaction Delegation Pattern (`tx: DrizzleDB`)
+When a business operation spans multiple business domains (for example, receiving goods against a purchase order), the coordinating service does **not** execute direct SQL mutations against foreign tables. Instead, it creates an ACID transaction and passes the active Drizzle transaction instance (`tx: DrizzleDB`) to domain service methods:
+
+```typescript
+await this.db.transaction(async (tx) => {
+  // 1. Owning domain writes its own entity
+  const receipt = await this.createReceipt(tx, dto, actor);
+
+  // 2. Delegate inventory movements to Inventory domain
+  await this.inventoryMovementService.recordInventoryMovement(tx, { ... });
+
+  // 3. Delegate purchase order line receipt & state recalculation to Purchase Orders domain
+  await this.purchaseOrdersWriteService.recordReceiptQuantities(tx, receipt.lines, actor);
+
+  // 4. Delegate demand fulfillment to Orders/Backorders domain
+  await this.backordersService.fulfillReceiptDemand(tx, receipt.lines, actor);
+});
+```
+
+### Canonical Domain Authority Map
+
+| Domain / Owning Service | Owned Operational Tables | Delegated Write Capabilities |
+| :--- | :--- | :--- |
+| **`BackordersService`** (`apps/api/src/orders/`) | `backorders` | Demand shortfall creation, receipt fulfillment, work order allocation, unlinking, cancellation |
+| **`PurchaseOrdersWriteService`** (`apps/api/src/purchase-orders/`) | `purchaseOrders`, `purchaseOrderLineItems` | Requisition generation, receipt adjustments (`recordReceiptQuantities`, `revertReceiptQuantities`), state machine synchronization |
+| **`PurchaseReturnsService`** (`apps/api/src/purchase-orders/`) | `purchaseOrderReturns`, `purchaseOrderReturnLines`, `purchaseOrderReturnShipments` | Return staging, dispatch, unshipment, resolution without debit note |
+| **`ReturnsWriteService`** (`apps/api/src/orders/`) | `salesOrderReturns`, `salesOrderReturnLines` | Return creation, putaway status tracking, credit note state transitions |
+| **`WorkOrdersExecutionService`** (`apps/api/src/manufacturing/`) | `workOrders`, `workOrderComponents` | Work order issuance, component reservation, completion, scrap |
+| **`OrdersService` / `OrderLinesService`** (`apps/api/src/orders/`) | `salesOrders`, `salesOrderLineItems` | Order creation, line updates, status transitions, direct counter-fulfillment |
+| **`InventoryMovementService`** (`apps/api/src/inventory/`) | `inventoryEntries`, `inventoryLedger`, `binContents` | Double-entry stock movements, reservations, bin reallocations, stock adjustments |
+| **`GlService`** (`apps/api/src/gl/`) | `glJournalEntries`, `glJournalLines` | Double-entry journal posting, cryptographic hash chaining |
+
+### Structural Enforcement (Immune System)
+This boundary is not merely a convention—it is statically enforced on every build by the AST scanner [`infra/tests/test_financial_table_write_boundaries.ts`](file:///c:/Users/Marcel/volz/modbm/modbm/infra/tests/test_financial_table_write_boundaries.ts). Any direct `insert`, `update`, or `delete` query targeting a table outside its authorized domain service immediately fails `make test-structural`.
+
+---
+
+## 4. Database Migrations & Ledger Linearity
 
 Database migrations are tracked via a strict, sequential ledger managed by `drizzle-kit`:
 
@@ -80,7 +141,7 @@ Database migrations are tracked via a strict, sequential ledger managed by `driz
 
 ---
 
-## 4. System Initialization & Seeds
+## 5. System Initialization & Seeds
 
 System initialization is split between core operational values and legacy migration anchors:
 

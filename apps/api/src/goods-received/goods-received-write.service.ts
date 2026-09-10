@@ -21,7 +21,6 @@ import {
   zones,
   bins,
   binContents,
-  backorders,
   glJournalEntries,
   glJournalLines,
   organizations,
@@ -45,13 +44,13 @@ import {
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { BackordersService } from '../orders/backorders.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
 import {
   GOODS_RECEIVED_STATE,
   GoodsReceivedState,
@@ -85,6 +84,7 @@ export class GoodsReceivedWriteService {
     private readonly glService: GlService,
     private readonly backordersService: BackordersService,
     private readonly purchaseOrdersService: PurchaseOrdersService,
+    private readonly purchaseOrdersWriteService: PurchaseOrdersWriteService,
     private readonly inventoryMovementService: InventoryMovementService,
     private readonly coreService: GoodsReceivedCoreService,
     private readonly stateService: GoodsReceivedStateService,
@@ -436,126 +436,30 @@ export class GoodsReceivedWriteService {
           );
         }
 
-        // --- 6. PO Update: Update matched PO lines ---
+        // --- 6. PO & Backorder Sync (Delegated Domain Mutations) ---
         const matchedLines = lineValues.filter(
           (l) => l.matchStatus === MATCH_STATUS.MATCHED,
         );
-        for (const ml of matchedLines) {
-          if (!ml.purchaseOrderLineId) continue;
+        const receiptsToRecord = matchedLines
+          .filter((ml) => Boolean(ml.purchaseOrderLineId))
+          .map((ml) => ({
+            purchaseOrderLineId: ml.purchaseOrderLineId as string,
+            quantity: parseFloat(ml.quantityReceived),
+          }));
 
-          await tx
-            .update(purchaseOrderLineItems)
-            .set({
-              quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${ml.quantityReceived} AS NUMERIC)`,
-            })
-            .where(
-              eq(
-                purchaseOrderLineItems.purchaseOrderLineId,
-                ml.purchaseOrderLineId,
-              ),
-            );
-        }
+        if (receiptsToRecord.length > 0) {
+          await this.purchaseOrdersWriteService.recordReceiptQuantities(
+            tx,
+            receiptsToRecord,
+            userId,
+          );
 
-        // --- 6.1 Backorder Sync: Transition awaiting_receipt → received_reserved ---
-        const matchedPoLineIds = [
-          ...new Set(
-            matchedLines
-              .map((ml) => ml.purchaseOrderLineId)
-              .filter((id): id is string => Boolean(id)),
-          ),
-        ];
-
-        const allAwaitingBackorders =
-          matchedPoLineIds.length > 0
-            ? await tx
-                .select()
-                .from(backorders)
-                .where(
-                  and(
-                    inArray(backorders.purchaseOrderLineId, matchedPoLineIds),
-                    eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
-                  ),
-                )
-            : [];
-
-        const backordersByPoLine = new Map<
-          string,
-          (typeof backorders.$inferSelect)[]
-        >();
-        for (const bo of allAwaitingBackorders) {
-          if (!bo.purchaseOrderLineId) continue;
-          const list = backordersByPoLine.get(bo.purchaseOrderLineId) || [];
-          list.push(bo);
-          backordersByPoLine.set(bo.purchaseOrderLineId, list);
-        }
-
-        for (const ml of matchedLines) {
-          if (!ml.purchaseOrderLineId) continue;
-
-          const awaitingBackorders =
-            backordersByPoLine.get(ml.purchaseOrderLineId) || [];
-
-          let receiptRemaining = parseFloat(ml.quantityReceived);
-
-          for (const bo of awaitingBackorders) {
-            if (receiptRemaining <= 0) break;
-            const boQty = parseFloat(bo.quantity);
-
-            if (receiptRemaining >= boQty) {
-              // Fully fulfilled — transition entire backorder
-              await this.backordersService.changeBackorderState(
-                bo.backorderId,
-                BACKORDER_STATE.RECEIVED_RESERVED,
-                userId,
-                tx,
-              );
-              receiptRemaining -= boQty;
-            } else {
-              // Partially fulfilled — split the backorder record
-              await tx
-                .update(backorders)
-                .set({
-                  quantity: (boQty - receiptRemaining).toString(),
-                  modifiedOn: new Date(),
-                })
-                .where(eq(backorders.backorderId, bo.backorderId));
-
-              await tx.insert(backorders).values({
-                salesOrderId: bo.salesOrderId,
-                salesOrderLineId: bo.salesOrderLineId,
-                productId: bo.productId,
-                purchaseOrderId: bo.purchaseOrderId,
-                purchaseOrderLineId: bo.purchaseOrderLineId,
-                quantity: receiptRemaining.toString(),
-                stateCode: BACKORDER_STATE.RECEIVED_RESERVED,
-              });
-              receiptRemaining = 0;
-            }
-          }
-        }
-
-        // Recompute PO State for any affected POs
-        const updatedPoIds = [
-          ...new Set(
-            matchedLines.map((l) => l.purchaseOrderId!).filter(Boolean),
-          ),
-        ];
-        for (const poId of updatedPoIds) {
-          // Trigger the lifecycle engine instead of hardcoded updates
-          try {
-            await evaluatePOLifecycleRules(
-              tx as unknown as DrizzleDB,
-              poId,
-              {
-                entity: 'goods_receipt',
-                action: 'created',
-              },
-              'system',
-            );
-          } catch (err) {
-            this.logger.error(
-              `Failed to evaluate PO lifecycle rules for PO ${poId} after goods receipt:`,
-              err,
+          for (const item of receiptsToRecord) {
+            await this.backordersService.fulfillReceiptDemand(
+              tx,
+              item.purchaseOrderLineId,
+              item.quantity,
+              userId,
             );
           }
         }
@@ -994,95 +898,20 @@ export class GoodsReceivedWriteService {
         splitLine = inserted;
       }
 
-      // Update PO Line
-      await tx
-        .update(purchaseOrderLineItems)
-        .set({
-          quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${targetQuantity} AS NUMERIC)`,
-        })
-        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, poLine.poLineId));
-
-      // --- Backorder Sync: Transition awaiting_receipt → received_reserved ---
-      const awaitingBackorders = await tx
-        .select()
-        .from(backorders)
-        .where(
-          and(
-            eq(backorders.purchaseOrderLineId, poLine.poLineId),
-            eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
-          ),
-        );
-
-      let receiptRemaining = targetQuantity;
-
-      for (const bo of awaitingBackorders) {
-        if (receiptRemaining <= 0) break;
-        const boQty = parseFloat(bo.quantity);
-
-        if (receiptRemaining >= boQty) {
-          await this.backordersService.changeBackorderState(
-            bo.backorderId,
-            BACKORDER_STATE.RECEIVED_RESERVED,
-            userId,
-            tx,
-          );
-          receiptRemaining -= boQty;
-        } else {
-          await tx
-            .update(backorders)
-            .set({
-              quantity: (boQty - receiptRemaining).toString(),
-              modifiedOn: new Date(),
-            })
-            .where(eq(backorders.backorderId, bo.backorderId));
-
-          await tx.insert(backorders).values({
-            salesOrderId: bo.salesOrderId,
-            salesOrderLineId: bo.salesOrderLineId,
-            productId: bo.productId,
-            purchaseOrderId: bo.purchaseOrderId,
-            purchaseOrderLineId: bo.purchaseOrderLineId,
-            quantity: receiptRemaining.toString(),
-            stateCode: BACKORDER_STATE.RECEIVED_RESERVED,
-          });
-          receiptRemaining = 0;
-        }
-      }
-
-      // Recompute PO State
-      const poLines = await tx
-        .select({
-          quantity: purchaseOrderLineItems.quantity,
-          quantityReceived: purchaseOrderLineItems.quantityReceived,
-        })
-        .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId));
-
-      const allFullyReceived = poLines.every(
-        (l) =>
-          parseFloat(l.quantityReceived || '0') >=
-          parseFloat(l.quantity || '0'),
+      // Update PO Line & State via Domain Owner
+      await this.purchaseOrdersWriteService.recordReceiptQuantities(
+        tx,
+        [{ purchaseOrderLineId: poLine.poLineId, quantity: targetQuantity }],
+        userId,
       );
 
-      const newState = allFullyReceived
-        ? PURCHASE_ORDER_STATE.RECEIVED
-        : PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
-
-      if (poLine.stateCode !== newState) {
-        await this.purchaseOrdersService.changePurchaseOrderState(
-          poLine.poId,
-          newState as
-            | 'cancelled'
-            | 'invoiced'
-            | 'received'
-            | 'closed_short'
-            | 'draft'
-            | 'ordered'
-            | 'partially_received',
-          userId,
-          tx,
-        );
-      }
+      // Backorder Sync via Domain Owner
+      await this.backordersService.fulfillReceiptDemand(
+        tx,
+        poLine.poLineId,
+        targetQuantity,
+        userId,
+      );
 
       const [receipt] = await tx
         .select({ receiptNumber: goodsReceived.receiptNumber })
@@ -1198,51 +1027,16 @@ export class GoodsReceivedWriteService {
           );
       }
 
-      // 2. Deduct quantity from PO Line
-      await tx
-        .update(purchaseOrderLineItems)
-        .set({
-          quantityReceived: sql`CAST(quantity_received AS NUMERIC) - CAST(${grLine.quantityReceived} AS NUMERIC)`,
-        })
-        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, poLine.poLineId));
-
-      // 3. Recompute PO State
-      const poLines = await tx
-        .select({
-          quantity: purchaseOrderLineItems.quantity,
-          quantityReceived: purchaseOrderLineItems.quantityReceived,
-        })
-        .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId));
-
-      const allFullyReceived = poLines.every(
-        (l) =>
-          parseFloat(l.quantityReceived || '0') >=
-          parseFloat(l.quantity || '0'),
-      );
-
-      const anyReceived = poLines.some(
-        (l) => parseFloat(l.quantityReceived || '0') > 0,
-      );
-
-      const newState = allFullyReceived
-        ? PURCHASE_ORDER_STATE.RECEIVED
-        : anyReceived
-          ? PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED
-          : PURCHASE_ORDER_STATE.ORDERED;
-
-      await this.purchaseOrdersService.changePurchaseOrderState(
-        poLine.poId,
-        newState as
-          | 'cancelled'
-          | 'invoiced'
-          | 'received'
-          | 'closed_short'
-          | 'draft'
-          | 'ordered'
-          | 'partially_received',
-        userId,
+      // 2. Revert quantity on PO Line & synchronize PO state
+      await this.purchaseOrdersWriteService.revertReceiptQuantities(
         tx,
+        [
+          {
+            purchaseOrderLineId: poLine.poLineId,
+            quantity: parseFloat(grLine.quantityReceived),
+          },
+        ],
+        userId,
       );
 
       // 4. Emit Event

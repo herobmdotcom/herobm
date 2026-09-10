@@ -45,6 +45,7 @@ import type {
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 import { TransfersCoreService } from './transfers-core.service';
+import { BackordersService } from '../backorders.service';
 
 const VALID_TRANSFER_STATES = getValidStates(TRANSFER_ORDER_TRANSITIONS);
 const VALID_PICK_STATES = getValidStates(TRANSFER_ORDER_PICK_TRANSITIONS);
@@ -55,6 +56,7 @@ export class TransfersStateService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryMovementService: InventoryMovementService,
     private readonly coreService: TransfersCoreService,
+    private readonly backordersService: BackordersService,
   ) {}
 
   async getPickingSummary(transferOrderId: string, tx?: DrizzleDB) {
@@ -407,6 +409,7 @@ export class TransfersStateService {
         shippedBy: actor,
         trackingNumber: dto.trackingNumber,
         notes: dto.notes,
+        shippingNotes: dto.shippingNotes ?? order.shippingNotes ?? null,
       });
 
       const inventoryLines: {
@@ -608,6 +611,7 @@ export class TransfersStateService {
         shipmentNumber,
         stateCode: SHIPMENT_STATE.DISPATCHED,
         shippedBy: actor,
+        shippingNotes: order.shippingNotes ?? null,
       });
 
       const inventoryLines: {
@@ -1247,16 +1251,9 @@ export class TransfersStateService {
         tx,
       );
 
-      await tx
-        .update(backorders)
-        .set({
-          transferOrderId: null,
-          transferOrderLineId: null,
-          // eslint-disable-next-line no-restricted-syntax -- State bypass required
-          stateCode: BACKORDER_STATE.PENDING_SUPPLY,
-        })
-        .where(eq(backorders.transferOrderId, id));
+      await this.backordersService.unlinkDemandForTransferOrder(tx, id, actor);
 
+      // @herobm-skip-audit - DB write is performed by changeTransferState, emitting event here
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: id,

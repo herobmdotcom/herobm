@@ -368,33 +368,11 @@ export class GlobalPurchaseReturnsController {
     @Param('id') id: string,
     @Body() body?: ResolvePurchaseReturnDto,
   ) {
-    const [existing] = await this.db
-      .select()
-      .from(purchaseOrderReturns)
-      .where(eq(purchaseOrderReturns.returnId, id))
-      .limit(1);
-
-    if (!existing) throw new NotFoundException('Purchase Return not found');
-
-    const updatedNotes = body?.notes
-      ? `${existing.notes ? existing.notes + ' | ' : ''}${body.notes}`
-      : existing.notes || 'Marked as resolved without debit note';
-
-    await this.db
-      .update(purchaseOrderReturns)
-      .set({
-        notes: updatedNotes,
-        modifiedOn: new Date(),
-      })
-      .where(eq(purchaseOrderReturns.returnId, id));
-
-    const updated = await this.purchaseReturnsService.changePurchaseReturnState(
+    return await this.purchaseReturnsService.resolveWithoutDebitNote(
       id,
-      PURCHASE_RETURN_STATE.CANCELLED,
+      body?.notes,
       'finance',
     );
-
-    return updated;
   }
 
   @Post(':id/email-document')

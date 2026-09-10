@@ -16,24 +16,24 @@
   }
 }
 
-#import "theme-external.typ": conf
-#show: doc => conf(title: "OVERDUE NOTICE", doc)
+#import "theme-customer.typ": conf, getTheme
+#show: doc => conf(title: "OVERDUE PAYMENT NOTICE", doc)
 
-#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 10pt)
+#let theme = getTheme(data)
 
 // ── Document Identity ───────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(12pt, weight: "semibold")[Account: #data.header.customerNumber] \
+    #text(12pt, weight: "semibold", fill: theme.primaryColor)[Account: #data.header.customerNumber] \
     #if "noticeLevel" in data.header and data.header.noticeLevel != none and data.header.noticeLevel != "" [
       #v(-0.1cm)
       #text(9pt, fill: rgb("#dc2626"), weight: "bold")[Notice: #data.header.noticeLevel]
     ]
   ],
   align(right)[
-    #text(9pt, fill: luma(100))[
+    #text(9pt, fill: theme.mutedColor)[
       Notice Date: #data.header.noticeDate \
       Generated: #data.generatedAt
     ]
@@ -47,14 +47,14 @@
   columns: (1.2fr, 0.8fr),
   gutter: 20pt,
   [
-    #text(9pt, weight: "bold", fill: luma(80))[BILL TO] \
+    #text(9pt, weight: "bold", fill: theme.accentColor)[BILL TO] \
     #v(0.1cm)
     #text(11pt, weight: "semibold")[#data.header.customerName] \
     #if "billingAddress" in data.header and data.header.billingAddress != none and data.header.billingAddress != "" [
-      #text(9pt, fill: luma(100))[#data.header.billingAddress] \
+      #text(9pt, fill: theme.mutedColor)[#data.header.billingAddress] \
     ]
     #if "customerContact" in data.header and data.header.customerContact != none and data.header.customerContact != "" [
-      #text(9pt, fill: luma(100))[Attn: #data.header.customerContact]
+      #text(9pt, fill: theme.mutedColor)[Attn: #data.header.customerContact]
     ]
   ],
   [
@@ -62,11 +62,11 @@
       columns: (auto, 1fr),
       row-gutter: 8pt,
       column-gutter: 12pt,
-      text(9pt, weight: "bold", fill: luma(80))[Account No:], data.header.customerNumber,
-      text(9pt, weight: "bold", fill: luma(80))[Notice Date:], data.header.noticeDate,
-      text(9pt, weight: "bold", fill: luma(80))[Payment Terms:], if "paymentTerms" in data.header and data.header.paymentTerms != none and data.header.paymentTerms != "" [#data.header.paymentTerms] else [30 Days],
-      text(9pt, weight: "bold", fill: luma(80))[Credit Limit:], if "creditLimit" in data.header and data.header.creditLimit != none and data.header.creditLimit != "" [#data.header.currencyCode #fmt(data.header.creditLimit)] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Account No:], data.header.customerNumber,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Notice Date:], data.header.noticeDate,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Payment Terms:], if "paymentTerms" in data.header and data.header.paymentTerms != none and data.header.paymentTerms != "" [#data.header.paymentTerms] else [30 Days],
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Credit Limit:], if "creditLimit" in data.header and data.header.creditLimit != none and data.header.creditLimit != "" [#data.header.currencyCode #fmt(data.header.creditLimit)] else [—],
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Currency:], data.header.currencyCode,
     )
   ]
 )
@@ -104,23 +104,23 @@
 #table(
   columns: (1fr, 1.2fr, 1.3fr, 1fr, 1fr, 1.2fr, 1.3fr),
   inset: (x: 6pt, y: 8pt),
-  stroke: 0.5pt + luma(210),
-  fill: (_, row) => if row == 0 { rgb("#f8fafc") },
+  stroke: 0.5pt + theme.borderColor,
+  fill: (_, row) => if row == 0 { theme.tableHeaderFill },
   align: (left, left, left, left, center, right, right),
   
   // Header Row
-  text(9pt, weight: "bold", fill: luma(50))[Invoice Date],
-  text(9pt, weight: "bold", fill: luma(50))[Invoice No.],
-  text(9pt, weight: "bold", fill: luma(50))[Customer Ref],
-  text(9pt, weight: "bold", fill: luma(50))[Due Date],
-  text(9pt, weight: "bold", fill: luma(50))[Days Overdue],
-  text(9pt, weight: "bold", fill: luma(50))[Original Total],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Invoice Date],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Invoice No.],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Customer Ref],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Due Date],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Days Overdue],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Original Total],
   text(9pt, weight: "bold", fill: rgb("#dc2626"))[Overdue Amount],
 
   ..for line in lines {
     (
       text(9pt)[#line.at("invoiceDate", default: "—")],
-      text(9pt, weight: "medium")[#line.at("invoiceNumber", default: "—")],
+      text(9pt, weight: "medium", fill: theme.primaryColor)[#line.at("invoiceNumber", default: "—")],
       text(9pt)[#line.at("customerOrderNumber", default: "—")],
       text(9pt)[#line.at("dueDate", default: "—")],
       text(9pt, weight: "bold", fill: rgb("#b91c1c"))[#line.at("daysOverdue", default: 0)],
@@ -137,20 +137,20 @@
   columns: (1fr),
   gutter: 10pt,
   [
-    #text(10pt, weight: "bold", fill: luma(60))[AGED RECEIVABLES BREAKDOWN (#data.header.currencyCode)]
+    #text(10pt, weight: "bold", fill: theme.primaryColor)[AGED RECEIVABLES BREAKDOWN (#data.header.currencyCode)]
     #v(0.2cm)
     #table(
       columns: (1fr, 1fr, 1fr, 1fr, 1fr, 1.2fr),
       inset: (x: 6pt, y: 8pt),
-      stroke: 0.5pt + luma(210),
-      fill: (_, row) => if row == 0 { rgb("#f1f5f9") } else if row == 1 { rgb("#ffffff") },
+      stroke: 0.5pt + theme.borderColor,
+      fill: (_, row) => if row == 0 { theme.tableHeaderFill } else if row == 1 { rgb("#ffffff") },
       align: (center, center, center, center, center, center),
 
-      text(8.5pt, weight: "bold", fill: luma(60))[Current],
-      text(8.5pt, weight: "bold", fill: luma(60))[1–30 Days],
-      text(8.5pt, weight: "bold", fill: luma(60))[31–60 Days],
-      text(8.5pt, weight: "bold", fill: luma(60))[61–90 Days],
-      text(8.5pt, weight: "bold", fill: luma(60))[90+ Days],
+      text(8.5pt, weight: "bold", fill: theme.primaryColor)[Current],
+      text(8.5pt, weight: "bold", fill: theme.primaryColor)[1–30 Days],
+      text(8.5pt, weight: "bold", fill: theme.primaryColor)[31–60 Days],
+      text(8.5pt, weight: "bold", fill: theme.primaryColor)[61–90 Days],
+      text(8.5pt, weight: "bold", fill: theme.primaryColor)[90+ Days],
       text(9pt, weight: "bold", fill: rgb("#b91c1c"))[Total Overdue],
 
       text(9pt)[#fmt(data.aging.current)],
@@ -169,16 +169,16 @@
 #let bank = if "bank" in data and data.bank != none { data.bank } else { (:) }
 #rect(
   width: 100%,
-  stroke: 0.5pt + luma(200),
+  stroke: 0.5pt + theme.borderColor,
   radius: 4pt,
-  fill: rgb("#f8fafc"),
+  fill: theme.tableHeaderFill,
   inset: 12pt,
 )[
   #grid(
     columns: (1fr, 1fr),
     gutter: 15pt,
     [
-      #text(9pt, weight: "bold", fill: luma(70))[HOW TO PAY (DIRECT DEPOSIT / EFT)] \
+      #text(9pt, weight: "bold", fill: theme.primaryColor)[HOW TO PAY (DIRECT DEPOSIT / EFT)] \
       #v(0.1cm)
       #if "bankName" in bank and bank.bankName != none and bank.bankName != "" [
         #text(9pt)[Bank: #bank.bankName] \
@@ -194,7 +194,7 @@
       ]
     ],
     [
-      #text(9pt, weight: "bold", fill: luma(70))[REMITTANCE ADVICE] \
+      #text(9pt, weight: "bold", fill: theme.primaryColor)[REMITTANCE ADVICE] \
       #v(0.1cm)
       #text(9pt)[Please quote Account No. *#data.header.customerNumber* when paying.] \
       #if "remittanceEmail" in bank and bank.remittanceEmail != none and bank.remittanceEmail != "" [

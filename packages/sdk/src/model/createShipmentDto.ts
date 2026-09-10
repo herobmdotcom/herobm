@@ -9,6 +9,7 @@ import type { CreateShipmentLineDto } from './createShipmentLineDto';
 
 export interface CreateShipmentDto {
   notes?: string;
+  shippingNotes?: string;
   deliveryCompanyName?: string;
   trackingNumber?: string;
   lines: CreateShipmentLineDto[];

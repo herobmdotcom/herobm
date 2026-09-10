@@ -5,13 +5,15 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
-import type { CounterFulfilledLineDto } from './counterFulfilledLineDto';
+import type { DirectFulfilledLineDto } from './directFulfilledLineDto';
 
-export interface CounterFulfillmentResponseDto {
+export interface DirectFulfillmentResponseDto {
   salesOrderId: string;
   orderNumber: string;
   stateCode: string;
-  fulfilledLines: CounterFulfilledLineDto[];
+  shipmentId?: string;
+  shipmentNumber?: string;
+  fulfilledLines: DirectFulfilledLineDto[];
   cogsAmount: string;
   message?: string;
 }

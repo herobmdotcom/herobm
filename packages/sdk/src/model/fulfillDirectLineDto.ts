@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.1
  */
 
-export interface FulfillCounterLineDto {
+export interface FulfillDirectLineDto {
   /** Sales order line ID to fulfill */
   salesOrderLineId: string;
-  /** Quantity to fulfill over the counter */
+  /** Quantity to directly fulfill */
   quantityToFulfill: string;
   /** Optional specific bin ID to issue stock from */
   binId?: string;

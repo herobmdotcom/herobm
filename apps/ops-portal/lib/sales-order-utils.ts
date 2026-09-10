@@ -184,6 +184,79 @@ export function calculateShippableQuantities(
 }
 
 /**
+ * Result for each order line's directly fulfillable (Pick & Ship) quantity.
+ */
+export interface PickAndShipQty {
+    salesOrderLineId: string;
+    /** Maximum quantity that can be directly picked & shipped (ordered − already shipped, clamped ≥ 0). */
+    maxQty: number;
+    /** Default quantity to pre-fill (equals maxQty when > 0, else ''). */
+    defaultQty: string;
+}
+
+/**
+ * Calculate how many units of each order line can still be directly fulfilled (Pick & Ship).
+ *
+ *   For non-physical (service/freight) and comment lines: maxQty = 0
+ *   For physical stocked and physical non-stock lines: maxQty = max(0, orderedQty − alreadyShippedQty)
+ *
+ * Only lines with maxQty > 0 are returned.
+ */
+export function calculatePickAndShipQuantities(
+    orderLines: OrderLine[],
+    shipments?: ShipmentSummaryItem[] | null,
+    pickingLines?: PickingLine[] | null,
+): PickAndShipQty[] {
+    return orderLines
+        .map((line) => {
+            const isPhysical = isPhysicalProductLine({
+                productId: line.productId,
+                productType: line.productType,
+            });
+
+            if (!isPhysical || line.lineType === 'Comment') {
+                return {
+                    salesOrderLineId: line.salesOrderLineId,
+                    maxQty: 0,
+                    defaultQty: '',
+                };
+            }
+
+            const orderedQty = parseFloat(line.quantity || '0');
+
+            // Sum already-shipped across non-cancelled shipments
+            let alreadyShipped = 0;
+            if (shipments && shipments.length > 0) {
+                alreadyShipped = shipments.reduce((sum, ship) => {
+                    if (ship.stateCode === 'cancelled') return sum;
+                    const sLine = ship.lines?.find(
+                        (sl) => sl.salesOrderLineId === line.salesOrderLineId,
+                    );
+                    return sum + (sLine ? parseFloat(sLine.quantityShipped || '0') : 0);
+                }, 0);
+            }
+
+            // Also check pickingLines (which includes direct fulfillment shipped counts via getCommittedPerLine)
+            const pLine = pickingLines?.find(
+                (pl) => pl.salesOrderLineId === line.salesOrderLineId,
+            );
+            const pShipped = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
+            if (pShipped > alreadyShipped) {
+                alreadyShipped = pShipped;
+            }
+
+            const maxQty = Math.max(0, orderedQty - alreadyShipped);
+
+            return {
+                salesOrderLineId: line.salesOrderLineId,
+                maxQty,
+                defaultQty: maxQty > 0 ? String(maxQty) : '',
+            };
+        })
+        .filter((l) => l.maxQty > 0);
+}
+
+/**
  * Convert a return fee between absolute and percentage modes.
  *
  * @param currentFee  The current fee value (string, e.g. '10.00' or '5.5').

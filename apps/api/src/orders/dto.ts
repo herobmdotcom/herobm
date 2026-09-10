@@ -443,6 +443,10 @@ export class CreateShipmentDto {
 
   @IsOptional()
   @IsString()
+  shippingNotes?: string;
+
+  @IsOptional()
+  @IsString()
   deliveryCompanyName?: string;
 
   @IsOptional()
@@ -459,6 +463,10 @@ export class UpdateShipmentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  shippingNotes?: string;
 
   @IsOptional()
   @IsString()
@@ -708,6 +716,8 @@ export class ShippingContextLineDto {
 
 export class ShippingContextDto {
   @ApiPropertyOptional() isCreditBlocked?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex sales order response
+  @ApiPropertyOptional({ type: () => Object }) order?: any;
   @ApiProperty({ type: () => [ShippingContextLineDto] })
   lines!: ShippingContextLineDto[];
 
@@ -960,13 +970,13 @@ export class OverrideCreditHoldDto {
   reason!: string;
 }
 
-export class FulfillCounterLineDto {
+export class FulfillDirectLineDto {
   @IsUUID()
   @ApiProperty({ description: 'Sales order line ID to fulfill' })
   salesOrderLineId!: string;
 
   @IsNumberString()
-  @ApiProperty({ description: 'Quantity to fulfill over the counter' })
+  @ApiProperty({ description: 'Quantity to directly fulfill' })
   quantityToFulfill!: string;
 
   @IsOptional()
@@ -977,17 +987,17 @@ export class FulfillCounterLineDto {
   binId?: string;
 }
 
-export class FulfillCounterOrderDto {
+export class FulfillDirectOrderDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => FulfillCounterLineDto)
+  @Type(() => FulfillDirectLineDto)
   @ApiPropertyOptional({
-    type: () => [FulfillCounterLineDto],
+    type: () => [FulfillDirectLineDto],
     description:
       'Specific lines and quantities to fulfill. If omitted, fulfills all unfulfilled lines up to available stock.',
   })
-  lines?: FulfillCounterLineDto[];
+  lines?: FulfillDirectLineDto[];
 
   @IsOptional()
   @IsBoolean()
@@ -1003,9 +1013,30 @@ export class FulfillCounterOrderDto {
     description: 'Optional fulfillment or handover notes',
   })
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Optional delivery instructions for the shipment',
+  })
+  shippingNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Carrier tracking number for the shipment',
+  })
+  trackingNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Carrier or delivery company name',
+  })
+  deliveryCompanyName?: string;
 }
 
-export class CounterFulfilledLineDto {
+export class DirectFulfilledLineDto {
   @ApiProperty()
   salesOrderLineId!: string;
 
@@ -1022,7 +1053,7 @@ export class CounterFulfilledLineDto {
   binNumber?: string;
 }
 
-export class CounterFulfillmentResponseDto {
+export class DirectFulfillmentResponseDto {
   @ApiProperty()
   salesOrderId!: string;
 
@@ -1032,8 +1063,14 @@ export class CounterFulfillmentResponseDto {
   @ApiProperty()
   stateCode!: string;
 
-  @ApiProperty({ type: () => [CounterFulfilledLineDto] })
-  fulfilledLines!: CounterFulfilledLineDto[];
+  @ApiPropertyOptional()
+  shipmentId?: string;
+
+  @ApiPropertyOptional()
+  shipmentNumber?: string;
+
+  @ApiProperty({ type: () => [DirectFulfilledLineDto] })
+  fulfilledLines!: DirectFulfilledLineDto[];
 
   @ApiProperty()
   cogsAmount!: string;

@@ -5,11 +5,13 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { ShippingContextDtoOrder } from './shippingContextDtoOrder';
 import type { ShippingContextLineDto } from './shippingContextLineDto';
 import type { ShipmentResponseDto } from './shipmentResponseDto';
 
 export interface ShippingContextDto {
   isCreditBlocked?: boolean;
+  order?: ShippingContextDtoOrder;
   lines: ShippingContextLineDto[];
   shipments: ShipmentResponseDto[];
 }

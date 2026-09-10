@@ -47,7 +47,10 @@ Bugs, security issues, and architectural drift are treated as system infections 
 ```
 
 ### Invariant Testing with TypeScript AST (`ts-morph`)
-Whenever a structural bug or boundary violation is resolved, an automated AST test is added to `infra/tests/` to prevent recurrence across all workspaces.
+Whenever a structural bug or boundary violation is resolved, an automated AST test is added to `infra/tests/` to prevent recurrence across all workspaces. Key structural boundary suites include:
+- **Single-Writer Table Boundaries (`test_financial_table_write_boundaries.ts`)**: Enforces that each database table is written to exclusively by its authorized domain service, preventing cross-module database pollution.
+- **Pass-the-TX Completeness (`test_adv_104_no_unpassed_tx.ts`, `test_adv_142_pass_the_tx_completeness.ts`)**: Ensures all service methods participating in transactions receive and propagate the active `tx` handle without falling back to unmanaged pool connections.
+- **Audit Mutation Parity (`test_adv_099_emit_event_mutations.ts`, `test_adv_103_no_spurious_events.ts`)**: Verifies that every mutation emits an audit event and no method emits spurious events without performing writes.
 
 ---
 

@@ -41,13 +41,13 @@ import {
   ChangeOrderStateDto,
   OverrideCreditHoldDto,
   EmailDocumentDto,
-  FulfillCounterOrderDto,
-  CounterFulfillmentResponseDto,
+  FulfillDirectOrderDto,
+  DirectFulfillmentResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import { CounterFulfillmentService } from './counter-fulfillment.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
 
 /**
  * Core order CRUD and state transition endpoints.
@@ -72,7 +72,7 @@ export class OrdersController {
     private readonly ordersCoreService: OrdersCoreService,
     private readonly documentDispatchService: DocumentDispatchService,
     private readonly ordersQueryService: OrdersQueryService,
-    private readonly counterFulfillmentService: CounterFulfillmentService,
+    private readonly directFulfillmentService: DirectFulfillmentService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -203,21 +203,21 @@ export class OrdersController {
     );
   }
 
-  @Post(':id/fulfill-counter')
-  @ApiBody({ type: FulfillCounterOrderDto })
+  @Post(':id/fulfill-direct')
+  @ApiBody({ type: FulfillDirectOrderDto })
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Fulfill Counter Order',
+    summary: 'Fulfill Direct Order',
     description:
-      'Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.',
+      'Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled directly without separate warehouse staging or parcel shipping.',
   })
-  @ApiOkResponse({ type: CounterFulfillmentResponseDto })
-  async fulfillCounterOrder(
+  @ApiOkResponse({ type: DirectFulfillmentResponseDto })
+  async fulfillDirectOrder(
     @Param('id') id: string,
-    @Body() body: FulfillCounterOrderDto,
+    @Body() body: FulfillDirectOrderDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.counterFulfillmentService.fulfillCounterOrder(
+    return this.directFulfillmentService.fulfillDirectOrder(
       id,
       body,
       user.username,

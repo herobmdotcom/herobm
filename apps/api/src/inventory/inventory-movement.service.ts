@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import {
   ilike,
@@ -75,6 +76,9 @@ import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
 import { getAccountingStrategy } from './inventory-accounting';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { BackordersService } from '../orders/backorders.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 
 @Injectable()
 export class InventoryMovementService {
@@ -85,6 +89,12 @@ export class InventoryMovementService {
     private appConfig: AppConfigService,
     private uomService: UomService,
     private glService: GlService,
+    @Inject(forwardRef(() => WorkOrdersWriteService))
+    private readonly workOrdersWriteService: WorkOrdersWriteService,
+    @Inject(forwardRef(() => BackordersService))
+    private readonly backordersService: BackordersService,
+    @Inject(forwardRef(() => ReturnsWriteService))
+    private readonly returnsWriteService: ReturnsWriteService,
   ) {}
 
   // =========================================================================
@@ -613,37 +623,25 @@ export class InventoryMovementService {
             .set({ putawayStatus: newStatus })
             .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
         } else if (lineDto.sourceType === 'work_order') {
-          await tx
-            .update(workOrders)
-            .set({
-              putawayStatus: newStatus,
-              modifiedOn: new Date(),
-            })
-            .where(eq(workOrders.workOrderId, lineDto.lineId));
-
-          const linkedBackorders = await tx
-            .select({ backorderId: backorders.backorderId })
-            .from(backorders)
-            .where(eq(backorders.workOrderId, lineDto.lineId));
-
-          for (const bo of linkedBackorders) {
-            await tx
-              .update(backorders)
-              .set({
-                // eslint-disable-next-line no-restricted-syntax -- Fulfill backorder
-                stateCode: BACKORDER_STATE.FULFILLED,
-                modifiedOn: new Date(),
-              })
-              .where(eq(backorders.backorderId, bo.backorderId));
-          }
+          await this.workOrdersWriteService.updatePutawayStatus(
+            tx,
+            lineDto.lineId,
+            newStatus,
+            userId,
+          );
+          await this.backordersService.fulfillWorkOrderDemand(
+            tx,
+            lineDto.lineId,
+            userId,
+          );
         } else {
-          await tx
-            .update(salesOrderReturnLines)
-            .set({
-              putawayStatus: newStatus,
-              ...(lineDto.reason ? { reason: lineDto.reason } : {}),
-            })
-            .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
+          await this.returnsWriteService.updateReturnLinePutawayStatus(
+            tx,
+            lineDto.lineId,
+            newStatus,
+            lineDto.reason,
+            userId,
+          );
         }
 
         await emitEvent(tx as unknown as DrizzleDB, {
@@ -712,31 +710,13 @@ export class InventoryMovementService {
                 ret.stateCode !== RETURN_STATE.RECEIVED &&
                 ret.stateCode !== RETURN_STATE.PROCESSED
               ) {
-                await this.changeReturnState(
-                  tx,
+                await this.returnsWriteService.changeReturnState(
                   rl.returnId,
                   RETURN_STATE.RECEIVED,
+                  userId,
+                  undefined,
+                  tx,
                 );
-
-                const [order] = await tx
-                  .select({ orderNumber: salesOrders.orderNumber })
-                  .from(salesOrders)
-                  .where(eq(salesOrders.salesOrderId, ret.salesOrderId));
-                await emitEvent(tx, {
-                  entityType: EntityType.SALES_ORDER,
-                  entityId: ret.salesOrderId,
-                  eventType: EventType.STATUS_CHANGED,
-                  entityDisplayName: order.orderNumber,
-                  payload: {
-                    entity: 'return',
-                    entityId: rl.returnId,
-                    from: ret.stateCode,
-                    to: RETURN_STATE.RECEIVED,
-                    returnNumber: ret.returnNumber,
-                    reason: 'Auto-transition from complete putaway',
-                  },
-                  actor: userId,
-                });
               }
             }
           }
@@ -1077,10 +1057,13 @@ export class InventoryMovementService {
             .set({ putawayStatus: newStatus })
             .where(eq(goodsReceivedLines.goodsReceivedLineId, dto.lineId));
         } else if (dto.sourceType === 'sales_return') {
-          await tx
-            .update(salesOrderReturnLines)
-            .set({ putawayStatus: newStatus })
-            .where(eq(salesOrderReturnLines.returnLineId, dto.lineId));
+          await this.returnsWriteService.updateReturnLinePutawayStatus(
+            tx,
+            dto.lineId,
+            newStatus,
+            'quarantine_transfer',
+            userId,
+          );
         }
       }
 
@@ -1235,31 +1218,6 @@ export class InventoryMovementService {
 
       return { success: true };
     });
-  }
-
-  private async changeReturnState(
-    tx: DrizzleDB,
-    returnId: string,
-    stateCode: (typeof RETURN_STATE)[keyof typeof RETURN_STATE],
-  ) {
-    const [updated] = await tx
-      .update(salesOrderReturns)
-      .set({ stateCode })
-      .where(eq(salesOrderReturns.returnId, returnId))
-      .returning();
-
-    if (updated) {
-      await emitEvent(tx, {
-        entityType: EntityType.SALES_RETURN,
-        entityId: returnId,
-        eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: updated.returnNumber,
-        payload: {
-          stateCode,
-        },
-        actor: 'system', // mostly system-driven
-      });
-    }
   }
 
   async adjustStock(dto: import('./dto').AdjustStockDto, userId: string) {

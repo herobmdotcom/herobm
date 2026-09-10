@@ -285,6 +285,21 @@ select.input:not([multiple]):not([size]) {
   border-bottom: 1px solid var(--border);
 }
 
+.table-lines th.text-right,
+.table-lines td.text-right {
+  text-align: right;
+}
+
+.table-lines th.text-center,
+.table-lines td.text-center {
+  text-align: center;
+}
+
+.table-lines th.text-left,
+.table-lines td.text-left {
+  text-align: left;
+}
+
 .table-lines td {
   padding: 6px 6px;
   border-bottom: 1px solid var(--border);

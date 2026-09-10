@@ -171,8 +171,18 @@ export {
   formatPickBarcode,
   parsePickBarcode,
   formatQuantity,
+  resolveSalesLineAvailabilityStatus,
 } from './inventory';
-export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData, ProductType, PickBarcodePayload } from './inventory';
+export type {
+  InventoryLevelMinimal,
+  OrderLineMinimal,
+  InventoryGap,
+  InventoryLevelData,
+  ProductType,
+  PickBarcodePayload,
+  SalesLineAvailabilityStatus,
+  ResolveSalesLineAvailabilityParams,
+} from './inventory';
 
 export type { ReportDefinition } from './reports';
 

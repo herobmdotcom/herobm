@@ -20,7 +20,7 @@ import {
   uomDictionary,
   taxCategories,
 } from '@herobm/db-schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_RETURN_STATE,
@@ -32,6 +32,7 @@ import {
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
 
 describe('PurchaseReturnsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -93,6 +94,53 @@ describe('PurchaseReturnsService', () => {
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfig },
         { provide: InventoryMovementService, useValue: mockInventoryService },
+        {
+          provide: PurchaseOrdersWriteService,
+          useValue: {
+            revertReceiptQuantities: jest.fn(
+              async (
+                tx,
+                reversals: { purchaseOrderLineId: string; quantity: number }[],
+              ) => {
+                for (const r of reversals) {
+                  await tx
+                    .update(purchaseOrderLineItems)
+                    .set({
+                      quantityReceived: sql`GREATEST(0, CAST(COALESCE(quantity_received, '0') AS NUMERIC) - CAST(${r.quantity} AS NUMERIC))`,
+                    })
+                    .where(
+                      eq(
+                        purchaseOrderLineItems.purchaseOrderLineId,
+                        r.purchaseOrderLineId,
+                      ),
+                    );
+                }
+              },
+            ),
+            recordReceiptQuantities: jest.fn(
+              async (
+                tx,
+                receipts: { purchaseOrderLineId: string; quantity: number }[],
+              ) => {
+                for (const r of receipts) {
+                  await tx
+                    .update(purchaseOrderLineItems)
+                    .set({
+                      quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${r.quantity} AS NUMERIC)`,
+                    })
+                    .where(
+                      eq(
+                        purchaseOrderLineItems.purchaseOrderLineId,
+                        r.purchaseOrderLineId,
+                      ),
+                    );
+                }
+              },
+            ),
+            recalculateReceiptStatus: jest.fn(),
+            changePurchaseOrderState: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

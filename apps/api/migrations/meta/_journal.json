@@ -36,6 +36,13 @@
       "when": 1788900000000,
       "tag": "0004_gl_journal_entries_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788983723899,
+      "tag": "0005_add_shipment_shipping_notes",
+      "breakpoints": true
     }
   ]
 }

@@ -263,4 +263,68 @@ export function formatQuantity(
   });
 }
 
+export type SalesLineAvailabilityStatus =
+  | 'shipped'
+  | 'picked'
+  | 'backordered'
+  | 'local'
+  | 'others'
+  | 'at_risk'
+  | 'shortage';
+
+export interface ResolveSalesLineAvailabilityParams {
+  isShipped?: boolean;
+  isPreConfirmation?: boolean;
+  orderedQuantity: number;
+  pickedQuantity?: number;
+  isBackordered?: boolean;
+  hasGap?: boolean;
+  gapOrderedQuantity?: number;
+  totalAvailableQuantity?: number;
+  localAvailableQuantity?: number;
+}
+
+/**
+ * Resolves the lifecycle & inventory availability status for a sales order line.
+ * Centralizes cross-location stock matching, picking, backorder, and shortage rules.
+ */
+export function resolveSalesLineAvailabilityStatus(
+  params: ResolveSalesLineAvailabilityParams,
+): SalesLineAvailabilityStatus {
+  if (params.isShipped) {
+    return 'shipped';
+  }
+
+  if (!params.isPreConfirmation) {
+    const picked = params.pickedQuantity ?? 0;
+    if (picked > 0 && picked >= params.orderedQuantity) {
+      return 'picked';
+    }
+
+    if (params.isBackordered) {
+      return 'backordered';
+    }
+  }
+
+  const canFulfil = !params.hasGap;
+  if (canFulfil) {
+    return 'local';
+  }
+
+  const totalAvail = params.totalAvailableQuantity ?? 0;
+  const gapQuantity = params.gapOrderedQuantity ?? params.orderedQuantity;
+  if (params.hasGap && totalAvail >= gapQuantity) {
+    return 'others';
+  }
+
+  if (!params.isPreConfirmation) {
+    const locAvail = params.localAvailableQuantity ?? 0;
+    if (locAvail < 0) {
+      return 'at_risk';
+    }
+  }
+
+  return 'shortage';
+}
+
 

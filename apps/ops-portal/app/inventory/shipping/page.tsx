@@ -94,6 +94,7 @@ export default function ShippingPage() {
     // Form
     const [shipQtys, setShipQtys] = useState<Record<string, string>>({});
     const [notes, setNotes] = useState('');
+    const [deliveryInstructions, setDeliveryInstructions] = useState('');
     const [trackingNumber, setTrackingNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -160,8 +161,8 @@ export default function ShippingPage() {
         setError(null);
         api.orderPickingControllerGetShippingContext(selectedOrder.id)
             .then((response) => {
-                const data = response.data ;
-                setContext(data as unknown as ShippingContext);
+                const data = response.data as unknown as ShippingContext;
+                setContext(data);
                 // Pre-fill ship quantities with available-to-ship
                 const defaults: Record<string, string> = {};
                 data.lines.forEach((line: ShippingLine) => {
@@ -172,6 +173,7 @@ export default function ShippingPage() {
                 });
                 setShipQtys(defaults);
                 setNotes('');
+                setDeliveryInstructions(data.order?.shippingNotes || '');
                 setTrackingNumber('');
             })
             .catch(err => setError(getErrorMessage(err)))
@@ -209,6 +211,7 @@ export default function ShippingPage() {
             await api.orderShipmentsControllerCreateShipment(selectedOrder.id, {
                 notes: notes || undefined,
                 trackingNumber: trackingNumber || undefined,
+                shippingNotes: deliveryInstructions || undefined,
                 lines,
             });
             toast.success(t('toasts.shipmentCreated'));
@@ -295,48 +298,44 @@ export default function ShippingPage() {
                             )}
 
                             <div className="space-y-6">
-                                {/* Delivery Address & Shipping Notes */}
-                                {(context.order.deliveryAddressLine1 || context.order.shippingNotes) && (
-                                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                                        {(context.order.deliveryAddressLine1) && (
-                                            <div className="flex-1">
-                                                { }
-                                                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                                                    {/* eslint-disable-next-line no-restricted-syntax -- legacy */}
-                                                    {context.order.type === 'transfer_order' ? 'Destination Location' : 'Delivery Address'}
-                                                </label>
-                                                <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg">
-                                                    <AddressDisplay
-                                                        addressLine1={context.order.deliveryAddressLine1}
-                                                        addressLine2={context.order.deliveryAddressLine2}
-                                                        city={context.order.deliveryCity}
-                                                        stateOrProvince={context.order.deliveryState}
-                                                        postalCode={context.order.deliveryPostalCode}
-                                                        country={context.order.deliveryCountry}
-                                                        phone={context.order.deliveryPhone}
-                                                        recipientName={context.order.deliveryName}
-                                                        companyName={context.order.deliveryCompanyName ?? undefined}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {context.order.shippingNotes && (
-                                            <div className="flex-1">
-                                                { }
-                                                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                                                    Shipping Instructions
-                                                </label>
-                                                <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-                                                    {context.order.shippingNotes}
-                                                </div>
-                                            </div>
-                                        )}
+                                {/* Delivery Address */}
+                                {context.order.deliveryAddressLine1 && (
+                                    <div>
+                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                                            {/* eslint-disable-next-line no-restricted-syntax -- legacy */}
+                                            {context.order.type === 'transfer_order' ? 'Destination Location' : 'Delivery Address'}
+                                        </label>
+                                        <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg">
+                                            <AddressDisplay
+                                                addressLine1={context.order.deliveryAddressLine1}
+                                                addressLine2={context.order.deliveryAddressLine2}
+                                                city={context.order.deliveryCity}
+                                                stateOrProvince={context.order.deliveryState}
+                                                postalCode={context.order.deliveryPostalCode}
+                                                country={context.order.deliveryCountry}
+                                                phone={context.order.deliveryPhone}
+                                                recipientName={context.order.deliveryName}
+                                                companyName={context.order.deliveryCompanyName ?? undefined}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Ship Form Header Fields */}
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <div className="flex-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                                            {t('deliveryInstructions')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={deliveryInstructions}
+                                            onChange={e => setDeliveryInstructions(e.target.value)}
+                                            placeholder={t('deliveryInstructions')}
+                                            className="input w-full"
+                                        />
+                                    </div>
+                                    <div>
                                         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                             {t('columns.trackingNumber')}
                                         </label>
@@ -348,15 +347,15 @@ export default function ShippingPage() {
                                             className="input w-full"
                                         />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                                            {t('columns.notes')}
+                                            {t('columns.shipmentNotes')}
                                         </label>
                                         <input
                                             type="text"
                                             value={notes}
                                             onChange={e => setNotes(e.target.value)}
-                                            placeholder={t('placeholders.notes')}
+                                            placeholder={t('placeholders.shipmentNotes')}
                                             className="input w-full"
                                         />
                                     </div>

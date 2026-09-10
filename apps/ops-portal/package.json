@@ -1,6 +1,6 @@
 {
   "name": "ops-portal",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "HeroBM: Modern Web Operations Portal",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -22,14 +22,14 @@
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" && npm run lint:i18n && npm run lint:forms",
     "lint:i18n": "node scripts/lint-i18n.js",
     "lint:forms": "node scripts/lint-forms.js",
-    "test": "jest --maxWorkers=50%",
-    "test:unit": "jest --maxWorkers=50%",
-    "test:changed": "jest --onlyChanged --passWithNoTests --maxWorkers=50%",
+    "test": "jest",
+    "test:unit": "jest",
+    "test:changed": "jest --onlyChanged --passWithNoTests",
     "test:e2e": "playwright test",
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"
   },
   "dependencies": {
-    "@herobm/sdk": "1.1.4",
+    "@herobm/sdk": "1.1.5",
     "@herobm/shared": "*",
     "@radix-ui/react-slot": "^1.3.0",
     "@types/dagre": "^0.7.54",

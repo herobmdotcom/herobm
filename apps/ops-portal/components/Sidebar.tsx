@@ -200,7 +200,6 @@ export default function Sidebar() {
             { href: routes.admin.settings.financial(), label: t('items.financial') },
             { href: routes.admin.settings.integrations(), label: 'Integrations' },
             { href: routes.admin.settings.license(), label: 'License' },
-            { href: routes.admin.settings.pdfHooks(), label: 'PDF Hooks' },
             { href: routes.admin.settings.pdfTemplates.list(), label: 'PDF Templates' },
             { href: routes.admin.settings.system(), label: t('items.system') },
           ]

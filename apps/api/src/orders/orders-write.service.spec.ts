@@ -207,6 +207,12 @@ describe('OrdersWriteService', () => {
     mockBackordersService = {
       evaluateGaps: jest.fn().mockResolvedValue([]),
       triggerBackorders: jest.fn().mockResolvedValue(undefined),
+      cancelDemandForSalesOrder: jest.fn().mockResolvedValue(undefined),
+      deleteDemandsForLineIds: jest.fn().mockResolvedValue(undefined),
+      createShortfallDemand: jest.fn().mockResolvedValue(undefined),
+      generateDemand: jest.fn().mockResolvedValue(undefined),
+      fulfillWorkOrderDemand: jest.fn().mockResolvedValue(undefined),
+      unlinkDemandForPurchaseOrder: jest.fn().mockResolvedValue(undefined),
     };
 
     mockPickingService = {

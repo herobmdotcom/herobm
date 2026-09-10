@@ -3,6 +3,7 @@ import {
   OnModuleInit,
   Inject,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
@@ -37,7 +38,7 @@ import { PickingService } from './picking.service';
 import { PickingQueryService } from './picking-query.service';
 import { PickingShippingQueryService } from './picking-shipping-query.service';
 import { PickingActionService } from './picking-action.service';
-import { CounterFulfillmentService } from './counter-fulfillment.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { ShipmentsWriteService } from './shipments/shipments-write.service';
 import { ShipmentsStateService } from './shipments/shipments-state.service';
@@ -63,22 +64,26 @@ import { ShippingDocketService } from '../pdf-templates/shipping-docket.service'
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
 import { EmailModule } from '../email/email.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ManufacturingModule } from '../manufacturing/manufacturing.module';
+import { PurchaseOrdersModule } from '../purchase-orders/purchase-orders.module';
 
 @Module({
   imports: [
     ConfigModule,
     TaxModule,
-    InventoryModule,
+    forwardRef(() => InventoryModule),
     CustomersModule,
     ProductsModule,
     GlModule,
     SettingsModule,
     PdfTemplatesModule,
-    InvoicesModule,
+    forwardRef(() => InvoicesModule),
     EnrichmentModule,
     BusinessReportsModule,
     EmailModule,
     NotificationsModule,
+    forwardRef(() => ManufacturingModule),
+    forwardRef(() => PurchaseOrdersModule),
   ],
   controllers: [
     OrderPickingController,
@@ -101,7 +106,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     OrdersQueryService,
     BackordersService,
     ReturnsWriteService,
-    CounterFulfillmentService,
+    DirectFulfillmentService,
     PickingService,
     PickingQueryService,
     PickingShippingQueryService,
@@ -125,8 +130,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
     OrderLinesService,
     OrderStateService,
     OrdersQueryService,
-    CounterFulfillmentService,
+    DirectFulfillmentService,
     BackordersService,
+    ReturnsWriteService,
     PickingService,
     PickingQueryService,
     PickingShippingQueryService,

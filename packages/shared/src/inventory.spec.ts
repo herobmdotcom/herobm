@@ -8,6 +8,7 @@ import {
   formatPickBarcode,
   parsePickBarcode,
   formatQuantity,
+  resolveSalesLineAvailabilityStatus,
 } from './inventory';
 
 describe('Inventory Logic (Shared)', () => {
@@ -202,6 +203,108 @@ describe('Inventory Logic (Shared)', () => {
       expect(formatQuantity(undefined)).toBe('0');
       expect(formatQuantity('')).toBe('0');
       expect(formatQuantity('abc')).toBe('0');
+    });
+  });
+
+  describe('resolveSalesLineAvailabilityStatus', () => {
+    it('should return shipped when isShipped is true', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isShipped: true,
+          orderedQuantity: 10,
+          hasGap: true,
+          totalAvailableQuantity: 0,
+        }),
+      ).toBe('shipped');
+    });
+
+    it('should return picked when pickedQuantity >= orderedQuantity in post-confirmation', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 5,
+          pickedQuantity: 5,
+        }),
+      ).toBe('picked');
+    });
+
+    it('should return backordered when isBackordered is true in post-confirmation', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 5,
+          pickedQuantity: 0,
+          isBackordered: true,
+        }),
+      ).toBe('backordered');
+    });
+
+    it('should return local (In Stock) when canFulfil / no gap in pre or post confirmation', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: true,
+          orderedQuantity: 5,
+          hasGap: false,
+        }),
+      ).toBe('local');
+
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 5,
+          hasGap: false,
+        }),
+      ).toBe('local');
+    });
+
+    it('should return others (In Stock - Other) when local gap exists but total inventory across locations covers it', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 1,
+          hasGap: true,
+          gapOrderedQuantity: 1,
+          localAvailableQuantity: 0,
+          totalAvailableQuantity: 7, // e.g. Perth 3 + Brisbane 4
+        }),
+      ).toBe('others');
+    });
+
+    it('should return at_risk when local stock is negative in post-confirmation', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 5,
+          hasGap: true,
+          gapOrderedQuantity: 5,
+          localAvailableQuantity: -2,
+          totalAvailableQuantity: 0,
+        }),
+      ).toBe('at_risk');
+    });
+
+    it('should return shortage when total stock is insufficient to cover gap', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: false,
+          orderedQuantity: 10,
+          hasGap: true,
+          gapOrderedQuantity: 10,
+          localAvailableQuantity: 0,
+          totalAvailableQuantity: 2,
+        }),
+      ).toBe('shortage');
+
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: true,
+          orderedQuantity: 10,
+          hasGap: true,
+          gapOrderedQuantity: 10,
+          localAvailableQuantity: 0,
+          totalAvailableQuantity: 2,
+        }),
+      ).toBe('shortage');
     });
   });
 });

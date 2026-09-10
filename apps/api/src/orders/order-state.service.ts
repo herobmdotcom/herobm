@@ -233,13 +233,7 @@ export class OrderStateService {
         await this.backordersService.generateDemand(id, gaps, actor, tx);
       }
       if (newState === SALES_ORDER_STATE.CANCELLED) {
-        await tx
-          .update(backorders)
-          .set({
-            stateCode: SALES_ORDER_STATE.CANCELLED,
-            modifiedOn: new Date(),
-          })
-          .where(eq(backorders.salesOrderId, id));
+        await this.backordersService.cancelDemandForSalesOrder(tx, id, actor);
       }
 
       const [updated] = await tx

@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
 
 
 define HELP_TEXT
@@ -52,8 +52,9 @@ Verification & Quality Gates:
   make check-all      - Fast static analysis: typecheck and linting across all workspaces
   make test-unit      - Run all fast unit tests (API PGlite + Ops Portal components)
   make test-single [TEST=name] - Run a single test file (or target from .test_target)
-  make test-api-unit  - Run API unit tests (PGlite)
+  make test-api-unit [SHARD=1/3] - Run API unit tests (PGlite, optional shard)
   make test-portal-unit - Run Ops Portal unit tests (Jest/RTL)
+  make test-packages-unit - Run shared packages & worker unit tests
   make test-portal-e2e- Run Playwright E2E against running dev host (PORTAL_URL=http://localhost:4301)
   make test-api-e2e   - Run end-to-end API tests against real Postgres
   make test-structural- Run structural architecture, security & knip checks
@@ -583,8 +584,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -609,10 +610,13 @@ TEST_API_TARGET = test:pglite
 TEST_E2E_TARGET = test:e2e
 
 test-api-unit:
-	@$(NPX) turbo run test:unit --filter=api
+	@$(NPX) turbo run test:unit --filter=api $(if $(SHARD),-- --shard=$(SHARD),) $(if $(TEST),-- $(TEST),)
 
 test-portal-unit:
 	@$(NPX) turbo run test:unit --filter=ops-portal
+
+test-packages-unit:
+	@$(NPX) turbo run test:unit --filter=!api --filter=!ops-portal
 
 test-portal-e2e:
 	@echo "Running Ops Portal Playwright E2E tests against $(or $(PORTAL_URL),http://localhost:4301)..."
@@ -850,7 +854,7 @@ query-postgres:
 test-heavy: $(if $(or $(SKIP_STRUCTURAL),$(UI_ONLY),$(REUSE)),,test-structural)
 	@$(TEST_HEAVY_CMD)
 
-test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-data
+test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural
 	@$(MAKE) test-heavy SKIP_STRUCTURAL=1
 
 build-all:

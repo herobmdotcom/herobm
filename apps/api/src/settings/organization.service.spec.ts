@@ -76,11 +76,24 @@ describe('OrganizationService', () => {
     it('should update tenantSettings if already exists', async () => {
       await service.update({ name: 'Initial Corp' } as any, 'testuser');
       const updated = await service.update(
-        { name: 'Updated Corp', city: 'Melbourne' } as any,
+        {
+          name: 'Updated Corp',
+          city: 'Melbourne',
+          pdfThemeConfig: {
+            primaryColor: '#006b5c',
+            fontFamily: 'DejaVu Sans',
+            baseFontSizePt: 10,
+          },
+        } as any,
         'testuser',
       );
       expect(updated.name).toBe('Updated Corp');
       expect(updated.city).toBe('Melbourne');
+      expect(updated.pdfThemeConfig).toEqual({
+        primaryColor: '#006b5c',
+        fontFamily: 'DejaVu Sans',
+        baseFontSizePt: 10,
+      });
     });
   });
 

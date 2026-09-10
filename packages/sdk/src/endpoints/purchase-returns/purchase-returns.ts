@@ -332,6 +332,7 @@ export const purchaseReturnsControllerCancelReturn = async (id: string,
 
 
 /**
+ * Retrieve a paginated or filtered list of purchase returns across all purchase orders.
  * @summary List all purchase returns across all POs
  */
 export type globalPurchaseReturnsControllerFindAllResponse200 = {

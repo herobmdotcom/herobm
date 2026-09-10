@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -39,6 +40,7 @@ export class WorkOrdersWriteService {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    @Inject(forwardRef(() => InventoryMovementService))
     private readonly inventoryMovementService: InventoryMovementService,
     private readonly queryService: WorkOrdersQueryService,
   ) {}
@@ -660,5 +662,97 @@ export class WorkOrdersWriteService {
     }
 
     return await this.queryService.getPickingSummary(id, tx);
+  }
+
+  /**
+   * Update work order putaway status.
+   */
+  async updatePutawayStatus(
+    tx: DrizzleDB,
+    workOrderId: string,
+    putawayStatus: string,
+    actor: string = 'system',
+  ) {
+    const [existing] = await tx
+      .select({ orderNumber: workOrders.orderNumber })
+      .from(workOrders)
+      .where(eq(workOrders.workOrderId, workOrderId));
+
+    if (!existing) {
+      throw new NotFoundException(`Work Order ${workOrderId} not found`);
+    }
+
+    await tx
+      .update(workOrders)
+      .set({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        putawayStatus: putawayStatus as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(workOrders.workOrderId, workOrderId));
+
+    await emitEvent(tx, {
+      entityType: EntityType.WORK_ORDER,
+      entityId: workOrderId,
+      eventType: EventType.UPDATED,
+      actor,
+      entityDisplayName: existing.orderNumber,
+      payload: { putawayStatus },
+    });
+  }
+
+  /**
+   * Create a draft Work Order and component BOM snapshot directly from backorder demand resolution.
+   */
+  async createFromDemand(
+    tx: DrizzleDB,
+    params: {
+      productId: string;
+      targetQuantity: string;
+      locationId: string;
+      actor: string;
+      components?: { productId: string; quantity: string }[];
+    },
+  ) {
+    const orderNumber = this.generateWorkOrderNumber();
+    const [wo] = await tx
+      .insert(workOrders)
+      .values({
+        orderNumber,
+        productId: params.productId,
+        targetQuantity: params.targetQuantity,
+        completedQuantity: '0',
+        locationId: params.locationId,
+        stateCode: WORK_ORDER_STATE.DRAFT,
+        createdBy: params.actor,
+      })
+      .returning();
+
+    if (params.components && params.components.length > 0) {
+      for (const comp of params.components) {
+        const expectedQty =
+          Number(comp.quantity) * Number(params.targetQuantity);
+        await tx.insert(workOrderComponents).values({
+          workOrderId: wo.workOrderId,
+          productId: comp.productId,
+          expectedQuantity: expectedQty.toString(),
+        });
+      }
+    }
+
+    await emitEvent(tx, {
+      entityType: EntityType.WORK_ORDER,
+      entityId: wo.workOrderId,
+      eventType: EventType.CREATED,
+      actor: params.actor,
+      entityDisplayName: orderNumber,
+      payload: {
+        reason: 'mrp_demand_resolution',
+        targetQuantity: params.targetQuantity,
+        componentsCount: params.components?.length || 0,
+      },
+    });
+
+    return wo;
   }
 }

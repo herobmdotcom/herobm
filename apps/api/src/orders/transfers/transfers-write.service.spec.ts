@@ -26,6 +26,7 @@ import {
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
 } from '@herobm/shared';
+import { BackordersService } from '../backorders.service';
 
 describe('TransfersWriteService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -35,9 +36,9 @@ describe('TransfersWriteService', () => {
   const LOCATION_SRC_ID = '00000000-0000-4000-8000-000000000001';
   const LOCATION_DST_ID = '00000000-0000-4000-8000-000000000002';
   const PROD_ID = '00000000-0000-4000-8000-000000000003';
-  const SALES_ORDER_ID = '00000000-0000-4000-8000-000000000004';
-  const SALES_ORDER_LINE_ID = '00000000-0000-4000-8000-000000000005';
-  const BACKORDER_ID = '00000000-0000-4000-8000-000000000006';
+  const BACKORDER_ID = '00000000-0000-4000-8000-000000000005';
+  const SALES_ORDER_ID = '00000000-0000-4000-8000-000000000006';
+  const SALES_ORDER_LINE_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     await pg.db
@@ -85,6 +86,29 @@ describe('TransfersWriteService', () => {
       providers: [
         TransfersWriteService,
         TransfersCoreService,
+        {
+          provide: BackordersService,
+          useValue: {
+            linkDemandToTransferOrder: jest.fn(
+              async (
+                tx: any,
+                backorderId: string,
+                transferOrderId: string,
+                transferOrderLineId: string,
+                actor: string,
+              ) => {
+                await tx
+                  .update(backorders)
+                  .set({
+                    transferOrderId,
+                    transferOrderLineId,
+                    stateCode: BACKORDER_STATE.AWAITING_RECEIPT,
+                  })
+                  .where(eq(backorders.backorderId, backorderId));
+              },
+            ),
+          },
+        },
         {
           provide: DRIZZLE,
           useValue: pg.db,

@@ -7,6 +7,7 @@ import {
   isPhysicalProductLine,
   isStockedProductLine,
   calculateAvailableQuantity,
+  resolveSalesLineAvailabilityStatus,
   CUSTOM_LINE_ID,
 } from '@herobm/shared';
 import { DataTable } from './DataTable';
@@ -312,39 +313,46 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
         }
 
         /* ── Sales Mode Row Rendering ───────────────────────────── */
+        const locInv = lineInventory.find((i) => i.locationId === targetLocationId);
+        const locAvail =
+          locInv?.quantityAvailable != null
+            ? parseFloat(String(locInv.quantityAvailable || '0'))
+            : calculateAvailableQuantity(
+                locInv?.quantityOnHand,
+                locInv?.quantityCommitted,
+                locInv?.quantityReserved,
+              );
+
+        const salesStatus = resolveSalesLineAvailabilityStatus({
+          isShipped,
+          isPreConfirmation,
+          orderedQuantity: orderedQty,
+          pickedQuantity: parseFloat(String(line.quantityPicked || '0')),
+          isBackordered: Boolean(line.productId && activeBackorders.has(line.productId)),
+          hasGap: Boolean(gap),
+          gapOrderedQuantity: gap?.orderedQuantity,
+          totalAvailableQuantity: totalAvail,
+          localAvailableQuantity: locAvail,
+        });
+
         const renderSalesStatusBadge = () => {
-          if (isShipped) {
-            return <span className="text-emerald-600 font-medium">{t('availability.statusShipped')}</span>;
-          }
-          if (!isPreConfirmation) {
-            const pickedQty = parseFloat(String(line.quantityPicked || '0'));
-            if (pickedQty > 0 && pickedQty >= orderedQty) {
+          switch (salesStatus) {
+            case 'shipped':
+              return <span className="text-emerald-600 font-medium">{t('availability.statusShipped')}</span>;
+            case 'picked':
               return <span className="text-emerald-600 font-medium">{t('availability.statusPicked')}</span>;
-            }
-
-            const isBackordered =
-              line.productId && activeBackorders.has(line.productId);
-            if (isBackordered) {
+            case 'backordered':
               return <span className="text-amber-600 font-medium">{t('availability.statusBackordered')}</span>;
-            }
-
-            const locInv = lineInventory.find((i) => i.locationId === targetLocationId);
-            const isAtRisk = locInv && parseFloat(String(locInv.quantityAvailable || '0')) < 0;
-            if (isAtRisk) {
+            case 'local':
+              return <span className="text-emerald-600 font-medium">{t('availability.statusLocal')}</span>;
+            case 'others':
+              return <span className="text-amber-600 font-medium">{t('availability.statusOthers')}</span>;
+            case 'at_risk':
               return <span className="text-rose-600 font-medium">{t('availability.statusAtRisk')}</span>;
-            }
-
-            return <span className="text-emerald-600 font-medium">{t('availability.statusLocal')}</span>;
+            case 'shortage':
+            default:
+              return <span className="text-rose-600 font-medium">{t('availability.statusShortage')}</span>;
           }
-
-          // Draft / Pre-confirmation
-          if (canFulfil) {
-            return <span className="text-emerald-600 font-medium">{t('availability.statusLocal')}</span>;
-          }
-          if (gap && totalAvail >= gap.orderedQuantity) {
-            return <span className="text-amber-600 font-medium">{t('availability.statusOthers')}</span>;
-          }
-          return <span className="text-rose-600 font-medium">{t('availability.statusShortage')}</span>;
         };
 
         if (isKitParent) {
@@ -487,6 +495,48 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
         const gap = gapMap[lineId];
         const canFulfil = context === 'purchase' ? totalAvail >= orderedQty : !gap;
 
+        const locInv = lineInventory.find((i) => i.locationId === targetLocationId);
+        const locAvail =
+          locInv?.quantityAvailable != null
+            ? parseFloat(String(locInv.quantityAvailable || '0'))
+            : calculateAvailableQuantity(
+                locInv?.quantityOnHand,
+                locInv?.quantityCommitted,
+                locInv?.quantityReserved,
+              );
+
+        const salesStatus = resolveSalesLineAvailabilityStatus({
+          isShipped,
+          isPreConfirmation,
+          orderedQuantity: orderedQty,
+          pickedQuantity: parseFloat(String(line.quantityPicked || '0')),
+          isBackordered: Boolean(line.productId && activeBackorders.has(line.productId)),
+          hasGap: Boolean(gap),
+          gapOrderedQuantity: gap?.orderedQuantity,
+          totalAvailableQuantity: totalAvail,
+          localAvailableQuantity: locAvail,
+        });
+
+        const renderMobileSalesStatusBadge = () => {
+          switch (salesStatus) {
+            case 'shipped':
+              return <span className="text-emerald-600">{t('availability.statusShipped')}</span>;
+            case 'picked':
+              return <span className="text-emerald-600">{t('availability.statusPicked')}</span>;
+            case 'backordered':
+              return <span className="text-amber-600">{t('availability.statusBackordered')}</span>;
+            case 'local':
+              return <span className="text-emerald-600">{t('availability.statusLocal')}</span>;
+            case 'others':
+              return <span className="text-amber-600">{t('availability.statusOthers')}</span>;
+            case 'at_risk':
+              return <span className="text-rose-600">{t('availability.statusAtRisk')}</span>;
+            case 'shortage':
+            default:
+              return <span className="text-rose-600">{t('availability.statusShortage')}</span>;
+          }
+        };
+
         return (
           <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
             <div className="flex justify-between items-start gap-2 mb-2">
@@ -545,24 +595,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
                       {t('availability.colStatus')}
                     </span>
                     <span className="text-sm font-medium">
-                      {isShipped ? (
-                        <span className="text-emerald-600">{t('availability.statusShipped')}</span>
-                      ) : !isPreConfirmation ? (
-                        parseFloat(String(line.quantityPicked || '0')) > 0 &&
-                        parseFloat(String(line.quantityPicked || '0')) >= orderedQty ? (
-                          <span className="text-emerald-600">{t('availability.statusPicked')}</span>
-                        ) : line.productId && activeBackorders.has(line.productId) ? (
-                          <span className="text-amber-600">{t('availability.statusBackordered')}</span>
-                        ) : (
-                          <span className="text-emerald-600">{t('availability.statusLocal')}</span>
-                        )
-                      ) : canFulfil ? (
-                        <span className="text-emerald-600">{t('availability.statusLocal')}</span>
-                      ) : gap && totalAvail >= gap.orderedQuantity ? (
-                        <span className="text-amber-600">{t('availability.statusOthers')}</span>
-                      ) : (
-                        <span className="text-rose-600">{t('availability.statusShortage')}</span>
-                      )}
+                      {renderMobileSalesStatusBadge()}
                     </span>
                   </div>
                 )}

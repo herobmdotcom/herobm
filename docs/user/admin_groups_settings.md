@@ -170,9 +170,10 @@ Controls how the system responds when a customer's total financial exposure (unp
 * **Email Settings** (`/admin/email/settings`): Configure outbound SMTP servers (Host, Port, TLS, Username, Password, From Address).
 * **Email Outbox** (`/admin/email/outbox`): Queue tracking all sent and pending emails with automated exponential retry.
 
-### 5. PDF Document Templates & Hooks
-* **PDF Templates** (`/admin/settings/pdf-templates`): Customize modern Typst layouts for Sales Orders, Quotes, Invoices, Pick Slips, Delivery Dockets, and Debit Notes.
-* **PDF Hooks** (`/admin/settings/pdf-hooks`): Connect system event triggers to specific PDF template renderings.
+### 5. PDF Document Templates, Fonts & Hooks (`/admin/settings/pdf-templates`)
+* **Settings**: Global branding controls for primary colors, accent colors, muted label colors, typography font families, base font sizing, and modular Customer/Supplier header and footer fragments with live PDF preview.
+* **Templates**: Searchable catalog of all 28 seeded Typst document templates with direct editing and custom output filename patterns.
+* **Hooks**: Connect system business event triggers (e.g. `sales-invoice`, `purchase-order`, `quote`) to specific Typst templates.
 
 ### 6. CRM Pipeline & Opportunity Settings (`/admin/settings/crm`)
 * **Pipeline Stages (`projectStatuses`)**: Define ordered stages representing the sales journey (e.g. Discovery, Proposal, Negotiation, Won, Lost) that populate the CRM Opportunities Kanban board.

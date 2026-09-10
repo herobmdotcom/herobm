@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -13,18 +14,11 @@ import {
   suppliers as coreSuppliers,
   products,
   locations,
-  backorders,
   taxCategories,
-  supplierExpiries,
-  appSettings,
   organizations,
+  supplierExpiries,
 } from '@herobm/db-schema';
 import { eq, sql, and, inArray } from 'drizzle-orm';
-import { getErrorMessage, LineType } from '@herobm/shared';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { getExchangeRateForCurrency } from '../common/fx-helper';
 import {
   PURCHASE_ORDER_STATE,
   computeLinePriceForStorage,
@@ -32,13 +26,21 @@ import {
   PRODUCT_STATE,
   BACKORDER_STATE,
   normalizeUomCode,
+  LineType,
+  getErrorMessage,
 } from '@herobm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import { getExchangeRateForCurrency } from '../common/fx-helper';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { BackordersService } from '../orders/backorders.service';
+import { resolvePurchaseTaxForLine } from './purchase-orders-tax.utils';
 
 @Injectable()
 export class PurchaseOrdersWriteService {
@@ -49,6 +51,8 @@ export class PurchaseOrdersWriteService {
     private readonly taxResolutionEngine: TaxResolutionEngine,
     private readonly appConfig: AppConfigService,
     private readonly queryService: PurchaseOrdersQueryService,
+    @Inject(forwardRef(() => BackordersService))
+    private readonly backordersService: BackordersService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersWriteService.name);
@@ -60,95 +64,15 @@ export class PurchaseOrdersWriteService {
     productId?: string,
     taxCategoryIdOverride?: string,
   ): Promise<{ taxCategoryId: string; rate: number }> {
-    const supplier = await this.suppliersService.findOne(vendorId, tx);
-
-    const resolvedTaxCategoryId =
-      await this.taxResolutionEngine.resolveTaxCategory(
-        {
-          isPurchase: true,
-          isTaxRegistered:
-            ((supplier as Record<string, unknown>)
-              .isTaxRegistered as boolean) || false,
-          partyTaxPositionId:
-            supplier.taxPositionId ||
-            ((supplier as Record<string, unknown>)
-              .supplierGroupTaxPositionId as string | undefined) ||
-            this.appConfig.getAppSettingsRaw()?.defaultSupplierTaxPositionId ||
-            null,
-          productId:
-            productId === '00000000-0000-4000-8000-000000000000'
-              ? null
-              : productId || null,
-          productDefaultTaxCategoryId: null,
-          manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
-        },
-        tx,
-      );
-
-    if (resolvedTaxCategoryId) {
-      try {
-        const catRows = await tx
-          .select()
-          .from(taxCategories)
-          .where(eq(taxCategories.taxCategoryId, resolvedTaxCategoryId))
-          .limit(1);
-        if (catRows.length > 0) {
-          return {
-            taxCategoryId: catRows[0].taxCategoryId,
-            rate: parseFloat(catRows[0].rate ?? '0'),
-          };
-        }
-      } catch (err) {
-        // Ignore and fallback
-      }
-    }
-
-    const defaultSettings = await tx
-      .select({ taxCategoryId: appSettings.defaultPurchaseTaxCategoryId })
-      .from(appSettings)
-      .limit(1);
-
-    if (defaultSettings.length > 0 && defaultSettings[0].taxCategoryId) {
-      const catRows = await tx
-        .select()
-        .from(taxCategories)
-        .where(
-          eq(taxCategories.taxCategoryId, defaultSettings[0].taxCategoryId),
-        )
-        .limit(1);
-
-      if (catRows.length > 0) {
-        return {
-          taxCategoryId: catRows[0].taxCategoryId,
-          rate: parseFloat(catRows[0].rate ?? '0'),
-        };
-      }
-    }
-
-    const fallbacks = await tx
-      .select()
-      .from(taxCategories)
-      .where(
-        inArray(taxCategories.code, ['GST', 'INPUT', 'STANDARD', 'VAT', 'TAX']),
-      )
-      .limit(1);
-
-    if (fallbacks.length > 0) {
-      return {
-        taxCategoryId: fallbacks[0].taxCategoryId,
-        rate: parseFloat(fallbacks[0].rate ?? '0'),
-      };
-    }
-
-    const anyCat = await tx.select().from(taxCategories).limit(1);
-    if (anyCat.length > 0) {
-      return {
-        taxCategoryId: anyCat[0].taxCategoryId,
-        rate: parseFloat(anyCat[0].rate ?? '0'),
-      };
-    }
-
-    return { taxCategoryId: '', rate: 0 };
+    return resolvePurchaseTaxForLine(
+      tx,
+      vendorId,
+      this.suppliersService,
+      this.taxResolutionEngine,
+      this.appConfig,
+      productId,
+      taxCategoryIdOverride,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -628,15 +552,7 @@ export class PurchaseOrdersWriteService {
         );
       }
 
-      await tx
-        .update(backorders)
-        .set({
-          purchaseOrderId: null,
-          purchaseOrderLineId: null,
-          // eslint-disable-next-line no-restricted-syntax -- Reverting unfulfilled backorders to PENDING_SUPPLY upon line removal
-          stateCode: BACKORDER_STATE.PENDING_SUPPLY,
-        })
-        .where(eq(backorders.purchaseOrderLineId, lineId));
+      await this.backordersService.unlinkDemandForPoLine(tx, lineId, actor);
 
       await tx
         .delete(purchaseOrderLineItems)
@@ -768,5 +684,283 @@ export class PurchaseOrdersWriteService {
 
       return this.queryService.findOne(id, tx);
     });
+  }
+
+  /**
+   * Record received quantities on purchase order lines and synchronize PO lifecycle state.
+   * @herobm-skip-audit - Line receipt updates delegated within goods received transaction; state change emits EventType.STATUS_CHANGED
+   */
+  async recordReceiptQuantities(
+    tx: DrizzleDB,
+    receipts: { purchaseOrderLineId: string; quantity: number }[],
+    actor: string = 'system',
+  ) {
+    if (!receipts || receipts.length === 0) return;
+
+    const touchedPoIds = new Set<string>();
+
+    for (const receipt of receipts) {
+      if (receipt.quantity <= 0) continue;
+
+      const [poLine] = await tx
+        .select({
+          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+          quantity: purchaseOrderLineItems.quantity,
+          quantityReceived: purchaseOrderLineItems.quantityReceived,
+        })
+        .from(purchaseOrderLineItems)
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            receipt.purchaseOrderLineId,
+          ),
+        );
+
+      if (!poLine) {
+        throw new NotFoundException(
+          `Purchase Order Line ${receipt.purchaseOrderLineId} not found`,
+        );
+      }
+
+      await tx
+        .update(purchaseOrderLineItems)
+        .set({
+          quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${receipt.quantity} AS NUMERIC)`,
+        })
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            receipt.purchaseOrderLineId,
+          ),
+        );
+
+      touchedPoIds.add(poLine.purchaseOrderId);
+    }
+
+    for (const poId of touchedPoIds) {
+      await this.syncReceiptState(tx, poId, actor, 'goods_receipt', false);
+    }
+  }
+
+  private async syncReceiptState(
+    tx: DrizzleDB,
+    poId: string,
+    actor: string,
+    reason: string,
+    fallbackToOrdered = false,
+  ) {
+    const [po] = await tx
+      .select({
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: purchaseOrders.stateCode,
+      })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+    if (!po) return;
+
+    const allLines = await tx
+      .select({
+        quantity: purchaseOrderLineItems.quantity,
+        quantityReceived: purchaseOrderLineItems.quantityReceived,
+      })
+      .from(purchaseOrderLineItems)
+      .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+
+    const isFullyReceived =
+      allLines.length > 0 &&
+      allLines.every(
+        (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity),
+      );
+
+    const hasPartialReceipt = allLines.some(
+      (l) => parseFloat(l.quantityReceived || '0') > 0,
+    );
+
+    const newState = isFullyReceived
+      ? PURCHASE_ORDER_STATE.RECEIVED
+      : hasPartialReceipt
+        ? PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED
+        : fallbackToOrdered
+          ? PURCHASE_ORDER_STATE.ORDERED
+          : po.stateCode;
+
+    if (newState !== po.stateCode) {
+      await this.changePurchaseOrderState(tx, poId, newState, actor, reason);
+    }
+  }
+
+  /**
+   * Formal state transition helper for Purchase Orders.
+   * Ensures transitions follow state machine and emits domain events.
+   */
+  async changePurchaseOrderState(
+    tx: DrizzleDB,
+    poId: string,
+    newState: string,
+    actor: string,
+    reason?: string,
+  ) {
+    const [po] = await tx
+      .select({
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: purchaseOrders.stateCode,
+      })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+    if (!po) {
+      throw new NotFoundException(`Purchase Order ${poId} not found`);
+    }
+
+    if (newState === po.stateCode) return;
+
+    await tx
+      .update(purchaseOrders)
+      .set({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+    await emitEvent(tx, {
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: poId,
+      eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: po.orderNumber,
+      actor,
+      payload: {
+        fromState: po.stateCode,
+        toState: newState,
+        reason,
+      },
+    });
+  }
+
+  /**
+   * Revert receipt quantities on purchase order lines (e.g. during goods receipt cancellation or purchase return).
+   * @herobm-skip-audit - Line receipt reversals delegated within return/cancellation transaction; state change emits EventType.STATUS_CHANGED
+   */
+  async revertReceiptQuantities(
+    tx: DrizzleDB,
+    reversals: { purchaseOrderLineId: string; quantity: number }[],
+    actor: string = 'system',
+  ) {
+    if (!reversals || reversals.length === 0) return;
+
+    const touchedPoIds = new Set<string>();
+
+    for (const reversal of reversals) {
+      if (reversal.quantity <= 0) continue;
+
+      const [poLine] = await tx
+        .select({
+          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+        })
+        .from(purchaseOrderLineItems)
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            reversal.purchaseOrderLineId,
+          ),
+        );
+
+      if (!poLine) continue;
+
+      await tx
+        .update(purchaseOrderLineItems)
+        .set({
+          quantityReceived: sql`GREATEST(0, CAST(COALESCE(quantity_received, '0') AS NUMERIC) - CAST(${reversal.quantity} AS NUMERIC))`,
+        })
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            reversal.purchaseOrderLineId,
+          ),
+        );
+
+      touchedPoIds.add(poLine.purchaseOrderId);
+    }
+
+    for (const poId of touchedPoIds) {
+      await this.syncReceiptState(tx, poId, actor, 'receipt_reversal', true);
+    }
+  }
+
+  /**
+   * Create a draft Purchase Order and its lines from backorder demand requisition.
+   */
+  async createFromRequisition(
+    tx: DrizzleDB,
+    params: {
+      orderNumber: string;
+      vendorId: string;
+      deliveryLocationId: string;
+      currencyCode: string;
+      notes: string;
+      actor: string;
+      lines: {
+        productId: string;
+        productDescription?: string;
+        quantity: string;
+        pricePerUnit: string;
+        taxCategoryId: string;
+      }[];
+    },
+  ): Promise<{
+    purchaseOrder: typeof purchaseOrders.$inferSelect;
+    lineItems: (typeof purchaseOrderLineItems.$inferSelect)[];
+  }> {
+    const [po] = await tx
+      .insert(purchaseOrders)
+      .values({
+        orderNumber: params.orderNumber,
+        name: `Requisition PO ${params.orderNumber}`,
+        vendorId: params.vendorId,
+        deliveryLocationId: params.deliveryLocationId,
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        currencyCode: params.currencyCode,
+        notes: params.notes,
+        createdBy: params.actor,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+      })
+      .returning();
+
+    await emitEvent(tx, {
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: po.purchaseOrderId,
+      eventType: EventType.CREATED,
+      entityDisplayName: params.orderNumber,
+      actor: params.actor,
+      payload: { reason: 'manual_requisition' },
+    });
+
+    const createdLines = params.lines.map((line, idx) => ({
+      purchaseOrderId: po.purchaseOrderId,
+      lineNumber: idx + 1,
+      productId: line.productId,
+      productDescription: line.productDescription,
+      quantity: line.quantity,
+      pricePerUnit: line.pricePerUnit,
+      taxCategoryId: line.taxCategoryId,
+      discountPercentage: '0',
+      amount: '0',
+      tax: '0',
+      quantityReceived: '0',
+    }));
+
+    const poLines =
+      createdLines.length > 0
+        ? await tx
+            .insert(purchaseOrderLineItems)
+            .values(createdLines)
+            .returning()
+        : [];
+
+    return { purchaseOrder: po, lineItems: poLines };
   }
 }

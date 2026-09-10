@@ -130,12 +130,12 @@ export default function InvoicesSection({
                         keyExtractor={(nl) => nl.salesOrderLineId}
                         columns={[
                             { header: '#', width: 40 },
-                            { header: tSales('columns.product') },
+                            { header: tSales('columns.product'), width: 140 },
                             { header: tSales('columns.description') },
-                            { header: tSales('columns.ordered'), align: 'right' },
-                            { header: tSales('columns.picked'), align: 'right' },
-                            { header: tSales('columns.shipped'), align: 'right' },
-                            { header: tSales('columns.invoiced'), align: 'right' },
+                            { header: tSales('columns.ordered'), width: 90, align: 'right' },
+                            { header: tSales('columns.picked'), width: 90, align: 'right' },
+                            { header: tSales('columns.shipped'), width: 90, align: 'right' },
+                            { header: tSales('columns.invoiced'), width: 90, align: 'right' },
                             { header: tSales('columns.qtyToInvoice'), width: 110, align: 'right' }
                         ]}
                         renderCustomRow={(nl, idx) => {

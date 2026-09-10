@@ -16,24 +16,24 @@
   }
 }
 
-#import "theme-external.typ": conf
-#show: doc => conf(title: "PURCHASE RETURN / RMA SLIP", doc)
+#import "theme-supplier.typ": conf, getTheme
+#show: doc => conf(title: "PURCHASE RETURN SLIP", doc)
 
-#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 10pt)
+#let theme = getTheme(data)
 
 // ── Document Identity ───────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(12pt, weight: "semibold")[#data.header.returnNumber] \
+    #text(12pt, weight: "semibold", fill: theme.primaryColor)[#data.header.returnNumber] \
     #if "state" in data.header and data.header.state != none and data.header.state != "" [
       #v(-0.1cm)
-      #text(9pt, fill: luma(120))[Status: #data.header.state]
+      #text(9pt, fill: theme.mutedColor)[Status: #data.header.state]
     ]
   ],
   align(right)[
-    #text(9pt, fill: luma(100))[
+    #text(9pt, fill: theme.mutedColor)[
       Generated on: #data.generatedAt
     ]
   ]
@@ -46,14 +46,14 @@
   columns: (1.2fr, 0.8fr),
   gutter: 20pt,
   [
-    #text(9pt, weight: "bold", fill: luma(80))[SUPPLIER] \
+    #text(9pt, weight: "bold", fill: theme.accentColor)[SUPPLIER] \
     #v(0.1cm)
     #text(11pt, weight: "semibold")[#data.header.supplierName] \
     #if "supplierAddress" in data.header and data.header.supplierAddress != none and data.header.supplierAddress != "" [
-      #text(9pt, fill: luma(100))[#data.header.supplierAddress] \
+      #text(9pt, fill: theme.mutedColor)[#data.header.supplierAddress] \
     ]
     #if "supplierContact" in data.header and data.header.supplierContact != none and data.header.supplierContact != "" [
-      #text(9pt, fill: luma(100))[Attn: #data.header.supplierContact]
+      #text(9pt, fill: theme.mutedColor)[Attn: #data.header.supplierContact]
     ]
   ],
   [
@@ -61,11 +61,11 @@
       columns: (auto, 1fr),
       row-gutter: 8pt,
       column-gutter: 12pt,
-      text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.returnDate,
-      text(9pt, weight: "bold", fill: luma(80))[PO Number:], data.header.orderNumber,
-      text(9pt, weight: "bold", fill: luma(80))[RMA / Ref:], if "packingSlipNumber" in data.header and data.header.packingSlipNumber != none and data.header.packingSlipNumber != "" [#data.header.packingSlipNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Tracking No.:], if "trackingNumber" in data.header and data.header.trackingNumber != none and data.header.trackingNumber != "" [#data.header.trackingNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Date:], data.header.returnDate,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[PO Number:], data.header.orderNumber,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[RMA / Ref:], if "packingSlipNumber" in data.header and data.header.packingSlipNumber != none and data.header.packingSlipNumber != "" [#data.header.packingSlipNumber] else [—],
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Tracking No.:], if "trackingNumber" in data.header and data.header.trackingNumber != none and data.header.trackingNumber != "" [#data.header.trackingNumber] else [—],
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Currency:], data.header.currencyCode,
     )
   ]
 )
@@ -94,18 +94,18 @@
 #table(
   columns: (2fr, 3.2fr, 0.9fr, 0.6fr, 1.6fr, 1fr, 1.1fr),
   inset: (x: 6pt, y: 8pt),
-  stroke: 0.5pt + luma(210),
-  fill: (_, row) => if row == 0 { rgb("#f8fafc") },
+  stroke: 0.5pt + theme.borderColor,
+  fill: (_, row) => if row == 0 { theme.tableHeaderFill },
   align: (left, left, center, center, left, right, right),
   
   // Header Row
-  text(9pt, weight: "bold", fill: luma(50))[Code],
-  text(9pt, weight: "bold", fill: luma(50))[Description],
-  text(9pt, weight: "bold", fill: luma(50))[Return Qty],
-  text(9pt, weight: "bold", fill: luma(50))[UoM],
-  text(9pt, weight: "bold", fill: luma(50))[Reason],
-  text(9pt, weight: "bold", fill: luma(50))[Unit Cost],
-  text(9pt, weight: "bold", fill: luma(50))[Amount],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Code],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Description],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Return Qty],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[UoM],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Reason],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Unit Cost],
+  text(9pt, weight: "bold", fill: theme.primaryColor)[Amount],
 
   ..for line in data.lines {
     let desc = line.at("description", default: "")
@@ -113,7 +113,7 @@
     (
       text(9pt)[#line.at("productNumber", default: "")],
       text(9pt)[#if desc != "" [#desc] else [—]],
-      text(9pt, weight: "semibold")[#fmtQty(line.at("quantity", default: 0))],
+      text(9pt, weight: "semibold", fill: theme.primaryColor)[#fmtQty(line.at("quantity", default: 0))],
       text(9pt)[#line.at("uom", default: "EA")],
       text(9pt)[#if reason != "" [#reason] else [—]],
       text(9pt)[#fmt(line.at("pricePerUnit", default: 0))],
@@ -136,10 +136,10 @@
       align: (left, right),
       [Total Return Value:], [#data.header.currencyCode #fmt(data.summary.subtotal)],
       
-      grid.cell(colspan: 2)[#line(length: 100%, stroke: 1pt + luma(230))],
+      grid.cell(colspan: 2)[#line(length: 100%, stroke: 0.5pt + theme.borderColor)],
       
       text(11pt, weight: "bold")[Total Debit Value:], 
-      text(11pt, weight: "bold", fill: rgb("#1e3a5f"))[#data.header.currencyCode #fmt(data.summary.totalAmount)],
+      text(11pt, weight: "bold", fill: theme.accentColor)[#data.header.currencyCode #fmt(data.summary.totalAmount)],
     )
   ]
 )
@@ -150,13 +150,13 @@
   columns: (1fr, 1fr),
   gutter: 40pt,
   [
-    #text(8pt, fill: luma(100))[Dispatched By / Signature:] \
+    #text(8pt, fill: theme.mutedColor)[Dispatched By / Signature:] \
     #v(1.2cm)
-    #line(length: 100%, stroke: 0.5pt + luma(180))
+    #line(length: 100%, stroke: 0.5pt + theme.borderColor)
   ],
   [
-    #text(8pt, fill: luma(100))[Carrier / Tracking Received:] \
+    #text(8pt, fill: theme.mutedColor)[Carrier / Tracking Received:] \
     #v(1.2cm)
-    #line(length: 100%, stroke: 0.5pt + luma(180))
+    #line(length: 100%, stroke: 0.5pt + theme.borderColor)
   ]
 )

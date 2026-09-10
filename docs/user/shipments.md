@@ -85,9 +85,26 @@ stateDiagram-v2
 
 | Field | Description |
 | :--- | :--- |
-| **Shipment Number** | Unique shipment tracking identifier. |
-| **Sales Order** | The parent sales order being fulfilled. |
-| **Tracking Number** | Waybill / tracking number for online tracking. |
+| **Shipment Number** | Unique shipment tracking identifier (`SHP-...`). |
+| **Sales Order** | The parent sales order being fulfilled (`ORD-...`). |
+| **Tracking Number** | Waybill / carrier consignment code for parcel tracking. |
+| **Shipment Notes** | Internal memo for this specific shipment dispatch. |
 | **Status** | Stage in dispatch workflow (`Draft`, `Dispatched`, `Partially Received`, `Received`, `Cancelled`). |
 | **Delivery Address** | Destination physical address for delivery. |
-| **Shipping Notes** | Special instructions for the delivery driver. |
+| **Delivery Instructions** | Special carrier instructions from the order. |
+
+---
+
+## Notes & Tracking Reference Guide
+
+The system clearly distinguishes between **internal** notes (private operational memos) and **external** instructions (printed on customer or carrier documents):
+
+| Field Name | Origin / Scope | Classification | Target Audience | Where to Enter / Edit | Printed on Documents / PDFs |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Delivery Instructions** (`shippingNotes`) | Sales Order / Transfer Order | **External** | Carrier drivers, dispatchers | Sales Order &rarr; **Delivery** card; Shipping workbench | **Printed on Shipping Labels** (`DELIVERY INSTRUCTIONS:` box). Included in Shipping Docket data payload. |
+| **Shipment Notes** (`notes`) | Outbound Shipment | **Internal** | Warehouse team, logistics history | **Create Shipment** dialog, **Pick & Ship** panel, Shipment details | Kept off customer documents; saved in shipment audit record and inventory dispatch memo (`DSP-DIR-...`). |
+| **Order Notes** (`notes`) | Sales Order | **Internal** | Sales team, customer service, operations | Sales Order &rarr; **Notes** card; Counter Sales checkout | **Not printed** on any customer PDFs (Quotes, Confirmations, Invoices, Dockets) to prevent private sales remarks leaking. |
+| **Tracking Number** (`trackingNumber`) | Outbound Shipment | **External** | Customer, carrier, warehouse | **Create Shipment** dialog, **Pick & Ship** panel, Shipping Workbench | **Printed on Shipping Dockets** and encoded as barcode/QR code on **Shipping Labels**. |
+| **Line Item Comments** (`productDescription`) | Order Line (`lineType = 'Comment'`) | **External** | Customer, pickers, receiving dock | Sales Order lines table | **Printed directly in line item tables** on Quotes, Confirmations, Invoices, and Shipping Dockets. |
+| **Document Cover / Intro Text** (`customPdfText` / `quoteIntroText`) | Dynamic PDF generation | **External** | Customer | Email / Print document modal dialog | **Printed in header banner** on Quotes, Order Confirmations, Invoices, and Shipping Dockets. |
+

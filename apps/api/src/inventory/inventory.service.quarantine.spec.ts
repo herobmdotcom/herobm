@@ -30,6 +30,9 @@ import { eq, like } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
 import { InventoryMovementService } from './inventory-movement.service';
 import { InventoryQueryService } from './inventory-query.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { BackordersService } from '../orders/backorders.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 
 describe('InventoryService - Quarantine', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -65,6 +68,26 @@ describe('InventoryService - Quarantine', () => {
           },
         },
         { provide: GlService, useValue: {} },
+        {
+          provide: WorkOrdersWriteService,
+          useValue: {
+            updatePutawayStatus: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: BackordersService,
+          useValue: {
+            fulfillWorkOrderDemand: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: ReturnsWriteService,
+          useValue: {
+            updateReturnLinePutawayStatus: jest
+              .fn()
+              .mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

@@ -50,8 +50,8 @@ export class OrganizationController {
   @ApiOkResponse({ type: OrganizationSettingsResponseDto })
   @CasbinAction('read')
   @ApiOperation({ summary: 'get', description: 'get operation' })
-  get() {
-    return this.orgService.get();
+  get(): Promise<OrganizationSettingsResponseDto> {
+    return this.orgService.get() as Promise<OrganizationSettingsResponseDto>;
   }
 
   @Patch()
@@ -62,8 +62,11 @@ export class OrganizationController {
   update(
     @Body() dto: UpdateOrganizationSettingsDto,
     @AuthUser() user: JwtUser,
-  ) {
-    return this.orgService.update(dto, user?.userId || 'system');
+  ): Promise<OrganizationSettingsResponseDto> {
+    return this.orgService.update(
+      dto,
+      user?.userId || 'system',
+    ) as Promise<OrganizationSettingsResponseDto>;
   }
 
   @Post('logo')

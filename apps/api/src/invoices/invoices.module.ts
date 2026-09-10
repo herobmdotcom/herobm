@@ -11,6 +11,7 @@ import {
   InvoiceDetailController,
 } from './invoices.controller';
 import { ExternalSyncController } from './external-sync.controller';
+import { OrdersModule } from '../orders/orders.module';
 import { GlModule } from '../gl/gl.module';
 import { TaxModule } from '../tax/tax.module';
 import { EnrichmentModule } from '../enrichment/enrichment.module';
@@ -19,7 +20,12 @@ import { SalesCreditNotesController } from './sales-credit-notes.controller';
 import { GlobalNotesController } from './global-notes.controller';
 
 @Module({
-  imports: [GlModule, TaxModule, EnrichmentModule],
+  imports: [
+    GlModule,
+    TaxModule,
+    EnrichmentModule,
+    forwardRef(() => OrdersModule),
+  ],
   controllers: [
     SalesInvoiceController,
     PurchaseInvoiceController,

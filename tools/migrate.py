@@ -5,9 +5,11 @@ Applies SQL migration files from apps/api/migrations/ in order,
 tracking which have already been applied in herobm_core.schema_migrations.
 
 Usage:
-    python tools/migrate.py              # apply pending migrations
-    python tools/migrate.py --status     # show migration status
-    python tools/migrate.py --dry-run    # show what would be applied
+    python tools/migrate.py                          # apply pending migrations
+    python tools/migrate.py --status                 # show migration status
+    python tools/migrate.py --dry-run                # show what would be applied
+    python tools/migrate.py --mark-applied <file>    # explicitly mark a single migration as applied without executing DDL
+    python tools/migrate.py --mark-all-applied       # mark all pending migrations as applied without executing DDL
 """
 from __future__ import annotations
 
@@ -142,6 +144,10 @@ def get_pending(applied: set[str]) -> list[str]:
 
 
 def main() -> None:
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print(__doc__.strip())
+        return
+
     dry_run = "--dry-run" in sys.argv
     status_only = "--status" in sys.argv
     mark_all = "--mark-all-applied" in sys.argv
@@ -160,6 +166,28 @@ def main() -> None:
             marker = "applied" if basename in applied else "PENDING"
             print(f"{marker:<10} {basename}")
         print(f"\n{len(applied)} applied, {len(pending)} pending")
+        return
+
+    mark_applied_target = None
+    if "--mark-applied" in sys.argv:
+        idx = sys.argv.index("--mark-applied")
+        if idx + 1 < len(sys.argv):
+            mark_applied_target = os.path.basename(sys.argv[idx + 1])
+        else:
+            print("ERROR: --mark-applied requires a migration filename argument (e.g. python tools/migrate.py --mark-applied 0004_gl_journal_entries_immutability.sql)", file=sys.stderr)
+            sys.exit(1)
+
+    if mark_applied_target:
+        target_path = os.path.join(MIGRATIONS_DIR, mark_applied_target)
+        if not os.path.exists(target_path):
+            print(f"ERROR: Migration file '{mark_applied_target}' does not exist in {MIGRATIONS_DIR}.", file=sys.stderr)
+            sys.exit(1)
+        if mark_applied_target in applied:
+            print(f"Migration '{mark_applied_target}' is already marked as applied in herobm_core.schema_migrations.")
+            return
+        print(f"Marking migration '{mark_applied_target}' as applied without running SQL DDL...", end=" ", flush=True)
+        psql(f"CREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO herobm_core.schema_migrations (filename) VALUES ('{mark_applied_target}');")
+        print("OK")
         return
 
     if mark_all:
@@ -191,21 +219,9 @@ def main() -> None:
             if success:
                 print("OK")
             else:
-                if not sys.stdin.isatty():
-                    print("Non-interactive terminal detected. Aborting.", file=sys.stderr)
-                    sys.exit(1)
-                
-                try:
-                    choice = input(f"Migration {basename} failed. Mark it as applied and continue to the next? (y/N): ").strip().lower()
-                except EOFError:
-                    choice = 'n'
-                    
-                if choice == 'y':
-                    psql(f"CREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO herobm_core.schema_migrations (filename) VALUES ('{basename}');")
-                    print("  -> Marked as applied. Continuing...")
-                else:
-                    print("Aborting.")
-                    sys.exit(1)
+                print(f"\nFATAL: Migration {basename} failed. Aborting migration process.", file=sys.stderr)
+                print(f"The transaction was rolled back. Fix the issue in the database or migration file, then re-run.", file=sys.stderr)
+                sys.exit(1)
 
     if dry_run:
         print("\nDry run complete — no changes made.")

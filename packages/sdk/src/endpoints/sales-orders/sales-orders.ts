@@ -7,12 +7,12 @@
  */
 import type {
   ChangeOrderStateDto,
-  CounterFulfillmentResponseDto,
   CreateOrderDto,
   CreateOrderLineDto,
+  DirectFulfillmentResponseDto,
   EmailDocumentDto,
   EmptyBodyDto,
-  FulfillCounterOrderDto,
+  FulfillDirectOrderDto,
   OrderResponseDto,
   OrdersControllerEmailDocument201,
   OrdersControllerFindAll200,
@@ -220,44 +220,44 @@ export const ordersControllerChangeState = async (id: string,
 
 
 /**
- * Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.
- * @summary Fulfill Counter Order
+ * Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled directly without separate warehouse staging or parcel shipping.
+ * @summary Fulfill Direct Order
  */
-export type ordersControllerFulfillCounterOrderResponse200 = {
-  data: CounterFulfillmentResponseDto
+export type ordersControllerFulfillDirectOrderResponse200 = {
+  data: DirectFulfillmentResponseDto
   status: 200
 }
 
-export type ordersControllerFulfillCounterOrderResponse201 = {
-  data: CounterFulfillmentResponseDto
+export type ordersControllerFulfillDirectOrderResponse201 = {
+  data: DirectFulfillmentResponseDto
   status: 201
 }
     
-export type ordersControllerFulfillCounterOrderResponseSuccess = (ordersControllerFulfillCounterOrderResponse200 | ordersControllerFulfillCounterOrderResponse201) & {
+export type ordersControllerFulfillDirectOrderResponseSuccess = (ordersControllerFulfillDirectOrderResponse200 | ordersControllerFulfillDirectOrderResponse201) & {
   headers: Headers;
 };
 ;
 
-export type ordersControllerFulfillCounterOrderResponse = (ordersControllerFulfillCounterOrderResponseSuccess)
+export type ordersControllerFulfillDirectOrderResponse = (ordersControllerFulfillDirectOrderResponseSuccess)
 
-export const getOrdersControllerFulfillCounterOrderUrl = (id: string,) => {
+export const getOrdersControllerFulfillDirectOrderUrl = (id: string,) => {
 
 
   
 
-  return `/sales-orders/${id}/fulfill-counter`
+  return `/sales-orders/${id}/fulfill-direct`
 }
 
-export const ordersControllerFulfillCounterOrder = async (id: string,
-    fulfillCounterOrderDto: FulfillCounterOrderDto, options?: RequestInit): Promise<ordersControllerFulfillCounterOrderResponse> => {
+export const ordersControllerFulfillDirectOrder = async (id: string,
+    fulfillDirectOrderDto: FulfillDirectOrderDto, options?: RequestInit): Promise<ordersControllerFulfillDirectOrderResponse> => {
   
-  return customFetch<ordersControllerFulfillCounterOrderResponse>(getOrdersControllerFulfillCounterOrderUrl(id),
+  return customFetch<ordersControllerFulfillDirectOrderResponse>(getOrdersControllerFulfillDirectOrderUrl(id),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      fulfillCounterOrderDto,)
+      fulfillDirectOrderDto,)
   }
 );}
 

@@ -210,38 +210,11 @@ export class PurchaseOrdersStateService {
         stateCode === PURCHASE_ORDER_STATE.CANCELLED ||
         stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT
       ) {
-        const affected = await innerTx
-          .select({ id: backorders.backorderId, soId: backorders.salesOrderId })
-          .from(backorders)
-          .where(eq(backorders.purchaseOrderId, id));
-        for (const b of affected) {
-          await this.backordersService.changeBackorderState(
-            b.id,
-            BACKORDER_STATE.PENDING_SUPPLY,
-            actor,
-            innerTx,
-          );
-
-          if (b.soId) {
-            await emitEvent(innerTx, {
-              entityType: EntityType.SALES_ORDER,
-              entityId: b.soId,
-              eventType: EventType.DEMAND_UNALLOCATED,
-              entityDisplayName: `Sales Order`,
-              payload: { backorderId: b.id },
-              actor,
-            });
-          }
-        }
-
-        await innerTx
-          .update(backorders)
-          .set({
-            purchaseOrderId: null,
-            purchaseOrderLineId: null,
-            modifiedOn: new Date(),
-          })
-          .where(eq(backorders.purchaseOrderId, id));
+        await this.backordersService.unlinkDemandForPurchaseOrder(
+          innerTx,
+          id,
+          actor,
+        );
       }
 
       return updated;

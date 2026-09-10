@@ -76,26 +76,31 @@ def main():
         print("\n\033[36m=== PostgreSQL Connection ===\033[0m")
         print("Press Enter to accept defaults, or supply details for an existing external Postgres server.")
 
-    pg_host = prompt("POSTGRES_HOST", "localhost", non_interactive=non_interactive)
+    pg_host = prompt("POSTGRES_HOST", os.environ.get("POSTGRES_HOST") or "localhost", non_interactive=non_interactive)
     content = content.replace("# POSTGRES_HOST=localhost", f"POSTGRES_HOST={pg_host}").replace("POSTGRES_HOST=localhost", f"POSTGRES_HOST={pg_host}")
 
-    pg_port = prompt("POSTGRES_PORT", "5432", non_interactive=non_interactive)
+    pg_port = prompt("POSTGRES_PORT", os.environ.get("POSTGRES_PORT") or "5432", non_interactive=non_interactive)
     content = content.replace("# POSTGRES_PORT=5432", f"POSTGRES_PORT={pg_port}").replace("POSTGRES_PORT=5432", f"POSTGRES_PORT={pg_port}")
 
-    pg_user = prompt("POSTGRES_USER", "postgres", non_interactive=non_interactive)
+    pg_user = prompt("POSTGRES_USER", os.environ.get("POSTGRES_USER") or "postgres", non_interactive=non_interactive)
     content = content.replace("POSTGRES_USER=pgadmin", f"POSTGRES_USER={pg_user}").replace("POSTGRES_USER=postgres", f"POSTGRES_USER={pg_user}")
 
-    pg_pass = prompt("POSTGRES_PASSWORD", "auto-generate secure sequence", non_interactive=non_interactive)
-    if pg_pass != "auto-generate secure sequence":
-        content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={pg_pass}")
+    env_pg_pass = os.environ.get("POSTGRES_PASSWORD")
+    if env_pg_pass:
+        content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={env_pg_pass}")
+        print("  Configured from environment: POSTGRES_PASSWORD")
     else:
-        password = generate_password(20)
-        content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={password}")
-        print("  Generated: POSTGRES_PASSWORD")
+        pg_pass = prompt("POSTGRES_PASSWORD", "auto-generate secure sequence", non_interactive=non_interactive)
+        if pg_pass != "auto-generate secure sequence":
+            content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={pg_pass}")
+        else:
+            password = generate_password(20)
+            content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={password}")
+            print("  Generated: POSTGRES_PASSWORD")
 
     if not non_interactive:
         print("\n\033[36m=== Regional Settings ===\033[0m")
-    home_currency = prompt("HOME_CURRENCY (ISO Code)", "AUD", non_interactive=non_interactive)
+    home_currency = prompt("HOME_CURRENCY (ISO Code)", os.environ.get("HOME_CURRENCY") or "AUD", non_interactive=non_interactive)
     if "HOME_CURRENCY=AUD" in content:
         content = content.replace("HOME_CURRENCY=AUD", f"HOME_CURRENCY={home_currency}")
 
@@ -114,27 +119,51 @@ def main():
     print("\n\033[36m=== Generating remaining local secrets ===\033[0m")
     for var in generated_vars:
         if f"{var}=<REDACTED>" in content:
-            content = content.replace(f"{var}=<REDACTED>", f"{var}={generate_password(20)}")
-            print(f"  Generated: {var}")
+            env_val = os.environ.get(var)
+            if env_val:
+                content = content.replace(f"{var}=<REDACTED>", f"{var}={env_val}")
+                print(f"  Configured from environment: {var}")
+            else:
+                content = content.replace(f"{var}=<REDACTED>", f"{var}={generate_password(20)}")
+                print(f"  Generated: {var}")
 
     if "DEMO_USERNAME=<REDACTED>" in content:
-        content = content.replace("DEMO_USERNAME=<REDACTED>", "DEMO_USERNAME=demo")
-        print("  Configured: DEMO_USERNAME=demo")
+        demo_user = os.environ.get("DEMO_USERNAME") or "demo"
+        content = content.replace("DEMO_USERNAME=<REDACTED>", f"DEMO_USERNAME={demo_user}")
+        print(f"  Configured: DEMO_USERNAME={demo_user}")
 
     if "JWT_SECRET=<REDACTED>" in content:
-        content = content.replace("JWT_SECRET=<REDACTED>", f"JWT_SECRET={generate_password(64)}")
-        print("  Generated: JWT_SECRET")
+        jwt_sec = os.environ.get("JWT_SECRET")
+        if jwt_sec:
+            content = content.replace("JWT_SECRET=<REDACTED>", f"JWT_SECRET={jwt_sec}")
+            print("  Configured from environment: JWT_SECRET")
+        else:
+            content = content.replace("JWT_SECRET=<REDACTED>", f"JWT_SECRET={generate_password(64)}")
+            print("  Generated: JWT_SECRET")
 
     if "ENCRYPTION_KEY=<REDACTED>" in content:
-        # Generate a 64-character (256-bit) random string for encryption
-        content = content.replace("ENCRYPTION_KEY=<REDACTED>", f"ENCRYPTION_KEY={secrets.token_hex(32)}")
-        print("  Generated: ENCRYPTION_KEY")
+        enc_key = os.environ.get("ENCRYPTION_KEY")
+        if enc_key:
+            content = content.replace("ENCRYPTION_KEY=<REDACTED>", f"ENCRYPTION_KEY={enc_key}")
+            print("  Configured from environment: ENCRYPTION_KEY")
+        else:
+            content = content.replace("ENCRYPTION_KEY=<REDACTED>", f"ENCRYPTION_KEY={secrets.token_hex(32)}")
+            print("  Generated: ENCRYPTION_KEY")
 
     if "PIPELINE_SECRET=<REDACTED>" in content:
-        content = content.replace("PIPELINE_SECRET=<REDACTED>", f"PIPELINE_SECRET={generate_password(64)}")
-        print("  Generated: PIPELINE_SECRET")
+        pipe_sec = os.environ.get("PIPELINE_SECRET")
+        if pipe_sec:
+            content = content.replace("PIPELINE_SECRET=<REDACTED>", f"PIPELINE_SECRET={pipe_sec}")
+            print("  Configured from environment: PIPELINE_SECRET")
+        else:
+            content = content.replace("PIPELINE_SECRET=<REDACTED>", f"PIPELINE_SECRET={generate_password(64)}")
+            print("  Generated: PIPELINE_SECRET")
 
-    if active_profile:
+    env_pg_db = os.environ.get("POSTGRES_DB")
+    if env_pg_db:
+        content = content.replace("POSTGRES_DB=herobm", f"POSTGRES_DB={env_pg_db}")
+        print(f"\n\033[32m=== Configured from environment ===\n  POSTGRES_DB={env_pg_db}\033[0m")
+    elif active_profile:
         postgres_db = f"herobm_{active_profile}"
         content = content.replace("POSTGRES_DB=herobm", f"POSTGRES_DB={postgres_db}")
         print(f"\n\033[32m=== Auto-Configured ===\n  POSTGRES_DB={postgres_db}\033[0m")

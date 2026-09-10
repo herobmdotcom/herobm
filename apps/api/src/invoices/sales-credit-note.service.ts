@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import {
   eq,
@@ -47,6 +48,7 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
 import {
   computeLinePrice,
@@ -80,6 +82,8 @@ export class SalesCreditNoteService {
     private readonly appConfig: AppConfigService,
     private readonly organizationService: OrganizationService,
     private readonly enrichmentService: EnrichmentService,
+    @Inject(forwardRef(() => ReturnsWriteService))
+    private readonly returnsWriteService: ReturnsWriteService,
   ) {}
 
   /**
@@ -235,27 +239,21 @@ export class SalesCreditNoteService {
         .where(eq(salesOrderReturnLines.returnId, returnId));
 
       const transitionReturnToProcessed = async () => {
-        await innerTx
-          .update(salesOrderReturns)
-          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-          .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
-          .where(eq(salesOrderReturns.returnId, returnId));
+        const [currentRet] = await innerTx
+          .select({ stateCode: salesOrderReturns.stateCode })
+          .from(salesOrderReturns)
+          .where(eq(salesOrderReturns.returnId, returnId))
+          .limit(1);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
-        await emitEvent(innerTx as any, {
-          entityType: EntityType.SALES_ORDER,
-          entityId: ret.salesOrderId,
-          eventType: EventType.STATUS_CHANGED,
-          entityDisplayName: order.orderNumber,
-          payload: {
-            entity: 'return',
-            entityId: returnId,
-            from: ret.stateCode,
-            to: RETURN_STATE.PROCESSED,
-            returnNumber: ret.returnNumber,
-          },
-          actor,
-        });
+        if (currentRet && currentRet.stateCode !== RETURN_STATE.PROCESSED) {
+          await this.returnsWriteService.changeReturnState(
+            returnId,
+            RETURN_STATE.PROCESSED,
+            actor,
+            undefined,
+            innerTx,
+          );
+        }
       };
 
       if (returnLines.length === 0) {
@@ -678,28 +676,8 @@ export class SalesCreditNoteService {
         }
       }
 
-      // Mark the return as PROCESSED
-      await innerTx
-        .update(salesOrderReturns)
-        // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-        .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
-        .where(eq(salesOrderReturns.returnId, returnId));
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
-      await emitEvent(innerTx as any, {
-        entityType: EntityType.SALES_ORDER,
-        entityId: ret.salesOrderId,
-        eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: order.orderNumber,
-        payload: {
-          entity: 'return',
-          entityId: returnId,
-          from: ret.stateCode,
-          to: RETURN_STATE.PROCESSED,
-          returnNumber: ret.returnNumber,
-        },
-        actor,
-      });
+      // Mark the return as PROCESSED via Domain Owner
+      await transitionReturnToProcessed();
 
       const [customer] = order.customerId
         ? await innerTx

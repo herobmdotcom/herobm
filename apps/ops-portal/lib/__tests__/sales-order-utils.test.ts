@@ -1,5 +1,6 @@
 import {
     calculateInvoiceableQuantities,
+    calculatePickAndShipQuantities,
     calculateShippableQuantities,
     convertFeeMode,
 } from '../sales-order-utils';
@@ -214,6 +215,100 @@ describe('calculateShippableQuantities', () => {
 
         expect(result).toEqual([
             { salesOrderLineId: 'L3', maxQty: 3, defaultQty: '3' },
+        ]);
+    });
+});
+
+/* ── calculatePickAndShipQuantities ──────────────────────────────── */
+
+describe('calculatePickAndShipQuantities', () => {
+    it('returns ordered quantity for physical items and excludes service/freight/comment lines', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+            makeLine({ salesOrderLineId: 'L2', productType: 'non-stock', quantity: '5' }),
+            makeLine({ salesOrderLineId: 'L3', productType: 'service', quantity: '2' }),
+            makeLine({ salesOrderLineId: 'L4', productType: 'freight', quantity: '1' }),
+            makeLine({ salesOrderLineId: 'L5', lineType: 'Comment', quantity: '1' }),
+        ];
+
+        const result = calculatePickAndShipQuantities(lines, [], null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 10, defaultQty: '10' },
+            { salesOrderLineId: 'L2', maxQty: 5, defaultQty: '5' },
+        ]);
+    });
+
+    it('subtracts shipped quantities from shipments', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+        ];
+        const shipments = [
+            {
+                shipmentId: 'ship-1',
+                stateCode: 'dispatched',
+                lines: [{ salesOrderLineId: 'L1', quantityShipped: '4' }],
+            },
+        ];
+
+        const result = calculatePickAndShipQuantities(lines, shipments, null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 6, defaultQty: '6' },
+        ]);
+    });
+
+    it('subtracts shipped quantities from pickingLines if greater than shipments', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+        ];
+        const picking: PickingLine[] = [
+            { salesOrderLineId: 'L1', quantityShipped: '7' },
+        ];
+
+        const result = calculatePickAndShipQuantities(lines, [], picking);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 3, defaultQty: '3' },
+        ]);
+    });
+
+    it('filters out fully-shipped lines', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '5' }),
+            makeLine({ salesOrderLineId: 'L2', productType: 'inventory', quantity: '10' }),
+        ];
+        const shipments = [
+            {
+                shipmentId: 'ship-1',
+                stateCode: 'dispatched',
+                lines: [{ salesOrderLineId: 'L1', quantityShipped: '5' }],
+            },
+        ];
+
+        const result = calculatePickAndShipQuantities(lines, shipments, null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L2', maxQty: 10, defaultQty: '10' },
+        ]);
+    });
+
+    it('ignores cancelled shipments', () => {
+        const lines = [
+            makeLine({ salesOrderLineId: 'L1', productType: 'inventory', quantity: '10' }),
+        ];
+        const shipments = [
+            {
+                shipmentId: 'ship-1',
+                stateCode: 'cancelled',
+                lines: [{ salesOrderLineId: 'L1', quantityShipped: '10' }],
+            },
+        ];
+
+        const result = calculatePickAndShipQuantities(lines, shipments, null);
+
+        expect(result).toEqual([
+            { salesOrderLineId: 'L1', maxQty: 10, defaultQty: '10' },
         ]);
     });
 });

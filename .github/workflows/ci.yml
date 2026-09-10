@@ -56,8 +56,22 @@ jobs:
         run: make test-structural
 
   unit-tests:
-    name: Unit Tests (API PGlite & Ops Portal)
+    name: Unit Tests (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: API (Shard 1/3)
+            run: make test-api-unit SHARD=1/3
+          - name: API (Shard 2/3)
+            run: make test-api-unit SHARD=2/3
+          - name: API (Shard 3/3)
+            run: make test-api-unit SHARD=3/3
+          - name: Ops Portal
+            run: make test-portal-unit
+          - name: Packages & Worker
+            run: make test-packages-unit
 
     steps:
       - name: Checkout repository
@@ -89,8 +103,16 @@ jobs:
           make build-db-schema
           make build-sdk
 
+      - name: Install Typst CLI
+        run: |
+          if ! command -v typst >/dev/null 2>&1; then
+            echo "Installing Typst CLI..."
+            curl -fsSL https://github.com/typst/typst/releases/download/v0.12.0/typst-x86_64-unknown-linux-musl.tar.xz | sudo tar -xJ -C /usr/local/bin --strip-components=1 typst-x86_64-unknown-linux-musl/typst
+          fi
+          typst --version
+
       - name: Run Unit Tests
-        run: make test-unit
+        run: ${{ matrix.run }}
 
   portal-build:
     name: Ops Portal Production Build
@@ -132,6 +154,13 @@ jobs:
   e2e-api:
     name: Backend API E2E Tests (PostgreSQL)
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: herobm
+      USE_PGLITE: false
 
     services:
       postgres:
@@ -177,6 +206,14 @@ jobs:
           make build-shared
           make build-db-schema
           make build-sdk
+
+      - name: Install Typst CLI
+        run: |
+          if ! command -v typst >/dev/null 2>&1; then
+            echo "Installing Typst CLI..."
+            curl -fsSL https://github.com/typst/typst/releases/download/v0.12.0/typst-x86_64-unknown-linux-musl.tar.xz | sudo tar -xJ -C /usr/local/bin --strip-components=1 typst-x86_64-unknown-linux-musl/typst
+          fi
+          typst --version
 
       - name: Run Backend API E2E Tests (PostgreSQL)
         env:

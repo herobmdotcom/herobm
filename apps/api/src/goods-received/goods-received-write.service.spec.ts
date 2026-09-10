@@ -7,6 +7,7 @@ import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { BackordersService } from '../orders/backorders.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
 import { GoodsReceivedCoreService } from './goods-received-core.service';
 import { GoodsReceivedStateService } from './goods-received-state.service';
 import {
@@ -23,7 +24,7 @@ import {
   taxCategories,
   organizations,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   MATCH_STATUS,
@@ -96,13 +97,55 @@ describe('GoodsReceivedWriteService', () => {
         { provide: AppConfigService, useValue: mockAppConfig },
         {
           provide: BackordersService,
-          useValue: { changeBackorderState: jest.fn() },
+          useValue: {
+            changeBackorderState: jest.fn(),
+            fulfillReceiptDemand: jest.fn().mockResolvedValue(0),
+          },
         },
         {
           provide: PurchaseOrdersService,
           useValue: {
             updateReceivedQuantities: jest.fn(),
             changePurchaseOrderState: jest.fn(),
+          },
+        },
+        {
+          provide: PurchaseOrdersWriteService,
+          useValue: {
+            recordReceiptQuantities: jest
+              .fn()
+              .mockImplementation(async (tx, receipts) => {
+                for (const r of receipts) {
+                  await tx
+                    .update(purchaseOrderLineItems)
+                    .set({
+                      quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${r.quantity} AS NUMERIC)`,
+                    })
+                    .where(
+                      eq(
+                        purchaseOrderLineItems.purchaseOrderLineId,
+                        r.purchaseOrderLineId,
+                      ),
+                    );
+                }
+              }),
+            revertReceiptQuantities: jest
+              .fn()
+              .mockImplementation(async (tx, reversals) => {
+                for (const r of reversals) {
+                  await tx
+                    .update(purchaseOrderLineItems)
+                    .set({
+                      quantityReceived: sql`GREATEST(0, CAST(COALESCE(quantity_received, '0') AS NUMERIC) - CAST(${r.quantity} AS NUMERIC))`,
+                    })
+                    .where(
+                      eq(
+                        purchaseOrderLineItems.purchaseOrderLineId,
+                        r.purchaseOrderLineId,
+                      ),
+                    );
+                }
+              }),
           },
         },
         { provide: InventoryMovementService, useValue: mockInventoryService },

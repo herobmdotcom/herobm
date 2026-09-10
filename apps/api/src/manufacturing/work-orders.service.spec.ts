@@ -9,6 +9,8 @@ import { InventoryMovementService } from '../inventory/inventory-movement.servic
 import { UomService } from '../inventory/uom.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
+import { BackordersService } from '../orders/backorders.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 import {
   products,
   locations,
@@ -199,6 +201,49 @@ describe('WorkOrdersService', () => {
         {
           provide: DRIZZLE,
           useValue: pg.db,
+        },
+        {
+          provide: BackordersService,
+          useValue: {
+            fulfillWorkOrderDemand: jest.fn().mockResolvedValue(undefined),
+            evaluateGaps: jest.fn().mockResolvedValue([]),
+            generateDemand: jest.fn().mockResolvedValue(undefined),
+            cancelDemandForWorkOrder: jest.fn(
+              async (tx: any, workOrderId: string) => {
+                await tx
+                  .update(backorders)
+                  .set({ stateCode: BACKORDER_STATE.CANCELLED })
+                  .where(eq(backorders.demandWorkOrderId, workOrderId));
+              },
+            ),
+            createShortfallDemand: jest.fn(
+              async (
+                tx: any,
+                params: {
+                  demandWorkOrderId: string;
+                  workOrderComponentId: string;
+                  productId: string;
+                  quantity: string;
+                },
+              ) => {
+                await tx.insert(backorders).values({
+                  demandWorkOrderId: params.demandWorkOrderId,
+                  workOrderComponentId: params.workOrderComponentId,
+                  productId: params.productId,
+                  quantity: params.quantity,
+                  stateCode: BACKORDER_STATE.PENDING_SUPPLY,
+                });
+              },
+            ),
+          },
+        },
+        {
+          provide: ReturnsWriteService,
+          useValue: {
+            updateReturnLinePutawayStatus: jest
+              .fn()
+              .mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

@@ -24,7 +24,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                 keyExtractor={(bo: any, idx: number) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
                 emptyMessage={tSales('noBackordersFound')}
                 columns={[
-                    { header: tSales('columns.lineNumber') },
+                    { header: tSales('columns.lineNumber'), width: 48, align: 'center' },
                     { header: tSales('columns.product') },
                     { header: tSales('columns.allocatedTo') },
                     { header: tSales('columns.soStatus') },

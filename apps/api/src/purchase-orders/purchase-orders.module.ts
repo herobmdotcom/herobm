@@ -26,7 +26,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    InventoryModule,
+    forwardRef(() => InventoryModule),
     SuppliersModule,
     TaxModule,
     GlModule,

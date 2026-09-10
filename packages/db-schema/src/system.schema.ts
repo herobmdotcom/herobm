@@ -100,6 +100,16 @@ export const userEvents = herobmCore.table('user_events', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
+export interface PdfThemeConfig {
+  primaryColor?: string;
+  accentColor?: string;
+  mutedColor?: string;
+  borderColor?: string;
+  tableHeaderFill?: string;
+  fontFamily?: string;
+  baseFontSizePt?: number;
+}
+
 export const tenantSettings = herobmCore.table('tenant_settings', {
   tenantSettingsId: uuid('tenant_settings_id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
@@ -120,6 +130,7 @@ export const tenantSettings = herobmCore.table('tenant_settings', {
   bankAccountNumber: text('bank_account_number'),
   bankSwiftBic: text('bank_swift_bic'),
   bankIban: text('bank_iban'),
+  pdfThemeConfig: jsonb('pdf_theme_config').$type<PdfThemeConfig>(),
 });
 
 export const appSettings = herobmCore.table('app_settings', {

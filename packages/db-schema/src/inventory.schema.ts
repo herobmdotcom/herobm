@@ -292,6 +292,7 @@ export const transferOrderShipments = herobmCore.table(
     trackingNumber: text('tracking_number'),
     carrierId: uuid('carrier_id'), // if carriers exist
     notes: text('notes'),
+    shippingNotes: text('shipping_notes'),
     stateCode: text('state_code').$type<ShipmentState>().notNull(),
     shippedBy: text('shipped_by'),
     shippedOn: timestamp('shipped_on', { withTimezone: true }).defaultNow(),

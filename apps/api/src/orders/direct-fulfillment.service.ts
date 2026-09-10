@@ -12,6 +12,8 @@ import {
   salesOrders,
   salesOrderLineItems,
   salesOrderPicks,
+  salesOrderShipments,
+  salesOrderShipmentLines,
   products as coreProducts,
   bins,
   binContents,
@@ -23,19 +25,21 @@ import {
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
-  FulfillCounterOrderDto,
-  CounterFulfillmentResponseDto,
-  CounterFulfilledLineDto,
+  FulfillDirectOrderDto,
+  DirectFulfillmentResponseDto,
+  DirectFulfilledLineDto,
 } from './dto';
 import {
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
+  SHIPMENT_STATE,
   SalesOrderState,
   isStockedProductLine,
 } from '@herobm/shared';
@@ -45,27 +49,28 @@ import {
 } from '../inventory/inventory-math.utils';
 
 @Injectable()
-export class CounterFulfillmentService {
-  private readonly logger = new Logger(CounterFulfillmentService.name);
+export class DirectFulfillmentService {
+  private readonly logger = new Logger(DirectFulfillmentService.name);
 
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly appConfig: AppConfigService,
     private readonly glService: GlService,
     private readonly inventoryMovementService: InventoryMovementService,
+    private readonly shipmentsCoreService: ShipmentsCoreService,
   ) {}
 
   /**
-   * Fulfill sales order lines over the counter by directly issuing physical stock
-   * from pickable bins at the fulfillment location, posting COGS, and advancing
-   * the order state (to SHIPPED or PICKING) without creating freight/parcel shipments.
+   * Fulfill sales order lines directly by issuing physical stock from
+   * pickable bins at the fulfillment location, posting COGS, and advancing
+   * the order state (to SHIPPED or PICKING) without creating staged freight/parcel shipments.
    */
-  async fulfillCounterOrder(
+  async fulfillDirectOrder(
     salesOrderId: string,
-    dto: FulfillCounterOrderDto,
+    dto: FulfillDirectOrderDto,
     actor: string,
     tx?: DrizzleDB,
-  ): Promise<CounterFulfillmentResponseDto> {
+  ): Promise<DirectFulfillmentResponseDto> {
     const result = await (tx || this.db).transaction(
       async (innerTx: DrizzleDB) => {
         const order = await findOrder(innerTx, salesOrderId);
@@ -109,7 +114,7 @@ export class CounterFulfillmentService {
 
         const committedMap = await getCommittedPerLine(innerTx, salesOrderId);
 
-        const fulfilledLines: CounterFulfilledLineDto[] = [];
+        const fulfilledLines: DirectFulfilledLineDto[] = [];
         const dispatchLines: Array<{
           productId: string;
           binId: string;
@@ -252,7 +257,7 @@ export class CounterFulfillmentService {
               const take = Math.min(remainingStockToTake, binOnHand);
 
               // 1. Record sales_order_picks entry directly as SHIPPED
-              // @herobm-skip-audit -- Counter sale immediate handover pick line record
+              // @herobm-skip-audit -- Direct fulfillment immediate handover pick line record
               await innerTx.insert(salesOrderPicks).values({
                 salesOrderId,
                 salesOrderLineId: line.salesOrderLineId,
@@ -324,10 +329,10 @@ export class CounterFulfillmentService {
         if (dispatchLines.length > 0) {
           const timestampSeq = Date.now().toString().slice(-4);
           await this.inventoryMovementService.recordInventoryMovement(innerTx, {
-            entryNumber: `DSP-OTC-${order.orderNumber}-${timestampSeq}`,
+            entryNumber: `DSP-DIR-${order.orderNumber}-${timestampSeq}`,
             sourceType: 'SO_COUNTER_SALE',
             sourceId: salesOrderId,
-            memo: dto.notes || 'Over-the-Counter Sale Handover',
+            memo: dto.notes || 'Direct Fulfillment Handover',
             userId: actor,
             lines: dispatchLines,
           });
@@ -379,7 +384,7 @@ export class CounterFulfillmentService {
 
           const dispatchGl = accountingStrategy.onGoodsDispatch({
             amount: Number(totalCogs.toFixed(2)),
-            memo: `Counter Handover ${order.orderNumber}`,
+            memo: `Direct Fulfillment ${order.orderNumber}`,
             costCenterId: customerCostCenterId,
             activityId: customerActivityId,
           });
@@ -387,7 +392,7 @@ export class CounterFulfillmentService {
           if (dispatchGl) {
             if (!dispatchGl.lines || dispatchGl.lines.length < 2) {
               throw new BadRequestException(
-                'Cannot fulfill counter order: COGS or Inventory Asset account is not configured in GL Settings.',
+                'Cannot fulfill order: COGS or Inventory Asset account is not configured in GL Settings.',
               );
             }
 
@@ -399,14 +404,70 @@ export class CounterFulfillmentService {
                 entryDate: new Date().toISOString().slice(0, 10),
                 sourceType: dispatchGl.sourceType,
                 sourceId: salesOrderId,
-                memo: `Counter Handover ${order.orderNumber}`,
+                memo: `Direct Fulfillment ${order.orderNumber}`,
               },
               innerTx,
             );
           }
         }
 
-        // 6. Update order status: SHIPPED if fully fulfilled, PICKING if partially fulfilled
+        // 6. Create Sales Order Shipment record (in DISPATCHED state)
+        const shipmentNumber =
+          await this.shipmentsCoreService.generateShipmentNumber(innerTx);
+
+        const lineQtyMap = new Map<string, number>();
+        for (const fl of fulfilledLines) {
+          const current = lineQtyMap.get(fl.salesOrderLineId) || 0;
+          lineQtyMap.set(
+            fl.salesOrderLineId,
+            current + parseFloat(fl.quantityFulfilled),
+          );
+        }
+
+        const [shipment] = await innerTx
+          .insert(salesOrderShipments)
+          .values({
+            shipmentNumber,
+            salesOrderId,
+            stateCode: SHIPMENT_STATE.DISPATCHED,
+            notes: dto.notes || null,
+            shippingNotes: dto.shippingNotes || order.shippingNotes || null,
+            trackingNumber: dto.trackingNumber || null,
+            deliveryCompanyName:
+              dto.deliveryCompanyName || order.deliveryCompanyName || null,
+            fulfillmentLocationId: order.fulfillmentLocationId || null,
+            createdBy: actor,
+          })
+          .returning();
+
+        const shipmentLineValues = Array.from(lineQtyMap.entries()).map(
+          ([salesOrderLineId, qty]) => ({
+            shipmentId: shipment.shipmentId,
+            salesOrderLineId,
+            quantityShipped: String(qty),
+          }),
+        );
+
+        if (shipmentLineValues.length > 0) {
+          await innerTx
+            .insert(salesOrderShipmentLines)
+            .values(shipmentLineValues);
+        }
+
+        await emitEvent(innerTx, {
+          entityType: EntityType.SHIPMENT,
+          entityId: shipment.shipmentId,
+          eventType: EventType.SHIPMENT_CREATED,
+          entityDisplayName: shipmentNumber,
+          payload: {
+            shipmentId: shipment.shipmentId,
+            shipmentNumber,
+            lineCount: shipmentLineValues.length,
+          },
+          actor,
+        });
+
+        // 7. Update order status: SHIPPED if fully fulfilled, PICKING if partially fulfilled
         const updatedCommittedMap = await getCommittedPerLine(
           innerTx,
           salesOrderId,
@@ -434,28 +495,32 @@ export class CounterFulfillmentService {
           targetState,
           actor,
           isFullyCommitted
-            ? 'All lines fulfilled over the counter'
-            : 'Partial lines fulfilled over the counter',
+            ? 'All lines fulfilled directly'
+            : 'Partial lines fulfilled directly',
           {
-            fulfillmentType: 'counter_pickup',
+            fulfillmentType: 'direct_fulfillment',
             fulfilledLines,
             cogsAmount: totalCogs.toFixed(2),
+            shipmentId: shipment.shipmentId,
+            shipmentNumber: shipment.shipmentNumber,
           },
         );
 
         this.logger.log(
-          `Order ${order.orderNumber} fulfilled over the counter (${fulfilledLines.length} lines, state: ${targetState}) by ${actor}`,
+          `Order ${order.orderNumber} fulfilled directly (Shipment: ${shipmentNumber}, ${fulfilledLines.length} lines, state: ${targetState}) by ${actor}`,
         );
 
         return {
           salesOrderId,
           orderNumber: order.orderNumber,
           stateCode: updatedOrder.stateCode,
+          shipmentId: shipment.shipmentId,
+          shipmentNumber: shipment.shipmentNumber,
           fulfilledLines,
           cogsAmount: totalCogs.toFixed(2),
           message: isFullyCommitted
-            ? 'Order fully fulfilled over the counter'
-            : 'Order partially fulfilled over the counter',
+            ? 'Order fully fulfilled directly'
+            : 'Order partially fulfilled directly',
         };
       },
     );

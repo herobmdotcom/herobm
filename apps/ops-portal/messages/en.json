@@ -397,6 +397,36 @@
       "withdrawal": "Withdrawal"
     },
     "reporting": {
+      "branding": {
+        "accentColor": "Accent / Highlight Color",
+        "baseFontSize": "Base Font Size (pt)",
+        "closePreview": "Close Preview",
+        "customFontOption": "Custom Font Name...",
+        "customFontPlaceholder": "e.g. Open Sans, Inter",
+        "customerDocs": "Customer Documents",
+        "customerFooter": "Customer Footer",
+        "customerHeader": "Customer Header",
+        "fontFamily": "Document Font Family",
+        "footerFragment": "Footer Fragment",
+        "fragmentTip": "Tip: Pass this code to an LLM to add custom fields or rearrange layout",
+        "headerFragment": "Header Fragment",
+        "livePreview": "Live PDF Preview",
+        "previewInvoice": "Preview Invoice",
+        "previewPo": "Preview Purchase Order",
+        "primaryColor": "Primary Text Color",
+        "renderingPreview": "Rendering...",
+        "saveFragment": "Save Template Fragment",
+        "saveTheme": "Save Theme Settings",
+        "savingFragment": "Saving Fragment...",
+        "savingTheme": "Saving...",
+        "standardLayouts": "Headers & Footers",
+        "standardLayoutsSubtitle": "Edit modular Typst fragments for customer-facing or supplier-facing documents.",
+        "subtitle": "These settings apply automatically to all themed customer and supplier documents.",
+        "supplierDocs": "Supplier Documents",
+        "supplierFooter": "Supplier Footer",
+        "supplierHeader": "Supplier Header",
+        "title": "Fonts & Colors"
+      },
       "errors": {
         "loading": "Loading template data...",
         "notFound": "Error: Template not found or unauthorized access logging in."
@@ -462,11 +492,11 @@
           "description": "Description",
           "lastModified": "Last Modified",
           "outputFilename": "Output Filename",
-          "systemToken": "System Token",
+          "systemToken": "Template Slug",
           "templateName": "Template Name"
         },
         "createButton": "Create Template",
-        "searchPlaceholder": "Search Typst templates...",
+        "searchPlaceholder": "Search templates",
         "totalCount": "Total Templates"
       },
       "hooks": {
@@ -496,10 +526,16 @@
           "selectTemplate": "Select a template...",
           "title": "Hook Mappings"
         },
-        "title": "Hook Assignments",
+        "title": "Hooks",
         "toast": {
           "success": "Updated successfully"
         }
+      },
+      "subtitle": "Manage global typography, brand colors, standard headers & footers, templates, and hook assignments.",
+      "tabs": {
+        "branding": "Settings",
+        "hooks": "Hooks",
+        "templates": "Templates"
       },
       "title": "PDF Templates",
       "toast": {
@@ -4323,22 +4359,28 @@
     "title": "Shipments"
   },
   "shipping": {
+    "allowPartialFulfillment": "Allow Partial Pick & Ship",
     "buttons": {
-      "createShipment": "Create Shipment"
+      "createShipment": "Create Shipment",
+      "pickAndShip": "Pick & Ship"
     },
     "columns": {
       "available": "Available",
+      "deliveryInstructions": "Delivery Instructions (External)",
       "description": "Description",
-      "notes": "Notes",
+      "notes": "Shipment Notes (Internal)",
       "ordered": "Ordered",
       "picked": "Picked",
       "product": "Product",
+      "qtyToPickAndShip": "Pick & Ship",
       "qtyToShip": "Qty to Ship",
+      "shipmentNotes": "Shipment Notes (Internal)",
       "shipped": "Shipped",
-      "trackingNumber": "Tracking Number"
+      "trackingNumber": "Tracking #"
     },
     "creditBlockedMessage": "Shipping is blocked due to a credit hold.",
     "creditBlockedTitle": "Credit Hold",
+    "deliveryInstructions": "Delivery Instructions (External)",
     "docketPdf": "Print Docket",
     "errors": {
       "atLeastOneLineError": "At least one line with a quantity is required",
@@ -4346,23 +4388,35 @@
       "failedToGenerateDocketError": "Failed to generate shipping docket.",
       "failedToGenerateLabelError": "Failed to generate shipping label.",
       "failedToLoadContextError": "Failed to load order context",
-      "failedToLoadOrdersError": "Failed to load shipping queue"
+      "failedToLoadOrdersError": "Failed to load shipping queue",
+      "fulfillDirectFailed": "Failed to pick & ship order"
     },
     "existingShipments": "Existing Shipments",
     "fullyShipped": "Fully Shipped",
     "labelPdf": "Print Label",
+    "labels": {
+      "deliveryInstructions": "Delivery Instructions (External)",
+      "shipmentNotes": "Shipment Notes (Internal)",
+      "trackingNumber": "Tracking #"
+    },
     "loadingOrder": "Loading order context...",
     "noName": "No Name",
     "noOrders": "No {tab} orders pending.",
     "noPhysicalLines": "No physical lines on this order.",
     "noShipmentsFound": "No shipments found.",
     "noShipmentsYet": "No shipments created yet.",
+    "pickAndShipTitle": "Pick & Ship",
     "placeholders": {
-      "notes": "Shipment notes",
+      "carrier": "Carrier / Delivery Company",
+      "deliveryInstructions": "Delivery instructions...",
+      "fulfillmentNotes": "Pick & ship notes",
+      "notes": "Internal shipment notes...",
+      "shipmentNotes": "Internal shipment notes...",
       "tracking": "Tracking #"
     },
     "selectOrder": "Select an order to create a shipment.",
     "shipmentLines": "{count} lines",
+    "shipmentNotes": "Shipment Notes (Internal)",
     "shipmentsTitle": "Shipments",
     "tabs": {
       "partial": "Partial",
@@ -4370,6 +4424,7 @@
     },
     "title": "Shipping",
     "toasts": {
+      "orderFulfilled": "Order picked & shipped successfully!",
       "shipmentCreated": "Shipment created successfully!"
     }
   },

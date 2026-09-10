@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
@@ -86,7 +87,9 @@ export class ReturnsWriteService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly glService: GlService,
     private readonly appConfig: AppConfigService,
+    @Inject(forwardRef(() => SalesCreditNoteService))
     public readonly creditNoteService: SalesCreditNoteService,
+    @Inject(forwardRef(() => InventoryMovementService))
     private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
@@ -418,12 +421,20 @@ export class ReturnsWriteService {
           .returning();
 
         if (newState === RETURN_STATE.PROCESSED) {
-          // 1. Generate Credit Note for refunded items
-          await this.creditNoteService.createCreditNote(
-            { returnId, lines: [] },
-            actor,
-            innerTx,
-          );
+          // 1. Generate Credit Note for refunded items if not already created
+          const [existingCn] = await innerTx
+            .select({ creditNoteId: salesCreditNotes.creditNoteId })
+            .from(salesCreditNotes)
+            .where(eq(salesCreditNotes.returnId, returnId))
+            .limit(1);
+
+          if (!existingCn) {
+            await this.creditNoteService.createCreditNote(
+              { returnId, lines: [] },
+              actor,
+              innerTx,
+            );
+          }
         }
 
         const [order] = await innerTx
@@ -1414,5 +1425,55 @@ export class ReturnsWriteService {
     }
 
     return rows[0];
+  }
+
+  /**
+   * Updates putaway status and optional resolution reason on a sales return line.
+   */
+  async updateReturnLinePutawayStatus(
+    tx: DrizzleDB,
+    returnLineId: string,
+    putawayStatus: string,
+    reason?: string,
+    actor: string = 'system',
+  ) {
+    const [line] = await tx
+      .select({
+        returnLineId: salesOrderReturnLines.returnLineId,
+        returnId: salesOrderReturnLines.returnId,
+        returnNumber: salesOrderReturns.returnNumber,
+      })
+      .from(salesOrderReturnLines)
+      .innerJoin(
+        salesOrderReturns,
+        eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+      )
+      .where(eq(salesOrderReturnLines.returnLineId, returnLineId));
+
+    if (!line) {
+      throw new NotFoundException(`Return line ${returnLineId} not found`);
+    }
+
+    await tx
+      .update(salesOrderReturnLines)
+      .set({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        putawayStatus: putawayStatus as any,
+        ...(reason ? { reason } : {}),
+      })
+      .where(eq(salesOrderReturnLines.returnLineId, returnLineId));
+
+    await emitEvent(tx, {
+      entityType: EntityType.SALES_RETURN,
+      entityId: line.returnId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: line.returnNumber,
+      actor,
+      payload: {
+        returnLineId,
+        putawayStatus,
+        reason,
+      },
+    });
   }
 }

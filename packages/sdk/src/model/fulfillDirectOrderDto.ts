@@ -5,13 +5,19 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
-import type { FulfillCounterLineDto } from './fulfillCounterLineDto';
+import type { FulfillDirectLineDto } from './fulfillDirectLineDto';
 
-export interface FulfillCounterOrderDto {
+export interface FulfillDirectOrderDto {
   /** Specific lines and quantities to fulfill. If omitted, fulfills all unfulfilled lines up to available stock. */
-  lines?: FulfillCounterLineDto[];
+  lines?: FulfillDirectLineDto[];
   /** Allow partial fulfillment if stock on hand is less than requested quantity */
   allowPartialFulfillment?: boolean;
   /** Optional fulfillment or handover notes */
   notes?: string;
+  /** Optional delivery instructions for the shipment */
+  shippingNotes?: string;
+  /** Carrier tracking number for the shipment */
+  trackingNumber?: string;
+  /** Carrier or delivery company name */
+  deliveryCompanyName?: string;
 }

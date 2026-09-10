@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -79,6 +80,43 @@ export class UpdateExchangeRateDto {
   effectiveDate?: string;
 }
 
+export class PdfThemeConfigDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  primaryColor?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  accentColor?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  mutedColor?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  borderColor?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  tableHeaderFill?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fontFamily?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  baseFontSizePt?: number;
+}
+
 export class UpdateOrganizationSettingsDto {
   @IsString()
   @IsNotEmpty()
@@ -151,6 +189,12 @@ export class UpdateOrganizationSettingsDto {
   @IsOptional()
   @IsString()
   bankIban?: string;
+
+  @ApiProperty({ type: () => PdfThemeConfigDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PdfThemeConfigDto)
+  pdfThemeConfig?: PdfThemeConfigDto;
 }
 
 export class CreateCostCenterDto {
@@ -208,7 +252,6 @@ export class BulkImportResultDto {
   @IsNumber()
   updated!: number;
 }
-import { ApiProperty } from '@nestjs/swagger';
 export class UomResponseDto {
   @ApiProperty() uomCode!: string;
   @ApiProperty() description!: string;
@@ -253,6 +296,8 @@ export class OrganizationSettingsResponseDto {
   @ApiProperty({ required: false }) bankAccountNumber?: string;
   @ApiProperty({ required: false }) bankSwiftBic?: string;
   @ApiProperty({ required: false }) bankIban?: string;
+  @ApiProperty({ type: () => PdfThemeConfigDto, required: false })
+  pdfThemeConfig?: PdfThemeConfigDto;
 }
 export class AppConfigResponseDto {
   @ApiProperty() defaultFulfillmentLocationId!: string;

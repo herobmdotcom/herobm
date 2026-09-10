@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.1
  */
 
-export interface CounterFulfilledLineDto {
+export interface DirectFulfilledLineDto {
   salesOrderLineId: string;
   productId?: string;
   quantityFulfilled: string;

@@ -112,11 +112,65 @@ const SEEDS: SeedData[] = [
     outputPattern: 'Picking-Slip-${orderNumber}.pdf',
   },
   {
-    slug: 'theme-external',
-    name: 'External Reports Theme',
+    slug: 'theme-customer',
+    name: 'Customer Reports Theme',
     contexts: ['theme'],
     description:
-      'Standard global wrapper for external documents with Organization info in headers/footers.',
+      'Standard global wrapper for customer documents with branding and standard customer headers/footers.',
+    templatePath: '../../../../tools/seeds/reports/theme-customer.typ',
+    outputPattern: 'Theme-Customer.pdf',
+  },
+  {
+    slug: 'theme-supplier',
+    name: 'Supplier Reports Theme',
+    contexts: ['theme'],
+    description:
+      'Standard global wrapper for supplier documents with branding and standard supplier headers/footers.',
+    templatePath: '../../../../tools/seeds/reports/theme-supplier.typ',
+    outputPattern: 'Theme-Supplier.pdf',
+  },
+  {
+    slug: 'fragment-customer-header',
+    name: 'Customer Document Header Fragment',
+    contexts: ['fragment'],
+    description: 'Standard header layout for customer-facing documents.',
+    templatePath:
+      '../../../../tools/seeds/reports/fragment-customer-header.typ',
+    outputPattern: 'Fragment-Customer-Header.pdf',
+  },
+  {
+    slug: 'fragment-customer-footer',
+    name: 'Customer Document Footer Fragment',
+    contexts: ['fragment'],
+    description: 'Standard footer layout for customer-facing documents.',
+    templatePath:
+      '../../../../tools/seeds/reports/fragment-customer-footer.typ',
+    outputPattern: 'Fragment-Customer-Footer.pdf',
+  },
+  {
+    slug: 'fragment-supplier-header',
+    name: 'Supplier Document Header Fragment',
+    contexts: ['fragment'],
+    description: 'Standard header layout for supplier-facing documents.',
+    templatePath:
+      '../../../../tools/seeds/reports/fragment-supplier-header.typ',
+    outputPattern: 'Fragment-Supplier-Header.pdf',
+  },
+  {
+    slug: 'fragment-supplier-footer',
+    name: 'Supplier Document Footer Fragment',
+    contexts: ['fragment'],
+    description: 'Standard footer layout for supplier-facing documents.',
+    templatePath:
+      '../../../../tools/seeds/reports/fragment-supplier-footer.typ',
+    outputPattern: 'Fragment-Supplier-Footer.pdf',
+  },
+  {
+    slug: 'theme-external',
+    name: 'External Reports Theme (Legacy Wrapper)',
+    contexts: ['theme'],
+    description:
+      'Legacy wrapper for external documents forwarding to Customer Reports Theme.',
     templatePath: '../../../../tools/seeds/reports/theme-external.typ',
     outputPattern: 'Theme-External.pdf',
   },

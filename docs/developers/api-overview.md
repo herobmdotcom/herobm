@@ -390,7 +390,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/sales-orders/{id}/tax` | Calculate Taxes |
 | `POST` | `/sales-orders/{id}/email-document` | Email Document |
 | `PATCH` | `/sales-orders/{id}/state` | Change Order State |
-| `POST` | `/sales-orders/{id}/fulfill-counter` | Fulfill Counter Order |
+| `POST` | `/sales-orders/{id}/fulfill-direct` | Fulfill Direct Order |
 | `POST` | `/sales-orders/{id}/override-credit-hold` | Override Credit Hold |
 | `POST` | `/sales-orders/{id}/archive` | Archive Order |
 | `POST` | `/sales-orders/{id}/unarchive` | Unarchive Order |

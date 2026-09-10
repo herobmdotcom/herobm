@@ -7892,10 +7892,10 @@
         ]
       }
     },
-    "/sales-orders/{id}/fulfill-counter": {
+    "/sales-orders/{id}/fulfill-direct": {
       "post": {
-        "description": "Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled over the counter without shipping.",
-        "operationId": "OrdersController_fulfillCounterOrder",
+        "description": "Directly issue inventory from pickable bins at the fulfillment location, post COGS, and mark lines fulfilled directly without separate warehouse staging or parcel shipping.",
+        "operationId": "OrdersController_fulfillDirectOrder",
         "parameters": [
           {
             "name": "id",
@@ -7911,7 +7911,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FulfillCounterOrderDto"
+                "$ref": "#/components/schemas/FulfillDirectOrderDto"
               }
             }
           }
@@ -7922,7 +7922,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CounterFulfillmentResponseDto"
+                  "$ref": "#/components/schemas/DirectFulfillmentResponseDto"
                 }
               }
             }
@@ -7932,13 +7932,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CounterFulfillmentResponseDto"
+                  "$ref": "#/components/schemas/DirectFulfillmentResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Fulfill Counter Order",
+        "summary": "Fulfill Direct Order",
         "tags": [
           "Sales Orders"
         ]
@@ -11351,6 +11351,472 @@
         ]
       }
     },
+    "/manufacturing/work-orders": {
+      "get": {
+        "description": "Get all work orders with optional filtering by days.",
+        "operationId": "WorkOrdersController_findAll",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkOrderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Work Orders",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      },
+      "post": {
+        "description": "Manually create a new Work Order.",
+        "operationId": "WorkOrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}": {
+      "get": {
+        "description": "Get work order details including component line items.",
+        "operationId": "WorkOrdersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Work Order by ID",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      },
+      "patch": {
+        "description": "Update a draft Work Order.",
+        "operationId": "WorkOrdersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/components/{componentId}": {
+      "patch": {
+        "description": "Update a component on a draft Work Order.",
+        "operationId": "WorkOrdersController_updateComponent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "componentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkOrderComponentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Work Order Component",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/release": {
+      "post": {
+        "description": "Transition Work Order from DRAFT to IN_PROGRESS and generate component picks.",
+        "operationId": "WorkOrdersController_release",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Release Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/complete": {
+      "post": {
+        "description": "Transition Work Order from IN_PROGRESS to COMPLETED and record output stock.",
+        "operationId": "WorkOrdersController_completeBuild",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Complete Work Order Production",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/cancel": {
+      "post": {
+        "description": "Cancel a Work Order and release component picks.",
+        "operationId": "WorkOrdersController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Work Order",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/picking": {
+      "get": {
+        "description": "Retrieve component picking summary for a Work Order.",
+        "operationId": "WorkOrdersController_getPickingSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Work Order Picking Summary",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/picking/lines/{lineId}": {
+      "post": {
+        "description": "Record picked component quantity into WIP bin.",
+        "operationId": "WorkOrdersController_pickLine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickWorkOrderComponentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pick Work Order Component",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
+    "/manufacturing/work-orders/{id}/picking/picks/{pickId}": {
+      "delete": {
+        "description": "Cancel a recorded component pick and reverse stock to storage.",
+        "operationId": "WorkOrdersController_cancelPick",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pickId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Component Pick",
+        "tags": [
+          "Manufacturing / Work Orders"
+        ]
+      }
+    },
     "/sales-orders/{id}/invoice": {
       "post": {
         "description": "Create an invoice for a sales order",
@@ -13284,21 +13750,124 @@
         ]
       }
     },
-    "/payments": {
+    "/purchase-orders": {
+      "post": {
+        "description": "Create a new purchase order.",
+        "operationId": "PurchaseOrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Purchase Order",
+        "tags": [
+          "Purchase Orders"
+        ]
+      },
       "get": {
-        "description": "Retrieve a list of payments with optional filters for days and allocation status.",
-        "operationId": "PaymentsController_findAll",
+        "description": "Retrieve a paginated list of purchase orders.",
+        "operationId": "PurchaseOrdersController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "days",
             "required": false,
             "in": "query",
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
-            "name": "allocation",
+            "name": "purchaseOrderId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13306,11 +13875,43 @@
             }
           },
           {
-            "name": "partyId",
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
             }
           },
           {
@@ -13338,7 +13939,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/PaymentResponseDto"
+                            "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                           }
                         }
                       },
@@ -13352,50 +13953,62 @@
             }
           }
         },
-        "summary": "Find All Payments",
+        "summary": "List Purchase Orders",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
-      },
-      "post": {
-        "description": "Create a new payment entry.",
-        "operationId": "PaymentsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePaymentDto"
-              }
+      }
+    },
+    "/purchase-orders/pending-lines": {
+      "get": {
+        "description": "Find purchase order lines pending receipt.",
+        "operationId": "PurchaseOrdersController_findPendingLines",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
+                  }
                 }
               }
             }
           }
         },
-        "summary": "Create Payment",
+        "summary": "List Pending Lines",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
       }
     },
-    "/payments/run-candidates": {
+    "/purchase-orders/returnable-lines": {
       "get": {
-        "description": "Fetch eligible invoices for a payment run on a target date.",
-        "operationId": "PaymentsController_getPaymentRunCandidates",
+        "description": "Find purchase order lines eligible for return.",
+        "operationId": "PurchaseOrdersController_findReturnableLines",
         "parameters": [
           {
-            "name": "targetDate",
+            "name": "productId",
             "required": true,
             "in": "query",
             "schema": {
@@ -13411,30 +14024,165 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PaymentRunCandidateResponseDto"
+                    "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
                   }
                 }
               }
             }
           }
         },
-        "summary": "Get Payment Run Candidates",
+        "summary": "List Returnable Lines",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
       }
     },
-    "/payments/generate-run": {
-      "post": {
-        "description": "Generates a new payment run batch for eligible supplier invoices.",
-        "operationId": "PaymentsController_generatePaymentRun",
-        "parameters": [],
+    "/purchase-orders/{id}/state": {
+      "patch": {
+        "description": "Update the state of a purchase order.",
+        "operationId": "PurchaseOrdersController_changeState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GeneratePaymentRunDto"
+                "$ref": "#/components/schemas/ChangeStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change Order State",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/archive": {
+      "post": {
+        "description": "Archive a purchase order.",
+        "operationId": "PurchaseOrdersController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Archive Purchase Order",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/unarchive": {
+      "post": {
+        "description": "Restore an archived purchase order.",
+        "operationId": "PurchaseOrdersController_unarchive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unarchive Purchase Order",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/lines": {
+      "post": {
+        "description": "Add a new line item to a purchase order.",
+        "operationId": "PurchaseOrdersController_addLine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseOrderLineDto"
               }
             }
           }
@@ -13445,22 +14193,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GeneratePaymentRunResponseDto"
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Generate Payment Run",
+        "summary": "Add Order Line",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
       }
     },
-    "/payments/{id}": {
-      "get": {
-        "description": "Retrieve detailed information for a specific payment.",
-        "operationId": "PaymentsController_findOne",
+    "/purchase-orders/{id}/lines/{lineId}": {
+      "patch": {
+        "description": "Modify a specific line item on a purchase order.",
+        "operationId": "PurchaseOrdersController_updateLine",
         "parameters": [
           {
             "name": "id",
@@ -13471,35 +14219,84 @@
             }
           },
           {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "name": "lineId",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePurchaseOrderLineDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentResponseDto"
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Find Payment",
+        "summary": "Update Order Line",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
       },
       "delete": {
-        "description": "Permanently deletes a payment in the DRAFT state.",
-        "operationId": "PaymentsController_remove",
+        "description": "Delete a line item from a purchase order.",
+        "operationId": "PurchaseOrdersController_removeLine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Order Line",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}": {
+      "get": {
+        "description": "Retrieve detailed information about a specific purchase order.",
+        "operationId": "PurchaseOrdersController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -13512,26 +14309,24 @@
         ],
         "responses": {
           "200": {
-            "description": "Payment successfully deleted",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Remove Draft Payment",
+        "summary": "Get Purchase Order",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
-      }
-    },
-    "/payments/{id}/submit": {
+      },
       "patch": {
-        "description": "Submit a draft payment for processing.",
-        "operationId": "PaymentsController_submit",
+        "description": "Update an existing purchase order.",
+        "operationId": "PurchaseOrdersController_update",
         "parameters": [
           {
             "name": "id",
@@ -13547,7 +14342,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
+                "$ref": "#/components/schemas/UpdatePurchaseOrderDto"
               }
             }
           }
@@ -13558,238 +14353,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentResponseDto"
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "Submit Payment",
+        "summary": "Update Purchase Order",
         "tags": [
-          "Payments"
+          "Purchase Orders"
         ]
       }
     },
-    "/payments/{id}/allocate": {
-      "patch": {
-        "description": "Allocate a payment to an invoice or bill.",
-        "operationId": "PaymentsController_allocate",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AllocatePaymentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Allocate Payment",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/{id}/cancel": {
-      "patch": {
-        "description": "Cancel an open payment.",
-        "operationId": "PaymentsController_cancel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Cancel Payment",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/export-aba": {
+    "/purchase-orders/{id}/email-document": {
       "post": {
-        "description": "Export selected payments into an ABA file format.",
-        "operationId": "PaymentsController_exportAba",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BatchPaymentActionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExportAbaResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Export ABA",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/export-nacha": {
-      "post": {
-        "description": "Export selected payments into a NACHA ACH file format.",
-        "operationId": "PaymentsController_exportNacha",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BatchPaymentActionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExportAbaResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Export NACHA",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/confirm-exported": {
-      "post": {
-        "description": "Mark a batch of exported payments as confirmed.",
-        "operationId": "PaymentsController_confirmExported",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BatchPaymentActionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Confirm Exported Payments",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/reject-exported": {
-      "post": {
-        "description": "Mark a batch of exported payments as rejected.",
-        "operationId": "PaymentsController_rejectExported",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BatchPaymentActionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Reject Exported Payments",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/{id}/email-document": {
-      "post": {
-        "description": "Generates a Payment Document (e.g. Supplier Remittance Advice) PDF using the active template/hook and queues an email outbox message to the specified recipient.",
-        "operationId": "PaymentsController_emailDocument",
+        "description": "Generates a Purchase Order PDF and queues it to be emailed to the supplier.",
+        "operationId": "PurchaseOrdersController_emailDocument",
         "parameters": [
           {
             "name": "id",
@@ -13827,9 +14406,546 @@
             }
           }
         },
-        "summary": "Email Payment Document / Remittance Advice",
+        "summary": "Email Purchase Order Document",
         "tags": [
-          "Payments"
+          "Purchase Orders"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns": {
+      "post": {
+        "description": "Create a return for a specific purchase order.",
+        "operationId": "PurchaseReturnsController_createReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      },
+      "get": {
+        "description": "Retrieve all returns for a specific purchase order.",
+        "operationId": "PurchaseReturnsController_findReturns",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Purchase Returns",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}": {
+      "get": {
+        "description": "Retrieve details for a specific return on an order.",
+        "operationId": "PurchaseReturnsController_findReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/stage": {
+      "post": {
+        "description": "Mark a purchase return as staged for shipping.",
+        "operationId": "PurchaseReturnsController_stageReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stage Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/unstage": {
+      "post": {
+        "description": "Revert a staged purchase return back to draft state.",
+        "operationId": "PurchaseReturnsController_unstageReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unstage Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/ship": {
+      "post": {
+        "description": "Mark a staged purchase return as shipped.",
+        "operationId": "PurchaseReturnsController_shipReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShipPurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ship Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/unship": {
+      "post": {
+        "description": "Revert a shipped purchase return back to staged state.",
+        "operationId": "PurchaseReturnsController_unshipReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unship Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-orders/{id}/returns/{returnId}/cancel": {
+      "post": {
+        "description": "Cancel a draft or staged purchase return.",
+        "operationId": "PurchaseReturnsController_cancelReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-returns": {
+      "get": {
+        "description": "Retrieve a paginated or filtered list of purchase returns across all purchase orders.",
+        "operationId": "GlobalPurchaseReturnsController_findAll",
+        "parameters": [
+          {
+            "name": "stateCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requireDebitNote",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all purchase returns across all POs",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-returns/{id}": {
+      "get": {
+        "description": "Retrieve details for a specific purchase return.",
+        "operationId": "GlobalPurchaseReturnsController_getPurchaseReturnById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Purchase Return",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-returns/{id}/mark-resolved": {
+      "post": {
+        "description": "Marks a purchase return as resolved without issuing a debit note.",
+        "operationId": "GlobalPurchaseReturnsController_markPurchaseReturnResolved",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolvePurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark Purchase Return as Resolved",
+        "tags": [
+          "Purchase Returns"
+        ]
+      }
+    },
+    "/purchase-returns/{id}/email-document": {
+      "post": {
+        "description": "Generates a PDF using the active purchase return template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "GlobalPurchaseReturnsController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Purchase Return Document",
+        "tags": [
+          "Purchase Returns"
         ]
       }
     },
@@ -15233,6 +16349,555 @@
         ]
       }
     },
+    "/payments": {
+      "get": {
+        "description": "Retrieve a list of payments with optional filters for days and allocation status.",
+        "operationId": "PaymentsController_findAll",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "allocation",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partyId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PaymentResponseDto"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Find All Payments",
+        "tags": [
+          "Payments"
+        ]
+      },
+      "post": {
+        "description": "Create a new payment entry.",
+        "operationId": "PaymentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Payment",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/run-candidates": {
+      "get": {
+        "description": "Fetch eligible invoices for a payment run on a target date.",
+        "operationId": "PaymentsController_getPaymentRunCandidates",
+        "parameters": [
+          {
+            "name": "targetDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentRunCandidateResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Payment Run Candidates",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/generate-run": {
+      "post": {
+        "description": "Generates a new payment run batch for eligible supplier invoices.",
+        "operationId": "PaymentsController_generatePaymentRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePaymentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratePaymentRunResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Generate Payment Run",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}": {
+      "get": {
+        "description": "Retrieve detailed information for a specific payment.",
+        "operationId": "PaymentsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Find Payment",
+        "tags": [
+          "Payments"
+        ]
+      },
+      "delete": {
+        "description": "Permanently deletes a payment in the DRAFT state.",
+        "operationId": "PaymentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Draft Payment",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}/submit": {
+      "patch": {
+        "description": "Submit a draft payment for processing.",
+        "operationId": "PaymentsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Submit Payment",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}/allocate": {
+      "patch": {
+        "description": "Allocate a payment to an invoice or bill.",
+        "operationId": "PaymentsController_allocate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Allocate Payment",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}/cancel": {
+      "patch": {
+        "description": "Cancel an open payment.",
+        "operationId": "PaymentsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Payment",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/export-aba": {
+      "post": {
+        "description": "Export selected payments into an ABA file format.",
+        "operationId": "PaymentsController_exportAba",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPaymentActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAbaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export ABA",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/export-nacha": {
+      "post": {
+        "description": "Export selected payments into a NACHA ACH file format.",
+        "operationId": "PaymentsController_exportNacha",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPaymentActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAbaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export NACHA",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/confirm-exported": {
+      "post": {
+        "description": "Mark a batch of exported payments as confirmed.",
+        "operationId": "PaymentsController_confirmExported",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPaymentActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm Exported Payments",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/reject-exported": {
+      "post": {
+        "description": "Mark a batch of exported payments as rejected.",
+        "operationId": "PaymentsController_rejectExported",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPaymentActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reject Exported Payments",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}/email-document": {
+      "post": {
+        "description": "Generates a Payment Document (e.g. Supplier Remittance Advice) PDF using the active template/hook and queues an email outbox message to the specified recipient.",
+        "operationId": "PaymentsController_emailDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Payment Document / Remittance Advice",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
     "/dashboard/summary": {
       "get": {
         "description": "Retrieves key metrics and statistics for the dashboard.",
@@ -15399,1205 +17064,6 @@
         "summary": "System Healthcheck",
         "tags": [
           "System"
-        ]
-      }
-    },
-    "/purchase-orders": {
-      "post": {
-        "description": "Create a new purchase order.",
-        "operationId": "PurchaseOrdersController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePurchaseOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create Purchase Order",
-        "tags": [
-          "Purchase Orders"
-        ]
-      },
-      "get": {
-        "description": "Retrieve a paginated list of purchase orders.",
-        "operationId": "PurchaseOrdersController_findAll",
-        "parameters": [
-          {
-            "name": "q",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "direction",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/Object"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "state",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "includeArchived",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "customerId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "vendorId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "days",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/Object"
-            }
-          },
-          {
-            "name": "purchaseOrderId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "opportunityId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "projectId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortDirection",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/Object"
-            }
-          },
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/PaginatedResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                          }
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Purchase Orders",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/pending-lines": {
-      "get": {
-        "description": "Find purchase order lines pending receipt.",
-        "operationId": "PurchaseOrdersController_findPendingLines",
-        "parameters": [
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "vendorId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Pending Lines",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/returnable-lines": {
-      "get": {
-        "description": "Find purchase order lines eligible for return.",
-        "operationId": "PurchaseOrdersController_findReturnableLines",
-        "parameters": [
-          {
-            "name": "productId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Returnable Lines",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/state": {
-      "patch": {
-        "description": "Update the state of a purchase order.",
-        "operationId": "PurchaseOrdersController_changeState",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangeStateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Change Order State",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/archive": {
-      "post": {
-        "description": "Archive a purchase order.",
-        "operationId": "PurchaseOrdersController_archive",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Archive Purchase Order",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/unarchive": {
-      "post": {
-        "description": "Restore an archived purchase order.",
-        "operationId": "PurchaseOrdersController_unarchive",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Unarchive Purchase Order",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/lines": {
-      "post": {
-        "description": "Add a new line item to a purchase order.",
-        "operationId": "PurchaseOrdersController_addLine",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePurchaseOrderLineDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Add Order Line",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/lines/{lineId}": {
-      "patch": {
-        "description": "Modify a specific line item on a purchase order.",
-        "operationId": "PurchaseOrdersController_updateLine",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "lineId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePurchaseOrderLineDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Order Line",
-        "tags": [
-          "Purchase Orders"
-        ]
-      },
-      "delete": {
-        "description": "Delete a line item from a purchase order.",
-        "operationId": "PurchaseOrdersController_removeLine",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "lineId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Remove Order Line",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}": {
-      "get": {
-        "description": "Retrieve detailed information about a specific purchase order.",
-        "operationId": "PurchaseOrdersController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Purchase Order",
-        "tags": [
-          "Purchase Orders"
-        ]
-      },
-      "patch": {
-        "description": "Update an existing purchase order.",
-        "operationId": "PurchaseOrdersController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePurchaseOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Purchase Order",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/email-document": {
-      "post": {
-        "description": "Generates a Purchase Order PDF and queues it to be emailed to the supplier.",
-        "operationId": "PurchaseOrdersController_emailDocument",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmailDocumentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email queued successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Email Purchase Order Document",
-        "tags": [
-          "Purchase Orders"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns": {
-      "post": {
-        "description": "Create a return for a specific purchase order.",
-        "operationId": "PurchaseReturnsController_createReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePurchaseReturnDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      },
-      "get": {
-        "description": "Retrieve all returns for a specific purchase order.",
-        "operationId": "PurchaseReturnsController_findReturns",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Purchase Returns",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}": {
-      "get": {
-        "description": "Retrieve details for a specific return on an order.",
-        "operationId": "PurchaseReturnsController_findReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}/stage": {
-      "post": {
-        "description": "Mark a purchase return as staged for shipping.",
-        "operationId": "PurchaseReturnsController_stageReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Stage Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}/unstage": {
-      "post": {
-        "description": "Revert a staged purchase return back to draft state.",
-        "operationId": "PurchaseReturnsController_unstageReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Unstage Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}/ship": {
-      "post": {
-        "description": "Mark a staged purchase return as shipped.",
-        "operationId": "PurchaseReturnsController_shipReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ShipPurchaseReturnDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Ship Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}/unship": {
-      "post": {
-        "description": "Revert a shipped purchase return back to staged state.",
-        "operationId": "PurchaseReturnsController_unshipReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Unship Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-orders/{id}/returns/{returnId}/cancel": {
-      "post": {
-        "description": "Cancel a draft or staged purchase return.",
-        "operationId": "PurchaseReturnsController_cancelReturn",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Cancel Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-returns": {
-      "get": {
-        "description": "Retrieve a paginated or filtered list of purchase returns across all purchase orders.",
-        "operationId": "GlobalPurchaseReturnsController_findAll",
-        "parameters": [
-          {
-            "name": "stateCode",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "requireDebitNote",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns list",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all purchase returns across all POs",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-returns/{id}": {
-      "get": {
-        "description": "Retrieve details for a specific purchase return.",
-        "operationId": "GlobalPurchaseReturnsController_getPurchaseReturnById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Purchase Return",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-returns/{id}/mark-resolved": {
-      "post": {
-        "description": "Marks a purchase return as resolved without issuing a debit note.",
-        "operationId": "GlobalPurchaseReturnsController_markPurchaseReturnResolved",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolvePurchaseReturnDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mark Purchase Return as Resolved",
-        "tags": [
-          "Purchase Returns"
-        ]
-      }
-    },
-    "/purchase-returns/{id}/email-document": {
-      "post": {
-        "description": "Generates a PDF using the active purchase return template/hook and queues an email outbox message to the specified recipient.",
-        "operationId": "GlobalPurchaseReturnsController_emailDocument",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmailDocumentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email queued successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Email Purchase Return Document",
-        "tags": [
-          "Purchase Returns"
         ]
       }
     },
@@ -16793,472 +17259,6 @@
         "summary": "Email Purchase Debit Note Document",
         "tags": [
           "Purchase Invoices"
-        ]
-      }
-    },
-    "/manufacturing/work-orders": {
-      "get": {
-        "description": "Get all work orders with optional filtering by days.",
-        "operationId": "WorkOrdersController_findAll",
-        "parameters": [
-          {
-            "name": "days",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WorkOrderResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Work Orders",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      },
-      "post": {
-        "description": "Manually create a new Work Order.",
-        "operationId": "WorkOrdersController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateWorkOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Create Work Order",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}": {
-      "get": {
-        "description": "Get work order details including component line items.",
-        "operationId": "WorkOrdersController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Work Order by ID",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      },
-      "patch": {
-        "description": "Update a draft Work Order.",
-        "operationId": "WorkOrdersController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateWorkOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Work Order",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/components/{componentId}": {
-      "patch": {
-        "description": "Update a component on a draft Work Order.",
-        "operationId": "WorkOrdersController_updateComponent",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "componentId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateWorkOrderComponentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Update Work Order Component",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/release": {
-      "post": {
-        "description": "Transition Work Order from DRAFT to IN_PROGRESS and generate component picks.",
-        "operationId": "WorkOrdersController_release",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Release Work Order",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/complete": {
-      "post": {
-        "description": "Transition Work Order from IN_PROGRESS to COMPLETED and record output stock.",
-        "operationId": "WorkOrdersController_completeBuild",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Complete Work Order Production",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/cancel": {
-      "post": {
-        "description": "Cancel a Work Order and release component picks.",
-        "operationId": "WorkOrdersController_cancel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Cancel Work Order",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/picking": {
-      "get": {
-        "description": "Retrieve component picking summary for a Work Order.",
-        "operationId": "WorkOrdersController_getPickingSummary",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Work Order Picking Summary",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/picking/lines/{lineId}": {
-      "post": {
-        "description": "Record picked component quantity into WIP bin.",
-        "operationId": "WorkOrdersController_pickLine",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "lineId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PickWorkOrderComponentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Pick Work Order Component",
-        "tags": [
-          "Manufacturing / Work Orders"
-        ]
-      }
-    },
-    "/manufacturing/work-orders/{id}/picking/picks/{pickId}": {
-      "delete": {
-        "description": "Cancel a recorded component pick and reverse stock to storage.",
-        "operationId": "WorkOrdersController_cancelPick",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pickId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkOrderPickingSummaryDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Cancel Component Pick",
-        "tags": [
-          "Manufacturing / Work Orders"
         ]
       }
     },
@@ -24148,6 +24148,23 @@
           }
         }
       },
+      "PdfThemeConfigDto": {
+        "type": "object",
+        "properties": {
+          "primaryColor": {
+            "type": "string"
+          },
+          "accentColor": {
+            "type": "string"
+          },
+          "fontFamily": {
+            "type": "string"
+          },
+          "baseFontSizePt": {
+            "type": "number"
+          }
+        }
+      },
       "OrganizationSettingsResponseDto": {
         "type": "object",
         "properties": {
@@ -24207,6 +24224,9 @@
           },
           "bankIban": {
             "type": "string"
+          },
+          "pdfThemeConfig": {
+            "$ref": "#/components/schemas/PdfThemeConfigDto"
           }
         },
         "required": [
@@ -24216,6 +24236,9 @@
       "UpdateOrganizationSettingsDto": {
         "type": "object",
         "properties": {
+          "pdfThemeConfig": {
+            "$ref": "#/components/schemas/PdfThemeConfigDto"
+          },
           "name": {
             "type": "string"
           },
@@ -28712,6 +28735,9 @@
           "isCreditBlocked": {
             "type": "boolean"
           },
+          "order": {
+            "type": "object"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -28974,7 +29000,7 @@
           "stateCode"
         ]
       },
-      "FulfillCounterLineDto": {
+      "FulfillDirectLineDto": {
         "type": "object",
         "properties": {
           "salesOrderLineId": {
@@ -28984,7 +29010,7 @@
           },
           "quantityToFulfill": {
             "type": "string",
-            "description": "Quantity to fulfill over the counter"
+            "description": "Quantity to directly fulfill"
           },
           "binId": {
             "type": "string",
@@ -28997,14 +29023,14 @@
           "quantityToFulfill"
         ]
       },
-      "FulfillCounterOrderDto": {
+      "FulfillDirectOrderDto": {
         "type": "object",
         "properties": {
           "lines": {
             "description": "Specific lines and quantities to fulfill. If omitted, fulfills all unfulfilled lines up to available stock.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FulfillCounterLineDto"
+              "$ref": "#/components/schemas/FulfillDirectLineDto"
             }
           },
           "allowPartialFulfillment": {
@@ -29014,10 +29040,22 @@
           "notes": {
             "type": "string",
             "description": "Optional fulfillment or handover notes"
+          },
+          "shippingNotes": {
+            "type": "string",
+            "description": "Optional delivery instructions for the shipment"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "description": "Carrier tracking number for the shipment"
+          },
+          "deliveryCompanyName": {
+            "type": "string",
+            "description": "Carrier or delivery company name"
           }
         }
       },
-      "CounterFulfilledLineDto": {
+      "DirectFulfilledLineDto": {
         "type": "object",
         "properties": {
           "salesOrderLineId": {
@@ -29041,7 +29079,7 @@
           "quantityFulfilled"
         ]
       },
-      "CounterFulfillmentResponseDto": {
+      "DirectFulfillmentResponseDto": {
         "type": "object",
         "properties": {
           "salesOrderId": {
@@ -29053,10 +29091,16 @@
           "stateCode": {
             "type": "string"
           },
+          "shipmentId": {
+            "type": "string"
+          },
+          "shipmentNumber": {
+            "type": "string"
+          },
           "fulfilledLines": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CounterFulfilledLineDto"
+              "$ref": "#/components/schemas/DirectFulfilledLineDto"
             }
           },
           "cogsAmount": {
@@ -29457,6 +29501,9 @@
           "notes": {
             "type": "string"
           },
+          "shippingNotes": {
+            "type": "string"
+          },
           "deliveryCompanyName": {
             "type": "string"
           },
@@ -29478,6 +29525,9 @@
         "type": "object",
         "properties": {
           "notes": {
+            "type": "string"
+          },
+          "shippingNotes": {
             "type": "string"
           },
           "deliveryCompanyName": {
@@ -30547,6 +30597,437 @@
           "genericSummary"
         ]
       },
+      "WorkOrderComponentResponseDto": {
+        "type": "object",
+        "properties": {
+          "workOrderComponentId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "expectedQuantity": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "stagedQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "wipBinQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentQuantity": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "workOrderComponentId",
+          "productId",
+          "productName",
+          "productNumber",
+          "expectedQuantity"
+        ]
+      },
+      "WorkOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "workOrderId": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "targetQuantity": {
+            "type": "string"
+          },
+          "completedQuantity": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "wipBinId": {
+            "type": "string",
+            "nullable": true
+          },
+          "wipBinName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputBinId": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputBinName": {
+            "type": "string",
+            "nullable": true
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "additionalCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "object"
+          },
+          "modifiedOn": {
+            "type": "object"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderComponentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "workOrderId",
+          "orderNumber",
+          "productId",
+          "productName",
+          "productNumber",
+          "targetQuantity",
+          "completedQuantity",
+          "locationId",
+          "locationName",
+          "stateCode"
+        ]
+      },
+      "CreateWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product ID of the component item"
+          },
+          "expectedQuantity": {
+            "type": "string",
+            "description": "Expected component quantity for this work order"
+          },
+          "unitCost": {
+            "type": "string",
+            "description": "Optional unit cost"
+          }
+        },
+        "required": [
+          "productId",
+          "expectedQuantity"
+        ]
+      },
+      "CreateWorkOrderDto": {
+        "type": "object",
+        "properties": {
+          "orderNumber": {
+            "type": "string",
+            "description": "Optional custom order number (WO-YYYYMMDD-XXXX generated if empty)"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product ID of the output product to produce"
+          },
+          "targetQuantity": {
+            "type": "string",
+            "description": "Target quantity to produce"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fulfillment location ID"
+          },
+          "wipBinId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "WIP Bin ID (optional)"
+          },
+          "outputBinId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Finished Goods Output Bin ID (optional)"
+          },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "description": "Per-unit assembly cost"
+          },
+          "additionalCost": {
+            "type": "string",
+            "description": "Flat additional work order-level cost added to total"
+          },
+          "components": {
+            "description": "Component lines snapshot (if empty, auto-populated from product BOM)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateWorkOrderComponentDto"
+            }
+          }
+        },
+        "required": [
+          "productId",
+          "targetQuantity",
+          "locationId"
+        ]
+      },
+      "UpdateWorkOrderDto": {
+        "type": "object",
+        "properties": {
+          "targetQuantity": {
+            "type": "string",
+            "description": "Target quantity to produce"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fulfillment location ID"
+          },
+          "wipBinId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "WIP Bin ID (optional)"
+          },
+          "outputBinId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Finished Goods Output Bin ID (optional)"
+          },
+          "assemblyCostPerUnit": {
+            "type": "string",
+            "nullable": true,
+            "description": "Per-unit assembly cost"
+          },
+          "additionalCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Flat additional work order-level cost added to total"
+          }
+        }
+      },
+      "UpdateWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "unitCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Overridden unit cost"
+          }
+        }
+      },
+      "WorkOrderAvailableBinDto": {
+        "type": "object",
+        "properties": {
+          "binId": {
+            "type": "string"
+          },
+          "binName": {
+            "type": "string"
+          },
+          "onHand": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "binId",
+          "binName",
+          "onHand"
+        ]
+      },
+      "WorkOrderPickingLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "lineNumber": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string"
+          },
+          "productDescription": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "quantityPicked": {
+            "type": "string"
+          },
+          "quantityShipped": {
+            "type": "string"
+          },
+          "remaining": {
+            "type": "string"
+          },
+          "isFullyPicked": {
+            "type": "boolean"
+          },
+          "isPhysical": {
+            "type": "boolean"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "availableBins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderAvailableBinDto"
+            }
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "lineNumber",
+          "productId",
+          "productNumber",
+          "productType",
+          "productDescription",
+          "locationName",
+          "quantity",
+          "quantityPicked",
+          "quantityShipped",
+          "remaining",
+          "isFullyPicked",
+          "isPhysical",
+          "onHand",
+          "availableBins"
+        ]
+      },
+      "WorkOrderPickDetailDto": {
+        "type": "object",
+        "properties": {
+          "pickId": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "binId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "binName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "pickId",
+          "salesOrderId",
+          "salesOrderLineId",
+          "productId",
+          "quantity",
+          "stateCode"
+        ]
+      },
+      "WorkOrderPickingSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalLines": {
+            "type": "number"
+          },
+          "fullyPickedLines": {
+            "type": "number"
+          },
+          "isFullyPicked": {
+            "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderPickingLineDto"
+            }
+          },
+          "picks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderPickDetailDto"
+            }
+          }
+        },
+        "required": [
+          "totalLines",
+          "fullyPickedLines",
+          "isFullyPicked",
+          "lines",
+          "picks"
+        ]
+      },
+      "PickWorkOrderComponentDto": {
+        "type": "object",
+        "properties": {
+          "binId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "binId",
+          "quantity"
+        ]
+      },
       "CreateSalesInvoiceLineDto": {
         "type": "object",
         "properties": {
@@ -31342,35 +31823,181 @@
           "config"
         ]
       },
-      "PaymentResponseDto": {
+      "CreatePurchaseOrderLineDto": {
         "type": "object",
         "properties": {
-          "paymentId": {
+          "productId": {
             "type": "string"
           },
-          "paymentNumber": {
+          "productDescription": {
             "type": "string"
           },
-          "paymentType": {
+          "quantity": {
             "type": "string"
           },
-          "partyType": {
+          "pricePerUnit": {
             "type": "string"
           },
-          "partyId": {
+          "discountPercentage": {
             "type": "string"
           },
-          "paymentDate": {
-            "type": "object"
-          },
-          "modeOfPayment": {
+          "unitOfMeasure": {
             "type": "string"
+          },
+          "taxCategoryId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "quantity",
+          "pricePerUnit"
+        ]
+      },
+      "CreatePurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "deliveryLocationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vendorId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
+          },
+          "expectedDate": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePurchaseOrderLineDto"
+            }
+          }
+        },
+        "required": [
+          "purchaseOrderId",
+          "orderNumber",
+          "deliveryLocationId",
+          "vendorId"
+        ]
+      },
+      "PurchaseOrderLineResponseDto": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderLineId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "lineNumber": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "productNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "productType": {
+            "type": "string",
+            "nullable": true
+          },
+          "productDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "pricePerUnit": {
+            "type": "string"
+          },
+          "discountPercentage": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxCategoryId": {
+            "type": "string"
+          },
+          "tax": {
+            "type": "string",
+            "nullable": true
           },
           "totalAmount": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
-          "unallocatedAmount": {
-            "type": "object"
+          "unitOfMeasure": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantityReceived": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "purchaseOrderLineId",
+          "purchaseOrderId",
+          "lineNumber",
+          "quantity",
+          "pricePerUnit",
+          "taxCategoryId"
+        ]
+      },
+      "PurchaseOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
+            }
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "vendorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryLocationId": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string",
+            "nullable": true
           },
           "stateCode": {
             "type": "string"
@@ -31378,302 +32005,344 @@
           "currencyCode": {
             "type": "string"
           },
-          "glAccountBank": {
-            "type": "string"
+          "notes": {
+            "type": "string",
+            "nullable": true
           },
-          "referenceNumber": {
+          "customFields": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdBy": {
             "type": "string",
             "nullable": true
           },
           "createdOn": {
-            "type": "object"
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
           },
-          "createdBy": {
-            "type": "string"
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
           },
-          "partyName": {
+          "expectedDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "vendorName": {
             "type": "string"
           }
         },
         "required": [
-          "paymentId",
-          "paymentNumber",
-          "paymentType",
-          "partyType",
-          "partyId",
-          "paymentDate",
-          "modeOfPayment",
-          "totalAmount",
-          "unallocatedAmount",
+          "purchaseOrderId",
+          "orderNumber",
+          "deliveryLocationId",
           "stateCode",
-          "currencyCode",
-          "glAccountBank",
-          "referenceNumber",
-          "createdOn",
-          "createdBy",
-          "partyName"
+          "currencyCode"
         ]
       },
-      "PaymentRunCandidateResponseDto": {
+      "ChangeStateDto": {
         "type": "object",
         "properties": {
-          "invoiceId": {
-            "type": "string"
-          },
-          "invoiceNumber": {
-            "type": "string"
-          },
-          "supplierId": {
-            "type": "string"
-          },
-          "supplierName": {
-            "type": "string"
-          },
-          "dueDate": {
-            "type": "object"
-          },
-          "invoiceDate": {
-            "type": "object"
-          },
-          "totalAmount": {
-            "type": "object"
-          },
-          "outstandingAmount": {
-            "type": "object"
-          },
-          "earlyPaymentDiscount": {
-            "type": "string",
-            "nullable": true
-          },
-          "earlyPaymentDiscountDays": {
-            "type": "number",
-            "nullable": true
-          },
-          "cashAmount": {
-            "type": "number"
-          },
-          "discountAmount": {
-            "type": "number"
-          },
-          "hasDiscountOpportunity": {
-            "type": "boolean"
-          },
-          "isDueSoon": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "invoiceId",
-          "invoiceNumber",
-          "supplierId",
-          "supplierName",
-          "dueDate",
-          "invoiceDate",
-          "totalAmount",
-          "outstandingAmount",
-          "earlyPaymentDiscount",
-          "earlyPaymentDiscountDays",
-          "cashAmount",
-          "discountAmount",
-          "hasDiscountOpportunity",
-          "isDueSoon"
-        ]
-      },
-      "GeneratePaymentRunDto": {
-        "type": "object",
-        "properties": {
-          "targetDate": {
-            "type": "string"
-          },
-          "glAccountBank": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "invoiceIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "targetDate",
-          "glAccountBank",
-          "invoiceIds"
-        ]
-      },
-      "GeneratePaymentRunResponseDto": {
-        "type": "object",
-        "properties": {
-          "generatedPayments": {
-            "type": "number"
-          },
-          "totalCashAmount": {
-            "type": "number"
-          },
-          "totalDiscountAmount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "generatedPayments",
-          "totalCashAmount",
-          "totalDiscountAmount"
-        ]
-      },
-      "PaymentLineDto": {
-        "type": "object",
-        "properties": {
-          "accountId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "memo": {
+          "stateCode": {
             "type": "string"
           }
         },
         "required": [
-          "accountId",
-          "amount"
+          "stateCode"
         ]
       },
-      "AllocationDto": {
+      "UpdatePurchaseOrderLineDto": {
         "type": "object",
         "properties": {
-          "referenceType": {
-            "type": "object"
-          },
-          "referenceId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "allocatedAmount": {
-            "type": "number",
-            "minimum": 0.01
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "referenceType",
-          "referenceId",
-          "allocatedAmount"
-        ]
-      },
-      "CreatePaymentDto": {
-        "type": "object",
-        "properties": {
-          "paymentId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "paymentType": {
-            "type": "object"
-          },
-          "partyId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "paymentDate": {
+          "quantity": {
             "type": "string"
           },
-          "modeOfPayment": {
-            "type": "object"
+          "pricePerUnit": {
+            "type": "string"
           },
-          "totalAmount": {
-            "type": "number",
-            "minimum": 0.01
+          "discountPercentage": {
+            "type": "string"
           },
-          "glAccountBank": {
-            "type": "string",
-            "format": "uuid"
+          "productDescription": {
+            "type": "string"
           },
-          "referenceNumber": {
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "taxCategoryId": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdatePurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "vendorId": {
             "type": "string"
           },
           "currencyCode": {
             "type": "string"
           },
-          "submitImmediately": {
-            "type": "boolean"
+          "notes": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "deliveryLocationId": {
+            "type": "string"
+          },
+          "expectedDate": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatePurchaseReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderLineId": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "returnFee": {
+            "type": "string"
+          },
+          "sourceBinId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "purchaseOrderLineId",
+          "quantityReturned"
+        ]
+      },
+      "CreatePurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
           },
           "lines": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PaymentLineDto"
+              "$ref": "#/components/schemas/CreatePurchaseReturnLineDto"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
+      "PurchaseReturnLineResponseDto": {
+        "type": "object",
+        "properties": {
+          "returnLineId": {
+            "type": "string"
+          },
+          "returnId": {
+            "type": "string"
+          },
+          "purchaseOrderLineId": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnFee": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "returnLineId",
+          "returnId",
+          "purchaseOrderLineId",
+          "quantityReturned"
+        ]
+      },
+      "PurchaseReturnResponseDto": {
+        "type": "object",
+        "properties": {
+          "returnId": {
+            "type": "string"
+          },
+          "returnNumber": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
             }
           },
-          "allocations": {
+          "shipments": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AllocationDto"
+              "type": "object"
+            }
+          },
+          "shipmentLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
             }
           }
         },
         "required": [
-          "paymentId",
-          "paymentType",
-          "paymentDate",
-          "modeOfPayment",
-          "totalAmount",
-          "glAccountBank",
-          "currencyCode"
+          "returnId",
+          "returnNumber",
+          "purchaseOrderId",
+          "stateCode"
         ]
       },
-      "AllocatePaymentDto": {
+      "ShipPurchaseReturnDto": {
         "type": "object",
         "properties": {
-          "allocations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AllocationDto"
-            }
-          }
-        },
-        "required": [
-          "allocations"
-        ]
-      },
-      "ConfirmRejectResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ]
-      },
-      "BatchPaymentActionDto": {
-        "type": "object",
-        "properties": {
-          "paymentIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "paymentIds"
-        ]
-      },
-      "ExportAbaResponseDto": {
-        "type": "object",
-        "properties": {
-          "fileContent": {
+          "trackingNumber": {
+            "type": "string"
+          },
+          "notes": {
             "type": "string"
           }
+        }
+      },
+      "GlobalPurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "orderNumber": {
+            "type": "string"
+          },
+          "vendorName": {
+            "type": "string"
+          },
+          "vendorId": {
+            "type": "string"
+          },
+          "vendorCode": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "debitNoteId": {
+            "type": "string"
+          },
+          "debitNoteNumber": {
+            "type": "string"
+          },
+          "debitNoteState": {
+            "type": "string"
+          },
+          "debitNoteTotalAmount": {
+            "type": "string"
+          },
+          "returnId": {
+            "type": "string"
+          },
+          "returnNumber": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
+            }
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "shipmentLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
         },
         "required": [
-          "fileContent"
+          "returnId",
+          "returnNumber",
+          "purchaseOrderId",
+          "stateCode"
         ]
+      },
+      "ResolvePurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          }
+        }
       },
       "SupplierResponseDto": {
         "type": "object",
@@ -32437,6 +33106,339 @@
           }
         }
       },
+      "PaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "paymentNumber": {
+            "type": "string"
+          },
+          "paymentType": {
+            "type": "string"
+          },
+          "partyType": {
+            "type": "string"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "paymentDate": {
+            "type": "object"
+          },
+          "modeOfPayment": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "object"
+          },
+          "unallocatedAmount": {
+            "type": "object"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "glAccountBank": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "object"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "partyName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "paymentId",
+          "paymentNumber",
+          "paymentType",
+          "partyType",
+          "partyId",
+          "paymentDate",
+          "modeOfPayment",
+          "totalAmount",
+          "unallocatedAmount",
+          "stateCode",
+          "currencyCode",
+          "glAccountBank",
+          "referenceNumber",
+          "createdOn",
+          "createdBy",
+          "partyName"
+        ]
+      },
+      "PaymentRunCandidateResponseDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierName": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "object"
+          },
+          "invoiceDate": {
+            "type": "object"
+          },
+          "totalAmount": {
+            "type": "object"
+          },
+          "outstandingAmount": {
+            "type": "object"
+          },
+          "earlyPaymentDiscount": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
+          "cashAmount": {
+            "type": "number"
+          },
+          "discountAmount": {
+            "type": "number"
+          },
+          "hasDiscountOpportunity": {
+            "type": "boolean"
+          },
+          "isDueSoon": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "invoiceId",
+          "invoiceNumber",
+          "supplierId",
+          "supplierName",
+          "dueDate",
+          "invoiceDate",
+          "totalAmount",
+          "outstandingAmount",
+          "earlyPaymentDiscount",
+          "earlyPaymentDiscountDays",
+          "cashAmount",
+          "discountAmount",
+          "hasDiscountOpportunity",
+          "isDueSoon"
+        ]
+      },
+      "GeneratePaymentRunDto": {
+        "type": "object",
+        "properties": {
+          "targetDate": {
+            "type": "string"
+          },
+          "glAccountBank": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "targetDate",
+          "glAccountBank",
+          "invoiceIds"
+        ]
+      },
+      "GeneratePaymentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "generatedPayments": {
+            "type": "number"
+          },
+          "totalCashAmount": {
+            "type": "number"
+          },
+          "totalDiscountAmount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "generatedPayments",
+          "totalCashAmount",
+          "totalDiscountAmount"
+        ]
+      },
+      "PaymentLineDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "memo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "amount"
+        ]
+      },
+      "AllocationDto": {
+        "type": "object",
+        "properties": {
+          "referenceType": {
+            "type": "object"
+          },
+          "referenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "allocatedAmount": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "referenceType",
+          "referenceId",
+          "allocatedAmount"
+        ]
+      },
+      "CreatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentType": {
+            "type": "object"
+          },
+          "partyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentDate": {
+            "type": "string"
+          },
+          "modeOfPayment": {
+            "type": "object"
+          },
+          "totalAmount": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "glAccountBank": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "referenceNumber": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "submitImmediately": {
+            "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentLineDto"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllocationDto"
+            }
+          }
+        },
+        "required": [
+          "paymentId",
+          "paymentType",
+          "paymentDate",
+          "modeOfPayment",
+          "totalAmount",
+          "glAccountBank",
+          "currencyCode"
+        ]
+      },
+      "AllocatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllocationDto"
+            }
+          }
+        },
+        "required": [
+          "allocations"
+        ]
+      },
+      "ConfirmRejectResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "BatchPaymentActionDto": {
+        "type": "object",
+        "properties": {
+          "paymentIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "paymentIds"
+        ]
+      },
+      "ExportAbaResponseDto": {
+        "type": "object",
+        "properties": {
+          "fileContent": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileContent"
+        ]
+      },
       "DashboardSummaryDto": {
         "type": "object",
         "properties": {
@@ -32582,527 +33584,6 @@
       "HealthResponseDto": {
         "type": "object",
         "properties": {}
-      },
-      "CreatePurchaseOrderLineDto": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string"
-          },
-          "productDescription": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "pricePerUnit": {
-            "type": "string"
-          },
-          "discountPercentage": {
-            "type": "string"
-          },
-          "unitOfMeasure": {
-            "type": "string"
-          },
-          "taxCategoryId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "quantity",
-          "pricePerUnit"
-        ]
-      },
-      "CreatePurchaseOrderDto": {
-        "type": "object",
-        "properties": {
-          "purchaseOrderId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "orderNumber": {
-            "type": "string"
-          },
-          "deliveryLocationId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "vendorId": {
-            "type": "string"
-          },
-          "currencyCode": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "referenceNumber": {
-            "type": "string"
-          },
-          "expectedDate": {
-            "type": "string"
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreatePurchaseOrderLineDto"
-            }
-          }
-        },
-        "required": [
-          "purchaseOrderId",
-          "orderNumber",
-          "deliveryLocationId",
-          "vendorId"
-        ]
-      },
-      "PurchaseOrderLineResponseDto": {
-        "type": "object",
-        "properties": {
-          "purchaseOrderLineId": {
-            "type": "string"
-          },
-          "purchaseOrderId": {
-            "type": "string"
-          },
-          "lineNumber": {
-            "type": "number"
-          },
-          "productId": {
-            "type": "string",
-            "nullable": true
-          },
-          "productNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "productType": {
-            "type": "string",
-            "nullable": true
-          },
-          "productDescription": {
-            "type": "string",
-            "nullable": true
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "pricePerUnit": {
-            "type": "string"
-          },
-          "discountPercentage": {
-            "type": "string",
-            "nullable": true
-          },
-          "amount": {
-            "type": "string",
-            "nullable": true
-          },
-          "taxCategoryId": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string",
-            "nullable": true
-          },
-          "totalAmount": {
-            "type": "string",
-            "nullable": true
-          },
-          "unitOfMeasure": {
-            "type": "string",
-            "nullable": true
-          },
-          "quantityReceived": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "purchaseOrderLineId",
-          "purchaseOrderId",
-          "lineNumber",
-          "quantity",
-          "pricePerUnit",
-          "taxCategoryId"
-        ]
-      },
-      "PurchaseOrderResponseDto": {
-        "type": "object",
-        "properties": {
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PurchaseOrderLineResponseDto"
-            }
-          },
-          "purchaseOrderId": {
-            "type": "string"
-          },
-          "orderNumber": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "vendorId": {
-            "type": "string",
-            "nullable": true
-          },
-          "deliveryLocationId": {
-            "type": "string"
-          },
-          "referenceNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "currencyCode": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "customFields": {
-            "type": "object",
-            "nullable": true
-          },
-          "createdBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "modifiedOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "expectedDate": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "vendorName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "purchaseOrderId",
-          "orderNumber",
-          "deliveryLocationId",
-          "stateCode",
-          "currencyCode"
-        ]
-      },
-      "ChangeStateDto": {
-        "type": "object",
-        "properties": {
-          "stateCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "stateCode"
-        ]
-      },
-      "UpdatePurchaseOrderLineDto": {
-        "type": "object",
-        "properties": {
-          "quantity": {
-            "type": "string"
-          },
-          "pricePerUnit": {
-            "type": "string"
-          },
-          "discountPercentage": {
-            "type": "string"
-          },
-          "productDescription": {
-            "type": "string"
-          },
-          "unitOfMeasure": {
-            "type": "string"
-          },
-          "taxCategoryId": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdatePurchaseOrderDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "vendorId": {
-            "type": "string"
-          },
-          "currencyCode": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "referenceNumber": {
-            "type": "string"
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "deliveryLocationId": {
-            "type": "string"
-          },
-          "expectedDate": {
-            "type": "string"
-          }
-        }
-      },
-      "CreatePurchaseReturnLineDto": {
-        "type": "object",
-        "properties": {
-          "purchaseOrderLineId": {
-            "type": "string"
-          },
-          "quantityReturned": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "returnFee": {
-            "type": "string"
-          },
-          "sourceBinId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "purchaseOrderLineId",
-          "quantityReturned"
-        ]
-      },
-      "CreatePurchaseReturnDto": {
-        "type": "object",
-        "properties": {
-          "notes": {
-            "type": "string"
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreatePurchaseReturnLineDto"
-            }
-          }
-        },
-        "required": [
-          "lines"
-        ]
-      },
-      "PurchaseReturnLineResponseDto": {
-        "type": "object",
-        "properties": {
-          "returnLineId": {
-            "type": "string"
-          },
-          "returnId": {
-            "type": "string"
-          },
-          "purchaseOrderLineId": {
-            "type": "string"
-          },
-          "quantityReturned": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string",
-            "nullable": true
-          },
-          "returnFee": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "returnLineId",
-          "returnId",
-          "purchaseOrderLineId",
-          "quantityReturned"
-        ]
-      },
-      "PurchaseReturnResponseDto": {
-        "type": "object",
-        "properties": {
-          "returnId": {
-            "type": "string"
-          },
-          "returnNumber": {
-            "type": "string"
-          },
-          "purchaseOrderId": {
-            "type": "string"
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "modifiedOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
-            }
-          },
-          "shipments": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
-          "shipmentLines": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        },
-        "required": [
-          "returnId",
-          "returnNumber",
-          "purchaseOrderId",
-          "stateCode"
-        ]
-      },
-      "ShipPurchaseReturnDto": {
-        "type": "object",
-        "properties": {
-          "trackingNumber": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "GlobalPurchaseReturnDto": {
-        "type": "object",
-        "properties": {
-          "orderNumber": {
-            "type": "string"
-          },
-          "vendorName": {
-            "type": "string"
-          },
-          "vendorId": {
-            "type": "string"
-          },
-          "vendorCode": {
-            "type": "string"
-          },
-          "currencyCode": {
-            "type": "string"
-          },
-          "debitNoteId": {
-            "type": "string"
-          },
-          "debitNoteNumber": {
-            "type": "string"
-          },
-          "debitNoteState": {
-            "type": "string"
-          },
-          "debitNoteTotalAmount": {
-            "type": "string"
-          },
-          "returnId": {
-            "type": "string"
-          },
-          "returnNumber": {
-            "type": "string"
-          },
-          "purchaseOrderId": {
-            "type": "string"
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "modifiedOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PurchaseReturnLineResponseDto"
-            }
-          },
-          "shipments": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
-          "shipmentLines": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        },
-        "required": [
-          "returnId",
-          "returnNumber",
-          "purchaseOrderId",
-          "stateCode"
-        ]
-      },
-      "ResolvePurchaseReturnDto": {
-        "type": "object",
-        "properties": {
-          "notes": {
-            "type": "string"
-          }
-        }
       },
       "PurchaseDebitNoteLineResponseDto": {
         "type": "object",
@@ -33303,437 +33784,6 @@
         },
         "required": [
           "lines"
-        ]
-      },
-      "WorkOrderComponentResponseDto": {
-        "type": "object",
-        "properties": {
-          "workOrderComponentId": {
-            "type": "string"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "productName": {
-            "type": "string"
-          },
-          "productNumber": {
-            "type": "string"
-          },
-          "expectedQuantity": {
-            "type": "string"
-          },
-          "unitCost": {
-            "type": "string",
-            "nullable": true
-          },
-          "stagedQuantity": {
-            "type": "string",
-            "nullable": true
-          },
-          "wipBinQuantity": {
-            "type": "string",
-            "nullable": true
-          },
-          "currentQuantity": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "workOrderComponentId",
-          "productId",
-          "productName",
-          "productNumber",
-          "expectedQuantity"
-        ]
-      },
-      "WorkOrderResponseDto": {
-        "type": "object",
-        "properties": {
-          "workOrderId": {
-            "type": "string"
-          },
-          "orderNumber": {
-            "type": "string"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "productName": {
-            "type": "string"
-          },
-          "productNumber": {
-            "type": "string"
-          },
-          "targetQuantity": {
-            "type": "string"
-          },
-          "completedQuantity": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "locationName": {
-            "type": "string"
-          },
-          "wipBinId": {
-            "type": "string",
-            "nullable": true
-          },
-          "wipBinName": {
-            "type": "string",
-            "nullable": true
-          },
-          "outputBinId": {
-            "type": "string",
-            "nullable": true
-          },
-          "outputBinName": {
-            "type": "string",
-            "nullable": true
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "assemblyCostPerUnit": {
-            "type": "string",
-            "nullable": true
-          },
-          "additionalCost": {
-            "type": "string",
-            "nullable": true
-          },
-          "totalCost": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdOn": {
-            "type": "object"
-          },
-          "modifiedOn": {
-            "type": "object"
-          },
-          "components": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkOrderComponentResponseDto"
-            }
-          }
-        },
-        "required": [
-          "workOrderId",
-          "orderNumber",
-          "productId",
-          "productName",
-          "productNumber",
-          "targetQuantity",
-          "completedQuantity",
-          "locationId",
-          "locationName",
-          "stateCode"
-        ]
-      },
-      "CreateWorkOrderComponentDto": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Product ID of the component item"
-          },
-          "expectedQuantity": {
-            "type": "string",
-            "description": "Expected component quantity for this work order"
-          },
-          "unitCost": {
-            "type": "string",
-            "description": "Optional unit cost"
-          }
-        },
-        "required": [
-          "productId",
-          "expectedQuantity"
-        ]
-      },
-      "CreateWorkOrderDto": {
-        "type": "object",
-        "properties": {
-          "orderNumber": {
-            "type": "string",
-            "description": "Optional custom order number (WO-YYYYMMDD-XXXX generated if empty)"
-          },
-          "productId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Product ID of the output product to produce"
-          },
-          "targetQuantity": {
-            "type": "string",
-            "description": "Target quantity to produce"
-          },
-          "locationId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Fulfillment location ID"
-          },
-          "wipBinId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "WIP Bin ID (optional)"
-          },
-          "outputBinId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Finished Goods Output Bin ID (optional)"
-          },
-          "assemblyCostPerUnit": {
-            "type": "string",
-            "description": "Per-unit assembly cost"
-          },
-          "additionalCost": {
-            "type": "string",
-            "description": "Flat additional work order-level cost added to total"
-          },
-          "components": {
-            "description": "Component lines snapshot (if empty, auto-populated from product BOM)",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateWorkOrderComponentDto"
-            }
-          }
-        },
-        "required": [
-          "productId",
-          "targetQuantity",
-          "locationId"
-        ]
-      },
-      "UpdateWorkOrderDto": {
-        "type": "object",
-        "properties": {
-          "targetQuantity": {
-            "type": "string",
-            "description": "Target quantity to produce"
-          },
-          "locationId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Fulfillment location ID"
-          },
-          "wipBinId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid",
-            "description": "WIP Bin ID (optional)"
-          },
-          "outputBinId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid",
-            "description": "Finished Goods Output Bin ID (optional)"
-          },
-          "assemblyCostPerUnit": {
-            "type": "string",
-            "nullable": true,
-            "description": "Per-unit assembly cost"
-          },
-          "additionalCost": {
-            "type": "string",
-            "nullable": true,
-            "description": "Flat additional work order-level cost added to total"
-          }
-        }
-      },
-      "UpdateWorkOrderComponentDto": {
-        "type": "object",
-        "properties": {
-          "unitCost": {
-            "type": "string",
-            "nullable": true,
-            "description": "Overridden unit cost"
-          }
-        }
-      },
-      "WorkOrderAvailableBinDto": {
-        "type": "object",
-        "properties": {
-          "binId": {
-            "type": "string"
-          },
-          "binName": {
-            "type": "string"
-          },
-          "onHand": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "binId",
-          "binName",
-          "onHand"
-        ]
-      },
-      "WorkOrderPickingLineDto": {
-        "type": "object",
-        "properties": {
-          "salesOrderLineId": {
-            "type": "string"
-          },
-          "lineNumber": {
-            "type": "number"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "productNumber": {
-            "type": "string"
-          },
-          "productType": {
-            "type": "string"
-          },
-          "productDescription": {
-            "type": "string"
-          },
-          "locationName": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "quantityPicked": {
-            "type": "string"
-          },
-          "quantityShipped": {
-            "type": "string"
-          },
-          "remaining": {
-            "type": "string"
-          },
-          "isFullyPicked": {
-            "type": "boolean"
-          },
-          "isPhysical": {
-            "type": "boolean"
-          },
-          "onHand": {
-            "type": "string"
-          },
-          "availableBins": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkOrderAvailableBinDto"
-            }
-          }
-        },
-        "required": [
-          "salesOrderLineId",
-          "lineNumber",
-          "productId",
-          "productNumber",
-          "productType",
-          "productDescription",
-          "locationName",
-          "quantity",
-          "quantityPicked",
-          "quantityShipped",
-          "remaining",
-          "isFullyPicked",
-          "isPhysical",
-          "onHand",
-          "availableBins"
-        ]
-      },
-      "WorkOrderPickDetailDto": {
-        "type": "object",
-        "properties": {
-          "pickId": {
-            "type": "string"
-          },
-          "salesOrderId": {
-            "type": "string"
-          },
-          "salesOrderLineId": {
-            "type": "string"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "binId": {
-            "type": "string",
-            "nullable": true
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "binName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "pickId",
-          "salesOrderId",
-          "salesOrderLineId",
-          "productId",
-          "quantity",
-          "stateCode"
-        ]
-      },
-      "WorkOrderPickingSummaryDto": {
-        "type": "object",
-        "properties": {
-          "totalLines": {
-            "type": "number"
-          },
-          "fullyPickedLines": {
-            "type": "number"
-          },
-          "isFullyPicked": {
-            "type": "boolean"
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkOrderPickingLineDto"
-            }
-          },
-          "picks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkOrderPickDetailDto"
-            }
-          }
-        },
-        "required": [
-          "totalLines",
-          "fullyPickedLines",
-          "isFullyPicked",
-          "lines",
-          "picks"
-        ]
-      },
-      "PickWorkOrderComponentDto": {
-        "type": "object",
-        "properties": {
-          "binId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "binId",
-          "quantity"
         ]
       },
       "StorageFileResponseDto": {

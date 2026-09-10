@@ -1,6 +1,8 @@
 #import "@preview/codetastic:0.2.2": qrcode
+#import "theme-internal.typ": getTheme
 
 #let data = json(sys.inputs.at("data"))
+#let theme = getTheme(data)
 
 #set page(
   paper: "a6",
@@ -8,7 +10,7 @@
   margin: (top: 0.6cm, bottom: 0.6cm, left: 0.8cm, right: 0.8cm)
 )
 
-#set text(font: ("DejaVu Sans", "Liberation Sans", "Helvetica", "Arial"), size: 9pt)
+#set text(font: theme.fontFamily, size: 9pt, fill: theme.primaryColor)
 
 #let orderId = data.header.at("orderId", default: "")
 #let orderNumber = data.header.at("orderNumber", default: "")
@@ -19,7 +21,7 @@
 
 #if pickingLines.len() == 0 [
   #align(center + horizon)[
-    #text(14pt, weight: "bold")[No items to pick]
+    #text(14pt, weight: "bold", fill: theme.primaryColor)[No items to pick]
   ]
 ] else [
   #for (i, pickLine) in pickingLines.enumerate() [
@@ -35,17 +37,17 @@
       columns: (1fr, auto),
       align: (left, right),
       [
-        #text(12pt, weight: "bold")[Order: #orderNumber] \
-        #text(8pt, fill: luma(80))[Customer: #customerName #if customerOrderNumber != "" and customerOrderNumber != none [(PO: #customerOrderNumber)]]
+        #text(12pt, weight: "bold", fill: theme.primaryColor)[Order: #orderNumber] \
+        #text(8pt, fill: theme.mutedColor)[Customer: #customerName #if customerOrderNumber != "" and customerOrderNumber != none [(PO: #customerOrderNumber)]]
       ],
       [
-        #text(8pt, fill: luma(80))[Date: #orderDate] \
-        #text(8pt, weight: "bold", fill: luma(100))[Item #(i + 1) of #(pickingLines.len())]
+        #text(8pt, fill: theme.mutedColor)[Date: #orderDate] \
+        #text(8pt, weight: "bold", fill: theme.accentColor)[Item #(i + 1) of #(pickingLines.len())]
       ]
     )
 
     #v(0.2cm)
-    #line(length: 100%, stroke: 0.5pt + luma(180))
+    #line(length: 100%, stroke: 0.5pt + theme.borderColor)
     #v(0.2cm)
 
     // Main content: Details & Barcode
@@ -54,8 +56,8 @@
       gutter: 12pt,
       align: (left + top, center + top),
       [
-        #text(8pt, fill: luma(100), weight: "bold")[PRODUCT SKU] \
-        #text(14pt, weight: "bold")[#productCode]
+        #text(8pt, fill: theme.mutedColor, weight: "bold")[PRODUCT SKU] \
+        #text(14pt, weight: "bold", fill: theme.primaryColor)[#productCode]
         
         #v(0.1cm)
         #text(9pt)[#description]
@@ -69,11 +71,11 @@
               width: 100%,
               inset: 6pt,
               radius: 3pt,
-              stroke: 0.5pt + luma(150),
-              fill: luma(245),
+              stroke: 0.5pt + theme.borderColor,
+              fill: theme.tableHeaderFill,
               [
-                #text(7pt, weight: "bold", fill: luma(100))[BIN LOCATION] \
-                #text(13pt, weight: "bold")[#binNumber]
+                #text(7pt, weight: "bold", fill: theme.mutedColor)[BIN LOCATION] \
+                #text(13pt, weight: "bold", fill: theme.primaryColor)[#binNumber]
               ]
             )
           ],
@@ -82,11 +84,11 @@
               width: 100%,
               inset: 6pt,
               radius: 3pt,
-              stroke: 1pt + black,
-              fill: luma(235),
+              stroke: 1pt + theme.primaryColor,
+              fill: theme.tableHeaderFill,
               [
-                #text(7pt, weight: "bold", fill: luma(60))[PICK QUANTITY] \
-                #text(15pt, weight: "bold")[QTY: #qty]
+                #text(7pt, weight: "bold", fill: theme.mutedColor)[PICK QUANTITY] \
+                #text(15pt, weight: "bold", fill: theme.accentColor)[QTY: #qty]
               ]
             )
           ]
@@ -96,7 +98,7 @@
         #align(center)[
           #qrcode(barcodePayload, width: 2.8cm)
           #v(0.1cm)
-          #text(6pt, fill: luma(80))[#productCode | QTY: #qty]
+          #text(6pt, fill: theme.mutedColor)[#productCode | QTY: #qty]
         ]
       ]
     )

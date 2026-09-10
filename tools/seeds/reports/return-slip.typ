@@ -16,26 +16,25 @@
   }
 }
 
-#import "theme-external.typ": conf
+#import "theme-customer.typ": conf, getTheme
 #show: doc => conf(title: "RETURN SLIP", doc)
-
-#set text(size: 10pt)
+#let theme = getTheme(data)
 
 // ── Document Identity ───────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(9pt, weight: "bold", fill: luma(80))[ORDER] \
-    #text(12pt, weight: "semibold")[#data.header.orderNumber] \
+    #text(9pt, weight: "bold", fill: theme.mutedColor)[ORDER] \
+    #text(12pt, weight: "semibold", fill: theme.primaryColor)[#data.header.orderNumber] \
     #if "returnMeta" in data and data.returnMeta != none and "returnNumber" in data.returnMeta [
       #v(0.1cm)
-      #text(9pt, weight: "bold", fill: luma(80))[RETURN] \
-      #text(10pt, weight: "semibold")[#data.returnMeta.returnNumber]
+      #text(9pt, weight: "bold", fill: theme.mutedColor)[RETURN] \
+      #text(10pt, weight: "semibold", fill: theme.primaryColor)[#data.returnMeta.returnNumber]
     ]
   ],
   align(right)[
-    #text(9pt, fill: luma(100))[
+    #text(9pt, fill: theme.mutedColor)[
       Generated on: #data.generatedAt
     ]
   ]
@@ -48,7 +47,7 @@
   columns: (1.2fr, 0.8fr),
   gutter: 20pt,
   [
-    #text(9pt, weight: "bold", fill: luma(80))[CUSTOMER] \
+    #text(9pt, weight: "bold", fill: theme.accentColor)[CUSTOMER] \
     #v(0.1cm)
     #text(11pt, weight: "semibold")[#data.header.customerName]
   ],
@@ -57,8 +56,8 @@
       columns: (auto, 1fr),
       row-gutter: 8pt,
       column-gutter: 12pt,
-      text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.orderDate,
-      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—]
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Date:], data.header.orderDate,
+      text(9pt, weight: "bold", fill: theme.mutedColor)[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—]
     )
   ]
 )
@@ -72,7 +71,7 @@
     columns: (1fr),
     gutter: 5pt,
     [
-      #text(9pt, weight: "bold", fill: luma(80))[SHIP TO] \
+      #text(9pt, weight: "bold", fill: theme.accentColor)[SHIP TO] \
       #v(0.1cm)
       #text(11pt, weight: "semibold")[#addr.at("name", default: "")] \
       #if addr.at("addressLine1", default: "") != "" and addr.at("addressLine1", default: "") != none [#text(10pt)[#addr.addressLine1] \ ]
@@ -101,15 +100,15 @@
 #table(
   columns: (2.2fr, 4fr, 1fr, 2.2fr),
   inset: (x: 6pt, y: 8pt),
-  stroke: 0.5pt + luma(210),
-  fill: (_, row) => if row == 0 { rgb("#f8fafc") },
+  stroke: 0.5pt + theme.borderColor,
+  fill: (_, row) => if row == 0 { theme.tableHeaderFill },
   align: (left, left, center, left),
   
   // Header Row
-  text(8pt, weight: "bold", fill: luma(50))[Code],
-  text(8pt, weight: "bold", fill: luma(50))[Description],
-  text(8pt, weight: "bold", fill: luma(50))[Return Qty],
-  text(8pt, weight: "bold", fill: luma(50))[Reason],
+  text(8pt, weight: "bold", fill: theme.primaryColor)[Code],
+  text(8pt, weight: "bold", fill: theme.primaryColor)[Description],
+  text(8pt, weight: "bold", fill: theme.primaryColor)[Return Qty],
+  text(8pt, weight: "bold", fill: theme.primaryColor)[Reason],
 
   ..for line in data.lines {
     let desc = line.at("description", default: "")
@@ -117,7 +116,7 @@
     (
       text(8pt)[#line.at("productNumber", default: "")],
       text(8pt)[#if desc != "" [#desc] else [—]],
-      text(8pt, weight: "bold")[#fmtQty(line.at("quantity", default: 0))],
+      text(8pt, weight: "bold", fill: theme.primaryColor)[#fmtQty(line.at("quantity", default: 0))],
       text(8pt)[#if rsn != "" [#rsn] else [—]],
     )
   }
@@ -125,8 +124,6 @@
 
 #v(0.6cm)
 
-
-
-#text(8pt, fill: luma(120), style: "italic")[
+#text(8pt, fill: theme.mutedColor, style: "italic")[
   Please include this slip with your returned goods.
 ]

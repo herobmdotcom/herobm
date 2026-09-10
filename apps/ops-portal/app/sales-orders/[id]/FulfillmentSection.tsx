@@ -125,11 +125,11 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                             { header: t('columns.lineNumber'), width: 40 },
                             { header: t('columns.product'), width: 140 },
                             { header: t('columns.description') },
-                            { header: t('columns.ordered'), align: 'right' },
-                            { header: t('columns.picked'), align: 'right' },
-                            { header: t('columns.onHand'), align: 'right' },
-                            { header: t('columns.shipped'), align: 'right' },
-                            { header: t('columns.readyToShip'), align: 'right' }
+                            { header: t('columns.ordered'), width: 90, align: 'right' },
+                            { header: t('columns.picked'), width: 90, align: 'right' },
+                            { header: t('columns.onHand'), width: 90, align: 'right' },
+                            { header: t('columns.shipped'), width: 90, align: 'right' },
+                            { header: t('columns.readyToShip'), width: 120, align: 'right' }
                         ]}
                         emptyMessage={t('noPhysicalLines')}
                         renderCustomRow={(line: ShippingLine, idx: number) => {

@@ -190,7 +190,7 @@ export const routes = {
       financial: () => '/admin/settings/financial',
       integrations: () => '/admin/settings/integrations',
       license: () => '/admin/settings/license',
-      pdfHooks: () => '/admin/settings/pdf-hooks',
+      pdfHooks: () => '/admin/settings/pdf-templates?tab=hooks',
       pdfTemplates: {
         list: () => '/admin/settings/pdf-templates',
         detail: (id: string) => `/admin/settings/pdf-templates/${id}`,

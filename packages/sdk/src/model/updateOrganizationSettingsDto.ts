@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { PdfThemeConfigDto } from './pdfThemeConfigDto';
 
 export interface UpdateOrganizationSettingsDto {
+  pdfThemeConfig?: PdfThemeConfigDto;
   name: string;
   addressLine1?: string;
   addressLine2?: string;

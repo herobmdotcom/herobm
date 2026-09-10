@@ -26,6 +26,7 @@ import { EntityType, EventType } from '../../common/event-types';
 import { BACKORDER_STATE, TRANSFER_ORDER_STATE } from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { TransfersCoreService } from './transfers-core.service';
+import { BackordersService } from '../backorders.service';
 
 @Injectable()
 export class TransfersWriteService {
@@ -34,6 +35,7 @@ export class TransfersWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly coreService: TransfersCoreService,
+    private readonly backordersService: BackordersService,
   ) {}
 
   async createTransferFromDemands(
@@ -103,15 +105,13 @@ export class TransfersWriteService {
           quantity: line.quantity,
         });
 
-        await tx
-          .update(backorders)
-          .set({
-            transferOrderId,
-            transferOrderLineId,
-            // eslint-disable-next-line no-restricted-syntax -- State bypass required
-            stateCode: BACKORDER_STATE.AWAITING_RECEIPT,
-          })
-          .where(eq(backorders.backorderId, line.backorderId));
+        await this.backordersService.linkDemandToTransferOrder(
+          tx,
+          line.backorderId,
+          transferOrderId,
+          transferOrderLineId,
+          actor,
+        );
       }
 
       const [[sourceLoc], [destLoc]] = await Promise.all([

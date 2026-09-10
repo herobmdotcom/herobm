@@ -411,6 +411,7 @@ export const salesOrderShipments = herobmCore.table(
       .references(() => salesOrders.salesOrderId),
     stateCode: text('state_code').$type<ShipmentState>().notNull(),
     notes: text('notes'),
+    shippingNotes: text('shipping_notes'),
     trackingNumber: text('tracking_number'),
     deliveryCompanyName: text('delivery_company_name'),
     fulfillmentLocationId: uuid('fulfillment_location_id').references(

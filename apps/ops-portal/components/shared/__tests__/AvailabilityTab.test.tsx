@@ -266,4 +266,218 @@ describe('AvailabilityTab Component', () => {
     expect(screen.getAllByText('40').length).toBeGreaterThanOrEqual(1); // available
     expect(screen.queryByText('✓')).not.toBeInTheDocument(); // No status column in purchase mode
   });
+
+  describe('Sales Mode - Confirmed Order Availability Status', () => {
+    const multiLocInventory = [
+      {
+        productId: 'prod-103850',
+        locationId: 'loc-albury',
+        locationName: 'Albury NSW',
+        quantityOnHand: 0,
+        quantityCommitted: 0,
+        quantityReserved: 0,
+        quantityOnOrder: 0,
+        quantityAvailable: 0,
+      },
+      {
+        productId: 'prod-103850',
+        locationId: 'loc-perth',
+        locationName: 'Perth WA',
+        quantityOnHand: 3,
+        quantityCommitted: 0,
+        quantityReserved: 0,
+        quantityOnOrder: 0,
+        quantityAvailable: 3,
+      },
+      {
+        productId: 'prod-103850',
+        locationId: 'loc-brisbane',
+        locationName: 'Brisbane QLD',
+        quantityOnHand: 4,
+        quantityCommitted: 0,
+        quantityReserved: 0,
+        quantityOnOrder: 0,
+        quantityAvailable: 4,
+      },
+    ];
+
+    it('renders "In Stock (Other)" when target location has 0 stock but other locations have sufficient stock', () => {
+      const lines = [
+        {
+          salesOrderLineId: 'line-1',
+          lineNumber: 2,
+          productId: 'prod-103850',
+          productNumber: '103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          quantity: 1,
+          productType: 'inventory',
+        },
+      ];
+
+      const gapMap = {
+        'line-1': {
+          salesOrderLineId: 'line-1',
+          productId: 'prod-103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          orderedQuantity: 1,
+          availableQuantity: 0,
+          shortage: 1,
+          locationId: 'loc-albury',
+        },
+      };
+
+      render(
+        <AvailabilityTab
+          lines={lines}
+          inventoryData={multiLocInventory}
+          inventoryLoading={false}
+          context="sales"
+          targetLocationId="loc-albury"
+          isPreConfirmation={false}
+          gapMap={gapMap}
+        />
+      );
+
+      // Should display "In Stock (Other)" because Perth and Brisbane have stock, even though Albury is 0
+      expect(screen.getAllByText('In Stock (Other)').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('In Stock')).not.toBeInTheDocument();
+    });
+
+    it('renders "Shortage" when total stock across all locations is less than ordered quantity', () => {
+      const zeroInventory = [
+        {
+          productId: 'prod-103850',
+          locationId: 'loc-albury',
+          locationName: 'Albury NSW',
+          quantityOnHand: 0,
+          quantityAvailable: 0,
+        },
+      ];
+
+      const lines = [
+        {
+          salesOrderLineId: 'line-1',
+          lineNumber: 1,
+          productId: 'prod-103850',
+          productNumber: '103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          quantity: 5,
+          productType: 'inventory',
+        },
+      ];
+
+      const gapMap = {
+        'line-1': {
+          salesOrderLineId: 'line-1',
+          productId: 'prod-103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          orderedQuantity: 5,
+          availableQuantity: 0,
+          shortage: 5,
+          locationId: 'loc-albury',
+        },
+      };
+
+      render(
+        <AvailabilityTab
+          lines={lines}
+          inventoryData={zeroInventory}
+          inventoryLoading={false}
+          context="sales"
+          targetLocationId="loc-albury"
+          isPreConfirmation={false}
+          gapMap={gapMap}
+        />
+      );
+
+      expect(screen.getAllByText('Shortage').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('In Stock')).not.toBeInTheDocument();
+    });
+
+    it('renders "In Stock" when target location has sufficient available quantity', () => {
+      const lines = [
+        {
+          salesOrderLineId: 'line-1',
+          lineNumber: 1,
+          productId: 'prod-103850',
+          productNumber: '103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          quantity: 2,
+          productType: 'inventory',
+        },
+      ];
+
+      render(
+        <AvailabilityTab
+          lines={lines}
+          inventoryData={multiLocInventory}
+          inventoryLoading={false}
+          context="sales"
+          targetLocationId="loc-perth"
+          isPreConfirmation={false}
+          gapMap={{}}
+        />
+      );
+
+      expect(screen.getAllByText('In Stock').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders "Picked" when line quantityPicked >= quantity', () => {
+      const lines = [
+        {
+          salesOrderLineId: 'line-1',
+          lineNumber: 1,
+          productId: 'prod-103850',
+          productNumber: '103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          quantity: 2,
+          quantityPicked: 2,
+          productType: 'inventory',
+        },
+      ];
+
+      render(
+        <AvailabilityTab
+          lines={lines}
+          inventoryData={multiLocInventory}
+          inventoryLoading={false}
+          context="sales"
+          targetLocationId="loc-albury"
+          isPreConfirmation={false}
+          gapMap={{}}
+        />
+      );
+
+      expect(screen.getAllByText('Picked').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders "Backordered" when productId is in activeBackorders', () => {
+      const lines = [
+        {
+          salesOrderLineId: 'line-1',
+          lineNumber: 1,
+          productId: 'prod-103850',
+          productNumber: '103850',
+          productDescription: 'RIAS2x1.1/2WD',
+          quantity: 2,
+          productType: 'inventory',
+        },
+      ];
+
+      render(
+        <AvailabilityTab
+          lines={lines}
+          inventoryData={multiLocInventory}
+          inventoryLoading={false}
+          context="sales"
+          targetLocationId="loc-albury"
+          isPreConfirmation={false}
+          activeBackorders={new Set(['prod-103850'])}
+          gapMap={{}}
+        />
+      );
+
+      expect(screen.getAllByText('Backordered').length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

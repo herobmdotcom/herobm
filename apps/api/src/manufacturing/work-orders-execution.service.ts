@@ -1,4 +1,9 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  forwardRef,
+} from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -7,7 +12,6 @@ import {
   bins,
   binContents,
   zones,
-  backorders,
 } from '@herobm/db-schema';
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { isPickableBinCondition } from '../inventory/inventory-math.utils';
@@ -15,7 +19,6 @@ import {
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
   WORK_ORDER_PICK_STATE,
-  BACKORDER_STATE,
   PUTAWAY_STATUS,
   BIN_TYPE,
   type WorkOrderState,
@@ -24,13 +27,17 @@ import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { WorkOrdersQueryService } from './work-orders-query.service';
+import { BackordersService } from '../orders/backorders.service';
 
 @Injectable()
 export class WorkOrdersExecutionService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    @Inject(forwardRef(() => InventoryMovementService))
     private readonly inventoryMovementService: InventoryMovementService,
     private readonly queryService: WorkOrdersQueryService,
+    @Inject(forwardRef(() => BackordersService))
+    private readonly backordersService: BackordersService,
   ) {}
 
   async changeWorkOrderState(
@@ -129,12 +136,12 @@ export class WorkOrdersExecutionService {
         const shortfall = Math.max(0, expectedQty - availableOnHand);
 
         if (shortfall > 0) {
-          await innerTx.insert(backorders).values({
+          await this.backordersService.createShortfallDemand(innerTx, {
             demandWorkOrderId: id,
             workOrderComponentId: comp.workOrderComponentId,
             productId: comp.productId,
             quantity: shortfall.toString(),
-            stateCode: BACKORDER_STATE.PENDING_SUPPLY,
+            actor: username || 'system',
           });
         }
 
@@ -421,11 +428,11 @@ export class WorkOrdersExecutionService {
         innerTx,
       );
 
-      await innerTx
-        .update(backorders)
-        // eslint-disable-next-line no-restricted-syntax -- Bulk cancelling backorders on work order cancellation
-        .set({ stateCode: BACKORDER_STATE.CANCELLED })
-        .where(eq(backorders.demandWorkOrderId, id));
+      await this.backordersService.cancelDemandForWorkOrder(
+        innerTx,
+        id,
+        username || 'system',
+      );
 
       await innerTx
         .update(workOrderPicks)

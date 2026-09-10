@@ -23,6 +23,7 @@ import {
   SHIPMENT_STATE,
 } from '@herobm/shared';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BackordersService } from '../backorders.service';
 
 describe('TransfersStateService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -93,6 +94,14 @@ describe('TransfersStateService', () => {
         {
           provide: DRIZZLE,
           useValue: pg.db,
+        },
+        {
+          provide: BackordersService,
+          useValue: {
+            unlinkDemandForTransferOrder: jest
+              .fn()
+              .mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

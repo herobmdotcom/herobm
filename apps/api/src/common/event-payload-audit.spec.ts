@@ -43,6 +43,7 @@ const EXCLUDED_IDS = new Set([
   'shipmentId',
   'shipmentLineId',
   'transferOrderId',
+  'transferOrderLineId',
   'pickId',
   'workOrderId',
   'workOrderComponentId',

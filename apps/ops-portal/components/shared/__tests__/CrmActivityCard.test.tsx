@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CrmActivityCard } from '../CrmActivityCard';
+import { formatLocalDate } from '@/lib/date';
 import type { CrmActivityResponseDto } from '@herobm/sdk';
 
 jest.mock('next-intl', () => ({
@@ -39,7 +40,7 @@ describe('CrmActivityCard', () => {
     // Due date inline in same font
     const dueDateEl = screen.getByText(/Due:/);
     expect(dueDateEl).toHaveClass('font-semibold', 'text-sm');
-    expect(dueDateEl.textContent).toContain('01/12/2026');
+    expect(dueDateEl.textContent).toContain(formatLocalDate(baseTask.dueDate));
 
     // No calendar icon
     expect(screen.queryByText('calendar_today')).not.toBeInTheDocument();
@@ -86,7 +87,7 @@ describe('CrmActivityCard', () => {
     expect(screen.queryByText(/Due:/)).not.toBeInTheDocument();
     const completedEl = screen.getByText(/Completed:/);
     expect(completedEl).toHaveClass('font-semibold', 'text-sm', 'text-emerald-600');
-    expect(completedEl.textContent).toContain('05/09/2026');
+    expect(completedEl.textContent).toContain(formatLocalDate(completedTask.completedAt));
 
     // Footer only has loggedBy and date
     expect(screen.getByText('Logged by admin')).toBeInTheDocument();

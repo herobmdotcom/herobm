@@ -39,6 +39,7 @@ export class OrganizationService {
         bankAccountNumber: '',
         bankSwiftBic: '',
         bankIban: '',
+        pdfThemeConfig: null,
       };
     }
     return rows[0];

@@ -144,7 +144,12 @@ describe('PurchaseOrdersService', () => {
         },
         {
           provide: BackordersService,
-          useValue: { changeBackorderState: jest.fn() },
+          useValue: {
+            changeBackorderState: jest.fn(),
+            unlinkDemandForPurchaseOrder: jest
+              .fn()
+              .mockResolvedValue(undefined),
+          },
         },
         { provide: InventoryMovementService, useValue: mockInventoryService },
       ],

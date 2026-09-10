@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { SalesCreditNoteService } from './sales-credit-note.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
@@ -253,6 +254,22 @@ describe('SalesCreditNoteService', () => {
         { provide: AppConfigService, useValue: mockAppConfigService },
         { provide: OrganizationService, useValue: mockOrgService },
         { provide: EnrichmentService, useValue: mockEnrichmentService },
+        {
+          provide: ReturnsWriteService,
+          useValue: {
+            changeReturnState: jest
+              .fn()
+              .mockImplementation(
+                async (returnId, toState, actor, locationId, tx) => {
+                  const db = tx || pg.db;
+                  await db
+                    .update(salesOrderReturns)
+                    .set({ stateCode: toState })
+                    .where(eq(salesOrderReturns.returnId, returnId));
+                },
+              ),
+          },
+        },
       ],
     }).compile();
 

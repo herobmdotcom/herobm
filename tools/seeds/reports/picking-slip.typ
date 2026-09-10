@@ -1,23 +1,22 @@
-#import "theme-internal.typ": conf
+#import "theme-internal.typ": conf, getTheme
 #show: doc => conf(title: "Picking Slip", doc)
 
 #let data = json(sys.inputs.at("data"))
-
-#set text(size: 10pt)
+#let theme = getTheme(data)
 
 // ── Header ──────────────────────────────────────────────────────────────────
 #align(center)[
-  #text(16pt, weight: "bold")[Picking Slip]
+  #text(16pt, weight: "bold", fill: theme.primaryColor)[Picking Slip]
 ]
 #v(0.5cm)
 
 #grid(
   columns: (1fr, 1fr),
   row-gutter: 8pt,
-  [*Order:* #data.header.orderNumber],
-  [*Customer:* #data.header.customerName],
-  [*Customer PO:* #if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—]],
-  [*Date:* #data.header.orderDate],
+  [#text(9pt, weight: "bold", fill: theme.mutedColor)[Order:] #text(10pt, weight: "semibold", fill: theme.primaryColor)[#data.header.orderNumber]],
+  [#text(9pt, weight: "bold", fill: theme.mutedColor)[Customer:] #text(10pt, weight: "semibold")[#data.header.customerName]],
+  [#text(9pt, weight: "bold", fill: theme.mutedColor)[Customer PO:] #if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—]],
+  [#text(9pt, weight: "bold", fill: theme.mutedColor)[Date:] #data.header.orderDate],
 )
 
 #v(0.8cm)
@@ -26,8 +25,8 @@
 #grid(
   columns: (1fr, auto),
   align: (left, right),
-  [#text(12pt, weight: "bold")[Items to Pick]],
-  [#text(10pt, style: "italic")[Location: #if "locationName" in data.header and data.header.locationName != none and data.header.locationName != "" [#data.header.locationName] else [Main Warehouse]]]
+  [#text(12pt, weight: "bold", fill: theme.primaryColor)[Items to Pick]],
+  [#text(10pt, style: "italic", fill: theme.mutedColor)[Location: #if "locationName" in data.header and data.header.locationName != none and data.header.locationName != "" [#data.header.locationName] else [Main Warehouse]]]
 )
 #v(0.3cm)
 
@@ -46,19 +45,19 @@
   table(
     columns: (2.2fr, 4fr, 1.2fr, 0.8fr),
     inset: (x: 8pt, y: 8pt),
-    stroke: 0.5pt + luma(210),
-    fill: (_, row) => if row == 0 { rgb("#f8fafc") },
+    stroke: 0.5pt + theme.borderColor,
+    fill: (_, row) => if row == 0 { theme.tableHeaderFill },
     align: (left, left, left, right),
-    text(9pt, weight: "bold", fill: luma(50))[Product Code],
-    text(9pt, weight: "bold", fill: luma(50))[Description],
-    text(9pt, weight: "bold", fill: luma(50))[Bin],
-    text(9pt, weight: "bold", fill: luma(50))[Qty to Pick],
+    text(9pt, weight: "bold", fill: theme.primaryColor)[Product Code],
+    text(9pt, weight: "bold", fill: theme.primaryColor)[Description],
+    text(9pt, weight: "bold", fill: theme.primaryColor)[Bin],
+    text(9pt, weight: "bold", fill: theme.primaryColor)[Qty to Pick],
     ..for line in pickingLines {
       (
         text(9pt, weight: "semibold")[#line.at("productCode", default: "—")],
         text(9pt)[#line.at("description", default: "—")],
         text(9pt)[#line.at("binNumber", default: "—")],
-        text(9pt, weight: "bold")[#fmtQty(line.at("qtyToPick", default: 0))]
+        text(9pt, weight: "bold", fill: theme.primaryColor)[#fmtQty(line.at("qtyToPick", default: 0))]
       )
     }
   )

@@ -220,6 +220,7 @@ describe('ShippingDocketService', () => {
       salesOrderId: ORDER_ID,
       trackingNumber: 'TRACK123',
       notes: 'Fragile items',
+      shippingNotes: 'Leave at front desk',
       stateCode: SHIPMENT_STATE.DISPATCHED,
       createdBy: 'system',
     });
@@ -263,6 +264,7 @@ describe('ShippingDocketService', () => {
       shipmentNumber: 'TSH-001',
       transferOrderId: TRANSFER_ORDER_ID,
       trackingNumber: 'TRK-TO-1',
+      shippingNotes: 'Urgent branch transfer',
       stateCode: SHIPMENT_STATE.DISPATCHED,
       shippedBy: 'system',
     });

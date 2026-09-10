@@ -9,7 +9,7 @@ import { OrderStateService } from './order-state.service';
 import { OrdersCoreService } from './orders-core.service';
 import { DocumentDispatchService } from '../notifications/document-dispatch.service';
 import { OrdersQueryService } from './orders-query.service';
-import { CounterFulfillmentService } from './counter-fulfillment.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 import { CreateOrderDto, ChangeOrderStateDto, CreateOrderLineDto } from './dto';
 
@@ -33,10 +33,7 @@ describe('OrdersController', () => {
   const mockOrder = {
     salesOrderId: 'uuid-1',
     orderNumber: 'ORD-001',
-    customerId: '00000000-0000-4000-8000-000000000001',
     stateCode: SALES_ORDER_STATE.DRAFT,
-    lines: [],
-    events: [],
   };
 
   const mockLine = {
@@ -44,15 +41,16 @@ describe('OrdersController', () => {
     lineNumber: 1,
     productId: 'P001',
     quantity: '10',
-    pricePerUnit: '25.00',
   };
 
   const mockUser = {
-    userId: 'user-uuid-1',
+    userId: 'user-1',
     username: 'admin',
+    email: 'admin@herobm.com',
     role: 'admin',
-    email: 'admin@example.com',
   };
+
+  let mockDirectFulfillmentService: { fulfillDirectOrder: jest.Mock };
 
   beforeEach(async () => {
     const mockReadService = {
@@ -62,7 +60,6 @@ describe('OrdersController', () => {
     const mockCreationService = {
       create: jest.fn().mockResolvedValue(mockOrder),
       update: jest.fn().mockResolvedValue(mockOrder),
-      updateLine: jest.fn().mockResolvedValue(mockLine),
       archive: jest.fn().mockResolvedValue(mockOrder),
       unarchive: jest.fn().mockResolvedValue(mockOrder),
     };
@@ -71,7 +68,6 @@ describe('OrdersController', () => {
       addLine: jest.fn().mockResolvedValue(mockLine),
       updateLine: jest.fn().mockResolvedValue(mockLine),
       removeLine: jest.fn().mockResolvedValue(undefined),
-      addPostConfirmationLine: jest.fn().mockResolvedValue(mockLine),
     };
 
     const mockStateService = {
@@ -79,7 +75,6 @@ describe('OrdersController', () => {
         ...mockOrder,
         stateCode: SALES_ORDER_STATE.QUOTED,
       }),
-      triggerTaxCalculation: jest.fn().mockResolvedValue(mockOrder),
       overrideCreditHold: jest.fn().mockResolvedValue(mockOrder),
     };
 
@@ -93,14 +88,14 @@ describe('OrdersController', () => {
       findOne: jest.fn().mockResolvedValue(mockOrder),
     };
 
-    const mockCounterFulfillmentService = {
-      fulfillCounterOrder: jest.fn().mockResolvedValue({
+    mockDirectFulfillmentService = {
+      fulfillDirectOrder: jest.fn().mockResolvedValue({
         salesOrderId: mockOrder.salesOrderId,
         orderNumber: mockOrder.orderNumber,
         stateCode: SALES_ORDER_STATE.SHIPPED,
         fulfilledLines: [],
         cogsAmount: '0.00',
-        message: 'Order fully fulfilled over the counter',
+        message: 'Order fully fulfilled directly',
       }),
     };
 
@@ -124,8 +119,8 @@ describe('OrdersController', () => {
         { provide: OrdersCoreService, useValue: mockCoreService },
         { provide: OrdersQueryService, useValue: mockQueryService },
         {
-          provide: CounterFulfillmentService,
-          useValue: mockCounterFulfillmentService,
+          provide: DirectFulfillmentService,
+          useValue: mockDirectFulfillmentService,
         },
       ],
     }).compile();
@@ -266,14 +261,13 @@ describe('OrdersController', () => {
     });
   });
 
-  describe('removeLine', () => {
-    it('should call orderLinesService.removeLine with orderId, lineId, and actor', async () => {
-      await controller.removeLine('uuid-1', 'line-uuid-1', mockUser);
-      expect(orderLinesService.removeLine).toHaveBeenCalledWith(
-        'uuid-1',
-        'line-uuid-1',
-        'admin',
-      );
+  describe('fulfillDirectOrder', () => {
+    it('should call directFulfillmentService.fulfillDirectOrder with orderId, body, and actor', async () => {
+      const body = { allowPartialFulfillment: true };
+      await controller.fulfillDirectOrder('uuid-1', body, mockUser);
+      expect(
+        mockDirectFulfillmentService.fulfillDirectOrder,
+      ).toHaveBeenCalledWith('uuid-1', body, 'admin');
     });
   });
 });

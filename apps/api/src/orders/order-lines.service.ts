@@ -888,9 +888,7 @@ export class OrderLinesService {
 
       if (childLineIds.length > 0) {
         // Delete child backorders
-        await tx
-          .delete(backorders)
-          .where(inArray(backorders.salesOrderLineId, childLineIds));
+        await this.backordersService.deleteDemandsForLineIds(tx, childLineIds);
 
         // Delete child lines
         await tx
@@ -899,9 +897,7 @@ export class OrderLinesService {
       }
 
       // Delete associated demand records for parent
-      await tx
-        .delete(backorders)
-        .where(eq(backorders.salesOrderLineId, lineId));
+      await this.backordersService.deleteDemandsForLineIds(tx, [lineId]);
 
       // Delete parent line
       await tx

@@ -146,7 +146,7 @@ export class ShipmentsCoreService {
         deliveryState: salesOrders.deliveryState,
         deliveryPostalCode: salesOrders.deliveryPostalCode,
         deliveryCountry: salesOrders.deliveryCountry,
-        shippingNotes: salesOrders.shippingNotes,
+        shippingNotes: salesOrderShipments.shippingNotes,
       })
       .from(salesOrderShipments)
       .innerJoin(
@@ -189,7 +189,7 @@ export class ShipmentsCoreService {
           deliveryState: locations.stateOrProvince,
           deliveryPostalCode: locations.postalCode,
           deliveryCountry: locations.country,
-          shippingNotes: transferOrders.shippingNotes,
+          shippingNotes: transferOrderShipments.shippingNotes,
         })
         .from(transferOrderShipments)
         .innerJoin(
